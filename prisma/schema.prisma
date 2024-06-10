@@ -1,0 +1,485 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum Gender {
+  MALE
+  FEAMLE
+  OTHER
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum SelectOffice {
+  Dadra_Nagar_Haveli
+  Branch_Office
+  Head_Office
+}
+
+enum NatureOfBusiness {
+  MANUFACTURING
+  TRADING
+  SERVICE
+  OTHER
+}
+
+enum ConstitutionOfBusiness {
+  PROPRIETORSHIP
+  PARTNERSHIP
+  LLP
+  PVT_LTD
+  PUBLIC_LTD
+  OTHER
+}
+
+enum TypeOfRegistration {
+  GST
+  MSME
+  UDYAM
+  OTHER
+}
+
+enum CommidityPursose {
+  COMMODITY_TRADED
+  MANUFACTURED
+}
+
+enum AccountingBasis {
+  CASH
+  ACCRUAL
+}
+
+enum FrequencyFilings {
+  MONTHLY
+  QUARTERLY
+}
+
+enum DepositType {
+  FIXED
+  RECURRING
+  SAVINGS
+}
+
+enum CategoryType {
+  USER
+  COMPANY
+}
+
+enum TitleParticulasOfperson {
+  PROPRIETOR
+  PARTNER
+  DIRECTOR
+  MANAGER
+  CHAIRMAN
+}
+
+enum TypeOfPerson {
+  BRACH_OFFICE
+  FACTORY
+  GODOWN
+  SHOP
+}
+
+enum LocationOfBusinessPlace {
+  WITHIN_STATE
+  OUTSIDE_STATE
+}
+
+enum TypeOfAccount {
+  CURRENT
+  SAVING
+  CASH_CREDIT
+  OVERDRAFT
+}
+
+model user {
+  id                    Int        @id @default(autoincrement())
+  firstName             String?
+  lastName              String?
+  mobileOne             String     @unique
+  mobileTwo             String?
+  email                 String?    @unique
+  pan                   String?    @unique
+  aadhar                String?    @unique
+  password              String?
+  otp                   String?
+  role                  Role       @default(USER)
+  designation           String?
+  isAuthorisedSignatory Boolean    @default(false)
+  signatoreUploadPath   String?
+  isAllowedLogin        Boolean    @default(true)
+  gender                Gender     @default(OTHER)
+  dob                   DateTime?
+  passportNumber        String?
+  buildingName          String?
+  area                  String?
+  address               String?
+  city                  String?
+  pincode               String?
+  status                UserStatus @default(ACTIVE)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  deletedAt             DateTime?
+
+  document document[]
+
+  // change
+  change_createBy  change[] @relation("change_createBy")
+  change_updatedBy change[] @relation("change_updatedBy")
+  change_deletedBy change[] @relation("change_deletedBy")
+
+  // Category
+  category_CreatedAt category[] @relation("category_CreatedAt")
+  category_updatedAt category[] @relation("category_updatedAt")
+  category_deletedAt category[] @relation("category_deletedAt")
+
+  // document
+  document_createdBy document[] @relation("document_createdBy")
+  document_updatedBy document[] @relation("document_updatedBy")
+  document_deletedBy document[] @relation("document_deletedBy")
+
+  // dvat04_01
+  dvat04_createdBy dvat04[] @relation("dvat04_createdBy")
+  dvat04_updatedBy dvat04[] @relation("dvat04_updatedBy")
+  dvat04_deletedBy dvat04[] @relation("dvat04_deletedBy")
+
+  // commodity
+  commodity_createdBy commodity[] @relation("commodity_createdBy")
+  commodity_updatedBy commodity[] @relation("commodity_updatedBy")
+  commodity_deletedBy commodity[] @relation("commodity_deletedBy")
+
+  // annexure1
+  annexure1_createdBy annexure1[] @relation("annexure1_createdBy")
+  annexure1_updatedBy annexure1[] @relation("annexure1_updatedBy")
+  annexure1_deletedBy annexure1[] @relation("annexure1_deletedBy")
+
+  // annexure2
+  annexure2_createdBy annexure2[] @relation("annexure2_createdBy")
+  annexure2_updatedBy annexure2[] @relation("annexure2_updatedBy")
+  annexure2_deletedBy annexure2[] @relation("annexure2_deletedBy")
+
+  // annexure3
+  // annexure3_createdBy annexure3[] @relation("annexure3_createdBy")
+  // annexure3_updatedBy annexure3[] @relation("annexure3_updatedBy")
+  // annexure3_deletedBy annexure3[] @relation("annexure3_deletedBy")
+
+  // registration
+  register_createdBy registration[] @relation("register_createdBy")
+  register_updatedBy registration[] @relation("register_updatedBy")
+  register_deletedBy registration[] @relation("register_deletedBy")
+
+  registration registration[]
+}
+
+model change {
+  id          Int       @id @default(autoincrement())
+  oldData     String
+  newData     String
+  tableName   String
+  columnName  String
+  createdAt   DateTime  @default(now())
+  createdBy   user      @relation("change_createBy", fields: [createdById], references: [id])
+  createdById Int
+  updatedAt   DateTime  @updatedAt
+  updatedBy   user?     @relation("change_updatedBy", fields: [updatedById], references: [id])
+  updatedById Int?
+  deletedAt   DateTime?
+  deletedBy   user?     @relation("change_deletedBy", fields: [deletedById], references: [id])
+  deletedById Int?
+}
+
+model category {
+  id          Int          @id @default(autoincrement())
+  category    CategoryType @default(USER)
+  name        String
+  createdAt   DateTime     @default(now())
+  createdBy   user         @relation("category_CreatedAt", fields: [createdById], references: [id])
+  createdById Int
+  updatedAt   DateTime     @updatedAt
+  updatedBy   user?        @relation("category_updatedAt", fields: [updatedById], references: [id])
+  updatedById Int?
+  deletedAt   DateTime?
+  deletedBy   user?        @relation("category_deletedAt", fields: [deletedById], references: [id])
+  deletedById Int?
+}
+
+model document {
+  id           Int       @id @default(autoincrement())
+  user         user      @relation(fields: [userId], references: [id])
+  userId       Int
+  name         String?
+  desscription String?
+  path         String
+  status       Status    @default(ACTIVE)
+  createdAt    DateTime  @default(now())
+  createdBy    user      @relation("document_createdBy", fields: [createdById], references: [id])
+  createdById  Int
+  updatedAt    DateTime  @updatedAt
+  updatedBy    user?     @relation("document_updatedBy", fields: [updatedById], references: [id])
+  updatedById  Int?
+  deletedAt    DateTime?
+  deletedBy    user?     @relation("document_deletedBy", fields: [deletedById], references: [id])
+  deletedById  Int?
+}
+
+// form tables
+
+model dvat04 {
+  id             Int          @id @default(autoincrement())
+  registration   registration @relation(fields: [registrationId], references: [id])
+  registrationId Int
+
+  // form 1
+  name                         String
+  tradename                    String?
+  natureOfBusiness             NatureOfBusiness       @default(OTHER)
+  constitutionOfBusiness       ConstitutionOfBusiness @default(OTHER)
+  selectOffice                 SelectOffice           @default(Dadra_Nagar_Haveli)
+  typeOfRegistration           TypeOfRegistration     @default(OTHER)
+  compositionScheme            Boolean                @default(false)
+  annualTurnoverCategory       Boolean                @default(false)
+  turnoverLastFinancialYear    String
+  turnoverCurrentFinancialYear String
+  vatLiableDate                DateTime
+  pan                          String                 @unique
+  gst                          String                 @unique
+  buildingNumber               String
+  area                         String
+  address                      String
+  city                         String
+  pincode                      String
+  contact_one                  String
+  contact_two                  String?
+  email                        String                 @unique
+  faxNumber                    String?                @unique
+
+  // from 2
+  noticeServingBuildingName       String?
+  noticeServingArea               String?
+  noticeServingAddress            String?
+  noticeServingCity               String?
+  noticeServingPincode            String?
+  additionalGodown                String?
+  additionalFactory               String?
+  additionalShops                 String?
+  otherPlaceOfBusiness            String?
+  accountnumber                   String?
+  typeOfAccount                   TypeOfAccount    @default(CURRENT)
+  bankName                        String?
+  ifscCode                        String?
+  addressOfBank                   String?
+  accountNumberVerificationStatus Boolean          @default(false)
+  ownCapital                      String?
+  loanFromBank                    String?
+  loanFromOther                   String?
+  plantAndMachinery               String?
+  landAndBuilding                 String?
+  otherAssetsInvestments          String?
+  selectComOne                    commodity?       @relation("commodity_one", fields: [selectComOneId], references: [id])
+  selectComOneId                  Int?
+  purposeOne                      CommidityPursose @default(COMMODITY_TRADED)
+  descriptionOne                  String?
+  selectComTwo                    commodity?       @relation("commodity_two", fields: [selectComTwoId], references: [id])
+  selectComTwoId                  Int?
+  purposeTwo                      CommidityPursose @default(COMMODITY_TRADED)
+  descriptionTwo                  String?
+  selectComThree                  commodity?       @relation("commodity_three", fields: [selectComThreeId], references: [id])
+  selectComThreeId                Int?
+  purposeThree                    CommidityPursose @default(COMMODITY_TRADED)
+  descriptionThree                String?
+  selectComFour                   commodity?       @relation("commodity_four", fields: [selectComFourId], references: [id])
+  selectComFourId                 Int?
+  purposeFour                     CommidityPursose @default(COMMODITY_TRADED)
+  descriptionFour                 String?
+  selectComFive                   commodity?       @relation("commodity_five", fields: [selectComFiveId], references: [id])
+  selectComFiveId                 Int?
+  purposeFive                     CommidityPursose @default(COMMODITY_TRADED)
+  descriptionFive                 String?
+  accountingBasis                 AccountingBasis  @default(CASH)
+  frequencyFilings                FrequencyFilings @default(MONTHLY)
+
+  // from 3
+  securityDepositAmount String?
+  depositType           DepositType @default(FIXED)
+  dateOfExpiry          DateTime?
+  nameOfBank            String?
+  branchName            String?
+  transactionId         String?
+  numberOfOwners        Int?
+  nmberOfManagers       Int?
+  numberOfSignatory     Int?
+  nameOfManager         String?
+  nameOfSignatory       String?
+
+  status      Status    @default(ACTIVE)
+  createdAt   DateTime  @default(now())
+  createdBy   user      @relation("dvat04_createdBy", fields: [createdById], references: [id])
+  createdById Int
+  updatedAt   DateTime  @updatedAt
+  updatedBy   user?     @relation("dvat04_updatedBy", fields: [updatedById], references: [id])
+  updatedById Int?
+  deletedAt   DateTime?
+  deletedBy   user?     @relation("dvat04_deletedBy", fields: [deletedById], references: [id])
+  deletedById Int?
+}
+
+model commodity {
+  id           Int       @id @default(autoincrement())
+  name         String
+  act          String?
+  code         String?
+  status       Status    @default(ACTIVE)
+  createdAt    DateTime  @default(now())
+  createdBy    user      @relation("commodity_createdBy", fields: [createdById], references: [id])
+  createdById  Int
+  updatedAt    DateTime  @updatedAt
+  updatedBy    user?     @relation("commodity_updatedBy", fields: [updatedById], references: [id])
+  updatedById  Int?
+  deletedAt    DateTime?
+  deletedBy    user?     @relation("commodity_deletedBy", fields: [deletedById], references: [id])
+  deletedById  Int?
+  dvat04_one   dvat04[]  @relation("commodity_one")
+  dvat04_two   dvat04[]  @relation("commodity_two")
+  dvat04_three dvat04[]  @relation("commodity_three")
+  dvat04_four  dvat04[]  @relation("commodity_four")
+  dvat04_five  dvat04[]  @relation("commodity_five")
+}
+
+model annexure1 {
+  id                      Int                     @id @default(autoincrement())
+  registration            registration            @relation(fields: [registrationId], references: [id])
+  registrationId          Int
+  titleParticulasOfperson TitleParticulasOfperson @default(PROPRIETOR)
+  nameOfPerson            String?
+  dateOfBirth             DateTime?
+  gender                  Gender                  @default(MALE)
+  fatherName              String?
+  panNumber               String?
+  aadharNumber            String?
+  designation             String?
+  eductionQualification   String?
+  rbuildingName           String?
+  rareaName               String?
+  rvillageName            String?
+  rpincode                String?
+  pbuildingName           String?
+  pareaName               String?
+  pvillageName            String?
+  ppincode                String?
+  contact                 String?
+  email                   String?
+  isAuthorisedSignatory   Boolean                 @default(false)
+  status                  Status                  @default(ACTIVE)
+  createdAt               DateTime                @default(now())
+  createdBy               user                    @relation("annexure1_createdBy", fields: [createdById], references: [id])
+  createdById             Int
+  updatedAt               DateTime                @updatedAt
+  updatedBy               user?                   @relation("annexure1_updatedBy", fields: [updatedById], references: [id])
+  updatedById             Int?
+  deletedAt               DateTime?
+  deletedBy               user?                   @relation("annexure1_deletedBy", fields: [deletedById], references: [id])
+  deletedById             Int?
+}
+
+model annexure2 {
+  id                      Int                     @id @default(autoincrement())
+  registration            registration            @relation(fields: [registrationId], references: [id])
+  registrationId          Int
+  typeOfPerson            TypeOfPerson            @default(BRACH_OFFICE)
+  name                    String?
+  branchName              String?
+  contact                 String?
+  buildingName            String?
+  areaName                String?
+  village                 String?
+  pinCode                 String?
+  dateOfExtablishment     DateTime?
+  locationOfBusinessPlace LocationOfBusinessPlace @default(WITHIN_STATE)
+  underStateAct           String?
+  underCstAct             String?
+  status                  Status                  @default(ACTIVE)
+  createdAt               DateTime                @default(now())
+  createdBy               user                    @relation("annexure2_createdBy", fields: [createdById], references: [id])
+  createdById             Int
+  updatedAt               DateTime                @updatedAt
+  updatedBy               user?                   @relation("annexure2_updatedBy", fields: [updatedById], references: [id])
+  updatedById             Int?
+  deletedAt               DateTime?
+  deletedBy               user?                   @relation("annexure2_deletedBy", fields: [deletedById], references: [id])
+  deletedById             Int?
+}
+
+// model annexure3 {
+//   id             Int          @id @default(autoincrement())
+//   registration   registration @relation(fields: [registrationId], references: [id])
+//   registrationId Int
+
+//   status      Status    @default(ACTIVE)
+//   createdAt   DateTime  @default(now())
+//   createdBy   user      @relation("annexure3_createdBy", fields: [createdById], references: [id])
+//   createdById Int
+//   updatedAt   DateTime  @updatedAt
+//   updatedBy   user?     @relation("annexure3_updatedBy", fields: [updatedById], references: [id])
+//   updatedById Int?
+//   deletedAt   DateTime?
+//   deletedBy   user?     @relation("annexure3_deletedBy", fields: [deletedById], references: [id])
+//   deletedById Int?
+// }
+
+model registration {
+  id                   Int       @id @default(autoincrement())
+  user                 user      @relation(fields: [userId], references: [id])
+  userId               Int
+  physicalVerification Boolean   @default(false)
+  inspectorNotes       String?
+  acNotes              String?
+  dcNotes              String?
+  inspectorUpload      String?
+  acUpload             String?
+  dcUpload             String?
+  inspectorRecommend   Boolean   @default(false)
+  acRecommend          Boolean   @default(false)
+  dcRecommend          Boolean   @default(false)
+  tinNumber            String?
+  certificateNumber    String?
+  status               Status    @default(ACTIVE)
+  createdAt            DateTime  @default(now())
+  createdBy            user      @relation("register_createdBy", fields: [createdById], references: [id])
+  createdById          Int
+  updatedAt            DateTime  @updatedAt
+  updatedBy            user?     @relation("register_updatedBy", fields: [updatedById], references: [id])
+  updatedById          Int?
+  deletedAt            DateTime?
+  deletedBy            user?     @relation("register_deletedBy", fields: [deletedById], references: [id])
+  deletedById          Int?
+
+  annexure1 annexure1[]
+  annexure2 annexure2[]
+  dvat04    dvat04[]
+}
