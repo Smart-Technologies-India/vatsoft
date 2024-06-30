@@ -3,10 +3,14 @@ import {
   Fa6RegularFileLines,
   FluentMdl2Home,
   FluentMdl2ViewDashboard,
+  FluentNotepadPerson16Regular,
+  FluentPersonSupport20Regular,
+  FluentWalletCreditCard20Regular,
   GgAlbum,
   IcBaselineAccountCircle,
   IcOutlineReceiptLong,
   LucideNewspaper,
+  LucideUser,
   MaterialSymbolsCloseSmall,
   MaterialSymbolsPersonRounded,
   MdiReceiptTextClock,
@@ -38,11 +42,11 @@ const Sidebar = (props: SidebarProps) => {
 
   return (
     <div
-      className={`fixed gap-2 top-0 left-0 z-20 shrink-0 w-52 h-screen flex flex-col bg-gradient-to-t from-[#172e57] to-[#162f57] md:translate-x-0 py-6 ${
+      className={`fixed gap-1 top-0 left-0 z-20 shrink-0 w-52 h-screen flex flex-col bg-gradient-to-t from-[#0c0c32] to-[#0c0c32] md:translate-x-0 py-6 ${
         props.isOpen ? "translate-x-0" : "-translate-x-52"
       }  transition-transform duration-300 ease-in-out`}
     >
-      <p className="text-xl font-semibold text-white text-center">Vat Soft</p>
+      <p className="text-xl font-semibold text-white text-center">VATSOFT</p>
       <div className="h-4"></div>
 
       <MenuTab
@@ -53,11 +57,51 @@ const Sidebar = (props: SidebarProps) => {
       />
 
       <MenuTab
-        icco={<Fa6RegularFileLines className="text-gray-300  w-6" />}
-        name="Register"
+        icco={
+          <FluentNotepadPerson16Regular className="text-gray-300  w-6 text-xl" />
+        }
+        name="Registration"
         path={path}
         pathcheck={"/dashboard/register"}
       />
+      <MenuTab
+        icco={<Fa6RegularFileLines className="text-gray-300  w-6" />}
+        name="Returns"
+        path={path}
+        pathcheck={"/dashboard/returns"}
+      />
+      <MenuTab
+        icco={
+          <FluentWalletCreditCard20Regular className="text-gray-300 text-xl  w-6" />
+        }
+        name="Payments"
+        path={path}
+        pathcheck={"/dashboard/payments"}
+      />
+      <MenuTab
+        icco={<LucideUser className="text-gray-300  w-6" />}
+        name="User Services"
+        path={path}
+        pathcheck={"/dashboard/user_service"}
+      />
+      <MenuTab
+        icco={<FluentPersonSupport20Regular className="text-gray-300  w-6" />}
+        name="Tax Payers Facility"
+        path={path}
+        pathcheck={"/dashboard/help_tax"}
+      />
+      {/* <MenuTab
+        icco={<Fa6RegularFileLines className="text-gray-300  w-6" />}
+        name="Downloads"
+        path={path}
+        pathcheck={"/dashboard/register"}
+      />
+      <MenuTab
+        icco={<Fa6RegularFileLines className="text-gray-300  w-6" />}
+        name="My Profile"
+        path={path}
+        pathcheck={"/dashboard/register"}
+      /> */}
 
       {/* {["USER"].includes(props.role) && (
         <>
@@ -209,9 +253,9 @@ const MenuTab = (props: MenuTabProps) => {
   return (
     <Link
       href={props.pathcheck}
-      className={`flex gap-2 px-4 items-center py-2 ${
+      className={`flex gap-1 px-1 items-center py-2 ${
         props.path == props.pathcheck
-          ? "border-l-2 border-green-500 bg-white bg-opacity-10"
+          ? "border-l-2 border-blue-500 bg-white bg-opacity-10"
           : ""
       }`}
     >
@@ -219,8 +263,8 @@ const MenuTab = (props: MenuTabProps) => {
       <p
         className={` text-sm ${
           props.path == props.pathcheck
-            ? "font-semibold text-white"
-            : " font-normal text-gray-300"
+            ? "font-medium text-white"
+            : " font-normal text-gray-400"
         }`}
       >
         {props.name}

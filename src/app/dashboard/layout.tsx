@@ -37,13 +37,13 @@ export default function DashboardLayout({
     );
 
   return (
-    <div className="min-h-screen w-full bg-[#f5f6f8] relative">
+    <div className="min-h-screen w-full bg-[#f5f6f8] relative ">
       <Sidebar
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         role={userdata?.role as Role}
       />
-      <div className="relative p-0 md:pl-52 h-full">
+      <div className="relative p-0 md:pl-52 min-h-screen">
         <Navbar
           role={userdata?.role as Role}
           isOpen={isOpen}

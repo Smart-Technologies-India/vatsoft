@@ -1,8 +1,8 @@
 "use client";
 import {
-  IcBaselineRefresh,
   MaterialSymbolsCloseSmall,
   SolarHamburgerMenuOutline,
+  TablerHome,
 } from "../icons";
 import { Button } from "../ui/button";
 import {
@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { deleteCookie } from "cookies-next";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface NavbarProps {
   isOpen: boolean;
@@ -26,29 +26,57 @@ interface NavbarProps {
 
 const Navbar = (props: NavbarProps) => {
   const router = useRouter();
-
+  const path = usePathname();
   const logoutbtn = async () => {
     deleteCookie("id");
     return router.push("/");
   };
 
+  const returnTitle = (): string => {
+    const searchPath = path.endsWith("/") ? path.slice(0, -1) : path;
+    switch (searchPath) {
+      case "/dashboard":
+        return "Dashboard";
+      case "/dashboard/register":
+        return "Registration";
+      case "/dashboard/returns":
+        return "Returns";
+      case "/dashboard/payments":
+        return "Payments";
+      case "/dashboard/help_tax":
+        return "Help & Tax Payers Facility";
+      case "/dashboard/user_service":
+        return "User Services";
+      default:
+        return "";
+    }
+  };
+  // bg-[#f0f1f5]
   return (
-    <nav className="py-1 px-4 w-full bg-[#f0f1f5] flex items-center gap-2 shadow fixed top-0 left-0 z-10">
+    <nav className="py-1 px-4 w-full md:w-[calc(100%-13rem)] md:ml-52 bg-white  flex items-center gap-2 shadow fixed top-0 left-0 z-10">
       <div className="md:hidden">
         {props.isOpen ? (
           <MaterialSymbolsCloseSmall
-            className="text-xl"
+            className="text-xl cursor-pointer"
             onClick={() => props.setIsOpen((val) => !val)}
           />
         ) : (
           <SolarHamburgerMenuOutline
-            className="text-xl"
+            className="text-xl cursor-pointer"
             onClick={() => props.setIsOpen((val) => !val)}
           />
         )}
       </div>
 
+      <p className="text-lg font-medium text-gray-600">{returnTitle()}</p>
       <div className="grow"></div>
+      <TablerHome
+        className="text-xl cursor-pointer text-gray-500"
+        onClick={() => {
+          router.push("/dashboard");
+        }}
+      />
+      <div className="w-[1px] h-8 bg-black"></div>
       {/* {["ADMIN", "MANAGER"].includes(props.role) && (
         <>
           <IcBaselineRefresh

@@ -1,61 +1,188 @@
 "use client";
 
+import GetUser from "@/action/user/getuser";
 import {
-  Fa6RegularFolderOpen,
-  LucideArrowBigLeft,
-  LucideArrowBigRight,
+  Fa6RegularFileLines,
+  FluentChannelSubtract48Regular,
+  FluentNotePin20Regular,
+  FluentWalletCreditCard20Regular,
   LucideArrowRight,
-  MaterialSymbolsKeyboardDoubleArrowLeft,
-  MaterialSymbolsKeyboardDoubleArrowRight,
 } from "@/components/icons";
+
+enum FileStatus {
+  FILED,
+  NOTFILED,
+}
+import { user } from "@prisma/client";
+import { getCookie } from "cookies-next";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const Page = () => {
+  const id: number = parseInt(getCookie("id") ?? "0");
+  const [user, setUser] = useState<user>();
+
+  useEffect(() => {
+    const init = async () => {
+      const userresponse = await GetUser({ id: id });
+      if (userresponse.status) setUser(userresponse.data!);
+    };
+
+    init();
+  }, []);
+
   return (
     <>
-      <main className=""></main>
-      <main className="bg-gradient-to-l from-[#0452b8] to-[#4088e9]">
-        <div className="mx-auto px-4  w-4/6 py-6">
-          <h1
-            className={`text-white text-center text-3xl font-nunito font-bold`}
-          >
-            Welcome To Vat Soft
-          </h1>
-          <p className="w-96 mx-auto text-xs text-justify text-white mt-2 font-nunito">
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Obcaecati
-            similique nobis omnis nostrum voluptate at, assumenda iste vero
-            distinctio, eius quidem, quam praesentium ea enim id quasi dolorem
-            mollitia harum. Consectetur corrupti excepturi repudiandae illum
-            asperiores delectus sed blanditiis, cumque culpa placeat ipsa quis
-          </p>
-        </div>
-      </main>
+      <main className="relative min-h-[calc(100vh-2.5rem)] ">
+        <div className="pb-10">
+          <div className="mx-auto px-4  w-4/6 py-6">
+            <div className="bg-white p-4 rounded-xl">
+              <h1 className="text-sm font-semibold font-nunito leading-3">
+                Welcome {user?.firstName} {user?.lastName} To VATSOFT Portal
+              </h1>
+              <h1 className="text-xs leading-3 text-gray-500 mt-1">
+                Returns Calender (Last 6 return periods)
+              </h1>
+            </div>
 
-      <main className="bg-gradient-to-l py-4 bg-white mx-4 rounded-md mt-4">
-        <p className="text-center mx-auto text-black text-lg my-2 font-nunito font-bold">
-          Lorem ipsum dolor sit amet,
-        </p>
-        <div className="px-4  grid grid-cols-4 justify-between items-center py-1 gap-2">
-          <Cards
-            title="E Registration"
-            description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Sapiente laborum iure "
-          />
-          <Cards
-            title="E Registration Payment"
-            description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Sapiente laborum iure "
-          />
-          <Cards
-            title="E Registration Status"
-            description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Sapiente laborum iure "
-          />
-          <Cards
-            title="Some Title"
-            description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Sapiente laborum iure "
-          />
-          <Cards
-            title="Some Title"
-            description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Sapiente laborum iure "
-          />
+            {/* second section start from here */}
+            <div className="w-full mt-2">
+              <div className="flex w-full gap-2">
+                <div className="flex-1 bg-white p-2 rounded-xl">
+                  <div className="flex items-center px-4">
+                    <div className="text-sm font-semibold font-nunito leading-3 py-1 w-full text-gray-500  rounded-xl">
+                      GSTR-1/IFF
+                    </div>
+                    <div className="glow"></div>
+                    <LucideArrowRight className="text-xl text-blue-500" />
+                  </div>
+                  <RentCard
+                    title="JAN-2024"
+                    date="19/12/2003"
+                    status="Filed"
+                    statusdate="Filed On"
+                    filestatus={FileStatus.FILED}
+                  />
+                  <RentCard
+                    title="FEB-2024"
+                    date="19/12/2003"
+                    status="Filed"
+                    statusdate="Filed On"
+                    filestatus={FileStatus.FILED}
+                  />
+                  <RentCard
+                    title="MAR-2024"
+                    date="19/12/2003"
+                    status="Filed"
+                    statusdate="Filed On"
+                    filestatus={FileStatus.FILED}
+                  />
+                  <RentCard
+                    title="APR-2024"
+                    date="19/12/2003"
+                    status="Filed"
+                    statusdate="Filed On"
+                    filestatus={FileStatus.FILED}
+                  />
+                  <RentCard
+                    title="MAY-2024"
+                    date="19/12/2003"
+                    status="Filed"
+                    statusdate="Filed On"
+                    filestatus={FileStatus.FILED}
+                  />
+                  <RentCard
+                    title="JUN-2024"
+                    date="19/12/2003"
+                    status="Filed"
+                    statusdate="Filed On"
+                    filestatus={FileStatus.NOTFILED}
+                  />
+                </div>
+
+                <div className="flex-1 bg-white p-2 rounded-xl">
+                  <div className="flex items-center px-4">
+                    <div className="text-sm font-semibold font-nunito leading-3 py-1 w-full text-gray-500  rounded-xl">
+                      GSTR-3B
+                    </div>
+                    <div className="glow"></div>
+                    <LucideArrowRight className="text-xl text-blue-500" />
+                  </div>
+                  <RentCard
+                    title="JAN-2024"
+                    date="19/12/2003"
+                    status="Filed"
+                    statusdate="Filed On"
+                    filestatus={FileStatus.FILED}
+                  />
+                  <RentCard
+                    title="FEB-2024"
+                    date="19/12/2003"
+                    status="Filed"
+                    statusdate="Filed On"
+                    filestatus={FileStatus.FILED}
+                  />
+                  <RentCard
+                    title="MAR-2024"
+                    date="19/12/2003"
+                    status="Filed"
+                    statusdate="Filed On"
+                    filestatus={FileStatus.FILED}
+                  />
+                  <RentCard
+                    title="APR-2024"
+                    date="19/12/2003"
+                    status="Filed"
+                    statusdate="Filed On"
+                    filestatus={FileStatus.FILED}
+                  />
+                  <RentCard
+                    title="MAY-2024"
+                    date="19/12/2003"
+                    status="Filed"
+                    statusdate="Filed On"
+                    filestatus={FileStatus.FILED}
+                  />
+                  <RentCard
+                    title="JUN-2024"
+                    date="19/12/2003"
+                    status="To be Filed"
+                    statusdate="To be Filed"
+                    filestatus={FileStatus.NOTFILED}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 mt-2 gap-2">
+              <ButtonCard
+                title="Return Dashboard"
+                icon={<Fa6RegularFileLines className="text-blue-500 text-lg" />}
+                link="/dashboard/returns/returns-dashboard"
+              />
+              <ButtonCard
+                title="Payment And Refunds"
+                icon={
+                  <FluentWalletCreditCard20Regular className="text-blue-500 text-lg" />
+                }
+                link="/dashboard/payments"
+              />
+              <ButtonCard
+                title="Notice(s) and Order(s)"
+                icon={
+                  <FluentNotePin20Regular className="text-blue-500 text-lg" />
+                }
+                link="/dashboard/notice-and-order"
+              />
+              <ButtonCard
+                title="Annual Return"
+                icon={
+                  <FluentChannelSubtract48Regular className="text-blue-500 text-lg" />
+                }
+                link="/dashboard/annual-return"
+              />
+            </div>
+          </div>
         </div>
       </main>
     </>
@@ -63,33 +190,83 @@ const Page = () => {
 };
 export default Page;
 
-interface CardsProps {
+interface RentCardProps {
   title: string;
-  description: string;
+  date: string;
+  status: string;
+  statusdate: string;
+  filestatus: FileStatus;
 }
 
-const Cards = (props: CardsProps) => {
+const RentCard = (props: RentCardProps) => {
   return (
-    <Link href={"/dashboard/registeruser"}>
-      <div className="rounded-sm shadow border-l-2 border-[#0452b8] p-2 h-28 overflow-hidden">
-        <div className="transition-all duration-500 hover:-translate-y-12">
-          <div className="h-10 w-10 bg-blue-600 rounded-sm grid place-items-center text-white">
-            <Fa6RegularFolderOpen />
+    <div className="flex w-full my-3 items-center gap-2">
+      {props.filestatus == FileStatus.FILED ? (
+        <>
+          <div className="leading-3 w-8 h-8 rounded-full bg-teal-500 bg-opacity-30 text-teal-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
+            03
+            <br />
+            24
           </div>
-          <h1 className="text-sm font-semibold font-nunito leading-5 mt-2">
-            {props.title}
-          </h1>
-          <p className="text-xs  leading-3 text-gray-500">
-            {props.description}
-          </p>
-          <div className="flex gap-4 mt-4">
-            <div className="grow"></div>
-            <div className="h-6 w-6 bg-blue-500 rounded-sm grid  place-items-center text-white cursor-pointer">
-              <LucideArrowRight />
-            </div>
+        </>
+      ) : (
+        <>
+          <div className="leading-3 w-8 h-8 rounded-full bg-rose-500 bg-opacity-30 text-rose-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
+            03
+            <br />
+            24
           </div>
-        </div>
+        </>
+      )}
+
+      <div className="flex-1">
+        <h1 className="text-xs font-semibold font-nunito leading-3">
+          {props.title}
+        </h1>
+        <p className="text-xs font-normal text-gray-600 font-nunito leading-3 mt-1">
+          {props.status}
+        </p>
       </div>
-    </Link>
+      <div className="flex-1">
+        <h1 className="text-xs font-semibold font-nunito leading-3">
+          {props.statusdate}
+        </h1>
+        <p className="text-xs font-normal text-gray-600 font-nunito leading-3 mt-1">
+          {props.date}
+        </p>
+      </div>
+      <Link
+        href={"/dashboard/returns/returns-dashboard"}
+        className="text-xs rounded px-4 py-1 border border-blue-500 text-blue-500 font-nunito"
+      >
+        View
+      </Link>
+    </div>
+  );
+};
+
+interface ButtonCardProps {
+  title: string;
+  icon: React.ReactNode;
+  link: string;
+}
+
+const ButtonCard = (props: ButtonCardProps) => {
+  return (
+    <div className="bg-white p-2  rounded-xl">
+      <div className="flex  items-center gap-2">
+        <div className="shrink-0 h-6 w-6 bg-blue-500 bg-opacity-30 rounded-full grid place-items-center text-white">
+          {props.icon}
+        </div>
+        <h1 className="text-xs leading-3 text-gray-500">{props.title}</h1>
+      </div>
+
+      <Link
+        href={props.link}
+        className="text-xs inline-block text-center text-white bg-blue-500 rounded-md w-full py-1 font-nunito mt-2"
+      >
+        View
+      </Link>
+    </div>
   );
 };

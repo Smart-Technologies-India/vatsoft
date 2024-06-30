@@ -1018,3 +1018,311 @@ export function LucideArrowRight(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function GgArrowRightO(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <g fill="currentColor">
+        <path d="m12.052 14.829l1.414 1.414L17.71 12l-4.243-4.243l-1.414 1.415L13.88 11H6.343v2h7.537z"></path>
+        <path
+          fillRule="evenodd"
+          d="M19.778 19.778c4.296-4.296 4.296-11.26 0-15.556c-4.296-4.296-11.26-4.296-15.556 0c-4.296 4.296-4.296 11.26 0 15.556c4.296 4.296 11.26 4.296 15.556 0m-1.414-1.414A9 9 0 1 0 5.636 5.636a9 9 0 0 0 12.728 12.728"
+          clipRule="evenodd"
+        ></path>
+      </g>
+    </svg>
+  );
+}
+
+export function MaterialSymbolsBoltOutline(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="m10.55 18.2l5.175-6.2h-4l.725-5.675L7.825 13H11.3zM8 22l1-7H4l9-13h2l-1 8h6L10 22zm3.775-9.75"
+      ></path>
+    </svg>
+  );
+}
+
+export function TablerCheckbox(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      >
+        <path d="m9 11l3 3l8-8"></path>
+        <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path>
+      </g>
+    </svg>
+  );
+}
+
+export function TablerRefresh(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4m-4 4a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"
+      ></path>
+    </svg>
+  );
+}
+
+export function MaterialSymbolsKeyboardArrowDownRounded(
+  props: SVGProps<SVGSVGElement>
+) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="M12 14.975q-.2 0-.375-.062T11.3 14.7l-4.6-4.6q-.275-.275-.275-.7t.275-.7q.275-.275.7-.275t.7.275l3.9 3.9l3.9-3.9q.275-.275.7-.275t.7.275q.275.275.275.7t-.275.7l-4.6 4.6q-.15.15-.325.213t-.375.062"
+      ></path>
+    </svg>
+  );
+}
+
+export function MaterialSymbolsKeyboardArrowUpRounded(
+  props: SVGProps<SVGSVGElement>
+) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="m12 10.8l-3.9 3.9q-.275.275-.7.275t-.7-.275q-.275-.275-.275-.7t.275-.7l4.6-4.6q.3-.3.7-.3t.7.3l4.6 4.6q.275.275.275.7t-.275.7q-.275.275-.7.275t-.7-.275z"
+      ></path>
+    </svg>
+  );
+}
+
+export function MaterialSymbolsClose(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6z"
+      ></path>
+    </svg>
+  );
+}
+
+export function GgInfo(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <g fill="currentColor">
+        <path d="M11 10.98a1 1 0 1 1 2 0v6a1 1 0 1 1-2 0zm1-4.929a1 1 0 1 0 0 2a1 1 0 0 0 0-2"></path>
+        <path
+          fillRule="evenodd"
+          d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10s10-4.477 10-10S17.523 2 12 2M4 12a8 8 0 1 0 16 0a8 8 0 0 0-16 0"
+          clipRule="evenodd"
+        ></path>
+      </g>
+    </svg>
+  );
+}
+
+export function TablerHome(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      >
+        <path d="M5 12H3l9-9l9 9h-2M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"></path>
+        <path d="M9 21v-6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6"></path>
+      </g>
+    </svg>
+  );
+}
+
+export function MdiPlusCircle(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="M17 13h-4v4h-2v-4H7v-2h4V7h2v4h4m-5-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10a10 10 0 0 0 10-10A10 10 0 0 0 12 2"
+      ></path>
+    </svg>
+  );
+}
+
+export function FluentNotepadPerson16Regular(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 16 16"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="M5.5 5.5A.5.5 0 0 1 6 5h4a.5.5 0 0 1 .405.206c-.441.173-.83.447-1.141.794H6a.5.5 0 0 1-.5-.5m3 2.5H6a.5.5 0 0 0 0 1h2.67c-.11-.313-.17-.65-.17-1m-1.092 6H4.5a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1.541c.359.06.696.185 1 .36V3.5A1.5 1.5 0 0 0 11.5 2v-.5a.5.5 0 0 0-1 0V2h-2v-.5a.5.5 0 0 0-1 0V2h-2v-.5a.5.5 0 0 0-1 0V2A1.5 1.5 0 0 0 3 3.5v10A1.5 1.5 0 0 0 4.5 15h3.586q.059 0 .118-.005A3.5 3.5 0 0 1 7.408 14m1.802.497A2.49 2.49 0 0 1 8 12.376c0-.673.531-1.224 1.21-1.283q.058-.005.118-.005h4.344c.733 0 1.328.577 1.328 1.288c0 1.149-.807 2.151-1.958 2.43l-.083.02a6.2 6.2 0 0 1-2.918 0l-.083-.02a2.6 2.6 0 0 1-.748-.309M13 9.323A2 2 0 0 1 9.5 8A2 2 0 1 1 13 9.323M5.5 11.5A.5.5 0 0 1 6 11h.5a.5.5 0 0 1 0 1H6a.5.5 0 0 1-.5-.5"
+      ></path>
+    </svg>
+  );
+}
+
+export function FluentWalletCreditCard20Regular(
+  props: SVGProps<SVGSVGElement>
+) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 20 20"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="M10.002 1.642a1.5 1.5 0 0 1 2.175-.307l3.27 2.655A1.5 1.5 0 0 1 15.741 6h-1.22l.39-.559a.5.5 0 0 0-.094-.675L13.133 3.4L11.337 6H10.12l2.234-3.232l-.808-.656a.5.5 0 0 0-.725.102L8.18 5.999H6.96zM13.5 12a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm-9-7h2.169l-.7 1H4.5a.5.5 0 0 0 0 1H15a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5.5A2.5 2.5 0 0 1 3 14.5v-8A1.5 1.5 0 0 1 4.5 5M4 14.5A1.5 1.5 0 0 0 5.5 16H15a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1H4.5q-.264-.001-.5-.085z"
+      ></path>
+    </svg>
+  );
+}
+
+export function LucideUser(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      >
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </g>
+    </svg>
+  );
+}
+
+export function FluentPersonSupport20Regular(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 20 20"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="M10 14.5a2 2 0 0 1-1.994-1.84A6.002 6.002 0 0 1 10 1a6 6 0 0 1 5.98 5.5a.47.47 0 0 1-.48.5a.54.54 0 0 1-.525-.5a5 5 0 1 0-6.79 5.16A2 2 0 1 1 10 14.5M5.009 12H5.1c.39.381.823.717 1.292 1H5.009C4.448 13 4 13.447 4 14c0 1.309.622 2.284 1.673 2.953C6.743 17.636 8.265 18 10 18s3.257-.364 4.327-1.047C15.377 16.283 16 15.31 16 14a1 1 0 0 0-1-1h-2.041a3 3 0 0 0 0-1H15a2 2 0 0 1 2 2c0 1.691-.833 2.966-2.135 3.797C13.583 18.614 11.855 19 10 19s-3.583-.386-4.865-1.203C3.833 16.967 3 15.69 3 14c0-1.113.903-2 2.009-2M14 7a4 4 0 0 1-1.87 3.387a3 3 0 0 0-.93-.637a3 3 0 1 0-2.4 0c-.35.153-.665.37-.93.637a4 4 0 0 1-1.638-2.042A4 4 0 0 1 6 7a4 4 0 1 1 8 0"
+      ></path>
+    </svg>
+  );
+}
+
+export function FluentChannelSubtract48Regular(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 48 48"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="M6.189 10.72A6.25 6.25 0 0 1 12.25 6h23.5A6.25 6.25 0 0 1 42 12.25v11.794c-.78-.5-1.618-.919-2.5-1.244V12.25a3.75 3.75 0 0 0-3.75-3.75h-23.5a3.75 3.75 0 0 0-3.427 2.224A4 4 0 0 0 7.5 10.5c-.46 0-.9.077-1.311.22m16.61 28.78c.326.882.745 1.72 1.245 2.5H12.25A6.25 6.25 0 0 1 6 35.75V18.21a4 4 0 0 0 2.5.165V35.75a3.75 3.75 0 0 0 3.75 3.75zm.94-11a13 13 0 0 1 1.88-2.5H17.25a1.25 1.25 0 1 0 0 2.5zM6 12.5c-.607.456-1 1.182-1 2A2.496 2.496 0 0 0 7.5 17A2.5 2.5 0 1 0 6 12.5M17.25 19a1.25 1.25 0 1 0 0 2.5h13.5a1.25 1.25 0 1 0 0-2.5zM46 35c0 6.075-4.925 11-11 11s-11-4.925-11-11s4.925-11 11-11s11 4.925 11 11m-3 0a1 1 0 0 0-1-1H28a1 1 0 1 0 0 2h14a1 1 0 0 0 1-1"
+      ></path>
+    </svg>
+  );
+}
+
+export function FluentNotePin20Regular(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 20 20"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="M3 9.018V14l.005.176A3 3 0 0 0 6 17h4.379l.176-.008a2 2 0 0 0 1.238-.578l4.621-4.621l.12-.13A2 2 0 0 0 17 10.38V6l-.005-.176A3 3 0 0 0 14 3H9.463c.254.3.416.644.49 1H14l.15.005A2 2 0 0 1 16 6v4h-3l-.176.005A3 3 0 0 0 10 13v3H6l-.15-.005A2 2 0 0 1 4 14V9.81a1.8 1.8 0 0 1-.615-.407zM13 11l2.783.001q-.036.045-.076.085l-4.621 4.621l-.086.074V13l.005-.15A2 2 0 0 1 13 11M8.538 3.387L6.611 1.46a1.5 1.5 0 0 0-2.409.404L3.4 3.51a1 1 0 0 1-.573.507l-1.102.38a1 1 0 0 0-.38 1.653l.948.948L1 8.29v.707h.707L3 7.706l.947.947a1 1 0 0 0 1.653-.38l.38-1.102a1 1 0 0 1 .507-.572l1.647-.803a1.5 1.5 0 0 0 .404-2.409"
+      ></path>
+    </svg>
+  );
+}
