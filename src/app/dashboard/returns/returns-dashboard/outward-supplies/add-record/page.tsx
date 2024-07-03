@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button, DatePicker, Input } from "antd";
+import { Button, DatePicker, Input, Select } from "antd";
 import { Dayjs } from "dayjs";
 import { useRouter } from "next/navigation";
 
@@ -28,57 +28,72 @@ const AddRecord = () => {
   //     console.log(date, dateString);
   //   };
   const route = useRouter();
+
+  const handleChange = (value: string) => {
+    console.log(`selected ${value}`);
+  };
   return (
     <div className="p-2 mt-4">
       <div className="bg-white p-2 shadow mt-2">
-        <div className="bg-blue-500 p-2 text-white">
-          B2B, 6EZ, DE - Add Invoices
-        </div>
+        <div className="bg-blue-500 p-2 text-white">Add Invoices</div>
 
-        <div className="flex mt-2 items-center">
-          <div className="flex-1 flex gap-2  items-center">
+        <div className="flex mt-4 items-center justify-between">
+          <div className="flex gap-1  items-center">
             <Checkbox id="terms1" />
-            <Label htmlFor="terms1" className="text-sm font-normal">
-              Deenaed exports
+            <Label htmlFor="terms1" className="text-xs font-normal">
+              Purchase not eligible for credit of input tax
             </Label>
           </div>
-          <div className="flex-1 flex gap-2 items-center">
+          <div className="flex gap-1 items-center">
             <Checkbox id="terms2" />
-            <Label htmlFor="terms2" className="text-sm font-normal">
-              SEZ Suplies with payment
+            <Label htmlFor="terms2" className="text-xs font-normal">
+              Purchase eligible for credit of input tax
             </Label>
           </div>
-          <div className="flex-1 flex gap-2 items-center">
+          <div className="flex gap-1 items-center">
             <Checkbox id="terms3" />
-            <Label htmlFor="terms3" className="text-sm font-normal">
-              SEZ Supplies withotu payment
+            <Label htmlFor="terms3" className="text-xs font-normal">
+              Any Other Purchase
+            </Label>
+          </div>
+          <div className="flex gap-1 items-center">
+            <Checkbox id="terms3" />
+            <Label htmlFor="terms3" className="text-xs font-normal">
+              Purchase Taxable At Concessional Rate
             </Label>
           </div>
         </div>
 
         <div className="flex gap-4 mt-2">
           <div className="flex-1">
-            <Label htmlFor="gstin" className="text-sm font-normal">
-              Recipient GSTIN/UIN <span className="text-red-500">*</span>
+            <Label htmlFor="vatno" className="text-sm font-normal">
+              Recipient VAT NO. <span className="text-red-500">*</span>
             </Label>
             <Input
               type="text"
-              id="gstin"
-              name="gstin"
+              id="vatno"
+              name="vatno"
               className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-              placeholder="Recipient GSTIN/UIN"
+              placeholder="Recipient VAT NO."
             />
           </div>
           <div className="flex-1">
             <Label htmlFor="sez" className="text-sm font-normal">
-              SEZ Supplies with payment <span className="text-red-500">*</span>
+              Category of Entry <span className="text-red-500">*</span>
             </Label>
-            <Input
-              type="text"
-              id="sez"
-              name="sez"
-              className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-              placeholder="SEZ Supplies with payment"
+            <Select
+              className="w-full block mt-1"
+              placeholder="Select"
+              onChange={handleChange}
+              options={[
+                { value: "1", label: "Invoice" },
+                { value: "2", label: "Credit Note" },
+                { value: "3", label: "Debit Note" },
+                { value: "4", label: "Goods Returned" },
+                { value: "4", label: "Cash Memo" },
+                { value: "4", label: "Works Contract" },
+                { value: "4", label: "Freight charges" },
+              ]}
             />
           </div>
           <div className="flex-1">
@@ -97,7 +112,7 @@ const AddRecord = () => {
 
         <div className="flex gap-4 mt-2">
           <div className="flex-1">
-            <Label htmlFor="gstin" className="text-sm font-normal">
+            <Label htmlFor="vatno" className="text-sm font-normal">
               Invoice no. <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -110,7 +125,7 @@ const AddRecord = () => {
           </div>
           <div className="flex-1">
             <Label htmlFor="invoicedate" className="text-sm font-normal">
-              Inovoice Date <span className="text-red-500">*</span>
+              Invoice Date <span className="text-red-500">*</span>
             </Label>
 
             <DatePicker onChange={onChange} className="block mt-1" />
@@ -132,7 +147,7 @@ const AddRecord = () => {
 
         <div className="flex gap-4 mt-2">
           <div className="flex-1">
-            <Label htmlFor="gstin" className="text-sm font-normal">
+            <Label htmlFor="vatno" className="text-sm font-normal">
               POS <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -165,17 +180,14 @@ const AddRecord = () => {
               <TableHead className="whitespace-nowrap border text-center">
                 Rate (%)
               </TableHead>
-              <TableHead className="whitespace-nowrap border text-center">
+              <TableHead className="whitespace-nowrap border text-center  w-60">
                 Taxable value (&#x20b9;) <span className="text-red-500">*</span>
               </TableHead>
-              <TableHead
-                className="whitespace-nowrap border text-center"
-                colSpan={3}
-              >
-                Amount of Tax
+              <TableHead className="whitespace-nowrap border text-center w-60">
+                Vat Amount
               </TableHead>
             </TableRow>
-            <TableRow className="bg-gray-100">
+            {/* <TableRow className="bg-gray-100">
               <TableHead className="whitespace-nowrap text-center"></TableHead>
               <TableHead className="whitespace-nowrap text-center"></TableHead>
               <TableHead className="whitespace-nowrap border text-center">
@@ -187,184 +199,103 @@ const AddRecord = () => {
               <TableHead className="whitespace-nowrap border text-center">
                 Cess (&#x20b9;)
               </TableHead>
-            </TableRow>
+            </TableRow> */}
           </TableHeader>
           <TableBody>
             <TableRow>
-              <TableCell className="p-2 border text-center">0%</TableCell>
+              <TableCell className="p-2 border text-left">
+                R4.1 Goods taxable at 0%
+              </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
               </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input disabled />
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="p-2 border text-center">0.1%</TableCell>
+              <TableCell className="p-2 border text-left">
+                R4.1 Goods taxable at 1%
+              </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
               </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input disabled />
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="p-2 border text-center">0.25%</TableCell>
+              <TableCell className="p-2 border text-left">
+                R4.1 Goods taxable at 4%
+              </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
               </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input disabled />
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="p-2 border text-center">1%</TableCell>
+              <TableCell className="p-2 border text-left">
+                R4.1 Goods taxable at 5%
+              </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
               </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input disabled />
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="p-2 border text-center">1.5%</TableCell>
+              <TableCell className="p-2 border text-left">
+                R4.1 Goods taxable at 12.5%
+              </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
               </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input disabled />
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="p-2 border text-center">3%</TableCell>
+              <TableCell className="p-2 border text-left">
+                R4.1 Goods taxable at 12.75%
+              </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
               </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input disabled />
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="p-2 border text-center">5%</TableCell>
+              <TableCell className="p-2 border text-left">
+                R4.1 Goods taxable at 13.5%
+              </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
               </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input disabled />
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="p-2 border text-center">6%</TableCell>
+              <TableCell className="p-2 border text-left">
+                R4.1 Goods taxable at 15%
+              </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
               </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input disabled />
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="p-2 border text-center">7.5%</TableCell>
+              <TableCell className="p-2 border text-left">
+                R4.1 Goods taxable at 20%
+              </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="p-2 border text-center">12%</TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="p-2 border text-center">18%</TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="p-2 border text-center">22%</TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
-              </TableCell>
-              <TableCell className="p-2 border text-center">
-                <Input disabled />
               </TableCell>
               <TableCell className="p-2 border text-center">
                 <Input disabled />

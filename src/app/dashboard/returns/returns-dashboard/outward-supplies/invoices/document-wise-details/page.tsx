@@ -30,22 +30,20 @@ const DocumentWiseDetails = () => {
     <div className="p-2 mt-4">
       <div className="bg-white p-4 flex text-xs justify-between shadow">
         <div>
-          <p>GSTIN - 27AFZPC4455K1ZU</p>
+          <p> - 26746574854</p>
           <p>FY - 2024-2025</p>
         </div>
         <div>
-          <p>Legal Name - FARZANA MOHAMMED SAYEED CHOUHAN</p>
+          <p>Legal Name - Smart Technologies</p>
           <p>Tax Period - May</p>
         </div>
         <div>
-          <p>Trade Name - TRADER SHIPPING INDIA</p>
+          <p>Trade Name - Smart Technologies</p>
           <p>Status - Filed</p>
         </div>
       </div>
       <div className="bg-white p-2 shadow mt-2">
-        <div className="bg-blue-500 p-2 text-white">
-          4A, 4B, 6B, 6C - B2B, SEZ DE Invoices
-        </div>
+        <div className="bg-blue-500 p-2 text-white">Invoices</div>
 
         <p className="text-[#162e57] text-sm mt-2">Processed Records</p>
         <div className="flex gap-2 mt-2">
@@ -53,7 +51,7 @@ const DocumentWiseDetails = () => {
             27AFZPC4455K1ZU
           </div>
           <div className="bg-gray-200 text-sm text-black rounded-full px-2 py-1">
-            TRADER SHIPPING INDIA
+          Smart Technologies
           </div>
         </div>
 

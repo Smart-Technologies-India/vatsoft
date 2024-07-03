@@ -19,22 +19,20 @@ const AddRecord = () => {
     <div className="p-2 mt-4">
       <div className="bg-white p-4 flex text-xs justify-between shadow">
         <div>
-          <p>GSTIN - 27AFZPC4455K1ZU</p>
+          <p>VAT NO. 26746574854</p>
           <p>FY - 2024-2025</p>
         </div>
         <div>
-          <p>Legal Name - FARZANA MOHAMMED SAYEED CHOUHAN</p>
+          <p>Legal Name - Smart Technologies</p>
           <p>Tax Period - May</p>
         </div>
         <div>
-          <p>Trade Name - TRADER SHIPPING INDIA</p>
+          <p>Trade Name - Smart Technologies</p>
           <p>Status - Filed</p>
         </div>
       </div>
       <div className="bg-white p-2 shadow mt-2">
-        <div className="bg-blue-500 p-2 text-white">
-          4A, 4B, 6B, 6C - B2B, SEZ DE Invoices
-        </div>
+        <div className="bg-blue-500 p-2 text-white">Invoices</div>
         {/* <div className=" flex gap-2 items-center mt-2">
           <button
             className="text-sm text-white bg-[#172e57] py-1 px-4"
@@ -79,10 +77,10 @@ const AddRecord = () => {
           <TableBody>
             <TableRow>
               <TableCell className="p-2 border text-center">
-                06AADER8444G1Z4
+                2456721984
               </TableCell>
               <TableCell className="p-2 border text-center">
-                RAGA DESIGN
+                Raj Computers
               </TableCell>
               <TableCell className="p-2 border text-center">
                 Regular taxpayer
@@ -94,22 +92,28 @@ const AddRecord = () => {
                     "/dashboard/returns/returns-dashboard/outward-supplies/invoices/document-wise-details"
                   }
                 >
-                  7
+                  3
                 </Link>
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
-                  <MdiPlusCircle className="text-white text-sm" />
-                </div>
+                <Link
+                  href={
+                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
+                  }
+                >
+                  <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
+                    <MdiPlusCircle className="text-white text-sm" />
+                  </div>
+                </Link>
               </TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="p-2 border text-center">
-                06AADER8444G1Z4
+                2678491239
               </TableCell>
               <TableCell className="p-2 border text-center">
-                RAGA DESIGN
+                Tanish Electronics
               </TableCell>
               <TableCell className="p-2 border text-center">
                 Regular taxpayer
@@ -121,22 +125,28 @@ const AddRecord = () => {
                     "/dashboard/returns/returns-dashboard/outward-supplies/invoices/document-wise-details"
                   }
                 >
-                  7
+                  5
                 </Link>
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
-                  <MdiPlusCircle className="text-white text-sm" />
-                </div>
+                <Link
+                  href={
+                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
+                  }
+                >
+                  <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
+                    <MdiPlusCircle className="text-white text-sm" />
+                  </div>
+                </Link>
               </TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="p-2 border text-center">
-                06AADER8444G1Z4
+                2795834210
               </TableCell>
               <TableCell className="p-2 border text-center">
-                RAGA DESIGN
+                Chandan Designs
               </TableCell>
               <TableCell className="p-2 border text-center">
                 Regular taxpayer
@@ -148,22 +158,28 @@ const AddRecord = () => {
                     "/dashboard/returns/returns-dashboard/outward-supplies/invoices/document-wise-details"
                   }
                 >
-                  7
+                  2
                 </Link>
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
-                  <MdiPlusCircle className="text-white text-sm" />
-                </div>
+                <Link
+                  href={
+                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
+                  }
+                >
+                  <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
+                    <MdiPlusCircle className="text-white text-sm" />
+                  </div>
+                </Link>
               </TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="p-2 border text-center">
-                06AADER8444G1Z4
+                2458327419
               </TableCell>
               <TableCell className="p-2 border text-center">
-                RAGA DESIGN
+                Ravi Kumar Assosciate
               </TableCell>
               <TableCell className="p-2 border text-center">
                 Regular taxpayer
@@ -175,22 +191,28 @@ const AddRecord = () => {
                     "/dashboard/returns/returns-dashboard/outward-supplies/invoices/document-wise-details"
                   }
                 >
-                  7
+                  6
                 </Link>
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
-                  <MdiPlusCircle className="text-white text-sm" />
-                </div>
+                <Link
+                  href={
+                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
+                  }
+                >
+                  <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
+                    <MdiPlusCircle className="text-white text-sm" />
+                  </div>
+                </Link>
               </TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="p-2 border text-center">
-                06AADER8444G1Z4
+                2694753821
               </TableCell>
               <TableCell className="p-2 border text-center">
-                RAGA DESIGN
+                Purva Computers
               </TableCell>
               <TableCell className="p-2 border text-center">
                 Regular taxpayer
@@ -202,22 +224,28 @@ const AddRecord = () => {
                     "/dashboard/returns/returns-dashboard/outward-supplies/invoices/document-wise-details"
                   }
                 >
-                  7
+                  8
                 </Link>
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
-                  <MdiPlusCircle className="text-white text-sm" />
-                </div>
+                <Link
+                  href={
+                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
+                  }
+                >
+                  <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
+                    <MdiPlusCircle className="text-white text-sm" />
+                  </div>
+                </Link>
               </TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="p-2 border text-center">
-                06AADER8444G1Z4
+                2745619283
               </TableCell>
               <TableCell className="p-2 border text-center">
-                RAGA DESIGN
+                Rajesh Electronics
               </TableCell>
               <TableCell className="p-2 border text-center">
                 Regular taxpayer
@@ -229,22 +257,28 @@ const AddRecord = () => {
                     "/dashboard/returns/returns-dashboard/outward-supplies/invoices/document-wise-details"
                   }
                 >
-                  7
+                  3
                 </Link>
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
-                  <MdiPlusCircle className="text-white text-sm" />
-                </div>
+                <Link
+                  href={
+                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
+                  }
+                >
+                  <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
+                    <MdiPlusCircle className="text-white text-sm" />
+                  </div>
+                </Link>
               </TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="p-2 border text-center">
-                06AADER8444G1Z4
+                2461827395
               </TableCell>
               <TableCell className="p-2 border text-center">
-                RAGA DESIGN
+                Manoj Techinicales
               </TableCell>
               <TableCell className="p-2 border text-center">
                 Regular taxpayer
@@ -261,9 +295,15 @@ const AddRecord = () => {
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
-                  <MdiPlusCircle className="text-white text-sm" />
-                </div>
+                <Link
+                  href={
+                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
+                  }
+                >
+                  <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
+                    <MdiPlusCircle className="text-white text-sm" />
+                  </div>
+                </Link>
               </TableCell>
             </TableRow>
           </TableBody>

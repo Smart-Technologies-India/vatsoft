@@ -118,6 +118,87 @@ enum TypeOfAccount {
   OVERDRAFT
 }
 
+enum ReturnType {
+  REVISED
+  ORIGNAL
+}
+
+enum DvatType {
+  DVAT_30
+  DVAT_30_A
+  DVAT_31
+  DVAT_31_A
+}
+
+enum CategoryOfEntry {
+  INVOICE
+  CREDIT_NOTE
+  DEBIT_NOTE
+  GOODS_RETURNED
+  CASH_MEMO
+  WORKS_CONTRACT
+  FREIGHT_CHARGES
+}
+
+enum SaleOf {
+  PROCESSED_GOODS
+  EXEMPTED_GOODS
+  GOODS_TAXABLE
+  NONCREDITABLE
+  LABOUR
+  TAXABLE
+  OTHER
+}
+
+enum SaleOfInterstate {
+  PROCESSED_GOODS
+  FORMF
+  EXPORT_OUTOF_INDIA
+  FORMH
+  FORMI
+  SCHI
+  EXEMPT_US6
+  TAXABLE_SALE
+  LABOUR
+  OTHER
+  TAXABLE_NOTIFICATION
+  SALE_IMPORT_INDIA
+  FORMC
+}
+
+enum InputTaxCredit {
+  ITC_ELIGIBLE
+  ITC_NOT_ELIGIBLE
+  OTHER
+  PURCHASE_TAXABLE
+}
+
+enum NaturePurchase {
+  CAPITAL_GOODS
+  OTHER_GOODS
+  OTHER_PURCHASE
+  PURCHASE_TAXABLE
+}
+
+enum NaturePurchaseOption {
+  TAX_FREE
+  UNREGISTER_DEALERS
+  OTHER
+  JOB_WORK
+  UNITS
+  NON_CREDITABLE
+}
+
+enum PurchaseType {
+  TAXABLE_RATE
+  TAXABLE_OTHER
+  FORMC_CONCESSION
+  FORMC_WITH_TAX
+  FORMC_WITHOUT_TAX
+  OUTSIDE_INDIA
+  STOCK_TRANSFER
+}
+
 model user {
   id                    Int        @id @default(autoincrement())
   firstName             String?
@@ -193,6 +274,16 @@ model user {
   register_createdBy registration[] @relation("register_createdBy")
   register_updatedBy registration[] @relation("register_updatedBy")
   register_deletedBy registration[] @relation("register_deletedBy")
+
+  // returns_01
+  returns_01_createdBy returns_01[] @relation("returns_01_createdBy")
+  returns_01_updatedBy returns_01[] @relation("returns_01_updatedBy")
+  returns_01_deletedBy returns_01[] @relation("returns_01_deletedBy")
+
+  //returns entry
+  returns_entry_createdBy returns_entry[] @relation("returns_entry_createdBy")
+  returns_entry_updatedBy returns_entry[] @relation("returns_entry_updatedBy")
+  returns_entry_deletedBy returns_entry[] @relation("returns_entry_deletedBy")
 
   registration registration[]
 }
@@ -347,6 +438,8 @@ model dvat04 {
   deletedAt   DateTime?
   deletedBy   user?     @relation("dvat04_deletedBy", fields: [deletedById], references: [id])
   deletedById Int?
+
+  returns_01 returns_01[]
 }
 
 model commodity {
@@ -435,23 +528,6 @@ model annexure2 {
   deletedById             Int?
 }
 
-// model annexure3 {
-//   id             Int          @id @default(autoincrement())
-//   registration   registration @relation(fields: [registrationId], references: [id])
-//   registrationId Int
-
-//   status      Status    @default(ACTIVE)
-//   createdAt   DateTime  @default(now())
-//   createdBy   user      @relation("annexure3_createdBy", fields: [createdById], references: [id])
-//   createdById Int
-//   updatedAt   DateTime  @updatedAt
-//   updatedBy   user?     @relation("annexure3_updatedBy", fields: [updatedById], references: [id])
-//   updatedById Int?
-//   deletedAt   DateTime?
-//   deletedBy   user?     @relation("annexure3_deletedBy", fields: [deletedById], references: [id])
-//   deletedById Int?
-// }
-
 model registration {
   id                   Int       @id @default(autoincrement())
   user                 user      @relation(fields: [userId], references: [id])
@@ -482,4 +558,89 @@ model registration {
   annexure1 annexure1[]
   annexure2 annexure2[]
   dvat04    dvat04[]
+}
+
+model state {
+  id        Int       @id @default(autoincrement())
+  name      String
+  code      String
+  status    Status    @default(ACTIVE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model tin_number_master {
+  id             Int       @id @default(autoincrement())
+  tin_nubmer     String
+  name_of_dealer String
+  status         Status    @default(ACTIVE)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  returns_entry returns_entry[]
+}
+
+model returns_01 {
+  id               Int        @id @default(autoincrement())
+  rr_number        String
+  return_type      ReturnType @default(ORIGNAL)
+  year             String
+  quarter          String
+  month            String?
+  dvat04           dvat04     @relation(fields: [dvat04Id], references: [id])
+  dvat04Id         Int
+  filing_datetime  DateTime
+  file_status      Status     @default(ACTIVE)
+  total_tax_amount String
+  transaction_date String
+  paymentmode      String
+  transaction_id   String
+  bank_name        String
+  track_id         String
+  remarks          String?
+  status           Status     @default(ACTIVE)
+  createdAt        DateTime   @default(now())
+  createdBy        user       @relation("returns_01_createdBy", fields: [createdById], references: [id])
+  createdById      Int
+  updatedAt        DateTime   @updatedAt
+  updatedBy        user?      @relation("returns_01_updatedBy", fields: [updatedById], references: [id])
+  updatedById      Int?
+  deletedAt        DateTime?
+  deletedBy        user?      @relation("returns_01_deletedBy", fields: [deletedById], references: [id])
+  deletedById      Int?
+
+  returns_entry returns_entry[]
+}
+
+model returns_entry {
+  id                     Int                   @id @default(autoincrement())
+  returns_01             returns_01            @relation(fields: [returns_01Id], references: [id])
+  returns_01Id           Int
+  dvat_type              DvatType              @default(DVAT_30)
+  urn_number             String
+  invoice_number         String
+  invoice_date           DateTime
+  seller_tin_number      tin_number_master     @relation(fields: [seller_tin_numberId], references: [id])
+  seller_tin_numberId    Int
+  category_of_entry      CategoryOfEntry?
+  sale_of                SaleOf?
+  sale_of_interstate     SaleOfInterstate?
+  input_tax_credit       InputTaxCredit?
+  nature_purchase        NaturePurchase?
+  nature_purchase_option NaturePurchaseOption?
+  tax_percent            String?
+  amount                 String?
+  remarks                String?
+  status                 Status                @default(ACTIVE)
+  createdAt              DateTime              @default(now())
+  createdBy              user                  @relation("returns_entry_createdBy", fields: [createdById], references: [id])
+  createdById            Int
+  updatedAt              DateTime              @updatedAt
+  updatedBy              user?                 @relation("returns_entry_updatedBy", fields: [updatedById], references: [id])
+  updatedById            Int?
+  deletedAt              DateTime?
+  deletedBy              user?                 @relation("returns_entry_deletedBy", fields: [deletedById], references: [id])
+  deletedById            Int?
 }

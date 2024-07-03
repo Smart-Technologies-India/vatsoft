@@ -120,199 +120,39 @@ const ChallanHistory = () => {
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
+                <TableCell className="text-center p-2">2458327419</TableCell>
                 <TableCell className="text-center p-2">
                   20/06/2024 14:02:33
                 </TableCell>
                 <TableCell className="text-center p-2">39,310</TableCell>
                 <TableCell className="text-center p-2">E-Payment</TableCell>
                 <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
+                <TableCell className="text-center p-2">03/04/2024</TableCell>
+                <TableCell className="text-center p-2">23/07/2024</TableCell>
                 <TableCell className="text-center p-2">PAID</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
+                <TableCell className="text-center p-2">2745619283</TableCell>
                 <TableCell className="text-center p-2">
                   20/06/2024 14:02:33
                 </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
+                <TableCell className="text-center p-2">23,430</TableCell>
                 <TableCell className="text-center p-2">E-Payment</TableCell>
                 <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
+                <TableCell className="text-center p-2">05/03/2024</TableCell>
+                <TableCell className="text-center p-2">20/08/2024</TableCell>
                 <TableCell className="text-center p-2">PAID</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
+                <TableCell className="text-center p-2">2684729357</TableCell>
                 <TableCell className="text-center p-2">
                   20/06/2024 14:02:33
                 </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
+                <TableCell className="text-center p-2">54,350</TableCell>
                 <TableCell className="text-center p-2">E-Payment</TableCell>
                 <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">
-                  07AKBPG2465L1Z5
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/07/2024</TableCell>
-                <TableCell className="text-center p-2">20/06/2024</TableCell>
+                <TableCell className="text-center p-2">03/03/2024</TableCell>
+                <TableCell className="text-center p-2">22/08/2024</TableCell>
                 <TableCell className="text-center p-2">PAID</TableCell>
               </TableRow>
             </TableBody>

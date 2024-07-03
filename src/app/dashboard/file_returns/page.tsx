@@ -366,7 +366,7 @@ const ViewPage = () => {
         <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4">
           <h1>File Returns</h1>
           <Marquee className="bg-yellow-500 bg-opacity-10 mt-2 text-sm">
-            Nil return for GSTR-1, GSTR-3B and CMP-08 can be filed through SMS.
+            This is a banner can be used for official updates and notifications.
           </Marquee>
 
           <div className="flex w-full gap-4 items-end mt-4">
@@ -497,7 +497,7 @@ const ViewPage = () => {
           </div>
           <div className="bg-white p-4 flex text-xs justify-between">
             <div>
-              <p>VAT No. - 9O2UI3HR92U3RH98</p>
+              <p>VAT NO. - 9O2UI3HR92U3RH98</p>
               <p>FY - 2024 - 9O2UI3HR92U3RH98</p>
             </div>
             <div>
@@ -505,7 +505,7 @@ const ViewPage = () => {
               <p>Tax Period - May</p>
             </div>
             <div>
-              <p>Trade Name - TRADER SHIPPING INDIA</p>
+              <p>Trade Name - Smart Technologies</p>
               <p>Status - Filed</p>
             </div>
             <div>

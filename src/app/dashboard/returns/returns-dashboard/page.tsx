@@ -1,26 +1,13 @@
 "use client";
 
-import {
-  CharmChevronLeft,
-  CharmChevronRight,
-  MaterialSymbolsKeyboardArrowDownRounded,
-  MaterialSymbolsKeyboardArrowUpRounded,
-  MaterialSymbolsKeyboardDoubleArrowLeft,
-  MaterialSymbolsKeyboardDoubleArrowRight,
-  TablerCheckbox,
-  TablerRefresh,
-} from "@/components/icons";
 import { Label } from "@/components/ui/label";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Marquee from "react-fast-marquee";
-import { default as MulSelect } from "react-select";
+// import { default as MulSelect } from "react-select";
 
-import {
-  ColumnFiltersState,
-  RowData,
-  PaginationState,
-} from "@tanstack/react-table";
+import { RowData } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
+import { Select } from "antd";
 
 declare module "@tanstack/react-table" {
   //allows us to define custom properties for our columns
@@ -30,17 +17,19 @@ declare module "@tanstack/react-table" {
 }
 
 const ReturnDashboard = () => {
-  const [year, setYear] = useState<string>("");
-  const [quarter, setQuarter] = useState<string>("");
-  const [period, setPeriod] = useState<string>("");
+  const [year, setYear] = useState<string>("2024");
+  const [quarter, setQuarter] = useState<string>("qtr1");
+  const [period, setPeriod] = useState<string>("April");
+
+  const [isSearch, setSearch] = useState<boolean>(false);
 
   return (
     <>
-      <main className="w-full p-4">
+      <main className="w-full p-4 relative h-full grow">
         <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4">
           <h1>File Returns</h1>
           <Marquee className="bg-yellow-500 bg-opacity-10 mt-2 text-sm">
-            Nil return for GSTR-1, GSTR-3B and CMP-08 can be filed through SMS.
+            This is a banner can be used for official updates and notifications.
           </Marquee>
 
           <div className="flex w-full gap-4 items-end mt-4">
@@ -48,8 +37,9 @@ const ReturnDashboard = () => {
               <Label htmlFor="duedate">
                 Financial Year <span className="text-rose-500">*</span>
               </Label>
-              <MulSelect
-                isMulti={false}
+              <Select
+                value={year}
+                placeholder="Select a year"
                 options={[
                   {
                     value: "2024",
@@ -84,10 +74,11 @@ const ReturnDashboard = () => {
                     label: "2017-18",
                   },
                 ]}
-                className="w-full accent-slate-900"
-                onChange={(val: any) => {
+                onChange={(val: string) => {
                   if (!val) return;
-                  setYear(val.value.toString());
+                  setYear(val.toString());
+                  setQuarter("qtr1");
+                  setPeriod("April");
                 }}
               />
             </div>
@@ -95,30 +86,48 @@ const ReturnDashboard = () => {
               <Label htmlFor="duedate">
                 Quarter <span className="text-rose-500">*</span>
               </Label>
-              <MulSelect
-                isMulti={false}
+
+              <Select
+                value={quarter}
+                placeholder="Select quarter"
                 options={[
                   {
-                    value: "Apr - Jun",
-                    label: "1",
+                    value: "qtr1",
+                    label: "Qtr 1 [Apr - Jun]",
                   },
                   {
-                    value: "Jul Sep",
-                    label: "2",
+                    value: "qtr2",
+                    label: "Qtr 2 [Jul - Sep]",
                   },
                   {
-                    value: "Oct Dec",
-                    label: "3",
+                    value: "qtr3",
+                    label: "Qtr 3 [Oct - Dec]",
                   },
                   {
-                    value: "Jan Mar",
-                    label: "4",
+                    value: "qtr4",
+                    label: "Qtr 4 [Jan - Mar]",
                   },
                 ]}
-                className="w-full accent-slate-900"
-                onChange={(val: any) => {
+                onChange={(val: string) => {
                   if (!val) return;
-                  setQuarter(val.value.toString());
+                  setQuarter(val.toString());
+
+                  switch (val.toString()) {
+                    case "qtr1":
+                      setPeriod("April");
+                      break;
+                    case "qtr2":
+                      setPeriod("July");
+                      break;
+                    case "qtr3":
+                      setPeriod("October");
+                      break;
+                    case "qtr4":
+                      setPeriod("January");
+                      break;
+                    default:
+                      break;
+                  }
                 }}
               />
             </div>
@@ -126,59 +135,146 @@ const ReturnDashboard = () => {
               <Label htmlFor="duedate">
                 Period <span className="text-rose-500">*</span>
               </Label>
-              <MulSelect
-                isMulti={false}
-                options={[
-                  {
-                    value: "October",
-                    label: "1",
-                  },
-                  {
-                    value: "November",
-                    label: "2",
-                  },
-                  {
-                    value: "December",
-                    label: "3",
-                  },
-                ]}
-                className="w-full accent-slate-900"
-                onChange={(val: any) => {
+              <Select
+                value={period}
+                placeholder="Select Period"
+                options={
+                  quarter == "qtr1"
+                    ? [
+                        {
+                          value: "April",
+                          label: "April",
+                        },
+                        {
+                          value: "May",
+                          label: "May",
+                        },
+                        {
+                          value: "June",
+                          label: "June",
+                        },
+                      ]
+                    : quarter == "qtr2"
+                    ? [
+                        {
+                          value: "July",
+                          label: "July",
+                        },
+                        {
+                          value: "Augest",
+                          label: "Augest",
+                        },
+                        {
+                          value: "September",
+                          label: "September",
+                        },
+                      ]
+                    : quarter == "qtr3"
+                    ? [
+                        {
+                          value: "October",
+                          label: "October",
+                        },
+                        {
+                          value: "November",
+                          label: "November",
+                        },
+                        {
+                          value: "December",
+                          label: "December",
+                        },
+                      ]
+                    : [
+                        {
+                          value: "January",
+                          label: "January",
+                        },
+                        {
+                          value: "February",
+                          label: "February",
+                        },
+                        {
+                          value: "March",
+                          label: "March",
+                        },
+                      ]
+                }
+                onChange={(val: string) => {
                   if (!val) return;
-                  setPeriod(val.value.toString());
+                  setPeriod(val.toString());
                 }}
               />
             </div>
-            <button className="bg-[#172e57] px-6  text-white py-2 rounded-md">
+            <button
+              className="bg-[#172e57] px-4  text-white py-1 rounded-md"
+              onClick={() => setSearch(true)}
+            >
               Search
             </button>
           </div>
         </div>
-        <div className="grid w-full grid-cols-4 gap-4 mt-4">
-          <Card
-            title={"Details of outward supplies of goods or services"}
-            subtitle={"GSTR1"}
-            buttonone="Prepare Now"
-            buttontwo="Download"
-          />
-          <Card
-            title={"Purchase Details"}
-            subtitle={"GSTR1"}
-            buttonone="View"
-            buttontwo="Download"
-          />
-          <Card
-            title={"Details of outward supplies of goods or services"}
-            subtitle={"GSTR1"}
-            buttonone="View"
-            buttontwo="Download"
-          />
-          <Card
-            title={"Details of outward supplies of goods or services"}
-            subtitle={"GSTR1"}
-            buttonone="View"
-            buttontwo="Download"
-          />
+        {isSearch && (
+          <div className="grid w-full grid-cols-4 gap-4 mt-4">
+            <Card
+              title={"Sales Local"}
+              subtitle={"Form 31"}
+              buttonone="View"
+              buttontwo="Add"
+              entry={23}
+              amount="3,23,533"
+              tax="3,234"
+            />
+            <Card
+              title={"Purchase Local"}
+              subtitle={"Form 30"}
+              buttonone="View"
+              buttontwo="Add"
+              entry={3}
+              amount="23,533"
+              tax="1,234"
+            />
+            <Card
+              title={"Sales Inter-State"}
+              subtitle={"Form 31-A"}
+              buttonone="View"
+              buttontwo="Add"
+              entry={32}
+              amount="4,23,533"
+              tax="3,232"
+            />
+
+            <Card
+              title={"Purchase Inter-State"}
+              subtitle={"Form 30-A"}
+              buttonone="View"
+              buttontwo="Add"
+              entry={15}
+              amount="85,533"
+              tax="2,324"
+            />
+          </div>
+        )}
+
+        <div className="absolute bottom-2 right-2 rounded shadow bg-white p-1 flex gap-2">
+          <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
+            Back
+          </button>
+          <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
+            Scroll to Top
+          </button>
+          {isSearch && (
+            <>
+              <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
+                Save
+              </button>
+              <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
+                Preview
+              </button>
+              <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
+                Proceed to Payment
+              </button>
+            </>
+          )}
         </div>
       </main>
     </>
@@ -191,13 +287,16 @@ interface CardProps {
   title: string;
   buttonone: string;
   buttontwo: string;
+  entry: number;
+  amount: string;
+  tax: string;
 }
 
 const Card = (props: CardProps) => {
   const route = useRouter();
   return (
-    <div className=" p-2 bg-white rounded-md">
-      <div className="text-white text-sm font-semibold text-center bg-[#162e57] p-2 rounded-md h-20 grid place-items-center">
+    <div className=" p-2 bg-white rounded-md hover:shadow-md hover:-translate-y-2 transition-all duration-700">
+      <div className="text-white text-sm font-semibold text-center bg-[#162e57] p-2 rounded-md grid place-items-center">
         <div>
           <p className="text-white text-xs font-normal text-center">
             {props.subtitle}
@@ -206,9 +305,13 @@ const Card = (props: CardProps) => {
         </div>
       </div>
 
-      <p className="text-[#162e57] mt-2 text-xs text-center">
-        Status : Submitted
+      <p className="text-[#162e57] mt-2 text-xs text-left">
+        No Of Entries : {props.entry}
       </p>
+      <p className="text-[#162e57] text-xs text-left">
+        Taxable Amount : {props.amount}
+      </p>
+      <p className="text-[#162e57] text-xs text-left">Tax : {props.tax}</p>
       <div className="flex gap-2 justify-around mt-2">
         <button
           onClick={() => {

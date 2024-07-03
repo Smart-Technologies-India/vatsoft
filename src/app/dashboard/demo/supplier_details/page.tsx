@@ -22,15 +22,15 @@ const supplierDetails = () => {
       <div className="p-6">
         <div className="bg-white p-4 flex text-xs justify-between shadow">
           <div>
-            <p>GSTIN - 27AFZPC4455K1ZU</p>
+            <p>VAT NO. - 26456456434</p>
             <p>FY - 2024-25</p>
           </div>
           <div>
-            <p>Legal Name - FARZANA MOHAMMED SAYEED CHOUHAN</p>
+            <p>Legal Name - Smart Technologies</p>
             <p>Return Period - May</p>
           </div>
           <div>
-            <p>Trade Name - TRADER SHIPPING TNOTAI</p>
+            <p>Trade Name - Smart Technologies</p>
           </div>
         </div>
 
@@ -73,7 +73,7 @@ const supplierDetails = () => {
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell className="text-center">07AKBPG2465L1Z5</TableCell>
+                <TableCell className="text-center">2694753821</TableCell>
                 <TableCell className="text-center">ARD LOGISTICS</TableCell>
                 <TableCell className="text-center">Y</TableCell>
                 <TableCell className="text-center">11-Jun-24</TableCell>

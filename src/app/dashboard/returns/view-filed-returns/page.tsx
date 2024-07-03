@@ -175,9 +175,11 @@ const TrackAppliation = () => {
             <TableBody>
               <TableRow>
                 <TableCell className="border text-center p-2">
-                  07AKBPG2465L1Z5
+                  2461827395
                 </TableCell>
-                <TableCell className="border text-center p-2">GSTR3B</TableCell>
+                <TableCell className="border text-center p-2">
+                  Regular
+                </TableCell>
                 <TableCell className="border text-center p-2">
                   2024-2025
                 </TableCell>
@@ -190,45 +192,51 @@ const TrackAppliation = () => {
               </TableRow>
               <TableRow>
                 <TableCell className="border text-center p-2">
-                  07AKBPG2465L1Z5
+                  2458327419
                 </TableCell>
-                <TableCell className="border text-center p-2">GSTR3B</TableCell>
+                <TableCell className="border text-center p-2">
+                  Regular
+                </TableCell>
                 <TableCell className="border text-center p-2">
                   2024-2025
                 </TableCell>
-                <TableCell className="border text-center p-2">May</TableCell>
+                <TableCell className="border text-center p-2">Apr</TableCell>
                 <TableCell className="border text-center p-2">
-                  20/06/2024
+                  19/05/2024
                 </TableCell>
                 <TableCell className="border text-center p-2">Filed</TableCell>
                 <TableCell className="border text-center p-2">ONLINE</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="border text-center p-2">
-                  07AKBPG2465L1Z5
+                  2678491239
                 </TableCell>
-                <TableCell className="border text-center p-2">GSTR3B</TableCell>
+                <TableCell className="border text-center p-2">
+                  Regular
+                </TableCell>
                 <TableCell className="border text-center p-2">
                   2024-2025
                 </TableCell>
-                <TableCell className="border text-center p-2">May</TableCell>
+                <TableCell className="border text-center p-2">Mar</TableCell>
                 <TableCell className="border text-center p-2">
-                  20/06/2024
+                  20/04/2024
                 </TableCell>
                 <TableCell className="border text-center p-2">Filed</TableCell>
                 <TableCell className="border text-center p-2">ONLINE</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="border text-center p-2">
-                  07AKBPG2465L1Z5
+                  2684729357
                 </TableCell>
-                <TableCell className="border text-center p-2">GSTR3B</TableCell>
+                <TableCell className="border text-center p-2">
+                  Regular
+                </TableCell>
                 <TableCell className="border text-center p-2">
                   2024-2025
                 </TableCell>
-                <TableCell className="border text-center p-2">May</TableCell>
+                <TableCell className="border text-center p-2">Feb</TableCell>
                 <TableCell className="border text-center p-2">
-                  20/06/2024
+                  18/03/2024
                 </TableCell>
                 <TableCell className="border text-center p-2">Filed</TableCell>
                 <TableCell className="border text-center p-2">ONLINE</TableCell>

@@ -125,7 +125,7 @@ const ChallanHistory = () => {
             <TableBody>
               <TableRow>
                 <TableCell className="text-center p-2 border">
-                  07AKBPG2465L1Z5
+                  2456721984
                 </TableCell>
                 <TableCell className="text-center p-2 border">
                   System Generated
@@ -166,7 +166,7 @@ const ChallanHistory = () => {
               </TableRow>
               <TableRow>
                 <TableCell className="text-center p-2 border">
-                  07AKBPG2465L1Z5
+                  2678491239
                 </TableCell>
                 <TableCell className="text-center p-2 border">
                   System Generated
@@ -207,7 +207,7 @@ const ChallanHistory = () => {
               </TableRow>
               <TableRow>
                 <TableCell className="text-center p-2 border">
-                  07AKBPG2465L1Z5
+                  2795834210
                 </TableCell>
                 <TableCell className="text-center p-2 border">
                   System Generated
@@ -248,7 +248,7 @@ const ChallanHistory = () => {
               </TableRow>
               <TableRow>
                 <TableCell className="text-center p-2 border">
-                  07AKBPG2465L1Z5
+                  2694753821
                 </TableCell>
                 <TableCell className="text-center p-2 border">
                   System Generated
@@ -289,7 +289,7 @@ const ChallanHistory = () => {
               </TableRow>
               <TableRow>
                 <TableCell className="text-center p-2 border">
-                  07AKBPG2465L1Z5
+                  2684729357
                 </TableCell>
                 <TableCell className="text-center p-2 border">
                   System Generated
