@@ -199,6 +199,13 @@ enum PurchaseType {
   STOCK_TRANSFER
 }
 
+enum Quarter {
+  QUATER1
+  QUATER2
+  QUATER3
+  QUATER4
+}
+
 model user {
   id                    Int        @id @default(autoincrement())
   firstName             String?
@@ -561,18 +568,19 @@ model registration {
 }
 
 model state {
-  id        Int       @id @default(autoincrement())
-  name      String
-  code      String
-  status    Status    @default(ACTIVE)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  id            Int             @id @default(autoincrement())
+  name          String
+  code          String
+  status        Status          @default(ACTIVE)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?
+  returns_entry returns_entry[]
 }
 
 model tin_number_master {
   id             Int       @id @default(autoincrement())
-  tin_nubmer     String
+  tin_number     String
   name_of_dealer String
   status         Status    @default(ACTIVE)
   createdAt      DateTime  @default(now())
@@ -587,18 +595,22 @@ model returns_01 {
   rr_number        String
   return_type      ReturnType @default(ORIGNAL)
   year             String
-  quarter          String
+  quarter          Quarter    @default(QUATER1)
   month            String?
   dvat04           dvat04     @relation(fields: [dvat04Id], references: [id])
   dvat04Id         Int
   filing_datetime  DateTime
   file_status      Status     @default(ACTIVE)
-  total_tax_amount String
-  transaction_date String
-  paymentmode      String
-  transaction_id   String
-  bank_name        String
-  track_id         String
+  vatamount        String?
+  interest         String?
+  penalty          String?
+  other_charge     String?
+  total_tax_amount String?
+  transaction_date String?
+  paymentmode      String?
+  transaction_id   String?
+  bank_name        String?
+  track_id         String?
   remarks          String?
   status           Status     @default(ACTIVE)
   createdAt        DateTime   @default(now())
@@ -622,6 +634,7 @@ model returns_entry {
   urn_number             String
   invoice_number         String
   invoice_date           DateTime
+  total_invoice_number   String
   seller_tin_number      tin_number_master     @relation(fields: [seller_tin_numberId], references: [id])
   seller_tin_numberId    Int
   category_of_entry      CategoryOfEntry?
@@ -630,8 +643,12 @@ model returns_entry {
   input_tax_credit       InputTaxCredit?
   nature_purchase        NaturePurchase?
   nature_purchase_option NaturePurchaseOption?
+  purchase_type        PurchaseType?
+  state                  state?                @relation(fields: [place_of_supply], references: [id])
+  place_of_supply        Int?
   tax_percent            String?
   amount                 String?
+  vatamount              String?
   remarks                String?
   status                 Status                @default(ACTIVE)
   createdAt              DateTime              @default(now())

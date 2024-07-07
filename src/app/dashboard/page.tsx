@@ -34,8 +34,21 @@ const Page = () => {
   return (
     <>
       <main className="relative min-h-[calc(100vh-2.5rem)] ">
-        <div className="pb-10">
-          <div className="mx-auto px-4  w-4/6 py-6">
+        <div className="pb-10 relative">
+          <div className="bg-black bg-opacity-10 w-full h-full absolute top-0 left-0 z-40 mt-2 bg-clip-padding backdrop-filter backdrop-blur-sm grid place-items-center">
+            <div className="rounded border bg-white mb-2 w-80 p-2">
+              <h1 className="text-lg font-medium text-black">Warning</h1>
+              <div className="bg-rose-500 w-full h-[1px] bg-opacity-30 my-1"></div>
+              <p className="text-gray-500 text-xs">
+                Your Registration seems incomplete. Kindly complete the
+                registration.
+              </p>
+              <button className="w-full text-white text-sm bg-rose-500 text-center rounded mt-2 py-1">
+                Complete profile
+              </button>
+            </div>
+          </div>
+          <div className="mx-auto px-4  w-4/6 py-6 relative">
             <div className="bg-white p-4 rounded-xl">
               <h1 className="text-sm font-semibold font-nunito leading-3">
                 Welcome {user?.firstName} {user?.lastName} To VATSOFT Portal

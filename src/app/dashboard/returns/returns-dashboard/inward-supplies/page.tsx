@@ -20,7 +20,7 @@ declare module "@tanstack/react-table" {
   }
 }
 
-const GSTR = () => {
+const InwardSupplies = () => {
   const route = useRouter();
 
   const searchParams = useSearchParams();
@@ -30,7 +30,7 @@ const GSTR = () => {
       <main className="w-full p-4">
         <div>
           <div className="bg-emerald-500 w-full mt-2 px-2 text-white flex gap-2 py-1">
-            <p>GSTR-1 Details of outward supplied of goods or services</p>
+            <p>Details of Purchase of goods or services</p>
             <div className="grow"></div>
             <button>
               <TablerRefresh />
@@ -207,4 +207,4 @@ const GSTR = () => {
     </>
   );
 };
-export default GSTR;
+export default InwardSupplies;

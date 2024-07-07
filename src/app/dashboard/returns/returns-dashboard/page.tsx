@@ -8,6 +8,7 @@ import Marquee from "react-fast-marquee";
 import { RowData } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { Select } from "antd";
+import { Quarter } from "@prisma/client";
 
 declare module "@tanstack/react-table" {
   //allows us to define custom properties for our columns
@@ -18,7 +19,7 @@ declare module "@tanstack/react-table" {
 
 const ReturnDashboard = () => {
   const [year, setYear] = useState<string>("2024");
-  const [quarter, setQuarter] = useState<string>("qtr1");
+  const [quarter, setQuarter] = useState<Quarter>(Quarter.QUATER1);
   const [period, setPeriod] = useState<string>("April");
 
   const [isSearch, setSearch] = useState<boolean>(false);
@@ -77,7 +78,7 @@ const ReturnDashboard = () => {
                 onChange={(val: string) => {
                   if (!val) return;
                   setYear(val.toString());
-                  setQuarter("qtr1");
+                  setQuarter(Quarter.QUATER1);
                   setPeriod("April");
                 }}
               />
@@ -92,37 +93,37 @@ const ReturnDashboard = () => {
                 placeholder="Select quarter"
                 options={[
                   {
-                    value: "qtr1",
-                    label: "Qtr 1 [Apr - Jun]",
+                    value: "QUATER1",
+                    label: "Quarter 1 [Apr - Jun]",
                   },
                   {
-                    value: "qtr2",
-                    label: "Qtr 2 [Jul - Sep]",
+                    value: "QUATER2",
+                    label: "Quarter 2 [Jul - Sep]",
                   },
                   {
-                    value: "qtr3",
-                    label: "Qtr 3 [Oct - Dec]",
+                    value: "QUATER3",
+                    label: "Quarter 3 [Oct - Dec]",
                   },
                   {
-                    value: "qtr4",
-                    label: "Qtr 4 [Jan - Mar]",
+                    value: "QUATER4",
+                    label: "Quarter 4 [Jan - Mar]",
                   },
                 ]}
-                onChange={(val: string) => {
+                onChange={(val: Quarter) => {
                   if (!val) return;
-                  setQuarter(val.toString());
+                  setQuarter(val);
 
                   switch (val.toString()) {
-                    case "qtr1":
+                    case Quarter.QUATER1:
                       setPeriod("April");
                       break;
-                    case "qtr2":
+                    case Quarter.QUATER2:
                       setPeriod("July");
                       break;
-                    case "qtr3":
+                    case Quarter.QUATER3:
                       setPeriod("October");
                       break;
-                    case "qtr4":
+                    case Quarter.QUATER4:
                       setPeriod("January");
                       break;
                     default:
@@ -139,7 +140,7 @@ const ReturnDashboard = () => {
                 value={period}
                 placeholder="Select Period"
                 options={
-                  quarter == "qtr1"
+                  quarter == Quarter.QUATER1
                     ? [
                         {
                           value: "April",
@@ -154,7 +155,7 @@ const ReturnDashboard = () => {
                           label: "June",
                         },
                       ]
-                    : quarter == "qtr2"
+                    : quarter == Quarter.QUATER2
                     ? [
                         {
                           value: "July",
@@ -169,7 +170,7 @@ const ReturnDashboard = () => {
                           label: "September",
                         },
                       ]
-                    : quarter == "qtr3"
+                    : quarter == Quarter.QUATER3
                     ? [
                         {
                           value: "October",
@@ -223,6 +224,7 @@ const ReturnDashboard = () => {
               entry={23}
               amount="3,23,533"
               tax="3,234"
+              link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31&year=${year}&quarter=${quarter}&month=${period}`}
             />
             <Card
               title={"Purchase Local"}
@@ -232,6 +234,7 @@ const ReturnDashboard = () => {
               entry={3}
               amount="23,533"
               tax="1,234"
+              link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30&year=${year}&quarter=${quarter}&month=${period}`}
             />
             <Card
               title={"Sales Inter-State"}
@@ -241,8 +244,8 @@ const ReturnDashboard = () => {
               entry={32}
               amount="4,23,533"
               tax="3,232"
+              link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31A&year=${year}&quarter=${quarter}&month=${period}`}
             />
-
             <Card
               title={"Purchase Inter-State"}
               subtitle={"Form 30-A"}
@@ -251,6 +254,7 @@ const ReturnDashboard = () => {
               entry={15}
               amount="85,533"
               tax="2,324"
+              link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30A&year=${year}&quarter=${quarter}&month=${period}`}
             />
           </div>
         )}
@@ -290,6 +294,7 @@ interface CardProps {
   entry: number;
   amount: string;
   tax: string;
+  link: string;
 }
 
 const Card = (props: CardProps) => {
@@ -315,7 +320,8 @@ const Card = (props: CardProps) => {
       <div className="flex gap-2 justify-around mt-2">
         <button
           onClick={() => {
-            route.push("/dashboard/returns/returns-dashboard/outward-supplies");
+            route.push(props.link);
+            // route.push("/dashboard/returns/returns-dashboard/outward-supplies");
           }}
           className="border flex-1 bg-[#162e57] text-white rounded-md text-sm py-1 text-center"
         >
@@ -323,7 +329,7 @@ const Card = (props: CardProps) => {
         </button>
         <button
           onClick={() => {
-            route.push("/dashboard/returns/returns-dashboard/outward-supplies");
+            route.push(props.link);
           }}
           className="border flex-1 bg-[#162e57]  text-white rounded-md text-sm py-1 text-center"
         >

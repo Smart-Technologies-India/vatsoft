@@ -47,6 +47,16 @@ const Navbar = (props: NavbarProps) => {
         return "Help & Tax Payers Facility";
       case "/dashboard/user_service":
         return "User Services";
+      case "/dashboard/returns/returns-dashboard/invoices":
+        return "Invoices";
+      case "/dashboard/returns/returns-dashboard/inward-supplies/add-record-30":
+        return "Local Purchase Invoice [DVAT 30]";
+      case "/dashboard/returns/returns-dashboard/inward-supplies/add-record-30A":
+        return "Inter-State Purchase Invoice [DVAT 30A]";
+      case "/dashboard/returns/returns-dashboard/outward-supplies/add-record-31":
+        return "Local Sales Invoice [DVAT 31]";
+      case "/dashboard/returns/returns-dashboard/outward-supplies/add-record-31A":
+        return "Inter-State Sales Invoice [DVAT 31A]";
       default:
         return "";
     }

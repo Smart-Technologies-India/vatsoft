@@ -9,22 +9,59 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "antd";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const AddRecord = () => {
   const route = useRouter();
+  const searchParams = useSearchParams();
+
+  const getUrl = (): string => {
+    const formType = searchParams.get("form");
+    switch (formType) {
+      case "30":
+        return `/dashboard/returns/returns-dashboard/inward-supplies/add-record-30?form=${searchParams.get(
+          "form"
+        )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
+          "quarter"
+        )}&month=${searchParams.get("month")}`;
+
+      case "30A":
+        return `/dashboard/returns/returns-dashboard/inward-supplies/add-record-30A?form=${searchParams.get(
+          "form"
+        )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
+          "quarter"
+        )}&month=${searchParams.get("month")}`;
+
+      case "31":
+        return `/dashboard/returns/returns-dashboard/outward-supplies/add-record-31?form=${searchParams.get(
+          "form"
+        )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
+          "quarter"
+        )}&month=${searchParams.get("month")}`;
+
+      case "31A":
+        return `/dashboard/returns/returns-dashboard/outward-supplies/add-record-31A?form=${searchParams.get(
+          "form"
+        )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
+          "quarter"
+        )}&month=${searchParams.get("month")}`;
+
+      default:
+        return "";
+    }
+  };
+
   return (
     <div className="p-2 mt-4">
       <div className="bg-white p-4 flex text-xs justify-between shadow">
         <div>
           <p>VAT NO. 26746574854</p>
-          <p>FY - 2024-2025</p>
+          <p>FY - {searchParams.get("year")}</p>
         </div>
         <div>
           <p>Legal Name - Smart Technologies</p>
-          <p>Tax Period - May</p>
+          <p>Tax Period - {searchParams.get("month")}</p>
         </div>
         <div>
           <p>Trade Name - Smart Technologies</p>
@@ -32,24 +69,7 @@ const AddRecord = () => {
         </div>
       </div>
       <div className="bg-white p-2 shadow mt-2">
-        <div className="bg-blue-500 p-2 text-white">Invoices</div>
-        {/* <div className=" flex gap-2 items-center mt-2">
-          <button
-            className="text-sm text-white bg-[#172e57] py-1 px-4"
-            onClick={() => {
-              route.push(
-                "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
-              );
-            }}
-          >
-            ADD RECORD
-          </button>
-          <div className="grow"></div>
-          <button className="text-sm text-white bg-[#172e57] py-1 px-4">
-            IMPORT EWB DATA
-          </button>
-        </div> */}
-        <p className="text-[#162e57] text-sm mt-2">Record Details</p>
+        <div className="bg-blue-500 p-2 text-white">Record Details</div>
 
         <Table className="border mt-2">
           <TableHeader>
@@ -89,7 +109,7 @@ const AddRecord = () => {
                 <Link
                   className="text-blue-500"
                   href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/invoices/document-wise-details"
+                    "/dashboard/returns/returns-dashboard/invoices/document-wise-details"
                   }
                 >
                   3
@@ -97,11 +117,7 @@ const AddRecord = () => {
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <Link
-                  href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
-                  }
-                >
+                <Link href={getUrl()}>
                   <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
                     <MdiPlusCircle className="text-white text-sm" />
                   </div>
@@ -122,7 +138,7 @@ const AddRecord = () => {
                 <Link
                   className="text-blue-500"
                   href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/invoices/document-wise-details"
+                    "/dashboard/returns/returns-dashboard/invoices/document-wise-details"
                   }
                 >
                   5
@@ -130,11 +146,7 @@ const AddRecord = () => {
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <Link
-                  href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
-                  }
-                >
+                <Link href={getUrl()}>
                   <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
                     <MdiPlusCircle className="text-white text-sm" />
                   </div>
@@ -155,7 +167,7 @@ const AddRecord = () => {
                 <Link
                   className="text-blue-500"
                   href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/invoices/document-wise-details"
+                    "/dashboard/returns/returns-dashboard/invoices/document-wise-details"
                   }
                 >
                   2
@@ -163,11 +175,7 @@ const AddRecord = () => {
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <Link
-                  href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
-                  }
-                >
+                <Link href={getUrl()}>
                   <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
                     <MdiPlusCircle className="text-white text-sm" />
                   </div>
@@ -188,7 +196,7 @@ const AddRecord = () => {
                 <Link
                   className="text-blue-500"
                   href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/invoices/document-wise-details"
+                    "/dashboard/returns/returns-dashboard/invoices/document-wise-details"
                   }
                 >
                   6
@@ -196,11 +204,7 @@ const AddRecord = () => {
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <Link
-                  href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
-                  }
-                >
+                <Link href={getUrl()}>
                   <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
                     <MdiPlusCircle className="text-white text-sm" />
                   </div>
@@ -221,7 +225,7 @@ const AddRecord = () => {
                 <Link
                   className="text-blue-500"
                   href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/invoices/document-wise-details"
+                    "/dashboard/returns/returns-dashboard/invoices/document-wise-details"
                   }
                 >
                   8
@@ -229,11 +233,7 @@ const AddRecord = () => {
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <Link
-                  href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
-                  }
-                >
+                <Link href={getUrl()}>
                   <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
                     <MdiPlusCircle className="text-white text-sm" />
                   </div>
@@ -254,7 +254,7 @@ const AddRecord = () => {
                 <Link
                   className="text-blue-500"
                   href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/invoices/document-wise-details"
+                    "/dashboard/returns/returns-dashboard/invoices/document-wise-details"
                   }
                 >
                   3
@@ -262,11 +262,7 @@ const AddRecord = () => {
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <Link
-                  href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
-                  }
-                >
+                <Link href={getUrl()}>
                   <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
                     <MdiPlusCircle className="text-white text-sm" />
                   </div>
@@ -295,11 +291,7 @@ const AddRecord = () => {
               </TableCell>
               <TableCell className="p-2 border text-center">0</TableCell>
               <TableCell className="p-2 border text-center">
-                <Link
-                  href={
-                    "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
-                  }
-                >
+                <Link href={getUrl()}>
                   <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
                     <MdiPlusCircle className="text-white text-sm" />
                   </div>
@@ -313,9 +305,7 @@ const AddRecord = () => {
           <button
             className="text-sm text-white bg-[#172e57] py-1 px-4"
             onClick={() => {
-              route.push(
-                "/dashboard/returns/returns-dashboard/outward-supplies/add-record"
-              );
+              route.push(getUrl());
             }}
           >
             ADD RECORD
