@@ -46,7 +46,9 @@ const record30Schema = object({
   place_of_supply: number([minValue(0, "Place of Supply is required.")]),
   tax_percent: string([minLength(1, "Tax Percent is required.")]),
   amount: string([minLength(1, "Amount is required.")]),
-  // remarks: string([minLength(1, "Remarks is required.")]),
+  description_of_goods: string([
+    minLength(1, "Description of goods is required."),
+  ]),
   vatamount: string([minLength(1, "Vat Amount is required.")]),
   // status: enum_(Status, "File Status is required."),
 });

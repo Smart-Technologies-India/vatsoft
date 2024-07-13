@@ -96,7 +96,7 @@ export default function LoginPage() {
             </div>
             <div className="grid max-w-sm items-center gap-1.5 w-80 mt-6">
               <Label htmlFor="password" className="text-xs">
-                Password{" "}
+                Password
               </Label>
               <div>
                 <div className="flex items-center gap-2 px-2 rounded border border-gray-300 bg-[#e8f0fe]">

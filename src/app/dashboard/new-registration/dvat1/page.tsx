@@ -223,7 +223,6 @@ const Dvat1Page = () => {
     init();
   }, [id]);
 
-  console.log(dvatData);
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">

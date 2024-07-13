@@ -136,8 +136,8 @@ enum CategoryOfEntry {
   DEBIT_NOTE
   GOODS_RETURNED
   CASH_MEMO
-  WORKS_CONTRACT
   FREIGHT_CHARGES
+  SALE_CANCELLED
 }
 
 enum SaleOf {
@@ -148,6 +148,7 @@ enum SaleOf {
   LABOUR
   TAXABLE
   OTHER
+  WORKS_CONTRACT
 }
 
 enum SaleOfInterstate {
@@ -182,6 +183,7 @@ enum NaturePurchase {
 
 enum NaturePurchaseOption {
   TAX_FREE
+  REGISTER_DEALERS
   UNREGISTER_DEALERS
   OTHER
   JOB_WORK
@@ -643,13 +645,14 @@ model returns_entry {
   input_tax_credit       InputTaxCredit?
   nature_purchase        NaturePurchase?
   nature_purchase_option NaturePurchaseOption?
-  purchase_type        PurchaseType?
+  purchase_type          PurchaseType?
   state                  state?                @relation(fields: [place_of_supply], references: [id])
   place_of_supply        Int?
   tax_percent            String?
   amount                 String?
   vatamount              String?
   remarks                String?
+  description_of_goods   String?
   status                 Status                @default(ACTIVE)
   createdAt              DateTime              @default(now())
   createdBy              user                  @relation("returns_entry_createdBy", fields: [createdById], references: [id])

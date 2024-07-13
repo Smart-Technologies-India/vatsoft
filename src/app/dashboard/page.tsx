@@ -64,7 +64,7 @@ const Page = () => {
                 <div className="flex-1 bg-white p-2 rounded-xl">
                   <div className="flex items-center px-4">
                     <div className="text-sm font-semibold font-nunito leading-3 py-1 w-full text-gray-500  rounded-xl">
-                      GSTR-1/IFF
+                     VAT
                     </div>
                     <div className="glow"></div>
                     <LucideArrowRight className="text-xl text-blue-500" />
@@ -116,7 +116,7 @@ const Page = () => {
                 <div className="flex-1 bg-white p-2 rounded-xl">
                   <div className="flex items-center px-4">
                     <div className="text-sm font-semibold font-nunito leading-3 py-1 w-full text-gray-500  rounded-xl">
-                      GSTR-3B
+                     VAT
                     </div>
                     <div className="glow"></div>
                     <LucideArrowRight className="text-xl text-blue-500" />

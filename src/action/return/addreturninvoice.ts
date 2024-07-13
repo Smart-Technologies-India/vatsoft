@@ -44,6 +44,7 @@ interface AddReturnInvoicePayload {
   amount?: string;
   vatamount?: string;
   remark?: string;
+  description_of_goods?: string;
 }
 
 const AddReturnInvoice = async (
@@ -110,6 +111,7 @@ const AddReturnInvoice = async (
         amount: payload.amount,
         vatamount: payload.vatamount,
         remarks: payload.remark,
+        description_of_goods: payload.description_of_goods,
         status: Status.ACTIVE,
         createdById: payload.createdById,
       },

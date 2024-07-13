@@ -1,6 +1,6 @@
 "use server";
 
-import { errorToString } from "@/utils/methods";
+import { encrypt, errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import { user } from "@prisma/client";
 
@@ -16,7 +16,7 @@ const SendOtp = async (
 ): Promise<ApiResponseType<user | null>> => {
   try {
     const user = await prisma.user.findFirst({
-      where: { mobileOne: payload.mobile, status: "ACTIVE" },
+      where: { mobileOne: encrypt(payload.mobile), status: "ACTIVE" },
     });
 
     const otp = Math.floor(1000 + Math.random() * 9000);
@@ -53,7 +53,7 @@ const SendOtp = async (
       } else {
         const user_resut = await prisma.user.create({
           data: {
-            mobileOne: payload.mobile,
+            mobileOne: encrypt(payload.mobile),
             otp: otp.toString(),
             role: "USER",
           },

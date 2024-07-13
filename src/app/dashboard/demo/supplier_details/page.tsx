@@ -57,18 +57,10 @@ const supplierDetails = () => {
                 <TableHead className="whitespace-nowrap text-center">
                   Supplier Name
                 </TableHead>
-                <TableHead className="text-center">
-                  GSTR-1/IFF/GSTR-5 Filing status
-                </TableHead>
-                <TableHead className="text-center">
-                  GSTR-1/IFF/GSTR-5 Filling Date
-                </TableHead>
-                <TableHead className="text-center">
-                  GSTR-1/IFF/GSTR-5 Filing Reriod
-                </TableHead>
-                <TableHead className="text-center">
-                  GSTR-3B filing status
-                </TableHead>
+                <TableHead className="text-center">VAT Filing status</TableHead>
+                <TableHead className="text-center">VAT Filing Date</TableHead>
+                <TableHead className="text-center">VAT Filing Reriod</TableHead>
+                <TableHead className="text-center">VAT filing status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -1,3 +1,5 @@
+import CryptoJS from "crypto-js";
+
 /**
  * Converts an error object or string to a string format.
  * If the input is a string, it converts it to uppercase.
@@ -5,6 +7,7 @@
  * @param {unknown} e - The error object or string to convert.
  * @returns {string} The error message in string format.
  */
+
 const errorToString = (e: unknown): string => {
   let err: string = "";
   if (typeof e === "string") {
@@ -173,3 +176,16 @@ const getEnumData = <T extends object>(
 };
 
 export { getEnumData };
+
+const encrypt = (value: string): string => {
+  return CryptoJS.AES.encrypt(value, process.env.DATABASE_KEY!).toString();
+};
+
+export { encrypt };
+
+const decrypt = (value: string): string => {
+  const bytes = CryptoJS.AES.decrypt(value, process.env.DATABASE_KEY!);
+  return bytes.toString(CryptoJS.enc.Utf8);
+};
+
+export { decrypt };

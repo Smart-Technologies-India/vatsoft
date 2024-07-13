@@ -59,9 +59,7 @@ const TestSearch = () => {
       return toast.error("enter keywork in order to search");
     }
 
-    console.log(searchRef.current?.value);
     const response = fuse.search(searchRef.current?.value);
-    console.log(response);
   };
 
   return (

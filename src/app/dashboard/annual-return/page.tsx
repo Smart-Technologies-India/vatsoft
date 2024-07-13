@@ -98,13 +98,13 @@ const ReturnDashboard = () => {
         <div className="grid w-full grid-cols-4 gap-4 mt-4">
           <Card
             title={"Details of outward supplies of goods or services"}
-            subtitle={"GSTR1"}
+            subtitle={"VAT"}
             buttonone="Prepare Now"
             buttontwo="Download"
           />
           <Card
             title={"Details of inward supplies of goods or services"}
-            subtitle={"GSTR1"}
+            subtitle={"VAT"}
             buttonone="View"
             buttontwo="Download"
           />

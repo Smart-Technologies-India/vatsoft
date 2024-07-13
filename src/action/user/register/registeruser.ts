@@ -1,6 +1,6 @@
 "use server";
 
-import { errorToString } from "@/utils/methods";
+import { decrypt, encrypt, errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import prisma from "../../../../prisma/database";
 import { user } from "@prisma/client";
@@ -32,14 +32,17 @@ const registerUser = async (
 ): Promise<ApiResponseType<user | null>> => {
   try {
     let data_to_update: any = {};
-    if (payload.firstName) data_to_update.firstName = payload.firstName;
-    if (payload.lastName) data_to_update.lastName = payload.lastName;
-    if (payload.mobileOne) data_to_update.mobileOne = payload.mobileOne;
-    if (payload.mobileTwo) data_to_update.mobileTwo = payload.mobileTwo;
-    if (payload.email) data_to_update.email = payload.email;
+    if (payload.firstName)
+      data_to_update.firstName = encrypt(payload.firstName);
+    if (payload.lastName) data_to_update.lastName = encrypt(payload.lastName);
+    if (payload.mobileOne)
+      data_to_update.mobileOne = encrypt(payload.mobileOne);
+    if (payload.mobileTwo)
+      data_to_update.mobileTwo = encrypt(payload.mobileTwo);
+    if (payload.email) data_to_update.email = encrypt(payload.email);
     if (payload.address) data_to_update.address = payload.address;
-    if (payload.aadhar) data_to_update.aadhar = payload.aadhar;
-    if (payload.pan) data_to_update.pan = payload.pan;
+    if (payload.aadhar) data_to_update.aadhar = encrypt(payload.aadhar);
+    if (payload.pan) data_to_update.pan = encrypt(payload.pan);
     if (payload.designation) data_to_update.designation = payload.designation;
     if (payload.isAuthorisedSignatory)
       data_to_update.isAuthorisedSignatory = payload.isAuthorisedSignatory;
@@ -47,20 +50,47 @@ const registerUser = async (
       data_to_update.signatoreUploadPath = payload.signatoreUploadPath;
     if (payload.gender) data_to_update = payload.gender;
     if (payload.dob) data_to_update = payload.dob;
-    if (payload.passportNumber) data_to_update = payload.passportNumber;
+    if (payload.passportNumber)
+      data_to_update = encrypt(payload.passportNumber);
     if (payload.buildingName) data_to_update = payload.buildingName;
     if (payload.area) data_to_update = payload.area;
     if (payload.city) data_to_update = payload.city;
     if (payload.pincode) data_to_update = payload.pincode;
 
-    if (payload.email) {
-      const isemailexist = await prisma.user.findFirst({
-        where: {
-          email: payload.email,
-        },
-      });
+    const usersresponse = await prisma.user.findMany({
+      where: { status: "ACTIVE", deletedAt: null },
+    });
 
-      if (isemailexist && isemailexist.id !== payload.id) {
+    if (!usersresponse) {
+      return {
+        status: false,
+        data: null,
+        message: "Unable to get users. Please try again.",
+        functionname: "Login",
+      };
+    }
+
+    if (payload.email) {
+      // const isemailexist = await prisma.user.findFirst({
+      //   where: {
+      //     email: payload.email,
+      //   },
+      // });
+
+      // if (isemailexist && isemailexist.id !== payload.id) {
+      //   return {
+      //     status: false,
+      //     data: null,
+      //     message: "Email already exist. Please try again.",
+      //     functionname: "registerUser",
+      //   };
+      // }
+
+      const users: user[] = usersresponse.filter(
+        (user: user) => decrypt(user.email ?? "") == payload.email
+      );
+
+      if (users.length > 0 && users[0].id !== payload.id) {
         return {
           status: false,
           data: null,
@@ -70,14 +100,29 @@ const registerUser = async (
       }
     }
 
-    if (payload.mobileOne) {
-      const iscontactoneexist = await prisma.user.findFirst({
-        where: {
-          mobileOne: payload.mobileOne,
-        },
-      });
+    // if (payload.mobileOne) {
+    //   const iscontactoneexist = await prisma.user.findFirst({
+    //     where: {
+    //       mobileOne: payload.mobileOne,
+    //     },
+    //   });
 
-      if (iscontactoneexist && iscontactoneexist.id !== payload.id) {
+    //   if (iscontactoneexist && iscontactoneexist.id !== payload.id) {
+    //     return {
+    //       status: false,
+    //       data: null,
+    //       message: "Contact number already exist. Please try again.",
+    //       functionname: "registerUser",
+    //     };
+    //   }
+    // }
+
+    if (payload.mobileOne) {
+      const users: user[] = usersresponse.filter(
+        (user: user) => decrypt(user.mobileOne) == payload.mobileOne
+      );
+
+      if (users.length > 0 && users[0].id !== payload.id) {
         return {
           status: false,
           data: null,
@@ -88,17 +133,45 @@ const registerUser = async (
     }
 
     if (payload.aadhar) {
-      const isAadharExist = await prisma.user.findFirst({
-        where: {
-          aadhar: payload.aadhar,
-        },
-      });
+      // const isAadharExist = await prisma.user.findFirst({
+      //   where: {
+      //     aadhar: payload.aadhar,
+      //   },
+      // });
 
-      if (isAadharExist && isAadharExist.id !== payload.id) {
+      // if (isAadharExist && isAadharExist.id !== payload.id) {
+      //   return {
+      //     status: false,
+      //     data: null,
+      //     message: "Aadhar number already exist. Please try again.",
+      //     functionname: "registerUser",
+      //   };
+      // }
+
+      const users: user[] = usersresponse.filter(
+        (user: user) => decrypt(user.aadhar ?? "") == payload.aadhar
+      );
+
+      if (users.length > 0 && users[0].id !== payload.id) {
         return {
           status: false,
           data: null,
           message: "Aadhar number already exist. Please try again.",
+          functionname: "registerUser",
+        };
+      }
+    }
+
+    if (payload.pan) {
+      const users: user[] = usersresponse.filter(
+        (user: user) => decrypt(user.pan ?? "") == payload.pan
+      );
+
+      if (users.length > 0 && users[0].id !== payload.id) {
+        return {
+          status: false,
+          data: null,
+          message: "Pan Card number already exist. Please try again.",
           functionname: "registerUser",
         };
       }

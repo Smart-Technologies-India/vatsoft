@@ -5,11 +5,11 @@ import SendOtp from "@/action/user/sendotp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { handleNumberChange } from "@/utils/methods";
+import { decrypt, encrypt, handleNumberChange } from "@/utils/methods";
 import { user } from "@prisma/client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 export default function Home() {
@@ -55,7 +55,7 @@ export default function Home() {
 
   const verifyOtp = async () => {
     setIsLogin(true);
-    const mobile = mobileNumber.current?.value;
+    const mobile = mobileNumber.current?.value!;
     const otp = otpRef.current?.value;
     const firstnameValue = otpresponse?.firstName ?? firstname.current?.value;
     const lastnameValue = otpresponse?.lastName ?? lastname.current?.value;
@@ -98,6 +98,7 @@ export default function Home() {
     router.push("/dashboard");
     setIsLogin(false);
   };
+
   return (
     <>
       <div className="p-10 rounded-md min-h-screen w-full bg-[#f5f6f8] flex">
@@ -140,7 +141,7 @@ export default function Home() {
                       <Input
                         id="mobile"
                         type="text"
-                        value={otpresponse?.mobileOne!}
+                        value={decrypt(otpresponse?.mobileOne!)}
                         ref={mobileNumber}
                         disabled
                         maxLength={10}
@@ -169,7 +170,7 @@ export default function Home() {
                           id="mobile"
                           type="text"
                           ref={mobileNumber}
-                          value={otpresponse?.mobileOne!}
+                          value={decrypt(otpresponse?.mobileOne!)}
                           maxLength={10}
                           disabled
                           onChange={handleNumberChange}

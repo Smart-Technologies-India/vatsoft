@@ -489,7 +489,7 @@ const ViewPage = () => {
 
         <div>
           <div className="bg-emerald-500 w-full mt-2 px-2 text-white flex gap-2 py-1">
-            <p>GSTR-1 Details of outward supplied of goods or services</p>
+            <p>VAT Details of outward supplied of goods or services</p>
             <div className="grow"></div>
             <button>
               <TablerRefresh />
@@ -531,7 +531,7 @@ const Card = () => {
   return (
     <div className=" p-2 bg-white rounded-md">
       <div className="text-white text-sm font-semibold text-center bg-[#162e57] p-2 rounded-md">
-        <p className="text-white text-xs font-semibold text-center">GSTR1</p>
+        <p className="text-white text-xs font-semibold text-center">VAT</p>
         <p>Details of outward supplies of goods or services</p>
       </div>
 

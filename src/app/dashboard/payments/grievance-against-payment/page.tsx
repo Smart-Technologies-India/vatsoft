@@ -27,7 +27,7 @@ const Grievance = () => {
           <div className="flex-1">
             <p className="text-sm font-normal">Grievance Type</p>
             <p className="text-sm font-medium">
-              Grievance Against Payment(GST PMT 07)
+              Grievance Against Payment(VAT)
             </p>
           </div>
           <div className="flex-1">

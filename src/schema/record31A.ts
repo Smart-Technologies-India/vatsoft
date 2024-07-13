@@ -33,10 +33,7 @@ const record31ASchema = object({
     minLength(1, "Total Invoice Amount is required."),
   ]),
   seller_tin_numberId: number([minValue(0, "Seller id is required.")]),
-  category_of_entry: enum_(
-    CategoryOfEntry,
-    "Category of entry is required."
-  ),
+  category_of_entry: enum_(CategoryOfEntry, "Category of entry is required."),
   sale_of_interstate: enum_(
     SaleOfInterstate,
     "Sale Of Inter-state is required."
@@ -44,6 +41,9 @@ const record31ASchema = object({
   place_of_supply: number([minValue(0, "Place of Supply is required.")]),
   tax_percent: string([minLength(1, "Tax Percent is required.")]),
   amount: string([minLength(1, "Amount is required.")]),
+  description_of_goods: string([
+    minLength(1, "Description of goods is required."),
+  ]),
   // remarks: string([minLength(1, "Remarks is required.")]),
   vatamount: string([minLength(1, "Vat Amount is required.")]),
   // status: enum_(Status, "File Status is required."),

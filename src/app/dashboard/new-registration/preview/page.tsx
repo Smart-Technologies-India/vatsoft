@@ -61,7 +61,7 @@ import {
 import GetAnx1User from "@/action/anx1/getanx1";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { handleNumberChange } from "@/utils/methods";
+import { decrypt, handleNumberChange } from "@/utils/methods";
 import { safeParse } from "valibot";
 import { UserDataSchema } from "@/schema/userdata";
 import { ApiResponseType } from "@/models/response";
@@ -209,20 +209,21 @@ const UserRegister = () => {
       if (user.status) {
         setTimeout(() => {
           if (firstnameRef.current)
-            firstnameRef.current!.value = user.data?.firstName ?? "";
+            firstnameRef.current!.value = decrypt(user.data?.firstName ?? "");
           if (lastnameRef.current)
-            lastnameRef.current!.value = user.data?.lastName ?? "";
+            lastnameRef.current!.value = decrypt(user.data?.lastName ?? "");
           if (addressRef.current)
             addressRef.current!.value = user.data?.address ?? "";
           if (emailRef.current)
-            emailRef.current!.value = user.data?.email ?? "";
+            emailRef.current!.value = decrypt(user.data?.email ?? "");
           if (mobileRef.current)
-            mobileRef.current!.value = user.data?.mobileOne ?? "";
+            mobileRef.current!.value = decrypt(user.data?.mobileOne ?? "");
           if (altMobileRef.current)
-            altMobileRef.current!.value = user.data?.mobileTwo ?? "";
-          if (panRef.current) panRef.current!.value = user.data?.pan ?? "";
+            altMobileRef.current!.value = decrypt(user.data?.mobileTwo ?? "");
+          if (panRef.current)
+            panRef.current!.value = decrypt(user.data?.pan ?? "");
           if (aadharRef.current)
-            aadharRef.current!.value = user.data?.aadhar ?? "";
+            aadharRef.current!.value = decrypt(user.data?.aadhar ?? "");
         }, 500);
       } else {
         toast.error(user.message);

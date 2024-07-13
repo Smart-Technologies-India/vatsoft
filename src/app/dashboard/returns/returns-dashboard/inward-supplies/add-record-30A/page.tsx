@@ -64,6 +64,7 @@ const AddRecord = () => {
   const [tax_percent, setTaxPercent] = useState<string | null>(null);
 
   const [vatAmount, setVatAmount] = useState<string>("");
+  const description_of_goods = useRef<InputRef>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -159,6 +160,7 @@ const AddRecord = () => {
       amount: amount.current?.input?.value,
       vatamount: vatAmount,
       purchase_type: purchase_type,
+      description_of_goods: description_of_goods.current?.input?.value,
     });
 
     if (result.success) {
@@ -183,6 +185,7 @@ const AddRecord = () => {
         tax_percent: result.output.tax_percent,
         amount: result.output.amount,
         vatamount: result.output.vatamount,
+        description_of_goods: result.output.description_of_goods,
         ...(remarks.current?.input?.value && {
           remarks: remarks.current?.input?.value,
         }),
@@ -263,8 +266,8 @@ const AddRecord = () => {
                 { value: "DEBIT_NOTE", label: "Debit Note" },
                 { value: "GOODS_RETURNED", label: "Goods Returned" },
                 { value: "CASH_MEMO", label: "Cash Memo" },
-                { value: "WORKS_CONTRACT", label: "Works Contract" },
                 { value: "FREIGHT_CHARGES", label: "Freight charges" },
+                { value: "SALE_CANCELLED", label: "Sale Cancelled" },
               ]}
             />
           </div>
@@ -398,13 +401,16 @@ const AddRecord = () => {
         <Table className="border mt-2">
           <TableHeader>
             <TableRow className="bg-gray-100">
-              <TableHead className="whitespace-nowrap border text-center p-1 h-8">
+              <TableHead className="whitespace-nowrap border text-center p-1 h-8 w-64">
                 Rate (%)
               </TableHead>
-              <TableHead className="whitespace-nowrap border text-center  w-60 p-1 h-8">
+              <TableHead className="whitespace-nowrap border text-center p-1 h-8  min-w-80">
+                Description of Goods
+              </TableHead>
+              <TableHead className="whitespace-nowrap border text-center  w-40 p-1 h-8">
                 Taxable value (&#x20b9;) <span className="text-red-500">*</span>
               </TableHead>
-              <TableHead className="whitespace-nowrap border text-center w-60 p-1 h-8">
+              <TableHead className="whitespace-nowrap border text-center w-40 p-1 h-8">
                 Vat Amount
               </TableHead>
             </TableRow>
@@ -424,6 +430,10 @@ const AddRecord = () => {
                     },
                     {
                       value: "1",
+                      label: "1%",
+                    },
+                    {
+                      value: "2",
                       label: "2%",
                     },
                     {
@@ -433,6 +443,10 @@ const AddRecord = () => {
                     {
                       value: "5",
                       label: "5%",
+                    },
+                    {
+                      value: "6",
+                      label: "6%",
                     },
                     {
                       value: "12.5",
@@ -460,10 +474,20 @@ const AddRecord = () => {
               <TableCell className="p-2 border text-center">
                 <Input
                   type="text"
+                  id="description_of_goods"
+                  name="description_of_goods"
+                  className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
+                  placeholder="Description of Goods"
+                  ref={description_of_goods}
+                />
+              </TableCell>
+              <TableCell className="p-2 border text-center">
+                <Input
+                  type="text"
                   id="invoicevaleu"
                   name="invoicevaleu"
                   className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-                  placeholder="Total invoice value"
+                  placeholder="Taxable value"
                   ref={amount}
                   onChange={handleAmountChange}
                 />

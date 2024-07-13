@@ -369,7 +369,7 @@ const Dvat2Page = () => {
                   Gender <span className="text-red-500">*</span>
                 </Label>
                 <RadioGroup
-                  defaultValue="exempt"
+                  defaultValue="FEAMLE"
                   className="flex gap-2 mt-2"
                   id="gender"
                   value={gender}
@@ -390,12 +390,12 @@ const Dvat2Page = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem
-                      value="FEMALE"
-                      id="FEMALE"
+                      value="FEAMLE"
+                      id="FEAMLE"
                       onClick={() => setGender(Gender.FEAMLE)}
                     />
                     <Label
-                      htmlFor="FEMALE"
+                      htmlFor="FEAMLE"
                       className="cursor-pointer  text-xs font-normal"
                       onClick={() => setGender(Gender.FEAMLE)}
                     >

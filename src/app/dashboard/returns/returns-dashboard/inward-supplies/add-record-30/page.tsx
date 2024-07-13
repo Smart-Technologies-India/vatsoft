@@ -18,10 +18,8 @@ import {
   InputTaxCredit,
   NaturePurchase,
   NaturePurchaseOption,
-  PurchaseType,
   Quarter,
   ReturnType,
-  state,
 } from "@prisma/client";
 import {
   Button,
@@ -63,6 +61,7 @@ const AddRecord = () => {
   const remarks = useRef<InputRef>(null);
   const [tax_percent, setTaxPercent] = useState<string | null>(null);
 
+  const description_of_goods = useRef<InputRef>(null);
   const [vatAmount, setVatAmount] = useState<string>("");
 
   useEffect(() => {
@@ -131,28 +130,6 @@ const AddRecord = () => {
 
   const addrecord = async () => {
     setIsSubmit(true);
-    console.log({
-      rr_number: "0",
-      return_type: ReturnType.ORIGNAL,
-      year: searchParams.get("year")?.toString(),
-      quarter: searchParams.get("quarter") as Quarter,
-      month: searchParams.get("month")?.toString(),
-      total_tax_amount: vatAmount,
-      dvat_type: DvatType.DVAT_30,
-      urn_number: "0",
-      invoice_number: invoice_numberRef.current?.input?.value,
-      total_invoice_number: invoice_valueRef.current?.input?.value,
-      invoice_date: invoice_date?.toISOString(),
-      seller_tin_numberId: tinId,
-      category_of_entry: category_of_entry,
-      input_tax_credit: input_tax_credit,
-      nature_purchase: nature_purchase,
-      nature_purchase_option: nature_purchase_option,
-      place_of_supply: 25,
-      tax_percent: tax_percent,
-      amount: amount.current?.input?.value,
-      vatamount: vatAmount,
-    });
 
     const result = safeParse(record30Schema, {
       rr_number: "0",
@@ -175,6 +152,7 @@ const AddRecord = () => {
       tax_percent: tax_percent,
       amount: amount.current?.input?.value,
       vatamount: vatAmount,
+      description_of_goods: description_of_goods.current?.input?.value,
     });
 
     if (result.success) {
@@ -200,6 +178,7 @@ const AddRecord = () => {
         tax_percent: result.output.tax_percent,
         amount: result.output.amount,
         vatamount: result.output.vatamount,
+        description_of_goods: result.output.description_of_goods,
         ...(remarks.current?.input?.value && {
           remarks: remarks.current?.input?.value,
         }),
@@ -279,8 +258,8 @@ const AddRecord = () => {
                 { value: "DEBIT_NOTE", label: "Debit Note" },
                 { value: "GOODS_RETURNED", label: "Goods Returned" },
                 { value: "CASH_MEMO", label: "Cash Memo" },
-                { value: "WORKS_CONTRACT", label: "Works Contract" },
                 { value: "FREIGHT_CHARGES", label: "Freight charges" },
+                { value: "SALE_CANCELLED", label: "Sale Cancelled" },
               ]}
             />
           </div>
@@ -372,6 +351,10 @@ const AddRecord = () => {
                   value: "UNREGISTER_DEALERS",
                   label: "Purchases from unregistered dealers",
                 },
+                {
+                  value: "REGISTER_DEALERS",
+                  label: "Purchases from registered dealers",
+                },
                 { value: "OTHER", label: "Any Other Purchases" },
                 { value: "UNITS", label: "Purchase from Exempted Untis" },
               ]}
@@ -396,13 +379,16 @@ const AddRecord = () => {
         <Table className="border mt-2">
           <TableHeader>
             <TableRow className="bg-gray-100">
-              <TableHead className="whitespace-nowrap border text-center p-1 h-8">
+              <TableHead className="whitespace-nowrap border text-center p-1 h-8 w-64">
                 Rate (%)
               </TableHead>
-              <TableHead className="whitespace-nowrap border text-center  w-60 p-1 h-8">
+              <TableHead className="whitespace-nowrap border text-center p-1 h-8  min-w-80">
+                Description of Goods
+              </TableHead>
+              <TableHead className="whitespace-nowrap border text-center  w-40 p-1 h-8">
                 Taxable value (&#x20b9;) <span className="text-red-500">*</span>
               </TableHead>
-              <TableHead className="whitespace-nowrap border text-center w-60 p-1 h-8">
+              <TableHead className="whitespace-nowrap border text-center w-40 p-1 h-8">
                 Vat Amount
               </TableHead>
             </TableRow>
@@ -422,6 +408,10 @@ const AddRecord = () => {
                     },
                     {
                       value: "1",
+                      label: "1%",
+                    },
+                    {
+                      value: "2",
                       label: "2%",
                     },
                     {
@@ -431,6 +421,10 @@ const AddRecord = () => {
                     {
                       value: "5",
                       label: "5%",
+                    },
+                    {
+                      value: "6",
+                      label: "6%",
                     },
                     {
                       value: "12.5",
@@ -458,10 +452,20 @@ const AddRecord = () => {
               <TableCell className="p-2 border text-center">
                 <Input
                   type="text"
+                  id="description_of_goods"
+                  name="description_of_goods"
+                  className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
+                  placeholder="Description of Goods"
+                  ref={description_of_goods}
+                />
+              </TableCell>
+              <TableCell className="p-2 border text-center">
+                <Input
+                  type="text"
                   id="invoicevaleu"
                   name="invoicevaleu"
                   className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-                  placeholder="Total invoice value"
+                  placeholder="Taxable value"
                   ref={amount}
                   onChange={handleAmountChange}
                 />

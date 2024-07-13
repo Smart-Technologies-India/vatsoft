@@ -1,7 +1,6 @@
 "use client";
 
 import { TablerRefresh } from "@/components/icons";
-
 import { RowData } from "@tanstack/react-table";
 import {
   Table,
@@ -12,6 +11,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useRouter, useSearchParams } from "next/navigation";
+import { DvatType, returns_01, returns_entry } from "@prisma/client";
+import { getCookie } from "cookies-next";
+import { useEffect, useState } from "react";
+import getPdfReturn from "@/action/return/getpdfreturn";
 
 declare module "@tanstack/react-table" {
   //allows us to define custom properties for our columns
@@ -23,7 +26,66 @@ declare module "@tanstack/react-table" {
 const InwardSupplies = () => {
   const route = useRouter();
 
+  const userid: number = parseInt(getCookie("id") ?? "0");
+
+  const [return01, setReturn01] = useState<returns_01 | null>();
+  const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
+
   const searchParams = useSearchParams();
+  useEffect(() => {
+    const init = async () => {
+      const year: string = searchParams.get("year") ?? "";
+      const month: string = searchParams.get("month") ?? "";
+
+      const returnformsresponse = await getPdfReturn({
+        year: year,
+        month: month,
+        userid: userid,
+      });
+
+      if (returnformsresponse.status && returnformsresponse.data) {
+        setReturn01(returnformsresponse.data.returns_01);
+        serReturns_entryData(returnformsresponse.data.returns_entry);
+      } else {
+        setReturn01(null);
+        serReturns_entryData([]);
+      }
+    };
+    init();
+  }, [searchParams, userid]);
+
+  interface DvatData {
+    entry: number;
+    amount: number;
+    tax: number;
+  }
+
+  const getDvatData = (dvatType: DvatType, percent: string): DvatData => {
+    let entry: number = 0;
+    let amount: string = "0";
+    let tax: string = "0";
+
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == dvatType && val.tax_percent == percent
+    );
+
+    for (let i = 0; i < output.length; i++) {
+      entry += 1;
+      amount = (
+        parseFloat(amount) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      tax = (parseFloat(tax) + parseFloat(output[i].vatamount ?? "0")).toFixed(
+        2
+      );
+    }
+
+    return {
+      entry,
+      amount: parseFloat(amount),
+      tax: parseFloat(tax),
+    };
+  };
 
   return (
     <>
@@ -55,18 +117,6 @@ const InwardSupplies = () => {
             </div>
           </div>
         </div>
-        {/* 
-        <div className="grid w-full grid-cols-4 gap-4 mt-4">
-          <CardTwo title="0% Tax Invoice" count={3} />
-          <CardTwo title="1% Tax Invoice" count={0} />
-          <CardTwo title="4% Tax Invoice" count={33} />
-          <CardTwo title="5% Tax Invoice" count={23} />
-          <CardTwo title="12.5% Tax Invoice" count={0} />
-          <CardTwo title="12.75% Tax Invoice" count={43} />
-          <CardTwo title="13.5% Tax Invoice" count={6} />
-          <CardTwo title="15% Tax Invoice" count={0} />
-          <CardTwo title="20% Tax Invoice" count={0} />
-        </div> */}
 
         <div className="bg-white p-2 shadow mt-2">
           <Table className="border mt-2">
@@ -87,94 +137,56 @@ const InwardSupplies = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell className="p-2 border text-center">
-                  0% Tax Invoice
-                </TableCell>
-                <TableCell className="p-2 border text-center">5</TableCell>
-                <TableCell className="p-2 border text-center">2,344</TableCell>
-                <TableCell className="p-2 border text-center">0</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="p-2 border text-center">
-                  1% Tax Invoice
-                </TableCell>
-                <TableCell className="p-2 border text-center">4</TableCell>
-                <TableCell className="p-2 border text-center">5,324</TableCell>
-                <TableCell className="p-2 border text-center">
-                  {((5324 * 1) / 100).toFixed(2)}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="p-2 border text-center">
-                  4% Tax Invoice
-                </TableCell>
-                <TableCell className="p-2 border text-center">3</TableCell>
-                <TableCell className="p-2 border text-center">6,234</TableCell>
-                <TableCell className="p-2 border text-center">
-                  {((5324 * 4) / 100).toFixed(2)}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="p-2 border text-center">
-                  5% Tax Invoice
-                </TableCell>
-                <TableCell className="p-2 border text-center">6</TableCell>
-                <TableCell className="p-2 border text-center">3,985</TableCell>
-                <TableCell className="p-2 border text-center">
-                  {((3985 * 5) / 100).toFixed(2)}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="p-2 border text-center">
-                  12.5% Tax Invoice
-                </TableCell>
-                <TableCell className="p-2 border text-center">6</TableCell>
-                <TableCell className="p-2 border text-center">7,234</TableCell>
-                <TableCell className="p-2 border text-center">
-                  {((7234 * 12.5) / 100).toFixed(2)}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="p-2 border text-center">
-                  12.75% Tax Invoice
-                </TableCell>
-                <TableCell className="p-2 border text-center">2</TableCell>
-                <TableCell className="p-2 border text-center">9,269</TableCell>
-                <TableCell className="p-2 border text-center">
-                  {((9269 * 12.75) / 100).toFixed(2)}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="p-2 border text-center">
-                  13.5% Tax Invoice
-                </TableCell>
-                <TableCell className="p-2 border text-center">6</TableCell>
-                <TableCell className="p-2 border text-center">3,295</TableCell>
-                <TableCell className="p-2 border text-center">
-                  {((3295 * 13.5) / 100).toFixed(2)}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="p-2 border text-center">
-                  15% Tax Invoice
-                </TableCell>
-                <TableCell className="p-2 border text-center">1</TableCell>
-                <TableCell className="p-2 border text-center">2,342</TableCell>
-                <TableCell className="p-2 border text-center">
-                  {((2342 * 15) / 100).toFixed(2)}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="p-2 border text-center">
-                  20% Tax Invoice
-                </TableCell>
-                <TableCell className="p-2 border text-center">6</TableCell>
-                <TableCell className="p-2 border text-center">8,274</TableCell>
-                <TableCell className="p-2 border text-center">
-                  {((8274 * 20) / 100).toFixed(2)}
-                </TableCell>
-              </TableRow>
+              {[
+                "0",
+                "1",
+                "2",
+                "4",
+                "6",
+                "12.5",
+                "12.75",
+                "13.5",
+                "15",
+                "20",
+              ].map((val: string, index: number) => {
+                return (
+                  <TableRow key={index}>
+                    <TableCell className="p-2 border text-center">
+                      {val}% Tax Invoice
+                    </TableCell>
+                    <TableCell className="p-2 border text-center">
+                      {
+                        getDvatData(
+                          searchParams.get("form") == "30"
+                            ? DvatType.DVAT_30
+                            : DvatType.DVAT_30_A,
+                          val
+                        ).entry
+                      }
+                    </TableCell>
+                    <TableCell className="p-2 border text-center">
+                      {
+                        getDvatData(
+                          searchParams.get("form") == "30"
+                            ? DvatType.DVAT_30
+                            : DvatType.DVAT_30_A,
+                          val
+                        ).amount
+                      }
+                    </TableCell>
+                    <TableCell className="p-2 border text-center">
+                      {
+                        getDvatData(
+                          searchParams.get("form") == "30"
+                            ? DvatType.DVAT_30
+                            : DvatType.DVAT_30_A,
+                          val
+                        ).tax
+                      }
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
           <div className="flex mt-2 gap-2">

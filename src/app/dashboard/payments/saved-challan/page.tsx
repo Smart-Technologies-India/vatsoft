@@ -103,7 +103,7 @@ const CreateChallan = () => {
             <TableBody>
               <TableRow>
                 <TableCell className="text-left p-2 border">
-                  CGST(0005)
+                  VAT(0005)
                 </TableCell>
                 <TableCell className="text-center p-2 border">
                   <Input></Input>
@@ -126,7 +126,7 @@ const CreateChallan = () => {
               </TableRow>
               <TableRow>
                 <TableCell className="text-left p-2 border">
-                  IGST(0008)
+                  Interest(0008)
                 </TableCell>
                 <TableCell className="text-center p-2 border">
                   <Input></Input>
@@ -171,10 +171,7 @@ const CreateChallan = () => {
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className="text-left p-2 border">
-                  Maharashtra
-                  <br /> SGST(006)
-                </TableCell>
+                <TableCell className="text-left p-2 border">Penalty</TableCell>
                 <TableCell className="text-center p-2 border">
                   <Input></Input>
                 </TableCell>
@@ -222,7 +219,7 @@ const CreateChallan = () => {
           <div className="mt-4"></div>
           <p className="text-xs">
             <span className="font-semibold">Note:</span>
-            For taxpayer filing GSTR-3B on quarterly basis:
+            For taxpayer filing VAT on quarterly basis:
           </p>
           <p className="text-xs mt-1">
             1. To make payment for the first (M1) and second (M2) months of the
@@ -233,10 +230,10 @@ const CreateChallan = () => {
           </p>
           <p className="text-xs mt-1">
             2. To make payment for the third month of the Quarter (M3), please
-            use &apos;Create Challan&apos; option in payment Table-6 of Form
-            GSTR-3B Quarterly. An auto- populated challan amounting to
-            liabilities for the quarter net off credit utilization and existing
-            cash balance can be generated and used to offset liabilities.
+            use &apos;Create Challan&apos; option in payment Table-6 of Form VAT
+            Quarterly. An auto- populated challan amounting to liabilities for
+            the quarter net off credit utilization and existing cash balance can
+            be generated and used to offset liabilities.
           </p>
         </div>
       </div>

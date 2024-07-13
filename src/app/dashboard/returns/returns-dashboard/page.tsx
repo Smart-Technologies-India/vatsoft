@@ -1,14 +1,17 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Marquee from "react-fast-marquee";
 // import { default as MulSelect } from "react-select";
 
 import { RowData } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { Select } from "antd";
-import { Quarter } from "@prisma/client";
+import { DvatType, Quarter, returns_01, returns_entry } from "@prisma/client";
+
+import { getCookie } from "cookies-next";
+import getPdfReturn from "@/action/return/getpdfreturn";
 
 declare module "@tanstack/react-table" {
   //allows us to define custom properties for our columns
@@ -22,7 +25,65 @@ const ReturnDashboard = () => {
   const [quarter, setQuarter] = useState<Quarter>(Quarter.QUATER1);
   const [period, setPeriod] = useState<string>("April");
 
+  const userid: number = parseInt(getCookie("id") ?? "0");
+
   const [isSearch, setSearch] = useState<boolean>(false);
+
+  const router = useRouter();
+
+  const [return01, setReturn01] = useState<returns_01 | null>();
+  const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
+    []
+  );
+
+  const search = async () => {
+    setSearch(true);
+
+    const returnformsresponse = await getPdfReturn({
+      year: year,
+      month: period,
+      userid: userid,
+    });
+
+    if (returnformsresponse.status && returnformsresponse.data) {
+      setReturn01(returnformsresponse.data.returns_01);
+      serReturns_entryData(returnformsresponse.data.returns_entry);
+    } else {
+      setReturn01(null);
+      serReturns_entryData([]);
+    }
+  };
+
+  interface DvatData {
+    entry: number;
+    amount: number;
+    tax: number;
+  }
+
+  const getDvatData = (dvatType: DvatType): DvatData => {
+    let entry: number = 0;
+    let amount: string = "0";
+    let tax: string = "0";
+
+    const output: returns_entry[] = returns_entryData.filter(
+      (val: returns_entry) => val.dvat_type == dvatType
+    );
+
+    for (let i = 0; i < output.length; i++) {
+      entry += 1;
+      amount = (
+        parseFloat(amount) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      tax = (parseFloat(tax) + parseFloat(output[i].vatamount ?? "0")).toFixed(
+        2
+      );
+    }
+    return {
+      entry,
+      amount: parseFloat(amount),
+      tax: parseFloat(tax),
+    };
+  };
 
   return (
     <>
@@ -208,7 +269,7 @@ const ReturnDashboard = () => {
             </div>
             <button
               className="bg-[#172e57] px-4  text-white py-1 rounded-md"
-              onClick={() => setSearch(true)}
+              onClick={search}
             >
               Search
             </button>
@@ -221,9 +282,9 @@ const ReturnDashboard = () => {
               subtitle={"Form 31"}
               buttonone="View"
               buttontwo="Add"
-              entry={23}
-              amount="3,23,533"
-              tax="3,234"
+              entry={getDvatData(DvatType.DVAT_31).entry}
+              amount={getDvatData(DvatType.DVAT_31).amount.toFixed(2)}
+              tax={getDvatData(DvatType.DVAT_31).tax.toFixed(2)}
               link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31&year=${year}&quarter=${quarter}&month=${period}`}
             />
             <Card
@@ -231,9 +292,9 @@ const ReturnDashboard = () => {
               subtitle={"Form 30"}
               buttonone="View"
               buttontwo="Add"
-              entry={3}
-              amount="23,533"
-              tax="1,234"
+              entry={getDvatData(DvatType.DVAT_30).entry}
+              amount={getDvatData(DvatType.DVAT_30).amount.toFixed(2)}
+              tax={getDvatData(DvatType.DVAT_30).tax.toFixed(2)}
               link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30&year=${year}&quarter=${quarter}&month=${period}`}
             />
             <Card
@@ -241,9 +302,9 @@ const ReturnDashboard = () => {
               subtitle={"Form 31-A"}
               buttonone="View"
               buttontwo="Add"
-              entry={32}
-              amount="4,23,533"
-              tax="3,232"
+              entry={getDvatData(DvatType.DVAT_31_A).entry}
+              amount={getDvatData(DvatType.DVAT_31_A).amount.toFixed(2)}
+              tax={getDvatData(DvatType.DVAT_31_A).tax.toFixed(2)}
               link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31A&year=${year}&quarter=${quarter}&month=${period}`}
             />
             <Card
@@ -251,9 +312,9 @@ const ReturnDashboard = () => {
               subtitle={"Form 30-A"}
               buttonone="View"
               buttontwo="Add"
-              entry={15}
-              amount="85,533"
-              tax="2,324"
+              entry={getDvatData(DvatType.DVAT_30_A).entry}
+              amount={getDvatData(DvatType.DVAT_30_A).amount.toFixed(2)}
+              tax={getDvatData(DvatType.DVAT_30_A).tax.toFixed(2)}
               link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30A&year=${year}&quarter=${quarter}&month=${period}`}
             />
           </div>
@@ -271,7 +332,14 @@ const ReturnDashboard = () => {
               <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
                 Save
               </button>
-              <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
+              <button
+                onClick={() => {
+                  router.push(
+                    `/dashboard/returns/returns-dashboard/preview?form=30A&year=${year}&quarter=${quarter}&month=${period}`
+                  );
+                }}
+                className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+              >
                 Preview
               </button>
               <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">

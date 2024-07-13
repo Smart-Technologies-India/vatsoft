@@ -1,6 +1,6 @@
 "use server";
 
-import { errorToString } from "@/utils/methods";
+import { encrypt, errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import { hash } from "bcrypt";
 import { Role, user } from "@prisma/client";
@@ -17,7 +17,7 @@ const createUser = async (
 ): Promise<ApiResponseType<user | null>> => {
   try {
     const user = await prisma.user.findFirst({
-      where: { mobileOne: payload.mobile, status: "ACTIVE" },
+      where: { mobileOne: encrypt(payload.mobile), status: "ACTIVE" },
     });
 
     if (user)
@@ -32,7 +32,7 @@ const createUser = async (
     const newpassword = await hash(payload.password, 10);
     const newUser = await prisma.user.create({
       data: {
-        mobileOne: payload.mobile,
+        mobileOne: encrypt(payload.mobile),
         password: newpassword,
         role: payload.role,
       },

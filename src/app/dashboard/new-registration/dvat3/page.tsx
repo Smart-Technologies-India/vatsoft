@@ -124,9 +124,7 @@ const Dvat3Page = () => {
       const dvatdata = await GetDvat({ userid: id });
 
       if (dvatdata.status) {
-        console.log(dvatdata.data);
         setTimeout(() => {
-          console.log(dvatdata.data?.transactionId);
           transactionIdRef.current!.value = dvatdata.data?.transactionId ?? "";
           securityDepositAmountRef.current!.value =
             dvatdata.data?.securityDepositAmount ?? "";

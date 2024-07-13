@@ -23,7 +23,7 @@ const ReturnTable = () => {
             <GgInfo className="text-xl cursor-pointer" />
             <p className="flex-1">
               Table 3.1(a), (b), and (e) are auto-drafted based on value proved
-              in GSTR-1. Whereas Table 3.1 (d) is auto-drafted based on GSTR-2B.
+              in VAT. Whereas Table 3.1 (d) is auto-drafted based on VAT.
             </p>
 
             <MaterialSymbolsClose className="text-xl cursor-pointer" />
@@ -124,7 +124,7 @@ const ReturnTable = () => {
               </TableRow>
               <TableRow>
                 <TableCell className="font-medium p-2 border">
-                  (e) Non-GST outward supplies
+                  (e) Non-VAT outward supplies
                 </TableCell>
                 <TableCell className="p-2 border">
                   <Input />
