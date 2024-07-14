@@ -22,7 +22,7 @@ interface PercentageOutput {
 }
 
 const Dvat16ReturnPreview = () => {
-  const userid: number = parseInt(getCookie("id") ?? "0");
+  const userid: number = parseFloat(getCookie("id") ?? "0");
 
   const [return01, setReturn01] = useState<returns_01 | null>();
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
@@ -52,7 +52,7 @@ const Dvat16ReturnPreview = () => {
   return (
     <>
       <section className="px-5">
-        <main className="bg-white mt-6 p-4 w-full">
+        <main className="bg-white mt-6 p-4 w-full xl:w-5/6 mx-auto">
           {/* page 1 start here */}
 
           {/* header 1 start from here */}
@@ -181,46 +181,7 @@ const Dvat16ReturnPreview = () => {
           {/* section 5 start here */}
           <R1TurnOverOfPurchase returnsentrys={returns_entryData ?? []} />
           {/* section 6 start here */}
-          <table border={1} className="w-5/6 mx-auto mt-4">
-            <tbody className="w-full">
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[80%]">
-                  R6.1 Net Tax (R4.10)-(R5.5)
-                </td>
-
-                <td className="border border-black px-2 leading-4 text-[0.6rem]  w-[20%]">
-                  0
-                </td>
-              </tr>
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                  R6.2 Add:Intrest,penalty or other government dues
-                </td>
-
-                <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                  0
-                </td>
-              </tr>
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                  R6.3 Less : Tax deducted at source
-                </td>
-
-                <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                  0
-                </td>
-              </tr>
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                  R7 Balance (R6.1+R6.2-R6.3)
-                </td>
-
-                <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                  0
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <NetTax returnsentrys={returns_entryData ?? []} />
           {/* section 7 start here */}
           <table border={1} className="w-5/6 mx-auto mt-4">
             <thead>
@@ -237,7 +198,7 @@ const Dvat16ReturnPreview = () => {
             <tbody className="w-full">
               <tr className="w-full">
                 <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  Balanace brought forward from line R7
+                  Balance brought forward from line R7
                 </td>
                 <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
                   0
@@ -276,7 +237,7 @@ const Dvat16ReturnPreview = () => {
             <tbody className="w-full">
               <tr className="w-full">
                 <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  Balanace brought forward from line R7
+                  Balance brought forward from line R7
                 </td>
                 <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
                   0
@@ -1004,10 +965,10 @@ const TurnOver = (props: TurnOverProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1027,10 +988,10 @@ const TurnOver = (props: TurnOverProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1050,10 +1011,10 @@ const TurnOver = (props: TurnOverProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1073,10 +1034,10 @@ const TurnOver = (props: TurnOverProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1096,10 +1057,10 @@ const TurnOver = (props: TurnOverProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1141,6 +1102,17 @@ const TurnOver = (props: TurnOverProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {getInvoicePercentage("1").decrease}
+          </td>
+        </tr>
+        <tr className="w-full">
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            R4.1 Goods taxable at 2%
+          </td>
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            {getInvoicePercentage("2").increase}
+          </td>
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            {getInvoicePercentage("2").decrease}
           </td>
         </tr>
         <tr className="w-full">
@@ -1296,19 +1268,21 @@ const TurnOver = (props: TurnOverProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {parseInt(getInvoicePercentage("0").decrease) +
-              parseInt(getInvoicePercentage("1").decrease) +
-              parseInt(getInvoicePercentage("4").decrease) +
-              parseInt(getInvoicePercentage("5").decrease) +
-              parseInt(getInvoicePercentage("6").decrease) +
-              parseInt(getInvoicePercentage("12.5").decrease) +
-              parseInt(getInvoicePercentage("15").decrease) +
-              parseInt(getInvoicePercentage("20").decrease) +
-              parseInt(getSaleOfPercentage("4").decrease) +
-              parseInt(getSaleOfPercentage("5").decrease) +
-              parseInt(getSaleOfPercentage("12.5").decrease) +
-              parseInt(get4_6().decrease) +
-              parseInt(get4_7().decrease)}
+            {(
+              parseFloat(getInvoicePercentage("0").decrease) +
+              parseFloat(getInvoicePercentage("1").decrease) +
+              parseFloat(getInvoicePercentage("4").decrease) +
+              parseFloat(getInvoicePercentage("5").decrease) +
+              parseFloat(getInvoicePercentage("6").decrease) +
+              parseFloat(getInvoicePercentage("12.5").decrease) +
+              parseFloat(getInvoicePercentage("15").decrease) +
+              parseFloat(getInvoicePercentage("20").decrease) +
+              parseFloat(getSaleOfPercentage("4").decrease) +
+              parseFloat(getSaleOfPercentage("5").decrease) +
+              parseFloat(getSaleOfPercentage("12.5").decrease) +
+              parseFloat(get4_6().decrease) +
+              parseFloat(get4_7().decrease)
+            ).toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -1321,7 +1295,7 @@ const TurnOver = (props: TurnOverProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get4_9().decrease}
+            -({get4_9().decrease})
           </td>
         </tr>
         <tr className="w-full">
@@ -1333,20 +1307,22 @@ const TurnOver = (props: TurnOverProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {parseInt(getInvoicePercentage("0").decrease) +
-              parseInt(getInvoicePercentage("1").decrease) +
-              parseInt(getInvoicePercentage("4").decrease) +
-              parseInt(getInvoicePercentage("5").decrease) +
-              parseInt(getInvoicePercentage("6").decrease) +
-              parseInt(getInvoicePercentage("12.5").decrease) +
-              parseInt(getInvoicePercentage("15").decrease) +
-              parseInt(getInvoicePercentage("20").decrease) +
-              parseInt(getSaleOfPercentage("4").decrease) +
-              parseInt(getSaleOfPercentage("5").decrease) +
-              parseInt(getSaleOfPercentage("12.5").decrease) +
-              parseInt(get4_6().decrease) +
-              parseInt(get4_7().decrease) -
-              parseInt(get4_9().decrease)}
+            {(
+              parseFloat(getInvoicePercentage("0").decrease) +
+              parseFloat(getInvoicePercentage("1").decrease) +
+              parseFloat(getInvoicePercentage("4").decrease) +
+              parseFloat(getInvoicePercentage("5").decrease) +
+              parseFloat(getInvoicePercentage("6").decrease) +
+              parseFloat(getInvoicePercentage("12.5").decrease) +
+              parseFloat(getInvoicePercentage("15").decrease) +
+              parseFloat(getInvoicePercentage("20").decrease) +
+              parseFloat(getSaleOfPercentage("4").decrease) +
+              parseFloat(getSaleOfPercentage("5").decrease) +
+              parseFloat(getSaleOfPercentage("12.5").decrease) +
+              parseFloat(get4_6().decrease) +
+              parseFloat(get4_7().decrease) -
+              parseFloat(get4_9().decrease)
+            ).toFixed(2)}
           </td>
         </tr>
       </tbody>
@@ -1370,10 +1346,10 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1392,10 +1368,10 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1529,8 +1505,10 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
             0
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {parseInt(getGoodsReturns().decrease) +
-              parseInt(getSaleCanceled().decrease)}
+            {(
+              parseFloat(getGoodsReturns().decrease) +
+              parseFloat(getSaleCanceled().decrease)
+            ).toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -1541,7 +1519,11 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
             S1.2 Total net Increase/(decrease)in Output Tax (A-B)
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {(
+              0 -
+              (parseFloat(getGoodsReturns().decrease) +
+                parseFloat(getSaleCanceled().decrease))
+            ).toFixed(2)}
           </td>
         </tr>
       </tbody>
@@ -1567,10 +1549,10 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1591,10 +1573,10 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1615,10 +1597,86 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const getCreditNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
+        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getDebitNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
+        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getGoodsReturnsNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
+        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1694,7 +1752,9 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {parseInt(get5_1().decrease) + parseInt(get5_2().decrease)}
+            {(
+              parseFloat(get5_1().decrease) + parseFloat(get5_2().decrease)
+            ).toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -1707,7 +1767,11 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {(
+              parseFloat(getCreditNote().decrease) -
+              parseFloat(getDebitNote().decrease) -
+              parseFloat(getGoodsReturnsNote().decrease)
+            ).toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -1719,7 +1783,13 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {(
+              parseFloat(get5_1().decrease) +
+              parseFloat(get5_2().decrease) +
+              (parseFloat(getCreditNote().decrease) -
+                parseFloat(getDebitNote().decrease) -
+                parseFloat(getGoodsReturnsNote().decrease))
+            ).toFixed(2)}
           </td>
         </tr>
       </tbody>
@@ -1746,10 +1816,10 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1771,10 +1841,10 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1796,10 +1866,10 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseInt(increase) + parseInt(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
-        parseInt(decrease) + parseInt(output[i].vatamount ?? "0")
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
       ).toFixed(2);
     }
     return {
@@ -1990,8 +2060,10 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
             {getCreditNote().decrease}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {parseInt(getDebitNote().decrease) +
-              parseInt(getGoodsReturnsNote().decrease)}
+            {(
+              parseFloat(getDebitNote().decrease) +
+              parseFloat(getGoodsReturnsNote().decrease)
+            ).toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -2002,9 +2074,11 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
             S2.2 Total net Increase/(decrease)in Output Tax (C-D)
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {parseInt(getCreditNote().decrease) -
-              parseInt(getDebitNote().decrease) -
-              parseInt(getGoodsReturnsNote().decrease)}
+            {(
+              parseFloat(getCreditNote().decrease) -
+              parseFloat(getDebitNote().decrease) -
+              parseFloat(getGoodsReturnsNote().decrease)
+            ).toFixed(2)}
           </td>
         </tr>
       </tbody>
@@ -2110,101 +2184,341 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
               </tr>
             );
           })}
-          <tr className="w-full">
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              1
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              2636061125
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              25/11/2016
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              HIRAL CHEMICALS
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              26500429100
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              COMPRESSOR OIL COMPRESIR OIL
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]"></td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              7760.00
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              970
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              12.50
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]"></td>
-          </tr>
-          <tr className="w-full">
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              2
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              2588
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              05/12/2016
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              ANNPURNA ELECTRICALS PVTLIMITE
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              26001000875
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              MCB BOX 4 WAY
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]"></td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              891.00
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              111
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              12.50
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]"></td>
-          </tr>
-          <tr className="w-full">
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              3
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              2603
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              07/12/2016
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              ANNPURNA ELECTRICALS PVTLIMITE
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              26001000875
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              MCB 16A 1 POLE
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]"></td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              7340.00
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              918
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]">
-              12.50
-            </td>
-            <td className="border border-black px-1 leading-4 text-[0.6rem]"></td>
-          </tr>
         </tbody>
       </table>
     </>
+  );
+};
+
+interface NetTaxProps {
+  returnsentrys: returns_entry[];
+}
+
+const NetTax = (props: NetTaxProps) => {
+  const getInvoicePercentage = (value: string): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE &&
+        val.tax_percent == value
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getSaleOfPercentage = (value: string): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of == SaleOf.WORKS_CONTRACT &&
+        val.tax_percent == value
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const get4_6 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const get4_7 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of == SaleOf.PROCESSED_GOODS
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const get4_9 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
+          val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
+        val.sale_of == SaleOf.GOODS_TAXABLE
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const get5_1 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const get5_2 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.nature_purchase == NaturePurchase.OTHER_GOODS &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const get5_3 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const getCreditNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
+        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getDebitNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
+        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getGoodsReturnsNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
+        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  return (
+    <table border={1} className="w-5/6 mx-auto mt-4">
+      <tbody className="w-full">
+        <tr className="w-full">
+          <td className="border border-black px-2 leading-4 text-[0.6rem] w-[80%]">
+            R6.1 Net Tax (R4.10)-(R5.6)
+          </td>
+
+          <td className="border border-black px-2 leading-4 text-[0.6rem] w-[20%]">
+            {(
+              parseFloat(getInvoicePercentage("0").decrease) +
+              parseFloat(getInvoicePercentage("1").decrease) +
+              parseFloat(getInvoicePercentage("4").decrease) +
+              parseFloat(getInvoicePercentage("5").decrease) +
+              parseFloat(getInvoicePercentage("6").decrease) +
+              parseFloat(getInvoicePercentage("12.5").decrease) +
+              parseFloat(getInvoicePercentage("15").decrease) +
+              parseFloat(getInvoicePercentage("20").decrease) +
+              parseFloat(getSaleOfPercentage("4").decrease) +
+              parseFloat(getSaleOfPercentage("5").decrease) +
+              parseFloat(getSaleOfPercentage("12.5").decrease) +
+              parseFloat(get4_6().decrease) +
+              parseFloat(get4_7().decrease) -
+              parseFloat(get4_9().decrease) -
+              (parseFloat(get5_1().decrease) +
+                parseFloat(get5_2().decrease) +
+                (parseFloat(getCreditNote().decrease) -
+                  parseFloat(getDebitNote().decrease) -
+                  parseFloat(getGoodsReturnsNote().decrease)))
+            ).toFixed(2)}
+          </td>
+        </tr>
+        <tr className="w-full">
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            R6.2 Add:Interest,penalty or other government dues
+          </td>
+
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            0
+          </td>
+        </tr>
+        <tr className="w-full">
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            R6.3 Less : Tax deducted at source
+          </td>
+
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            0
+          </td>
+        </tr>
+        <tr className="w-full">
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            R7 Balance (R6.1+R6.2-R6.3)
+          </td>
+
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            0
+          </td>
+        </tr>
+      </tbody>
+    </table>
   );
 };

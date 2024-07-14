@@ -5,7 +5,7 @@ import DashboardCards from "@/components/dashboard/cards/dashboardcard";
 const Page = () => {
   return (
     <>
-      <main className="bg-gradient-to-l py-4 mx-4 rounded-md mt-4">
+      <main className="bg-gradient-to-l py-4 px-4 rounded-md mt-4 w-full xl:w-5/6 xl:mx-auto">
         <div className=" grid grid-cols-3 justify-between items-center py-1  mx-auto gap-4">
           <DashboardCards
             title="News and Updates"

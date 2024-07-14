@@ -87,7 +87,7 @@ const ReturnDashboard = () => {
 
   return (
     <>
-      <main className="w-full p-4 relative h-full grow">
+      <main className="w-full p-4 relative h-full grow xl:w-5/6 xl:mx-auto">
         <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4">
           <h1>File Returns</h1>
           <Marquee className="bg-yellow-500 bg-opacity-10 mt-2 text-sm">

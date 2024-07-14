@@ -19,7 +19,7 @@ const Dvat3Schema = object({
   branchName: string([minLength(1, "Branch Name is required.")]),
   transactionId: string([minLength(1, "Transaction ID is required.")]),
   numberOfOwners: number([
-    minValue(1, "Number of person intrested in business is required."),
+    minValue(1, "Number of person interested in business is required."),
   ]),
   nmberOfManagers: number([minValue(1, "Number of Managers is required.")]),
   numberOfSignatory: number([minValue(1, "Number of Signatory is required.")]),
