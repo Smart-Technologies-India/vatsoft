@@ -12,6 +12,7 @@ import { DvatType, Quarter, returns_01, returns_entry } from "@prisma/client";
 
 import { getCookie } from "cookies-next";
 import getPdfReturn from "@/action/return/getpdfreturn";
+import { setMonth } from "date-fns";
 
 declare module "@tanstack/react-table" {
   //allows us to define custom properties for our columns
@@ -21,9 +22,9 @@ declare module "@tanstack/react-table" {
 }
 
 const ReturnDashboard = () => {
-  const [year, setYear] = useState<string>("2024");
-  const [quarter, setQuarter] = useState<Quarter>(Quarter.QUATER1);
-  const [period, setPeriod] = useState<string>("April");
+  const [year, setYear] = useState<string>();
+  const [quarter, setQuarter] = useState<Quarter>(Quarter.QUARTER1);
+  const [period, setPeriod] = useState<string>();
 
   const userid: number = parseInt(getCookie("id") ?? "0");
 
@@ -36,9 +37,12 @@ const ReturnDashboard = () => {
     []
   );
 
+  const [dateValue, setDateValue] = useState<Date>();
+
   const search = async () => {
     setSearch(true);
 
+    if (!year || !period) return;
     const returnformsresponse = await getPdfReturn({
       year: year,
       month: period,
@@ -85,6 +89,156 @@ const ReturnDashboard = () => {
     };
   };
 
+  useEffect(() => {
+    const currentDate: Date = new Date();
+    setDateValue(currentDate);
+    setYear(currentDate.getFullYear().toString());
+    setPeriod("April");
+  }, []);
+
+  interface PeriodValue {
+    value: string;
+    label: string;
+  }
+
+  const getYearList = (): PeriodValue[] => {
+    if (!dateValue) return [];
+
+    const year: number = dateValue.getFullYear();
+    const month: number = dateValue.getMonth();
+    const day: number = dateValue.getDate();
+
+    const startYear = month >= 2 && day >= 1 ? year : year - 1;
+
+    const numberOfYears = 8;
+    const periodValues: PeriodValue[] = [];
+
+    for (let i = 0; i < numberOfYears; i++) {
+      const currentYear = startYear - i;
+      periodValues.push({
+        value: currentYear.toString(),
+        label: `${currentYear}-${(currentYear + 1).toString().slice(-2)}`,
+      });
+    }
+
+    return periodValues;
+  };
+
+  const getQuarterList = (): PeriodValue[] => {
+    if (!dateValue) return [];
+
+    const currentYear: number = dateValue.getFullYear();
+    const month: number = dateValue.getMonth();
+
+    const quarters: PeriodValue[] = [
+      { value: "QUARTER1", label: "Quarter 1 [Apr - Jun]" },
+      { value: "QUARTER2", label: "Quarter 2 [Jul - Sep]" },
+      { value: "QUARTER3", label: "Quarter 3 [Oct - Dec]" },
+      { value: "QUARTER4", label: "Quarter 4 [Jan - Mar]" },
+    ];
+
+    let startQuarterIndex: number = 1;
+
+    // jan = 0
+    // fab = 1
+    // mar = 2
+    // apr = 3
+    // may = 4
+    // jun = 5
+    // jul = 6
+    // aug = 7
+    // sep = 8
+    // oct = 9
+    // nov = 10
+    // dec = 11
+
+    if (parseInt(year ?? "0") != currentYear) {
+      startQuarterIndex = 4;
+    } else {
+      if (month >= 6 && month <= 8) {
+        // July to September
+        startQuarterIndex = 2; // Quarter 2
+      } else if (month >= 9 && month <= 11) {
+        // October to December
+        startQuarterIndex = 3; // Quarter 3
+      } else if (month >= 0 && month <= 2) {
+        // January to March
+        startQuarterIndex = 4; // Quarter 4
+      }
+    }
+
+    const resultQuarters: PeriodValue[] = [];
+
+    for (let i = 0; i < startQuarterIndex; i++) {
+      resultQuarters.push(quarters[i]);
+    }
+
+    return resultQuarters;
+  };
+
+  const getPeriodList = (): PeriodValue[] => {
+    if (!dateValue) return [];
+    const currentYear: number = dateValue.getFullYear();
+    const month: number = dateValue.getMonth();
+
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const periods: PeriodValue[] = [];
+
+    let startMonth: number;
+
+    switch (quarter) {
+      case Quarter.QUARTER1:
+        startMonth = 3; // April
+        break;
+      case Quarter.QUARTER2:
+        startMonth = 6; // July
+        break;
+      case Quarter.QUARTER3:
+        startMonth = 9; // October
+        break;
+      case Quarter.QUARTER4:
+        startMonth = 0; // January
+        break;
+      default:
+        return [];
+    }
+
+    for (let i = 0; i < 3; i++) {
+      const periodMonth = (startMonth + i) % 12;
+      const periodName = monthNames[periodMonth];
+
+      if (parseInt(year ?? "0") != currentYear) {
+        periods.push({
+          value: periodName,
+          label: periodName,
+        });
+      } else {
+        if (month + 1 >= periodMonth) {
+          periods.push({
+            value: periodName,
+            label: periodName,
+          });
+        }
+      }
+    }
+
+    return periods;
+  };
+
   return (
     <>
       <main className="w-full p-4 relative h-full grow xl:w-5/6 xl:mx-auto">
@@ -102,44 +256,11 @@ const ReturnDashboard = () => {
               <Select
                 value={year}
                 placeholder="Select a year"
-                options={[
-                  {
-                    value: "2024",
-                    label: "2024-25",
-                  },
-                  {
-                    value: "2023",
-                    label: "2023-24",
-                  },
-                  {
-                    value: "2022",
-                    label: "2022-23",
-                  },
-                  {
-                    value: "2021",
-                    label: "2021-22",
-                  },
-                  {
-                    value: "2020",
-                    label: "2020-21",
-                  },
-                  {
-                    value: "2019",
-                    label: "2019-20",
-                  },
-                  {
-                    value: "2018",
-                    label: "2018-19",
-                  },
-                  {
-                    value: "2017",
-                    label: "2017-18",
-                  },
-                ]}
+                options={getYearList()}
                 onChange={(val: string) => {
                   if (!val) return;
                   setYear(val.toString());
-                  setQuarter(Quarter.QUATER1);
+                  setQuarter(Quarter.QUARTER1);
                   setPeriod("April");
                 }}
               />
@@ -152,39 +273,22 @@ const ReturnDashboard = () => {
               <Select
                 value={quarter}
                 placeholder="Select quarter"
-                options={[
-                  {
-                    value: "QUATER1",
-                    label: "Quarter 1 [Apr - Jun]",
-                  },
-                  {
-                    value: "QUATER2",
-                    label: "Quarter 2 [Jul - Sep]",
-                  },
-                  {
-                    value: "QUATER3",
-                    label: "Quarter 3 [Oct - Dec]",
-                  },
-                  {
-                    value: "QUATER4",
-                    label: "Quarter 4 [Jan - Mar]",
-                  },
-                ]}
+                options={getQuarterList()}
                 onChange={(val: Quarter) => {
                   if (!val) return;
                   setQuarter(val);
 
                   switch (val.toString()) {
-                    case Quarter.QUATER1:
+                    case Quarter.QUARTER1:
                       setPeriod("April");
                       break;
-                    case Quarter.QUATER2:
+                    case Quarter.QUARTER2:
                       setPeriod("July");
                       break;
-                    case Quarter.QUATER3:
+                    case Quarter.QUARTER3:
                       setPeriod("October");
                       break;
-                    case Quarter.QUATER4:
+                    case Quarter.QUARTER4:
                       setPeriod("January");
                       break;
                     default:
@@ -200,67 +304,7 @@ const ReturnDashboard = () => {
               <Select
                 value={period}
                 placeholder="Select Period"
-                options={
-                  quarter == Quarter.QUATER1
-                    ? [
-                        {
-                          value: "April",
-                          label: "April",
-                        },
-                        {
-                          value: "May",
-                          label: "May",
-                        },
-                        {
-                          value: "June",
-                          label: "June",
-                        },
-                      ]
-                    : quarter == Quarter.QUATER2
-                    ? [
-                        {
-                          value: "July",
-                          label: "July",
-                        },
-                        {
-                          value: "Augest",
-                          label: "Augest",
-                        },
-                        {
-                          value: "September",
-                          label: "September",
-                        },
-                      ]
-                    : quarter == Quarter.QUATER3
-                    ? [
-                        {
-                          value: "October",
-                          label: "October",
-                        },
-                        {
-                          value: "November",
-                          label: "November",
-                        },
-                        {
-                          value: "December",
-                          label: "December",
-                        },
-                      ]
-                    : [
-                        {
-                          value: "January",
-                          label: "January",
-                        },
-                        {
-                          value: "February",
-                          label: "February",
-                        },
-                        {
-                          value: "March",
-                          label: "March",
-                        },
-                      ]
-                }
+                options={getPeriodList()}
                 onChange={(val: string) => {
                   if (!val) return;
                   setPeriod(val.toString());

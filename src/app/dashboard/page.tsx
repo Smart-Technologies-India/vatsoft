@@ -8,6 +8,7 @@ import {
   FluentWalletCreditCard20Regular,
   LucideArrowRight,
 } from "@/components/icons";
+import { decrypt } from "@/utils/methods";
 
 enum FileStatus {
   FILED,
@@ -35,7 +36,7 @@ const Page = () => {
     <>
       <main className="relative min-h-[calc(100vh-2.5rem)] ">
         <div className="pb-10 relative">
-          <div className="bg-black bg-opacity-10 w-full h-full absolute top-0 left-0 z-40 mt-2 bg-clip-padding backdrop-filter backdrop-blur-sm grid place-items-center">
+          {/* <div className="bg-black bg-opacity-10 w-full h-full absolute top-0 left-0 z-40 mt-2 bg-clip-padding backdrop-filter backdrop-blur-sm grid place-items-center">
             <div className="rounded border bg-white mb-2 w-80 p-2">
               <h1 className="text-lg font-medium text-black">Warning</h1>
               <div className="bg-rose-500 w-full h-[1px] bg-opacity-30 my-1"></div>
@@ -47,11 +48,12 @@ const Page = () => {
                 Complete profile
               </button>
             </div>
-          </div>
+          </div> */}
           <div className="mx-auto px-4  w-4/6 py-6 relative">
             <div className="bg-white p-4 rounded-xl">
               <h1 className="text-sm font-semibold font-nunito leading-3">
-                Welcome {user?.firstName} {user?.lastName} To VATSOFT Portal
+                Welcome {decrypt(user?.firstName ?? "")}{" "}
+                {decrypt(user?.lastName ?? "")} To VATSOFT Portal
               </h1>
               <h1 className="text-xs leading-3 text-gray-500 mt-1">
                 Returns Calender (Last 6 return periods)
@@ -61,10 +63,10 @@ const Page = () => {
             {/* second section start from here */}
             <div className="w-full mt-2">
               <div className="flex w-full gap-2">
-                <div className="flex-1 bg-white p-2 rounded-xl">
+                <div className="flex-1 rounded-xl">
                   <div className="flex items-center px-4">
                     <div className="text-sm font-semibold font-nunito leading-3 py-1 w-full text-gray-500  rounded-xl">
-                     VAT
+                      VAT
                     </div>
                     <div className="glow"></div>
                     <LucideArrowRight className="text-xl text-blue-500" />
@@ -113,10 +115,10 @@ const Page = () => {
                   />
                 </div>
 
-                <div className="flex-1 bg-white p-2 rounded-xl">
+                {/* <div className="flex-1 bg-white p-2 rounded-xl">
                   <div className="flex items-center px-4">
                     <div className="text-sm font-semibold font-nunito leading-3 py-1 w-full text-gray-500  rounded-xl">
-                     VAT
+                      VAT
                     </div>
                     <div className="glow"></div>
                     <LucideArrowRight className="text-xl text-blue-500" />
@@ -163,7 +165,7 @@ const Page = () => {
                     statusdate="To be Filed"
                     filestatus={FileStatus.NOTFILED}
                   />
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -213,34 +215,40 @@ interface RentCardProps {
 
 const RentCard = (props: RentCardProps) => {
   return (
-    <div className="flex w-full my-3 items-center gap-2">
-      {props.filestatus == FileStatus.FILED ? (
-        <>
-          <div className="leading-3 w-8 h-8 rounded-full bg-teal-500 bg-opacity-30 text-teal-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
-            03
-            <br />
-            24
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="leading-3 w-8 h-8 rounded-full bg-rose-500 bg-opacity-30 text-rose-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
-            03
-            <br />
-            24
-          </div>
-        </>
-      )}
+    <div className="flex w-full my-2 px-3 py-1 rounded-md items-center gap-2 bg-white justify-between ">
+      <div className="flex gap-2 items-center">
+        <div
+          className={`h-10 w-1 rounded-sm ${
+            props.filestatus == FileStatus.FILED ? "bg-teal-500" : "bg-rose-500"
+          }`}
+        ></div>
 
-      <div className="flex-1">
+        {props.filestatus == FileStatus.FILED ? (
+          <>
+            <div className="leading-3 w-8 h-8 rounded-full bg-teal-500 bg-opacity-30 text-teal-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
+              03
+              <br />
+              24
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="leading-3 w-8 h-8 rounded-full bg-rose-500 bg-opacity-30 text-rose-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
+              03
+              <br />
+              24
+            </div>
+          </>
+        )}
         <h1 className="text-xs font-semibold font-nunito leading-3">
           {props.title}
         </h1>
-        <p className="text-xs font-normal text-gray-600 font-nunito leading-3 mt-1">
-          {props.status}
-        </p>
       </div>
-      <div className="flex-1">
+
+      <p className="text-xs font-normal text-gray-600 font-nunito leading-3 mt-1">
+        {props.status}
+      </p>
+      <div className="">
         <h1 className="text-xs font-semibold font-nunito leading-3">
           {props.statusdate}
         </h1>

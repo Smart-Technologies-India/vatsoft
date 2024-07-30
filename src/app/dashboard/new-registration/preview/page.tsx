@@ -59,27 +59,24 @@ import {
 } from "@/components/ui/table";
 
 import GetAnx1User from "@/action/anx1/getanx1";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { decrypt, handleNumberChange } from "@/utils/methods";
-import { safeParse } from "valibot";
-import { UserDataSchema } from "@/schema/userdata";
-import { ApiResponseType } from "@/models/response";
 import { Checkbox } from "@/components/ui/checkbox";
 import GetAnx1ById from "@/action/anx1/getanxbyid";
-import { Anx1Schema } from "@/schema/anx1";
 import GetDvat from "@/action/user/register/getdvat";
 import { CommodityData } from "@/models/main";
-import { Dvat2Schema } from "@/schema/dvat2";
-import Dvat2Update from "@/action/user/register/dvat2";
 import GetAllCommodity from "@/action/commodity/getcommodity";
-import { Dvat3Schema } from "@/schema/dvat3";
-import Anx1Update from "@/action/anx1/updateauth";
 import GetAnx2User from "@/action/anx2/getanx2";
 import GetAnx2ById from "@/action/anx2/getanxbyid";
+import { Modal } from "antd";
+import { customAlphabet } from "nanoid";
+import AddTempRegNo from "@/action/user/register/addtempregno";
+import UserToDvat04 from "@/action/user/register/usertodvat04";
+const nanoid = customAlphabet("1234567890", 12);
 
 const PreviewPage = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
+  const tempregno: string = nanoid();
 
   const router = useRouter();
 
@@ -100,6 +97,8 @@ const PreviewPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [Annexuredata, setAnnexuredata] = useState<annexure1[]>([]);
+
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -172,7 +171,10 @@ const PreviewPage = () => {
 
             {pageIndex == 7 && (
               <Button
-                onClick={() => router.push("/dashboard")}
+                onClick={async () => {
+                  setOpen(true);
+                }}
+                // onClick={() => router.push("/dashboard")}
                 className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
               >
                 Finish
@@ -181,6 +183,29 @@ const PreviewPage = () => {
           </div>
         </div>
       </main>
+      <Modal
+        title="Registration Number"
+        open={open}
+        onOk={async () => {
+          setOpen(false);
+          const dvat04 = await UserToDvat04({ userid: id });
+
+          if (!dvat04.status && !dvat04.data)
+            return toast.error(dvat04.message);
+
+          const response = await AddTempRegNo({
+            tempregno: tempregno,
+            id: dvat04.data?.id ?? 0,
+          });
+          if (!response.status && !response.data)
+            return toast.error(response.message);
+
+          return router.push("/dashboard");
+        }}
+        onCancel={() => setOpen(false)}
+      >
+        <p>Your temporary registration number is: {tempregno}</p>
+      </Modal>
     </>
   );
 };

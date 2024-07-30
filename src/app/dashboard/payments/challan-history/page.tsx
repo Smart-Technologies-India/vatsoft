@@ -111,10 +111,10 @@ const ChallanHistory = () => {
                   Expire Date
                 </TableHead>
                 <TableHead className="whitespace-nowrap text-center  px-2">
-                  Desposit Date
+                  Deposit Date
                 </TableHead>
                 <TableHead className="whitespace-nowrap text-center  px-2">
-                  Desposit Status
+                  Deposit Status
                 </TableHead>
               </TableRow>
             </TableHeader>

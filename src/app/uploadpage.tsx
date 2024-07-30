@@ -32,7 +32,6 @@ export default function Home() {
 
     // const response = await fetch("/api/upload/", requestOptions);
     // const result = await response.text();
-    // console.log(result);
   };
   return (
     <>

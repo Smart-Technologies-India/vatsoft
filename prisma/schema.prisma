@@ -202,10 +202,10 @@ enum PurchaseType {
 }
 
 enum Quarter {
-  QUATER1
-  QUATER2
-  QUATER3
-  QUATER4
+  QUARTER1
+  QUARTER2
+  QUARTER3
+  QUARTER4
 }
 
 model user {
@@ -354,6 +354,8 @@ model dvat04 {
   id             Int          @id @default(autoincrement())
   registration   registration @relation(fields: [registrationId], references: [id])
   registrationId Int
+
+  tempregistrationnumber String?
 
   // form 1
   name                         String
@@ -597,7 +599,7 @@ model returns_01 {
   rr_number        String
   return_type      ReturnType @default(ORIGNAL)
   year             String
-  quarter          Quarter    @default(QUATER1)
+  quarter          Quarter    @default(QUARTER1)
   month            String?
   dvat04           dvat04     @relation(fields: [dvat04Id], references: [id])
   dvat04Id         Int

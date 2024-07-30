@@ -3,7 +3,12 @@
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import prisma from "../../../prisma/database";
-import { returns_01, returns_entry } from "@prisma/client";
+import {
+  dvat04,
+  registration,
+  returns_01,
+  returns_entry,
+} from "@prisma/client";
 
 interface getPdfReturnPayload {
   userid: number;
@@ -16,7 +21,9 @@ const getPdfReturn = async (
 ): Promise<
   ApiResponseType<{
     returns_entry: returns_entry[];
-    returns_01: returns_01;
+    returns_01: returns_01 & {
+      dvat04: dvat04 & { registration: registration };
+    };
   } | null>
 > => {
   try {
