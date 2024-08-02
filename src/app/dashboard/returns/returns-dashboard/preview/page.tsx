@@ -87,7 +87,6 @@ const Dvat16ReturnPreview = () => {
     control,
     formState: { errors, isSubmitting },
     reset,
-    getValues,
   } = useForm<SubmitPaymentForm>({
     resolver: valibotResolver(SubmitPaymentSchema),
   });
