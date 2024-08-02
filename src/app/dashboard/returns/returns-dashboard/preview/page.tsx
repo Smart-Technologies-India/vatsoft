@@ -127,7 +127,9 @@ const Dvat16ReturnPreview = () => {
               type="text"
             />
             {errors.bank_name && (
-              <p className="text-xs text-red-500">{errors.bank_name.message}</p>
+              <p className="text-xs text-red-500">
+                {errors.bank_name.message?.toString()}
+              </p>
             )}
           </div>
           <div className="mt-2">
@@ -143,7 +145,7 @@ const Dvat16ReturnPreview = () => {
             />
             {errors.transaction_id && (
               <p className="text-xs text-red-500">
-                {errors.transaction_id.message}
+                {errors.transaction_id.message?.toString()}
               </p>
             )}
           </div>
@@ -157,7 +159,9 @@ const Dvat16ReturnPreview = () => {
               {...register("track_id")}
             />
             {errors.track_id && (
-              <p className="text-xs text-red-500">{errors.track_id.message}</p>
+              <p className="text-xs text-red-500">
+                {errors.track_id.message?.toString()}
+              </p>
             )}
           </div>
           <div className="flex  gap-2 mt-2">
