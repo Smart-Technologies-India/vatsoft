@@ -16,8 +16,6 @@ import { record30ASchema } from "@/schema/record30A";
 import {
   CategoryOfEntry,
   DvatType,
-  InputTaxCredit,
-  NaturePurchase,
   PurchaseType,
   Quarter,
   ReturnType,
@@ -55,7 +53,6 @@ const AddRecord = () => {
   const [invoice_date, setInvoiceDate] = useState<Date>();
   const invoice_valueRef = useRef<InputRef>(null);
 
-  const [input_tax_credit, setInputTaxCredit] = useState<InputTaxCredit>();
   const [purchase_type, setPurchaseType] = useState<PurchaseType>();
 
   const [place_of_supply, SetPlaceOfSupply] = useState<number>();
@@ -152,7 +149,6 @@ const AddRecord = () => {
       invoice_number: invoice_numberRef.current?.input?.value,
       total_invoice_number: invoice_numberRef.current?.input?.value,
       invoice_date: invoice_date?.toISOString(),
-      input_tax_credit: input_tax_credit,
       seller_tin_numberId: tinId,
       category_of_entry: category_of_entry,
       place_of_supply: place_of_supply,
@@ -177,7 +173,6 @@ const AddRecord = () => {
         invoice_number: result.output.invoice_number,
         total_invoice_number: result.output.total_invoice_number,
         invoice_date: new Date(result.output.invoice_date),
-        input_tax_credit: result.output.input_tax_credit,
         purchase_type: result.output.purchase_type,
         seller_tin_numberId: result.output.seller_tin_numberId,
         category_of_entry: result.output.category_of_entry,
@@ -364,25 +359,6 @@ const AddRecord = () => {
             />
           </div>
         </div>
-
-        <Radio.Group
-          onChange={(e: RadioChangeEvent) => setInputTaxCredit(e.target.value)}
-          value={input_tax_credit}
-          className="mt-2"
-        >
-          <Radio value={InputTaxCredit.ITC_NOT_ELIGIBLE} className="text-xs">
-            Purchase not eligible for credit of input tax
-          </Radio>
-          <Radio value={InputTaxCredit.ITC_ELIGIBLE} className="text-xs">
-            Purchase eligible for credit of input tax
-          </Radio>
-          <Radio value={InputTaxCredit.OTHER} className="text-xs">
-            Any Other Purchase
-          </Radio>
-          <Radio value={InputTaxCredit.PURCHASE_TAXABLE} className="text-xs">
-            Purchase Taxable At Concessional Rate
-          </Radio>
-        </Radio.Group>
 
         <div>
           <Label htmlFor="remark" className="text-sm font-normal mt-2">

@@ -1,7 +1,11 @@
 "use client";
-
 import getPdfReturn from "@/action/return/getpdfreturn";
-import { formateDate } from "@/utils/methods";
+import {
+  formatDateTime,
+  formateDate,
+  getPrismaDatabaseDate,
+} from "@/utils/methods";
+import { DevTool } from "@hookform/devtools";
 import {
   CategoryOfEntry,
   dvat04,
@@ -18,6 +22,18 @@ import {
 import { getCookie } from "cookies-next";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { valibotResolver } from "@hookform/resolvers/valibot";
+
+import { Modal } from "antd";
+
+import { useForm, FieldErrors } from "react-hook-form";
+import {
+  SubmitPaymentForm,
+  SubmitPaymentSchema,
+} from "@/schema/subtmitpayment";
+import AddPayment from "@/action/return/addpayment";
+import { toast } from "react-toastify";
+import CheckPayment from "@/action/return/checkpayment";
 
 interface PercentageOutput {
   increase: string;
@@ -31,6 +47,8 @@ const Dvat16ReturnPreview = () => {
     (returns_01 & { dvat04: dvat04 & { registration: registration } }) | null
   >();
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
+  const [paymentbox, setPaymentBox] = useState<boolean>(false);
+  const [payment, setPayment] = useState<boolean>(false);
 
   const searchparam = useSearchParams();
   useEffect(() => {
@@ -47,6 +65,13 @@ const Dvat16ReturnPreview = () => {
       if (returnformsresponse.status && returnformsresponse.data) {
         setReturn01(returnformsresponse.data.returns_01);
         serReturns_entryData(returnformsresponse.data.returns_entry);
+
+        const payment_response = await CheckPayment({
+          id: returnformsresponse.data.returns_01.id ?? 0,
+        });
+        if (payment_response.status && payment_response.data) {
+          setPayment(payment_response.data);
+        }
       } else {
         setReturn01(null);
         serReturns_entryData([]);
@@ -54,9 +79,106 @@ const Dvat16ReturnPreview = () => {
     };
     init();
   }, [searchparam, userid]);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    formState: { errors, isSubmitting },
+    reset,
+    getValues,
+  } = useForm<SubmitPaymentForm>({
+    resolver: valibotResolver(SubmitPaymentSchema),
+  });
+
+  const onSubmit = async (data: SubmitPaymentForm) => {
+    if (return01 == null) return toast.error("There is not return from here");
+    const response = await AddPayment({
+      id: return01.id ?? 0,
+      bank_name: data.bank_name,
+      track_id: data.track_id,
+      transaction_id: data.transaction_id,
+    });
+
+    if (!response.status) return toast.error(response.message);
+
+    toast.success(response.message);
+    reset();
+    setPaymentBox(false);
+  };
+
+  const onError = (error: FieldErrors<SubmitPaymentForm>) => {
+    console.log(error);
+  };
+
   return (
     <>
-      <section className="px-5">
+      <DevTool control={control} />
+      <Modal title="Payment" open={paymentbox} footer={null}>
+        <form onSubmit={handleSubmit(onSubmit, onError)}>
+          <div className="mt-2">
+            <p>Bank Name</p>
+            <input
+              className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
+                errors.bank_name ? "border-red-500" : "hover:border-blue-500"
+              }`}
+              placeholder="Bank Name"
+              {...register("bank_name")}
+              type="text"
+            />
+            {errors.bank_name && (
+              <p className="text-xs text-red-500">{errors.bank_name.message}</p>
+            )}
+          </div>
+          <div className="mt-2">
+            <p>Transaction Id</p>
+            <input
+              className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500 ${
+                errors.transaction_id
+                  ? "border-red-500"
+                  : "hover:border-blue-500"
+              }`}
+              placeholder="Transaction id"
+              {...register("transaction_id")}
+            />
+            {errors.transaction_id && (
+              <p className="text-xs text-red-500">
+                {errors.transaction_id.message}
+              </p>
+            )}
+          </div>
+          <div className="mt-2">
+            <p>Track Id</p>
+            <input
+              className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
+                errors.track_id ? "border-red-500" : "hover:border-blue-500"
+              }`}
+              placeholder="Track Id"
+              {...register("track_id")}
+            />
+            {errors.track_id && (
+              <p className="text-xs text-red-500">{errors.track_id.message}</p>
+            )}
+          </div>
+          <div className="flex  gap-2 mt-2">
+            <div className="grow"></div>
+            <button
+              disabled={isSubmitting}
+              className="py-1 rounded-md border px-4 text-sm text-gray-600"
+              onClick={() => setPaymentBox(false)}
+            >
+              Close
+            </button>
+            <input
+              type="submit"
+              value={"Submit"}
+              className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
+            />
+          </div>
+        </form>
+      </Modal>
+      <section className="px-5 relative">
         <main className="bg-white mt-6 p-4 w-full xl:w-5/6 mx-auto">
           {/* page 1 start here */}
 
@@ -285,52 +407,75 @@ const Dvat16ReturnPreview = () => {
               </tr>
             </tbody>
           </table>
-
           <FORM_DVAT_16 returnsentrys={returns_entryData ?? []} />
-          <h1 className="text-center font-semibold text-sm mt-4">
-            Payment Details
-          </h1>
-          <table border={1} className="w-5/6 mx-auto mt-2">
-            <thead className="w-full">
-              <tr className="w-full">
-                <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                  Payment Mode
-                </th>
-                <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                  Ref. No
-                </th>
-                <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                  Payment Date
-                </th>
-                <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                  Payment Date
-                </th>
-                <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                  Amount
-                </th>
-              </tr>
-            </thead>
-            <tbody className="w-full">
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                  e-Payment
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                  2636061125
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                  01/02/2017
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                  BANK OF BARODA
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                  548441
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {payment && (
+            <>
+              <h1 className="text-center font-semibold text-sm mt-4">
+                Payment Details
+              </h1>
+              <table border={1} className="w-5/6 mx-auto mt-2">
+                <thead className="w-full">
+                  <tr className="w-full">
+                    <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                      Payment Mode
+                    </th>
+                    <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                      Ref. No
+                    </th>
+                    <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                      Payment Date
+                    </th>
+                    <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                      Bank Name
+                    </th>
+                    <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                      Amount
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="w-full">
+                  <tr className="w-full">
+                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                      {return01?.paymentmode}
+                    </td>
+                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                      {return01?.transaction_id}
+                    </td>
+                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                      {formatDateTime(
+                        getPrismaDatabaseDate(
+                          new Date(return01?.transaction_date!)
+                        )
+                      )}
+                    </td>
+                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                      {return01?.bank_name}
+                    </td>
+                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                      {return01?.total_tax_amount}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </>
+          )}
         </main>
+        <div className="h-20"></div>
+        <div className="p-2 shadow bg-white fixed bottom-0 right-0 flex gap-4 items-center">
+          <button className="text-white bg-black py-1 px-4 text-sm">
+            Download Certificate
+          </button>
+          {!payment && (
+            <button
+              className="text-white bg-black py-1 px-4 text-sm"
+              onClick={() => {
+                setPaymentBox(true);
+              }}
+            >
+              Proceed to Pay
+            </button>
+          )}
+        </div>
       </section>
     </>
   );

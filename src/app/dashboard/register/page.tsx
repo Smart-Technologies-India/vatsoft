@@ -20,7 +20,7 @@ const Page = () => {
           <DashboardCards
             title="Application For Filing Clarification"
             description="Submit a request to provide or seek clarification regarding an existing VAT application or filing."
-            link="/dashboard/new-registration/registeruser"
+            link="/dashboard/register/applicatin_for_filing_clarification"
           />
           <DashboardCards
             title="Amendment of Registration Core Fields"

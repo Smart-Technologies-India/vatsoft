@@ -37,7 +37,6 @@ const record30ASchema = object({
   ]),
   seller_tin_numberId: number([minValue(0, "Seller id is required.")]),
   category_of_entry: enum_(CategoryOfEntry, "Category of entry is required."),
-  input_tax_credit: enum_(InputTaxCredit, "Input Tax Credit is required."),
   purchase_type: enum_(PurchaseType, "Purchase Type is required."),
   place_of_supply: number([minValue(0, "Place of Supply is required.")]),
   tax_percent: string([minLength(1, "Tax Percent is required.")]),

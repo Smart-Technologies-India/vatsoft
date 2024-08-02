@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardMonth from "@/action/dashboard/dashboard";
 import GetUser from "@/action/user/getuser";
 import {
   Fa6RegularFileLines,
@@ -8,7 +9,7 @@ import {
   FluentWalletCreditCard20Regular,
   LucideArrowRight,
 } from "@/components/icons";
-import { decrypt } from "@/utils/methods";
+import { decrypt, formateDate } from "@/utils/methods";
 
 enum FileStatus {
   FILED,
@@ -22,11 +23,19 @@ import { useEffect, useState } from "react";
 const Page = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
   const [user, setUser] = useState<user>();
+  const [month, setMonth] = useState<any[]>([]);
 
   useEffect(() => {
     const init = async () => {
       const userresponse = await GetUser({ id: id });
       if (userresponse.status) setUser(userresponse.data!);
+
+      const dashboard = await DashboardMonth({});
+
+      if (dashboard.status && dashboard.data) {
+        setMonth(dashboard.data);
+      }
+      console.log(dashboard);
     };
 
     init();
@@ -36,19 +45,6 @@ const Page = () => {
     <>
       <main className="relative min-h-[calc(100vh-2.5rem)] ">
         <div className="pb-10 relative">
-          {/* <div className="bg-black bg-opacity-10 w-full h-full absolute top-0 left-0 z-40 mt-2 bg-clip-padding backdrop-filter backdrop-blur-sm grid place-items-center">
-            <div className="rounded border bg-white mb-2 w-80 p-2">
-              <h1 className="text-lg font-medium text-black">Warning</h1>
-              <div className="bg-rose-500 w-full h-[1px] bg-opacity-30 my-1"></div>
-              <p className="text-gray-500 text-xs">
-                Your Registration seems incomplete. Kindly complete the
-                registration.
-              </p>
-              <button className="w-full text-white text-sm bg-rose-500 text-center rounded mt-2 py-1">
-                Complete profile
-              </button>
-            </div>
-          </div> */}
           <div className="mx-auto px-4  w-4/6 py-6 relative">
             <div className="bg-white p-4 rounded-xl">
               <h1 className="text-sm font-semibold font-nunito leading-3">
@@ -71,101 +67,27 @@ const Page = () => {
                     <div className="glow"></div>
                     <LucideArrowRight className="text-xl text-blue-500" />
                   </div>
-                  <RentCard
-                    title="JAN-2024"
-                    date="19/12/2003"
-                    status="Filed"
-                    statusdate="Filed On"
-                    filestatus={FileStatus.FILED}
-                  />
-                  <RentCard
-                    title="FEB-2024"
-                    date="19/12/2003"
-                    status="Filed"
-                    statusdate="Filed On"
-                    filestatus={FileStatus.FILED}
-                  />
-                  <RentCard
-                    title="MAR-2024"
-                    date="19/12/2003"
-                    status="Filed"
-                    statusdate="Filed On"
-                    filestatus={FileStatus.FILED}
-                  />
-                  <RentCard
-                    title="APR-2024"
-                    date="19/12/2003"
-                    status="Filed"
-                    statusdate="Filed On"
-                    filestatus={FileStatus.FILED}
-                  />
-                  <RentCard
-                    title="MAY-2024"
-                    date="19/12/2003"
-                    status="Filed"
-                    statusdate="Filed On"
-                    filestatus={FileStatus.FILED}
-                  />
-                  <RentCard
-                    title="JUN-2024"
-                    date="19/12/2003"
-                    status="Filed"
-                    statusdate="Filed On"
-                    filestatus={FileStatus.NOTFILED}
-                  />
+                  {month.map((val: any, index: number) => (
+                    <RentCard
+                      key={index}
+                      year={val.year.toString().substring(2)}
+                      month={formateDate(
+                        new Date(val.date.toString())
+                      ).substring(3, 5)}
+                      title={
+                        val.month.toString().toUpperCase() +
+                        "-" +
+                        val.year.toString()
+                      }
+                      date={val.date}
+                      status={val.completed ? "Filed" : "Not Filed"}
+                      statusdate={val.completed ? "Filed On" : "Due Date"}
+                      filestatus={
+                        val.completed ? FileStatus.FILED : FileStatus.NOTFILED
+                      }
+                    />
+                  ))}
                 </div>
-
-                {/* <div className="flex-1 bg-white p-2 rounded-xl">
-                  <div className="flex items-center px-4">
-                    <div className="text-sm font-semibold font-nunito leading-3 py-1 w-full text-gray-500  rounded-xl">
-                      VAT
-                    </div>
-                    <div className="glow"></div>
-                    <LucideArrowRight className="text-xl text-blue-500" />
-                  </div>
-                  <RentCard
-                    title="JAN-2024"
-                    date="19/12/2003"
-                    status="Filed"
-                    statusdate="Filed On"
-                    filestatus={FileStatus.FILED}
-                  />
-                  <RentCard
-                    title="FEB-2024"
-                    date="19/12/2003"
-                    status="Filed"
-                    statusdate="Filed On"
-                    filestatus={FileStatus.FILED}
-                  />
-                  <RentCard
-                    title="MAR-2024"
-                    date="19/12/2003"
-                    status="Filed"
-                    statusdate="Filed On"
-                    filestatus={FileStatus.FILED}
-                  />
-                  <RentCard
-                    title="APR-2024"
-                    date="19/12/2003"
-                    status="Filed"
-                    statusdate="Filed On"
-                    filestatus={FileStatus.FILED}
-                  />
-                  <RentCard
-                    title="MAY-2024"
-                    date="19/12/2003"
-                    status="Filed"
-                    statusdate="Filed On"
-                    filestatus={FileStatus.FILED}
-                  />
-                  <RentCard
-                    title="JUN-2024"
-                    date="19/12/2003"
-                    status="To be Filed"
-                    statusdate="To be Filed"
-                    filestatus={FileStatus.NOTFILED}
-                  />
-                </div> */}
               </div>
             </div>
 
@@ -206,6 +128,8 @@ const Page = () => {
 export default Page;
 
 interface RentCardProps {
+  year: string;
+  month: string;
   title: string;
   date: string;
   status: string;
@@ -214,6 +138,11 @@ interface RentCardProps {
 }
 
 const RentCard = (props: RentCardProps) => {
+  const getnextmonth = () => {
+    const date: Date = new Date(props.date);
+    const res: Date = new Date(date.setMonth(date.getMonth() + 1, 10));
+    return formateDate(res);
+  };
   return (
     <div className="flex w-full my-2 px-3 py-1 rounded-md items-center gap-2 bg-white justify-between ">
       <div className="flex gap-2 items-center">
@@ -226,17 +155,17 @@ const RentCard = (props: RentCardProps) => {
         {props.filestatus == FileStatus.FILED ? (
           <>
             <div className="leading-3 w-8 h-8 rounded-full bg-teal-500 bg-opacity-30 text-teal-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
-              03
+              {props.month}
               <br />
-              24
+              {props.year}
             </div>
           </>
         ) : (
           <>
             <div className="leading-3 w-8 h-8 rounded-full bg-rose-500 bg-opacity-30 text-rose-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
-              03
+              {props.month}
               <br />
-              24
+              {props.year}
             </div>
           </>
         )}
@@ -245,15 +174,17 @@ const RentCard = (props: RentCardProps) => {
         </h1>
       </div>
 
-      <p className="text-xs font-normal text-gray-600 font-nunito leading-3 mt-1">
+      <p className="text-xs font-normal text-gray-600 font-nunito leading-3 mt-1 w-16 text-center">
         {props.status}
       </p>
-      <div className="">
+      <div className="w-20 ">
         <h1 className="text-xs font-semibold font-nunito leading-3">
           {props.statusdate}
         </h1>
         <p className="text-xs font-normal text-gray-600 font-nunito leading-3 mt-1">
-          {props.date}
+          {props.filestatus == FileStatus.FILED
+            ? formateDate(new Date(props.date))
+            : getnextmonth()}
         </p>
       </div>
       <Link
