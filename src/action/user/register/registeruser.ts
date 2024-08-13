@@ -3,7 +3,7 @@
 import { decrypt, encrypt, errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import prisma from "../../../../prisma/database";
-import { user } from "@prisma/client";
+import { registration, user } from "@prisma/client";
 
 interface RegisterUserPayload {
   id: number;
@@ -25,11 +25,14 @@ interface RegisterUserPayload {
   area?: string;
   city?: string;
   pincode?: string;
+  issecond: boolean;
 }
 
 const registerUser = async (
   payload: RegisterUserPayload
-): Promise<ApiResponseType<user | null>> => {
+): Promise<
+  ApiResponseType<{ user: user; registration: registration | null } | null>
+> => {
   try {
     let data_to_update: any = {};
     if (payload.firstName)
@@ -192,13 +195,7 @@ const registerUser = async (
         functionname: "registerUser",
       };
 
-    const isRegistration = await prisma.registration.findFirst({
-      where: {
-        userId: payload.id,
-      },
-    });
-
-    if (!isRegistration) {
+    if (!payload.issecond) {
       const registration = await prisma.registration.create({
         data: {
           userId: payload.id,
@@ -214,11 +211,24 @@ const registerUser = async (
           message: "Registration create failed. Please try again.",
           functionname: "registerUser",
         };
+
+      return {
+        status: true,
+        data: {
+          user: updateresponse,
+          registration: registration,
+        },
+        message: "User updated successfully",
+        functionname: "registerUser",
+      };
     }
 
     return {
       status: true,
-      data: updateresponse,
+      data: {
+        user: updateresponse,
+        registration: null,
+      },
       message: "User updated successfully",
       functionname: "registerUser",
     };

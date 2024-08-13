@@ -191,7 +191,7 @@ const Dvat16ReturnPreview = () => {
               Company Name : {return01?.dvat04.tradename}
             </h1>
             <p className="text-center text-xs  leading-4">
-              Tin Number : {return01?.dvat04.registration.tinNumber} Period (
+              Tin Number : {return01?.dvat04.tinNumber} Period (
               {return01?.month} {return01?.year})
             </p>
           </div>
@@ -245,7 +245,7 @@ const Dvat16ReturnPreview = () => {
                   R2.1 Registration Certificate No.
                 </td>
                 <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  {return01?.dvat04.registration.tinNumber}
+                  {return01?.dvat04.tinNumber}
                 </td>
               </tr>
               <tr className="w-full">

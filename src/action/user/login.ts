@@ -63,6 +63,7 @@ const Login = async (
         functionname: "Login",
       };
     cookies().set("id", user.id.toString());
+    cookies().set("role", user.role.toString());
     return {
       status: true,
       data: user,

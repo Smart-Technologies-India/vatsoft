@@ -7,7 +7,7 @@ interface AddTempRegNoPayload {
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import { dvat04 } from "@prisma/client";
-import prisma from "../../../../prisma/database";
+import prisma from "../../../prisma/database";
 
 const AddTempRegNo = async (
   payload: AddTempRegNoPayload
@@ -34,9 +34,11 @@ const AddTempRegNo = async (
         id: dvat04.id,
         deletedAt: null,
         deletedById: null,
+        status: "NONE",
       },
       data: {
         tempregistrationnumber: payload.tempregno,
+        status: "PENDINGPROCESSING",
       },
     });
 

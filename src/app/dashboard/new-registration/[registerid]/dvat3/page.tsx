@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import GetUser from "@/action/user/getuser";
 import { getCookie } from "cookies-next";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -30,14 +30,19 @@ import { ApiResponseType } from "@/models/response";
 import { safeParse } from "valibot";
 import { Dvat3Schema } from "@/schema/dvat3";
 import Dvat3CreateUpdate from "@/action/user/register/dvat3";
-import GetDvat from "@/action/user/register/getdvat";
+import GetDvat04FromRegistration from "@/action/register/getdvat04fromregisteration";
 
 const Dvat3Page = () => {
+  const { registerid } = useParams<{ registerid: string | string[] }>();
+  const registeridString = Array.isArray(registerid)
+    ? registerid[0]
+    : registerid;
+
+  const registrationid: number = parseInt(registeridString);
+
   const id: number = parseInt(getCookie("id") ?? "0");
 
   const router = useRouter();
-
-  const [dvatData, setDvatData] = useState<dvat04>();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmit, setIsSubmit] = useState<boolean>(false);
@@ -93,7 +98,7 @@ const Dvat3Page = () => {
           nameOfSignatory: result.output.nameOfSignatory,
         });
       if (userrespone.status) {
-        router.push("/dashboard/new-registration/anx1");
+        router.push(`/dashboard/new-registration/${registrationid}/anx1`);
       } else {
         toast.error(userrespone.message);
       }
@@ -121,7 +126,7 @@ const Dvat3Page = () => {
         toast.error(user.message);
       }
 
-      const dvatdata = await GetDvat({ userid: id });
+      const dvatdata = await GetDvat04FromRegistration({ id: registrationid });
 
       if (dvatdata.status) {
         setTimeout(() => {
@@ -407,7 +412,11 @@ const Dvat3Page = () => {
           <div className="flex gap-2">
             <div className="grow"></div>
             <Button
-              onClick={() => router.push("/dashboard/new-registration/dvat2")}
+              onClick={() =>
+                router.push(
+                  `/dashboard/new-registration/${registrationid}/dvat2`
+                )
+              }
               className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
             >
               Previous

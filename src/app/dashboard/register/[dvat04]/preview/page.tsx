@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { FormSteps } from "@/components/formstepts";
 import {
   AccountingBasis,
   CommidityPursose,
@@ -27,7 +26,7 @@ import { useEffect, useRef, useState } from "react";
 import GetUser from "@/action/user/getuser";
 import { getCookie } from "cookies-next";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
@@ -58,7 +57,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import GetAnx1User from "@/action/anx1/getanx1";
 import { Textarea } from "@/components/ui/textarea";
 import { decrypt, handleNumberChange } from "@/utils/methods";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -66,16 +64,21 @@ import GetAnx1ById from "@/action/anx1/getanxbyid";
 import GetDvat from "@/action/user/register/getdvat";
 import { CommodityData } from "@/models/main";
 import GetAllCommodity from "@/action/commodity/getcommodity";
-import GetAnx2User from "@/action/anx2/getanx2";
 import GetAnx2ById from "@/action/anx2/getanxbyid";
 import { Modal } from "antd";
 import { customAlphabet } from "nanoid";
-import AddTempRegNo from "@/action/user/register/addtempregno";
-import UserToDvat04 from "@/action/user/register/usertodvat04";
+import GetDvat04 from "@/action/register/getdvat04";
+import AddTempRegNo from "@/action/register/addtempregno";
+import GetAnx1 from "@/action/anx1/getanx1";
+import GetAnx2 from "@/action/anx2/getanx2";
 const nanoid = customAlphabet("1234567890", 12);
 
 const PreviewPage = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const { dvat04 } = useParams<{ dvat04: string | string[] }>();
+  const dvatidString = Array.isArray(dvat04) ? dvat04[0] : dvat04;
+
+  const dvatid: number = parseInt(dvatidString);
+  // const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const tempregno: string = nanoid();
 
   const router = useRouter();
@@ -96,23 +99,24 @@ const PreviewPage = () => {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const [Annexuredata, setAnnexuredata] = useState<annexure1[]>([]);
-
   const [open, setOpen] = useState(false);
+
+  const [dvat04Data, setDvat04Data] = useState<dvat04>();
 
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
 
-      const getanx1resposne = await GetAnx1User({ userid: id });
+      const dvat04 = await GetDvat04({ id: dvatid });
 
-      if (getanx1resposne.status) {
-        setAnnexuredata(getanx1resposne.data!);
+      if (dvat04.status && dvat04.data) {
+        setDvat04Data(dvat04.data);
       }
+
       setIsLoading(false);
     };
     init();
-  }, [id]);
+  }, []);
 
   if (isLoading)
     return (
@@ -124,29 +128,46 @@ const PreviewPage = () => {
   return (
     <>
       <main className="min-h-screen bg-[#f6f7fb] w-full py-2 px-6">
-        <div className="bg-white mx-auto p-4 shadow mt-6">
-          <FormSteps
-            completedSteps={pageIndex}
-            labels={[
-              "User",
-              "DVAT01",
-              "DVAT02",
-              "DVAT03",
-              "ANNEXURE-1",
-              "ANNEXURE-2",
-              "ANNEXURE-3",
-            ]}
-          ></FormSteps>
+        <div className="bg-white shadow p-2 flex justify-between mt-2">
+          {[
+            "USER",
+            "DVAT01",
+            "DVAT02",
+            "DVAT03",
+            "ANNEXURE-1",
+            "ANNEXURE-2",
+            "ANNEXURE-3",
+          ].map((val: string, index: number) => {
+            return (
+              <div
+                onClick={() => setPageIndex(index + 1)}
+                key={index}
+                className={` px-2 py-1 flex-1 grid place-items-center cursor-pointer ${
+                  pageIndex == index + 1
+                    ? "bg-[#0c0c32] text-white"
+                    : "text-[#0c0c32]"
+                }`}
+              >
+                {val}
+              </div>
+            );
+          })}
         </div>
 
-        <div className="bg-white mx-auto shadow mt-6">
+        <div className="bg-white mx-auto shadow mt-4">
           {pageIndex == 1 && <UserRegister />}
           {pageIndex == 2 && <Dvat1Page />}
           {pageIndex == 3 && <Dvat2Page />}
           {pageIndex == 4 && <Dvat3Page />}
-          {pageIndex == 5 && <Anx1Page />}
-          {pageIndex == 6 && <Anx2Page />}
-          {pageIndex == 7 && <Anx3Page />}
+          {pageIndex == 5 && (
+            <Anx1Page registrationid={dvat04Data?.registrationId ?? 0} />
+          )}
+          {pageIndex == 6 && (
+            <Anx2Page registrationid={dvat04Data?.registrationId ?? 0} />
+          )}
+          {pageIndex == 7 && (
+            <Anx3Page registrationid={dvat04Data?.registrationId ?? 0} />
+          )}
           <div className="flex p-4">
             <div className="grow"></div>
 
@@ -172,7 +193,11 @@ const PreviewPage = () => {
             {pageIndex == 7 && (
               <Button
                 onClick={async () => {
-                  setOpen(true);
+                  if (dvat04Data?.status == "NONE") {
+                    setOpen(true);
+                  } else {
+                    router.push("/dashboard");
+                  }
                 }}
                 // onClick={() => router.push("/dashboard")}
                 className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
@@ -188,14 +213,10 @@ const PreviewPage = () => {
         open={open}
         onOk={async () => {
           setOpen(false);
-          const dvat04 = await UserToDvat04({ userid: id });
-
-          if (!dvat04.status && !dvat04.data)
-            return toast.error(dvat04.message);
 
           const response = await AddTempRegNo({
             tempregno: tempregno,
-            id: dvat04.data?.id ?? 0,
+            id: dvat04Data?.id ?? 0,
           });
           if (!response.status && !response.data)
             return toast.error(response.message);
@@ -213,17 +234,9 @@ const PreviewPage = () => {
 export default PreviewPage;
 
 const UserRegister = () => {
-  const router = useRouter();
   const id: number = parseInt(getCookie("id") ?? "0");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const firstnameRef = useRef<HTMLInputElement>(null);
-  const lastnameRef = useRef<HTMLInputElement>(null);
-  const addressRef = useRef<HTMLTextAreaElement>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
-  const mobileRef = useRef<HTMLInputElement>(null);
-  const altMobileRef = useRef<HTMLInputElement>(null);
-  const panRef = useRef<HTMLInputElement>(null);
-  const aadharRef = useRef<HTMLInputElement>(null);
+  const [userdata, setUserData] = useState<user>();
 
   useEffect(() => {
     const init = async () => {
@@ -231,25 +244,8 @@ const UserRegister = () => {
 
       const user = await GetUser({ id: id });
 
-      if (user.status) {
-        setTimeout(() => {
-          if (firstnameRef.current)
-            firstnameRef.current!.value = decrypt(user.data?.firstName ?? "");
-          if (lastnameRef.current)
-            lastnameRef.current!.value = decrypt(user.data?.lastName ?? "");
-          if (addressRef.current)
-            addressRef.current!.value = user.data?.address ?? "";
-          if (emailRef.current)
-            emailRef.current!.value = decrypt(user.data?.email ?? "");
-          if (mobileRef.current)
-            mobileRef.current!.value = decrypt(user.data?.mobileOne ?? "");
-          if (altMobileRef.current)
-            altMobileRef.current!.value = decrypt(user.data?.mobileTwo ?? "");
-          if (panRef.current)
-            panRef.current!.value = decrypt(user.data?.pan ?? "");
-          if (aadharRef.current)
-            aadharRef.current!.value = decrypt(user.data?.aadhar ?? "");
-        }, 500);
+      if (user.status && user.data) {
+        setUserData(user.data);
       } else {
         toast.error(user.message);
       }
@@ -272,135 +268,66 @@ const UserRegister = () => {
         <div className="flex gap-2">
           <p className="text-lg font-nunito">User Registration</p>
           <div className="grow"></div>
-          <p className="text-sm">
-            <span className="text-red-500">*</span> Include mandatory fields
-          </p>
         </div>
 
-        <div className="flex gap-4 mt-1">
-          <div className="flex-1">
-            <Label htmlFor="firstname" className="text-sm font-normal">
-              First Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              ref={firstnameRef}
-              type="text"
-              disabled={true}
-              id="firstname"
-              name="firstName"
-              className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-              placeholder="First name"
-            />
+        <div className="gap-4 mt-1 grid grid-cols-3">
+          <div className="">
+            <p className="text-xs font-normal text-gray-500">First Name</p>
+            <p className="font-semibold text-sm ">
+              {decrypt(userdata?.firstName ?? "")}
+            </p>
           </div>
-          <div className="flex-1">
-            <Label htmlFor="lastname" className="text-sm font-normal">
-              Last Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              ref={lastnameRef}
-              type="text"
-              disabled={true}
-              id="lastname"
-              name="firstName"
-              className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-              placeholder="Last name"
-            />
+          <div className="">
+            <p className="text-xs font-normal text-gray-500">Last Name</p>
+            <p className="font-semibold text-sm ">
+              {decrypt(userdata?.lastName ?? "")}
+            </p>
           </div>
-        </div>
-        <div className="mt-2">
-          <Label htmlFor="address" className="text-sm font-normal">
-            Address <span className="text-red-500">*</span>
-          </Label>
-
-          <Textarea
-            ref={addressRef}
-            name="address"
-            id="address"
-            disabled={true}
-            className="px-2 py-1 focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm resize-none mt-1"
-            placeholder="Address"
-          />
-        </div>
-
-        <div className="mt-2">
-          <Label htmlFor="email" className="text-sm font-normal">
-            Email <span className="text-red-500">*</span>
-          </Label>
-
-          <Input
-            ref={emailRef}
-            type="email"
-            name="email"
-            disabled={true}
-            id="email"
-            className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-            placeholder="Email"
-          />
-        </div>
-        <div className="flex gap-4 mt-2">
-          <div className="flex-1">
-            <Label htmlFor="mobileOne" className="text-sm font-normal">
-              Mobile Number <span className="text-red-500">*</span>
-            </Label>
-
-            <Input
-              ref={mobileRef}
-              disabled={true}
-              type="text"
-              id="mobileOne"
-              name="mobileOne"
-              className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-              placeholder="Mobile Number"
-              onChange={handleNumberChange}
-            />
+          <div className="">
+            <p className="text-xs font-normal text-gray-500">Email</p>
+            <p className="font-semibold text-sm ">
+              {decrypt(userdata?.email ?? "")}
+            </p>
           </div>
-          <div className="flex-1">
-            <Label htmlFor="mobileTwo" className="text-sm font-normal">
+
+          <div className="">
+            <p className="text-xs font-normal text-gray-500">Mobile Number</p>
+            <p className="font-semibold text-sm ">
+              {decrypt(userdata?.mobileOne ?? "")}
+            </p>
+          </div>
+          <div className="">
+            <p className="text-xs font-normal text-gray-500">
               Alternate Number
-            </Label>
-
-            <Input
-              ref={altMobileRef}
-              type="text"
-              name="mobileTwo"
-              disabled={true}
-              id="mobileTwo"
-              className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-              placeholder="Alternate Number"
-              onChange={handleNumberChange}
-            />
+            </p>
+            <p className="font-semibold text-sm ">
+              {decrypt(userdata?.mobileTwo ?? "")}
+            </p>
           </div>
-        </div>
-
-        <div className="flex gap-4 mt-2">
-          <div className="flex-1">
-            <Label htmlFor="pan" className="text-sm font-normal">
-              Pan Card <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              ref={panRef}
-              type="text"
-              disabled={true}
-              name="pan"
-              id="pan"
-              className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-              placeholder="Pan Card"
-            />
+          <div className="">
+            <p className="text-xs font-normal text-gray-500">Pan Card</p>
+            <p className="font-medium text-sm">
+              {decrypt(userdata?.pan ?? "")}
+            </p>
           </div>
-          <div className="flex-1">
-            <Label htmlFor="aadhar" className="text-sm font-normal">
-              Aadhar Card <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              ref={aadharRef}
-              type="text"
-              name="aadhar"
-              id="aadhar"
-              disabled={true}
-              className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-              placeholder="Aadhar Card"
-              onChange={handleNumberChange}
-            />
+
+          <div className="">
+            <p className="text-xs font-normal text-gray-500">Aadhar Card</p>
+            <p className="font-medium text-sm ">
+              {decrypt(userdata?.aadhar ?? "")}
+            </p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs font-normal text-gray-500">Address</p>
+            <p className="font-medium text-sm ">
+              {decrypt(userdata?.lastName ?? "")}
+              Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dolor ex
+              magni recusandae quam. Debitis eos itaque ea fugiat eaque sint
+              perferendis, ex voluptates a! Molestiae repellat, magni facilis
+              sunt explicabo possimus aliquid eos unde? Voluptatem doloremque
+              voluptate aut aperiam cumque, similique ea dolore neque minus sit
+              tempore cupiditate itaque consequatur est nisi dolor iusto dolorem
+            </p>
           </div>
         </div>
       </div>
@@ -409,8 +336,7 @@ const UserRegister = () => {
 };
 
 const Dvat1Page = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
-  const router = useRouter();
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
   enum TrueFalse {
     YES = "YES",
@@ -465,7 +391,7 @@ const Dvat1Page = () => {
     const init = async () => {
       setIsLoading(true);
 
-      const dvatdata = await GetDvat({ userid: id });
+      const dvatdata = await GetDvat({ userid: current_user_id });
 
       if (dvatdata.status) {
         setTimeout(() => {
@@ -512,7 +438,7 @@ const Dvat1Page = () => {
       setIsLoading(false);
     };
     init();
-  }, [id]);
+  }, [current_user_id]);
 
   if (isLoading)
     return (
@@ -1047,7 +973,7 @@ const Dvat1Page = () => {
 };
 
 const Dvat2Page = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
   const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -1096,7 +1022,7 @@ const Dvat2Page = () => {
     const init = async () => {
       setIsLoading(true);
 
-      const user = await GetUser({ id: id });
+      const user = await GetUser({ id: current_user_id });
 
       if (user.status) {
         setUser(user.data!);
@@ -1105,7 +1031,7 @@ const Dvat2Page = () => {
       }
 
       const dvatresponse: any = await GetDvat({
-        userid: id,
+        userid: current_user_id,
       });
 
       if (dvatresponse.status) {
@@ -1240,7 +1166,7 @@ const Dvat2Page = () => {
       setIsLoading(false);
     };
     init();
-  }, [id]);
+  }, [current_user_id]);
 
   if (isLoading)
     return (
@@ -1265,24 +1191,6 @@ const Dvat2Page = () => {
             11 Address for service of notice (If Diffrent From Principle Place
             of Business)
           </span>
-          <div className="text-sm flex gap-1 items-center">
-            <Checkbox
-              disabled={true}
-              onCheckedChange={(value: boolean) => {
-                if (value) {
-                  noticeServingBuildingNameRef.current!.value =
-                    dvatdata!.buildingNumber ?? "";
-                  noticeServingAreaRef.current!.value = dvatdata!.area ?? "";
-                  noticeServingAddressRef.current!.value =
-                    dvatdata!.address ?? "";
-                  noticeServingCityRef.current!.value = dvatdata!.city ?? "";
-                  noticeServingPincodeRef.current!.value =
-                    dvatdata!.pincode ?? "";
-                }
-              }}
-            />
-            <p>Same as Principle Place Of Business</p>
-          </div>
 
           <div className="flex gap-4 items-end mt-2">
             <div className="flex-1">
@@ -1851,7 +1759,7 @@ const Dvat2Page = () => {
 };
 
 const Dvat3Page = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -1877,7 +1785,7 @@ const Dvat3Page = () => {
     const init = async () => {
       setIsLoading(true);
 
-      const user = await GetUser({ id: id });
+      const user = await GetUser({ id: current_user_id });
 
       if (user.status) {
         // setUser(user.data!);
@@ -1885,7 +1793,7 @@ const Dvat3Page = () => {
         toast.error(user.message);
       }
 
-      const dvatdata = await GetDvat({ userid: id });
+      const dvatdata = await GetDvat({ userid: current_user_id });
 
       if (dvatdata.status) {
         setTimeout(() => {
@@ -1922,7 +1830,7 @@ const Dvat3Page = () => {
       setIsLoading(false);
     };
     init();
-  }, [id]);
+  }, [current_user_id]);
 
   if (isLoading)
     return (
@@ -2172,12 +2080,14 @@ const Dvat3Page = () => {
   );
 };
 
-const Anx1Page = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+interface Anx1PageProps {
+  registrationid: number;
+}
 
-  const [anx1id, setAnxid] = useState<number>(0);
+const Anx1Page = (props: Anx1PageProps) => {
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
-  const router = useRouter();
+  // const [anx1id, setAnxid] = useState<number>(0);
 
   const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -2216,7 +2126,7 @@ const Anx1Page = () => {
     const init = async () => {
       setIsLoading(true);
 
-      const user = await GetUser({ id: id });
+      const user = await GetUser({ id: current_user_id });
 
       if (user.status) {
         setUser(user.data!);
@@ -2224,7 +2134,7 @@ const Anx1Page = () => {
         toast.error(user.message);
       }
 
-      const getanx1resposne = await GetAnx1User({ userid: id });
+      const getanx1resposne = await GetAnx1({ id: props.registrationid });
 
       if (getanx1resposne.status) {
         setAnnexuredata(getanx1resposne.data!);
@@ -2232,10 +2142,9 @@ const Anx1Page = () => {
       setIsLoading(false);
     };
     init();
-  }, [id]);
+  }, [current_user_id]);
 
   const edit = async (id: number) => {
-    setAnxid(id);
     const data = await GetAnx1ById({ id: id });
 
     if (data.status) {
@@ -2757,12 +2666,12 @@ const Anx1Page = () => {
   );
 };
 
-const Anx2Page = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+interface Anx2PageProps {
+  registrationid: number;
+}
 
-  const [anx1id, setAnxid] = useState<number>(0);
-
-  const router = useRouter();
+const Anx2Page = (props: Anx2PageProps) => {
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
   const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -2793,7 +2702,7 @@ const Anx2Page = () => {
     const init = async () => {
       setIsLoading(true);
 
-      const user = await GetUser({ id: id });
+      const user = await GetUser({ id: current_user_id });
 
       if (user.status) {
         setUser(user.data!);
@@ -2801,19 +2710,18 @@ const Anx2Page = () => {
         toast.error(user.message);
       }
 
-      const getanx2resposne = await GetAnx2User({ userid: id });
+      const getanx2resposne = await GetAnx2({ id: props.registrationid });
 
-      if (getanx2resposne.status) {
-        setAnnexuredata(getanx2resposne.data!);
+      if (getanx2resposne.status && getanx2resposne.data) {
+        setAnnexuredata(getanx2resposne.data);
       }
 
       setIsLoading(false);
     };
     init();
-  }, [id]);
+  }, [current_user_id]);
 
   const edit = async (id: number) => {
-    setAnxid(id);
     const data = await GetAnx2ById({ id: id });
 
     if (data.status) {
@@ -3169,8 +3077,12 @@ const Anx2Page = () => {
   );
 };
 
-const Anx3Page = () => {
-  const userid: number = parseInt(getCookie("id") ?? "0");
+interface Anx3PageProps {
+  registrationid: number;
+}
+
+const Anx3Page = (props: Anx3PageProps) => {
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
   const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -3181,7 +3093,7 @@ const Anx3Page = () => {
     const init = async () => {
       setIsLoading(true);
 
-      const user = await GetUser({ id: userid });
+      const user = await GetUser({ id: current_user_id });
 
       if (user.status) {
         setUser(user.data!);
@@ -3189,7 +3101,7 @@ const Anx3Page = () => {
         toast.error(user.message);
       }
 
-      const getanx1resposne = await GetAnx1User({ userid: userid });
+      const getanx1resposne = await GetAnx1({ id: props.registrationid });
 
       if (getanx1resposne.status) {
         setAnnexuredata(getanx1resposne.data!);
@@ -3197,7 +3109,7 @@ const Anx3Page = () => {
       setIsLoading(false);
     };
     init();
-  }, [userid]);
+  }, [current_user_id]);
 
   if (isLoading)
     return (

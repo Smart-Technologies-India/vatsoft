@@ -12,11 +12,15 @@ import { Label } from "@/components/ui/label";
 import { decrypt, handleNumberChange } from "@/utils/methods";
 import { safeParse } from "valibot";
 import { UserDataSchema } from "@/schema/userdata";
-import { ApiResponseType } from "@/models/response";
-import { user } from "@prisma/client";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import registerUser from "@/action/user/register/registeruser";
 const UserRegister = () => {
+  const { registerid } = useParams<{ registerid: string | string[] }>();
+  const registeridString = Array.isArray(registerid)
+    ? registerid[0]
+    : registerid;
+
+  const registrationid: number = parseInt(registeridString);
   const router = useRouter();
   const id: number = parseInt(getCookie("id") ?? "0");
 
@@ -58,14 +62,10 @@ const UserRegister = () => {
             : altMobileRef.current?.value,
         pan: result.output.pan,
         aadhar: result.output.aadhar,
-        issecond: false,
+        issecond: true,
       });
       if (userrespone.status && userrespone.data) {
-        router.push(
-          `/dashboard/new-registration/${
-            userrespone.data.registration!.id
-          }/dvat1`
-        );
+        router.push(`/dashboard/new-registration/${registrationid}/dvat1`);
       } else {
         toast.error(userrespone.message);
       }

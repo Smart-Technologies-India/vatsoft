@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import GetUser from "@/action/user/getuser";
 import { getCookie } from "cookies-next";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,15 +38,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import GetDvat from "@/action/user/register/getdvat";
 import { safeParse } from "valibot";
 import { Dvat2Schema } from "@/schema/dvat2";
 import { ApiResponseType } from "@/models/response";
 import Dvat2Update from "@/action/user/register/dvat2";
 import GetAllCommodity from "@/action/commodity/getcommodity";
 import { CommodityData } from "@/models/main";
+import GetDvat04FromRegistration from "@/action/register/getdvat04fromregisteration";
 
 const Dvat2Page = () => {
+  const { registerid } = useParams<{ registerid: string | string[] }>();
+  const registeridString = Array.isArray(registerid)
+    ? registerid[0]
+    : registerid;
+
+  const registrationid: number = parseInt(registeridString);
+
   const id: number = parseInt(getCookie("id") ?? "0");
 
   const router = useRouter();
@@ -190,7 +197,7 @@ const Dvat2Page = () => {
         CommodityData: commodityData,
       });
       if (userrespone.status) {
-        router.push("/dashboard/new-registration/dvat3");
+        router.push(`/dashboard/new-registration/${registrationid}/dvat3`);
       } else {
         toast.error(userrespone.message);
       }
@@ -218,8 +225,8 @@ const Dvat2Page = () => {
         toast.error(user.message);
       }
 
-      const dvatresponse: any = await GetDvat({
-        userid: id,
+      const dvatresponse: any = await GetDvat04FromRegistration({
+        id: registrationid,
       });
 
       if (dvatresponse.status) {
@@ -978,7 +985,11 @@ const Dvat2Page = () => {
           <div className="flex gap-2">
             <div className="grow"></div>
             <Button
-              onClick={() => router.push("/dashboard/new-registration/dvat1")}
+              onClick={() =>
+                router.push(
+                  `/dashboard/new-registration/${registrationid}/dvat1`
+                )
+              }
               className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
             >
               Previous

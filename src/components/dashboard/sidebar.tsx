@@ -24,6 +24,7 @@ import Link from "next/link";
 import { Button } from "../ui/button";
 import { Role } from "@prisma/client";
 import { deleteCookie } from "cookies-next";
+import { logoutbtn } from "@/methods/user";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -34,11 +35,6 @@ interface SidebarProps {
 const Sidebar = (props: SidebarProps) => {
   const path = usePathname();
   const router = useRouter();
-
-  const logoutbtn = async () => {
-    deleteCookie("id");
-    return router.push("/");
-  };
 
   return (
     <div
@@ -231,7 +227,7 @@ const Sidebar = (props: SidebarProps) => {
       </button>
 
       <Button
-        onClick={logoutbtn}
+        onClick={() => logoutbtn(router)}
         className={`flex justify-start gap-4 rounded-none px-4 py-2 hover:bg-rose-500 hover:border-l-2 hover:border-rose-500 bg-transparent hover:bg-opacity-20 `}
       >
         <SolarLogout2Bold className="text-gray-300  w-6" />

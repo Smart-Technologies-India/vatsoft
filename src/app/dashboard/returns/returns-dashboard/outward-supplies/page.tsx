@@ -87,6 +87,31 @@ const GSTR = () => {
     };
   };
 
+  const getAllDvatData = (dvatType: DvatType): DvatData => {
+    let entry: number = 0;
+    let amount: string = "0";
+    let tax: string = "0";
+
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) => val.dvat_type == dvatType
+    );
+
+    for (let i = 0; i < output.length; i++) {
+      entry += 1;
+      amount = (
+        parseFloat(amount) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      tax = (parseFloat(tax) + parseFloat(output[i].vatamount ?? "0")).toFixed(
+        2
+      );
+    }
+    return {
+      entry,
+      amount: parseFloat(amount),
+      tax: parseFloat(tax),
+    };
+  };
+
   return (
     <>
       <main className="w-full p-4">
@@ -145,6 +170,7 @@ const GSTR = () => {
                 "1",
                 "2",
                 "4",
+                "5",
                 "6",
                 "12.5",
                 "12.75",
@@ -190,6 +216,36 @@ const GSTR = () => {
                   </TableRow>
                 );
               })}
+              <TableRow>
+                <TableCell className="p-2 border text-center">Total</TableCell>
+                <TableCell className="p-2 border text-center">
+                  {
+                    getAllDvatData(
+                      searchParams.get("form") == "31"
+                        ? DvatType.DVAT_31
+                        : DvatType.DVAT_31_A
+                    ).entry
+                  }
+                </TableCell>
+                <TableCell className="p-2 border text-center">
+                  {
+                    getAllDvatData(
+                      searchParams.get("form") == "31"
+                        ? DvatType.DVAT_31
+                        : DvatType.DVAT_31_A
+                    ).amount
+                  }
+                </TableCell>
+                <TableCell className="p-2 border text-center">
+                  {
+                    getAllDvatData(
+                      searchParams.get("form") == "31"
+                        ? DvatType.DVAT_31
+                        : DvatType.DVAT_31_A
+                    ).tax
+                  }
+                </TableCell>
+              </TableRow>
             </TableBody>
           </Table>
           <div className="flex mt-2 gap-2">

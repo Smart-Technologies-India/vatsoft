@@ -15,8 +15,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+
 import { deleteCookie } from "cookies-next";
 import { usePathname, useRouter } from "next/navigation";
+import { logoutbtn } from "@/methods/user";
 
 interface NavbarProps {
   isOpen: boolean;
@@ -28,10 +30,6 @@ interface NavbarProps {
 const Navbar = (props: NavbarProps) => {
   const router = useRouter();
   const path = usePathname();
-  const logoutbtn = async () => {
-    deleteCookie("id");
-    return router.push("/");
-  };
 
   const returnTitle = (): string => {
     const searchPath = path.endsWith("/") ? path.slice(0, -1) : path;
@@ -62,7 +60,7 @@ const Navbar = (props: NavbarProps) => {
         return "";
     }
   };
-  // bg-[#f0f1f5]
+
   return (
     <nav className="py-1 px-4 w-full md:w-[calc(100%-13rem)] md:ml-52 bg-white  flex items-center gap-2 shadow fixed top-0 left-0 z-10">
       <div className="md:hidden">
@@ -150,7 +148,10 @@ const Navbar = (props: NavbarProps) => {
           <DropdownMenuItem>Support</DropdownMenuItem>
           <DropdownMenuItem disabled>API</DropdownMenuItem> */}
             {/* <DropdownMenuSeparator /> */}
-            <DropdownMenuItem onClick={logoutbtn} className="cursor-pointer">
+            <DropdownMenuItem
+              onClick={() => logoutbtn(router)}
+              className="cursor-pointer"
+            >
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import GetUser from "@/action/user/getuser";
 import { getCookie } from "cookies-next";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { handleNumberChange } from "@/utils/methods";
@@ -46,11 +46,18 @@ import { safeParse } from "valibot";
 import { Anx1Schema } from "@/schema/anx1";
 import { ApiResponseType } from "@/models/response";
 import Anx1Create from "@/action/anx1/addanx1";
-import GetAnx1User from "@/action/anx1/getanx1";
 import GetAnx1ById from "@/action/anx1/getanxbyid";
+import GetAnx1 from "@/action/anx1/getanx1";
 
 const Dvat2Page = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const { registerid } = useParams<{ registerid: string | string[] }>();
+  const registeridString = Array.isArray(registerid)
+    ? registerid[0]
+    : registerid;
+
+  const registrationid: number = parseInt(registeridString);
+
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
   const [anx1id, setAnxid] = useState<number>(0);
 
@@ -93,14 +100,14 @@ const Dvat2Page = () => {
 
   const handelSubmit = () => {
     if (Annexuredata.length === 0) return toast.error("Please add Annexure I");
-    router.push("/dashboard/new-registration/anx2");
+    router.push(`/dashboard/new-registration/${registrationid}/anx2`);
   };
 
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
 
-      const user = await GetUser({ id: id });
+      const user = await GetUser({ id: current_user_id });
 
       if (user.status) {
         setUser(user.data!);
@@ -108,7 +115,8 @@ const Dvat2Page = () => {
         toast.error(user.message);
       }
 
-      const getanx1resposne = await GetAnx1User({ userid: id });
+      const getanx1resposne = await GetAnx1({ id: registrationid });
+      console.log(getanx1resposne);
 
       if (getanx1resposne.status) {
         setAnnexuredata(getanx1resposne.data!);
@@ -116,7 +124,7 @@ const Dvat2Page = () => {
       setIsLoading(false);
     };
     init();
-  }, [id]);
+  }, [current_user_id, registrationid]);
 
   const createAnx1 = async () => {
     setIsSubmit(true);
@@ -144,7 +152,7 @@ const Dvat2Page = () => {
 
     if (result.success) {
       const userrespone: ApiResponseType<annexure1 | null> = await Anx1Create({
-        createdById: id,
+        createdById: current_user_id,
         titleParticulasOfperson: result.output.titleParticulasOfperson,
         nameOfPerson: result.output.nameOfPerson,
         dateOfBirth: new Date(result.output.dateOfBirth),
@@ -695,7 +703,11 @@ const Dvat2Page = () => {
 
             <div className="grow"></div>
             <Button
-              onClick={() => router.push("/dashboard/new-registration/dvat3")}
+              onClick={() =>
+                router.push(
+                  `/dashboard/new-registration/${registrationid}/dvat3`
+                )
+              }
               className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
             >
               Previous

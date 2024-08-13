@@ -21,8 +21,20 @@ enum UserStatus {
 }
 
 enum Role {
+  SYSTEM
   ADMIN
+  COMMISSIONER
+  JOINT_COMMISSIONER
+  DY_COMMISSIONER
+  VATOFFICER
+  ASST_VAT_OFFICER
+  INSPECTOR
+  UDC
+  LDC
+  DATA_ENTRY_OPERATOR
+  ACCOUNTANT
   USER
+  CA
 }
 
 enum Gender {
@@ -34,6 +46,18 @@ enum Gender {
 enum Status {
   ACTIVE
   INACTIVE
+}
+
+enum DvatStatus {
+  NONE
+  PENDINGPROCESSING
+  PENDINGCLARIFICATION
+  CLARIFICATINFILED
+  CLARIFICATIONNOTFILED
+  REJECTED
+  APPROVED
+  WITHDRAWN
+  CANCELLED
 }
 
 enum SelectOffice {
@@ -295,6 +319,11 @@ model user {
   returns_entry_deletedBy returns_entry[] @relation("returns_entry_deletedBy")
 
   registration registration[]
+  // department doc upload
+
+  department_doc_upload_createdBy deparment_doc_upload[] @relation("department_doc_upload_createdBy")
+  department_doc_upload_updatedBy deparment_doc_upload[] @relation("department_doc_upload_updatedBy")
+  department_doc_upload_deletedBy deparment_doc_upload[] @relation("department_doc_upload_deletedBy")
 }
 
 model change {
@@ -356,6 +385,8 @@ model dvat04 {
   registrationId Int
 
   tempregistrationnumber String?
+  tinNumber              String?
+  certificateNumber      String?
 
   // form 1
   name                         String
@@ -439,15 +470,15 @@ model dvat04 {
   nameOfManager         String?
   nameOfSignatory       String?
 
-  status      Status    @default(ACTIVE)
-  createdAt   DateTime  @default(now())
-  createdBy   user      @relation("dvat04_createdBy", fields: [createdById], references: [id])
+  status      DvatStatus @default(NONE)
+  createdAt   DateTime   @default(now())
+  createdBy   user       @relation("dvat04_createdBy", fields: [createdById], references: [id])
   createdById Int
-  updatedAt   DateTime  @updatedAt
-  updatedBy   user?     @relation("dvat04_updatedBy", fields: [updatedById], references: [id])
+  updatedAt   DateTime   @updatedAt
+  updatedBy   user?      @relation("dvat04_updatedBy", fields: [updatedById], references: [id])
   updatedById Int?
   deletedAt   DateTime?
-  deletedBy   user?     @relation("dvat04_deletedBy", fields: [deletedById], references: [id])
+  deletedBy   user?      @relation("dvat04_deletedBy", fields: [deletedById], references: [id])
   deletedById Int?
 
   returns_01 returns_01[]
@@ -553,8 +584,6 @@ model registration {
   inspectorRecommend   Boolean   @default(false)
   acRecommend          Boolean   @default(false)
   dcRecommend          Boolean   @default(false)
-  tinNumber            String?
-  certificateNumber    String?
   status               Status    @default(ACTIVE)
   createdAt            DateTime  @default(now())
   createdBy            user      @relation("register_createdBy", fields: [createdById], references: [id])
@@ -665,4 +694,19 @@ model returns_entry {
   deletedAt              DateTime?
   deletedBy              user?                 @relation("returns_entry_deletedBy", fields: [deletedById], references: [id])
   deletedById            Int?
+}
+
+model deparment_doc_upload {
+  id          Int       @id @default(autoincrement())
+  path        String
+  status      Status    @default(ACTIVE)
+  createdAt   DateTime  @default(now())
+  createdBy   user      @relation("department_doc_upload_createdBy", fields: [createdById], references: [id])
+  createdById Int
+  updatedAt   DateTime  @updatedAt
+  updatedBy   user?     @relation("department_doc_upload_updatedBy", fields: [updatedById], references: [id])
+  updatedById Int?
+  deletedAt   DateTime?
+  deletedBy   user?     @relation("department_doc_upload_deletedBy", fields: [deletedById], references: [id])
+  deletedById Int?
 }

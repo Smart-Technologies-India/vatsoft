@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { getCookie } from "cookies-next";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Label } from "@radix-ui/react-label";
 import {
   ConstitutionOfBusiness,
@@ -38,9 +38,16 @@ import { Dvat1Schema } from "@/schema/dvat1";
 import { ApiResponseType } from "@/models/response";
 import { toast } from "react-toastify";
 import Dvat1CreateUpdate from "@/action/user/register/dvat1";
-import GetDvat from "@/action/user/register/getdvat";
+import GetDvat04FromRegistration from "@/action/register/getdvat04fromregisteration";
 
 const Dvat1Page = () => {
+  const { registerid } = useParams<{ registerid: string | string[] }>();
+  const registeridString = Array.isArray(registerid)
+    ? registerid[0]
+    : registerid;
+
+  const registrationid: number = parseInt(registeridString);
+
   const id: number = parseInt(getCookie("id") ?? "0");
   const router = useRouter();
 
@@ -52,7 +59,7 @@ const Dvat1Page = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmit, setIsSubmit] = useState<boolean>(false);
 
-  const [dvatData, setDvatData] = useState<dvat04>();
+  // const [dvatData, setDvatData] = useState<dvat04>();
 
   const nameRef = useRef<HTMLInputElement>(null);
   const tradenameRef = useRef<HTMLInputElement>(null);
@@ -161,7 +168,7 @@ const Dvat1Page = () => {
               : faxNumberRef.current?.value,
         });
       if (userrespone.status) {
-        router.push("/dashboard/new-registration/dvat2");
+        router.push(`/dashboard/new-registration/${registrationid}/dvat2`);
       } else {
         toast.error(userrespone.message);
       }
@@ -181,7 +188,11 @@ const Dvat1Page = () => {
     const init = async () => {
       setIsLoading(true);
 
-      const dvatdata = await GetDvat({ userid: id });
+      // const dvatdata = await GetDvat({ userid: id });
+
+      const dvatdata = await GetDvat04FromRegistration({
+        id: registrationid,
+      });
 
       if (dvatdata.status) {
         setTimeout(() => {
@@ -214,8 +225,6 @@ const Dvat1Page = () => {
           emailRef.current!.value = dvatdata.data!.email!;
           faxNumberRef.current!.value = dvatdata.data!.faxNumber!;
         }, 1000);
-
-        setDvatData(dvatdata.data!);
       }
 
       setIsLoading(false);
@@ -752,7 +761,9 @@ const Dvat1Page = () => {
 
             <Button
               onClick={() =>
-                router.push("/dashboard/new-registration/registeruser")
+                router.push(
+                  `/dashboard/new-registration/${registrationid}/registeruser`
+                )
               }
               className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
             >

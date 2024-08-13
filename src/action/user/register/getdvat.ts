@@ -15,7 +15,6 @@ const GetDvat = async (
     const dvat04 = await prisma.dvat04.findFirst({
       where: {
         createdById: parseInt(payload.userid.toString() ?? "0"),
-        status: "ACTIVE",
       },
       include: {
         selectComOne: true,

@@ -15,6 +15,7 @@ enum FileStatus {
   FILED,
   NOTFILED,
 }
+
 import { user } from "@prisma/client";
 import { getCookie } from "cookies-next";
 import Link from "next/link";
@@ -35,7 +36,6 @@ const Page = () => {
       if (dashboard.status && dashboard.data) {
         setMonth(dashboard.data);
       }
-      console.log(dashboard);
     };
 
     init();

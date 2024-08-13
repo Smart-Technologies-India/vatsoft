@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
 import { Radio, DatePicker } from "antd";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
 import { MaterialSymbolsClose } from "@/components/icons";
@@ -24,8 +24,14 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import GetUserTrackPayment from "@/action/return/getusertrackpayment";
+import { getCookie } from "cookies-next";
+import { returns_01 } from "@prisma/client";
+import { formateDate } from "@/utils/methods";
 
 const TrackAppliation = () => {
+  const userid: number = parseFloat(getCookie("id") ?? "0");
+
   enum SearchOption {
     ARN,
     RETURN,
@@ -52,6 +58,22 @@ const TrackAppliation = () => {
   ) => {
     setSearchDate(dates);
   };
+
+  const [paymentData, setPaymentData] = useState<returns_01[]>([]);
+
+  useEffect(() => {
+    const init = async () => {
+      const payment_data = await GetUserTrackPayment({
+        user_id: userid,
+      });
+
+      if (payment_data.status && payment_data.data) {
+        setPaymentData(payment_data.data);
+        console.log(payment_data.data);
+      }
+    };
+    init();
+  }, []);
 
   return (
     <>
@@ -187,74 +209,35 @@ const TrackAppliation = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell className="border text-center p-2">
-                  2461827395
-                </TableCell>
-                <TableCell className="border text-center p-2">
-                  Regular
-                </TableCell>
-                <TableCell className="border text-center p-2">
-                  2024-2025
-                </TableCell>
-                <TableCell className="border text-center p-2">May</TableCell>
-                <TableCell className="border text-center p-2">
-                  20/06/2024
-                </TableCell>
-                <TableCell className="border text-center p-2">Filed</TableCell>
-                <TableCell className="border text-center p-2">ONLINE</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="border text-center p-2">
-                  2458327419
-                </TableCell>
-                <TableCell className="border text-center p-2">
-                  Regular
-                </TableCell>
-                <TableCell className="border text-center p-2">
-                  2024-2025
-                </TableCell>
-                <TableCell className="border text-center p-2">Apr</TableCell>
-                <TableCell className="border text-center p-2">
-                  19/05/2024
-                </TableCell>
-                <TableCell className="border text-center p-2">Filed</TableCell>
-                <TableCell className="border text-center p-2">ONLINE</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="border text-center p-2">
-                  2678491239
-                </TableCell>
-                <TableCell className="border text-center p-2">
-                  Regular
-                </TableCell>
-                <TableCell className="border text-center p-2">
-                  2024-2025
-                </TableCell>
-                <TableCell className="border text-center p-2">Mar</TableCell>
-                <TableCell className="border text-center p-2">
-                  20/04/2024
-                </TableCell>
-                <TableCell className="border text-center p-2">Filed</TableCell>
-                <TableCell className="border text-center p-2">ONLINE</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="border text-center p-2">
-                  2684729357
-                </TableCell>
-                <TableCell className="border text-center p-2">
-                  Regular
-                </TableCell>
-                <TableCell className="border text-center p-2">
-                  2024-2025
-                </TableCell>
-                <TableCell className="border text-center p-2">Feb</TableCell>
-                <TableCell className="border text-center p-2">
-                  18/03/2024
-                </TableCell>
-                <TableCell className="border text-center p-2">Filed</TableCell>
-                <TableCell className="border text-center p-2">ONLINE</TableCell>
-              </TableRow>
+              {paymentData.map((val: returns_01, index: number) => {
+                return (
+                  <TableRow key={index}>
+                    <TableCell className="border text-center p-2">
+                      {val.transaction_id}
+                    </TableCell>
+                    <TableCell className="border text-center p-2">
+                      {val.return_type}
+                    </TableCell>
+                    <TableCell className="border text-center p-2">
+                      2024-2025
+                    </TableCell>
+                    <TableCell className="border text-center p-2">
+                      {new Date(val.transaction_date!).toLocaleString("en-US", {
+                        month: "short",
+                      })}
+                    </TableCell>
+                    <TableCell className="border text-center p-2">
+                      {formateDate(new Date(val.transaction_date!))}
+                    </TableCell>
+                    <TableCell className="border text-center p-2">
+                      Filed
+                    </TableCell>
+                    <TableCell className="border text-center p-2">
+                      {val.paymentmode}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

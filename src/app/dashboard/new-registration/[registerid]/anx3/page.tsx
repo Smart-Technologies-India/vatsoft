@@ -2,31 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { FormSteps } from "@/components/formstepts";
-import { annexure1, user } from "@prisma/client";
+import { annexure1, dvat04, user } from "@prisma/client";
 import { useEffect, useRef, useState } from "react";
 import GetUser from "@/action/user/getuser";
 import { getCookie } from "cookies-next";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { IcBaselineCalendarMonth } from "@/components/icons";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { useParams, useRouter } from "next/navigation";
+
 import {
   Table,
   TableBody,
@@ -35,13 +17,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import GetAnx1User from "@/action/anx1/getanx1";
 import { Switch } from "@/components/ui/switch";
 import { ApiResponseType } from "@/models/response";
 import Anx1Update from "@/action/anx1/updateauth";
+import GetAnx1 from "@/action/anx1/getanx1";
+import RegisterToDvat from "@/action/register/registertodvat";
 
 const Dvat2Page = () => {
-  const userid: number = parseInt(getCookie("id") ?? "0");
+  const { registerid } = useParams<{ registerid: string | string[] }>();
+  const registeridString = Array.isArray(registerid)
+    ? registerid[0]
+    : registerid;
+
+  const registrationid: number = parseInt(registeridString);
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
   const router = useRouter();
 
@@ -50,16 +39,17 @@ const Dvat2Page = () => {
   const [isSubmit, setIsSubmit] = useState<boolean>(false);
 
   const [Annexuredata, setAnnexuredata] = useState<annexure1[]>([]);
+  const [dvat04Data, setDvat04Data] = useState<dvat04>();
 
   const handelSubmit = () => {
-    router.push("/dashboard/new-registration/preview");
+    router.push(`/dashboard/register/${dvat04Data?.id}/preview`);
   };
 
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
 
-      const user = await GetUser({ id: userid });
+      const user = await GetUser({ id: current_user_id });
 
       if (user.status) {
         setUser(user.data!);
@@ -67,15 +57,20 @@ const Dvat2Page = () => {
         toast.error(user.message);
       }
 
-      const getanx1resposne = await GetAnx1User({ userid: userid });
+      const getanx1resposne = await GetAnx1({ id: registrationid });
 
       if (getanx1resposne.status) {
         setAnnexuredata(getanx1resposne.data!);
       }
+
+      const dvat04 = await RegisterToDvat({ id: registrationid });
+      if (dvat04.status && dvat04.data) {
+        setDvat04Data(dvat04.data);
+      }
       setIsLoading(false);
     };
     init();
-  }, [userid]);
+  }, [current_user_id, registrationid]);
 
   const updateAnx1Auth = async (id: number, auth: boolean) => {
     const userrespone: ApiResponseType<annexure1 | null> = await Anx1Update({
@@ -84,7 +79,7 @@ const Dvat2Page = () => {
     });
     if (userrespone.status) {
       toast.success("Annexure I updated successfully");
-      const getanx1resposne = await GetAnx1User({ userid: userid });
+      const getanx1resposne = await GetAnx1({ id: registrationid });
 
       if (getanx1resposne.status) {
         setAnnexuredata(getanx1resposne.data!);
@@ -154,8 +149,18 @@ const Dvat2Page = () => {
               })}
             </TableBody>
           </Table>
-          <div className="p-4 flex">
+          <div className="p-4 flex gap-2">
             <div className="grow"></div>
+            <Button
+              onClick={() =>
+                router.push(
+                  `/dashboard/new-registration/${registrationid}/anx1`
+                )
+              }
+              className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
+            >
+              Previous
+            </Button>
             {isSubmit ? (
               <Button
                 disabled={true}

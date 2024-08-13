@@ -1,6 +1,6 @@
 "use server";
-interface GetAnx2UserPayload {
-  userid: number;
+interface GetAnx2Payload {
+  id: number;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -8,13 +8,13 @@ import { ApiResponseType } from "@/models/response";
 import { annexure2, dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
-const GetAnx2User = async (
-  payload: GetAnx2UserPayload
+const GetAnx2 = async (
+  payload: GetAnx2Payload
 ): Promise<ApiResponseType<annexure2[] | null>> => {
   try {
     const registrationresponse = await prisma.registration.findFirst({
       where: {
-        userId: parseInt(payload.userid.toString() ?? "0"),
+        id: parseInt(payload.id.toString() ?? "0"),
       },
     });
 
@@ -23,7 +23,7 @@ const GetAnx2User = async (
         status: false,
         data: null,
         message: "Invalid id. Please try again.",
-        functionname: "GetAnx2User",
+        functionname: "GetAnx2",
       };
 
     const anx2response = await prisma.annexure2.findMany({
@@ -37,7 +37,7 @@ const GetAnx2User = async (
         status: false,
         data: null,
         message: "Invalid id. Please try again.",
-        functionname: "GetAnx2User",
+        functionname: "GetAnx2",
       };
 
     if (anx2response.length === 0)
@@ -45,24 +45,24 @@ const GetAnx2User = async (
         status: false,
         data: null,
         message: "No data found",
-        functionname: "GetAnx2User",
+        functionname: "GetAnx2",
       };
 
     return {
       status: true,
       data: anx2response,
       message: "ANNEXURE 2 data get successfully",
-      functionname: "GetAnx2User",
+      functionname: "GetAnx2",
     };
   } catch (e) {
     const response: ApiResponseType<null> = {
       status: false,
       data: null,
       message: errorToString(e),
-      functionname: "GetAnx2User",
+      functionname: "GetAnx2",
     };
     return response;
   }
 };
 
-export default GetAnx2User;
+export default GetAnx2;

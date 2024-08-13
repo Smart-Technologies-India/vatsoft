@@ -1,17 +1,38 @@
 "use client";
 
+import IsRegisterPedning from "@/action/register/isregisterpending";
 import DashboardCards from "@/components/dashboard/cards/dashboardcard";
+import { getCookie } from "cookies-next";
+import { useEffect, useState } from "react";
 
 const Page = () => {
+  const id: number = parseInt(getCookie("id") ?? "0");
+
+  const [isRegisterPending, setRegisterPending] = useState<boolean>(false);
+  useEffect(() => {
+    const init = async () => {
+      const pendingregistraion = await IsRegisterPedning({
+        userid: id,
+      });
+
+      if (pendingregistraion.status && pendingregistraion.data) {
+        setRegisterPending(pendingregistraion.data);
+      }
+    };
+    init();
+  }, []);
+
   return (
     <>
       <main className="bg-gradient-to-l py-4 px-4 rounded-md mt-4 w-full xl:w-5/6 xl:mx-auto">
         <div className=" grid grid-cols-3 justify-between items-center py-1  mx-auto gap-4">
-          <DashboardCards
-            title="New Registration"
-            description="Initiate the process of registering a new taxpayer account for VAT compliance."
-            link="/dashboard/new-registration/registeruser"
-          />
+          {isRegisterPending != true && (
+            <DashboardCards
+              title="New Registration"
+              description="Initiate the process of registering a new taxpayer account for VAT compliance."
+              link="/dashboard/new-registration/registeruser"
+            />
+          )}
           <DashboardCards
             title="Track Application Status"
             description="Monitor the progress and status of your submitted applications and requests with real-time updates."

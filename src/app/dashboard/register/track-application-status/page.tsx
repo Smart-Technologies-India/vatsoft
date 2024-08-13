@@ -10,9 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { InputRef, RadioChangeEvent } from "antd";
 import { Radio, DatePicker } from "antd";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
 import { MaterialSymbolsClose } from "@/components/icons";
@@ -26,34 +25,65 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { dvat04, user } from "@prisma/client";
+import { getCookie } from "cookies-next";
+import { decrypt, formateDate } from "@/utils/methods";
+import GetUser from "@/action/user/getuser";
+import GetAllUserDvat from "@/action/register/getalluserdvat";
+import Link from "next/link";
 
 const TrackAppliation = () => {
-  enum SearchOption {
-    ARN,
-    SRN_FRN,
-    SUBMISSION,
-  }
-  const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.ARN
-  );
+  const id: number = parseInt(getCookie("id") ?? "0");
 
-  const onChange = (e: RadioChangeEvent) => {
-    setSeachOption(e.target.value);
-  };
+  const [data, setData] = useState<dvat04[]>([]);
+  const [user, setUser] = useState<user>();
 
-  const arnRef = useRef<InputRef>(null);
-  const srnRef = useRef<InputRef>(null);
+  useEffect(() => {
+    const init = async () => {
+      const response = await GetAllUserDvat({
+        userid: id,
+      });
+      if (response.data && response.status) {
+        setData(response.data);
+      }
 
-  const [searchDate, setSearchDate] = useState<
-    [Dayjs | null, Dayjs | null] | null
-  >(null);
+      const userresponse = await GetUser({
+        id: id,
+      });
 
-  const onChangeDate = (
-    dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
-  ) => {
-    setSearchDate(dates);
-  };
+      if (userresponse.data && userresponse.status) {
+        setUser(userresponse.data);
+      }
+    };
+    init();
+  }, [id]);
+
+  // enum SearchOption {
+  //   ARN,
+  //   SRN_FRN,
+  //   SUBMISSION,
+  // }
+  // const [searchOption, setSeachOption] = useState<SearchOption>(
+  //   SearchOption.ARN
+  // );
+
+  // const onChange = (e: RadioChangeEvent) => {
+  //   setSeachOption(e.target.value);
+  // };
+
+  // const arnRef = useRef<InputRef>(null);
+  // const srnRef = useRef<InputRef>(null);
+
+  // const [searchDate, setSearchDate] = useState<
+  //   [Dayjs | null, Dayjs | null] | null
+  // >(null);
+
+  // const onChangeDate = (
+  //   dates: [Dayjs | null, Dayjs | null] | null,
+  //   dateStrings: [string, string]
+  // ) => {
+  //   setSearchDate(dates);
+  // };
 
   return (
     <>
@@ -154,7 +184,7 @@ const TrackAppliation = () => {
               </DrawerContent>
             </Drawer>
           </div>
-          <Radio.Group
+          {/* <Radio.Group
             onChange={onChange}
             value={searchOption}
             className="mt-2"
@@ -202,7 +232,7 @@ const TrackAppliation = () => {
           <div className="text-blue-400 bg-blue-500 bg-opacity-10 border border-blue-300 mt-2 text-sm p-2 flex gap-2 items-center">
             <p className="flex-1">Search Result Based on Date range</p>
             <MaterialSymbolsClose className="text-xl cursor-pointer" />
-          </div>
+          </div> */}
           <Table className="border mt-2">
             <TableHeader>
               <TableRow className="bg-gray-100">
@@ -223,20 +253,33 @@ const TrackAppliation = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell className="text-center border">
-                  AKBPG2465L1Z5
-                </TableCell>
-                <TableCell className="text-center border">VAT-04</TableCell>
-                <TableCell className="text-center border">
-                  Application For new Registration
-                </TableCell>
-                <TableCell className="text-center border">11-Jun-24</TableCell>
-                <TableCell className="text-center border">Approved</TableCell>
-                <TableCell className="text-center border">
-                  Rahul Sharma
-                </TableCell>
-              </TableRow>
+              {data.map((val: dvat04, index: number) => {
+                return (
+                  <TableRow key={index}>
+                    <TableCell className="text-center border">
+                      <Link
+                        href={`/dashboard/register/${val.id}/preview`}
+                        className="text-blue-500"
+                      >
+                        {val.tempregistrationnumber}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-center border">VAT-04</TableCell>
+                    <TableCell className="text-center border">
+                      Application For new Registration
+                    </TableCell>
+                    <TableCell className="text-center border">
+                      {formateDate(new Date(val.createdAt))}
+                    </TableCell>
+                    <TableCell className="text-center border">
+                      {val.status}
+                    </TableCell>
+                    <TableCell className="text-center border">
+                      {decrypt(user?.firstName ?? "")}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
