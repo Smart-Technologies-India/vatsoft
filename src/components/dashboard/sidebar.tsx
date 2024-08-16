@@ -1,29 +1,18 @@
 import { usePathname, useRouter } from "next/navigation";
 import {
   Fa6RegularFileLines,
-  FluentMdl2Home,
   FluentMdl2ViewDashboard,
   FluentNotepadPerson16Regular,
   FluentPersonSupport20Regular,
   FluentWalletCreditCard20Regular,
-  GgAlbum,
-  IcBaselineAccountCircle,
-  IcOutlineReceiptLong,
-  LucideNewspaper,
   LucideUser,
   MaterialSymbolsCloseSmall,
-  MaterialSymbolsPersonRounded,
-  MdiReceiptTextClock,
-  MdiStorefrontOutline,
-  RiAuctionLine,
-  RiMoneyRupeeCircleLine,
   SolarLogout2Bold,
 } from "../icons";
 import React from "react";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { Role } from "@prisma/client";
-import { deleteCookie } from "cookies-next";
 import { logoutbtn } from "@/methods/user";
 
 interface SidebarProps {
@@ -35,6 +24,7 @@ interface SidebarProps {
 const Sidebar = (props: SidebarProps) => {
   const path = usePathname();
   const router = useRouter();
+  console.log(props.role);
 
   return (
     <div
@@ -46,14 +36,16 @@ const Sidebar = (props: SidebarProps) => {
       <div className="h-4"></div>
 
       <MenuTab
-        icco={<FluentMdl2ViewDashboard className="text-gray-300 w-6" />}
+        click={() => props.setIsOpen(false)}
+        icon={<FluentMdl2ViewDashboard className="text-gray-300 w-6" />}
         name="Dashboard"
         path={path}
         pathcheck={"/dashboard"}
       />
 
       <MenuTab
-        icco={
+        click={() => props.setIsOpen(false)}
+        icon={
           <FluentNotepadPerson16Regular className="text-gray-300  w-6 text-xl" />
         }
         name="Registration"
@@ -61,13 +53,15 @@ const Sidebar = (props: SidebarProps) => {
         pathcheck={"/dashboard/register"}
       />
       <MenuTab
-        icco={<Fa6RegularFileLines className="text-gray-300  w-6" />}
+        click={() => props.setIsOpen(false)}
+        icon={<Fa6RegularFileLines className="text-gray-300  w-6" />}
         name="Returns"
         path={path}
         pathcheck={"/dashboard/returns"}
       />
       <MenuTab
-        icco={
+        click={() => props.setIsOpen(false)}
+        icon={
           <FluentWalletCreditCard20Regular className="text-gray-300 text-xl  w-6" />
         }
         name="Payments"
@@ -75,17 +69,21 @@ const Sidebar = (props: SidebarProps) => {
         pathcheck={"/dashboard/payments"}
       />
       <MenuTab
-        icco={<LucideUser className="text-gray-300  w-6" />}
+        click={() => props.setIsOpen(false)}
+        icon={<LucideUser className="text-gray-300  w-6" />}
         name="User Services"
         path={path}
         pathcheck={"/dashboard/user_service"}
       />
-      <MenuTab
-        icco={<FluentPersonSupport20Regular className="text-gray-300  w-6" />}
-        name="Tax Payers Facility"
-        path={path}
-        pathcheck={"/dashboard/help_tax"}
-      />
+      {["USER"].includes(props.role) && (
+        <MenuTab
+          click={() => props.setIsOpen(false)}
+          icon={<FluentPersonSupport20Regular className="text-gray-300  w-6" />}
+          name="Tax Payers Facility"
+          path={path}
+          pathcheck={"/dashboard/help_tax"}
+        />
+      )}
       {/* <MenuTab
         icco={<Fa6RegularFileLines className="text-gray-300  w-6" />}
         name="Downloads"
@@ -240,14 +238,16 @@ const Sidebar = (props: SidebarProps) => {
 export default Sidebar;
 
 interface MenuTabProps {
+  click: () => void;
   name: string;
   path: string;
   pathcheck: string;
-  icco: React.ReactNode;
+  icon: React.ReactNode;
 }
 const MenuTab = (props: MenuTabProps) => {
   return (
     <Link
+      onClick={props.click}
       href={props.pathcheck}
       className={`flex gap-1 px-1 items-center py-2 ${
         props.path == props.pathcheck
@@ -255,7 +255,7 @@ const MenuTab = (props: MenuTabProps) => {
           : ""
       }`}
     >
-      {props.icco}
+      {props.icon}
       <p
         className={` text-sm ${
           props.path == props.pathcheck

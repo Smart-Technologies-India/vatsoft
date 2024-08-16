@@ -52,6 +52,14 @@ export default function DashboardLayout({
         ></Navbar>
         <div className="h-10"></div>
         {children}
+
+        {isOpen && (
+          <div
+            role="button"
+            onClick={() => setIsOpen(false)}
+            className="block md:hidden fixed top-0 left-0 bg-black bg-opacity-25 h-screen w-full z-10"
+          ></div>
+        )}
       </div>
     </div>
   );

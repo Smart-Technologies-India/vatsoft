@@ -324,6 +324,9 @@ model user {
   department_doc_upload_createdBy deparment_doc_upload[] @relation("department_doc_upload_createdBy")
   department_doc_upload_updatedBy deparment_doc_upload[] @relation("department_doc_upload_updatedBy")
   department_doc_upload_deletedBy deparment_doc_upload[] @relation("department_doc_upload_deletedBy")
+
+  user_logins user_logins[]
+  session     session[]
 }
 
 model change {
@@ -709,4 +712,19 @@ model deparment_doc_upload {
   deletedAt   DateTime?
   deletedBy   user?     @relation("department_doc_upload_deletedBy", fields: [deletedById], references: [id])
   deletedById Int?
+}
+
+model user_logins {
+  id         Int      @id @default(autoincrement())
+  user       user     @relation(fields: [user_id], references: [id])
+  user_id    Int
+  ip_address String
+  when       DateTime
+}
+
+model session {
+  id      Int  @id @default(autoincrement())
+  user    user @relation(fields: [user_id], references: [id])
+  user_id Int
+  expireat DateTime
 }

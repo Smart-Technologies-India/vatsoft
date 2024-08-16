@@ -9,6 +9,7 @@ import {
   FluentWalletCreditCard20Regular,
   LucideArrowRight,
 } from "@/components/icons";
+
 import { decrypt, formateDate } from "@/utils/methods";
 
 enum FileStatus {
