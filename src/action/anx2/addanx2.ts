@@ -1,7 +1,7 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
+import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import {
   LocationOfBusinessPlace,
@@ -10,6 +10,7 @@ import {
 } from "@prisma/client";
 
 interface Anx2CreatePayload {
+  dvatId: number;
   createdById: number;
   typeOfPerson: TypeOfPerson;
   name: string;
@@ -28,24 +29,12 @@ interface Anx2CreatePayload {
 const Anx2Create = async (
   payload: Anx2CreatePayload
 ): Promise<ApiResponseType<annexure2 | null>> => {
+  const functionname: string = Anx2Create.name;
+
   try {
-    const registrationresponse = await prisma.registration.findFirst({
-      where: {
-        userId: parseInt(payload.createdById.toString() ?? "0"),
-      },
-    });
-
-    if (!registrationresponse)
-      return {
-        status: false,
-        data: null,
-        message: "Invalid id. Please try again.",
-        functionname: "Anx2Create",
-      };
-
     const annexure2response = await prisma.annexure2.create({
       data: {
-        registrationId: registrationresponse.id,
+        dvatId: payload.dvatId,
         createdById: payload.createdById,
         updatedById: payload.createdById,
         typeOfPerson: payload.typeOfPerson,
@@ -64,27 +53,21 @@ const Anx2Create = async (
     });
 
     if (!annexure2response)
-      return {
-        status: false,
-        data: null,
-        message: "Annexure 2 update failed. Please try again.",
-        functionname: "Anx2Create",
-      };
+      return createResponse({
+        message: "Annexure 2 create failed. Please try again.",
+        functionname,
+      });
 
-    return {
-      status: true,
-      data: annexure2response,
+    return createResponse({
       message: "Annexure 2 updated successfully",
-      functionname: "Anx2Create",
-    };
+      functionname,
+      data: annexure2response,
+    });
   } catch (e) {
-    const response: ApiResponseType<null> = {
-      status: false,
-      data: null,
+    return createResponse({
       message: errorToString(e),
-      functionname: "Anx2Create",
-    };
-    return response;
+      functionname,
+    });
   }
 };
 

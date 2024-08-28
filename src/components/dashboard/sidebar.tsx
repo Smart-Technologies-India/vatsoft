@@ -24,7 +24,6 @@ interface SidebarProps {
 const Sidebar = (props: SidebarProps) => {
   const path = usePathname();
   const router = useRouter();
-  console.log(props.role);
 
   return (
     <div

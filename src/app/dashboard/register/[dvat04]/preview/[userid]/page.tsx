@@ -20,6 +20,7 @@ import {
   TypeOfPerson,
   LocationOfBusinessPlace,
   annexure2,
+  registration,
 } from "@prisma/client";
 
 import { useEffect, useRef, useState } from "react";
@@ -70,6 +71,7 @@ import GetDvat04 from "@/action/register/getdvat04";
 import AddTempRegNo from "@/action/register/addtempregno";
 import GetAnx1 from "@/action/anx1/getanx1";
 import GetAnx2 from "@/action/anx2/getanx2";
+import { getCookie } from "cookies-next";
 const nanoid = customAlphabet("1234567890", 12);
 
 const PreviewPage = () => {
@@ -84,7 +86,7 @@ const PreviewPage = () => {
   const useridString = Array.isArray(userid) ? userid[0] : userid;
   const user_id: number = parseInt(useridString);
 
-  // const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const tempregno: string = nanoid();
 
   const router = useRouter();
@@ -107,7 +109,9 @@ const PreviewPage = () => {
 
   const [open, setOpen] = useState(false);
 
-  const [dvat04Data, setDvat04Data] = useState<dvat04>();
+  const [dvat04Data, setDvat04Data] = useState<
+    dvat04 & { registration: registration[] }
+  >();
 
   useEffect(() => {
     const init = async () => {
@@ -165,24 +169,9 @@ const PreviewPage = () => {
           {pageIndex == 2 && <Dvat1Page userid={user_id} />}
           {pageIndex == 3 && <Dvat2Page userid={user_id} />}
           {pageIndex == 4 && <Dvat3Page userid={user_id} />}
-          {pageIndex == 5 && (
-            <Anx1Page
-              userid={user_id}
-              registrationid={dvat04Data?.registrationId ?? 0}
-            />
-          )}
-          {pageIndex == 6 && (
-            <Anx2Page
-              userid={user_id}
-              registrationid={dvat04Data?.registrationId ?? 0}
-            />
-          )}
-          {pageIndex == 7 && (
-            <Anx3Page
-              userid={user_id}
-              registrationid={dvat04Data?.registrationId ?? 0}
-            />
-          )}
+          {pageIndex == 5 && <Anx1Page userid={user_id} dvatid={dvatid} />}
+          {pageIndex == 6 && <Anx2Page userid={user_id} dvatid={dvatid} />}
+          {pageIndex == 7 && <Anx3Page userid={user_id} dvatid={dvatid} />}
           <div className="flex p-4">
             <div className="grow"></div>
 
@@ -208,7 +197,11 @@ const PreviewPage = () => {
             {pageIndex == 7 && (
               <Button
                 onClick={async () => {
-                  if (dvat04Data?.status == "NONE") {
+                  if (dvat04Data?.registration[0].dept_user_id == 15) {
+                    router.push(
+                      `/dashboard/register/${dvat04Data.id}/register`
+                    );
+                  } else if (dvat04Data?.status == "NONE") {
                     setOpen(true);
                   } else {
                     router.push("/dashboard");
@@ -232,6 +225,7 @@ const PreviewPage = () => {
           const response = await AddTempRegNo({
             tempregno: tempregno,
             id: dvat04Data?.id ?? 0,
+            userid: current_user_id,
           });
           if (!response.status && !response.data)
             return toast.error(response.message);
@@ -415,7 +409,7 @@ const Dvat1Page = (props: Dvat1PageProps) => {
 
       if (dvatdata.status) {
         setTimeout(() => {
-          if (nameRef.current) nameRef.current!.value = dvatdata.data!.name;
+          if (nameRef.current) nameRef.current!.value = dvatdata.data!.name!;
           if (tradenameRef.current)
             tradenameRef.current!.value = dvatdata.data!.tradename!;
           setNatureOfBusiness(dvatdata.data!.natureOfBusiness!);
@@ -1838,7 +1832,7 @@ const Dvat3Page = (props: Dvat3PageProps) => {
               dvatdata.data?.numberOfOwners?.toString() ?? "";
           if (numberOfManagersRef.current)
             numberOfManagersRef.current!.value =
-              dvatdata.data?.nmberOfManagers?.toString() ?? "";
+              dvatdata.data?.numberOfManagers?.toString() ?? "";
           if (numberOfSignatoryRef.current)
             numberOfSignatoryRef.current!.value =
               dvatdata.data?.numberOfSignatory?.toString() ?? "";
@@ -2105,7 +2099,7 @@ const Dvat3Page = (props: Dvat3PageProps) => {
 };
 
 interface Anx1PageProps {
-  registrationid: number;
+  dvatid: number;
   userid: number;
 }
 
@@ -2157,7 +2151,7 @@ const Anx1Page = (props: Anx1PageProps) => {
         toast.error(user.message);
       }
 
-      const getanx1resposne = await GetAnx1({ id: props.registrationid });
+      const getanx1resposne = await GetAnx1({ dvatid: props.dvatid });
 
       if (getanx1resposne.status) {
         setAnnexuredata(getanx1resposne.data!);
@@ -2165,7 +2159,7 @@ const Anx1Page = (props: Anx1PageProps) => {
       setIsLoading(false);
     };
     init();
-  }, [props.userid]);
+  }, [props.userid, props.dvatid]);
 
   const edit = async (id: number) => {
     const data = await GetAnx1ById({ id: id });
@@ -2690,7 +2684,7 @@ const Anx1Page = (props: Anx1PageProps) => {
 };
 
 interface Anx2PageProps {
-  registrationid: number;
+  dvatid: number;
   userid: number;
 }
 
@@ -2732,7 +2726,7 @@ const Anx2Page = (props: Anx2PageProps) => {
         toast.error(user.message);
       }
 
-      const getanx2resposne = await GetAnx2({ id: props.registrationid });
+      const getanx2resposne = await GetAnx2({ dvatid: props.dvatid });
 
       if (getanx2resposne.status && getanx2resposne.data) {
         setAnnexuredata(getanx2resposne.data);
@@ -2741,7 +2735,7 @@ const Anx2Page = (props: Anx2PageProps) => {
       setIsLoading(false);
     };
     init();
-  }, [props.userid]);
+  }, [props.userid, props.dvatid]);
 
   const edit = async (id: number) => {
     const data = await GetAnx2ById({ id: id });
@@ -3100,12 +3094,11 @@ const Anx2Page = (props: Anx2PageProps) => {
 };
 
 interface Anx3PageProps {
-  registrationid: number;
   userid: number;
+  dvatid: number;
 }
 
 const Anx3Page = (props: Anx3PageProps) => {
-  const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [Annexuredata, setAnnexuredata] = useState<annexure1[]>([]);
@@ -3114,15 +3107,7 @@ const Anx3Page = (props: Anx3PageProps) => {
     const init = async () => {
       setIsLoading(true);
 
-      const user = await GetUser({ id: props.userid });
-
-      if (user.status) {
-        setUser(user.data!);
-      } else {
-        toast.error(user.message);
-      }
-
-      const getanx1resposne = await GetAnx1({ id: props.registrationid });
+      const getanx1resposne = await GetAnx1({ dvatid: props.dvatid });
 
       if (getanx1resposne.status) {
         setAnnexuredata(getanx1resposne.data!);
@@ -3130,7 +3115,7 @@ const Anx3Page = (props: Anx3PageProps) => {
       setIsLoading(false);
     };
     init();
-  }, [props.userid]);
+  }, [props.userid, props.dvatid]);
 
   if (isLoading)
     return (

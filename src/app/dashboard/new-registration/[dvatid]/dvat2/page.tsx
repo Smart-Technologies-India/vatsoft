@@ -45,14 +45,11 @@ import Dvat2Update from "@/action/user/register/dvat2";
 import GetAllCommodity from "@/action/commodity/getcommodity";
 import { CommodityData } from "@/models/main";
 import GetDvat04FromRegistration from "@/action/register/getdvat04fromregisteration";
+import GetDvat04 from "@/action/register/getdvat04";
 
 const Dvat2Page = () => {
-  const { registerid } = useParams<{ registerid: string | string[] }>();
-  const registeridString = Array.isArray(registerid)
-    ? registerid[0]
-    : registerid;
-
-  const registrationid: number = parseInt(registeridString);
+  const { dvatid } = useParams<{ dvatid: string | string[] }>();
+  const dvat04id = parseInt(Array.isArray(dvatid) ? dvatid[0] : dvatid);
 
   const id: number = parseInt(getCookie("id") ?? "0");
 
@@ -171,7 +168,8 @@ const Dvat2Page = () => {
 
     if (result.success) {
       const userrespone: ApiResponseType<dvat04 | null> = await Dvat2Update({
-        createdById: id,
+        id: dvat04id,
+        updatedby: id,
         noticeServingBuildingName: result.output.noticeServingBuildingName,
         noticeServingArea: result.output.noticeServingArea,
         noticeServingAddress: result.output.noticeServingAddress,
@@ -197,7 +195,7 @@ const Dvat2Page = () => {
         CommodityData: commodityData,
       });
       if (userrespone.status) {
-        router.push(`/dashboard/new-registration/${registrationid}/dvat3`);
+        router.push(`/dashboard/new-registration/${dvat04id}/dvat3`);
       } else {
         toast.error(userrespone.message);
       }
@@ -225,8 +223,8 @@ const Dvat2Page = () => {
         toast.error(user.message);
       }
 
-      const dvatresponse: any = await GetDvat04FromRegistration({
-        id: registrationid,
+      const dvatresponse: any = await GetDvat04({
+        id: dvat04id,
       });
 
       if (dvatresponse.status) {
@@ -986,9 +984,7 @@ const Dvat2Page = () => {
             <div className="grow"></div>
             <Button
               onClick={() =>
-                router.push(
-                  `/dashboard/new-registration/${registrationid}/dvat1`
-                )
+                router.push(`/dashboard/new-registration/${dvat04id}/dvat1`)
               }
               className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
             >

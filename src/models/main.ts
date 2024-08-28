@@ -10,3 +10,8 @@ interface CommodityData {
 }
 
 export type { CommodityData };
+
+export interface OptionValue {
+  value: string;
+  label: string;
+}

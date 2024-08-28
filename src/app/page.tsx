@@ -3,7 +3,7 @@
 import { GravityUiChevronDown } from "@/components/icons";
 import { Collapse } from "antd";
 import Marquee from "react-fast-marquee";
-import type { CSSProperties } from "react";
+import { useEffect, type CSSProperties } from "react";
 import type { CollapseProps } from "antd";
 import Image from "next/image";
 import Link from "next/link";
@@ -59,13 +59,13 @@ const Home = () => {
             </a>
             <a
               href="/home"
-             className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
             >
               About
             </a>
             <a
               href="/home"
-               className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
             >
               Contact
             </a>

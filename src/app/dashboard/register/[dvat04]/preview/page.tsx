@@ -78,7 +78,7 @@ const PreviewPage = () => {
   const dvatidString = Array.isArray(dvat04) ? dvat04[0] : dvat04;
 
   const dvatid: number = parseInt(dvatidString);
-  // const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const tempregno: string = nanoid();
 
   const router = useRouter();
@@ -159,15 +159,9 @@ const PreviewPage = () => {
           {pageIndex == 2 && <Dvat1Page />}
           {pageIndex == 3 && <Dvat2Page />}
           {pageIndex == 4 && <Dvat3Page />}
-          {pageIndex == 5 && (
-            <Anx1Page registrationid={dvat04Data?.registrationId ?? 0} />
-          )}
-          {pageIndex == 6 && (
-            <Anx2Page registrationid={dvat04Data?.registrationId ?? 0} />
-          )}
-          {pageIndex == 7 && (
-            <Anx3Page registrationid={dvat04Data?.registrationId ?? 0} />
-          )}
+          {pageIndex == 5 && <Anx1Page dvatid={dvatid} />}
+          {pageIndex == 6 && <Anx2Page dvatid={dvatid} />}
+          {pageIndex == 7 && <Anx3Page dvatid={dvatid} />}
           <div className="flex p-4">
             <div className="grow"></div>
 
@@ -217,6 +211,7 @@ const PreviewPage = () => {
           const response = await AddTempRegNo({
             tempregno: tempregno,
             id: dvat04Data?.id ?? 0,
+            userid: current_user_id,
           });
           if (!response.status && !response.data)
             return toast.error(response.message);
@@ -395,7 +390,7 @@ const Dvat1Page = () => {
 
       if (dvatdata.status) {
         setTimeout(() => {
-          if (nameRef.current) nameRef.current!.value = dvatdata.data!.name;
+          if (nameRef.current) nameRef.current!.value = dvatdata.data!.name!;
           if (tradenameRef.current)
             tradenameRef.current!.value = dvatdata.data!.tradename!;
           setNatureOfBusiness(dvatdata.data!.natureOfBusiness!);
@@ -1814,7 +1809,7 @@ const Dvat3Page = () => {
               dvatdata.data?.numberOfOwners?.toString() ?? "";
           if (numberOfManagersRef.current)
             numberOfManagersRef.current!.value =
-              dvatdata.data?.nmberOfManagers?.toString() ?? "";
+              dvatdata.data?.numberOfManagers?.toString() ?? "";
           if (numberOfSignatoryRef.current)
             numberOfSignatoryRef.current!.value =
               dvatdata.data?.numberOfSignatory?.toString() ?? "";
@@ -2081,7 +2076,7 @@ const Dvat3Page = () => {
 };
 
 interface Anx1PageProps {
-  registrationid: number;
+  dvatid: number;
 }
 
 const Anx1Page = (props: Anx1PageProps) => {
@@ -2134,7 +2129,7 @@ const Anx1Page = (props: Anx1PageProps) => {
         toast.error(user.message);
       }
 
-      const getanx1resposne = await GetAnx1({ id: props.registrationid });
+      const getanx1resposne = await GetAnx1({ dvatid: props.dvatid });
 
       if (getanx1resposne.status) {
         setAnnexuredata(getanx1resposne.data!);
@@ -2142,7 +2137,7 @@ const Anx1Page = (props: Anx1PageProps) => {
       setIsLoading(false);
     };
     init();
-  }, [current_user_id]);
+  }, [current_user_id, props.dvatid]);
 
   const edit = async (id: number) => {
     const data = await GetAnx1ById({ id: id });
@@ -2667,7 +2662,7 @@ const Anx1Page = (props: Anx1PageProps) => {
 };
 
 interface Anx2PageProps {
-  registrationid: number;
+  dvatid: number;
 }
 
 const Anx2Page = (props: Anx2PageProps) => {
@@ -2710,7 +2705,7 @@ const Anx2Page = (props: Anx2PageProps) => {
         toast.error(user.message);
       }
 
-      const getanx2resposne = await GetAnx2({ id: props.registrationid });
+      const getanx2resposne = await GetAnx2({ dvatid: props.dvatid });
 
       if (getanx2resposne.status && getanx2resposne.data) {
         setAnnexuredata(getanx2resposne.data);
@@ -2719,7 +2714,7 @@ const Anx2Page = (props: Anx2PageProps) => {
       setIsLoading(false);
     };
     init();
-  }, [current_user_id]);
+  }, [current_user_id, props.dvatid]);
 
   const edit = async (id: number) => {
     const data = await GetAnx2ById({ id: id });
@@ -3078,7 +3073,7 @@ const Anx2Page = (props: Anx2PageProps) => {
 };
 
 interface Anx3PageProps {
-  registrationid: number;
+  dvatid: number;
 }
 
 const Anx3Page = (props: Anx3PageProps) => {
@@ -3101,7 +3096,7 @@ const Anx3Page = (props: Anx3PageProps) => {
         toast.error(user.message);
       }
 
-      const getanx1resposne = await GetAnx1({ id: props.registrationid });
+      const getanx1resposne = await GetAnx1({ dvatid: props.dvatid });
 
       if (getanx1resposne.status) {
         setAnnexuredata(getanx1resposne.data!);
@@ -3109,7 +3104,7 @@ const Anx3Page = (props: Anx3PageProps) => {
       setIsLoading(false);
     };
     init();
-  }, [current_user_id]);
+  }, [current_user_id, props.dvatid]);
 
   if (isLoading)
     return (

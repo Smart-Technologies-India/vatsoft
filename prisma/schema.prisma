@@ -318,15 +318,11 @@ model user {
   returns_entry_updatedBy returns_entry[] @relation("returns_entry_updatedBy")
   returns_entry_deletedBy returns_entry[] @relation("returns_entry_deletedBy")
 
-  registration registration[]
   // department doc upload
-
   department_doc_upload_createdBy deparment_doc_upload[] @relation("department_doc_upload_createdBy")
   department_doc_upload_updatedBy deparment_doc_upload[] @relation("department_doc_upload_updatedBy")
   department_doc_upload_deletedBy deparment_doc_upload[] @relation("department_doc_upload_deletedBy")
-
-  user_logins user_logins[]
-  session     session[]
+  registration                    registration[]
 }
 
 model change {
@@ -383,37 +379,36 @@ model document {
 // form tables
 
 model dvat04 {
-  id             Int          @id @default(autoincrement())
-  registration   registration @relation(fields: [registrationId], references: [id])
-  registrationId Int
+  id Int @id @default(autoincrement())
 
   tempregistrationnumber String?
   tinNumber              String?
   certificateNumber      String?
+  certificateDate        DateTime?
 
   // form 1
-  name                         String
+  name                         String?
   tradename                    String?
-  natureOfBusiness             NatureOfBusiness       @default(OTHER)
-  constitutionOfBusiness       ConstitutionOfBusiness @default(OTHER)
-  selectOffice                 SelectOffice           @default(Dadra_Nagar_Haveli)
-  typeOfRegistration           TypeOfRegistration     @default(OTHER)
-  compositionScheme            Boolean                @default(false)
-  annualTurnoverCategory       Boolean                @default(false)
-  turnoverLastFinancialYear    String
-  turnoverCurrentFinancialYear String
-  vatLiableDate                DateTime
-  pan                          String                 @unique
-  gst                          String                 @unique
-  buildingNumber               String
-  area                         String
-  address                      String
-  city                         String
-  pincode                      String
-  contact_one                  String
+  natureOfBusiness             NatureOfBusiness?       @default(OTHER)
+  constitutionOfBusiness       ConstitutionOfBusiness? @default(OTHER)
+  selectOffice                 SelectOffice?           @default(Dadra_Nagar_Haveli)
+  typeOfRegistration           TypeOfRegistration?     @default(OTHER)
+  compositionScheme            Boolean?                @default(false)
+  annualTurnoverCategory       Boolean?                @default(false)
+  turnoverLastFinancialYear    String?
+  turnoverCurrentFinancialYear String?
+  vatLiableDate                DateTime?
+  pan                          String?                 @unique
+  gst                          String?                 @unique
+  buildingNumber               String?
+  area                         String?
+  address                      String?
+  city                         String?
+  pincode                      String?
+  contact_one                  String?
   contact_two                  String?
-  email                        String                 @unique
-  faxNumber                    String?                @unique
+  email                        String?                 @unique
+  faxNumber                    String?                 @unique
 
   // from 2
   noticeServingBuildingName       String?
@@ -468,7 +463,7 @@ model dvat04 {
   branchName            String?
   transactionId         String?
   numberOfOwners        Int?
-  nmberOfManagers       Int?
+  numberOfManagers      Int?
   numberOfSignatory     Int?
   nameOfManager         String?
   nameOfSignatory       String?
@@ -484,7 +479,10 @@ model dvat04 {
   deletedBy   user?      @relation("dvat04_deletedBy", fields: [deletedById], references: [id])
   deletedById Int?
 
-  returns_01 returns_01[]
+  returns_01   returns_01[]
+  registration registration[]
+  annexure1    annexure1[]
+  annexure2    annexure2[]
 }
 
 model commodity {
@@ -511,8 +509,8 @@ model commodity {
 
 model annexure1 {
   id                      Int                     @id @default(autoincrement())
-  registration            registration            @relation(fields: [registrationId], references: [id])
-  registrationId          Int
+  dvat                    dvat04                  @relation(fields: [dvatId], references: [id])
+  dvatId                  Int
   titleParticulasOfperson TitleParticulasOfperson @default(PROPRIETOR)
   nameOfPerson            String?
   dateOfBirth             DateTime?
@@ -547,8 +545,8 @@ model annexure1 {
 
 model annexure2 {
   id                      Int                     @id @default(autoincrement())
-  registration            registration            @relation(fields: [registrationId], references: [id])
-  registrationId          Int
+  dvat                    dvat04                  @relation(fields: [dvatId], references: [id])
+  dvatId                  Int
   typeOfPerson            TypeOfPerson            @default(BRACH_OFFICE)
   name                    String?
   branchName              String?
@@ -574,33 +572,56 @@ model annexure2 {
 }
 
 model registration {
-  id                   Int       @id @default(autoincrement())
-  user                 user      @relation(fields: [userId], references: [id])
-  userId               Int
-  physicalVerification Boolean   @default(false)
-  inspectorNotes       String?
-  acNotes              String?
-  dcNotes              String?
-  inspectorUpload      String?
-  acUpload             String?
-  dcUpload             String?
-  inspectorRecommend   Boolean   @default(false)
-  acRecommend          Boolean   @default(false)
-  dcRecommend          Boolean   @default(false)
-  status               Status    @default(ACTIVE)
-  createdAt            DateTime  @default(now())
-  createdBy            user      @relation("register_createdBy", fields: [createdById], references: [id])
-  createdById          Int
-  updatedAt            DateTime  @updatedAt
-  updatedBy            user?     @relation("register_updatedBy", fields: [updatedById], references: [id])
-  updatedById          Int?
-  deletedAt            DateTime?
-  deletedBy            user?     @relation("register_deletedBy", fields: [deletedById], references: [id])
-  deletedById          Int?
+  id       Int    @id @default(autoincrement())
+  dvat04   dvat04 @relation(fields: [dvat04Id], references: [id])
+  dvat04Id Int
 
-  annexure1 annexure1[]
-  annexure2 annexure2[]
-  dvat04    dvat04[]
+  physicalVerification            Boolean          @default(false)
+  date_of_visit                   DateTime?
+  natureOfBusiness                NatureOfBusiness @default(OTHER)
+  date_of_purchases               DateTime?
+  amount_of_purchases             String?
+  date_of_sales                   DateTime?
+  amount_of_sales                 String?
+  capital_proposed                String?
+  amount_of_stock                 String?
+  books_of_account                String?
+  verification_of_originals       String?
+  verification_of_title           String?
+  other_information               String?
+  security_deposit                Boolean?
+  security_deposit_amount         String?
+  security_deposit_date           DateTime?
+  date_of_expiry_security_deposit DateTime?
+  bank                            String?
+  name_of_person                  String?
+  address                         String?          @db.MediumText
+  plant_and_machinery             String?          @db.MediumText
+  raw_materials                   String?          @db.MediumText
+  packing_materials               String?          @db.MediumText
+
+  commissioner_note       String? @db.MediumText
+  joint_commissioner_note String? @db.MediumText
+  dy_commissioner         String? @db.MediumText
+  vat_officer_note        String? @db.MediumText
+  asst_vat_officer_note   String? @db.MediumText
+  inspector_note          String? @db.MediumText
+  udc_note                String? @db.MediumText
+  ldc_note                String? @db.MediumText
+
+  dept_user    user @relation(fields: [dept_user_id], references: [id])
+  dept_user_id Int
+
+  status      Status    @default(ACTIVE)
+  createdAt   DateTime  @default(now())
+  createdBy   user      @relation("register_createdBy", fields: [createdById], references: [id])
+  createdById Int
+  updatedAt   DateTime  @updatedAt
+  updatedBy   user?     @relation("register_updatedBy", fields: [updatedById], references: [id])
+  updatedById Int?
+  deletedAt   DateTime?
+  deletedBy   user?     @relation("register_deletedBy", fields: [deletedById], references: [id])
+  deletedById Int?
 }
 
 model state {
@@ -687,6 +708,7 @@ model returns_entry {
   vatamount              String?
   remarks                String?
   description_of_goods   String?
+  isnil                  Boolean               @default(false)
   status                 Status                @default(ACTIVE)
   createdAt              DateTime              @default(now())
   createdBy              user                  @relation("returns_entry_createdBy", fields: [createdById], references: [id])
@@ -712,19 +734,4 @@ model deparment_doc_upload {
   deletedAt   DateTime?
   deletedBy   user?     @relation("department_doc_upload_deletedBy", fields: [deletedById], references: [id])
   deletedById Int?
-}
-
-model user_logins {
-  id         Int      @id @default(autoincrement())
-  user       user     @relation(fields: [user_id], references: [id])
-  user_id    Int
-  ip_address String
-  when       DateTime
-}
-
-model session {
-  id      Int  @id @default(autoincrement())
-  user    user @relation(fields: [user_id], references: [id])
-  user_id Int
-  expireat DateTime
 }

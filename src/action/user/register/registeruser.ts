@@ -3,7 +3,7 @@
 import { decrypt, encrypt, errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import prisma from "../../../../prisma/database";
-import { registration, user } from "@prisma/client";
+import { dvat04, user } from "@prisma/client";
 
 interface RegisterUserPayload {
   id: number;
@@ -25,14 +25,12 @@ interface RegisterUserPayload {
   area?: string;
   city?: string;
   pincode?: string;
-  issecond: boolean;
+  isdavt04: boolean;
 }
 
 const registerUser = async (
   payload: RegisterUserPayload
-): Promise<
-  ApiResponseType<{ user: user; registration: registration | null } | null>
-> => {
+): Promise<ApiResponseType<{ user: user; dvat04: dvat04 | null } | null>> => {
   try {
     let data_to_update: any = {};
     if (payload.firstName)
@@ -195,20 +193,19 @@ const registerUser = async (
         functionname: "registerUser",
       };
 
-    if (!payload.issecond) {
-      const registration = await prisma.registration.create({
+    if (!payload.isdavt04) {
+      const dvat04response = await prisma.dvat04.create({
         data: {
-          userId: payload.id,
           createdById: payload.id,
           updatedById: payload.id,
         },
       });
 
-      if (!registration)
+      if (!dvat04response)
         return {
           status: false,
           data: null,
-          message: "Registration create failed. Please try again.",
+          message: "Dvat04 create failed. Please try again.",
           functionname: "registerUser",
         };
 
@@ -216,7 +213,7 @@ const registerUser = async (
         status: true,
         data: {
           user: updateresponse,
-          registration: registration,
+          dvat04: dvat04response,
         },
         message: "User updated successfully",
         functionname: "registerUser",
@@ -227,7 +224,7 @@ const registerUser = async (
       status: true,
       data: {
         user: updateresponse,
-        registration: null,
+        dvat04: null,
       },
       message: "User updated successfully",
       functionname: "registerUser",

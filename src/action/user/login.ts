@@ -43,7 +43,6 @@ const Login = async (
 
     const user = users[0];
 
-
     if (!user)
       return {
         status: false,
@@ -51,7 +50,6 @@ const Login = async (
         message: "Invalid Credentials. Please try again.",
         functionname: "Login",
       };
-
 
     const password = await compare(payload.password, user.password!);
 
@@ -62,6 +60,14 @@ const Login = async (
         message: "Invalid Credentials. Please try again.",
         functionname: "Login",
       };
+
+    // const session = await lucia.createSession(user.id, {});
+    // const sessionCookie = lucia.createSessionCookie(session.id);
+    // cookies().set(
+    //   sessionCookie.name,
+    //   sessionCookie.value,
+    //   sessionCookie.attributes
+    // );
     cookies().set("id", user.id.toString());
     cookies().set("role", user.role.toString());
     return {

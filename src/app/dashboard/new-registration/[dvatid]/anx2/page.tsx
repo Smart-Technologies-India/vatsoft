@@ -48,12 +48,8 @@ import GetAnx2ById from "@/action/anx2/getanxbyid";
 import GetAnx2 from "@/action/anx2/getanx2";
 
 const Dvat2Page = () => {
-  const { registerid } = useParams<{ registerid: string | string[] }>();
-  const registeridString = Array.isArray(registerid)
-    ? registerid[0]
-    : registerid;
-
-  const registrationid: number = parseInt(registeridString);
+  const { dvatid } = useParams<{ dvatid: string | string[] }>();
+  const dvat04id = parseInt(Array.isArray(dvatid) ? dvatid[0] : dvatid);
 
   const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
@@ -100,7 +96,7 @@ const Dvat2Page = () => {
 
   const handelSubmit = () => {
     if (Annexuredata.length === 0) return toast.error("Please add Annexure II");
-    router.push(`/dashboard/new-registration/${registrationid}/anx3`);
+    router.push(`/dashboard/new-registration/${dvat04id}/anx3`);
   };
 
   useEffect(() => {
@@ -115,7 +111,7 @@ const Dvat2Page = () => {
         toast.error(user.message);
       }
 
-      const getanx2resposne = await GetAnx2({ id: registrationid });
+      const getanx2resposne = await GetAnx2({ dvatid: dvat04id });
 
       if (getanx2resposne.status) {
         setAnnexuredata(getanx2resposne.data!);
@@ -124,7 +120,7 @@ const Dvat2Page = () => {
       setIsLoading(false);
     };
     init();
-  }, [current_user_id, registrationid]);
+  }, [current_user_id, dvat04id]);
 
   const createAnx1 = async () => {
     setIsSubmit(true);
@@ -145,6 +141,7 @@ const Dvat2Page = () => {
 
     if (result.success) {
       const userrespone: ApiResponseType<annexure2 | null> = await Anx2Create({
+        dvatId: dvat04id,
         createdById: current_user_id,
         typeOfPerson: result.output.typeOfPerson,
         name: result.output.name,
@@ -549,7 +546,7 @@ const Dvat2Page = () => {
             <Button
               onClick={() =>
                 router.push(
-                  `/dashboard/new-registration/${registrationid}/anx1`
+                  `/dashboard/new-registration/${dvat04id}/anx1`
                 )
               }
               className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "

@@ -28,6 +28,7 @@ import GetUserTrackPayment from "@/action/return/getusertrackpayment";
 import { getCookie } from "cookies-next";
 import { returns_01 } from "@prisma/client";
 import { formateDate } from "@/utils/methods";
+import GetTrackPayment from "@/action/return/gettrackpayment";
 
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
@@ -63,12 +64,11 @@ const TrackAppliation = () => {
 
   useEffect(() => {
     const init = async () => {
-      const payment_data = await GetUserTrackPayment({
-        user_id: userid,
-      });
+      
+      const payment_data = await GetTrackPayment({});
 
       if (payment_data.status && payment_data.data) {
-        setPaymentData(payment_data.data);
+        // setPaymentData(payment_data.data);
         console.log(payment_data.data);
       }
     };

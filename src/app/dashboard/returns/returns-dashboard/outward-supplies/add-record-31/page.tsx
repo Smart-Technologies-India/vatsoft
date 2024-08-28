@@ -1,7 +1,6 @@
 "use client";
 
 import AddReturnInvoice from "@/action/return/addreturninvoice";
-import GetAllState from "@/action/state/getallstate";
 import SearchTin from "@/action/tin_number/searchtin";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,7 +22,7 @@ import {
 } from "@prisma/client";
 import { Button, DatePicker, Input, InputRef, Select } from "antd";
 import { getCookie } from "cookies-next";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FocusEvent, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -51,6 +50,7 @@ const AddRecord = () => {
 
   const [vatAmount, setVatAmount] = useState<string>("");
   const description_of_goods = useRef<InputRef>(null);
+  const dateFormat = "YYYY-MM-DD";
 
   useEffect(() => {
     const init = async () => {
@@ -60,6 +60,44 @@ const AddRecord = () => {
     };
     init();
   }, []);
+
+  interface GetMonthDateas {
+    start: string;
+    end: string;
+  }
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const getMonthDateas = (month: string, year: string): GetMonthDateas => {
+    const monthIndex = monthNames.indexOf(month);
+    if (monthIndex === -1) {
+      toast.error("Invalid month name");
+    }
+
+    const yearNum = parseInt(year, 10);
+    // Start date of the month
+    const start = new Date(yearNum, monthIndex, 1);
+
+    // End date of the month
+    const end = new Date(yearNum, monthIndex + 1, 0); // setting day 0 gets the last day of the month
+    // Formatting dates to "YYYY-MM-DD"
+    const formattedStart = dayjs(start).format(dateFormat);
+    const formattedEnd = dayjs(end).format(dateFormat);
+
+    return { start: formattedStart, end: formattedEnd };
+  };
 
   const handelDate = (dates: Dayjs | null, dateStrings: string | string[]) => {
     if (!dates) return;
@@ -118,6 +156,14 @@ const AddRecord = () => {
 
   const addrecord = async () => {
     setIsSubmit(true);
+
+    if (
+      parseInt(invoice_valueRef.current?.input?.value!) <=
+      parseInt(amount.current?.input?.value!) + parseInt(vatAmount)
+    ) {
+      setIsSubmit(false);
+      return toast.error("Invoice value cannot be less than taxable value");
+    }
 
     const result = safeParse(record31Schema, {
       rr_number: "0",
@@ -269,7 +315,24 @@ const AddRecord = () => {
               Invoice Date <span className="text-red-500">*</span>
             </Label>
 
-            <DatePicker onChange={handelDate} className="block mt-1" />
+            <DatePicker
+              onChange={handelDate}
+              className="block mt-1"
+              minDate={dayjs(
+                getMonthDateas(
+                  searchParams.get("month")?.toString()!,
+                  searchParams.get("year")?.toString()!
+                ).start,
+                dateFormat
+              )}
+              maxDate={dayjs(
+                getMonthDateas(
+                  searchParams.get("month")?.toString()!,
+                  searchParams.get("year")?.toString()!
+                ).end,
+                dateFormat
+              )}
+            />
           </div>
           <div className="flex-1">
             <Label htmlFor="master" className="text-sm font-normal">

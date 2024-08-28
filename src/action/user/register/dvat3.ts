@@ -1,12 +1,12 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
+import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../../prisma/database";
 import { DepositType, dvat04 } from "@prisma/client";
 
-interface Dvat3CreateUpdatePayload {
-  createdById: number;
+interface Dvat3UpdatePayload {
+  id: number;
   securityDepositAmount?: string;
   depositType: DepositType;
   dateOfExpiry: Date;
@@ -14,34 +14,35 @@ interface Dvat3CreateUpdatePayload {
   branchName: string;
   transactionId: string;
   numberOfOwners: number;
-  nmberOfManagers: number;
+  numberOfManagers: number;
   numberOfSignatory: number;
   nameOfManager: string;
   nameOfSignatory: string;
+  updatedby: number;
 }
 
-const Dvat3CreateUpdate = async (
-  payload: Dvat3CreateUpdatePayload
+const Dvat3Update = async (
+  payload: Dvat3UpdatePayload
 ): Promise<ApiResponseType<dvat04 | null>> => {
+  const functionname: string = Dvat3Update.name;
+
   try {
-    const isExist = await prisma.dvat04.findFirst({
+    const is_exist = await prisma.dvat04.findFirst({
       where: {
-        createdById: payload.createdById,
+        id: payload.id,
       },
     });
 
-    if (!isExist) {
-      return {
-        status: false,
-        data: null,
+    if (!is_exist) {
+      return createResponse({
         message: "Dvat3 not found.",
-        functionname: "Dvat3CreateUpdate",
-      };
+        functionname,
+      });
     }
 
     const updateddvat3 = await prisma.dvat04.update({
       where: {
-        id: isExist.id,
+        id: is_exist.id,
       },
       data: {
         securityDepositAmount: payload.securityDepositAmount,
@@ -51,37 +52,31 @@ const Dvat3CreateUpdate = async (
         branchName: payload.branchName,
         transactionId: payload.transactionId,
         numberOfOwners: payload.numberOfOwners,
-        nmberOfManagers: payload.nmberOfManagers,
+        numberOfManagers: payload.numberOfManagers,
         numberOfSignatory: payload.numberOfSignatory,
         nameOfManager: payload.nameOfManager,
         nameOfSignatory: payload.nameOfSignatory,
-        updatedById: payload.createdById,
+        updatedById: payload.updatedby,
       },
     });
 
     if (!updateddvat3)
-      return {
-        status: false,
-        data: null,
+      return createResponse({
         message: "Dvat3 update failed. Please try again.",
-        functionname: "Dvat3CreateUpdate",
-      };
+        functionname,
+      });
 
-    return {
-      status: true,
+    return createResponse({
+      message: "Dvat3 updated successfully.",
+      functionname,
       data: updateddvat3,
-      message: "Dvat3 updated successfully",
-      functionname: "Dvat3CreateUpdate",
-    };
+    });
   } catch (e) {
-    const response: ApiResponseType<null> = {
-      status: false,
-      data: null,
+    return createResponse({
       message: errorToString(e),
-      functionname: "Dvat3CreateUpdate",
-    };
-    return response;
+      functionname,
+    });
   }
 };
 
-export default Dvat3CreateUpdate;
+export default Dvat3Update;

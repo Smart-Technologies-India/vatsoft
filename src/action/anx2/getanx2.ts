@@ -1,67 +1,47 @@
 "use server";
 interface GetAnx2Payload {
-  id: number;
+  dvatid: number;
 }
 
 import { errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
-import { annexure2, dvat04 } from "@prisma/client";
+import { ApiResponseType, createResponse } from "@/models/response";
+import { annexure2 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const GetAnx2 = async (
   payload: GetAnx2Payload
 ): Promise<ApiResponseType<annexure2[] | null>> => {
+  const functionname: string = GetAnx2.name;
+
   try {
-    const registrationresponse = await prisma.registration.findFirst({
-      where: {
-        id: parseInt(payload.id.toString() ?? "0"),
-      },
-    });
-
-    if (!registrationresponse)
-      return {
-        status: false,
-        data: null,
-        message: "Invalid id. Please try again.",
-        functionname: "GetAnx2",
-      };
-
     const anx2response = await prisma.annexure2.findMany({
       where: {
-        registrationId: registrationresponse.id,
+        dvatId: payload.dvatid,
       },
     });
 
     if (!anx2response)
-      return {
-        status: false,
-        data: null,
+      return createResponse({
         message: "Invalid id. Please try again.",
-        functionname: "GetAnx2",
-      };
+        functionname,
+      });
 
     if (anx2response.length === 0)
-      return {
-        status: false,
-        data: null,
+      return createResponse({
         message: "No data found",
-        functionname: "GetAnx2",
-      };
+        functionname,
+      });
 
-    return {
-      status: true,
+    return createResponse({
       data: anx2response,
       message: "ANNEXURE 2 data get successfully",
-      functionname: "GetAnx2",
-    };
+      functionname,
+    });
   } catch (e) {
-    const response: ApiResponseType<null> = {
-      status: false,
-      data: null,
+    return createResponse({
       message: errorToString(e),
-      functionname: "GetAnx2",
-    };
-    return response;
+      functionname,
+    });
   }
 };
 

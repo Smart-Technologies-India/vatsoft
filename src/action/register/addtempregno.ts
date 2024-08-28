@@ -2,16 +2,19 @@
 interface AddTempRegNoPayload {
   id: number;
   tempregno: string;
+  userid: number;
 }
 
 import { errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
+import { ApiResponseType, createResponse } from "@/models/response";
 import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const AddTempRegNo = async (
   payload: AddTempRegNoPayload
 ): Promise<ApiResponseType<dvat04 | null>> => {
+  const functionname: string = AddTempRegNo.name;
+
   try {
     const dvat04 = await prisma.dvat04.findFirst({
       where: {
@@ -22,12 +25,10 @@ const AddTempRegNo = async (
     });
 
     if (!dvat04)
-      return {
-        status: false,
-        data: null,
+      return createResponse({
         message: "Invalid id. Please try again.",
-        functionname: "AddTempRegNo",
-      };
+        functionname,
+      });
 
     const updateresponse = await prisma.dvat04.update({
       where: {
@@ -43,12 +44,24 @@ const AddTempRegNo = async (
     });
 
     if (!updateresponse)
-      return {
-        status: false,
-        data: null,
+      return createResponse({
         message: "Unable to add Temp registration number. Please try again.",
-        functionname: "AddTempRegNo",
-      };
+        functionname,
+      });
+
+    const createregistration = await prisma.registration.create({
+      data: {
+        dvat04Id: updateresponse.id,
+        dept_user_id: 15,
+        physicalVerification: false,
+        createdById: payload.userid,
+      },
+    });
+    if (!createregistration)
+      return createResponse({
+        message: "Unable to create registration. Please try again.",
+        functionname,
+      });
 
     return {
       status: true,
@@ -57,13 +70,10 @@ const AddTempRegNo = async (
       functionname: "AddTempRegNo",
     };
   } catch (e) {
-    const response: ApiResponseType<null> = {
-      status: false,
-      data: null,
+    return createResponse({
       message: errorToString(e),
-      functionname: "AddTempRegNo",
-    };
-    return response;
+      functionname,
+    });
   }
 };
 

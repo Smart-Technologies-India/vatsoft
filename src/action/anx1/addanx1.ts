@@ -1,11 +1,12 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
+import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { Gender, TitleParticulasOfperson, annexure1 } from "@prisma/client";
 
 interface Anx1CreatePayload {
+  dvatId: number;
   createdById: number;
   titleParticulasOfperson: TitleParticulasOfperson;
   nameOfPerson: string;
@@ -31,24 +32,12 @@ interface Anx1CreatePayload {
 const Anx1Create = async (
   payload: Anx1CreatePayload
 ): Promise<ApiResponseType<annexure1 | null>> => {
+  const functionname: string = Anx1Create.name;
+
   try {
-    const registrationresponse = await prisma.registration.findFirst({
-      where: {
-        userId: parseInt(payload.createdById.toString() ?? "0"),
-      },
-    });
-
-    if (!registrationresponse)
-      return {
-        status: false,
-        data: null,
-        message: "Invalid id. Please try again.",
-        functionname: "Anx1Create",
-      };
-
     const annexure1response = await prisma.annexure1.create({
       data: {
-        registrationId: registrationresponse.id,
+        dvatId: payload.dvatId,
         createdById: payload.createdById,
         updatedById: payload.createdById,
         titleParticulasOfperson: payload.titleParticulasOfperson,
@@ -74,27 +63,21 @@ const Anx1Create = async (
     });
 
     if (!annexure1response)
-      return {
-        status: false,
-        data: null,
-        message: "Annexure 1 update failed. Please try again.",
-        functionname: "Anx1Create",
-      };
+      return createResponse({
+        message: "Annexure 1 create failed. Please try again.",
+        functionname,
+      });
 
-    return {
-      status: true,
-      data: annexure1response,
+    return createResponse({
       message: "Annexure 1 updated successfully",
-      functionname: "Anx1Create",
-    };
+      functionname,
+      data: annexure1response,
+    });
   } catch (e) {
-    const response: ApiResponseType<null> = {
-      status: false,
-      data: null,
+    return createResponse({
       message: errorToString(e),
-      functionname: "Anx1Create",
-    };
-    return response;
+      functionname,
+    });
   }
 };
 

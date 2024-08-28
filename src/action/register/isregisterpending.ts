@@ -17,6 +17,20 @@ const IsRegisterPedning = async (
         deletedAt: null,
         deletedBy: null,
         createdById: payload.userid,
+        OR: [
+          {
+            status: "CLARIFICATINFILED",
+          },
+          {
+            status: "CLARIFICATIONNOTFILED",
+          },
+          {
+            status: "PENDINGCLARIFICATION",
+          },
+          {
+            status: "PENDINGPROCESSING",
+          },
+        ],
       },
     });
 

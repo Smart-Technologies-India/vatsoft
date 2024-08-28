@@ -1,7 +1,7 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
+import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../../prisma/database";
 import {
   AccountingBasis,
@@ -12,7 +12,7 @@ import {
 import { CommodityData } from "@/models/main";
 
 interface Dvat2UpdatePayload {
-  createdById: number;
+  id: number;
   noticeServingBuildingName: string;
   noticeServingArea: string;
   noticeServingAddress: string;
@@ -36,29 +36,29 @@ interface Dvat2UpdatePayload {
   accountingBasis: AccountingBasis;
   frequencyFilings: FrequencyFilings;
   CommodityData: CommodityData[];
+  updatedby: number;
 }
 
 const Dvat2Update = async (
   payload: Dvat2UpdatePayload
 ): Promise<ApiResponseType<dvat04 | null>> => {
+  const functionname: string = Dvat2Update.name;
+
   try {
-    const isExist = await prisma.dvat04.findFirst({
+    const is_exist = await prisma.dvat04.findFirst({
       where: {
-        createdById: payload.createdById,
+        id: payload.id,
       },
     });
 
-    if (!isExist) {
-      return {
-        status: false,
-        data: null,
+    if (!is_exist) {
+      return createResponse({
         message: "Dvat2 not found.",
-        functionname: "Dvat2Update",
-      };
+        functionname,
+      });
     }
 
     let commodity_data_to_insert = {};
-
 
     if (payload.CommodityData.length >= 1) {
       commodity_data_to_insert = {
@@ -105,10 +105,9 @@ const Dvat2Update = async (
       };
     }
 
-
     const updateddvat2 = await prisma.dvat04.update({
       where: {
-        id: isExist.id,
+        id: is_exist.id,
       },
       data: {
         noticeServingBuildingName: payload.noticeServingBuildingName,
@@ -133,33 +132,27 @@ const Dvat2Update = async (
         otherAssetsInvestments: payload.otherAssetsInvestments,
         accountingBasis: payload.accountingBasis,
         frequencyFilings: payload.frequencyFilings,
-        updatedById: payload.createdById,
+        updatedById: payload.updatedby,
         ...commodity_data_to_insert,
       },
     });
 
     if (!updateddvat2)
-      return {
-        status: false,
-        data: null,
+      return createResponse({
         message: "Dvat2 update failed. Please try again.",
-        functionname: "Dvat2Update",
-      };
+        functionname,
+      });
 
-    return {
-      status: true,
-      data: updateddvat2,
+    return createResponse({
       message: "Dvat2 updated successfully",
-      functionname: "Dvat2Update",
-    };
+      functionname,
+      data: updateddvat2,
+    });
   } catch (e) {
-    const response: ApiResponseType<null> = {
-      status: false,
-      data: null,
+    return createResponse({
       message: errorToString(e),
-      functionname: "Dvat2Update",
-    };
-    return response;
+      functionname,
+    });
   }
 };
 

@@ -4,49 +4,43 @@ interface GetTempRegNumberPayload {
 }
 
 import { errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
+import { ApiResponseType, createResponse } from "@/models/response";
 import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const GetAllUserDvat = async (
   payload: GetTempRegNumberPayload
 ): Promise<ApiResponseType<dvat04[] | null>> => {
+  const functionname: string = GetAllUserDvat.name;
+
   try {
-    const registerresponse = await prisma.registration.findMany({
+    const dvatresponse = await prisma.dvat04.findMany({
       where: {
-        userId: parseInt(payload.userid.toString() ?? "0"),
+        createdById: parseInt(payload.userid.toString() ?? "0"),
+        NOT: [
+          {
+            status: "NONE",
+          },
+        ],
       },
-      include: { dvat04: true },
     });
 
-    if (!registerresponse)
-      return {
-        status: false,
-        data: null,
+    if (!dvatresponse)
+      return createResponse({
         message: "Invalid id. Please try again.",
-        functionname: "GetTempRegNumber",
-      };
+        functionname,
+      });
 
-    let dvat04response: dvat04[] = [];
-
-    for (let i = 0; i < registerresponse.length; i++) {
-      dvat04response.push(...registerresponse[i].dvat04);
-    }
-
-    return {
-      status: true,
-      data: dvat04response,
+    return createResponse({
+      data: dvatresponse,
       message: "dvat04 data get successfully",
-      functionname: "GetTempRegNumber",
-    };
+      functionname,
+    });
   } catch (e) {
-    const response: ApiResponseType<null> = {
-      status: false,
-      data: null,
+    return createResponse({
       message: errorToString(e),
-      functionname: "GetTempRegNumber",
-    };
-    return response;
+      functionname,
+    });
   }
 };
 

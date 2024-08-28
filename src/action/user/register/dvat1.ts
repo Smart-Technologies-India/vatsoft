@@ -1,7 +1,7 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
+import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../../prisma/database";
 import {
   ConstitutionOfBusiness,
@@ -12,7 +12,7 @@ import {
 } from "@prisma/client";
 
 interface Dvat1CreateUpdatePayload {
-  createdById: number;
+  id: number;
   name: string;
   tradename?: string;
   natureOfBusiness: NatureOfBusiness;
@@ -35,82 +35,30 @@ interface Dvat1CreateUpdatePayload {
   contact_two?: string;
   email: string;
   faxNumber?: string;
+  updatedby: number;
 }
 
-const Dvat1CreateUpdate = async (
+const DvatUpdate = async (
   payload: Dvat1CreateUpdatePayload
 ): Promise<ApiResponseType<dvat04 | null>> => {
+  const functionname: string = DvatUpdate.name;
+
   try {
-    const isExist = await prisma.dvat04.findFirst({
+    const is_exist = await prisma.dvat04.findFirst({
       where: {
-        createdById: payload.createdById,
+        id: payload.id,
       },
     });
 
-    if (!isExist) {
-      const registrationinfo = await prisma.registration.findFirst({
-        where: {
-          userId: payload.createdById,
-        },
+    if (!is_exist)
+      return createResponse({
+        message: "Invalid id. Please try again.",
+        functionname,
       });
-
-      if (!registrationinfo)
-        return {
-          status: false,
-          data: null,
-          message: "Registration not found. Please try again.",
-          functionname: "Dvat1CreateUpdate",
-        };
-
-      const dvat = await prisma.dvat04.create({
-        data: {
-          registrationId: registrationinfo.id,
-          name: payload.name,
-          ...(payload.tradename && { tradename: payload.tradename }),
-          natureOfBusiness: payload.natureOfBusiness,
-          constitutionOfBusiness: payload.constitutionOfBusiness,
-          selectOffice: payload.selectOffice,
-          typeOfRegistration: payload.typeOfRegistration,
-          compositionScheme: payload.compositionScheme,
-          annualTurnoverCategory: payload.annualTurnoverCategory,
-          turnoverLastFinancialYear: payload.turnoverLastFinancialYear,
-          turnoverCurrentFinancialYear: payload.turnoverCurrentFinancialYear,
-          vatLiableDate: payload.vatLiableDate,
-          pan: payload.pan,
-          gst: payload.gst,
-          buildingNumber: payload.buildingNumber,
-          area: payload.area,
-          address: payload.address,
-          city: payload.city,
-          pincode: payload.pincode,
-          contact_one: payload.contact_one,
-          ...(payload.contact_two && { contact_two: payload.contact_two }),
-          email: payload.email,
-          ...(payload.faxNumber && { faxNumber: payload.faxNumber }),
-          createdById: payload.createdById,
-          updatedById: payload.createdById,
-        },
-      });
-
-      if (!dvat)
-        return {
-          status: false,
-          data: null,
-          message: "Dvat1 create failed. Please try again.",
-          functionname: "Dvat1CreateUpdate",
-        };
-
-      return {
-        status: true,
-        data: dvat,
-        message: "Dvat1 created successfully",
-        functionname: "Dvat1CreateUpdate",
-      };
-    }
 
     const updateddvat = await prisma.dvat04.update({
       where: {
-        id: isExist.id,
+        id: is_exist.id,
       },
       data: {
         name: payload.name,
@@ -135,33 +83,26 @@ const Dvat1CreateUpdate = async (
         ...(payload.contact_two && { contact_two: payload.contact_two }),
         email: payload.email,
         faxNumber: payload.faxNumber,
-        updatedById: payload.createdById,
+        updatedById: payload.updatedby,
       },
     });
 
     if (!updateddvat)
-      return {
-        status: false,
-        data: null,
+      return createResponse({
         message: "Dvat1 update failed. Please try again.",
-        functionname: "Dvat1CreateUpdate",
-      };
-
-    return {
-      status: true,
+        functionname,
+      });
+    return createResponse({
+      message: "Dvat1 update failed. Please try again.",
+      functionname,
       data: updateddvat,
-      message: "Dvat1 updated successfully",
-      functionname: "Dvat1CreateUpdate",
-    };
+    });
   } catch (e) {
-    const response: ApiResponseType<null> = {
-      status: false,
-      data: null,
+    return createResponse({
       message: errorToString(e),
-      functionname: "Dvat1CreateUpdate",
-    };
-    return response;
+      functionname,
+    });
   }
 };
 
-export default Dvat1CreateUpdate;
+export default DvatUpdate;
