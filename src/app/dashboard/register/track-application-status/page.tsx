@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/drawer";
 import { dvat04, user } from "@prisma/client";
 import { getCookie } from "cookies-next";
-import { decrypt, formateDate } from "@/utils/methods";
+import { formateDate } from "@/utils/methods";
 import GetUser from "@/action/user/getuser";
 import GetAllUserDvat from "@/action/register/getalluserdvat";
 import Link from "next/link";
@@ -274,7 +274,7 @@ const TrackAppliation = () => {
                       {val.status}
                     </TableCell>
                     <TableCell className="text-center border">
-                      {decrypt(user?.firstName ?? "")}
+                      {user?.firstName ?? ""}
                     </TableCell>
                   </TableRow>
                 );

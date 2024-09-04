@@ -33,7 +33,7 @@ export function MultiSelect<T extends FieldValues>(props: MultiSelectProps<T>) {
             disabled={props.disable ?? false}
             showSearch
             status={error ? "error" : undefined}
-            className="w-full mt-1"
+            className="w-full"
             onChange={(value) => field.onChange(value)}
             options={props.options}
             value={field.value}

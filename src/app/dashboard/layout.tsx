@@ -5,6 +5,7 @@ import Sidebar from "@/components/dashboard/sidebar";
 import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next";
 import { Role, user } from "@prisma/client";
+import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({
   children,
@@ -15,7 +16,17 @@ export default function DashboardLayout({
   const [userdata, setUpser] = useState<user>();
   const [isLoading, setLoading] = useState<boolean>(true);
 
+  const [isbluck, setBluck] = useState<boolean>(false);
+  const path = usePathname();
+
   useEffect(() => {
+    const searchPath = path.endsWith("/") ? path.slice(0, -1) : path;
+    console.log(searchPath);
+    if (
+      searchPath == "/dashboard/returns/returns-dashboard/invoices/bluckupload"
+    ) {
+      setBluck(true);
+    }
     const init = async () => {
       setLoading(true);
       const id: number = parseInt(getCookie("id") ?? "0");
@@ -27,7 +38,7 @@ export default function DashboardLayout({
       setLoading(false);
     };
     init();
-  }, []);
+  }, [path]);
 
   if (isLoading)
     return (
@@ -38,17 +49,25 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen w-full bg-[#f5f6f8] relative">
-      <Sidebar
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        role={userdata?.role as Role}
-      />
-      <div className="relative p-0 md:pl-52 min-h-screen flex flex-col">
+      {!isbluck && (
+        <Sidebar
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          role={userdata?.role as Role}
+        />
+      )}
+
+      <div
+        className={`relative p-0 ${
+          !isbluck ? "md:pl-52" : ""
+        }  min-h-screen flex flex-col`}
+      >
         <Navbar
           role={userdata?.role as Role}
           isOpen={isOpen}
           setIsOpen={setIsOpen}
           name={userdata?.firstName ?? ""}
+          isbluck={isbluck}
         ></Navbar>
         <div className="h-10"></div>
         {children}

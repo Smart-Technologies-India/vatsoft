@@ -101,6 +101,11 @@ const RegistrationSchema = object({
   inspector_note: optional(string()),
   udc_note: optional(string()),
   ldc_note: optional(string()),
+   
+  registration_date: optional(string()),
+  all_doc_upload: optional(boolean()),
+  all_appointment: optional(boolean()),
+  necessary_payments: optional(boolean()),
 });
 
 type RegistrationForm = InferInput<typeof RegistrationSchema>;

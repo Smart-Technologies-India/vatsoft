@@ -1,31 +1,22 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { ApiResponseType } from "@/models/response";
 import { user } from "@prisma/client";
 import { useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { safeParse } from "valibot";
 
-import Login from "@/action/user/login";
 import { Button } from "@/components/ui/button";
-import { LoginSchema } from "@/schema/login";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Fa6RegularEye, Fa6RegularEyeSlash } from "@/components/icons";
 import LoginOtp from "@/action/user/loginotp";
-import { decrypt, handleNumberChange } from "@/utils/methods";
 import { Input } from "@/components/ui/input";
 import SendOtp from "@/action/user/sendotp";
+import { handleNumberChange } from "@/utils/methods";
 
 export default function LoginPage() {
-
-
   const router = useRouter();
 
   const [isLogin, setIsLogin] = useState<boolean>(false);
-
-
 
   // top section
   const firstname = useRef<HTMLInputElement>(null);
@@ -69,27 +60,48 @@ export default function LoginPage() {
     setIsLogin(true);
     const mobile = mobileNumber.current?.value!;
     const otp = otpRef.current?.value;
-    const firstnameValue = otpresponse?.firstName ?? firstname.current?.value;
-    const lastnameValue = otpresponse?.lastName ?? lastname.current?.value;
 
-    if (!mobile) {
+    const firstnameValue: string =
+      otpresponse &&
+      otpresponse.firstName &&
+      otpresponse.firstName !== "undefined"
+        ? otpresponse.firstName
+        : firstname.current?.value!;
+    const lastnameValue =
+      otpresponse &&
+      otpresponse.lastName &&
+      otpresponse.lastName !== "undefined"
+        ? otpresponse.lastName
+        : lastname.current?.value!;
+    console.log(firstnameValue);
+    console.log(lastnameValue);
+
+    if (mobile == null || mobile == undefined || mobile == "") {
       toast.error("Please enter a valid mobile number");
       setIsLogin(false);
       return;
     }
 
-    if (!otp) {
+    if (otp == null || otp == undefined || otp == "") {
       toast.error("Please enter a valid otp");
       setIsLogin(false);
       return;
     }
 
-    if (!firstnameValue) {
+    if (
+      firstnameValue == null ||
+      firstnameValue == undefined ||
+      firstnameValue == ""
+    ) {
       toast.error("Please enter a valid first name");
       return setIsLogin(false);
     }
 
-    if (!lastnameValue) {
+    if (
+      lastnameValue == null ||
+      lastnameValue == undefined ||
+      lastnameValue == ""
+    ) {
       toast.error("Please enter a valid last name");
       return setIsLogin(false);
     }
@@ -153,7 +165,7 @@ export default function LoginPage() {
                       <Input
                         id="mobile"
                         type="text"
-                        value={decrypt(otpresponse?.mobileOne!)}
+                        value={otpresponse?.mobileOne!}
                         ref={mobileNumber}
                         disabled
                         maxLength={10}
@@ -182,7 +194,7 @@ export default function LoginPage() {
                           id="mobile"
                           type="text"
                           ref={mobileNumber}
-                          value={decrypt(otpresponse?.mobileOne!)}
+                          value={otpresponse?.mobileOne!}
                           maxLength={10}
                           disabled
                           onChange={handleNumberChange}

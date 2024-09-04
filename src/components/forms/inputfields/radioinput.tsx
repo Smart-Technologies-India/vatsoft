@@ -27,7 +27,7 @@ export function RabioInput<T extends FieldValues>(props: RabioInputProps<T>) {
             {props.title}
             {props.required && <span className="text-rose-500">*</span>}
           </Label>
-          <div className="flex gap-4 mt-1">
+          <div className="flex gap-4">
             {props.options.map((val: OptionValue, index: number) => {
               return (
                 <label className="flex items-center gap-2" key={index}>

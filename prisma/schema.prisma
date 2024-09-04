@@ -223,6 +223,9 @@ enum PurchaseType {
   FORMC_WITHOUT_TAX
   OUTSIDE_INDIA
   STOCK_TRANSFER
+  FORM_H
+  LABOUR_CHARGE
+  UNREGISTERED_DEALER
 }
 
 enum Quarter {
@@ -600,14 +603,18 @@ model registration {
   raw_materials                   String?          @db.MediumText
   packing_materials               String?          @db.MediumText
 
-  commissioner_note       String? @db.MediumText
-  joint_commissioner_note String? @db.MediumText
-  dy_commissioner         String? @db.MediumText
-  vat_officer_note        String? @db.MediumText
-  asst_vat_officer_note   String? @db.MediumText
-  inspector_note          String? @db.MediumText
-  udc_note                String? @db.MediumText
-  ldc_note                String? @db.MediumText
+  commissioner_note       String?   @db.MediumText
+  joint_commissioner_note String?   @db.MediumText
+  dy_commissioner         String?   @db.MediumText
+  vat_officer_note        String?   @db.MediumText
+  asst_vat_officer_note   String?   @db.MediumText
+  inspector_note          String?   @db.MediumText
+  udc_note                String?   @db.MediumText
+  ldc_note                String?   @db.MediumText
+  registration_date       DateTime?
+  all_doc_upload          Boolean?
+  all_appointment         Boolean?
+  necessary_payments      Boolean?
 
   dept_user    user @relation(fields: [dept_user_id], references: [id])
   dept_user_id Int

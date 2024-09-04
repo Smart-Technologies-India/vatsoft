@@ -13,9 +13,7 @@ import { valibotResolver } from "@hookform/resolvers/valibot";
 import { UserDataForm, UserDataSchema } from "@/schema/userdata";
 import { useEffect, useState } from "react";
 import GetUser from "@/action/user/getuser";
-import { propagateServerField } from "next/dist/server/lib/render-server";
 import { toast } from "react-toastify";
-import { decrypt } from "@/utils/methods";
 import GetUncompeltedDvat04 from "@/action/register/getuncomplteddvat04";
 import { dvat04 } from "@prisma/client";
 import registerUser from "@/action/user/register/registeruser";
@@ -84,14 +82,14 @@ const Registration = (props: RegisterProviderProps) => {
 
       if (user.status) {
         reset({
-          firstName: decrypt(user.data?.firstName ?? ""),
-          lastName: decrypt(user.data?.lastName ?? ""),
+          firstName: user.data?.firstName ?? "",
+          lastName: user.data?.lastName ?? "",
           address: user.data?.address ?? "",
-          email: decrypt(user.data?.email ?? ""),
-          mobileOne: decrypt(user.data?.mobileOne ?? ""),
-          mobileTwo: decrypt(user.data?.mobileTwo ?? ""),
-          pan: decrypt(user.data?.pan ?? ""),
-          aadhar: decrypt(user.data?.aadhar ?? ""),
+          email: user.data?.email ?? "",
+          mobileOne: user.data?.mobileOne ?? "",
+          mobileTwo: user.data?.mobileTwo ?? "",
+          pan: user.data?.pan ?? "",
+          aadhar: user.data?.aadhar ?? "",
         });
       } else {
         toast.error(user.message);

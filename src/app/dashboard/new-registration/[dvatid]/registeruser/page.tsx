@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { decrypt, handleNumberChange } from "@/utils/methods";
+import { handleNumberChange } from "@/utils/methods";
 import { safeParse } from "valibot";
 import { UserDataSchema } from "@/schema/userdata";
 import { useParams, useRouter } from "next/navigation";
@@ -62,7 +62,7 @@ const UserRegister = () => {
             : altMobileRef.current?.value,
         pan: result.output.pan,
         aadhar: result.output.aadhar,
-        issecond: true,
+        isdavt04: true,
       });
       if (userrespone.status && userrespone.data) {
         router.push(`/dashboard/new-registration/${registrationid}/dvat1`);
@@ -89,14 +89,14 @@ const UserRegister = () => {
 
       if (user.status) {
         setTimeout(() => {
-          firstnameRef.current!.value = decrypt(user.data?.firstName ?? "");
-          lastnameRef.current!.value = decrypt(user.data?.lastName ?? "");
+          firstnameRef.current!.value = user.data?.firstName ?? "";
+          lastnameRef.current!.value = user.data?.lastName ?? "";
           addressRef.current!.value = user.data?.address ?? "";
-          emailRef.current!.value = decrypt(user.data?.email ?? "");
-          mobileRef.current!.value = decrypt(user.data?.mobileOne ?? "");
-          altMobileRef.current!.value = decrypt(user.data?.mobileTwo ?? "");
-          panRef.current!.value = decrypt(user.data?.pan ?? "");
-          aadharRef.current!.value = decrypt(user.data?.aadhar ?? "");
+          emailRef.current!.value = user.data?.email ?? "";
+          mobileRef.current!.value = user.data?.mobileOne ?? "";
+          altMobileRef.current!.value = user.data?.mobileTwo ?? "";
+          panRef.current!.value = user.data?.pan ?? "";
+          aadharRef.current!.value = user.data?.aadhar ?? "";
         }, 500);
       } else {
         toast.error(user.message);

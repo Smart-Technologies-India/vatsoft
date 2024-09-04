@@ -1,5 +1,4 @@
 "use client";
-import { decrypt } from "@/utils/methods";
 import {
   MaterialSymbolsCloseSmall,
   SolarHamburgerMenuOutline,
@@ -25,6 +24,7 @@ interface NavbarProps {
   setIsOpen: (arg: (val: boolean) => boolean) => void;
   name: string;
   role: string;
+  isbluck: boolean;
 }
 
 const Navbar = (props: NavbarProps) => {
@@ -62,7 +62,11 @@ const Navbar = (props: NavbarProps) => {
   };
 
   return (
-    <nav className="py-1 px-4 w-full md:w-[calc(100%-13rem)] md:ml-52 bg-white  flex items-center gap-2 shadow fixed top-0 left-0 z-10">
+    <nav
+      className={`py-1 px-4 w-full   ${
+        !props.isbluck ? "md:ml-52 md:w-[calc(100%-13rem)]" : ""
+      } bg-white  flex items-center gap-2 shadow fixed top-0 left-0 z-10`}
+    >
       <div className="md:hidden">
         {props.isOpen ? (
           <MaterialSymbolsCloseSmall
@@ -104,7 +108,7 @@ const Navbar = (props: NavbarProps) => {
           <DropdownMenuTrigger asChild className="px-1">
             <Button variant="ghost" className="gap-2 flex text-right">
               <div>
-                <p className="font-medium text-sm">{decrypt(props.name)}</p>
+                <p className="font-medium text-sm">{props.name}</p>
                 <p className="text-xs text-gray-500">{props.role}</p>
               </div>
             </Button>

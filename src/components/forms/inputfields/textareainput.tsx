@@ -36,7 +36,7 @@ export function TaxtAreaInput<T extends FieldValues>(
             showCount={props.maxlength ? true : undefined}
             maxLength={props.maxlength ?? undefined}
             status={error ? "error" : undefined}
-            className="w-full mt-1 h-20 resize-none"
+            className="w-full h-20 resize-none"
             value={field.value}
             disabled={props.disable ?? false}
             onChange={(e) => {

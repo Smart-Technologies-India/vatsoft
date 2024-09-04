@@ -177,18 +177,18 @@ const getEnumData = <T extends object>(
 
 export { getEnumData };
 
-const encrypt = (value: string): string => {
-  return CryptoJS.AES.encrypt(value, process.env.DATABASE_KEY!).toString();
-};
+// const encrypt = (value: string): string => {
+//   return CryptoJS.AES.encrypt(value, process.env.DATABASE_KEY!).toString();
+// };
 
-export { encrypt };
+// export { encrypt };
 
-const decrypt = (value: string): string => {
-  const bytes = CryptoJS.AES.decrypt(value, process.env.DATABASE_KEY!);
-  return bytes.toString(CryptoJS.enc.Utf8);
-};
+// const decrypt = (value: string): string => {
+//   const bytes = CryptoJS.AES.decrypt(value, process.env.DATABASE_KEY!);
+//   return bytes.toString(CryptoJS.enc.Utf8);
+// };
 
-export { decrypt };
+// export { decrypt };
 
 const addPrismaDatabaseDate = (date: Date): Date => {
   const newDate = new Date(date);

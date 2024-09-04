@@ -70,7 +70,7 @@ const ReturnDashboard = () => {
     let tax: string = "0";
 
     const output: returns_entry[] = returns_entryData.filter(
-      (val: returns_entry) => val.dvat_type == dvatType
+      (val: returns_entry) => val.dvat_type == dvatType && val.isnil == false
     );
 
     for (let i = 0; i < output.length; i++) {
@@ -239,6 +239,28 @@ const ReturnDashboard = () => {
     return periods;
   };
 
+  const ispreview = (): boolean => {
+    const dvat_30 =
+      returns_entryData.filter(
+        (val: returns_entry) => val.dvat_type == DvatType.DVAT_30
+      ).length > 0;
+    const dvat_30A =
+      returns_entryData.filter(
+        (val: returns_entry) => val.dvat_type == DvatType.DVAT_30_A
+      ).length > 0;
+    const dvat_31 =
+      returns_entryData.filter(
+        (val: returns_entry) => val.dvat_type == DvatType.DVAT_31
+      ).length > 0;
+    const dvat_31A =
+      returns_entryData.filter(
+        (val: returns_entry) => val.dvat_type == DvatType.DVAT_31_A
+      ).length > 0;
+    if (dvat_30 && dvat_30A && dvat_31 && dvat_31A) return true;
+
+    return false;
+  };
+
   return (
     <>
       <main className="w-full p-4 relative h-full grow xl:w-5/6 xl:mx-auto">
@@ -368,27 +390,32 @@ const ReturnDashboard = () => {
           <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
             Back
           </button>
-          <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
+          {/* <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
             Scroll to Top
-          </button>
+          </button> */}
           {isSearch && (
             <>
               <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
                 Save
               </button>
-              <button
-                onClick={() => {
-                  router.push(
-                    `/dashboard/returns/returns-dashboard/preview?form=30A&year=${year}&quarter=${quarter}&month=${period}`
-                  );
-                }}
-                className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-              >
-                Preview
-              </button>
-              <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
-                Proceed to Payment
-              </button>
+
+              {ispreview() && (
+                <>
+                  <button
+                    onClick={() => {
+                      router.push(
+                        `/dashboard/returns/returns-dashboard/preview?form=30A&year=${year}&quarter=${quarter}&month=${period}`
+                      );
+                    }}
+                    className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                  >
+                    Preview
+                  </button>
+                  <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
+                    Proceed to Payment
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>

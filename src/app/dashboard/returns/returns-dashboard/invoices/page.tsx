@@ -1,5 +1,6 @@
 "use client";
 
+import AddNil from "@/action/return/addnil";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import { MdiPlusCircle } from "@/components/icons";
 import {
@@ -17,6 +18,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const AddRecord = () => {
+  const id: number = parseInt(getCookie("id") ?? "0");
+
   const route = useRouter();
 
   const userid: number = parseInt(getCookie("id") ?? "0");
@@ -220,6 +223,21 @@ const AddRecord = () => {
         </Table>
         <div className="flex mt-2 gap-2">
           <div className="grow"></div>
+
+          <button
+            className="text-sm text-white bg-[#172e57] py-1 px-4"
+            onClick={() => {
+              route.push(
+                `/dashboard/returns/returns-dashboard/invoices/bluckupload?form=${searchParams.get(
+                  "form"
+                )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
+                  "quarter"
+                )}&month=${searchParams.get("month")}`
+              );
+            }}
+          >
+            Bulk Upload
+          </button>
           <button
             className="text-sm text-white bg-[#172e57] py-1 px-4"
             onClick={() => {

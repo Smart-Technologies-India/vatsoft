@@ -1,7 +1,7 @@
 "use server";
 
-import { decrypt, encrypt, errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
+import { errorToString } from "@/utils/methods";
+import { ApiResponseType, createResponse } from "@/models/response";
 import { user } from "@prisma/client";
 import { cookies } from "next/headers";
 import prisma from "../../../prisma/database";
@@ -16,85 +16,53 @@ interface LoginOtpPayload {
 const LoginOtp = async (
   payload: LoginOtpPayload
 ): Promise<ApiResponseType<user | null>> => {
+  const functionname: string = LoginOtp.name;
+
   try {
-    const usersresponse = await prisma.user.findMany({
-      where: { status: "ACTIVE", deletedAt: null },
+    const usersresponse = await prisma.user.findFirst({
+      where: { status: "ACTIVE", deletedAt: null, mobileOne: payload.mobile },
     });
 
     if (!usersresponse) {
-      return {
-        status: false,
-        data: null,
-        message: "Unable to get users. Please try again.",
-        functionname: "Login",
-      };
-    }
-
-    const users: user[] = usersresponse.filter(
-      (user: user) => decrypt(user.mobileOne) == payload.mobile
-    );
-
-    if (users.length == 0) {
-      return {
-        status: false,
-        data: null,
-        message: "Unable to get users. Please try again.",
-        functionname: "Login",
-      };
-    }
-
-    const user = users[0];
-
-    if (!user)
-      return {
-        status: false,
-        data: null,
+      return createResponse({
         message: "Wrong Mobile Number. Please try again.",
-        functionname: "Login",
-      };
-
-    if (user.otp !== payload.otp) {
-      return {
-        status: false,
-        data: null,
-        message: "Invalid OTP. Please try again.",
-        functionname: "LoginOtp",
-      };
+        functionname,
+      });
     }
 
-    const user_resut = await prisma.user.update({
-      where: { id: user.id },
+    if (usersresponse.otp !== payload.otp) {
+      return createResponse({
+        message: "Invalid OTP. Please try again.",
+        functionname,
+      });
+    }
+
+    const user_result = await prisma.user.update({
+      where: { id: usersresponse.id },
       data: {
-        mobileOne: encrypt(payload.mobile),
-        firstName: encrypt(payload.firstname),
-        lastName: encrypt(payload.lastname),
+        firstName: payload.firstname,
+        lastName: payload.lastname,
       },
     });
 
-    if (!user_resut) {
-      return {
-        status: false,
-        data: null,
+    if (!user_result) {
+      return createResponse({
         message: "Unable to update user. Please try again.",
-        functionname: "LoginOtp",
-      };
+        functionname,
+      });
     }
 
-    cookies().set("id", user.id.toString());
-    return {
-      status: true,
-      data: user,
+    cookies().set("id", user_result.id.toString());
+
+    return createResponse({
       message: "Login successfully",
-      functionname: "LoginOtp",
-    };
+      functionname,
+    });
   } catch (e) {
-    const response: ApiResponseType<null> = {
-      status: false,
-      data: null,
+    return createResponse({
       message: errorToString(e),
-      functionname: "LoginOtp",
-    };
-    return response;
+      functionname,
+    });
   }
 };
 

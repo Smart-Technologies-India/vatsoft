@@ -10,7 +10,7 @@ import {
   LucideArrowRight,
 } from "@/components/icons";
 
-import { decrypt, formateDate } from "@/utils/methods";
+import { formateDate } from "@/utils/methods";
 
 enum FileStatus {
   FILED,
@@ -49,8 +49,8 @@ const Page = () => {
           <div className="mx-auto px-4  w-4/6 py-6 relative">
             <div className="bg-white p-4 rounded-xl">
               <h1 className="text-sm font-semibold font-nunito leading-3">
-                Welcome {decrypt(user?.firstName ?? "")}{" "}
-                {decrypt(user?.lastName ?? "")} To VATSOFT Portal
+                Welcome {user?.firstName ?? ""} {user?.lastName ?? ""} To
+                VATSOFT Portal
               </h1>
               <h1 className="text-xs leading-3 text-gray-500 mt-1">
                 Returns Calender (Last 6 return periods)

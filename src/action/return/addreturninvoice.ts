@@ -97,7 +97,7 @@ const AddReturnInvoice = async (
         urn_number: payload.urn_number,
         invoice_number: payload.invoice_number,
         total_invoice_number: payload.total_invoice_number,
-        invoice_date: payload.invoice_date,
+        invoice_date: payload.invoice_date.toISOString(),
         seller_tin_numberId: payload.seller_tin_numberId,
         category_of_entry: payload.category_of_entry,
         sale_of: payload.sale_of,

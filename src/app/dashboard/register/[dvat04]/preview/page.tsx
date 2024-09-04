@@ -58,7 +58,7 @@ import {
 } from "@/components/ui/table";
 
 import { Textarea } from "@/components/ui/textarea";
-import { decrypt, handleNumberChange } from "@/utils/methods";
+import { handleNumberChange } from "@/utils/methods";
 import { Checkbox } from "@/components/ui/checkbox";
 import GetAnx1ById from "@/action/anx1/getanxbyid";
 import GetDvat from "@/action/user/register/getdvat";
@@ -269,26 +269,22 @@ const UserRegister = () => {
           <div className="">
             <p className="text-xs font-normal text-gray-500">First Name</p>
             <p className="font-semibold text-sm ">
-              {decrypt(userdata?.firstName ?? "")}
+              {userdata?.firstName ?? ""}
             </p>
           </div>
           <div className="">
             <p className="text-xs font-normal text-gray-500">Last Name</p>
-            <p className="font-semibold text-sm ">
-              {decrypt(userdata?.lastName ?? "")}
-            </p>
+            <p className="font-semibold text-sm ">{userdata?.lastName ?? ""}</p>
           </div>
           <div className="">
             <p className="text-xs font-normal text-gray-500">Email</p>
-            <p className="font-semibold text-sm ">
-              {decrypt(userdata?.email ?? "")}
-            </p>
+            <p className="font-semibold text-sm ">{userdata?.email ?? ""}</p>
           </div>
 
           <div className="">
             <p className="text-xs font-normal text-gray-500">Mobile Number</p>
             <p className="font-semibold text-sm ">
-              {decrypt(userdata?.mobileOne ?? "")}
+              {userdata?.mobileOne ?? ""}
             </p>
           </div>
           <div className="">
@@ -296,26 +292,22 @@ const UserRegister = () => {
               Alternate Number
             </p>
             <p className="font-semibold text-sm ">
-              {decrypt(userdata?.mobileTwo ?? "")}
+              {userdata?.mobileTwo ?? ""}
             </p>
           </div>
           <div className="">
             <p className="text-xs font-normal text-gray-500">Pan Card</p>
-            <p className="font-medium text-sm">
-              {decrypt(userdata?.pan ?? "")}
-            </p>
+            <p className="font-medium text-sm">{userdata?.pan ?? ""}</p>
           </div>
 
           <div className="">
             <p className="text-xs font-normal text-gray-500">Aadhar Card</p>
-            <p className="font-medium text-sm ">
-              {decrypt(userdata?.aadhar ?? "")}
-            </p>
+            <p className="font-medium text-sm ">{userdata?.aadhar ?? ""}</p>
           </div>
           <div className="col-span-2">
             <p className="text-xs font-normal text-gray-500">Address</p>
             <p className="font-medium text-sm ">
-              {decrypt(userdata?.lastName ?? "")}
+              {userdata?.lastName ?? ""}
               Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dolor ex
               magni recusandae quam. Debitis eos itaque ea fugiat eaque sint
               perferendis, ex voluptates a! Molestiae repellat, magni facilis

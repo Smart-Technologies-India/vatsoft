@@ -31,7 +31,7 @@ export function DateSelect<T extends FieldValues>(props: DateSelectProps<T>) {
           </Label>
           <DatePicker
             disabled={props.disable ?? false}
-            className="w-full mt-1"
+            className="w-full"
             value={field.value ? dayjs(field.value) : null}
             status={error ? "error" : undefined}
             onChange={(value: dayjs.Dayjs) => {

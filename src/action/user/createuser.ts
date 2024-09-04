@@ -1,66 +1,58 @@
 "use server";
 
-import { encrypt, errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
+import { errorToString } from "@/utils/methods";
+import { ApiResponseType, createResponse } from "@/models/response";
 import { hash } from "bcrypt";
-import { Role, user } from "@prisma/client";
+import { user } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 interface CreateUserPayload {
   mobile: string;
+  firstname: string;
+  lastname: string;
   password: string;
-  role: Role;
 }
 
-const createUser = async (
+const CreateUser = async (
   payload: CreateUserPayload
 ): Promise<ApiResponseType<user | null>> => {
+  const functionname: string = CreateUser.name;
+
   try {
     const user = await prisma.user.findFirst({
-      where: { mobileOne: encrypt(payload.mobile), status: "ACTIVE" },
+      where: { mobileOne: payload.mobile, status: "ACTIVE" },
     });
 
-    if (user)
-      return {
-        status: false,
-        data: null,
+    if (user) {
+      return createResponse({
         message:
-          "Mobile  number already exists. Please try another mobile number.",
-        functionname: "createUsers",
-      };
+          "Mobile number already exists. Please try another mobile number.",
+        functionname,
+      });
+    }
 
     const newpassword = await hash(payload.password, 10);
     const newUser = await prisma.user.create({
       data: {
-        mobileOne: encrypt(payload.mobile),
+        mobileOne: payload.mobile,
         password: newpassword,
-        role: payload.role,
+        role: "USER",
+        firstName: payload.firstname,
+        lastName: payload.lastname,
       },
     });
 
-    if (!newUser)
-      return {
-        status: false,
-        data: null,
-        message: "User not created",
-        functionname: "createUser",
-      };
-
-    return {
-      status: true,
-      data: newUser,
-      message: "User register successfully",
-      functionname: "createUser",
-    };
+    return createResponse({
+      message: newUser ? "User registered successfully" : "User not created",
+      functionname: functionname,
+      data: newUser ?? null,
+    });
   } catch (e) {
-    const response: ApiResponseType<null> = {
-      status: false,
-      data: null,
+    return createResponse({
       message: errorToString(e),
-      functionname: "createUser",
-    };
-    return response;
+      functionname,
+    });
   }
 };
 
-export default createUser;
+export default CreateUser;

@@ -3,7 +3,7 @@
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
-import { annexure1, NatureOfBusiness, registration } from "@prisma/client";
+import { NatureOfBusiness, registration } from "@prisma/client";
 
 interface UpdateRegistrationPayload {
   id: number;
@@ -42,6 +42,11 @@ interface UpdateRegistrationPayload {
   inspector_note?: string;
   udc_note?: string;
   ldc_note?: string;
+
+  registration_date?: Date;
+  all_doc_upload?: boolean;
+  all_appointment?: boolean;
+  necessary_payments?: boolean;
 }
 
 const UpdateRegistration = async (
@@ -151,6 +156,19 @@ const UpdateRegistration = async (
         }),
         ...(payload.udc_note && { udc_note: payload.udc_note }),
         ...(payload.ldc_note && { ldc_note: payload.ldc_note }),
+
+        ...(payload.registration_date && {
+          registration_date: payload.registration_date,
+        }),
+        ...(payload.all_doc_upload && {
+          all_doc_upload: payload.all_doc_upload,
+        }),
+        ...(payload.all_appointment && {
+          all_appointment: payload.all_appointment,
+        }),
+        ...(payload.necessary_payments && {
+          necessary_payments: payload.necessary_payments,
+        }),
       },
     });
 

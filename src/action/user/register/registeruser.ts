@@ -1,6 +1,6 @@
 "use server";
 
-import { decrypt, encrypt, errorToString } from "@/utils/methods";
+import { errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import prisma from "../../../../prisma/database";
 import { dvat04, user } from "@prisma/client";
@@ -33,17 +33,14 @@ const registerUser = async (
 ): Promise<ApiResponseType<{ user: user; dvat04: dvat04 | null } | null>> => {
   try {
     let data_to_update: any = {};
-    if (payload.firstName)
-      data_to_update.firstName = encrypt(payload.firstName);
-    if (payload.lastName) data_to_update.lastName = encrypt(payload.lastName);
-    if (payload.mobileOne)
-      data_to_update.mobileOne = encrypt(payload.mobileOne);
-    if (payload.mobileTwo)
-      data_to_update.mobileTwo = encrypt(payload.mobileTwo);
-    if (payload.email) data_to_update.email = encrypt(payload.email);
+    if (payload.firstName) data_to_update.firstName = payload.firstName;
+    if (payload.lastName) data_to_update.lastName = payload.lastName;
+    if (payload.mobileOne) data_to_update.mobileOne = payload.mobileOne;
+    if (payload.mobileTwo) data_to_update.mobileTwo = payload.mobileTwo;
+    if (payload.email) data_to_update.email = payload.email;
     if (payload.address) data_to_update.address = payload.address;
-    if (payload.aadhar) data_to_update.aadhar = encrypt(payload.aadhar);
-    if (payload.pan) data_to_update.pan = encrypt(payload.pan);
+    if (payload.aadhar) data_to_update.aadhar = payload.aadhar;
+    if (payload.pan) data_to_update.pan = payload.pan;
     if (payload.designation) data_to_update.designation = payload.designation;
     if (payload.isAuthorisedSignatory)
       data_to_update.isAuthorisedSignatory = payload.isAuthorisedSignatory;
@@ -51,8 +48,7 @@ const registerUser = async (
       data_to_update.signatoreUploadPath = payload.signatoreUploadPath;
     if (payload.gender) data_to_update = payload.gender;
     if (payload.dob) data_to_update = payload.dob;
-    if (payload.passportNumber)
-      data_to_update = encrypt(payload.passportNumber);
+    if (payload.passportNumber) data_to_update = payload.passportNumber;
     if (payload.buildingName) data_to_update = payload.buildingName;
     if (payload.area) data_to_update = payload.area;
     if (payload.city) data_to_update = payload.city;
@@ -88,7 +84,7 @@ const registerUser = async (
       // }
 
       const users: user[] = usersresponse.filter(
-        (user: user) => decrypt(user.email ?? "") == payload.email
+        (user: user) => user.email ?? "" == payload.email
       );
 
       if (users.length > 0 && users[0].id !== payload.id) {
@@ -120,7 +116,7 @@ const registerUser = async (
 
     if (payload.mobileOne) {
       const users: user[] = usersresponse.filter(
-        (user: user) => decrypt(user.mobileOne) == payload.mobileOne
+        (user: user) => user.mobileOne == payload.mobileOne
       );
 
       if (users.length > 0 && users[0].id !== payload.id) {
@@ -150,7 +146,7 @@ const registerUser = async (
       // }
 
       const users: user[] = usersresponse.filter(
-        (user: user) => decrypt(user.aadhar ?? "") == payload.aadhar
+        (user: user) => user.aadhar ?? "" == payload.aadhar
       );
 
       if (users.length > 0 && users[0].id !== payload.id) {
@@ -165,7 +161,7 @@ const registerUser = async (
 
     if (payload.pan) {
       const users: user[] = usersresponse.filter(
-        (user: user) => decrypt(user.pan ?? "") == payload.pan
+        (user: user) => user.pan ?? "" == payload.pan
       );
 
       if (users.length > 0 && users[0].id !== payload.id) {

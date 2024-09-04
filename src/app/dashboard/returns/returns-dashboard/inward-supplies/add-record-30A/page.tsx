@@ -179,7 +179,6 @@ const AddRecord = () => {
       parseInt(invoice_valueRef.current?.input?.value!) <=
       parseInt(amount.current?.input?.value!) + parseInt(vatAmount)
     ) {
-      
       setIsSubmit(false);
       return toast.error("Invoice value cannot be less than taxable value");
     }
@@ -418,6 +417,18 @@ const AddRecord = () => {
                 {
                   value: "TAXABLE_OTHER",
                   label: "Taxable at - other rate ",
+                },
+                {
+                  value: "FORM_H",
+                  label: "Against Form H",
+                },
+                {
+                  value: "LABOUR_CHARGE",
+                  label: "Labour Charges Paid",
+                },
+                {
+                  value: "UNREGISTERED_DEALER",
+                  label: "Purchase From Unregistered Dealer",
                 },
               ]}
             />

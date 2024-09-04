@@ -4,8 +4,8 @@ interface LoginPayload {
   password: string;
 }
 
-import { decrypt, errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
+import { errorToString } from "@/utils/methods";
+import { ApiResponseType, createResponse } from "@/models/response";
 import { user } from "@prisma/client";
 import { compare } from "bcrypt";
 import { cookies } from "next/headers";
@@ -14,76 +14,43 @@ import prisma from "../../../prisma/database";
 const Login = async (
   payload: LoginPayload
 ): Promise<ApiResponseType<user | null>> => {
+  const functionname: string = Login.name;
+
   try {
-    const usersresponse = await prisma.user.findMany({
-      where: { status: "ACTIVE", deletedAt: null },
+    const usersresponse = await prisma.user.findFirst({
+      where: { status: "ACTIVE", deletedAt: null, mobileOne: payload.mobile },
     });
 
     if (!usersresponse) {
-      return {
-        status: false,
-        data: null,
-        message: "Unable to get users. Please try again.",
-        functionname: "Login",
-      };
+      return createResponse({
+        message: "Invalid Credentials. Please try again.",
+        functionname,
+      });
     }
 
-    const users: user[] = usersresponse.filter(
-      (user: user) => decrypt(user.mobileOne) == payload.mobile
+    const password = await compare(
+      payload.password,
+      usersresponse.password ?? ""
     );
 
-    if (users.length == 0) {
-      return {
-        status: false,
-        data: null,
-        message: "Unable to get users. Please try again.",
-        functionname: "Login",
-      };
+    if (!password) {
+      return createResponse({
+        message: "Invalid Credentials. Please try again.",
+        functionname,
+      });
     }
 
-    const user = users[0];
-
-    if (!user)
-      return {
-        status: false,
-        data: null,
-        message: "Invalid Credentials. Please try again.",
-        functionname: "Login",
-      };
-
-    const password = await compare(payload.password, user.password!);
-
-    if (!password)
-      return {
-        status: false,
-        data: null,
-        message: "Invalid Credentials. Please try again.",
-        functionname: "Login",
-      };
-
-    // const session = await lucia.createSession(user.id, {});
-    // const sessionCookie = lucia.createSessionCookie(session.id);
-    // cookies().set(
-    //   sessionCookie.name,
-    //   sessionCookie.value,
-    //   sessionCookie.attributes
-    // );
-    cookies().set("id", user.id.toString());
-    cookies().set("role", user.role.toString());
-    return {
-      status: true,
-      data: user,
+    cookies().set("id", usersresponse.id.toString());
+    cookies().set("role", usersresponse.role.toString());
+    return createResponse({
       message: "Login successfully",
-      functionname: "Login",
-    };
+      functionname,
+    });
   } catch (e) {
-    const response: ApiResponseType<null> = {
-      status: false,
-      data: null,
+    return createResponse({
       message: errorToString(e),
-      functionname: "Login",
-    };
-    return response;
+      functionname,
+    });
   }
 };
 
