@@ -2,7 +2,6 @@
 
 import { RegistrationProvider } from "@/components/forms/user/registration";
 
-
 const Register = () => {
   return (
     <main className="min-h-screen bg-[#f6f7fb] w-full py-2 px-4">
@@ -14,7 +13,7 @@ const Register = () => {
             <span className="text-red-500">*</span> Include mandatory fields
           </p>
         </div>
-        <RegistrationProvider />
+        {/* <RegistrationProvider /> */}
       </div>
     </main>
   );
