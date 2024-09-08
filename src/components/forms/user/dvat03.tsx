@@ -8,7 +8,7 @@ import {
 
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MultiSelect } from "../inputfields/multiselect";
 import { OptionValue } from "@/models/main";

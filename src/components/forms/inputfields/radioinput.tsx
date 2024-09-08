@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { OptionValue } from "@/models/main";
+import { capitalcase } from "@/utils/methods";
 import { Controller, FieldValues, Path, useFormContext } from "react-hook-form";
 
 type RabioInputProps<T extends FieldValues> = {
@@ -7,6 +8,7 @@ type RabioInputProps<T extends FieldValues> = {
   title: string;
   required: boolean;
   options: OptionValue[];
+  extratax?: JSX.Element;
 };
 
 export function RabioInput<T extends FieldValues>(props: RabioInputProps<T>) {
@@ -23,10 +25,13 @@ export function RabioInput<T extends FieldValues>(props: RabioInputProps<T>) {
       name={props.name}
       render={({ field }) => (
         <>
-          <Label htmlFor={props.name} className="text-sm font-normal">
-            {props.title}
-            {props.required && <span className="text-rose-500">*</span>}
-          </Label>
+          <div className="w-full flex flex-wrap">
+            <Label htmlFor={props.name} className="text-sm font-normal">
+              {props.title}
+              {props.required && <span className="text-rose-500">*</span>}
+            </Label>
+            {props.extratax && props.extratax}
+          </div>
           <div className="flex gap-4">
             {props.options.map((val: OptionValue, index: number) => {
               return (
@@ -37,7 +42,7 @@ export function RabioInput<T extends FieldValues>(props: RabioInputProps<T>) {
                     checked={field.value === val.value}
                     onChange={() => field.onChange(val.value)}
                   />
-                  {val.label}
+                  <p className="text-sm">{capitalcase(val.label)}</p>
                 </label>
               );
             })}

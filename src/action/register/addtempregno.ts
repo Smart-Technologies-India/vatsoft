@@ -52,7 +52,7 @@ const AddTempRegNo = async (
     const createregistration = await prisma.registration.create({
       data: {
         dvat04Id: updateresponse.id,
-        dept_user_id: 15,
+        dept_user_id: 8,
         physicalVerification: false,
         createdById: payload.userid,
       },

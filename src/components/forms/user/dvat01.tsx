@@ -121,7 +121,6 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
   useEffect(() => {
     const init = async () => {
       const dvat = await GetDvat04({ id: props.dvatid });
-      console.log(dvat);
       if (dvat.status && dvat.data) {
         reset({
           name: dvat.data.name!,
@@ -134,7 +133,9 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           annualTurnoverCategory: dvat.data.annualTurnoverCategory!,
           turnoverLastFinancialYear: dvat.data.turnoverLastFinancialYear!,
           turnoverCurrentFinancialYear: dvat.data.turnoverCurrentFinancialYear!,
-          vatLiableDate: new Date(dvat.data.vatLiableDate!).toLocaleString(),
+          vatLiableDate: dvat.data.vatLiableDate
+            ? new Date(dvat.data.vatLiableDate!).toLocaleString()
+            : undefined,
           pan: dvat.data.pan!,
           gst: dvat.data.gst!,
           buildingNumber: dvat.data.buildingNumber!,

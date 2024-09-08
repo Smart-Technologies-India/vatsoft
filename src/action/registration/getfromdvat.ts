@@ -17,7 +17,6 @@ const GetFromDvat = async (
     const is_exist = await prisma.registration.findFirst({
       where: {
         dvat04Id: payload.id,
-        status: "ACTIVE",
         deletedAt: null,
         deletedById: null,
       },

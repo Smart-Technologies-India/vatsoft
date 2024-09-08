@@ -1,5 +1,6 @@
 "use client";
 
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AddReturnInvoice from "@/action/return/addreturninvoice";
 import SearchTin from "@/action/tin_number/searchtin";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ import {
 import { record30Schema } from "@/schema/record30";
 import {
   CategoryOfEntry,
+  dvat04,
   DvatType,
   InputTaxCredit,
   NaturePurchase,
@@ -40,6 +42,9 @@ import { safeParse } from "valibot";
 const { TextArea } = Input;
 
 const AddRecord = () => {
+  const userid: number = parseInt(getCookie("id") ?? "0");
+  const [davtdata, setDvatdata] = useState<dvat04>();
+
   const dateFormat = "YYYY-MM-DD";
 
   interface GetMonthDateas {
@@ -106,6 +111,12 @@ const AddRecord = () => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+      const response = await GetUserDvat04({
+        userid: userid,
+      });
+      if (response.status && response.data) {
+        setDvatdata(response.data);
+      }
 
       setIsLoading(false);
     };
@@ -179,14 +190,14 @@ const AddRecord = () => {
     }
 
     const result = safeParse(record30Schema, {
-      rr_number: "0",
+      rr_number: "",
       return_type: ReturnType.ORIGNAL,
       year: searchParams.get("year")?.toString(),
       quarter: searchParams.get("quarter") as Quarter,
       month: searchParams.get("month")?.toString(),
       total_tax_amount: vatAmount,
       dvat_type: DvatType.DVAT_30,
-      urn_number: "0",
+      urn_number: "",
       invoice_number: invoice_numberRef.current?.input?.value,
       total_invoice_number: invoice_valueRef.current?.input?.value,
       invoice_date: invoice_date?.toISOString(),
@@ -334,13 +345,23 @@ const AddRecord = () => {
             <DatePicker
               onChange={handelDate}
               className="block mt-1"
-              minDate={dayjs(
-                getMonthDateas(
-                  searchParams.get("month")?.toString()!,
-                  searchParams.get("year")?.toString()!
-                ).start,
-                dateFormat
-              )}
+              minDate={
+                davtdata?.compositionScheme
+                  ? dayjs(
+                      getMonthDateas(
+                        searchParams.get("month")?.toString()!,
+                        searchParams.get("year")?.toString()!
+                      ).start,
+                      dateFormat
+                    ).subtract(2, "month")
+                  : dayjs(
+                      getMonthDateas(
+                        searchParams.get("month")?.toString()!,
+                        searchParams.get("year")?.toString()!
+                      ).start,
+                      dateFormat
+                    )
+              }
               maxDate={dayjs(
                 getMonthDateas(
                   searchParams.get("month")?.toString()!,

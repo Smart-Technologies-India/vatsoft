@@ -14,11 +14,19 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next";
-import { DvatType, Quarter, returns_01, returns_entry } from "@prisma/client";
+import {
+  dvat04,
+  DvatType,
+  Quarter,
+  returns_01,
+  returns_entry,
+} from "@prisma/client";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import AddNil from "@/action/return/addnil";
 import { toast } from "react-toastify";
 import { Modal } from "antd";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import { formateDate } from "@/utils/methods";
 
 declare module "@tanstack/react-table" {
   //allows us to define custom properties for our columns
@@ -32,6 +40,7 @@ const GSTR = () => {
 
   const [open, setOpen] = useState(false);
   const userid: number = parseInt(getCookie("id") ?? "0");
+  const [dvatdata, setDvatData] = useState<dvat04>();
 
   const getdvattype = (): DvatType => {
     switch (searchParams.get("form")!) {
@@ -89,6 +98,13 @@ const GSTR = () => {
 
   useEffect(() => {
     const init = async () => {
+      const dvat_response = await GetUserDvat04({
+        userid: userid,
+      });
+
+      if (dvat_response.status && dvat_response.data) {
+        setDvatData(dvat_response.data);
+      }
       const year: string = searchParams.get("year") ?? "";
       const month: string = searchParams.get("month") ?? "";
 
@@ -114,6 +130,25 @@ const GSTR = () => {
     amount: number;
     tax: number;
   }
+
+  const getTaxPerios = (): string => {
+    if (dvatdata?.compositionScheme) {
+      switch (searchParams.get("month") ?? "") {
+        case "June":
+          return "April - June";
+        case "September":
+          return "July - September";
+        case "December":
+          return "October - December";
+        case "March":
+          return "January - March";
+        default:
+          return "April - June";
+      }
+    } else {
+      return searchParams.get("month") ?? "";
+    }
+  };
 
   const getDvatData = (dvatType: DvatType, percent: string): DvatData => {
     let entry: number = 0;
@@ -183,6 +218,36 @@ const GSTR = () => {
     );
     return output.length > 0;
   };
+  const payment_complted = () => {
+    return (
+      return01 != null &&
+      return01.rr_number != "" &&
+      return01.rr_number != undefined &&
+      return01.rr_number != null
+    );
+  };
+  const getDueDate = () => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const year: number = parseInt(searchParams.get("year")!);
+    const month: string = searchParams.get("month")!;
+    const day = 11;
+
+    return formateDate(new Date(year, monthNames.indexOf(month) + 1, day));
+  };
 
   return (
     <>
@@ -200,20 +265,20 @@ const GSTR = () => {
           </div>
           <div className="bg-white p-4 flex text-xs justify-between">
             <div>
-              <p>VAT No. - 9O2UI3HR92U3RH98</p>
+              <p>VAT No. - {dvatdata?.tinNumber}</p>
               <p>FY - {searchParams.get("year")}</p>
             </div>
             <div>
-              <p>Legal Name - Smart Technologies</p>
-              <p>Tax Period - {searchParams.get("month")}</p>
+              <p>Legal Name - {dvatdata?.name}</p>
+              <p>Tax Period - {getTaxPerios()}</p>
             </div>
             <div>
-              <p>Trade Name - Smart Technologies</p>
-              <p>Status - Filed</p>
+              <p>Trade Name - {dvatdata?.tradename}</p>
+              <p>Status - {payment_complted() ? "Filed" : "Not Filed"} </p>
             </div>
             <div>
               <p>Indicates Mandatory Fields</p>
-              <p>Due Date - 11/06/2024</p>
+              <p>Due Date - {getDueDate()}</p>
             </div>
           </div>
         </div>
@@ -327,7 +392,7 @@ const GSTR = () => {
           </Table>
           <div className="flex mt-2 gap-2">
             <div className="grow"></div>
-            {is_empty() ? (
+            {is_empty() && payment_complted() == false ? (
               <button
                 className="text-sm text-white bg-[#172e57] py-1 px-4"
                 onClick={() => setOpen(true)}

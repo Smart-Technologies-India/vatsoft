@@ -3,36 +3,34 @@
 import { Label } from "@/components/ui/label";
 import { useEffect, useRef, useState } from "react";
 import Marquee from "react-fast-marquee";
-// import { default as MulSelect } from "react-select";
 
 import { RowData } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { Select } from "antd";
-import { DvatType, Quarter, returns_01, returns_entry } from "@prisma/client";
+import { dvat04, DvatType, Quarter, returns_entry } from "@prisma/client";
 
 import { getCookie } from "cookies-next";
 import getPdfReturn from "@/action/return/getpdfreturn";
-import { setMonth } from "date-fns";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 
 declare module "@tanstack/react-table" {
-  //allows us to define custom properties for our columns
   interface ColumnMeta<TData extends RowData, TValue> {
     filterVariant?: "text" | "range" | "select";
   }
 }
 
 const ReturnDashboard = () => {
+  const userid: number = parseInt(getCookie("id") ?? "0");
   const [year, setYear] = useState<string>();
   const [quarter, setQuarter] = useState<Quarter>(Quarter.QUARTER1);
   const [period, setPeriod] = useState<string>();
-
-  const userid: number = parseInt(getCookie("id") ?? "0");
+  const [davtdata, setDvatdata] = useState<dvat04>();
 
   const [isSearch, setSearch] = useState<boolean>(false);
 
   const router = useRouter();
 
-  const [return01, setReturn01] = useState<returns_01 | null>();
+  // const [return01, setReturn01] = useState<returns_01 | null>();
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
     []
   );
@@ -50,10 +48,10 @@ const ReturnDashboard = () => {
     });
 
     if (returnformsresponse.status && returnformsresponse.data) {
-      setReturn01(returnformsresponse.data.returns_01);
+      // setReturn01(returnformsresponse.data.returns_01);
       serReturns_entryData(returnformsresponse.data.returns_entry);
     } else {
-      setReturn01(null);
+      // setReturn01(null);
       serReturns_entryData([]);
     }
   };
@@ -82,6 +80,7 @@ const ReturnDashboard = () => {
         2
       );
     }
+
     return {
       entry,
       amount: parseFloat(amount),
@@ -93,7 +92,18 @@ const ReturnDashboard = () => {
     const currentDate: Date = new Date();
     setDateValue(currentDate);
     setYear(currentDate.getFullYear().toString());
-    setPeriod("April");
+    const init = async () => {
+      const response = await GetUserDvat04({
+        userid: userid,
+      });
+      if (response.status && response.data) {
+        setDvatdata(response.data);
+        response.data.compositionScheme
+          ? setPeriod("June")
+          : setPeriod("April");
+      }
+    };
+    init();
   }, []);
 
   interface PeriodValue {
@@ -203,14 +213,18 @@ const ReturnDashboard = () => {
     switch (quarter) {
       case Quarter.QUARTER1:
         startMonth = 3; // April
+        // startMonth = davtdata?.compositionScheme ? 5 : 3;
         break;
       case Quarter.QUARTER2:
+        // startMonth = davtdata?.compositionScheme ? 8 : 6;
         startMonth = 6; // July
         break;
       case Quarter.QUARTER3:
+        // startMonth = davtdata?.compositionScheme ? 11 : 9;
         startMonth = 9; // October
         break;
       case Quarter.QUARTER4:
+        // startMonth = davtdata?.compositionScheme ? 2 : 0;
         startMonth = 0; // January
         break;
       default:
@@ -283,7 +297,9 @@ const ReturnDashboard = () => {
                   if (!val) return;
                   setYear(val.toString());
                   setQuarter(Quarter.QUARTER1);
-                  setPeriod("April");
+                  davtdata?.compositionScheme
+                    ? setPeriod("June")
+                    : setPeriod("April");
                 }}
               />
             </div>
@@ -300,18 +316,26 @@ const ReturnDashboard = () => {
                   if (!val) return;
                   setQuarter(val);
 
-                  switch (val.toString()) {
+                  switch (val.toString() as Quarter) {
                     case Quarter.QUARTER1:
-                      setPeriod("April");
+                      davtdata?.compositionScheme
+                        ? setPeriod("June")
+                        : setPeriod("April");
                       break;
                     case Quarter.QUARTER2:
-                      setPeriod("July");
+                      davtdata?.compositionScheme
+                        ? setPeriod("September")
+                        : setPeriod("July");
                       break;
                     case Quarter.QUARTER3:
-                      setPeriod("October");
+                      davtdata?.compositionScheme
+                        ? setPeriod("December")
+                        : setPeriod("October");
                       break;
                     case Quarter.QUARTER4:
-                      setPeriod("January");
+                      davtdata?.compositionScheme
+                        ? setPeriod("March")
+                        : setPeriod("January");
                       break;
                     default:
                       break;
@@ -319,20 +343,23 @@ const ReturnDashboard = () => {
                 }}
               />
             </div>
-            <div className="grid items-center gap-1.5 w-full">
-              <Label htmlFor="duedate">
-                Period <span className="text-rose-500">*</span>
-              </Label>
-              <Select
-                value={period}
-                placeholder="Select Period"
-                options={getPeriodList()}
-                onChange={(val: string) => {
-                  if (!val) return;
-                  setPeriod(val.toString());
-                }}
-              />
-            </div>
+            {davtdata?.compositionScheme == false && (
+              <div className="grid items-center gap-1.5 w-full">
+                <Label htmlFor="duedate">
+                  Period <span className="text-rose-500">*</span>
+                </Label>
+                <Select
+                  value={period}
+                  placeholder="Select Period"
+                  options={getPeriodList()}
+                  onChange={(val: string) => {
+                    if (!val) return;
+                    setPeriod(val.toString());
+                  }}
+                />
+              </div>
+            )}
+
             <button
               className="bg-[#172e57] px-4  text-white py-1 rounded-md"
               onClick={search}
@@ -390,9 +417,6 @@ const ReturnDashboard = () => {
           <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
             Back
           </button>
-          {/* <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
-            Scroll to Top
-          </button> */}
           {isSearch && (
             <>
               <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
@@ -412,7 +436,7 @@ const ReturnDashboard = () => {
                     Preview
                   </button>
                   <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
-                    Proceed to Payment
+                    Download Filed Return
                   </button>
                 </>
               )}

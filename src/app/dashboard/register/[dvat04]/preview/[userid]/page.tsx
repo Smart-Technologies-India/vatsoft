@@ -21,6 +21,7 @@ import {
   LocationOfBusinessPlace,
   annexure2,
   registration,
+  Role,
 } from "@prisma/client";
 
 import { useEffect, useRef, useState } from "react";
@@ -79,6 +80,8 @@ const PreviewPage = () => {
     dvat04: string | string[];
     userid: string | string[];
   }>();
+
+  const role = getCookie("role");
 
   const dvatidString = Array.isArray(dvat04) ? dvat04[0] : dvat04;
   const dvatid: number = parseInt(dvatidString);
@@ -197,13 +200,19 @@ const PreviewPage = () => {
             {pageIndex == 7 && (
               <Button
                 onClick={async () => {
-                  if (dvat04Data?.registration[0].dept_user_id == 15) {
+                  if (
+                    dvat04Data?.registration[0].dept_user_id == 8 &&
+                    role == Role.INSPECTOR
+                  ) {
                     router.push(
-                      `/dashboard/register/${dvat04Data.id}/register`
+                      `/dashboard/register/${dvat04Data!.id}/register`
                     );
-                  } else if (dvat04Data?.registration[0].dept_user_id == 13) {
+                  } else if (
+                    dvat04Data?.registration[0].dept_user_id == 6 &&
+                    role == Role.VATOFFICER
+                  ) {
                     router.push(
-                      `/dashboard/register/${dvat04Data.id}/register`
+                      `/dashboard/register/${dvat04Data!.id}/register`
                     );
                   } else if (dvat04Data?.status == "NONE") {
                     setOpen(true);

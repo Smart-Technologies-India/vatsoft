@@ -2,9 +2,11 @@
 
 import DashboardMonth from "@/action/dashboard/dashboard";
 import GetUser from "@/action/user/getuser";
+import GetUserStatus from "@/action/user/userstatus";
 import {
   Fa6RegularFileLines,
   FluentChannelSubtract48Regular,
+  FluentEmojiSad20Regular,
   FluentNotePin20Regular,
   FluentWalletCreditCard20Regular,
   LucideArrowRight,
@@ -20,31 +22,44 @@ enum FileStatus {
 import { user } from "@prisma/client";
 import { getCookie } from "cookies-next";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const Page = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
   const [user, setUser] = useState<user>();
   const [month, setMonth] = useState<any[]>([]);
+
+  const [isProfileCompletd, setIsProfileCompleted] = useState<boolean>(false);
 
   useEffect(() => {
     const init = async () => {
       const userresponse = await GetUser({ id: id });
       if (userresponse.status) setUser(userresponse.data!);
 
-      const dashboard = await DashboardMonth({});
+      const dashboard = await DashboardMonth({
+        userid: id,
+      });
 
       if (dashboard.status && dashboard.data) {
         setMonth(dashboard.data);
       }
+
+      const profile_response = await GetUserStatus({
+        id: id,
+      });
+      if (profile_response.status && profile_response.data) {
+        setIsProfileCompleted(profile_response.data.registration);
+      }
     };
 
     init();
-  }, []);
+  }, [id]);
 
   return (
     <>
-      <main className="relative min-h-[calc(100vh-2.5rem)] ">
+      <main className="relative min-h-[calc(100vh-2.5rem)]">
         <div className="pb-10 relative">
           <div className="mx-auto px-4  w-4/6 py-6 relative">
             <div className="bg-white p-4 rounded-xl">
@@ -122,6 +137,31 @@ const Page = () => {
             </div>
           </div>
         </div>
+
+        {!isProfileCompletd && user?.role! == "USER" && (
+          <div className="w-full h-full absolute top-0 left-0 bg-black  bg-opacity-20 grid place-items-center bg-clip-padding backdrop-filter backdrop-blur-sm">
+            <div className=" bg-white w-60">
+              <div className="bg-rose-500 grid place-items-center py-6">
+                <FluentEmojiSad20Regular className="text-white text-7xl" />
+              </div>
+              <div className="p-2">
+                <h1 className="text-lg text-center">Profile Incomplete </h1>
+                <p className="text-xs">
+                  Your Profile is incomplete, kindly complete your profile in
+                  order to proceed.
+                </p>
+                <button
+                  onClick={() => {
+                    router.push("/dashboard/register");
+                  }}
+                  className="w-full bg-blue-500 text-white text-sm py-1 rounded-md mt-2"
+                >
+                  Register
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </>
   );

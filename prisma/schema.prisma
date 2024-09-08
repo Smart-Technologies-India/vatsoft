@@ -48,9 +48,16 @@ enum Status {
   INACTIVE
 }
 
+enum RegistrationStatus {
+  ACTIVE
+  INACTIVE
+  BYPASS
+}
+
 enum DvatStatus {
   NONE
   PENDINGPROCESSING
+  PROVISIONAL
   PENDINGCLARIFICATION
   CLARIFICATINFILED
   CLARIFICATIONNOTFILED
@@ -619,15 +626,15 @@ model registration {
   dept_user    user @relation(fields: [dept_user_id], references: [id])
   dept_user_id Int
 
-  status      Status    @default(ACTIVE)
-  createdAt   DateTime  @default(now())
-  createdBy   user      @relation("register_createdBy", fields: [createdById], references: [id])
+  status      RegistrationStatus @default(ACTIVE)
+  createdAt   DateTime           @default(now())
+  createdBy   user               @relation("register_createdBy", fields: [createdById], references: [id])
   createdById Int
-  updatedAt   DateTime  @updatedAt
-  updatedBy   user?     @relation("register_updatedBy", fields: [updatedById], references: [id])
+  updatedAt   DateTime           @updatedAt
+  updatedBy   user?              @relation("register_updatedBy", fields: [updatedById], references: [id])
   updatedById Int?
   deletedAt   DateTime?
-  deletedBy   user?     @relation("register_deletedBy", fields: [deletedById], references: [id])
+  deletedBy   user?              @relation("register_deletedBy", fields: [deletedById], references: [id])
   deletedById Int?
 }
 
@@ -655,37 +662,38 @@ model tin_number_master {
 }
 
 model returns_01 {
-  id               Int        @id @default(autoincrement())
-  rr_number        String
-  return_type      ReturnType @default(ORIGNAL)
-  year             String
-  quarter          Quarter    @default(QUARTER1)
-  month            String?
-  dvat04           dvat04     @relation(fields: [dvat04Id], references: [id])
-  dvat04Id         Int
-  filing_datetime  DateTime
-  file_status      Status     @default(ACTIVE)
-  vatamount        String?
-  interest         String?
-  penalty          String?
-  other_charge     String?
-  total_tax_amount String?
-  transaction_date String?
-  paymentmode      String?
-  transaction_id   String?
-  bank_name        String?
-  track_id         String?
-  remarks          String?
-  status           Status     @default(ACTIVE)
-  createdAt        DateTime   @default(now())
-  createdBy        user       @relation("returns_01_createdBy", fields: [createdById], references: [id])
-  createdById      Int
-  updatedAt        DateTime   @updatedAt
-  updatedBy        user?      @relation("returns_01_updatedBy", fields: [updatedById], references: [id])
-  updatedById      Int?
-  deletedAt        DateTime?
-  deletedBy        user?      @relation("returns_01_deletedBy", fields: [deletedById], references: [id])
-  deletedById      Int?
+  id                Int        @id @default(autoincrement())
+  rr_number         String
+  return_type       ReturnType @default(ORIGNAL)
+  year              String
+  quarter           Quarter    @default(QUARTER1)
+  month             String?
+  dvat04            dvat04     @relation(fields: [dvat04Id], references: [id])
+  dvat04Id          Int
+  filing_datetime   DateTime
+  file_status       Status     @default(ACTIVE)
+  vatamount         String?
+  interest          String?
+  penalty           String?
+  other_charge      String?
+  total_tax_amount  String?
+  transaction_date  String?
+  paymentmode       String?
+  transaction_id    String?
+  bank_name         String?
+  track_id          String?
+  compositionScheme Boolean?   @default(false)
+  remarks           String?
+  status            Status     @default(ACTIVE)
+  createdAt         DateTime   @default(now())
+  createdBy         user       @relation("returns_01_createdBy", fields: [createdById], references: [id])
+  createdById       Int
+  updatedAt         DateTime   @updatedAt
+  updatedBy         user?      @relation("returns_01_updatedBy", fields: [updatedById], references: [id])
+  updatedById       Int?
+  deletedAt         DateTime?
+  deletedBy         user?      @relation("returns_01_deletedBy", fields: [deletedById], references: [id])
+  deletedById       Int?
 
   returns_entry returns_entry[]
 }

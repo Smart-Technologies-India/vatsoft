@@ -9,6 +9,7 @@ interface UpdateDvatStatusPayload {
   id: number;
   updatedby: number;
   status: DvatStatus;
+  tinNumber?: string;
 }
 
 const UpdateDvatStatus = async (
@@ -39,6 +40,7 @@ const UpdateDvatStatus = async (
       data: {
         status: payload.status,
         updatedById: payload.updatedby,
+        ...(payload.tinNumber && { tinNumber: payload.tinNumber }),
       },
     });
 

@@ -4,18 +4,19 @@ interface UserStatusPayload {
 }
 
 import { errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
+import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 
 type Response = {
   user: boolean;
   registration: boolean;
-  dvat: boolean;
 };
 
-const UserStatus = async (
+const GetUserStatus = async (
   payload: UserStatusPayload
 ): Promise<ApiResponseType<Response | null>> => {
+  const functionname: string = GetUserStatus.name;
+
   try {
     const user = await prisma.user.findFirst({
       where: { id: parseInt(payload.id.toString() ?? "0"), status: "ACTIVE" },
@@ -27,72 +28,45 @@ const UserStatus = async (
         data: {
           user: false,
           registration: false,
-          dvat: false,
         },
         message: "Invalid user id. Please try again.",
         functionname: "GetUser",
       };
 
-    const registration = await prisma.registration.findFirst({
-      where: {
-        deletedAt: null,
-        deletedBy: null,
-        status: "ACTIVE",
-        userId: user.id,
-      },
-    });
-
-    if (!registration)
-      return {
-        status: false,
-        data: {
-          user: true,
-          registration: false,
-          dvat: false,
-        },
-        message: "Invalid register id. Please try again.",
-        functionname: "GetUser",
-      };
-
     const dvat04 = await prisma.dvat04.findFirst({
       where: {
-        registrationId: registration.id,
+        createdById: payload.id,
         deletedAt: null,
         deletedById: null,
+        status: "APPROVED",
       },
     });
 
-    if (!dvat04)
-      return {
-        status: false,
+    if (!dvat04) {
+      return createResponse({
+        message: "Invalid register id. Please try again.",
+        functionname,
         data: {
           user: true,
           registration: false,
-          dvat: false,
         },
-        message: "Invalid register id. Please try again.",
-        functionname: "GetUser",
-      };
+      });
+    }
 
-    return {
-      status: true,
+    return createResponse({
+      message: "User data get successfully",
+      functionname,
       data: {
         user: true,
         registration: true,
-        dvat: true,
       },
-      message: "User data get successfully",
-      functionname: "GetUser",
-    };
+    });
   } catch (e) {
-    const response: ApiResponseType<null> = {
-      status: false,
-      data: null,
+    return createResponse({
       message: errorToString(e),
-      functionname: "GetUser",
-    };
-    return response;
+      functionname,
+    });
   }
 };
 
-export default UserStatus;
+export default GetUserStatus;

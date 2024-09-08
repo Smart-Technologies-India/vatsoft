@@ -1,3 +1,4 @@
+"use client";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Fa6RegularFileLines,
@@ -9,11 +10,14 @@ import {
   MaterialSymbolsCloseSmall,
   SolarLogout2Bold,
 } from "../icons";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "../ui/button";
-import { Role } from "@prisma/client";
+import { Role, user } from "@prisma/client";
 import { logoutbtn } from "@/methods/user";
+import { getCookie } from "cookies-next";
+import GetUser from "@/action/user/getuser";
+import GetUserStatus from "@/action/user/userstatus";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -24,6 +28,28 @@ interface SidebarProps {
 const Sidebar = (props: SidebarProps) => {
   const path = usePathname();
   const router = useRouter();
+
+  const id: number = parseInt(getCookie("id") ?? "0");
+  const [user, setUser] = useState<user>();
+  const [isProfileCompletd, setIsProfileCompleted] = useState<boolean>(false);
+
+  useEffect(() => {
+    const init = async () => {
+      const userresponse = await GetUser({
+        id: id,
+      });
+      if (userresponse.status && userresponse.data) {
+        setUser(userresponse.data);
+      }
+      const profile_response = await GetUserStatus({
+        id: id,
+      });
+      if (profile_response.status && profile_response.data) {
+        setIsProfileCompleted(profile_response.data.registration);
+      }
+    };
+    init();
+  }, [id]);
 
   return (
     <div
@@ -41,7 +67,6 @@ const Sidebar = (props: SidebarProps) => {
         path={path}
         pathcheck={"/dashboard"}
       />
-
       <MenuTab
         click={() => props.setIsOpen(false)}
         icon={
@@ -51,22 +76,27 @@ const Sidebar = (props: SidebarProps) => {
         path={path}
         pathcheck={"/dashboard/register"}
       />
-      <MenuTab
-        click={() => props.setIsOpen(false)}
-        icon={<Fa6RegularFileLines className="text-gray-300  w-6" />}
-        name="Returns"
-        path={path}
-        pathcheck={"/dashboard/returns"}
-      />
-      <MenuTab
-        click={() => props.setIsOpen(false)}
-        icon={
-          <FluentWalletCreditCard20Regular className="text-gray-300 text-xl  w-6" />
-        }
-        name="Payments"
-        path={path}
-        pathcheck={"/dashboard/payments"}
-      />
+      {isProfileCompletd && ["USER"].includes(props.role) && (
+        <>
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={<Fa6RegularFileLines className="text-gray-300  w-6" />}
+            name="Returns"
+            path={path}
+            pathcheck={"/dashboard/returns"}
+          />
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={
+              <FluentWalletCreditCard20Regular className="text-gray-300 text-xl  w-6" />
+            }
+            name="Payments"
+            path={path}
+            pathcheck={"/dashboard/payments"}
+          />
+        </>
+      )}
+
       <MenuTab
         click={() => props.setIsOpen(false)}
         icon={<LucideUser className="text-gray-300  w-6" />}

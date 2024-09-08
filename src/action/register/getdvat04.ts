@@ -23,6 +23,11 @@ const GetDvat04 = async (
       },
       include: {
         registration: true,
+        selectComOne: true,
+        selectComTwo: true,
+        selectComThree: true,
+        selectComFour: true,
+        selectComFive: true,
       },
     });
 

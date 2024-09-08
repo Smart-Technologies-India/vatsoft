@@ -57,6 +57,7 @@ const LoginOtp = async (
     return createResponse({
       message: "Login successfully",
       functionname,
+      data: user_result,
     });
   } catch (e) {
     return createResponse({

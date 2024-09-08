@@ -89,6 +89,7 @@ const AddNil = async (
           total_tax_amount: "0",
           status: Status.ACTIVE,
           createdById: payload.createdById,
+          compositionScheme: dvat04.compositionScheme,
         },
       });
 

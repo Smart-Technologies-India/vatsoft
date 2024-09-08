@@ -1,6 +1,6 @@
 "use server";
-interface GetDvat04FromRegistrationPayload {
-  id: number;
+interface GetUserDvat04Payload {
+  userid: number;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -8,27 +8,18 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
-const GetDvat04FromRegistration = async (
-  payload: GetDvat04FromRegistrationPayload
+const GetUserDvat04 = async (
+  payload: GetUserDvat04Payload
 ): Promise<ApiResponseType<dvat04 | null>> => {
-  const functionname: string = GetDvat04FromRegistration.name;
+  const functionname: string = GetUserDvat04.name;
+
   try {
-    const dvat04response = await prisma.registration.findFirst({
+    const dvat04response = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
         deletedBy: null,
-        id: payload.id,
-      },
-      include: {
-        dvat04: {
-          include: {
-            selectComOne: true,
-            selectComTwo: true,
-            selectComThree: true,
-            selectComFour: true,
-            selectComFive: true,
-          },
-        },
+        createdById: payload.userid,
+        status: "APPROVED",
       },
     });
 
@@ -41,7 +32,7 @@ const GetDvat04FromRegistration = async (
     return createResponse({
       message: "dvat04 data get successfully",
       functionname,
-      data: dvat04response.dvat04[0],
+      data: dvat04response,
     });
   } catch (e) {
     return createResponse({
@@ -51,4 +42,4 @@ const GetDvat04FromRegistration = async (
   }
 };
 
-export default GetDvat04FromRegistration;
+export default GetUserDvat04;

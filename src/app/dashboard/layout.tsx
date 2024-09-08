@@ -21,7 +21,6 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const searchPath = path.endsWith("/") ? path.slice(0, -1) : path;
-    console.log(searchPath);
     if (
       searchPath == "/dashboard/returns/returns-dashboard/invoices/bluckupload"
     ) {

@@ -10,6 +10,7 @@ interface AddPaymentPayload {
   bank_name: string;
   transaction_id: string;
   track_id: string;
+  rr_number: string;
 }
 
 const AddPayment = async (
@@ -42,6 +43,7 @@ const AddPayment = async (
         transaction_id: payload.transaction_id,
         transaction_date: addPrismaDatabaseDate(new Date()).toISOString(),
         paymentmode: "ONLINE",
+        rr_number: payload.rr_number,
       },
     });
     if (!updateresponse) {

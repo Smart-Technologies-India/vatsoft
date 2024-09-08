@@ -44,8 +44,9 @@ const Dvat16ReturnPreview = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
 
   const [return01, setReturn01] = useState<
-    (returns_01 & { dvat04: dvat04 & { registration: registration } }) | null
+    (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
   >();
+
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
   const [paymentbox, setPaymentBox] = useState<boolean>(false);
   const [payment, setPayment] = useState<boolean>(false);
@@ -91,13 +92,31 @@ const Dvat16ReturnPreview = () => {
     resolver: valibotResolver(SubmitPaymentSchema),
   });
 
+  const get_rr_number = (): string => {
+    const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
+    const today = new Date();
+    const month = ("0" + (today.getMonth() + 1)).slice(-2);
+    const day = ("0" + today.getDate()).slice(-2);
+    const return_id = parseInt(return01?.id.toString() ?? "0") + 4000;
+
+    return `${rr_no}${month}${day}${return_id}`;
+  };
+
   const onSubmit = async (data: SubmitPaymentForm) => {
     if (return01 == null) return toast.error("There is not return from here");
+    console.log({
+      id: return01.id ?? 0,
+      bank_name: data.bank_name,
+      track_id: data.track_id,
+      transaction_id: data.transaction_id,
+      rr_number: get_rr_number(),
+    });
     const response = await AddPayment({
       id: return01.id ?? 0,
       bank_name: data.bank_name,
       track_id: data.track_id,
       transaction_id: data.transaction_id,
+      rr_number: get_rr_number(),
     });
 
     if (!response.status) return toast.error(response.message);
@@ -269,7 +288,9 @@ const Dvat16ReturnPreview = () => {
                   R2.3 Dealer Status
                 </td>
                 <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  {return01?.dvat04.constitutionOfBusiness.split("_").join(" ")}
+                  {return01?.dvat04
+                    .constitutionOfBusiness!.split("_")
+                    .join(" ")}
                 </td>
               </tr>
             </tbody>
@@ -466,7 +487,7 @@ const Dvat16ReturnPreview = () => {
         <div className="h-20"></div>
         <div className="p-2 shadow bg-white fixed bottom-0 right-0 flex gap-4 items-center">
           <button className="text-white bg-black py-1 px-4 text-sm">
-            Download Certificate
+            Download returns
           </button>
           {!payment && (
             <button

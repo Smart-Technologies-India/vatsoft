@@ -85,6 +85,7 @@ const AddReturnInvoice = async (
           file_status: Status.ACTIVE,
           total_tax_amount: payload.total_tax_amount,
           status: Status.ACTIVE,
+          compositionScheme: dvat04.compositionScheme,
           createdById: payload.createdById,
         },
       });

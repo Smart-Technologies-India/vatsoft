@@ -68,26 +68,14 @@ const registerUser = async (
     }
 
     if (payload.email) {
-      // const isemailexist = await prisma.user.findFirst({
-      //   where: {
-      //     email: payload.email,
-      //   },
-      // });
+      const isemailexist = await prisma.user.findFirst({
+        where: {
+          email: payload.email,
+          deletedAt: null,
+        },
+      });
 
-      // if (isemailexist && isemailexist.id !== payload.id) {
-      //   return {
-      //     status: false,
-      //     data: null,
-      //     message: "Email already exist. Please try again.",
-      //     functionname: "registerUser",
-      //   };
-      // }
-
-      const users: user[] = usersresponse.filter(
-        (user: user) => user.email ?? "" == payload.email
-      );
-
-      if (users.length > 0 && users[0].id !== payload.id) {
+      if (isemailexist && isemailexist.id !== payload.id) {
         return {
           status: false,
           data: null,
@@ -97,29 +85,15 @@ const registerUser = async (
       }
     }
 
-    // if (payload.mobileOne) {
-    //   const iscontactoneexist = await prisma.user.findFirst({
-    //     where: {
-    //       mobileOne: payload.mobileOne,
-    //     },
-    //   });
-
-    //   if (iscontactoneexist && iscontactoneexist.id !== payload.id) {
-    //     return {
-    //       status: false,
-    //       data: null,
-    //       message: "Contact number already exist. Please try again.",
-    //       functionname: "registerUser",
-    //     };
-    //   }
-    // }
-
     if (payload.mobileOne) {
-      const users: user[] = usersresponse.filter(
-        (user: user) => user.mobileOne == payload.mobileOne
-      );
+      const iscontactoneexist = await prisma.user.findFirst({
+        where: {
+          deletedAt: null,
+          mobileOne: payload.mobileOne,
+        },
+      });
 
-      if (users.length > 0 && users[0].id !== payload.id) {
+      if (iscontactoneexist && iscontactoneexist.id !== payload.id) {
         return {
           status: false,
           data: null,
@@ -130,26 +104,14 @@ const registerUser = async (
     }
 
     if (payload.aadhar) {
-      // const isAadharExist = await prisma.user.findFirst({
-      //   where: {
-      //     aadhar: payload.aadhar,
-      //   },
-      // });
+      const isAadharExist = await prisma.user.findFirst({
+        where: {
+          aadhar: payload.aadhar,
+          deletedAt: null,
+        },
+      });
 
-      // if (isAadharExist && isAadharExist.id !== payload.id) {
-      //   return {
-      //     status: false,
-      //     data: null,
-      //     message: "Aadhar number already exist. Please try again.",
-      //     functionname: "registerUser",
-      //   };
-      // }
-
-      const users: user[] = usersresponse.filter(
-        (user: user) => user.aadhar ?? "" == payload.aadhar
-      );
-
-      if (users.length > 0 && users[0].id !== payload.id) {
+      if (isAadharExist && isAadharExist.id !== payload.id) {
         return {
           status: false,
           data: null,
@@ -160,15 +122,20 @@ const registerUser = async (
     }
 
     if (payload.pan) {
-      const users: user[] = usersresponse.filter(
-        (user: user) => user.pan ?? "" == payload.pan
-      );
 
-      if (users.length > 0 && users[0].id !== payload.id) {
+
+      const isPanExist = await prisma.user.findFirst({
+        where: {
+          pan: payload.pan,
+          deletedAt: null,
+        },
+      });
+
+      if (isPanExist && isPanExist.id !== payload.id) {
         return {
           status: false,
           data: null,
-          message: "Pan Card number already exist. Please try again.",
+          message: "Pan Card Number already exist. Please try again.",
           functionname: "registerUser",
         };
       }

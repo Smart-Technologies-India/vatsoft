@@ -20,9 +20,9 @@ import { toast } from "react-toastify";
 import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { registration } from "@prisma/client";
+import { dvat04, registration, RegistrationStatus, Role } from "@prisma/client";
 import GetFromDvat from "@/action/registration/getfromdvat";
-import { formatDateTime, formateDate } from "@/utils/methods";
+import { formateDate } from "@/utils/methods";
 import UpdateDvatStatus from "@/action/dvat/updatestatus";
 
 type RegistrationProviderPrpos = {
@@ -31,6 +31,7 @@ type RegistrationProviderPrpos = {
 
 export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
   const [registrationdata, setRegistrationData] = useState<registration>();
+  const role = getCookie("role");
 
   useEffect(() => {
     const init = async () => {
@@ -48,7 +49,7 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
     resolver: valibotResolver(RegistrationSchema),
   });
 
-  if (registrationdata?.dept_user_id == 13) {
+  if (registrationdata?.dept_user_id == 6 && role == Role.VATOFFICER) {
     return (
       <FormProvider {...methods}>
         <VatNote registrationdata={registrationdata} />
@@ -56,37 +57,29 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
     );
   }
 
-  return (
-    <FormProvider {...methods}>
-      <Registration dvatid={props.dvatid} />
-    </FormProvider>
-  );
-
-  // if (registrationdata?.dept_user_id == 15) {
-  //   return (
-  //     <FormProvider {...methods}>
-  //       <Registration dvatid={props.dvatid} />
-  //     </FormProvider>
-  //   );
-  // } else if (registrationdata?.dept_user_id == 13) {
-  //   return <VatNote registrationdata={registrationdata} />;
-  // } else {
-  //   <FormProvider {...methods}>
-  //     <Registration dvatid={props.dvatid} />
-  //   </FormProvider>;
-  // }
+  if (registrationdata?.dept_user_id == 8 && role == Role.INSPECTOR) {
+    return (
+      <FormProvider {...methods}>
+        <Registration dvatid={props.dvatid} />
+      </FormProvider>
+    );
+  }
+  return <></>;
 };
 
 const Registration = (props: RegistrationProviderPrpos) => {
   const id: number = parseInt(getCookie("id") ?? "0");
   const router = useRouter();
 
+  const [dvatdata, setDvatdata] = useState<
+    dvat04 & { registration: registration[] }
+  >();
+
   const {
-    register,
     reset,
     handleSubmit,
-    watch,
-    formState: { errors, isSubmitting },
+    getValues,
+    formState: { isSubmitting },
   } = useFormContext<RegistrationForm>();
 
   useEffect(() => {
@@ -96,31 +89,34 @@ const Registration = (props: RegistrationProviderPrpos) => {
       });
       if (response.status && response.data) {
         reset({
-          date_of_visit: formateDate(response.data.date_of_visit!),
+          date_of_visit: response.data.date_of_visit
+            ? formateDate(response.data.date_of_visit)
+            : undefined,
           natureOfBusiness: response.data.natureOfBusiness!,
 
-          date_of_purchases: formateDate(
-            response.data.date_of_purchases!
-          ),
+          date_of_purchases: response.data.date_of_purchases
+            ? formateDate(response.data.date_of_purchases)
+            : undefined,
           amount_of_purchases: response.data.amount_of_purchases!,
-          date_of_sales: formateDate(response.data.date_of_sales!),
+          date_of_sales: response.data.date_of_sales
+            ? formateDate(response.data.date_of_sales)
+            : undefined,
           amount_of_sales: response.data.amount_of_sales!,
           capital_proposed: response.data.capital_proposed!,
           amount_of_stock: response.data.amount_of_stock!,
           books_of_account: response.data.books_of_account!,
-          verification_of_originals:
-          response.data.verification_of_originals!,
+          verification_of_originals: response.data.verification_of_originals!,
           verification_of_title: response.data.verification_of_title!,
           other_information: response.data.other_information!,
           security_deposit: response.data.security_deposit!,
-          security_deposit_amount:
-          response.data.security_deposit_amount!,
-          security_deposit_date: formateDate(
-            response.data.security_deposit_date!
-          ),
-          date_of_expiry_security_deposit: formateDate(
-            response.data.date_of_expiry_security_deposit!
-          ),
+          security_deposit_amount: response.data.security_deposit_amount!,
+          security_deposit_date: response.data.security_deposit_date
+            ? formateDate(response.data.security_deposit_date)
+            : undefined,
+          date_of_expiry_security_deposit: response.data
+            .date_of_expiry_security_deposit
+            ? formateDate(response.data.date_of_expiry_security_deposit)
+            : undefined,
           bank: response.data.bank!,
           name_of_person: response.data.name_of_person!,
           address: response.data.address!,
@@ -131,20 +127,22 @@ const Registration = (props: RegistrationProviderPrpos) => {
           inspector_note: response.data.inspector_note!,
         });
       }
+
+      const dvat04_response = await GetDvat04({
+        id: props.dvatid,
+      });
+
+      if (dvat04_response.status && dvat04_response.data) {
+        setDvatdata(dvat04_response.data);
+      }
     };
     init();
   }, [props.dvatid, reset]);
 
   const onSubmit = async (data: RegistrationForm) => {
-    const dvat04_response = await GetDvat04({
-      id: props.dvatid,
-    });
-
-    if (!dvat04_response.status || !dvat04_response.data)
-      return toast.error("There is not any dvat form exist with.");
-
-    if (dvat04_response.data.registration.length == 0)
-      return toast.error("There is not any regirstion form exist with.");
+    if (!dvatdata) return toast.error("There is not any dvat form exist.");
+    if (dvatdata.registration.length == 0)
+      return toast.error("There is not any regirstion form exist.");
 
     if (
       data.inspector_note == null ||
@@ -154,7 +152,7 @@ const Registration = (props: RegistrationProviderPrpos) => {
       return toast.error("Inspector Note is required");
 
     const response = await UpdateRegistration({
-      id: dvat04_response.data.registration[0].id,
+      id: dvatdata.registration[0].id,
       updatedby: id,
       inspector_note: data.inspector_note,
       date_of_visit: new Date(data.date_of_visit),
@@ -181,7 +179,8 @@ const Registration = (props: RegistrationProviderPrpos) => {
       plant_and_machinery: data.plant_and_machinery,
       raw_materials: data.raw_materials,
       packing_materials: data.packing_materials,
-      dept_user_id: 13,
+      dept_user_id: 6,
+      status: RegistrationStatus.ACTIVE,
     });
 
     if (response.status) {
@@ -189,7 +188,6 @@ const Registration = (props: RegistrationProviderPrpos) => {
     } else {
       toast.error(response.message);
     }
-    console.log(data);
 
     // toast.success(response.message);
     reset();
@@ -197,6 +195,38 @@ const Registration = (props: RegistrationProviderPrpos) => {
 
   const onError = (error: FieldErrors<RegistrationForm>) => {
     console.log(error);
+  };
+
+  const by_pass = async () => {
+    const { inspector_note } = getValues();
+    if (!dvatdata) return toast.error("There is not any dvat form exist.");
+
+    if (dvatdata.registration.length == 0)
+      return toast.error("There is not any regirstion form exist with.");
+
+    if (
+      inspector_note == null ||
+      inspector_note == undefined ||
+      inspector_note == ""
+    )
+      return toast.error("Inspector Note is required.");
+
+    const response = await UpdateRegistration({
+      id: dvatdata.registration[0].id,
+      updatedby: id,
+      inspector_note: inspector_note,
+      dept_user_id: 6,
+      status: RegistrationStatus.BYPASS,
+    });
+
+    if (response.status) {
+      router.push("/dashboard/register/department-track-application-status");
+    } else {
+      toast.error(response.message);
+    }
+
+    // toast.success(response.message);
+    reset();
   };
 
   const natureOfBusiness: OptionValue[] = [
@@ -424,12 +454,32 @@ const Registration = (props: RegistrationProviderPrpos) => {
         />
       </div>
 
-      <input
-        type="submit"
-        value={"Submit"}
-        disabled={isSubmitting}
-        className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2"
-      />
+      {dvatdata && dvatdata.registration[0].dept_user_id == 8 && (
+        <div className="flex gap-2 mt-2">
+          <input
+            type="submit"
+            value={"Submit"}
+            disabled={isSubmitting}
+            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
+          />
+          <button
+            type="button"
+            onClick={by_pass}
+            className="py-1 text-sm px-4 bg-blue-500 text-white rounded-md"
+          >
+            Bypass
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              router.back();
+            }}
+            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2"
+          >
+            Exit
+          </button>
+        </div>
+      )}
     </form>
   );
 };
@@ -441,22 +491,31 @@ const VatNote = (props: VatNoteProps) => {
   const id: number = parseInt(getCookie("id") ?? "0");
   const router = useRouter();
 
+  const [dvatdata, setDvatdata] = useState<
+    dvat04 & { registration: registration[] }
+  >();
+
   const {
-    register,
     reset,
     handleSubmit,
-    watch,
+    getValues,
     formState: { errors, isSubmitting },
   } = useFormContext<RegistrationForm>();
 
   useEffect(() => {
     reset({
-      date_of_visit: formateDate(props.registrationdata.date_of_visit!),
+      date_of_visit: props.registrationdata.date_of_visit
+        ? formateDate(props.registrationdata.date_of_visit)
+        : undefined,
       natureOfBusiness: props.registrationdata.natureOfBusiness!,
 
-      date_of_purchases: formateDate(props.registrationdata.date_of_purchases!),
+      date_of_purchases: props.registrationdata.date_of_purchases
+        ? formateDate(props.registrationdata.date_of_purchases)
+        : undefined,
       amount_of_purchases: props.registrationdata.amount_of_purchases!,
-      date_of_sales: formateDate(props.registrationdata.date_of_sales!),
+      date_of_sales: props.registrationdata.date_of_sales
+        ? formateDate(props.registrationdata.date_of_sales)
+        : undefined,
       amount_of_sales: props.registrationdata.amount_of_sales!,
       capital_proposed: props.registrationdata.capital_proposed!,
       amount_of_stock: props.registrationdata.amount_of_stock!,
@@ -467,12 +526,13 @@ const VatNote = (props: VatNoteProps) => {
       other_information: props.registrationdata.other_information!,
       security_deposit: props.registrationdata.security_deposit!,
       security_deposit_amount: props.registrationdata.security_deposit_amount!,
-      security_deposit_date: formateDate(
-        props.registrationdata.security_deposit_date!
-      ),
-      date_of_expiry_security_deposit: formateDate(
-        props.registrationdata.date_of_expiry_security_deposit!
-      ),
+      security_deposit_date: props.registrationdata.security_deposit_date
+        ? formateDate(props.registrationdata.security_deposit_date)
+        : undefined,
+      date_of_expiry_security_deposit: props.registrationdata
+        .date_of_expiry_security_deposit
+        ? formateDate(props.registrationdata.date_of_expiry_security_deposit)
+        : undefined,
       bank: props.registrationdata.bank!,
       name_of_person: props.registrationdata.name_of_person!,
       address: props.registrationdata.address!,
@@ -482,36 +542,44 @@ const VatNote = (props: VatNoteProps) => {
 
       inspector_note: props.registrationdata.inspector_note!,
     });
+
+    const init = async () => {
+      const dvat04_response = await GetDvat04({
+        id: props.registrationdata.dvat04Id,
+      });
+
+      if (dvat04_response.status && dvat04_response.data) {
+        setDvatdata(dvat04_response.data);
+      }
+    };
+    init();
   }, [props.registrationdata, reset]);
 
   const onSubmit = async (data: RegistrationForm) => {
-    const dvat04_response = await GetDvat04({
-      id: props.registrationdata.dvat04Id,
-    });
-
     if (!data.registration_date) {
-      return toast.success("Select Registration Date.");
+      return toast.error("Select Registration Date.");
     }
     if (data.all_doc_upload == undefined || data.all_doc_upload == null) {
-      return toast.success("Select is your all documents uploaded or not.");
+      return toast.error("Select is your all documents uploaded or not.");
     }
     if (data.all_appointment == undefined || data.all_appointment == null) {
-      return toast.success(
-        "Select is your all appointments are closed or not."
-      );
+      return toast.error("Select is your all appointments are closed or not.");
     }
-    if (data.all_appointment == undefined || data.all_appointment == null) {
+
+    if (
+      data.vat_officer_note == undefined ||
+      data.vat_officer_note == null ||
+      data.vat_officer_note
+    ) {
       return toast.success("VAt officer comment is required.");
     }
 
-    if (!dvat04_response.status || !dvat04_response.data)
-      return toast.success("There is not any dvat form exist with.");
-
-    if (dvat04_response.data.registration.length == 0)
-      return toast.success("There is not any regirstion form exist with.");
+    if (!dvatdata) return toast.error("There is not any dvat form exist.");
+    if (dvatdata.registration.length == 0)
+      return toast.error("There is not any regirstion form exist.");
 
     const response = await UpdateRegistration({
-      id: dvat04_response.data.registration[0].id,
+      id: dvatdata.registration[0].id,
       updatedby: id,
       inspector_note: data.inspector_note,
       date_of_visit: new Date(data.date_of_visit),
@@ -542,8 +610,10 @@ const VatNote = (props: VatNoteProps) => {
       all_appointment: data.all_appointment,
       all_doc_upload: data.all_doc_upload,
       registration_date: new Date(data.registration_date!),
+      vat_officer_note: data.vat_officer_note,
 
-      dept_user_id: 13,
+      dept_user_id: 6,
+      status: RegistrationStatus.ACTIVE,
     });
 
     if (response.status) {
@@ -551,6 +621,7 @@ const VatNote = (props: VatNoteProps) => {
         id: props.registrationdata.dvat04Id!,
         updatedby: id,
         status: "APPROVED",
+        tinNumber: "26000004000" + dvatdata.id,
       });
       if (resposne.status) {
         toast.success(resposne.message);
@@ -588,6 +659,92 @@ const VatNote = (props: VatNoteProps) => {
     { value: "SERVICE", label: "SERVICE" },
     { value: "OTHER", label: "OTHER" },
   ];
+
+  const send_back = async () => {
+    if (!dvatdata) return toast.error("There is not any dvat form exist.");
+
+    if (dvatdata.registration.length == 0)
+      return toast.error("There is not any regirstion form exist with.");
+
+    const response = await UpdateRegistration({
+      id: dvatdata.registration[0].id,
+      updatedby: id,
+      dept_user_id: 8,
+      status: RegistrationStatus.BYPASS,
+    });
+
+    if (response.status) {
+      router.push("/dashboard/register/department-track-application-status");
+    } else {
+      toast.error(response.message);
+    }
+
+    // toast.success(response.message);
+    reset();
+  };
+  const bypass = async () => {
+    const {
+      registration_date,
+      necessary_payments,
+      all_appointment,
+      all_doc_upload,
+      vat_officer_note,
+    } = getValues();
+
+    if (!registration_date) {
+      return toast.error("Select Registration Date.");
+    }
+    if (all_doc_upload == undefined || all_doc_upload == null) {
+      return toast.error("Select is your all documents uploaded or not.");
+    }
+    if (all_appointment == undefined || all_appointment == null) {
+      return toast.error("Select is your all appointments are closed or not.");
+    }
+    if (
+      vat_officer_note == undefined ||
+      vat_officer_note == null ||
+      vat_officer_note == ""
+    ) {
+      return toast.error("VAt officer comment is required.");
+    }
+
+    if (!dvatdata) return toast.error("There is not any dvat form exist.");
+    if (dvatdata.registration.length == 0)
+      return toast.error("There is not any regirstion form exist.");
+
+    const response = await UpdateRegistration({
+      id: dvatdata.registration[0].id,
+      updatedby: id,
+
+      necessary_payments: necessary_payments,
+      all_appointment: all_appointment,
+      all_doc_upload: all_doc_upload,
+      registration_date: new Date(registration_date),
+      vat_officer_note: vat_officer_note,
+
+      dept_user_id: 0,
+      status: RegistrationStatus.ACTIVE,
+    });
+
+    if (response.status) {
+      const resposne = await UpdateDvatStatus({
+        id: props.registrationdata.dvat04Id!,
+        updatedby: id,
+        status: "APPROVED",
+        tinNumber: "26000004000" + dvatdata.id,
+      });
+      if (resposne.status) {
+        toast.success(resposne.message);
+      } else {
+        toast.error(resposne.message);
+      }
+    } else {
+      toast.error(response.message);
+    }
+    router.back();
+
+    reset();
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onError)}>
@@ -879,20 +1036,45 @@ const VatNote = (props: VatNoteProps) => {
           />
         </div>
       </div>
+
       <div className="flex gap-4">
-        <input
-          type="submit"
-          value={"Approve"}
-          disabled={isSubmitting}
+        <button
+          onClick={send_back}
+          type="button"
           className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2"
-        />
+        >
+          Send to Inspector
+        </button>
+        {dvatdata &&
+          dvatdata.registration[0].status == RegistrationStatus.BYPASS && (
+            <button
+              onClick={bypass}
+              type="button"
+              className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2"
+            >
+              Bypass
+            </button>
+          )}
+
+        {dvatdata &&
+          dvatdata.registration[0].status == RegistrationStatus.ACTIVE && (
+            <input
+              type="submit"
+              value={"Approve"}
+              disabled={isSubmitting}
+              className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2"
+            />
+          )}
+
         <button
           onClick={reject}
+          type="button"
           className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white mt-2"
         >
           Reject
         </button>
         <button
+          type="button"
           onClick={() => {
             router.back();
           }}

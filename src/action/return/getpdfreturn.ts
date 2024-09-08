@@ -22,7 +22,7 @@ const getPdfReturn = async (
   ApiResponseType<{
     returns_entry: returns_entry[];
     returns_01: returns_01 & {
-      dvat04: dvat04 & { registration: registration };
+      dvat04: dvat04 & { registration: registration[] };
     };
   } | null>
 > => {

@@ -159,14 +159,14 @@ const BulkUpload = () => {
       }
 
       const result = safeParse(record31Schema, {
-        rr_number: "0",
+        rr_number: "",
         return_type: ReturnType.ORIGNAL,
         year: searchParams.get("year")?.toString(),
         quarter: searchParams.get("quarter") as Quarter,
         month: searchParams.get("month")?.toString(),
         total_tax_amount: data[i].vat_amount,
         dvat_type: DvatType.DVAT_31,
-        urn_number: "0",
+        urn_number: "",
         invoice_number: data[i].invoice_no,
         total_invoice_number: data[i].invoice_value,
         invoice_date: data[i].invoice_date!.toISOString(),
@@ -202,14 +202,14 @@ const BulkUpload = () => {
     for (let i = 0; i < data.length; i++) {
       const recordresponse = await AddReturnInvoice({
         createdById: id,
-        rr_number: "0",
+        rr_number: "",
         returnType: ReturnType.ORIGNAL,
         year: searchParams.get("year")?.toString()!,
         quarter: searchParams.get("quarter") as Quarter,
         month: searchParams.get("month")?.toString()!,
         total_tax_amount: data[i].vat_amount,
         dvat_type: DvatType.DVAT_31,
-        urn_number: "0",
+        urn_number: "",
         invoice_number: data[i].invoice_no,
         total_invoice_number: data[i].invoice_value,
         invoice_date: new Date(data[i].invoice_date!),

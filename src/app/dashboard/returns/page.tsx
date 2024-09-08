@@ -11,7 +11,6 @@ const Page = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
   const [user, setUser] = useState<user>();
 
-  const [isRegisterPending, setRegisterPending] = useState<boolean>(false);
   useEffect(() => {
     const init = async () => {
       const userresponse = await GetUser({
@@ -20,16 +19,9 @@ const Page = () => {
       if (userresponse.status && userresponse.data) {
         setUser(userresponse.data);
       }
-      const pendingregistraion = await IsRegisterPedning({
-        userid: id,
-      });
-
-      if (pendingregistraion.status && pendingregistraion.data) {
-        setRegisterPending(pendingregistraion.data);
-      }
     };
     init();
-  }, []);
+  }, [id]);
 
   return (
     <>
