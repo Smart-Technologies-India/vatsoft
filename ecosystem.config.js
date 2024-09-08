@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "vatsoft",
-      script: "pnpm start",
+      script: "pnpm next start",
       port: 4000,
     },
   ],
