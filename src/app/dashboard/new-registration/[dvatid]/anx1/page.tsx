@@ -354,13 +354,12 @@ const Dvat2Page = () => {
                         setdateOfBirth(e);
                         setStartDPop(false);
                       }}
-                      initialFocus
-                      // disabled={(date) =>
-                      //   date >
-                      //   new Date(
-                      //     new Date().setFullYear(new Date().getFullYear() - 14)
-                      //   )
-                      // }
+                      disabled={(date) =>
+                        date >
+                        new Date(
+                          new Date().setFullYear(new Date().getFullYear() - 15)
+                        )
+                      }
                     />
                   </PopoverContent>
                 </Popover>
@@ -700,9 +699,7 @@ const Dvat2Page = () => {
             <div className="grow"></div>
             <Button
               onClick={() =>
-                router.push(
-                  `/dashboard/new-registration/${dvat04id}/dvat3`
-                )
+                router.push(`/dashboard/new-registration/${dvat04id}/dvat3`)
               }
               className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
             >

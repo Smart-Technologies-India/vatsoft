@@ -474,7 +474,7 @@ const Registration = (props: RegistrationProviderPrpos) => {
             onClick={() => {
               router.back();
             }}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2"
+            className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white"
           >
             Exit
           </button>
@@ -1050,7 +1050,7 @@ const VatNote = (props: VatNoteProps) => {
             <button
               onClick={bypass}
               type="button"
-              className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2"
+              className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
             >
               Bypass
             </button>
@@ -1062,14 +1062,14 @@ const VatNote = (props: VatNoteProps) => {
               type="submit"
               value={"Approve"}
               disabled={isSubmitting}
-              className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2"
+              className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
             />
           )}
 
         <button
           onClick={reject}
           type="button"
-          className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white mt-2"
+          className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white"
         >
           Reject
         </button>
@@ -1078,7 +1078,7 @@ const VatNote = (props: VatNoteProps) => {
           onClick={() => {
             router.back();
           }}
-          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2"
+          className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white"
         >
           Exit
         </button>

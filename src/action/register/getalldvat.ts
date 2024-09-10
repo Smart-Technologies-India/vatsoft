@@ -11,6 +11,13 @@ const GetAllDvat = async (
 ): Promise<ApiResponseType<dvat04[] | null>> => {
   try {
     const dvat04response = await prisma.dvat04.findMany({
+      where: {
+        NOT: [
+          {
+            status: "NONE",
+          },
+        ],
+      },
       include: { createdBy: true },
     });
 

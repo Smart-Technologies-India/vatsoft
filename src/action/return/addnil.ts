@@ -78,7 +78,7 @@ const AddNil = async (
     } else {
       const return_invoice = await prisma.returns_01.create({
         data: {
-          rr_number: "0",
+          rr_number: "",
           return_type: "ORIGNAL",
           year: payload.year,
           quarter: payload.quarter,
@@ -86,7 +86,7 @@ const AddNil = async (
           dvat04Id: dvat04.id,
           filing_datetime: new Date(),
           file_status: Status.ACTIVE,
-          total_tax_amount: "0",
+          total_tax_amount: "",
           status: Status.ACTIVE,
           createdById: payload.createdById,
           compositionScheme: dvat04.compositionScheme,

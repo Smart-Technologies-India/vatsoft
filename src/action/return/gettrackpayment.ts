@@ -21,12 +21,11 @@ const GetTrackPayment = async (
       },
     });
 
-
     // const filteredResponse = dvat04response.map(entry => ({
     //   ...entry,
     //   returns_01: entry.returns_01.filter(related => related.deletedAt === null && related.deletedById === null),
     // }));
-    
+
     // NOT: [{ transaction_id: null, track_id: null }],
     if (!dvat04response)
       return createResponse({

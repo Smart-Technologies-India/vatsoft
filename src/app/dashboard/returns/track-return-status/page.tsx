@@ -213,7 +213,7 @@ const TrackAppliation = () => {
                 return (
                   <TableRow key={index}>
                     <TableCell className="border text-center p-2">
-                      {val.transaction_id}
+                      {val.rr_number}
                     </TableCell>
                     <TableCell className="border text-center p-2">
                       {val.return_type}

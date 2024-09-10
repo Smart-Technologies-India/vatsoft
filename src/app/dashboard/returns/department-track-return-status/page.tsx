@@ -64,7 +64,6 @@ const TrackAppliation = () => {
 
   useEffect(() => {
     const init = async () => {
-      
       const payment_data = await GetTrackPayment({});
 
       if (payment_data.status && payment_data.data) {
@@ -213,7 +212,7 @@ const TrackAppliation = () => {
                 return (
                   <TableRow key={index}>
                     <TableCell className="border text-center p-2">
-                      {val.transaction_id}
+                      {val.rr_number}
                     </TableCell>
                     <TableCell className="border text-center p-2">
                       {val.return_type}

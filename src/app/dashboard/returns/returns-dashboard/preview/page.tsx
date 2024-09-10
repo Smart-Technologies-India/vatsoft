@@ -5,7 +5,7 @@ import {
   formateDate,
   getPrismaDatabaseDate,
 } from "@/utils/methods";
-import { DevTool } from "@hookform/devtools";
+// import { DevTool } from "@hookform/devtools";
 import {
   CategoryOfEntry,
   dvat04,
@@ -132,7 +132,7 @@ const Dvat16ReturnPreview = () => {
 
   return (
     <>
-      <DevTool control={control} />
+      {/* <DevTool control={control} /> */}
       <Modal title="Payment" open={paymentbox} footer={null}>
         <form onSubmit={handleSubmit(onSubmit, onError)}>
           <div className="mt-2">
