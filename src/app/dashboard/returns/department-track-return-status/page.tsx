@@ -27,8 +27,9 @@ import {
 import GetUserTrackPayment from "@/action/return/getusertrackpayment";
 import { getCookie } from "cookies-next";
 import { returns_01 } from "@prisma/client";
-import { formateDate } from "@/utils/methods";
+import { capitalcase, formateDate } from "@/utils/methods";
 import GetTrackPayment from "@/action/return/gettrackpayment";
+import Link from "next/link";
 
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
@@ -73,6 +74,53 @@ const TrackAppliation = () => {
     };
     init();
   }, []);
+  const get_years = (month: string, year: string): string => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const monthIndex = monthNames.indexOf(capitalcase(month));
+    const yearNum = parseInt(year, 10);
+
+    // If the month is between September (index 8) and March (index 2), return year-year+1
+    if (monthIndex >= 8) {
+      // September to December
+      return `${yearNum}-${yearNum + 1}`;
+    } else {
+      // January to April
+      return `${yearNum - 1}-${yearNum}`;
+    }
+  };
+
+  const get_month = (composition: boolean, month: string): string => {
+    if (composition) {
+      if (["January", "February", "March"].includes(capitalcase(month))) {
+        return "Jan-Mar";
+      } else if (["April", "May", "June"].includes(capitalcase(month))) {
+        return "Apr-Jun";
+      } else if (["July", "August", "September"].includes(capitalcase(month))) {
+        return "Jul-Sep";
+      } else if (
+        ["October", "November", "December"].includes(capitalcase(month))
+      ) {
+        return "Oct-Dec";
+      } else {
+        return "Jan-Mar";
+      }
+    } else {
+      return month.slice(0, -3);
+    }
+  };
 
   return (
     <>
@@ -212,18 +260,37 @@ const TrackAppliation = () => {
                 return (
                   <TableRow key={index}>
                     <TableCell className="border text-center p-2">
-                      {val.rr_number}
+                      <Link
+                        href={`/dashboard/returns/returns-dashboard/preview/${val.createdById}?form=30A&year=${val.year}&quarter=${val.quarter}&month=${val.month}`}
+                        className="text-blue-500"
+                      >
+                        {val.rr_number}
+                      </Link>
                     </TableCell>
                     <TableCell className="border text-center p-2">
                       {val.return_type}
                     </TableCell>
                     <TableCell className="border text-center p-2">
-                      2024-2025
+                      {get_years(
+                        new Date(val.transaction_date!).toLocaleString(
+                          "en-US",
+                          {
+                            month: "long",
+                          }
+                        ),
+                        val.year
+                      )}
                     </TableCell>
                     <TableCell className="border text-center p-2">
-                      {new Date(val.transaction_date!).toLocaleString("en-US", {
-                        month: "short",
-                      })}
+                      {get_month(
+                        val.compositionScheme ?? false,
+                        new Date(val.transaction_date!).toLocaleString(
+                          "en-US",
+                          {
+                            month: "short",
+                          }
+                        )
+                      )}
                     </TableCell>
                     <TableCell className="border text-center p-2">
                       {formateDate(new Date(val.transaction_date!))}

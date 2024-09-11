@@ -73,8 +73,6 @@ export default function LoginPage() {
       otpresponse.lastName !== "undefined"
         ? otpresponse.lastName
         : lastname.current?.value!;
-    console.log(firstnameValue);
-    console.log(lastnameValue);
 
     if (mobile == null || mobile == undefined || mobile == "") {
       toast.error("Please enter a valid mobile number");

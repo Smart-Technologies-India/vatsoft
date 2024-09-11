@@ -19,8 +19,12 @@ import {
   SaleOf,
   SaleOfInterstate,
 } from "@prisma/client";
-import { getCookie } from "cookies-next";
-import { usePathname, useSearchParams } from "next/navigation";
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 
@@ -34,6 +38,7 @@ import {
 import AddPayment from "@/action/return/addpayment";
 import { toast } from "react-toastify";
 import CheckPayment from "@/action/return/checkpayment";
+import { Parentheses, Router } from "lucide-react";
 
 interface PercentageOutput {
   increase: string;
@@ -41,9 +46,9 @@ interface PercentageOutput {
 }
 
 const Dvat16ReturnPreview = () => {
-  const path = usePathname();
-
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const router = useRouter();
+  const { id } = useParams<{ id: string | string[] }>();
+  const userid = parseInt(Array.isArray(id) ? id[0] : id);
 
   const [return01, setReturn01] = useState<
     (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
@@ -127,6 +132,7 @@ const Dvat16ReturnPreview = () => {
   const generatePDF = async () => {
     try {
       // Fetch the PDF from the server
+      const path = `${window.location.pathname}${window.location.search}`;
 
       const response = await fetch("/api/getpdf", {
         method: "POST",
@@ -150,7 +156,7 @@ const Dvat16ReturnPreview = () => {
       // Programmatically click the link to trigger the download
       link.click();
     } catch (error) {
-      console.error("Failed to download PDF:", error);
+      toast.error("Unable to download pdf try again.");
     }
   };
 
@@ -224,310 +230,320 @@ const Dvat16ReturnPreview = () => {
           </div>
         </form>
       </Modal>
-      <section className="px-5 relative">
-        <main className="bg-white mt-6 p-4 w-full xl:w-5/6 mx-auto">
-          {/* page 1 start here */}
 
-          {/* header 1 start from here */}
-          <div className="border border-black py-2 w-full">
-            <h1 className="text-center text-sm  leading-3">
-              Company Name : {return01?.dvat04.tradename}
-            </h1>
-            <p className="text-center text-xs  leading-4">
-              Tin Number : {return01?.dvat04.tinNumber} Period (
-              {return01?.month} {return01?.year})
-            </p>
-          </div>
-          {/* header 2 start from here */}
-          <div className="border border-black py-2 mt-4 w-5/6 mx-auto leading-3">
-            <p className="text-center font-semibold text-xs leading-3">
-              DEPARTMENT OF VALUE ADDED TAX
-            </p>
-            <p className="text-center font-semibold text-xs  leading-3">
-              UT Administration of Dadra & Nagar Haveli
-            </p>
-            <p className="text-center font-semibold text-xs  leading-3">
-              Form DVAT 16
-            </p>
-            <p className="text-center font-semibold text-xs  leading-3">
-              (See Rule 28 and 29 of the Dadra & Nagar Haveli, Value Added Tax
-              Rules, 2005)
-            </p>
-            <p className="text-center font-semibold text-xs  leading-3">
-              Dadra & Nagar Haveli Value Added Tax Return
-            </p>
-          </div>
-          {/* section 1 start here */}
-          <table border={1} className="w-5/6 mx-auto mt-4">
-            <tbody className="w-full">
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R1.1 Tax Period From {return01?.month}, {return01?.year} To{" "}
-                  {return01?.month}, {return01?.year}
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R1.2 RR No: {return01?.rr_number}
-                </td>
-              </tr>
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R1.3 Return Type: {return01?.return_type}
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R1.4 Return Date:{" "}
-                  {formateDate(new Date(return01?.createdAt!))}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          {/* section 2 start here  */}
-          <table border={1} className="w-5/6 mx-auto mt-4">
-            <tbody className="w-full">
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R2.1 Registration Certificate No.
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  {return01?.dvat04.tinNumber}
-                </td>
-              </tr>
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R2.2.1 Name of Dealer
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  {return01?.dvat04.tradename}
-                </td>
-              </tr>
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R2.2.2 Address of Dealer
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  {return01?.dvat04.address}
-                </td>
-              </tr>
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R2.3 Dealer Status
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  {return01?.dvat04
-                    .constitutionOfBusiness!.split("_")
-                    .join(" ")}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          {/* section 3 start here  */}
-          <table border={1} className="w-5/6 mx-auto mt-4">
-            <tbody className="w-full">
-              <tr className="w-full">
-                <th className="border border-black px-2 leading-4 text-[0.6rem] w-[50%] font-semibold text-left">
-                  R3 Description of top 3 items you deal in (In order of volume
-                  of sales for the tax period. 1-highest volume to 3-lowest
-                  volume)
-                </th>
-              </tr>
-              <tr className="">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  CABLE FILLING COMPUND CABLE FLOODING COMPOUND MINERAL OIL BASE
-                  OIL WAXES POLYMERS AND ADDITIVES SPECIALITY COMPOUND ORANIC
-                  TITANATESORGANIC ENANELS
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          {/* section 4 start here */}
-          <TurnOver returnsentrys={returns_entryData ?? []} />
-          {/* section 5 start here */}
-          <R1TurnOverOfPurchase returnsentrys={returns_entryData ?? []} />
-          {/* section 6 start here */}
-          <NetTax returnsentrys={returns_entryData ?? []} />
-          {/* section 7 start here */}
-          <table border={1} className="w-5/6 mx-auto mt-4">
-            <thead>
-              <tr className="w-full">
-                <td
-                  className="border border-black px-2 leading-4 text-[0.6rem] w-[50%] font-semibold"
-                  colSpan={2}
-                >
-                  THE BALANCE ON LINE 7 IS POSITIVE, PAY TAX PROVIDE DETAILS IN
-                  THIS BOX
-                </td>
-              </tr>
-            </thead>
-            <tbody className="w-full">
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  Balance brought forward from line R7
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  0
-                </td>
-              </tr>
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R8.1 Challan number by which payment made
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  0
-                </td>
-              </tr>
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R8.2 Date of payment
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  0
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          {/* section 8 start here */}
-          <table border={1} className="w-5/6 mx-auto mt-4">
-            <thead>
-              <tr className="w-full">
-                <td
-                  className="border border-black px-2 leading-4 text-[0.6rem] w-[50%] font-semibold"
-                  colSpan={2}
-                >
-                  THE BALANCE ON LINE 7 IS NEGATIVE,PROVIDE DETAILS IN THIS BOX
-                </td>
-              </tr>
-            </thead>
-            <tbody className="w-full">
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  Balance brought forward from line R7
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  0
-                </td>
-              </tr>
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R9.1 Adjusted against liability under Central Sales Tax
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  0
-                </td>
-              </tr>
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R9.2 Refund Claimed
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  0
-                </td>
-              </tr>
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  R9.3 Balance carried forward to next tax period
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-                  0
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          {/* section 9 start here */}
+      {return01 && (
+        <section className="px-5 relative mainpdf" id="mainpdf">
+          <main className="bg-white mt-6 p-4 w-full xl:w-5/6 mx-auto">
+            {/* page 1 start here */}
 
-          <InterStateTrade returnsentrys={returns_entryData ?? []} />
-          {/* page 1 end here */}
-
-          {/* page 2 start here */}
-          {/* section 10 start here */}
-          <S1_1Adjustment returnsentrys={returns_entryData ?? []} />
-          <S2AdjustmentOfTax returnsentrys={returns_entryData ?? []} />
-          {/* page 2 end here */}
-
-          {/* page 3 start from here */}
-          <CentralSales returnsentrys={returns_entryData ?? []} />
-
-          <table border={1} className="w-5/6 mx-auto mt-4">
-            <tbody className="w-full">
-              <tr className="w-full">
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[20%]">
-                  Note
-                </td>
-                <td className="border border-black px-2 leading-4 text-[0.6rem] w-[80%]"></td>
-              </tr>
-            </tbody>
-          </table>
-          <FORM_DVAT_16 returnsentrys={returns_entryData ?? []} />
-          {payment && (
-            <>
-              <h1 className="text-center font-semibold text-sm mt-4">
-                Payment Details
+            {/* header 1 start from here */}
+            <div className="border border-black py-2 w-full">
+              <h1 className="text-center text-sm  leading-3">
+                Company Name : {return01?.dvat04.tradename}
               </h1>
-              <table border={1} className="w-5/6 mx-auto mt-2">
-                <thead className="w-full">
-                  <tr className="w-full">
-                    <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                      Payment Mode
-                    </th>
-                    <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                      Ref. No
-                    </th>
-                    <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                      Payment Date
-                    </th>
-                    <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                      Bank Name
-                    </th>
-                    <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                      Amount
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="w-full">
-                  <tr className="w-full">
-                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                      {return01?.paymentmode}
-                    </td>
-                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                      {return01?.transaction_id}
-                    </td>
-                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                      {formatDateTime(
-                        getPrismaDatabaseDate(
-                          new Date(return01?.transaction_date!)
-                        )
-                      )}
-                    </td>
-                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                      {return01?.bank_name}
-                    </td>
-                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                      {return01?.total_tax_amount}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </>
-          )}
-        </main>
-        <div className="h-20"></div>
-        <div className="p-2 shadow bg-white fixed bottom-0 right-0 flex gap-4 items-center hidden-print">
-          <button
-            className="text-white bg-black py-1 px-4 text-sm"
-            onClick={generatePDF}
-          >
-            Download returns
-          </button>
-          {!payment && (
+              <p className="text-center text-xs  leading-4">
+                Tin Number : {return01?.dvat04.tinNumber} Period (
+                {return01?.month} {return01?.year})
+              </p>
+            </div>
+            {/* header 2 start from here */}
+            <div className="border border-black py-2 mt-4 w-5/6 mx-auto leading-3">
+              <p className="text-center font-semibold text-xs leading-3">
+                DEPARTMENT OF VALUE ADDED TAX
+              </p>
+              <p className="text-center font-semibold text-xs  leading-3">
+                UT Administration of Dadra & Nagar Haveli
+              </p>
+              <p className="text-center font-semibold text-xs  leading-3">
+                Form DVAT 16
+              </p>
+              <p className="text-center font-semibold text-xs  leading-3">
+                (See Rule 28 and 29 of the Dadra & Nagar Haveli, Value Added Tax
+                Rules, 2005)
+              </p>
+              <p className="text-center font-semibold text-xs  leading-3">
+                Dadra & Nagar Haveli Value Added Tax Return
+              </p>
+            </div>
+            {/* section 1 start here */}
+            <table border={1} className="w-5/6 mx-auto mt-4">
+              <tbody className="w-full">
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R1.1 Tax Period From {return01?.month}, {return01?.year} To{" "}
+                    {return01?.month}, {return01?.year}
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R1.2 RR No: {return01?.rr_number}
+                  </td>
+                </tr>
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R1.3 Return Type: {return01?.return_type}
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R1.4 Return Date:{" "}
+                    {formateDate(new Date(return01?.createdAt!))}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            {/* section 2 start here  */}
+            <table border={1} className="w-5/6 mx-auto mt-4">
+              <tbody className="w-full">
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R2.1 Registration Certificate No.
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    {return01?.dvat04.tinNumber}
+                  </td>
+                </tr>
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R2.2.1 Name of Dealer
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    {return01?.dvat04.tradename}
+                  </td>
+                </tr>
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R2.2.2 Address of Dealer
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    {return01?.dvat04.address}
+                  </td>
+                </tr>
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R2.3 Dealer Status
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    {return01?.dvat04
+                      .constitutionOfBusiness!.split("_")
+                      .join(" ")}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            {/* section 3 start here  */}
+            <table border={1} className="w-5/6 mx-auto mt-4">
+              <tbody className="w-full">
+                <tr className="w-full">
+                  <th className="border border-black px-2 leading-4 text-[0.6rem] w-[50%] font-semibold text-left">
+                    R3 Description of top 3 items you deal in (In order of
+                    volume of sales for the tax period. 1-highest volume to
+                    3-lowest volume)
+                  </th>
+                </tr>
+                <tr className="">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    CABLE FILLING COMPUND CABLE FLOODING COMPOUND MINERAL OIL
+                    BASE OIL WAXES POLYMERS AND ADDITIVES SPECIALITY COMPOUND
+                    ORANIC TITANATESORGANIC ENANELS
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            {/* section 4 start here */}
+            <TurnOver returnsentrys={returns_entryData ?? []} />
+            {/* section 5 start here */}
+            <R1TurnOverOfPurchase returnsentrys={returns_entryData ?? []} />
+            {/* section 6 start here */}
+            <NetTax returnsentrys={returns_entryData ?? []} />
+            {/* section 7 start here */}
+            <table border={1} className="w-5/6 mx-auto mt-4">
+              <thead>
+                <tr className="w-full">
+                  <td
+                    className="border border-black px-2 leading-4 text-[0.6rem] w-[50%] font-semibold"
+                    colSpan={2}
+                  >
+                    THE BALANCE ON LINE 7 IS POSITIVE, PAY TAX PROVIDE DETAILS
+                    IN THIS BOX
+                  </td>
+                </tr>
+              </thead>
+              <tbody className="w-full">
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    Balance brought forward from line R7
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    0
+                  </td>
+                </tr>
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R8.1 Challan number by which payment made
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    0
+                  </td>
+                </tr>
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R8.2 Date of payment
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    0
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            {/* section 8 start here */}
+            <table border={1} className="w-5/6 mx-auto mt-4">
+              <thead>
+                <tr className="w-full">
+                  <td
+                    className="border border-black px-2 leading-4 text-[0.6rem] w-[50%] font-semibold"
+                    colSpan={2}
+                  >
+                    THE BALANCE ON LINE 7 IS NEGATIVE,PROVIDE DETAILS IN THIS
+                    BOX
+                  </td>
+                </tr>
+              </thead>
+              <tbody className="w-full">
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    Balance brought forward from line R7
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    0
+                  </td>
+                </tr>
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R9.1 Adjusted against liability under Central Sales Tax
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    0
+                  </td>
+                </tr>
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R9.2 Refund Claimed
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    0
+                  </td>
+                </tr>
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    R9.3 Balance carried forward to next tax period
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
+                    0
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            {/* section 9 start here */}
+
+            <InterStateTrade returnsentrys={returns_entryData ?? []} />
+            {/* page 1 end here */}
+
+            {/* page 2 start here */}
+            {/* section 10 start here */}
+            <S1_1Adjustment returnsentrys={returns_entryData ?? []} />
+            <S2AdjustmentOfTax returnsentrys={returns_entryData ?? []} />
+            {/* page 2 end here */}
+
+            {/* page 3 start from here */}
+            <CentralSales returnsentrys={returns_entryData ?? []} />
+
+            <table border={1} className="w-5/6 mx-auto mt-4">
+              <tbody className="w-full">
+                <tr className="w-full">
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[20%]">
+                    Note
+                  </td>
+                  <td className="border border-black px-2 leading-4 text-[0.6rem] w-[80%]"></td>
+                </tr>
+              </tbody>
+            </table>
+            <FORM_DVAT_16 returnsentrys={returns_entryData ?? []} />
+            {payment && (
+              <>
+                <h1 className="text-center font-semibold text-sm mt-4">
+                  Payment Details
+                </h1>
+                <table border={1} className="w-5/6 mx-auto mt-2">
+                  <thead className="w-full">
+                    <tr className="w-full">
+                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                        Payment Mode
+                      </th>
+                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                        Ref. No
+                      </th>
+                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                        Payment Date
+                      </th>
+                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                        Bank Name
+                      </th>
+                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                        Amount
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="w-full">
+                    <tr className="w-full">
+                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                        {return01?.paymentmode}
+                      </td>
+                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                        {return01?.transaction_id}
+                      </td>
+                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                        {formatDateTime(
+                          getPrismaDatabaseDate(
+                            new Date(return01?.transaction_date!)
+                          )
+                        )}
+                      </td>
+                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                        {return01?.bank_name}
+                      </td>
+                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                        {return01?.total_tax_amount}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </>
+            )}
+          </main>
+          <div className="h-20"></div>
+          <div className="p-2 shadow bg-white fixed bottom-0 right-0 flex gap-4 items-center hidden-print">
             <button
               className="text-white bg-black py-1 px-4 text-sm"
-              onClick={() => {
-                setPaymentBox(true);
-              }}
+              onClick={() => router.back()}
             >
-              Proceed to Pay
+              Back
             </button>
-          )}
-        </div>
-      </section>
+            <button
+              className="text-white bg-black py-1 px-4 text-sm"
+              onClick={generatePDF}
+            >
+              Download returns
+            </button>
+            {!payment && (
+              <button
+                className="text-white bg-black py-1 px-4 text-sm"
+                onClick={() => {
+                  setPaymentBox(true);
+                }}
+              >
+                Proceed to Pay
+              </button>
+            )}
+          </div>
+        </section>
+      )}
     </>
   );
 };

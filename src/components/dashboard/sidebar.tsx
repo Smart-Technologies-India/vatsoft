@@ -53,7 +53,7 @@ const Sidebar = (props: SidebarProps) => {
 
   return (
     <div
-      className={`fixed gap-1 top-0 left-0 z-20 shrink-0 w-52 h-screen flex flex-col bg-gradient-to-t from-[#0c0c32] to-[#0c0c32] md:translate-x-0 py-6 ${
+      className={`hidden-print fixed gap-1 top-0 left-0 z-20 shrink-0 w-52 h-screen flex flex-col bg-gradient-to-t from-[#0c0c32] to-[#0c0c32] md:translate-x-0 py-6 ${
         props.isOpen ? "translate-x-0" : "-translate-x-52"
       }  transition-transform duration-300 ease-in-out`}
     >

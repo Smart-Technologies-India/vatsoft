@@ -12,6 +12,7 @@ import { dvat04, DvatType, Quarter, returns_entry } from "@prisma/client";
 import { getCookie } from "cookies-next";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import { toast } from "react-toastify";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -275,6 +276,36 @@ const ReturnDashboard = () => {
     return false;
   };
 
+  const generatePDF = async (path: string) => {
+    try {
+      // Fetch the PDF from the server
+
+      const response = await fetch("/api/getpdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: path }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+
+      const blob = await response.blob();
+
+      // Create a link element for the download
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = "output.pdf";
+
+      // Programmatically click the link to trigger the download
+      link.click();
+    } catch (error) {
+      toast.error("Unable to download pdf try again.");
+    }
+  };
+
   return (
     <>
       <main className="w-full p-4 relative h-full grow xl:w-5/6 xl:mx-auto">
@@ -428,14 +459,21 @@ const ReturnDashboard = () => {
                   <button
                     onClick={() => {
                       router.push(
-                        `/dashboard/returns/returns-dashboard/preview?form=30A&year=${year}&quarter=${quarter}&month=${period}`
+                        `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}`
                       );
                     }}
                     className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
                   >
                     Preview
                   </button>
-                  <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
+                  <button
+                    onClick={async () => {
+                      await generatePDF(
+                        `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}`
+                      );
+                    }}
+                    className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                  >
                     Download Filed Return
                   </button>
                 </>

@@ -7,6 +7,12 @@ export function middleware(request: NextRequest) {
 
   if (id && request.nextUrl.pathname.startsWith("/login")) {
     return NextResponse.redirect(new URL("dashboard/", request.url));
+  } else if (
+    request.nextUrl.pathname.startsWith(
+      "/dashboard/returns/returns-dashboard/preview"
+    )
+  ) {
+    NextResponse.next();
   } else if (!id && request.nextUrl.pathname.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/login", request.url));
   }

@@ -22,7 +22,9 @@ export default function DashboardLayout({
   useEffect(() => {
     const searchPath = path.endsWith("/") ? path.slice(0, -1) : path;
     if (
-      searchPath == "/dashboard/returns/returns-dashboard/invoices/bluckupload"
+      searchPath ==
+        "/dashboard/returns/returns-dashboard/invoices/bluckupload" ||
+      searchPath.includes("/dashboard/returns/returns-dashboard/preview/")
     ) {
       setBluck(true);
     }
