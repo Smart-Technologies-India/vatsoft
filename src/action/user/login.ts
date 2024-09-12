@@ -43,7 +43,7 @@ const Login = async (
     cookies().set("id", usersresponse.id.toString());
     cookies().set("role", usersresponse.role.toString());
     return createResponse({
-      message: "Login successfully",
+      message: "Login Successful",
       functionname,
       data: usersresponse,
     });

@@ -45,14 +45,29 @@ const Dvat1Schema = object({
     string("Turnover Current Financial Year is required."),
     minLength(1, "Turnover Current Financial Year is required.")
   ),
-  vatLiableDate: pipe(string("VAT Liable Date is required."), minLength(1, "VAT Liable Date is required.")),
+  vatLiableDate: pipe(
+    string("VAT Liable Date is required."),
+    minLength(1, "VAT Liable Date is required.")
+  ),
   pan: pipe(string("PAN is required."), minLength(1, "PAN is required.")),
   gst: pipe(string("GST is required."), minLength(1, "GST is required.")),
-  buildingNumber: pipe(string("Building Number is required."), minLength(1, "Building Number is required.")),
-  area: pipe(string("Area is required."), minLength(1, "Area is required.")),
-  address: pipe(string("Address is required."), minLength(1, "Address is required.")),
+  buildingNumber: pipe(
+    string("Building Number is required."),
+    minLength(1, "Building Number is required.")
+  ),
+  area: pipe(
+    string("Area/Locality is required."),
+    minLength(1, "Area/Locality is required.")
+  ),
+  address: pipe(
+    string("Address is required."),
+    minLength(1, "Address is required.")
+  ),
   city: pipe(string("City is required."), minLength(1, "City is required.")),
-  pincode: pipe(string("Pincode is required."), minLength(1, "Pincode is required.")),
+  pincode: pipe(
+    string("Pincode is required."),
+    minLength(1, "Pincode is required.")
+  ),
   contact_one: pipe(
     string("Contact One is required."),
     minLength(1, "Contact One is required."),

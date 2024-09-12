@@ -79,7 +79,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
   const [commodityData, setCommodityData] = useState<CommodityData[]>([]);
 
   const [selectCom, setSelectCom] = useState<string>("0");
-  const [purpose, setPurpose] = useState<CommidityPursose>();
+  const [purpose, setPurpose] = useState<CommidityPursose | null>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   const addCommodity = () => {
@@ -108,7 +108,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
       }
 
       setSelectCom("0");
-      setPurpose(undefined);
+      setPurpose(null);
       descriptionRef.current!.value = "";
     }
   };
@@ -183,6 +183,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
 
   useEffect(() => {
     const init = async () => {
+      setCommodityData([]);
       const commoditylist = await GetAllCommodity({});
 
       if (commoditylist.status) {
@@ -286,7 +287,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
     <form onSubmit={handleSubmit(onSubmit, onError)}>
       <div className="rounded-sm p-4 border border-black mt-6 relative">
         <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
-          11 Address for service of notice (If Diffrent From Principle Place of
+          11 Address for service of notice (If Different From Principle Place of
           Business)
         </span>
         <div className="text-sm flex gap-1 items-center">
@@ -320,10 +321,10 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           </div>
           <div className="flex-1">
             <TaxtInput<Dvat2Form>
-              placeholder="Area"
+              placeholder="Area/Locality"
               name="noticeServingArea"
               required={true}
-              title="Area"
+              title="Area/Locality"
               disable={isSaveAddress}
             />
           </div>
@@ -346,6 +347,8 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               required={true}
               title="Pincode"
               disable={isSaveAddress}
+              onlynumber={true}
+              maxlength={6}
             />
           </div>
         </div>
@@ -373,6 +376,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               name="additionalGodown"
               required={true}
               title="Godown"
+              onlynumber={true}
             />
           </div>
           <div className="flex-1">
@@ -381,6 +385,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               name="additionalFactory"
               required={true}
               title="Factory"
+              onlynumber={true}
             />
           </div>
         </div>
@@ -391,6 +396,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               name="additionalShops"
               required={true}
               title="Shops"
+              onlynumber={true}
             />
           </div>
           <div className="flex-1">
@@ -399,6 +405,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               name="otherPlaceOfBusiness"
               required={true}
               title="Other Place of Business"
+              onlynumber={true}
             />
           </div>
         </div>
@@ -422,7 +429,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             <MultiSelect<Dvat2Form>
               name={"typeOfAccount"}
               options={typeOfAccount}
-              placeholder="Select Commodity"
+              placeholder="Select Type of Account"
               title="Type of Account"
               required={true}
             />
@@ -513,10 +520,10 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           </div>
           <div className="flex-1">
             <TaxtInput<Dvat2Form>
-              placeholder="Other assets & Investments"
+              placeholder="Other Assets & Investments"
               name="otherAssetsInvestments"
               required={true}
-              title="Other assets & Investments (Rs)"
+              title="Other Assets & Investments (Rs)"
             />
           </div>
         </div>
@@ -534,6 +541,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               <span className="text-red-500">*</span>
             </Label>
             <Select
+              value={selectCom}
               onValueChange={(val: string) => {
                 setSelectCom(val);
               }}
@@ -557,6 +565,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               Purpose <span className="text-red-500">*</span>
             </Label>
             <Select
+              value={purpose ?? undefined}
               onValueChange={(val) => {
                 setPurpose(val as CommidityPursose);
               }}
@@ -578,7 +587,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
 
         <div className="mt-2">
           <Label htmlFor="description" className="text-sm font-normal">
-            Dealer description of Commodity{" "}
+            Dealer Description of Commodity{" "}
             <span className="text-red-500">*</span>
           </Label>
 
@@ -587,7 +596,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             name="description"
             id="description"
             className="px-2 py-1 focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm resize-none mt-1"
-            placeholder="Dealer description of Commodity"
+            placeholder="Dealer Description of Commodity"
           />
         </div>
 
@@ -621,14 +630,18 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           <TableBody>
             {commodityData.map((com, index) => (
               <TableRow key={index}>
-                <TableCell className="text-xs">{com.act}</TableCell>
-                <TableCell className="text-xs">{com.code}</TableCell>
-                <TableCell className="text-xs">{com.commodity}</TableCell>
-                <TableCell className="text-xs">{com.description}</TableCell>
-                <TableCell className="flex gap-2">
+                <TableCell className="text-xs p-2">{com.act}</TableCell>
+                <TableCell className="text-xs p-2">{com.code}</TableCell>
+                <TableCell className="text-xs p-2">{com.commodity}</TableCell>
+                <TableCell className="text-xs p-2">{com.description}</TableCell>
+                <TableCell className="flex gap-2 p-2">
                   <Button
+                    type="button"
                     className="text-white bg-blue-500 hover:bg-blue-600 hover:-translate-y-1 transition-all duration-500 rounded-sm px-2 h-8 text-sm flex items-center gap-2  font-medium py-2"
-                    onClick={() => removeCommodity(index)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      removeCommodity(index);
+                    }}
                   >
                     Delete
                   </Button>
@@ -640,7 +653,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
 
         {commodityData.length <= 0 ? (
           <div className="text-sm text-red-500 mt-2">
-            No Commodity Added Yet! Add Commodity to Proceed Further!
+            No Commodity Added Yet! Add Commodity to Proceed Further.
           </div>
         ) : null}
       </div>

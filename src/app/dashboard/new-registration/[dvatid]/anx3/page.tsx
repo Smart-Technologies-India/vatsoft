@@ -95,9 +95,9 @@ const Dvat2Page = () => {
             completedSteps={7}
             labels={[
               "User",
-              "DVAT01",
-              "DVAT02",
-              "DVAT03",
+              "DVAT04-1",
+              "DVAT04-2",
+              "DVAT04-3",
               "ANNEXURE-1",
               "ANNEXURE-2",
               "ANNEXURE-3",

@@ -462,7 +462,7 @@ const Dvat1Page = () => {
             <SelectContent className="max-h-64">
               <SelectGroup>
                 <SelectItem value={"Dadra_Nagar_Haveli"}>
-                  Dept. of VAT - Dadra and Nagar
+                  Dept. of VAT - DNH
                 </SelectItem>
                 <SelectItem value={"Branch_Office"}>Branch Office</SelectItem>
                 <SelectItem value={"Head_Office"}>Head Office</SelectItem>
@@ -722,7 +722,7 @@ const Dvat1Page = () => {
           <div className="grid items-center gap-1.5 w-full flex-1">
             <Label htmlFor="starttime" className="text-sm font-normal">
               7. Date from which liable for registration under Dadra and Nagar
-              Haveli Value Added Tax regulatio, 2005 (DD/MM/YYYY){" "}
+              Haveli Value Added Tax regulation, 2005 (DD/MM/YYYY){" "}
               <span className="text-rose-500">*</span>
             </Label>
 
@@ -871,9 +871,9 @@ const Dvat1Page = () => {
             />
           </div>
           <p className="text-xs bg-rose-500 bg-opacity-20 shadow px-2 py-1 rounded-sm mt-2 border-red-500 border-l-4">
-            Note: If you have more then one place of
+            Note: If you have more than one place of
             business/factory/godown/warehourse, fill up form Additional Business
-            Plaes
+            Places
           </p>
         </div>
 
@@ -1546,7 +1546,7 @@ const Dvat2Page = () => {
                 htmlFor="assetsinvestments"
                 className="text-sm font-normal"
               >
-                Other assets & Investments (Rs){" "}
+                Other Assets & Investments (Rs){" "}
                 <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -1556,7 +1556,7 @@ const Dvat2Page = () => {
                 id="assetsinvestments"
                 disabled={true}
                 className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-                placeholder="Other assets & Investments"
+                placeholder="Other Assets & Investments"
                 onChange={handleNumberChange}
               />
             </div>
@@ -1621,7 +1621,7 @@ const Dvat2Page = () => {
 
           <div className="mt-2">
             <Label htmlFor="description" className="text-sm font-normal">
-              Dealer description of Commodity{" "}
+              Dealer Description of Commodity{" "}
               <span className="text-red-500">*</span>
             </Label>
 
@@ -1631,7 +1631,7 @@ const Dvat2Page = () => {
               disabled={true}
               id="description"
               className="px-2 py-1 focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm resize-none mt-1"
-              placeholder="Dealer description of Commodity"
+              placeholder="Dealer Description of Commodity"
             />
           </div>
 

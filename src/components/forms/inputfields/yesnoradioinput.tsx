@@ -49,7 +49,7 @@ export function YesNoRabioInput<T extends FieldValues>(
                 checked={field.value === false}
                 onChange={() => field.onChange(false)}
               />
-              {props.valueOne ?? "No"}
+              {props.valueTwo ?? "No"}
             </label>
           </div>
           {error && (

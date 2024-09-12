@@ -228,9 +228,9 @@ const Dvat2Page = () => {
             completedSteps={6}
             labels={[
               "User",
-              "DVAT01",
-              "DVAT02",
-              "DVAT03",
+              "DVAT04-1",
+              "DVAT04-2",
+              "DVAT04-3",
               "ANNEXURE-1",
               "ANNEXURE-2",
               "ANNEXURE-3",
@@ -545,9 +545,7 @@ const Dvat2Page = () => {
             <div className="grow"></div>
             <Button
               onClick={() =>
-                router.push(
-                  `/dashboard/new-registration/${dvat04id}/anx1`
-                )
+                router.push(`/dashboard/new-registration/${dvat04id}/anx1`)
               }
               className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
             >

@@ -52,31 +52,31 @@ const Home = () => {
           <div className="w-10"></div>
           <div className="mx-auto">
             <a
-              href="/home"
+              href="#"
               className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
             >
               Home
             </a>
             <a
-              href="/home"
+              href="#"
               className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
             >
               About
             </a>
             <a
-              href="/home"
+              href="#"
               className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
             >
               Contact
             </a>
             <a
-              href="/home"
+              href="#"
               className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
             >
               Support
             </a>
             <a
-              href="/home"
+              href="#"
               className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
             >
               Help

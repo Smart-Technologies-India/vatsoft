@@ -43,9 +43,9 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
   const router = useRouter();
 
   const selectOffice: OptionValue[] = [
-    { value: "Dadra_Nagar_Haveli", label: "Dept. of VAT - Dadra and Nagar" },
-    { value: "Branch_Office", label: "Branch Office" },
-    { value: "Head_Office", label: "Head Office" },
+    { value: "Dadra_Nagar_Haveli", label: "Dept. of VAT - DNH" },
+    { value: "Branch_Office", label: "Dept. of VAT - Daman" },
+    { value: "Head_Office", label: "Dept. of VAT - Diu" },
   ];
 
   const natureOfBusiness: OptionValue[] = [
@@ -56,10 +56,10 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
   ];
 
   const constitutionOfBusiness: OptionValue[] = [
-    { value: "PROPRIETORSHIP", label: "PROPRIETORSHIP" },
+    { value: "PROPRIETORSHIP", label: "Proprietorship" },
     { value: "LLP", label: "LLP" },
-    { value: "PVT_LTD", label: "PVT_LTD" },
-    { value: "PUBLIC_LTD", label: "PUBLIC_LTD" },
+    { value: "PVT_LTD", label: "Private LTD" },
+    { value: "PUBLIC_LTD", label: "Public LTD" },
     { value: "OTHER", label: "OTHER" },
   ];
 
@@ -311,10 +311,10 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           </div>
           <div className="flex-1">
             <TaxtInput<Dvat1Form>
-              placeholder="Enter Area"
+              placeholder="Enter Area/Locality"
               name="area"
               required={true}
-              title="Area"
+              title="Area/Locality"
             />
           </div>
         </div>
@@ -333,6 +333,8 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               name="pincode"
               required={true}
               title="Pincode"
+              onlynumber={true}
+              maxlength={6}
             />
           </div>
         </div>
@@ -345,14 +347,14 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           />
         </div>
         <p className="text-xs bg-rose-500 bg-opacity-10 shadow px-2 py-1 rounded-sm mt-2 text-rose-500">
-          Note: If you have more then one place of
+          Note: If you have more than one place of
           business/factory/godown/warehourse, fill up form Additional Business
-          Plaes
+          Places
         </p>
       </div>
       <div className="rounded-sm p-4 border border-black mt-6 relative">
         <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
-          11 Contact Details
+          Contact Details
         </span>
         <div className="flex gap-4 mt-2">
           <div className="flex-1">
@@ -369,7 +371,6 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             <TaxtInput<Dvat1Form>
               placeholder="Enter Alternate Number"
               name="contact_two"
-              required={true}
               title="Alternate Number"
               onlynumber={true}
               maxlength={10}
@@ -389,7 +390,6 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             <TaxtInput<Dvat1Form>
               placeholder="Fax Numer"
               name="faxNumber"
-              required={true}
               title="Fax Number"
             />
           </div>

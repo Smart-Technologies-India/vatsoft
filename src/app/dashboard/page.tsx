@@ -147,7 +147,7 @@ const Page = () => {
               <div className="p-2">
                 <h1 className="text-lg text-center">Profile Incomplete </h1>
                 <p className="text-xs">
-                  Your Profile is incomplete, kindly complete your profile in
+                  Your profile is incomplete, Kindly complete your profile in
                   order to proceed.
                 </p>
                 <button

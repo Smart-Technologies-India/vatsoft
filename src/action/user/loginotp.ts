@@ -55,7 +55,7 @@ const LoginOtp = async (
     cookies().set("id", user_result.id.toString());
 
     return createResponse({
-      message: "Login successfully",
+      message: "Login Successful",
       functionname,
       data: user_result,
     });

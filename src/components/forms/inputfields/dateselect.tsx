@@ -1,7 +1,7 @@
 import { Controller, FieldValues, Path, useFormContext } from "react-hook-form";
 
 import { DatePicker } from "antd";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { Label } from "@/components/ui/label";
 
 type DateSelectProps<T extends FieldValues> = {
@@ -10,6 +10,8 @@ type DateSelectProps<T extends FieldValues> = {
   placeholder: string;
   required: boolean;
   disable?: boolean;
+  mindate?: Dayjs;
+  maxdate?: Dayjs;
 };
 
 export function DateSelect<T extends FieldValues>(props: DateSelectProps<T>) {
@@ -37,6 +39,8 @@ export function DateSelect<T extends FieldValues>(props: DateSelectProps<T>) {
             onChange={(value: dayjs.Dayjs) => {
               field.onChange(value ? value.toDate().toISOString() : null);
             }}
+            minDate={props.mindate ? props.mindate : undefined}
+            maxDate={props.maxdate ? props.maxdate : undefined}
             placeholder={props.placeholder}
           />
           {error && (
