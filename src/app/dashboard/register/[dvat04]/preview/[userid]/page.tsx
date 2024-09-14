@@ -2819,7 +2819,7 @@ const Anx2Page = (props: Anx2PageProps) => {
                       Branch Office
                     </SelectItem>
                     <SelectItem value={"FACTORY"}>Factory</SelectItem>
-                    <SelectItem value={"GODOWN"}>Gpdown/Warehous</SelectItem>
+                    <SelectItem value={"GODOWN"}>Godown/Warehouse</SelectItem>
                     <SelectItem value={"SHOP"}>Shop</SelectItem>
                   </SelectGroup>
                 </SelectContent>

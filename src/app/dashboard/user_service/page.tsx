@@ -40,7 +40,7 @@ const Page = () => {
           <DashboardCards
             title="Holiday List"
             description="View the list of official holidays recognized by the VAT department."
-            link="/dashboard/user_service"
+            link="/dashboard/user_service/holiday-list"
           />
           <DashboardCards
             title="Locate VAT Practitioner"

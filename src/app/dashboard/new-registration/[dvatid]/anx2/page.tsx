@@ -46,6 +46,7 @@ import { ApiResponseType } from "@/models/response";
 import Anx2Create from "@/action/anx2/addanx2";
 import GetAnx2ById from "@/action/anx2/getanxbyid";
 import GetAnx2 from "@/action/anx2/getanx2";
+import { Anx2Provider } from "@/components/forms/user/anx2";
 
 const Dvat2Page = () => {
   const { dvatid } = useParams<{ dvatid: string | string[] }>();
@@ -247,6 +248,8 @@ const Dvat2Page = () => {
             </p>
           </div>
 
+          <Anx2Provider userid={current_user_id} dvatid={dvat04id} />
+
           <div className="rounded-sm p-4 border border-black mt-6 relative">
             <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
               Details of Additional Places of Business
@@ -284,7 +287,7 @@ const Dvat2Page = () => {
                         Branch Office
                       </SelectItem>
                       <SelectItem value={"FACTORY"}>Factory</SelectItem>
-                      <SelectItem value={"GODOWN"}>Gpdown/Warehous</SelectItem>
+                      <SelectItem value={"GODOWN"}>Godown/Warehouse</SelectItem>
                       <SelectItem value={"SHOP"}>Shop</SelectItem>
                     </SelectGroup>
                   </SelectContent>

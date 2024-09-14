@@ -1,18 +1,14 @@
-"use client";
-
 import { FormSteps } from "@/components/formstepts";
-
-import { getCookie } from "cookies-next";
-
-import { useParams } from "next/navigation";
-
 import { Anx1Provider } from "@/components/forms/user/anx1";
+import { cookies } from "next/headers";
 
-const Dvat2Page = () => {
-  const { dvatid } = useParams<{ dvatid: string | string[] }>();
-  const dvat04id = parseInt(Array.isArray(dvatid) ? dvatid[0] : dvatid);
+const Dvat2Page = ({ params }: { params: { dvatid: string } }) => {
+  const current_user_id: number = parseInt(cookies().get("id")?.value ?? "0");
 
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  // const { dvatid } = useParams<{ dvatid: string | string[] }>();
+  // const dvat04id = parseInt(Array.isArray(dvatid) ? dvatid[0] : dvatid);
+
+  // const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
   return (
     <>
@@ -41,7 +37,10 @@ const Dvat2Page = () => {
             </p>
           </div>
 
-          <Anx1Provider userid={current_user_id} dvatid={dvat04id} />
+          <Anx1Provider
+            userid={current_user_id}
+            dvatid={parseInt(params.dvatid)}
+          />
 
           <div className="flex gap-2"></div>
         </div>
