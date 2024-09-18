@@ -24,24 +24,30 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { dvat04, user } from "@prisma/client";
+import { composition, dvat04, user } from "@prisma/client";
 import { getCookie } from "cookies-next";
 import { formateDate } from "@/utils/methods";
 import GetUser from "@/action/user/getuser";
 import GetAllUserDvat from "@/action/register/getalluserdvat";
 import Link from "next/link";
+import GetComposition from "@/action/composition/getcompositon";
 
 const TrackAppliation = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
 
-  const [data, setData] = useState<dvat04[]>([]);
+  const [data, setData] = useState<any[]>([]);
   const [user, setUser] = useState<user>();
+  const [compdata, setCompData] = useState<
+    Array<composition & { dept_user: user }>
+  >([]);
 
   useEffect(() => {
     const init = async () => {
       const response = await GetAllUserDvat({
         userid: id,
       });
+      console.log(response.data);
+
       if (response.data && response.status) {
         setData(response.data);
       }
@@ -52,6 +58,13 @@ const TrackAppliation = () => {
 
       if (userresponse.data && userresponse.status) {
         setUser(userresponse.data);
+      }
+
+      const composition_response = await GetComposition({
+        userid: id,
+      });
+      if (composition_response.status && composition_response.data) {
+        setCompData(composition_response.data);
       }
     };
     init();
@@ -252,7 +265,7 @@ const TrackAppliation = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((val: dvat04, index: number) => {
+              {data.map((val: any, index: number) => {
                 return (
                   <TableRow key={index}>
                     <TableCell className="text-center border">
@@ -274,11 +287,40 @@ const TrackAppliation = () => {
                       {val.status}
                     </TableCell>
                     <TableCell className="text-center border">
-                      {user?.firstName ?? ""}
+                      {val.registration[0].dept_user.firstName} - {" "}
+                      {val.registration[0].dept_user.lastName}
                     </TableCell>
                   </TableRow>
                 );
               })}
+
+              {compdata.map(
+                (val: composition & { dept_user: user }, index: number) => {
+                  return (
+                    <TableRow key={index}>
+                      <TableCell className="text-center border">
+                        {val.arn}
+                      </TableCell>
+                      <TableCell className="text-center border">
+                        {val.compositionScheme ? "In Comp" : "Out Comp"}
+                      </TableCell>
+                      <TableCell className="text-center border">
+                        Application For new composition Scheme
+                      </TableCell>
+                      <TableCell className="text-center border">
+                        {formateDate(new Date(val.createdAt))}
+                      </TableCell>
+                      <TableCell className="text-center border">
+                        {val.status}
+                      </TableCell>
+                      <TableCell className="text-center border">
+                        {val.dept_user.firstName ?? ""} -{" "}
+                        {val.dept_user.lastName ?? ""}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+              )}
             </TableBody>
           </Table>
         </div>

@@ -48,6 +48,18 @@ enum Status {
   INACTIVE
 }
 
+enum CompositionStatus {
+  REJECTED
+  PENDING
+  COMPLETED
+}
+
+enum ChallanStatus {
+  PAID
+  DUE
+  CREATED
+}
+
 enum RegistrationStatus {
   ACTIVE
   INACTIVE
@@ -242,6 +254,13 @@ enum Quarter {
   QUARTER4
 }
 
+enum ChallanReason {
+  MONTHLYPAYMENT
+  PASTDUES
+  DEMAND
+  OTHERS
+}
+
 model user {
   id                    Int        @id @default(autoincrement())
   firstName             String?
@@ -332,7 +351,24 @@ model user {
   department_doc_upload_createdBy deparment_doc_upload[] @relation("department_doc_upload_createdBy")
   department_doc_upload_updatedBy deparment_doc_upload[] @relation("department_doc_upload_updatedBy")
   department_doc_upload_deletedBy deparment_doc_upload[] @relation("department_doc_upload_deletedBy")
-  registration                    registration[]
+
+  //challan
+  challan_createdBy challan[] @relation("challan_createdBy")
+  challan_updatedBy challan[] @relation("challan_updatedBy")
+  challan_deletedBy challan[] @relation("challan_deletedBy")
+
+  //refunds
+  refunds_createdBy refunds[] @relation("refunds_createdBy")
+  refunds_updatedBy refunds[] @relation("refunds_updatedBy")
+  refunds_deletedBy refunds[] @relation("refunds_deletedBy")
+
+  //composition
+  composition_createdBy composition[] @relation("composition_createdBy")
+  composition_updatedBy composition[] @relation("composition_updatedBy")
+  composition_deletedBy composition[] @relation("composition_deletedBy")
+
+  registration registration[]
+  composition  composition[]
 }
 
 model change {
@@ -749,4 +785,92 @@ model deparment_doc_upload {
   deletedAt   DateTime?
   deletedBy   user?     @relation("department_doc_upload_deletedBy", fields: [deletedById], references: [id])
   deletedById Int?
+}
+
+model challan {
+  id               Int           @id @default(autoincrement())
+  reason           ChallanReason @default(MONTHLYPAYMENT)
+  cpin             String
+  vat              String
+  interest         String
+  penalty          String
+  cess             String
+  others           String
+  total_tax_amount String
+  transaction_date DateTime?
+  paymentmode      String?
+  transaction_id   String?
+  bank_name        String?
+  track_id         String?
+  remark           String?       @db.MediumText
+  challanstatus    ChallanStatus @default(CREATED)
+  status           Status        @default(ACTIVE)
+  expire_date      DateTime
+  createdAt        DateTime      @default(now())
+  createdBy        user          @relation("challan_createdBy", fields: [createdById], references: [id])
+  createdById      Int
+  updatedAt        DateTime      @updatedAt
+  updatedBy        user?         @relation("challan_updatedBy", fields: [updatedById], references: [id])
+  updatedById      Int?
+  deletedAt        DateTime?
+  deletedBy        user?         @relation("challan_deletedBy", fields: [deletedById], references: [id])
+  deletedById      Int?
+}
+
+model refunds {
+  id                   Int           @id @default(autoincrement())
+  reason               String
+  old_grievance_number String
+  oldcpin              String
+  cpin                 String
+  date                 DateTime
+  vat                  String
+  interest             String
+  penalty              String
+  cess                 String
+  others               String
+  total_tax_amount     String?
+  transaction_date     String?
+  paymentmode          String?
+  transaction_id       String?
+  bank_name            String?
+  track_id             String?
+  doc_upload           String
+  officer_remark       String?       @db.MediumText
+  remark               String?       @db.MediumText
+  challanstatus        ChallanStatus @default(CREATED)
+  status               Status        @default(ACTIVE)
+  expire_date          DateTime
+  createdAt            DateTime      @default(now())
+  createdBy            user          @relation("refunds_createdBy", fields: [createdById], references: [id])
+  createdById          Int
+  updatedAt            DateTime      @updatedAt
+  updatedBy            user?         @relation("refunds_updatedBy", fields: [updatedById], references: [id])
+  updatedById          Int?
+  deletedAt            DateTime?
+  deletedBy            user?         @relation("refunds_deletedBy", fields: [deletedById], references: [id])
+  deletedById          Int?
+}
+
+model composition {
+  id                           Int               @id @default(autoincrement())
+  officer_date                 DateTime?
+  compositionScheme            Boolean           @default(false)
+  turnoverLastFinancialYear    String?
+  turnoverCurrentFinancialYear String?
+  officerremark                String?           @db.MediumText
+  remark                       String?           @db.MediumText
+  dept_user                    user              @relation(fields: [dept_user_id], references: [id])
+  dept_user_id                 Int
+  arn                          String
+  status                       CompositionStatus @default(PENDING)
+  createdAt                    DateTime          @default(now())
+  createdBy                    user              @relation("composition_createdBy", fields: [createdById], references: [id])
+  createdById                  Int
+  updatedAt                    DateTime          @updatedAt
+  updatedBy                    user?             @relation("composition_updatedBy", fields: [updatedById], references: [id])
+  updatedById                  Int?
+  deletedAt                    DateTime?
+  deletedBy                    user?             @relation("composition_deletedBy", fields: [deletedById], references: [id])
+  deletedById                  Int?
 }

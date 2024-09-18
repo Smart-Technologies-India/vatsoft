@@ -465,7 +465,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
           <button
             onClick={(e) => {
               e.preventDefault();
-              router.push(`/dashboard/new-registration/${props.dvatid}/dvat2`);
+              router.push(`/dashboard/new-registration/${props.dvatid}/dvat3`);
             }}
             className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
           >

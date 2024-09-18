@@ -413,37 +413,28 @@ const Refunds = () => {
           may save this Refund Application and navigate to the dashboard to
           settle the dues first, or may proceed here to file the application.
           Please note that the recoverable dues shall be deducted from the gross
-          amount to be paid from the Retund Amount dalmed in the refund
-          application recelved, by the Refund Processing tAlker anille
-          processing the Kefund.
+          amount to be paid from the Return Amount claimed in the refund
+          application received, by the Refund Processing officer before
+          processing the refund.
         </p>
         <Separator />
         <p className="text-left text-black text-lg mt-2">
           Upload Supporting Documents
         </p>
         <p className="text-xs border p-2 bg-[#e2e2e2]">
-          Note: In case you seek to chance the preferance of the bank account
-          wnich is not aocearing in the droo down list, olease add bank accounti
-          by filing non-core amendment of registration form. Disbursement of a
-          oe advised to keep the merioned bank account ocerational call
-          sanctioned retund is successtully disbursed. &quot;disbursement tail
-          due to
+          Note: In case you seek to change the preference of the bank account
+          wnich is not appearing in the drop down list, please add bank account
+          by filing non-core amendment of registration form.
         </p>
         <p className="text-xs border p-2 bg-[#e2e2e2] mt-2">
           Note: Taxpayers are expected to upload supporting documents while
-          filing refund application, You may upload up to 10 supporting
-          documents, 5 Mr each (total 50 MO). There is no limit to the number of
-          documents. You can scan and upload, tili size of the scanned document
-          containing multipie pages is less than er equal to 5 MB. For detailed
-          tips on the process, dick here.
+          filing refund application.
         </p>
 
         <div className="flex gap-2 mt-2">
           <div className="grow"></div>
           <Button>BACK</Button>
           <Button type="primary">SAVE</Button>
-          <Button type="primary">PREVIEW</Button>
-          <Button type="primary">PROCEED</Button>
 
           {isSubmit ? (
             <Button

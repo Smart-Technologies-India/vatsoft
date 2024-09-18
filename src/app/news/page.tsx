@@ -24,7 +24,7 @@ export default Refund;
 
 const News = () => {
   return (
-    <div className="border border-gray-800 rounded py-2 px-3 mt-2">
+    <div className="border border-gray-800 rounded py-2 px-3 mt-2 bg-white hover:shadow-md">
       <h1 className="text-lg font-medium">
         Detailed Manual and FAQs on filing of GSTR-1A
       </h1>

@@ -1037,11 +1037,11 @@ const VatNote = (props: VatNoteProps) => {
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex gap-4 mt-2">
         <button
           onClick={send_back}
           type="button"
-          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2"
+          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
         >
           Send to Inspector
         </button>

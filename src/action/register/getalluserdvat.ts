@@ -5,12 +5,12 @@ interface GetTempRegNumberPayload {
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { dvat04 } from "@prisma/client";
+import { dvat04, user } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const GetAllUserDvat = async (
   payload: GetTempRegNumberPayload
-): Promise<ApiResponseType<dvat04[] | null>> => {
+): Promise<ApiResponseType<any[] | null>> => {
   const functionname: string = GetAllUserDvat.name;
 
   try {
@@ -22,6 +22,13 @@ const GetAllUserDvat = async (
             status: "NONE",
           },
         ],
+      },
+      include: {
+        registration: {
+          include: {
+            dept_user: true,
+          },
+        },
       },
     });
 

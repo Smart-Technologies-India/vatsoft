@@ -102,12 +102,12 @@ const Page = () => {
                   <DashboardCards
                     title="Application to Opt for Composition levy"
                     description="Apply to join the composition levy scheme, allowing for a simplified VAT payment method with lower compliance burdens."
-                    link="/dashboard/new-registration/registeruser"
+                    link="/dashboard/register/composition-levy"
                   />
                   <DashboardCards
                     title="Application for Withdrawal from Composition levy"
                     description="Apply to discontinue participation in the composition levy scheme and return to standard VAT payment."
-                    link="/dashboard/new-registration/registeruser"
+                    link="/dashboard/register/without-composition-levy"
                   />
                   <DashboardCards
                     title="Application for Cancellation of Registration"

@@ -53,17 +53,11 @@ export const Anx2Provider = (props: Anx2ProviderProps) => {
 const Anx1 = (props: Anx2ProviderProps) => {
   const router = useRouter();
 
-  const titleParticulasOfperson: OptionValue[] = [
-    { value: "PROPRIETOR", label: "PROPRIETOR" },
-    { value: "PARTNER", label: "PARTNER" },
-    { value: "DIRECTOR", label: "DIRECTOR" },
-    { value: "CHAIRMAN", label: "CHAIRMAN" },
-    { value: "MANAGER", label: "MANAGER" },
-  ];
-
-  const gender: OptionValue[] = [
-    { value: "MALE", label: "MALE" },
-    { value: "FEAMLE", label: "FEAMLE" },
+  const typeOfPerson: OptionValue[] = [
+    { value: "BRACH_OFFICE", label: "BRACH_OFFICE" },
+    { value: "FACTORY", label: "FACTORY" },
+    { value: "GODOWN", label: "GODOWN" },
+    { value: "SHOP", label: "SHOP" },
   ];
 
   const {
@@ -76,37 +70,30 @@ const Anx1 = (props: Anx2ProviderProps) => {
   const [anx1id, setAnxid] = useState<number>(0);
 
   const onSubmit = async (data: Anx2Form) => {
-    // const userrespone: ApiResponseType<annexure2 | null> = await Anx2Create({
-    //   dvatId: props.dvatid,
-    //   createdById: props.userid,
-    //   titleParticulasOfperson: data.titleParticulasOfperson,
-    //   nameOfPerson: data.nameOfPerson,
-    //   dateOfBirth: new Date(data.dateOfBirth),
-    //   gender: data.gender,
-    //   fatherName: data.fatherName,
-    //   panNumber: data.panNumber,
-    //   aadharNumber: data.aadharNumber,
-    //   designation: data.designation,
-    //   eductionQualification: data.eductionQualification,
-    //   rbuildingName: data.rbuildingName,
-    //   rareaName: data.rareaName,
-    //   rvillageName: data.rvillageName,
-    //   rpincode: data.rpincode,
-    //   pbuildingName: data.pbuildingName,
-    //   pareaName: data.pareaName,
-    //   pvillageName: data.pvillageName,
-    //   ppincode: data.ppincode,
-    //   contact: data.contact,
-    //   email: data.email,
-    // });
-    // if (userrespone.status) {
-    //   toast.success("Annexure I added successfully");
-    //   reset({});
-    //   setIsSameAddress(false);
-    //   await init();
-    // } else {
-    //   toast.error(userrespone.message);
-    // }
+    const userrespone: ApiResponseType<annexure2 | null> = await Anx2Create({
+      dvatId: props.dvatid,
+      createdById: props.userid,
+      typeOfPerson: data.typeOfPerson,
+      name: data.name,
+      branchName: data.branchName,
+      contact: data.contact,
+      buildingName: data.buildingName,
+      areaName: data.areaName,
+      village: data.village,
+      pinCode: data.pinCode,
+      dateOfExtablishment: new Date(data.dateOfExtablishment),
+      locationOfBusinessPlace: data.locationOfBusinessPlace,
+      underStateAct: data.underStateAct,
+      underCstAct: data.underCstAct,
+    });
+
+    if (userrespone.status) {
+      toast.success("Annexure I added successfully");
+      reset({});
+      await init();
+    } else {
+      toast.error(userrespone.message);
+    }
 
     reset({});
   };
@@ -143,27 +130,21 @@ const Anx1 = (props: Anx2ProviderProps) => {
     const data = await GetAnx2ById({ id: id });
 
     if (data.status && data.data) {
-      // reset({
-      //   titleParticulasOfperson: data.data.titleParticulasOfperson,
-      //   nameOfPerson: data.data.nameOfPerson!,
-      //   dateOfBirth: data.data.dateOfBirth!.toLocaleString(),
-      //   gender: data.data.gender,
-      //   fatherName: data.data.fatherName!,
-      //   panNumber: data.data.panNumber!,
-      //   aadharNumber: data.data.aadharNumber!,
-      //   designation: data.data.designation!,
-      //   eductionQualification: data.data.eductionQualification!,
-      //   rbuildingName: data.data.rbuildingName!,
-      //   rareaName: data.data.rareaName!,
-      //   rpincode: data.data.rpincode!,
-      //   rvillageName: data.data.rvillageName!,
-      //   pbuildingName: data.data.pbuildingName!,
-      //   pvillageName: data.data.pvillageName!,
-      //   ppincode: data.data.ppincode!,
-      //   pareaName: data.data.pareaName!,
-      //   contact: data.data.contact!,
-      //   email: data.data.email!,
-      // });
+      reset({
+        name: data.data.name!,
+        typeOfPerson: data.data.typeOfPerson,
+        branchName: data.data.branchName!,
+        contact: data.data.contact!,
+        locationOfBusinessPlace: data.data.locationOfBusinessPlace!,
+        buildingName: data.data.branchName!,
+        village: data.data.village!,
+        areaName: data.data.areaName!,
+        pinCode: data.data.pinCode!,
+        dateOfExtablishment:
+          data.data.dateOfExtablishment!.toLocaleDateString(),
+        underCstAct: data.data.underCstAct!,
+        underStateAct: data.data.underStateAct!,
+      });
     }
   };
 
@@ -197,146 +178,35 @@ const Anx1 = (props: Anx2ProviderProps) => {
           <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
             Particulars Of Person Having Interest In the Business
           </span>
-          <div className="flex gap-4 mt-2">
-            <div className="flex-1">
-              <MultiSelect<Anx2Form>
-                placeholder="Title Particulars of person"
-                name="contact"
-                required={true}
-                title="Title Particulars of person"
-                options={titleParticulasOfperson}
-              />
-            </div>
-            <div className="flex-1">
-              <TaxtInput<Anx2Form>
-                placeholder="Full Name of Person"
-                name="contact"
-                required={true}
-                title="Full Name of Person"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-4 mt-2">
-            <div className="flex-1">
-              <DateSelect<Anx2Form>
-                placeholder="Date Of Birth"
-                name="contact"
-                required={true}
-                title="Date Of Birth"
-                maxdate={dayjs(
-                  new Date(
-                    new Date().setFullYear(new Date().getFullYear() - 15)
-                  )
-                )}
-              />
-            </div>
-            <div className="flex-1">
-              <RabioInput<Anx2Form>
-                name="contact"
-                required={true}
-                title="Gender"
-                options={gender}
-              />
-            </div>
-          </div>
 
           <div className="flex gap-4 mt-2">
             <div className="flex-1">
               <TaxtInput<Anx2Form>
                 placeholder="Enter Father's Name"
-                name="contact"
+                name="name"
                 required={true}
-                title="Father's Name"
+                title="Name of the Applicant"
               />
             </div>
             <div className="flex-1">
-              <TaxtInput<Anx2Form>
-                placeholder="PAN"
-                name="contact"
+              <MultiSelect<Anx2Form>
+                placeholder="Select Type"
+                name="typeOfPerson"
                 required={true}
-                title="PAN"
+                title="Type"
+                options={typeOfPerson}
               />
             </div>
           </div>
           <div className="flex gap-4 mt-2">
             <div className="flex-1">
               <TaxtInput<Anx2Form>
-                placeholder="Enter Aadhar No."
-                name="contact"
+                placeholder="Branch Name"
+                name="branchName"
                 required={true}
-                title="Aadhar No."
-                onlynumber={true}
+                title="Branch Name"
               />
             </div>
-            <div className="flex-1">
-              <TaxtInput<Anx2Form>
-                placeholder="Enter Designation"
-                name="contact"
-                required={true}
-                title="Designation"
-              />
-            </div>
-          </div>
-          <div className="mt-2">
-            <TaxtInput<Anx2Form>
-              placeholder="Education Qualification"
-              name="contact"
-              required={true}
-              title="Education Qualification"
-            />
-          </div>
-        </div>
-        <div className="rounded-sm p-4 border border-black mt-6 relative">
-          <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
-            Residential Address
-          </span>
-          <div className="flex gap-4 mt-2">
-            <div className="flex-1">
-              <TaxtInput<Anx2Form>
-                placeholder="Building Name/ Number"
-                name="contact"
-                required={true}
-                title="Building Name/ Number"
-              />
-            </div>
-            <div className="flex-1">
-              <TaxtInput<Anx2Form>
-                placeholder="Area/ Road/ Locality/ Market"
-                name="contact"
-                required={true}
-                title="Area/ Road/ Locality/ Market"
-              />
-            </div>
-          </div>
-          <div className="flex gap-4 mt-2">
-            <div className="flex-1">
-              <TaxtInput<Anx2Form>
-                placeholder="Village/ Town"
-                name="contact"
-                required={true}
-                title="Village/ Town"
-              />
-            </div>
-            <div className="flex-1">
-              <TaxtInput<Anx2Form>
-                placeholder="Pincode"
-                name="contact"
-                required={true}
-                title="Pincode"
-                onlynumber={true}
-                maxlength={6}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-sm p-4 border border-black mt-6 relative">
-          <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
-            Contact Details
-          </span>
-
-          <div className="flex gap-4 mt-2">
             <div className="flex-1">
               <TaxtInput<Anx2Form>
                 placeholder="Contact Number"
@@ -347,12 +217,99 @@ const Anx1 = (props: Anx2ProviderProps) => {
                 maxlength={10}
               />
             </div>
+          </div>
+        </div>
+        <div className="rounded-sm p-4 border border-black mt-6 relative">
+          <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
+            Address
+          </span>
+          <div className="flex gap-4 mt-2">
             <div className="flex-1">
               <TaxtInput<Anx2Form>
-                placeholder="Email Id"
+                placeholder="Building Name/ Number"
+                name="buildingName"
+                required={true}
+                title="Building Name/ Number"
+              />
+            </div>
+            <div className="flex-1">
+              <TaxtInput<Anx2Form>
+                placeholder="Area/ Road/ Locality/ Market"
                 name="areaName"
                 required={true}
-                title="Email Id"
+                title="Area/ Road/ Locality/ Market"
+              />
+            </div>
+          </div>
+          <div className="flex gap-4 mt-2">
+            <div className="flex-1">
+              <TaxtInput<Anx2Form>
+                placeholder="Village/ Town"
+                name="village"
+                required={true}
+                title="Village/ Town"
+              />
+            </div>
+            <div className="flex-1">
+              <TaxtInput<Anx2Form>
+                placeholder="Pincode"
+                name="pinCode"
+                required={true}
+                title="Pincode"
+                onlynumber={true}
+                maxlength={6}
+              />
+            </div>
+          </div>
+          <div className="flex gap-4 mt-2">
+            <div className="flex-1">
+              <DateSelect<Anx2Form>
+                placeholder="Date of Establishment"
+                name="dateOfExtablishment"
+                required={true}
+                title="Date of Establishment"
+              />
+            </div>
+            <div className="flex-1">
+              <RabioInput<Anx2Form>
+                name="locationOfBusinessPlace"
+                required={true}
+                title="Location of Business Place"
+                options={[
+                  {
+                    label: "Within State",
+                    value: "WITHIN_STATE",
+                  },
+                  {
+                    label: "Outside State",
+                    value: "OUTSIDE_STATE",
+                  },
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-sm p-4 border border-black mt-6 relative">
+          <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
+            Registration No. of Branch
+          </span>
+
+          <div className="flex gap-4 mt-2">
+            <div className="flex-1">
+              <TaxtInput<Anx2Form>
+                placeholder="Under State Act"
+                name="underStateAct"
+                required={true}
+                title="Under State Act"
+              />
+            </div>
+            <div className="flex-1">
+              <TaxtInput<Anx2Form>
+                placeholder="Under CST Act, 1958"
+                name="underCstAct"
+                required={true}
+                title="Under CST Act, 1958"
               />
             </div>
           </div>
@@ -394,7 +351,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
           <button
             onClick={(e) => {
               e.preventDefault();
-              router.push(`/dashboard/new-registration/${props.dvatid}/dvat2`);
+              router.push(`/dashboard/new-registration/${props.dvatid}/anx1`);
             }}
             className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
           >
@@ -406,7 +363,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
               e.preventDefault();
               if (Annexuredata.length === 0)
                 return toast.error("Please add Annexure I");
-              router.push(`/dashboard/new-registration/${props.dvatid}/anx2`);
+              router.push(`/dashboard/new-registration/${props.dvatid}/anx3`);
             }}
             className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
           >

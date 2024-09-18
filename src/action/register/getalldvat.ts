@@ -3,12 +3,11 @@ interface GetTempRegNumberPayload {}
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
-import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const GetAllDvat = async (
   payload: GetTempRegNumberPayload
-): Promise<ApiResponseType<dvat04[] | null>> => {
+): Promise<ApiResponseType<any[] | null>> => {
   try {
     const dvat04response = await prisma.dvat04.findMany({
       where: {
@@ -18,7 +17,13 @@ const GetAllDvat = async (
           },
         ],
       },
-      include: { createdBy: true },
+      include: {
+        registration: {
+          include: {
+            dept_user: true,
+          },
+        },
+      },
     });
 
     if (!dvat04response)

@@ -74,8 +74,8 @@ const Dvat1Schema = object({
     check(isContainSpace, "Contact One should not contain space."),
     maxLength(10, "Contact One should not exceed 10 characters.")
   ),
-  contact_two: optional(string()),
-  faxNumber: optional(string()),
+  contact_two: nullish(string()),
+  faxNumber: nullish(string()),
   email: pipe(
     string("Email is required."),
     minLength(1, "Email is required."),

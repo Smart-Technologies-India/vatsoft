@@ -11,12 +11,22 @@ import {
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
 import { Radio, DatePicker } from "antd";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
-import { MaterialSymbolsClose } from "@/components/icons";
+import { challan } from "@prisma/client";
+import GetUserChallan from "@/action/challan/getuserchallan";
+import { getCookie } from "cookies-next";
+import { formateDate } from "@/utils/methods";
+import Link from "next/link";
+import { toast } from "react-toastify";
+import SearchChallan from "@/action/challan/searchchallan";
 
 const ChallanHistory = () => {
+  const id: number = parseInt(getCookie("id") ?? "0");
+  const [isLoading, setLoading] = useState<boolean>(true);
+  const [isSearch, setSearch] = useState<boolean>(false);
+
   enum SearchOption {
     CPIN,
     DATE,
@@ -43,6 +53,78 @@ const ChallanHistory = () => {
     setSearchDate(dates);
   };
 
+  const [challanData, setChallanData] = useState<challan[]>([]);
+  const init = async () => {
+    setLoading(true);
+
+    const challan_resposne = await GetUserChallan({
+      userid: id,
+    });
+    if (challan_resposne.data && challan_resposne.data) {
+      setChallanData(challan_resposne.data);
+    }
+    setSearch(false);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+
+      const challan_resposne = await GetUserChallan({
+        userid: id,
+      });
+
+      if (challan_resposne.data && challan_resposne.data) {
+        setChallanData(challan_resposne.data);
+      }
+
+      setLoading(false);
+    };
+    init();
+  }, [id]);
+
+  const cpinsearch = async () => {
+    if (
+      cpinRef.current?.input?.value == undefined ||
+      cpinRef.current?.input?.value == null ||
+      cpinRef.current?.input?.value == ""
+    ) {
+      return toast.error("Enter cpin");
+    }
+    const search_response = await SearchChallan({
+      userid: id,
+      cpin: cpinRef.current?.input?.value,
+    });
+    if (search_response.status && search_response.data) {
+      setChallanData(search_response.data);
+      setSearch(true);
+    }
+  };
+
+  const datesearch = async () => {
+    if (searchDate == null || searchDate.length <= 1) {
+      return toast.error("Select state date and end date");
+    }
+
+    const search_response = await SearchChallan({
+      userid: id,
+      fromdate: searchDate[0]?.toDate(),
+      todate: searchDate[1]?.toDate(),
+    });
+    if (search_response.status && search_response.data) {
+      setChallanData(search_response.data);
+      setSearch(true);
+    }
+  };
+
+  if (isLoading)
+    return (
+      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
+        Loading...
+      </div>
+    );
+
   return (
     <>
       <div className="p-2">
@@ -68,7 +150,14 @@ const ChallanHistory = () => {
                         ref={cpinRef}
                         placeholder={"Enter CPIN"}
                       />
-                      <Button type="primary">Search</Button>
+                      <Button onClick={cpinsearch} type="primary">
+                        Search
+                      </Button>
+                      {isSearch && (
+                        <Button onClick={init} type="primary">
+                          Reset
+                        </Button>
+                      )}
                     </div>
                   );
 
@@ -76,7 +165,14 @@ const ChallanHistory = () => {
                   return (
                     <div className="flex gap-2">
                       <RangePicker onChange={onChangeDate} />
-                      <Button type="primary">Search</Button>
+                      <Button type="primary" onClick={datesearch}>
+                        Search
+                      </Button>
+                      {isSearch && (
+                        <Button onClick={init} type="primary">
+                          Reset
+                        </Button>
+                      )}
                     </div>
                   );
                 default:
@@ -85,78 +181,85 @@ const ChallanHistory = () => {
             })()}
           </div>
 
-          <div className="text-blue-400 bg-blue-500 bg-opacity-10 border border-blue-300 mt-2 text-sm p-2 flex gap-2 items-center">
+          {/* <div className="text-blue-400 bg-blue-500 bg-opacity-10 border border-blue-300 mt-2 text-sm p-2 flex gap-2 items-center">
             <p className="flex-1">Search Result Based on Date range</p>
             <MaterialSymbolsClose className="text-xl cursor-pointer" />
-          </div>
-          <Table className="border mt-2">
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="whitespace-nowrap text-center px-2">
-                  CPIN
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center w-36  px-2">
-                  Created On
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center  px-2">
-                  Amount ()
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center  px-2">
-                  Mode
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center  px-2">
-                  Challan Reason
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center  px-2">
-                  Expire Date
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center  px-2">
-                  Deposit Date
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center  px-2">
-                  Deposit Status
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell className="text-center p-2">2458327419</TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">39,310</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">03/04/2024</TableCell>
-                <TableCell className="text-center p-2">23/07/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">2745619283</TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">23,430</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">05/03/2024</TableCell>
-                <TableCell className="text-center p-2">20/08/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center p-2">2684729357</TableCell>
-                <TableCell className="text-center p-2">
-                  20/06/2024 14:02:33
-                </TableCell>
-                <TableCell className="text-center p-2">54,350</TableCell>
-                <TableCell className="text-center p-2">E-Payment</TableCell>
-                <TableCell className="text-center p-2">AOP</TableCell>
-                <TableCell className="text-center p-2">03/03/2024</TableCell>
-                <TableCell className="text-center p-2">22/08/2024</TableCell>
-                <TableCell className="text-center p-2">PAID</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          </div> */}
+          {challanData.length == 0 && (
+            <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
+              <p className="flex-1">There is no challan.</p>
+            </div>
+          )}
+
+          {challanData.length > 0 && (
+            <Table className="border mt-2">
+              <TableHeader>
+                <TableRow className="bg-gray-100">
+                  <TableHead className="whitespace-nowrap text-center px-2">
+                    CPIN
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center w-36  px-2">
+                    Created On
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center  px-2">
+                    Amount
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center  px-2">
+                    Mode
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center  px-2">
+                    Challan Reason
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center  px-2">
+                    Expire Date
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center  px-2">
+                    Deposit Date
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center  px-2">
+                    Deposit Status
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {challanData.map((val: challan, index: number) => (
+                  <TableRow key={index}>
+                    <TableCell className="text-center p-2">
+                      <Link
+                        className="text-blue-500"
+                        href={`/dashboard/payments/saved-challan/${val.id}`}
+                      >
+                        {val.cpin}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-center p-2">
+                      {formateDate(new Date(val.createdAt))}
+                    </TableCell>
+                    <TableCell className="text-center p-2">
+                      {val.total_tax_amount}
+                    </TableCell>
+                    <TableCell className="text-center p-2">
+                      {val.paymentmode ?? "-"}
+                    </TableCell>
+                    <TableCell className="text-center p-2">
+                      {val.reason}
+                    </TableCell>
+                    <TableCell className="text-center p-2">
+                      {formateDate(new Date(val.expire_date))}
+                    </TableCell>
+                    <TableCell className="text-center p-2">
+                      {val.transaction_date
+                        ? formateDate(new Date(val.transaction_date))
+                        : "-"}
+                    </TableCell>
+                    <TableCell className="text-center p-2">
+                      {val.challanstatus}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </div>
     </>
