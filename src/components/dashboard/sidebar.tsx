@@ -85,17 +85,17 @@ const Sidebar = (props: SidebarProps) => {
             path={path}
             pathcheck={"/dashboard/returns"}
           />
-          <MenuTab
-            click={() => props.setIsOpen(false)}
-            icon={
-              <FluentWalletCreditCard20Regular className="text-gray-300 text-xl  w-6" />
-            }
-            name="Payments"
-            path={path}
-            pathcheck={"/dashboard/payments"}
-          />
         </>
       )}
+      <MenuTab
+        click={() => props.setIsOpen(false)}
+        icon={
+          <FluentWalletCreditCard20Regular className="text-gray-300 text-xl  w-6" />
+        }
+        name="Payments"
+        path={path}
+        pathcheck={"/dashboard/payments"}
+      />
 
       <MenuTab
         click={() => props.setIsOpen(false)}

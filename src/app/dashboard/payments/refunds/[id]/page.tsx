@@ -1,7 +1,6 @@
 "use client";
 
-import GetChallan from "@/action/challan/getchallan";
-import { challan, dvat04, user } from "@prisma/client";
+import { dvat04, refunds, Role, user } from "@prisma/client";
 import { getCookie } from "cookies-next";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -23,15 +22,16 @@ import {
 } from "@/schema/subtmitpayment";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { toast } from "react-toastify";
-import AddChallanPayment from "@/action/challan/addchallanpayment";
-import GetUser from "@/action/user/getuser";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { Button } from "antd";
+import GetRefunds from "@/action/refund/getrefunds";
+import AddRefundsPayment from "@/action/refund/addrefundspayment";
+import GetUser from "@/action/user/getuser";
 
-const ChallanData = () => {
+const RefundsData = () => {
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
-  const challanid = parseInt(Array.isArray(id) ? id[0] : id);
+  const refundsid = parseInt(Array.isArray(id) ? id[0] : id);
   const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const [isLoading, setLoading] = useState<boolean>(true);
 
@@ -40,35 +40,41 @@ const ChallanData = () => {
 
   const toWords = new ToWords();
 
+  const [currentUser, setCurrentUser] = useState<user | null>();
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const user_response = await GetUser({
-        id: current_user_id,
+
+      const refunds_resposne = await GetRefunds({
+        id: refundsid,
       });
-      if (user_response.data && user_response.status) {
-        setUser(user_response.data);
-      }
-      const dvat_response = await GetUserDvat04({
-        userid: current_user_id,
-      });
-      if (dvat_response.data && dvat_response.status) {
-        setDvat(dvat_response.data);
+      if (refunds_resposne.data && refunds_resposne.data) {
+        setRefundsData(refunds_resposne.data);
+        setUser(refunds_resposne.data.createdBy);
+
+        const dvat_response = await GetUserDvat04({
+          userid: refunds_resposne.data.createdBy.id,
+        });
+        if (dvat_response.data && dvat_response.status) {
+          setDvat(dvat_response.data);
+        }
       }
 
-      const challan_resposne = await GetChallan({
-        id: challanid,
+      const current_user_response = await GetUser({
+        id: current_user_id,
       });
-      if (challan_resposne.data && challan_resposne.data) {
-        setChallanData(challan_resposne.data);
+
+      if (current_user_response.status && current_user_response.data) {
+        setCurrentUser(current_user_response.data);
       }
 
       setLoading(false);
     };
     init();
-  }, [challanid, current_user_id]);
+  }, [refundsid, current_user_id]);
 
-  const [challanData, setChallanData] = useState<challan | null>(null);
+  const [refundsData, setRefundsData] = useState<refunds | null>(null);
 
   const {
     register,
@@ -80,11 +86,11 @@ const ChallanData = () => {
   });
 
   const onSubmit = async (data: SubmitPaymentForm) => {
-    if (!challanData || challanData == null) {
-      return toast.error("There is no challan data.");
+    if (!refundsData || refundsData == null) {
+      return toast.error("There is no refunds data.");
     }
-    const response = await AddChallanPayment({
-      id: challanData.id,
+    const response = await AddRefundsPayment({
+      id: refundsData.id,
       userid: current_user_id,
       bank_name: data.bank_name,
       track_id: data.track_id,
@@ -112,30 +118,30 @@ const ChallanData = () => {
     <>
       <div className="p-2">
         <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white">Challan</div>
+          <div className="bg-blue-500 p-2 text-white">Refunds</div>
 
           <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-2">
-            GST Challan
+            GST Refunds
           </div>
           <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
             <div>
               <p className="text-sm">CPIN</p>
-              <p className="text-sm  font-medium">{challanData?.cpin}</p>
+              <p className="text-sm  font-medium">{refundsData?.cpin}</p>
             </div>
             <div>
               <p className="text-sm">User Tin Number</p>
               <p className="text-sm  font-medium">{dvat?.tinNumber}</p>
             </div>
             <div>
-              <p className="text-sm">Challan Generateon Date</p>
+              <p className="text-sm">Refunds Generateon Date</p>
               <p className="text-sm  font-medium">
-                {formatDateTime(new Date(challanData?.createdAt!))}
+                {formatDateTime(new Date(refundsData?.createdAt!))}
               </p>
             </div>
             <div>
-              <p className="text-sm">Challan Expiry Date</p>
+              <p className="text-sm">Refunds Expiry Date</p>
               <p className="text-sm  font-medium">
-                {formatDateTime(new Date(challanData?.expire_date!))}
+                {formatDateTime(new Date(refundsData?.expire_date!))}
               </p>
             </div>
           </div>
@@ -143,7 +149,7 @@ const ChallanData = () => {
           <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">
             Details Of Taxpayer
           </div>
-          <div className="p-1 bg-gray-50 grid grid-cols-3 gap-6 justify-between px-4">
+          <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
             <div>
               <p className="text-sm">Name</p>
               <p className="text-sm  font-medium">
@@ -159,22 +165,18 @@ const ChallanData = () => {
               <p className="text-sm  font-medium">{user?.mobileOne}</p>
             </div>
             <div>
+              <p className="text-sm">Reason for Refunds</p>
+              <p className="text-sm font-medium">
+                {capitalcase(refundsData?.reason ?? "")}
+              </p>
+            </div>
+            <div className="col-span-4">
               <p className="text-sm">Address</p>
               <p className="text-sm  font-medium">{user?.address}</p>
             </div>
           </div>
 
-          <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">
-            Reason for challan
-          </div>
-          <div className="p-1 bg-gray-50 grid grid-cols-4  gap-2  px-4">
-            <div>
-              <p className="text-sm">Reason for challan</p>
-              <p className="text-sm font-medium">
-                {capitalcase(challanData?.reason ?? "")}
-              </p>
-            </div>
-          </div>
+          <div className="p-1 bg-gray-50 grid grid-cols-4  gap-2  px-4"></div>
 
           <div className="flex gap-4">
             <Table className="border mt-2">
@@ -192,7 +194,7 @@ const ChallanData = () => {
                     VAT(0005)
                   </TableCell>
                   <TableCell className="text-center p-2 border ">
-                    {challanData?.vat}
+                    {refundsData?.vat}
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -200,7 +202,7 @@ const ChallanData = () => {
                     Interest(0008)
                   </TableCell>
                   <TableCell className="text-center p-2 border">
-                    {challanData?.interest}
+                    {refundsData?.interest}
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -208,7 +210,7 @@ const ChallanData = () => {
                     CESS(0009)
                   </TableCell>
                   <TableCell className="text-center p-2 border">
-                    {challanData?.cess}
+                    {refundsData?.cess}
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -216,31 +218,31 @@ const ChallanData = () => {
                     Penalty
                   </TableCell>
                   <TableCell className="text-center p-2 border">
-                    {challanData?.penalty}
+                    {refundsData?.penalty}
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="text-left p-2 border">Others</TableCell>
                   <TableCell className="text-center p-2 border">
-                    {challanData?.others}
+                    {refundsData?.others}
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="text-left p-2 border">
-                    Total Challan Amount:
+                    Total Refunds Amount:
                   </TableCell>
                   <TableCell className="text-center p-2 border">
-                    {challanData?.total_tax_amount}
+                    {refundsData?.total_tax_amount}
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="text-left p-2 border">
-                    Total Challan Amount (In Words):
+                    Total Refunds Amount (In Words):
                   </TableCell>
                   <TableCell className="text-center p-2 border">
                     {capitalcase(
                       toWords.convert(
-                        parseInt(challanData?.total_tax_amount ?? "0")
+                        parseInt(refundsData?.total_tax_amount ?? "0")
                       )
                     )}
                   </TableCell>
@@ -248,33 +250,39 @@ const ChallanData = () => {
               </TableBody>
             </Table>
             <div className="w-96">
-              {challanData?.challanstatus == "PAID" ? (
+              {refundsData?.refundsstatus == "PAID" ? (
                 <>
                   <div className="p-2 flex flex-col gap-2 border bg-gray-100 mt-2">
                     <div>
                       <p className="text-sm">Bank Name</p>
                       <p className="text-sm  font-medium">
-                        {challanData?.bank_name}
+                        {refundsData?.bank_name}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm">Track Id</p>
                       <p className="text-sm  font-medium">
-                        {challanData?.track_id}
+                        {refundsData?.track_id}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm">Transaction Id</p>
                       <p className="text-sm  font-medium">
-                        {challanData?.transaction_id}
+                        {refundsData?.transaction_id}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm">Transaction Date</p>
                       <p className="text-sm  font-medium">
-                        {formateDate(new Date(challanData?.transaction_date!))}
+                        {formateDate(new Date(refundsData?.transaction_date!))}
                       </p>
                     </div>
+                  </div>
+                </>
+              ) : currentUser?.role == Role.USER ? (
+                <>
+                  <div className="p-2 flex flex-col gap-2 border bg-gray-100 mt-2">
+                    <p>Your request is pending from the department side.</p>
                   </div>
                 </>
               ) : (
@@ -353,7 +361,7 @@ const ChallanData = () => {
                       </Button>
                       <input
                         type="submit"
-                        value={"Pay Challan"}
+                        value={"Pay Refunds"}
                         className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
                       />
                     </div>
@@ -362,36 +370,55 @@ const ChallanData = () => {
               )}
             </div>
           </div>
-          {challanData?.remark == null ||
-          challanData?.remark == undefined ||
-          challanData?.remark == "" ? (
+          <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4 mt-2">
+            <div>
+              <p className="text-sm">Previous CPIN</p>
+              <p className="text-sm  font-medium">
+                {refundsData?.oldcpin ?? "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm">Previous Grievance Number</p>
+              <p className="text-sm  font-medium">
+                {refundsData?.old_grievance_number ?? "N/A"}
+              </p>
+            </div>
+          </div>
+          {refundsData?.remark == null ||
+          refundsData?.remark == undefined ||
+          refundsData?.remark == "" ? (
             <></>
           ) : (
             <div className="mt-2 bg-gray-100 p-2 rounded-md">
               <p>Remark</p>
               <Separator />
-              <p>{challanData?.remark}</p>
+              <p>{refundsData?.remark}</p>
             </div>
           )}
 
-          <div className="p-2">
-            <p className="text-sm">
-              <span className="font-semibold">Note:</span>
-              For taxpayer filing VAT on quarterly basis:
+          <div className="">
+            <p className="text-xs border p-2 bg-gray-100 mt-2">
+              Note: You may view the Electronic Liability Register that displays
+              your liabilities/ dues of Returns and other than Returns. Hence,
+              you may save this Refund Application and navigate to the dashboard
+              to settle the dues first, or may proceed here to file the
+              application. Please note that the recoverable dues shall be
+              deducted from the gross amount to be paid from the Return Amount
+              claimed in the refund application received, by the Refund
+              Processing officer before processing the refund.
             </p>
-            <p className="text-sm mt-1">
-              1. To make payment for the first (M1) and second (M2) months of
-              the quarter, please select reason as &lsquo;Monthly Payment for
-              Quarterly Return&lsquo; and the relevant period (financial year,
-              month) and choose whether to pay through 35% challan or
-              self-assessment challan.
+            <Separator />
+            <p className="text-left text-black text-lg mt-2">
+              Upload Supporting Documents
             </p>
-            <p className="text-sm mt-1">
-              2. To make payment for the third month of the Quarter (M3), please
-              use &apos;Create Challan&apos; option in payment Table-6 of Form
-              VAT Quarterly. An auto- populated challan amounting to liabilities
-              for the quarter net off credit utilization and existing cash
-              balance can be generated and used to offset liabilities.
+            <p className="text-xs border p-2 bg-gray-100">
+              Note: In case you seek to change the preference of the bank
+              account wnich is not appearing in the drop down list, please add
+              bank account by filing non-core amendment of registration form.
+            </p>
+            <p className="text-xs border p-2 bg-gray-100 mt-2">
+              Note: Taxpayers are expected to upload supporting documents while
+              filing refund application.
             </p>
           </div>
         </div>
@@ -400,4 +427,4 @@ const ChallanData = () => {
   );
 };
 
-export default ChallanData;
+export default RefundsData;

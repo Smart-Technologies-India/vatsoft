@@ -2,23 +2,23 @@
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { challan } from "@prisma/client";
+import { refunds } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
-interface SearchChallanPayload {
+interface SearchRfundsPayload {
   userid?: number;
   cpin?: string;
   fromdate?: Date;
   todate?: Date;
 }
 
-const SearchChallan = async (
-  payload: SearchChallanPayload
-): Promise<ApiResponseType<challan[] | null>> => {
-  const functionname: string = SearchChallan.name;
+const SearchRefunds = async (
+  payload: SearchRfundsPayload
+): Promise<ApiResponseType<refunds[] | null>> => {
+  const functionname: string = SearchRefunds.name;
 
   try {
-    const challan = await prisma.challan.findMany({
+    const refunds = await prisma.refunds.findMany({
       where: {
         status: "ACTIVE",
         deletedAt: null,
@@ -36,9 +36,9 @@ const SearchChallan = async (
     });
 
     return createResponse({
-      message: challan ? "Challan Get successfully" : "Unable to get challan.",
+      message: refunds ? "Refunds Get successfully" : "Unable to get refunds.",
       functionname: functionname,
-      data: challan ?? null,
+      data: refunds ?? null,
     });
   } catch (e) {
     return createResponse({
@@ -48,4 +48,4 @@ const SearchChallan = async (
   }
 };
 
-export default SearchChallan;
+export default SearchRefunds;

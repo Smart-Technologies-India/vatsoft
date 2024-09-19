@@ -5,17 +5,12 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import { challan } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
-interface SearchChallanPayload {
-  userid?: number;
-  cpin?: string;
-  fromdate?: Date;
-  todate?: Date;
-}
+interface GetAllChallanPayload {}
 
-const SearchChallan = async (
-  payload: SearchChallanPayload
+const GetAllChallan = async (
+  payload: GetAllChallanPayload
 ): Promise<ApiResponseType<challan[] | null>> => {
-  const functionname: string = SearchChallan.name;
+  const functionname: string = GetAllChallan.name;
 
   try {
     const challan = await prisma.challan.findMany({
@@ -23,20 +18,13 @@ const SearchChallan = async (
         status: "ACTIVE",
         deletedAt: null,
         deletedById: null,
-        ...(payload.userid && { createdById: payload.userid }),
-        ...(payload.cpin && { cpin: payload.cpin }),
-        ...(payload.fromdate &&
-          payload.todate && {
-            createdAt: {
-              gte: payload.fromdate,
-              lte: payload.todate,
-            },
-          }),
       },
     });
 
     return createResponse({
-      message: challan ? "Challan Get successfully" : "Unable to get challan.",
+      message: challan
+        ? "All Challan Get successfully"
+        : "Unable to get challan.",
       functionname: functionname,
       data: challan ?? null,
     });
@@ -48,4 +36,4 @@ const SearchChallan = async (
   }
 };
 
-export default SearchChallan;
+export default GetAllChallan;

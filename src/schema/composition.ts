@@ -22,3 +22,17 @@ const CompositionSchema = object({
 
 type CompositionForm = InferInput<typeof CompositionSchema>;
 export { CompositionSchema, type CompositionForm };
+
+const CompositionDeptSchema = object({
+  officer_date: pipe(
+    string("Officer Date is required."),
+    minLength(1, "Officer Date is required.")
+  ),
+  officerremark: pipe(
+    string("Officer Remark is required."),
+    minLength(1, "Officer Remark is required.")
+  ),
+});
+
+type CompositionDeptForm = InferInput<typeof CompositionDeptSchema>;
+export { CompositionDeptSchema, type CompositionDeptForm };

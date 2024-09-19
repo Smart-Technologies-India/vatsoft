@@ -60,6 +60,12 @@ enum ChallanStatus {
   CREATED
 }
 
+enum RefundStatus {
+  PAID
+  DUE
+  CREATED
+}
+
 enum RegistrationStatus {
   ACTIVE
   INACTIVE
@@ -369,6 +375,7 @@ model user {
 
   registration registration[]
   composition  composition[]
+  refunds      refunds[]
 }
 
 model change {
@@ -818,37 +825,38 @@ model challan {
 }
 
 model refunds {
-  id                   Int           @id @default(autoincrement())
+  id                   Int          @id @default(autoincrement())
   reason               String
-  old_grievance_number String
-  oldcpin              String
+  old_grievance_number String?
+  oldcpin              String?
   cpin                 String
-  date                 DateTime
   vat                  String
   interest             String
   penalty              String
   cess                 String
-  others               String
+  others               String?
   total_tax_amount     String?
-  transaction_date     String?
+  transaction_date     DateTime?
   paymentmode          String?
   transaction_id       String?
   bank_name            String?
   track_id             String?
-  doc_upload           String
-  officer_remark       String?       @db.MediumText
-  remark               String?       @db.MediumText
-  challanstatus        ChallanStatus @default(CREATED)
-  status               Status        @default(ACTIVE)
+  doc_upload           String?
+  dept_user            user         @relation(fields: [dept_user_id], references: [id])
+  dept_user_id         Int
+  officer_remark       String?      @db.MediumText
+  remark               String?      @db.MediumText
+  refundsstatus        RefundStatus @default(CREATED)
+  status               Status       @default(ACTIVE)
   expire_date          DateTime
-  createdAt            DateTime      @default(now())
-  createdBy            user          @relation("refunds_createdBy", fields: [createdById], references: [id])
+  createdAt            DateTime     @default(now())
+  createdBy            user         @relation("refunds_createdBy", fields: [createdById], references: [id])
   createdById          Int
-  updatedAt            DateTime      @updatedAt
-  updatedBy            user?         @relation("refunds_updatedBy", fields: [updatedById], references: [id])
+  updatedAt            DateTime     @updatedAt
+  updatedBy            user?        @relation("refunds_updatedBy", fields: [updatedById], references: [id])
   updatedById          Int?
   deletedAt            DateTime?
-  deletedBy            user?         @relation("refunds_deletedBy", fields: [deletedById], references: [id])
+  deletedBy            user?        @relation("refunds_deletedBy", fields: [deletedById], references: [id])
   deletedById          Int?
 }
 

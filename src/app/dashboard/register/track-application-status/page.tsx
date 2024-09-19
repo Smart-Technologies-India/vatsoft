@@ -30,7 +30,7 @@ import { formateDate } from "@/utils/methods";
 import GetUser from "@/action/user/getuser";
 import GetAllUserDvat from "@/action/register/getalluserdvat";
 import Link from "next/link";
-import GetComposition from "@/action/composition/getcompositon";
+import GetUserComposition from "@/action/composition/getusercompositon";
 
 const TrackAppliation = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
@@ -46,7 +46,6 @@ const TrackAppliation = () => {
       const response = await GetAllUserDvat({
         userid: id,
       });
-      console.log(response.data);
 
       if (response.data && response.status) {
         setData(response.data);
@@ -60,7 +59,7 @@ const TrackAppliation = () => {
         setUser(userresponse.data);
       }
 
-      const composition_response = await GetComposition({
+      const composition_response = await GetUserComposition({
         userid: id,
       });
       if (composition_response.status && composition_response.data) {
@@ -287,7 +286,7 @@ const TrackAppliation = () => {
                       {val.status}
                     </TableCell>
                     <TableCell className="text-center border">
-                      {val.registration[0].dept_user.firstName} - {" "}
+                      {val.registration[0].dept_user.firstName} -{" "}
                       {val.registration[0].dept_user.lastName}
                     </TableCell>
                   </TableRow>
@@ -299,7 +298,12 @@ const TrackAppliation = () => {
                   return (
                     <TableRow key={index}>
                       <TableCell className="text-center border">
-                        {val.arn}
+                        <Link
+                          href={`/dashboard/register/composition-levy/${val.id}`}
+                          className="text-blue-500"
+                        >
+                          {val.arn}
+                        </Link>
                       </TableCell>
                       <TableCell className="text-center border">
                         {val.compositionScheme ? "In Comp" : "Out Comp"}

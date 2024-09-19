@@ -171,7 +171,8 @@ const Composition = (props: CompositionProviderProps) => {
         <div className="grow"></div>
         <input
           type="reset"
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
             reset({});
           }}
           value={"Reset"}

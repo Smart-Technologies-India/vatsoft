@@ -5,26 +5,25 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import { composition, user } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
-interface GetCompositionPayload {
-  id: number;
+interface GetUserCompositionPayload {
+  userid?: number;
 }
 
-const GetComposition = async (
-  payload: GetCompositionPayload
+const GetUserComposition = async (
+  payload: GetUserCompositionPayload
 ): Promise<
-  ApiResponseType<(composition & { dept_user: user; createdBy: user }) | null>
+  ApiResponseType<Array<composition & { dept_user: user }> | null>
 > => {
-  const functionname: string = GetComposition.name;
+  const functionname: string = GetUserComposition.name;
 
   try {
-    const composition_response = await prisma.composition.findFirst({
+    const composition_response = await prisma.composition.findMany({
       where: {
         deletedAt: null,
         deletedById: null,
-        id: payload.id,
+        ...(payload.userid && { createdById: payload.userid }),
       },
       include: {
-        createdBy: true,
         dept_user: true,
       },
     });
@@ -44,4 +43,4 @@ const GetComposition = async (
   }
 };
 
-export default GetComposition;
+export default GetUserComposition;

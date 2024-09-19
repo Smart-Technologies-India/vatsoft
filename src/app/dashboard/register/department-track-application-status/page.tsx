@@ -28,7 +28,7 @@ import { formateDate } from "@/utils/methods";
 import GetUser from "@/action/user/getuser";
 import Link from "next/link";
 import GetAllDvat from "@/action/register/getalldvat";
-import GetComposition from "@/action/composition/getcompositon";
+import GetUserComposition from "@/action/composition/getusercompositon";
 
 const TrackAppliation = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
@@ -54,9 +54,7 @@ const TrackAppliation = () => {
         setUser(userresponse.data);
       }
 
-      const composition_response = await GetComposition({
-        userid: id,
-      });
+      const composition_response = await GetUserComposition({});
       if (composition_response.status && composition_response.data) {
         setCompData(composition_response.data);
       }
@@ -292,7 +290,12 @@ const TrackAppliation = () => {
                   return (
                     <TableRow key={index}>
                       <TableCell className="text-center border">
-                        {val.arn}
+                        <Link
+                          href={`/dashboard/register/composition-levy/${val.id}`}
+                          className="text-blue-500"
+                        >
+                          {val.arn}
+                        </Link>
                       </TableCell>
                       <TableCell className="text-center border">
                         {val.compositionScheme ? "In Comp" : "Out Comp"}
