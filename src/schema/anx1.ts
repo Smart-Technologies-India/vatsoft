@@ -1,3 +1,4 @@
+import { validateAadharCard, validatePanCard } from "@/utils/methods";
 import { DepositType, Gender, TitleParticulasOfperson } from "@prisma/client";
 import {
   email,
@@ -8,6 +9,8 @@ import {
   object,
   string,
   pipe,
+  custom,
+  check,
 } from "valibot";
 
 // titleParticulasOfperson TitleParticulasOfperson @default(PROPRIETOR)
@@ -50,11 +53,13 @@ const Anx1Schema = object({
   ),
   panNumber: pipe(
     string("Pan Number is required."),
-    minLength(1, "Pan Number is required.")
+    minLength(1, "Pan Number is required."),
+    check(validatePanCard, "Enter valid pan card number")
   ),
   aadharNumber: pipe(
     string("Aadhar Number is required."),
-    minLength(1, "Aadhar Number is required.")
+    minLength(1, "Aadhar Number is required."),
+    check(validateAadharCard, "Enter valid aadhar number")
   ),
   designation: pipe(
     string("Designation is required."),

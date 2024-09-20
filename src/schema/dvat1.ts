@@ -1,4 +1,4 @@
-import { isContainSpace } from "@/utils/methods";
+import { isContainSpace, validatePanCard } from "@/utils/methods";
 import {
   ConstitutionOfBusiness,
   DepositType,
@@ -49,7 +49,11 @@ const Dvat1Schema = object({
     string("VAT Liable Date is required."),
     minLength(1, "VAT Liable Date is required.")
   ),
-  pan: pipe(string("PAN is required."), minLength(1, "PAN is required.")),
+  pan: pipe(
+    string("PAN is required."),
+    minLength(1, "PAN is required."),
+    check(validatePanCard, "Enter valid pan card number")
+  ),
   gst: pipe(string("GST is required."), minLength(1, "GST is required.")),
   buildingNumber: pipe(
     string("Building Number is required."),

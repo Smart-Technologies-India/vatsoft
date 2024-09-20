@@ -7,6 +7,7 @@ import { useEffect, type CSSProperties } from "react";
 import type { CollapseProps } from "antd";
 import Image from "next/image";
 import Link from "next/link";
+import { validateAadharCard, validatePanCard } from "@/utils/methods";
 
 const Home = () => {
   const text = `
@@ -43,6 +44,20 @@ const Home = () => {
     background: "#f4f4f4",
     border: "none",
   };
+
+  useEffect(() => {
+    const aadharnumber = ["241140014857", "243140064857"];
+    const pannumber = ["241140014857", "243140064857"];
+
+    console.log("------------------- aadhar card");
+    aadharnumber.map((val: string) => {
+      console.table([val, validateAadharCard(val)]);
+    });
+    console.log("------------------- pan card");
+    pannumber.map((val: string) => {
+      console.table([val, validatePanCard(val)]);
+    });
+  }, []);
 
   return (
     <>

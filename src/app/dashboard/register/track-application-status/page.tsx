@@ -306,10 +306,12 @@ const TrackAppliation = () => {
                         </Link>
                       </TableCell>
                       <TableCell className="text-center border">
-                        {val.compositionScheme ? "In Comp" : "Out Comp"}
+                        {val.compositionScheme ? "COMP-IN" : "COMP-OUT"}
                       </TableCell>
                       <TableCell className="text-center border">
-                        Application For new composition Scheme
+                        {val.compositionScheme
+                          ? "Migration to composition Scheme"
+                          : "Migration to regular scheme"}
                       </TableCell>
                       <TableCell className="text-center border">
                         {formateDate(new Date(val.createdAt))}

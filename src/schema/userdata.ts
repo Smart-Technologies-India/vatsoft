@@ -1,4 +1,8 @@
-import { isContainSpace } from "@/utils/methods";
+import {
+  isContainSpace,
+  validateAadharCard,
+  validatePanCard,
+} from "@/utils/methods";
 import {
   check,
   email,
@@ -41,12 +45,14 @@ const UserDataSchema = object({
   pan: pipe(
     string("Please enter your PAN number."),
     minLength(1, "Please enter your PAN number."),
-    check(isContainSpace, "PAN number cannot contain space.")
+    check(isContainSpace, "PAN number cannot contain space."),
+    check(validatePanCard, "Enter valid pan card number")
   ),
   aadhar: pipe(
     string("Please enter your Aadhar number."),
     minLength(1, "Please enter your Aadhar number."),
-    check(isContainSpace, "Aadhar number cannot contain space.")
+    check(isContainSpace, "Aadhar number cannot contain space."),
+    check(validateAadharCard, "Enter valid aadhar number")
   ),
 });
 
