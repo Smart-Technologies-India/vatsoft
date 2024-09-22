@@ -7,7 +7,9 @@ const CreateChallan = () => {
     <>
       <div className="p-2">
         <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white">Create Challan</div>
+          <div className="bg-blue-500 p-2 text-white">
+            Create Challan Form DVAT 20
+          </div>
           <CreateChallanProvider userid={current_user_id} />
         </div>
       </div>

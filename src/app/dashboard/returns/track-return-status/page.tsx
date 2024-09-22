@@ -1,4 +1,5 @@
 "use client";
+import { Button, Input } from "antd";
 
 import { Button as ShButton } from "@/components/ui/button";
 import {
@@ -29,6 +30,8 @@ import { getCookie } from "cookies-next";
 import { returns_01 } from "@prisma/client";
 import { capitalcase, formateDate } from "@/utils/methods";
 import Link from "next/link";
+import { toast } from "react-toastify";
+import SearchReturnPayment from "@/action/return/searchreturnpayment";
 
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
@@ -36,7 +39,6 @@ const TrackAppliation = () => {
   enum SearchOption {
     ARN,
     RETURN,
-    STATUS,
   }
   const [searchOption, setSeachOption] = useState<SearchOption>(
     SearchOption.ARN
@@ -45,9 +47,6 @@ const TrackAppliation = () => {
   const onChange = (e: RadioChangeEvent) => {
     setSeachOption(e.target.value);
   };
-
-  const arnRef = useRef<InputRef>(null);
-  const srnRef = useRef<InputRef>(null);
 
   const [searchDate, setSearchDate] = useState<
     [Dayjs | null, Dayjs | null] | null
@@ -62,6 +61,15 @@ const TrackAppliation = () => {
 
   const [paymentData, setPaymentData] = useState<returns_01[]>([]);
 
+  const init = async () => {
+    const payment_data = await GetUserTrackPayment({
+      user_id: userid,
+    });
+
+    if (payment_data.status && payment_data.data) {
+      setPaymentData(payment_data.data);
+    }
+  };
   useEffect(() => {
     const init = async () => {
       const payment_data = await GetUserTrackPayment({
@@ -70,11 +78,10 @@ const TrackAppliation = () => {
 
       if (payment_data.status && payment_data.data) {
         setPaymentData(payment_data.data);
-        console.log(payment_data.data);
       }
     };
     init();
-  }, []);
+  }, [userid]);
 
   const get_years = (month: string, year: string): string => {
     const monthNames = [
@@ -121,6 +128,43 @@ const TrackAppliation = () => {
       }
     } else {
       return month;
+    }
+  };
+
+  const [isSearch, setSearch] = useState<boolean>(false);
+  const arnRef = useRef<InputRef>(null);
+
+  const cpinsearch = async () => {
+    if (
+      arnRef.current?.input?.value == undefined ||
+      arnRef.current?.input?.value == null ||
+      arnRef.current?.input?.value == ""
+    ) {
+      return toast.error("Enter arn number");
+    }
+    const search_response = await SearchReturnPayment({
+      userid: userid,
+      rr_number: arnRef.current?.input?.value,
+    });
+    if (search_response.status && search_response.data) {
+      setPaymentData(search_response.data);
+      setSearch(true);
+    }
+  };
+
+  const datesearch = async () => {
+    if (searchDate == null || searchDate.length <= 1) {
+      return toast.error("Select state date and end date");
+    }
+
+    const search_response = await SearchReturnPayment({
+      userid: userid,
+      fromdate: searchDate[0]?.toDate(),
+      todate: searchDate[1]?.toDate(),
+    });
+    if (search_response.status && search_response.data) {
+      setPaymentData(search_response.data);
+      setSearch(true);
     }
   };
 
@@ -227,8 +271,46 @@ const TrackAppliation = () => {
             <Radio.Group onChange={onChange} value={searchOption}>
               <Radio value={SearchOption.ARN}>ARN</Radio>
               <Radio value={SearchOption.RETURN}>Return Filing Period</Radio>
-              <Radio value={SearchOption.STATUS}>Status</Radio>
             </Radio.Group>
+            {(() => {
+              switch (searchOption) {
+                case SearchOption.ARN:
+                  return (
+                    <div className="flex gap-2">
+                      <Input
+                        className="w-60"
+                        ref={arnRef}
+                        placeholder={"Enter CPIN"}
+                      />
+                      <Button onClick={cpinsearch} type="primary">
+                        Search
+                      </Button>
+                      {isSearch && (
+                        <Button onClick={init} type="primary">
+                          Reset
+                        </Button>
+                      )}
+                    </div>
+                  );
+
+                case SearchOption.RETURN:
+                  return (
+                    <div className="flex gap-2">
+                      <RangePicker onChange={onChangeDate} />
+                      <Button type="primary" onClick={datesearch}>
+                        Search
+                      </Button>
+                      {isSearch && (
+                        <Button onClick={init} type="primary">
+                          Reset
+                        </Button>
+                      )}
+                    </div>
+                  );
+                default:
+                  return null;
+              }
+            })()}
           </div>
 
           <Table className="border mt-2">
@@ -263,7 +345,7 @@ const TrackAppliation = () => {
                   <TableRow key={index}>
                     <TableCell className="border text-center p-2">
                       <Link
-                        href={`/dashboard/returns/returns-dashboard/preview/${val.createdById}?form=30A&year=${val.year}&quarter=${val.quarter}&month=${val.month}`}
+                        href={`/dashboard/returns/returns-dashboard/preview/${val.createdById}?form=30A&year=${val.year}&quarter=${val.quarter}&month=${val.month}&sidebar=no`}
                         className="text-blue-500"
                       >
                         {val.rr_number}
@@ -284,7 +366,8 @@ const TrackAppliation = () => {
                       )}
                     </TableCell>
                     <TableCell className="border text-center p-2">
-                      {get_month(
+                      {val.month}
+                      {/* {get_month(
                         val.compositionScheme ?? false,
                         new Date(val.transaction_date!).toLocaleString(
                           "en-US",
@@ -292,7 +375,7 @@ const TrackAppliation = () => {
                             month: "short",
                           }
                         )
-                      )}
+                      )} */}
                     </TableCell>
                     <TableCell className="border text-center p-2">
                       {formateDate(new Date(val.transaction_date!))}

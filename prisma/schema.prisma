@@ -92,13 +92,20 @@ enum SelectOffice {
 }
 
 enum NatureOfBusiness {
-  MANUFACTURING
-  TRADING
+  MANUFACTURER
+  TRADER
   SERVICE
-  OTHER
+  LEASING
+  WORKS
+  OTHERS
 }
 
 enum ConstitutionOfBusiness {
+  GOVERNMENT_COMPANY
+  GOVERNMENT_CORPORATION
+  GOVERNMENT_DEPARTMENT
+  HUF
+  PUBLIC_SECTOR
   PROPRIETORSHIP
   PARTNERSHIP
   LLP
@@ -108,10 +115,8 @@ enum ConstitutionOfBusiness {
 }
 
 enum TypeOfRegistration {
-  GST
-  MSME
-  UDYAM
-  OTHER
+  MANDATORY
+  VOLUNTARY
 }
 
 enum CommidityPursose {
@@ -169,7 +174,7 @@ enum TypeOfAccount {
 
 enum ReturnType {
   REVISED
-  ORIGNAL
+  ORIGINAL
 }
 
 enum DvatType {
@@ -442,10 +447,10 @@ model dvat04 {
   // form 1
   name                         String?
   tradename                    String?
-  natureOfBusiness             NatureOfBusiness?       @default(OTHER)
+  natureOfBusiness             NatureOfBusiness?       @default(OTHERS)
   constitutionOfBusiness       ConstitutionOfBusiness? @default(OTHER)
   selectOffice                 SelectOffice?           @default(Dadra_Nagar_Haveli)
-  typeOfRegistration           TypeOfRegistration?     @default(OTHER)
+  typeOfRegistration           TypeOfRegistration?     @default(MANDATORY)
   compositionScheme            Boolean?                @default(false)
   annualTurnoverCategory       Boolean?                @default(false)
   turnoverLastFinancialYear    String?
@@ -631,7 +636,7 @@ model registration {
 
   physicalVerification            Boolean          @default(false)
   date_of_visit                   DateTime?
-  natureOfBusiness                NatureOfBusiness @default(OTHER)
+  natureOfBusiness                NatureOfBusiness @default(OTHERS)
   date_of_purchases               DateTime?
   amount_of_purchases             String?
   date_of_sales                   DateTime?
@@ -707,7 +712,7 @@ model tin_number_master {
 model returns_01 {
   id                Int        @id @default(autoincrement())
   rr_number         String
-  return_type       ReturnType @default(ORIGNAL)
+  return_type       ReturnType @default(ORIGINAL)
   year              String
   quarter           Quarter    @default(QUARTER1)
   month             String?
@@ -720,7 +725,7 @@ model returns_01 {
   penalty           String?
   other_charge      String?
   total_tax_amount  String?
-  transaction_date  String?
+  transaction_date  DateTime?
   paymentmode       String?
   transaction_id    String?
   bank_name         String?

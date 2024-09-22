@@ -1,18 +1,26 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Marquee from "react-fast-marquee";
 
 import { RowData } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { Select } from "antd";
-import { dvat04, DvatType, Quarter, returns_entry } from "@prisma/client";
+import {
+  dvat04,
+  DvatType,
+  Quarter,
+  returns_01,
+  returns_entry,
+} from "@prisma/client";
 
 import { getCookie } from "cookies-next";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { toast } from "react-toastify";
+import { formateDate } from "@/utils/methods";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -31,12 +39,12 @@ const ReturnDashboard = () => {
 
   const router = useRouter();
 
-  // const [return01, setReturn01] = useState<returns_01 | null>();
+  const [return01, setReturn01] = useState<returns_01 | null>(null);
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
     []
   );
 
-  const [dateValue, setDateValue] = useState<Date>();
+  const [duedate, setDueDate] = useState<Date | null>(null);
 
   const search = async () => {
     setSearch(true);
@@ -47,9 +55,35 @@ const ReturnDashboard = () => {
       month: period,
       userid: userid,
     });
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    let monthIndex = monthNames.indexOf(period);
+
+    // Check if it's December (index 11) and increment year if needed
+    let newYear = parseInt(year);
+    if (monthIndex === 11) {
+      newYear += 1;
+      monthIndex = 0; // Set month to January
+    } else {
+      monthIndex += 1; // Otherwise, just increment the month
+    }
+
+    setDueDate(new Date(parseInt(year), monthIndex, 10));
 
     if (returnformsresponse.status && returnformsresponse.data) {
-      // setReturn01(returnformsresponse.data.returns_01);
+      setReturn01(returnformsresponse.data.returns_01);
       serReturns_entryData(returnformsresponse.data.returns_entry);
     } else {
       // setReturn01(null);
@@ -61,6 +95,7 @@ const ReturnDashboard = () => {
     entry: number;
     amount: number;
     tax: number;
+    isnil: boolean;
   }
 
   const getDvatData = (dvatType: DvatType): DvatData => {
@@ -86,12 +121,17 @@ const ReturnDashboard = () => {
       entry,
       amount: parseFloat(amount),
       tax: parseFloat(tax),
+      isnil:
+        0 <
+        returns_entryData.filter(
+          (val: returns_entry) => val.dvat_type == dvatType && val.isnil == true
+        ).length,
     };
   };
 
   useEffect(() => {
     const currentDate: Date = new Date();
-    setDateValue(currentDate);
+    // setDateValue(currentDate);
     setYear(currentDate.getFullYear().toString());
     const init = async () => {
       const response = await GetUserDvat04({
@@ -103,18 +143,31 @@ const ReturnDashboard = () => {
           ? setPeriod("June")
           : setPeriod("April");
       }
+
+      const cusQuarter: Quarter = getQuarterList(
+        new Date(),
+        new Date().getFullYear().toString()
+      ).at(-1)?.value as Quarter;
+
+      setQuarter(cusQuarter);
+      setPeriod(
+        getPeriodList(
+          new Date(),
+          new Date().getFullYear().toString(),
+          cusQuarter
+        ).at(-1)?.value
+      );
+      await search();
     };
     init();
-  }, []);
+  }, [userid]);
 
   interface PeriodValue {
     value: string;
     label: string;
   }
 
-  const getYearList = (): PeriodValue[] => {
-    if (!dateValue) return [];
-
+  const getYearList = (dateValue: Date): PeriodValue[] => {
     const year: number = dateValue.getFullYear();
     const month: number = dateValue.getMonth();
     const day: number = dateValue.getDate();
@@ -135,9 +188,7 @@ const ReturnDashboard = () => {
     return periodValues;
   };
 
-  const getQuarterList = (): PeriodValue[] => {
-    if (!dateValue) return [];
-
+  const getQuarterList = (dateValue: Date, year: string): PeriodValue[] => {
     const currentYear: number = dateValue.getFullYear();
     const month: number = dateValue.getMonth();
 
@@ -187,8 +238,11 @@ const ReturnDashboard = () => {
     return resultQuarters;
   };
 
-  const getPeriodList = (): PeriodValue[] => {
-    if (!dateValue) return [];
+  const getPeriodList = (
+    dateValue: Date,
+    year: string,
+    quarter: Quarter
+  ): PeriodValue[] => {
     const currentYear: number = dateValue.getFullYear();
     const month: number = dateValue.getMonth();
 
@@ -306,6 +360,26 @@ const ReturnDashboard = () => {
     }
   };
 
+  const salesLocalData = useMemo(
+    () => getDvatData(DvatType.DVAT_31),
+    [returns_entryData, year, quarter, period] // Include relevant dependencies
+  );
+
+  const purchaseLocalData = useMemo(
+    () => getDvatData(DvatType.DVAT_30),
+    [returns_entryData, year, quarter, period] // Same here
+  );
+
+  const salesInterStateData = useMemo(
+    () => getDvatData(DvatType.DVAT_31_A),
+    [returns_entryData, year, quarter, period]
+  );
+
+  const purchaseInterStateData = useMemo(
+    () => getDvatData(DvatType.DVAT_30_A),
+    [returns_entryData, year, quarter, period]
+  );
+
   return (
     <>
       <main className="w-full p-4 relative h-full grow xl:w-5/6 xl:mx-auto">
@@ -323,7 +397,7 @@ const ReturnDashboard = () => {
               <Select
                 value={year}
                 placeholder="Select a year"
-                options={getYearList()}
+                options={getYearList(new Date())}
                 onChange={(val: string) => {
                   if (!val) return;
                   setYear(val.toString());
@@ -342,7 +416,7 @@ const ReturnDashboard = () => {
               <Select
                 value={quarter}
                 placeholder="Select quarter"
-                options={getQuarterList()}
+                options={getQuarterList(new Date(), year!)}
                 onChange={(val: Quarter) => {
                   if (!val) return;
                   setQuarter(val);
@@ -382,7 +456,7 @@ const ReturnDashboard = () => {
                 <Select
                   value={period}
                   placeholder="Select Period"
-                  options={getPeriodList()}
+                  options={getPeriodList(new Date(), year!, quarter)}
                   onChange={(val: string) => {
                     if (!val) return;
                     setPeriod(val.toString());
@@ -400,48 +474,97 @@ const ReturnDashboard = () => {
           </div>
         </div>
         {isSearch && (
-          <div className="grid w-full grid-cols-4 gap-4 mt-4">
-            <Card
-              title={"Sales Local"}
-              subtitle={"Form 31"}
-              buttonone="View"
-              buttontwo="Add"
-              entry={getDvatData(DvatType.DVAT_31).entry}
-              amount={getDvatData(DvatType.DVAT_31).amount.toFixed(2)}
-              tax={getDvatData(DvatType.DVAT_31).tax.toFixed(2)}
-              link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31&year=${year}&quarter=${quarter}&month=${period}`}
-            />
-            <Card
-              title={"Purchase Local"}
-              subtitle={"Form 30"}
-              buttonone="View"
-              buttontwo="Add"
-              entry={getDvatData(DvatType.DVAT_30).entry}
-              amount={getDvatData(DvatType.DVAT_30).amount.toFixed(2)}
-              tax={getDvatData(DvatType.DVAT_30).tax.toFixed(2)}
-              link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30&year=${year}&quarter=${quarter}&month=${period}`}
-            />
-            <Card
-              title={"Sales Inter-State"}
-              subtitle={"Form 31-A"}
-              buttonone="View"
-              buttontwo="Add"
-              entry={getDvatData(DvatType.DVAT_31_A).entry}
-              amount={getDvatData(DvatType.DVAT_31_A).amount.toFixed(2)}
-              tax={getDvatData(DvatType.DVAT_31_A).tax.toFixed(2)}
-              link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31A&year=${year}&quarter=${quarter}&month=${period}`}
-            />
-            <Card
-              title={"Purchase Inter-State"}
-              subtitle={"Form 30-A"}
-              buttonone="View"
-              buttontwo="Add"
-              entry={getDvatData(DvatType.DVAT_30_A).entry}
-              amount={getDvatData(DvatType.DVAT_30_A).amount.toFixed(2)}
-              tax={getDvatData(DvatType.DVAT_30_A).tax.toFixed(2)}
-              link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30A&year=${year}&quarter=${quarter}&month=${period}`}
-            />
-          </div>
+          <>
+            <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-4 gap-6 justify-between mt-4 border">
+              <div>
+                <p className="text-sm">RR Number</p>
+                <p className="text-sm  font-medium">
+                  {return01?.rr_number == null ||
+                  return01?.rr_number == undefined ||
+                  return01?.rr_number == ""
+                    ? "N/A"
+                    : return01?.rr_number}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm">User Tin Number</p>
+                <p className="text-sm  font-medium">{davtdata?.tinNumber}</p>
+              </div>
+
+              <div>
+                <p className="text-sm">
+                  {return01?.rr_number != "" &&
+                  return01?.rr_number != undefined &&
+                  return01?.rr_number != null
+                    ? "Filed Date"
+                    : "Filing Date"}
+                </p>
+                <p className="text-sm  font-medium">
+                  {return01?.rr_number != "" &&
+                  return01?.rr_number != undefined &&
+                  return01?.rr_number != null
+                    ? formateDate(return01.filing_datetime)
+                    : formateDate(duedate ?? new Date())}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm">Status</p>
+                <p className="text-sm  font-medium">
+                  {return01?.rr_number != "" &&
+                  return01?.rr_number != undefined &&
+                  return01?.rr_number != null
+                    ? "Filed"
+                    : "Due - Not Filed"}
+                </p>
+              </div>
+            </div>
+            <div className="grid w-full grid-cols-4 gap-4 mt-4">
+              <Card
+                title={"Sales Local"}
+                subtitle={"Form 31"}
+                buttonone="View"
+                buttontwo="Add"
+                entry={salesLocalData.entry}
+                amount={salesLocalData.amount.toFixed(2)}
+                tax={salesLocalData.tax.toFixed(2)}
+                isnil={salesLocalData.isnil}
+                link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31&year=${year}&quarter=${quarter}&month=${period}`}
+              />
+              <Card
+                title={"Purchase Local"}
+                subtitle={"Form 30"}
+                buttonone="View"
+                buttontwo="Add"
+                entry={purchaseLocalData.entry}
+                amount={purchaseLocalData.amount.toFixed(2)}
+                tax={purchaseLocalData.tax.toFixed(2)}
+                isnil={purchaseLocalData.isnil}
+                link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30&year=${year}&quarter=${quarter}&month=${period}`}
+              />
+              <Card
+                title={"Sales Inter-State"}
+                subtitle={"Form 31-A"}
+                buttonone="View"
+                buttontwo="Add"
+                entry={salesInterStateData.entry}
+                amount={salesInterStateData.amount.toFixed(2)}
+                tax={salesInterStateData.tax.toFixed(2)}
+                isnil={salesInterStateData.isnil}
+                link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31A&year=${year}&quarter=${quarter}&month=${period}`}
+              />
+              <Card
+                title={"Purchase Inter-State"}
+                subtitle={"Form 30-A"}
+                buttonone="View"
+                buttontwo="Add"
+                entry={purchaseInterStateData.entry}
+                amount={purchaseInterStateData.amount.toFixed(2)}
+                tax={purchaseInterStateData.tax.toFixed(2)}
+                isnil={purchaseInterStateData.isnil}
+                link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30A&year=${year}&quarter=${quarter}&month=${period}`}
+              />
+            </div>
+          </>
         )}
 
         <div className="absolute bottom-2 right-2 rounded shadow bg-white p-1 flex gap-2">
@@ -457,24 +580,24 @@ const ReturnDashboard = () => {
               {ispreview() && (
                 <>
                   <button
+                    onClick={async () => {
+                      await generatePDF(
+                        `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
+                      );
+                    }}
+                    className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                  >
+                    Download Return
+                  </button>
+                  <button
                     onClick={() => {
                       router.push(
-                        `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}`
+                        `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
                       );
                     }}
                     className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
                   >
                     Preview
-                  </button>
-                  <button
-                    onClick={async () => {
-                      await generatePDF(
-                        `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}`
-                      );
-                    }}
-                    className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-                  >
-                    Download Filed Return
                   </button>
                 </>
               )}
@@ -496,6 +619,7 @@ interface CardProps {
   amount: string;
   tax: string;
   link: string;
+  isnil: boolean;
 }
 
 const Card = (props: CardProps) => {
@@ -512,12 +636,13 @@ const Card = (props: CardProps) => {
       </div>
 
       <p className="text-[#162e57] mt-2 text-xs text-left">
-        No Of Entries : {props.entry}
+        No Of Entries : {props.isnil ? "Nil Filed" : props.entry}
       </p>
       <p className="text-[#162e57] text-xs text-left">
         Taxable Amount : {props.amount}
       </p>
       <p className="text-[#162e57] text-xs text-left">Tax : {props.tax}</p>
+
       <div className="flex gap-2 justify-around mt-2">
         <button
           onClick={() => {
@@ -528,14 +653,17 @@ const Card = (props: CardProps) => {
         >
           {props.buttonone}
         </button>
-        <button
-          onClick={() => {
-            route.push(props.link);
-          }}
-          className="border flex-1 bg-[#162e57]  text-white rounded-md text-sm py-1 text-center"
-        >
-          {props.buttontwo}
-        </button>
+
+        {!props.isnil && (
+          <button
+            onClick={() => {
+              route.push(props.link);
+            }}
+            className="border flex-1 bg-[#162e57]  text-white rounded-md text-sm py-1 text-center"
+          >
+            {props.buttontwo}
+          </button>
+        )}
       </div>
     </div>
   );

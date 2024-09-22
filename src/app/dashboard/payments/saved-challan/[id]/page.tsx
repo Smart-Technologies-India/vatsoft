@@ -14,7 +14,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ToWords } from "to-words";
-import { capitalcase, formatDateTime, formateDate } from "@/utils/methods";
+import {
+  capitalcase,
+  formatDateTime,
+  formateDate,
+  onFormError,
+} from "@/utils/methods";
 import { Separator } from "@/components/ui/separator";
 import { FieldErrors, useForm } from "react-hook-form";
 import {
@@ -97,10 +102,6 @@ const ChallanData = () => {
     router.back();
   };
 
-  const onError = (error: FieldErrors<SubmitPaymentForm>) => {
-    console.log(error);
-  };
-
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -127,7 +128,7 @@ const ChallanData = () => {
               <p className="text-sm  font-medium">{dvat?.tinNumber}</p>
             </div>
             <div>
-              <p className="text-sm">Challan Generateon Date</p>
+              <p className="text-sm">Challan Generation Date</p>
               <p className="text-sm  font-medium">
                 {formatDateTime(new Date(challanData?.createdAt!))}
               </p>
@@ -279,7 +280,7 @@ const ChallanData = () => {
                 </>
               ) : (
                 <>
-                  <form onSubmit={handleSubmit(onSubmit, onError)}>
+                  <form onSubmit={handleSubmit(onSubmit, onFormError)}>
                     <div className="mt-2">
                       <p>Bank Name</p>
                       <input
@@ -375,7 +376,20 @@ const ChallanData = () => {
           )}
 
           <div className="p-2">
-            <p className="text-sm">
+            <p className="text-center text-xl font-semibold">Form DVAT 20</p>
+            <p className="mt-2 text-sm">
+              (See Rule 28 of the Dadra and Nagar Haveli and Daman and Diu Value
+              Added Tax Rules, 2021)
+            </p>
+            <p className="mt-3 text-sm">
+              Challan for the Dadra and Nagar Haveli and Daman and Diu Value
+              Added Regulation, 2005
+            </p>
+            <p className="mt-3 text-sm">Credited: Consolidated Fund of India</p>
+            <p className="mt-3 text-sm">
+              Head: 0040, Value Added Tax Receipt - Value Added Tax Receipt
+            </p>
+            {/* <p className="text-sm">
               <span className="font-semibold">Note:</span>
               For taxpayer filing VAT on quarterly basis:
             </p>
@@ -392,7 +406,7 @@ const ChallanData = () => {
               VAT Quarterly. An auto- populated challan amounting to liabilities
               for the quarter net off credit utilization and existing cash
               balance can be generated and used to offset liabilities.
-            </p>
+            </p> */}
           </div>
         </div>
       </div>

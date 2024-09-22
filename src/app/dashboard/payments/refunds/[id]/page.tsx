@@ -13,7 +13,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ToWords } from "to-words";
-import { capitalcase, formatDateTime, formateDate } from "@/utils/methods";
+import {
+  capitalcase,
+  formatDateTime,
+  formateDate,
+  onFormError,
+} from "@/utils/methods";
 import { Separator } from "@/components/ui/separator";
 import { FieldErrors, useForm } from "react-hook-form";
 import {
@@ -103,10 +108,6 @@ const RefundsData = () => {
     router.back();
   };
 
-  const onError = (error: FieldErrors<SubmitPaymentForm>) => {
-    console.log(error);
-  };
-
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -133,7 +134,7 @@ const RefundsData = () => {
               <p className="text-sm  font-medium">{dvat?.tinNumber}</p>
             </div>
             <div>
-              <p className="text-sm">Refunds Generateon Date</p>
+              <p className="text-sm">Refunds Generation Date</p>
               <p className="text-sm  font-medium">
                 {formatDateTime(new Date(refundsData?.createdAt!))}
               </p>
@@ -287,7 +288,7 @@ const RefundsData = () => {
                 </>
               ) : (
                 <>
-                  <form onSubmit={handleSubmit(onSubmit, onError)}>
+                  <form onSubmit={handleSubmit(onSubmit, onFormError)}>
                     <div className="mt-2">
                       <p>Bank Name</p>
                       <input

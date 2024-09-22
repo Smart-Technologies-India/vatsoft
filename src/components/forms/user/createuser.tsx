@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { RegisterUserForm, RegisterUserSchema } from "@/schema/registeruser";
 import { ApiResponseType } from "@/models/response";
 import CreateUser from "@/action/user/createuser";
+import { onFormError } from "@/utils/methods";
 
 export const CreateUserProvider = () => {
   const methods = useForm<RegisterUserForm>({
@@ -50,12 +51,8 @@ const Registration = () => {
     reset({});
   };
 
-  const onError = (error: FieldErrors<RegisterUserForm>) => {
-    console.log(error);
-  };
-
   return (
-    <form onSubmit={handleSubmit(onSubmit, onError)}>
+    <form onSubmit={handleSubmit(onSubmit, onFormError)}>
       <div className="mt-2">
         <TaxtInput<RegisterUserForm>
           placeholder="Enter Mobile Number"

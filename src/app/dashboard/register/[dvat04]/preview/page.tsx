@@ -337,7 +337,7 @@ const Dvat1Page = () => {
   const nameRef = useRef<HTMLInputElement>(null);
   const tradenameRef = useRef<HTMLInputElement>(null);
   const [natureOfBusiness, setNatureOfBusiness] = useState<NatureOfBusiness>(
-    NatureOfBusiness.MANUFACTURING
+    NatureOfBusiness.MANUFACTURER
   );
 
   const [selectOffice, setSelectOffice] = useState<SelectOffice>(
@@ -348,7 +348,7 @@ const Dvat1Page = () => {
     useState<ConstitutionOfBusiness>(ConstitutionOfBusiness.PARTNERSHIP);
 
   const [typeOfRegistration, setTypeOfRegistration] =
-    useState<TypeOfRegistration>(TypeOfRegistration.GST);
+    useState<TypeOfRegistration>(TypeOfRegistration.MANDATORY);
 
   const [isCompositionScheme, setIsCompositionScheme] = useState<TrueFalse>(
     TrueFalse.NO
@@ -519,10 +519,11 @@ const Dvat1Page = () => {
               </SelectTrigger>
               <SelectContent className="max-h-64">
                 <SelectGroup>
-                  <SelectItem value={"MANUFACTURING"}>MANUFACTURING</SelectItem>
-                  <SelectItem value={"TRADING"}>TRADING</SelectItem>
+                  <SelectItem value={"MANUFACTURER"}>MANUFACTURER</SelectItem>
+                  <SelectItem value={"TRADER"}>TRADER</SelectItem>
                   <SelectItem value={"SERVICE"}>SERVICE</SelectItem>
-                  <SelectItem value={"OTHER"}>OTHER</SelectItem>
+                  <SelectItem value={"OTHERS"}>OTHERS</SelectItem>
+                  <SelectItem value={"WORKS"}>WORKS</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -547,6 +548,17 @@ const Dvat1Page = () => {
                   <SelectItem value={"PROPRIETORSHIP"}>
                     PROPRIETORSHIP
                   </SelectItem>
+                  <SelectItem value={"GOVERNMENT_COMPANY"}>
+                    GOVERNMENT_COMPANY
+                  </SelectItem>
+                  <SelectItem value={"GOVERNMENT_CORPORATION"}>
+                    GOVERNMENT_CORPORATION
+                  </SelectItem>
+                  <SelectItem value={"GOVERNMENT_DEPARTMENT"}>
+                    GOVERNMENT_DEPARTMENT
+                  </SelectItem>
+                  <SelectItem value={"HUF"}>HUF</SelectItem>
+                  <SelectItem value={"PUBLIC_SECTOR"}>PUBLIC_SECTOR</SelectItem>
                   <SelectItem value={"PARTNERSHIP"}>PARTNERSHIP</SelectItem>
                   <SelectItem value={"LLP"}>LLP</SelectItem>
                   <SelectItem value={"PVT_LTD"}>PVT_LTD</SelectItem>
@@ -575,10 +587,8 @@ const Dvat1Page = () => {
               </SelectTrigger>
               <SelectContent className="max-h-64">
                 <SelectGroup>
-                  <SelectItem value={"GST"}>GST</SelectItem>
-                  <SelectItem value={"MSME"}>MSME</SelectItem>
-                  <SelectItem value={"UDYAM"}>UDYAM</SelectItem>
-                  <SelectItem value={"OTHER"}>OTHER</SelectItem>
+                  <SelectItem value={"MANDATORY"}>MANDATORY</SelectItem>
+                  <SelectItem value={"VOLUNTARY"}>VOLUNTARY</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -771,7 +781,7 @@ const Dvat1Page = () => {
               name="pan"
               id="pan"
               className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
-              placeholder="Pan Number"
+              placeholder="Pan Number (In Capital Case)"
             />
           </div>
           <div className="flex-1">

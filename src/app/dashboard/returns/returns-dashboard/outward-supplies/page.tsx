@@ -42,6 +42,21 @@ const GSTR = () => {
   const userid: number = parseInt(getCookie("id") ?? "0");
   const [dvatdata, setDvatData] = useState<dvat04>();
 
+  const getdvatname = (): string => {
+    switch (searchParams.get("form")!) {
+      case "30":
+        return "DVAT 30";
+      case "30A":
+        return "DVAT 30-A";
+      case "31":
+        return "DVAT 31";
+      case "31A":
+        return "DVAT 31-A";
+      default:
+        return "DVAT 30";
+    }
+  };
+
   const getdvattype = (): DvatType => {
     switch (searchParams.get("form")!) {
       case "30":
@@ -283,8 +298,8 @@ const GSTR = () => {
           </div>
         </div>
         {isnil() && (
-          <div className="my-2 bg-rose-500 bg-opacity-10 border border-rose-500  px-2 text-rose-500 py-1">
-            <p>Nil file already field with for this form</p>
+          <div className="my-2 bg-green-500 bg-opacity-10 text-center border border-green-500  px-2 text-green-500 py-1">
+            <p>Nil filing successful for this form.</p>
           </div>
         )}
 
@@ -397,7 +412,7 @@ const GSTR = () => {
                 className="text-sm text-white bg-[#172e57] py-1 px-4"
                 onClick={() => setOpen(true)}
               >
-                Nil Filing
+                Declare Nil Invoice
               </button>
             ) : null}
 
@@ -429,7 +444,7 @@ const GSTR = () => {
         </div>
       </main>
       <Modal
-        title="Add Nil"
+        title="Nil Filing"
         open={open}
         onOk={async () => {
           setOpen(false);
@@ -451,7 +466,7 @@ const GSTR = () => {
         }}
         onCancel={() => setOpen(false)}
       >
-        <p>Are you sure you want to add nil?</p>
+        <p>Do you want to submit Nil details for {getdvatname()}</p>
       </Modal>
     </>
   );

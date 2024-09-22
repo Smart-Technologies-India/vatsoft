@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { dvat04, registration, RegistrationStatus, Role } from "@prisma/client";
 import GetFromDvat from "@/action/registration/getfromdvat";
-import { formateDate } from "@/utils/methods";
+import { formateDate, onFormError } from "@/utils/methods";
 import UpdateDvatStatus from "@/action/dvat/updatestatus";
 
 type RegistrationProviderPrpos = {
@@ -193,10 +193,6 @@ const Registration = (props: RegistrationProviderPrpos) => {
     reset();
   };
 
-  const onError = (error: FieldErrors<RegistrationForm>) => {
-    console.log(error);
-  };
-
   const by_pass = async () => {
     const { inspector_note } = getValues();
     if (!dvatdata) return toast.error("There is not any dvat form exist.");
@@ -230,14 +226,15 @@ const Registration = (props: RegistrationProviderPrpos) => {
   };
 
   const natureOfBusiness: OptionValue[] = [
-    { value: "MANUFACTURING", label: "MANUFACTURING" },
-    { value: "TRADING", label: "TRADING" },
+    { value: "MANUFACTURER", label: "MANUFACTURER" },
+    { value: "TRADER", label: "TRADER" },
     { value: "SERVICE", label: "SERVICE" },
-    { value: "OTHER", label: "OTHER" },
+    { value: "OTHERS", label: "OTHERS" },
+    { value: "WORKS", label: "WORKS" },
   ];
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onError)}>
+    <form onSubmit={handleSubmit(onSubmit, onFormError)}>
       <div className="flex gap-3">
         <div className="flex-1">
           <DateSelect<RegistrationForm>
@@ -636,10 +633,6 @@ const VatNote = (props: VatNoteProps) => {
     reset();
   };
 
-  const onError = (error: FieldErrors<RegistrationForm>) => {
-    console.log(error);
-  };
-
   const reject = async () => {
     const resposne = await UpdateDvatStatus({
       id: props.registrationdata.dvat04Id!,
@@ -654,10 +647,11 @@ const VatNote = (props: VatNoteProps) => {
     router.back();
   };
   const natureOfBusiness: OptionValue[] = [
-    { value: "MANUFACTURING", label: "MANUFACTURING" },
-    { value: "TRADING", label: "TRADING" },
+    { value: "MANUFACTURER", label: "MANUFACTURER" },
+    { value: "TRADER", label: "TRADER" },
     { value: "SERVICE", label: "SERVICE" },
-    { value: "OTHER", label: "OTHER" },
+    { value: "OTHERS", label: "OTHERS" },
+    { value: "WORKS", label: "WORKS" },
   ];
 
   const send_back = async () => {
@@ -747,7 +741,7 @@ const VatNote = (props: VatNoteProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onError)}>
+    <form onSubmit={handleSubmit(onSubmit, onFormError)}>
       <div className="flex gap-3">
         <div className="flex-1">
           <DateSelect<RegistrationForm>

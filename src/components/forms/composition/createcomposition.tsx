@@ -25,6 +25,7 @@ import { CompositionForm, CompositionSchema } from "@/schema/composition";
 import CreateComposition from "@/action/composition/createcomposition";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import IsUserComposition from "@/action/composition/isusercomposition";
+import { onFormError } from "@/utils/methods";
 
 type CompositionProviderProps = {
   userid: number;
@@ -68,10 +69,6 @@ const Composition = (props: CompositionProviderProps) => {
     await init();
 
     reset({});
-  };
-
-  const onError = (error: FieldErrors<CompositionForm>) => {
-    console.log(error);
   };
 
   const [davtData, setDvatData] = useState<dvat04 | null>(null);
@@ -137,7 +134,7 @@ const Composition = (props: CompositionProviderProps) => {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onError)}>
+    <form onSubmit={handleSubmit(onSubmit, onFormError)}>
       <div className="flex gap-4 mt-2 items-end">
         <div className="flex-1">
           <TaxtInput<CompositionForm>

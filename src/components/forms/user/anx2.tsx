@@ -33,6 +33,7 @@ import GetAnx2ById from "@/action/anx2/getanxbyid";
 import GetAnx2 from "@/action/anx2/getanx2";
 import Anx2Create from "@/action/anx2/addanx2";
 import DeleteAnx2 from "@/action/anx2/deleteanx2";
+import { onFormError } from "@/utils/methods";
 
 type Anx2ProviderProps = {
   dvatid: number;
@@ -88,7 +89,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
     });
 
     if (userrespone.status) {
-      toast.success("Annexure I added successfully");
+      toast.success("Annexure II added successfully");
       reset({});
       await init();
     } else {
@@ -96,10 +97,6 @@ const Anx1 = (props: Anx2ProviderProps) => {
     }
 
     reset({});
-  };
-
-  const onError = (error: FieldErrors<Anx2Form>) => {
-    console.log(error);
   };
 
   const init = async () => {
@@ -173,7 +170,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
 
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmit, onError)}>
+      <form onSubmit={handleSubmit(onSubmit, onFormError)}>
         <div className="rounded-sm p-4 border border-black mt-6 relative">
           <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
             Particulars Of Person Having Interest In the Business

@@ -63,11 +63,11 @@ const Page = () => {
                 description="Monitor the progress and status of your submitted VAT returns in real-time."
                 link="/dashboard/returns/track-return-status"
               />
-              <DashboardCards
+              {/* <DashboardCards
                 title="View Filed Returns"
                 description="Review all your previously filed VAT returns and access detailed records and receipts."
                 link="/dashboard/returns/view-filed-returns"
-              />
+              /> */}
               <DashboardCards
                 title="Return Compliance"
                 description="Check your VAT return compliance status and ensure all filings meet regulatory requirements."

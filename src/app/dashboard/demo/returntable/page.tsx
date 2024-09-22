@@ -1,3 +1,4 @@
+"use client";
 import { GgInfo, MaterialSymbolsClose } from "@/components/icons";
 import { Button, Input } from "antd";
 import {

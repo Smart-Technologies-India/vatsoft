@@ -16,7 +16,7 @@ const DashboardCards = (props: CardsProps) => {
             <div className="shrink-0 h-10 w-10 bg-blue-500 bg-opacity-30 rounded-sm grid place-items-center text-white">
               <Fa6RegularFolderOpen className="text-blue-500 text-xl" />
             </div>
-            <h1 className="text-sm font-semibold font-nunito leading-3">
+            <h1 className="text-xs font-semibold font-nunito leading-4">
               {props.title}
             </h1>
           </div>

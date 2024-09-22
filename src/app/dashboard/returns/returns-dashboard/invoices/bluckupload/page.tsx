@@ -160,7 +160,7 @@ const BulkUpload = () => {
 
       const result = safeParse(record31Schema, {
         rr_number: "",
-        return_type: ReturnType.ORIGNAL,
+        return_type: ReturnType.ORIGINAL,
         year: searchParams.get("year")?.toString(),
         quarter: searchParams.get("quarter") as Quarter,
         month: searchParams.get("month")?.toString(),
@@ -203,7 +203,7 @@ const BulkUpload = () => {
       const recordresponse = await AddReturnInvoice({
         createdById: id,
         rr_number: "",
-        returnType: ReturnType.ORIGNAL,
+        returnType: ReturnType.ORIGINAL,
         year: searchParams.get("year")?.toString()!,
         quarter: searchParams.get("quarter") as Quarter,
         month: searchParams.get("month")?.toString()!,

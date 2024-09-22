@@ -22,6 +22,7 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import IsUserComposition from "@/action/composition/isusercomposition";
 import { Button } from "antd";
 import UpdateComposition from "@/action/composition/updatecomposition";
+import { onFormError } from "@/utils/methods";
 
 type CompositionProviderProps = {
   userid: number;
@@ -75,15 +76,11 @@ const Composition = (props: CompositionProviderProps) => {
     reset({});
   };
 
-  const onError = (error: FieldErrors<CompositionDeptForm>) => {
-    console.log(error);
-  };
-
   return (
     <form
       onSubmit={handleSubmit(
         (data) => onSubmit(data, CompositionStatus.COMPLETED),
-        onError
+        onFormError
       )}
     >
       <div className="flex gap-4 mt-2">

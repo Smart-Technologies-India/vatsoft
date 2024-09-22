@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import GetUser from "@/action/user/getuser";
 import Navbar from "@/components/dashboard/header";
@@ -5,40 +6,54 @@ import Sidebar from "@/components/dashboard/sidebar";
 import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next";
 import { Role, user } from "@prisma/client";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export default function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const searchParams = useSearchParams();
+
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [userdata, setUpser] = useState<user>();
   const [isLoading, setLoading] = useState<boolean>(true);
 
-  const [isbluck, setBluck] = useState<boolean>(false);
+  const [isbluck, setBluck] = useState<boolean>(
+    searchParams.get("sidebar") == "no" ? true : false
+  );
   const path = usePathname();
+  const init = async () => {
+    setLoading(true);
+    // const searchPath = path.endsWith("/") ? path.slice(0, -1) : path;
+    // if (
+    //   searchPath ==
+    //     "/dashboard/returns/returns-dashboard/invoices/bluckupload" ||
+    //   searchPath.includes("/dashboard/returns/returns-dashboard/preview/")
+    // ) {
+    //   setBluck(true);
+    // }
+    const id: number = parseInt(getCookie("id") ?? "0");
 
-  useEffect(() => {
-    const searchPath = path.endsWith("/") ? path.slice(0, -1) : path;
-    if (
-      searchPath ==
-        "/dashboard/returns/returns-dashboard/invoices/bluckupload" ||
-      searchPath.includes("/dashboard/returns/returns-dashboard/preview/")
-    ) {
-      setBluck(true);
+    const userrespone = await GetUser({ id: id });
+    if (userrespone.status) {
+      setUpser(userrespone.data!);
     }
-    const init = async () => {
-      setLoading(true);
-      const id: number = parseInt(getCookie("id") ?? "0");
-
-      const userrespone = await GetUser({ id: id });
-      if (userrespone.status) {
-        setUpser(userrespone.data!);
-      }
-      setLoading(false);
-    };
+    setLoading(false);
+  };
+  useEffect(() => {
     init();
+    // Handle back button (popstate) event
+    const handlePopState = () => {
+      init(); // Re-run init when the user navigates back to the page
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, [path]);
 
   if (isLoading)

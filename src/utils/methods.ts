@@ -1,4 +1,5 @@
 import CryptoJS from "crypto-js";
+import { FieldErrors, FieldValues } from "react-hook-form";
 
 /**
  * Converts an error object or string to a string format.
@@ -250,3 +251,25 @@ const validatePanCard = (panNumber: string): boolean => {
 };
 
 export { validateAadharCard, validatePanCard };
+
+const onFormError = <T extends FieldValues>(error: FieldErrors<T>) => {
+  const firstErrorMessage = Object.values(error)[0]?.message;
+
+  setTimeout(() => {
+    if (firstErrorMessage) {
+      const errorElement = Array.from(document.querySelectorAll("p")).find(
+        (el) => el.textContent == firstErrorMessage
+      );
+      if (errorElement) {
+        // Scroll to the error message element
+        errorElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "start",
+        });
+      }
+    }
+  }, 1000);
+};
+
+export { onFormError };

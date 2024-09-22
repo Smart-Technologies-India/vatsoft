@@ -26,6 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { CreateRefundForm, CreateRefundSchema } from "@/schema/refunds";
 import { Button } from "antd";
 import CreateRefund from "@/action/refund/createrefund";
+import { onFormError } from "@/utils/methods";
 
 type CreateChallanProviderProps = {
   userid: number;
@@ -132,7 +133,7 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
     });
 
     if (challan_response.status) {
-      toast.success("Annexure I added successfully");
+      toast.success("Refund request submitted successfully");
       reset({});
       router.back();
     } else {
@@ -140,10 +141,6 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
     }
 
     reset({});
-  };
-
-  const onError = (error: FieldErrors<CreateRefundForm>) => {
-    console.log(error);
   };
 
   const getTotalAmount = (): number => {
@@ -165,7 +162,7 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
 
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmit, onError)}>
+      <form onSubmit={handleSubmit(onSubmit, onFormError)}>
         <div className="flex gap-4 mt-1">
           <div className="flex-1">
             <p className="text-sm font-normal">Payment Type</p>
@@ -371,7 +368,7 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
             disabled={isSubmitting}
             className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
           >
-            {isSubmitting ? "Loading...." : "Sumbit"}
+            {isSubmitting ? "Loading...." : "Submit"}
           </button>
         </div>
       </form>

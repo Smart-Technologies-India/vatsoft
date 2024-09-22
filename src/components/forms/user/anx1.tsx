@@ -33,6 +33,7 @@ import GetAnx1ById from "@/action/anx1/getanxbyid";
 import GetAnx1 from "@/action/anx1/getanx1";
 import Anx1Create from "@/action/anx1/addanx1";
 import DeleteAnx1 from "@/action/anx1/deleteanx1";
+import { onFormError } from "@/utils/methods";
 
 type Anx1ProviderProps = {
   dvatid: number;
@@ -112,10 +113,6 @@ const Anx1 = (props: Anx1ProviderProps) => {
     reset({});
   };
 
-  const onError = (error: FieldErrors<Anx1Form>) => {
-    console.log(error);
-  };
-
   const init = async () => {
     const getanx1resposne = await GetAnx1({ dvatid: props.dvatid });
 
@@ -193,7 +190,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
 
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmit, onError)}>
+      <form onSubmit={handleSubmit(onSubmit, onFormError)}>
         <div className="rounded-sm p-4 border border-black mt-6 relative">
           <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
             Particulars Of Person Having Interest In the Business
@@ -256,7 +253,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
                 placeholder="PAN"
                 name="panNumber"
                 required={true}
-                title="PAN"
+                title="PAN (In Capital Letters)"
               />
             </div>
           </div>

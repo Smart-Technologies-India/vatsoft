@@ -269,7 +269,7 @@ const TrackAppliation = () => {
                   <TableRow key={index}>
                     <TableCell className="text-center border">
                       <Link
-                        href={`/dashboard/register/${val.id}/preview`}
+                        href={`/dashboard/register/${val.id}/preview?sidebar=no`}
                         className="text-blue-500"
                       >
                         {val.tempregistrationnumber}

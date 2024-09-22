@@ -188,7 +188,7 @@ const AddRecord = () => {
 
     const result = safeParse(record31ASchema, {
       rr_number: "",
-      return_type: ReturnType.ORIGNAL,
+      return_type: ReturnType.ORIGINAL,
       year: searchParams.get("year")?.toString(),
       quarter: searchParams.get("quarter") as Quarter,
       month: searchParams.get("month")?.toString(),

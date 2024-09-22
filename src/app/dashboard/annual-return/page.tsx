@@ -1,25 +1,11 @@
 "use client";
 
-import {
-  CharmChevronLeft,
-  CharmChevronRight,
-  MaterialSymbolsKeyboardArrowDownRounded,
-  MaterialSymbolsKeyboardArrowUpRounded,
-  MaterialSymbolsKeyboardDoubleArrowLeft,
-  MaterialSymbolsKeyboardDoubleArrowRight,
-  TablerCheckbox,
-  TablerRefresh,
-} from "@/components/icons";
 import { Label } from "@/components/ui/label";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Marquee from "react-fast-marquee";
 import { default as MulSelect } from "react-select";
 
-import {
-  ColumnFiltersState,
-  RowData,
-  PaginationState,
-} from "@tanstack/react-table";
+import { RowData } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 
 declare module "@tanstack/react-table" {

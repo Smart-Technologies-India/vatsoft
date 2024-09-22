@@ -10,30 +10,55 @@ import Link from "next/link";
 import { validateAadharCard, validatePanCard } from "@/utils/methods";
 
 const Home = () => {
-  const text = `
-  A dog is a type of domesticated animal.
-  Known for its loyalty and faithfulness,
-  it can be found as a welcome guest in many households across the world.
-`;
   const getItems: (panelStyle: CSSProperties) => CollapseProps["items"] = (
     panelStyle
   ) => [
     {
       key: "1",
-      label: "This is panel header 1",
-      children: <p>{text}</p>,
+      label: "What is Value Added Tax (VAT)?",
+      children: (
+        <p>
+          VAT!s a multi-point tax on value addition which is collected at
+          different stages of sale with a provision for set-off for tax paid at
+          the previous stage/tax paid on inputs.
+        </p>
+      ),
       style: panelStyle,
     },
     {
       key: "2",
-      label: "This is panel header 2",
-      children: <p>{text}</p>,
+      label:
+        "Whether it is possible to avail credit for taxes paid on input if goods are sold interstate or are exported?",
+      children: (
+        <p>
+          Purchases intended for inter-State Sale as well as exports are
+          eligible for tax credit.
+        </p>
+      ),
       style: panelStyle,
     },
     {
       key: "3",
-      label: "This is panel header 3",
-      children: <p>{text}</p>,
+      label: "When can one claim input Tax Credit?",
+      children: (
+        <p>
+          Input tax credit is the credit for tax paid on inputs. Dealer has to
+          pay tax after deducting Input tax which he had paid from total tax
+          collected by him.
+        </p>
+      ),
+      style: panelStyle,
+    },
+    {
+      key: "4",
+      label: "What proof is required to claim input tax credit?",
+      children: (
+        <p>
+          Input tax credit can be claimed only on purchases from VAT Registered
+          Dealers. The original &quot;Tax Invoice&quot; is the proof required to
+          claim input tax credit.
+        </p>
+      ),
       style: panelStyle,
     },
   ];
@@ -49,11 +74,9 @@ const Home = () => {
     const aadharnumber = ["241140014857", "243140064857"];
     const pannumber = ["241140014857", "243140064857"];
 
-    console.log("------------------- aadhar card");
     aadharnumber.map((val: string) => {
       console.table([val, validateAadharCard(val)]);
     });
-    console.log("------------------- pan card");
     pannumber.map((val: string) => {
       console.table([val, validatePanCard(val)]);
     });
@@ -62,7 +85,7 @@ const Home = () => {
   return (
     <>
       <main className="bg-[#f8fafe] pb-8">
-        <header className="bg-[#0b1e59] w-full py-2 flex gap-2 px-4 items-center">
+        <header className="bg-[#05313c] w-full py-2 flex gap-2 px-4 items-center">
           <h1 className="text-white font-medium text-xl">VATSOFT</h1>
           <div className="w-10"></div>
           <div className="mx-auto">
@@ -140,8 +163,16 @@ const Home = () => {
             </a>
           </div>
         </nav> */}
+        <div className="relative w-full h-[24rem]">
+          <Image
+            src={"/banner.jpg"}
+            alt="error"
+            fill={true}
+            className="object-cover object-center"
+          />
+        </div>
 
-        <div className="flex items-end relative">
+        {/* <div className="flex items-end relative">
           <div className="relative h-80 bg-[#030303] w-96">
             <Image
               src={"/banner.jpg"}
@@ -161,13 +192,13 @@ const Home = () => {
           <div className="bg-white w-full text-xl absolute top-20 text-center">
             This banner shall be customized as per the choice.
           </div>
-        </div>
+        </div> */}
         <Marquee className="bg-yellow-500 bg-opacity-10 text-sm">
           This is a banner shall be used for official updates and notifications.
         </Marquee>
 
         <section className="mx-auto w-5/6 py-4">
-          <div className="flex gap-10">
+          <div className="flex gap-2">
             {/* box 1 start */}
             <div className="flex-1 bg-white rounded-md border border-[#0b1e59] p-2">
               <div className="flex">
@@ -180,13 +211,37 @@ const Home = () => {
                   View All
                 </Link>
               </div>
-              <NewsCard />
+              <NewsCard
+                title="Natural GAS Revised Rate of Tax - DNH DD."
+                descriptio="Natural GAS Revised Rate of Tax - DNH DD."
+                topic="Notificaton"
+                date="Jul 16th, 2024"
+                link="https://ddvat.gov.in/docs/Notification/2024/Natural%20GAS%20Revised%20Rate%20of%20Tax%20-%20DNH%20DD.pdf"
+              />
               <div className="w-full border border-black"></div>
-              <NewsCard />
+              <NewsCard
+                title="Revised the rate of tax in respect of ATF under forth schedule."
+                descriptio="Revised the rate of tax in respect of ATF under forth schedule."
+                topic="Notificaton"
+                date="Jul 16th, 2024"
+                link="https://ddvat.gov.in/docs/Notification/2022/Revised%20tax%20of%20rate%20respext%20of%20ATF.pdf"
+              />
               <div className="w-full border border-black"></div>
-              <NewsCard />
+              <NewsCard
+                title="Revised the rate of tax in respect of petrol and diesel under forth schedule."
+                descriptio="Revised the rate of tax in respect of petrol and diesel under forth schedule."
+                topic="Notificaton"
+                date="Jul 16th, 2024"
+                link="https://ddvat.gov.in/docs/Notification/2021/Revised%20tax%20of%20rate%20respext%20of%20petrol%20diesel.pdf"
+              />
               <div className="w-full border border-black"></div>
-              <NewsCard />
+              <NewsCard
+                title="Notification Regarding appoints Shri Gaurav singh Rajawat as a Commissioner for the UT of Dadra Nagar Haveli and Daman and Diu."
+                descriptio="Notification Regarding appoints Shri Gaurav singh Rajawat as a Commissioner for the UT of Dadra Nagar Haveli and Daman and Diu."
+                topic="Notificaton"
+                date="Jul 16th, 2024"
+                link="https://ddvat.gov.in/docs/Notification/2021/Notification%20VAT.pdf"
+              />
             </div>
             {/* box 1 end */}
             {/* box 2 start */}
@@ -195,16 +250,45 @@ const Home = () => {
                 <p className="text-lg font-medium">VAT Knowledge Base </p>
                 <div className="grow"></div>
               </div>
-              <div className="rounded-md h-40 w-full bg-blue-500"></div>
-              <p className="mt-1 cursor-pointer text-xs">
-                Know more about Map-based Geocoding in the Registration process.
-                Watch the video.
-              </p>
-              <div className="rounded-md h-40 w-full bg-blue-500 mt-4"></div>
-              <p className="mt-1 cursor-pointer text-xs">
-                How to validate Digital Signature affixed to the downloaded
-                document from the GST Portal?
-              </p>
+              <div className="bg-[#0f839e] p-2 rounded-md">
+                <iframe
+                  className="w-full rounded-md"
+                  src="https://www.youtube.com/embed/XEzRZ35urlk"
+                  title=""
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+                <p className="mt-1 cursor-pointer text-xs text-white">
+                  Know more about Map-based Geocoding in the Registration
+                  process. Watch the video.
+                </p>
+              </div>
+              <div className="bg-[#0f839e] p-2 rounded-md mt-2">
+                <iframe
+                  className="w-full rounded-md"
+                  src="https://www.youtube.com/embed/npFE7NIy574"
+                  title=""
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+                <p className="mt-1 cursor-pointer text-xs text-white">
+                  Know more about Map-based Geocoding in the Registration
+                  process. Watch the video.
+                </p>
+              </div>
+              {/* <div className="bg-[#0f839e] p-2 rounded-md mt-2">
+                <iframe
+                  className="w-full rounded-md"
+                  src="https://www.youtube.com/embed/XEzRZ35urlk"
+                  title=""
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+                <p className="mt-1 cursor-pointer text-xs text-white">
+                  How to validate Digital Signature affixed to the downloaded
+                  document from the GST Portal?
+                </p>
+              </div> */}
             </div>
             {/* box 2 end */}
           </div>
@@ -239,8 +323,8 @@ const Home = () => {
           </h1>
 
           <div className="grid mt-4 gap-2 items-end grid-cols-2">
-            <div className="border hover:border-[#0b1e59] border-gray-400 rounded-md p-2 bg-gray-100">
-              <p className="text-left text-lg text-gray-600">Monthly</p>
+            <div className="rounded-md p-2 bg-[#1096b7]">
+              <p className="text-left text-lg text-white">Monthly</p>
               <div className="grid grid-cols-3 gap-2 mt-2">
                 <DateCard
                   title={"DVAT04 (Jun, 2024)"}
@@ -256,8 +340,8 @@ const Home = () => {
                 />
               </div>
             </div>
-            <div className="border hover:border-[#0b1e59] border-gray-400 rounded-md p-2 bg-gray-100">
-              <p className="text-left text-lg text-gray-600">Quarterly</p>
+            <div className="rounded-md p-2 bg-[#1096b7]">
+              <p className="text-left text-lg text-white">Quarterly</p>
               <div className="grid grid-cols-3 gap-2 mt-2">
                 <DateCard
                   title={"DVAT04 (Jun, 2024)"}
@@ -275,10 +359,8 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="border hover:border-[#0b1e59] border-gray-400 rounded-md p-2 bg-gray-100 mt-2">
-            <p className="text-left text-lg text-gray-600 mb-1">
-              Other Due Dates
-            </p>
+          <div className=" rounded-md p-2 bg-[#1096b7] mt-2">
+            <p className="text-left text-lg mb-1 text-white">Other Due Dates</p>
             <div className="grid grid-cols-6 gap-2 mt-2">
               <DateCard
                 title={"DVAT04 (Jun, 2024)"}
@@ -323,7 +405,7 @@ const Home = () => {
             items={getItems(panelStyle)}
           />
         </section>
-        <footer className="flex gap-2 items-center bg-[#14315d] justify-evenly py-2">
+        <footer className="flex gap-2 items-center bg-[#05313c] justify-evenly py-2">
           <h1 className=" text-gray-300 text-sm">&copy; VAT-DNH</h1>
           <h1 className=" text-gray-300 text-sm">
             Site Last Updated on 28-06-2024
@@ -338,25 +420,29 @@ const Home = () => {
 };
 export default Home;
 
-const NewsCard = () => {
+interface NewsCardProps {
+  title: string;
+  descriptio: string;
+  topic: string;
+  date: string;
+  link: string;
+}
+
+const NewsCard = (props: NewsCardProps) => {
   return (
     <div className=" p-1 px-2 mt-2 pb-2">
       <div className="flex items-center">
-        <h1 className="text-sm">
-          Integrated services from NIC-IRP e-invoice-1 and e-invoice-2
-        </h1>
+        <h1 className="text-sm">{props.title}</h1>
         <div className="grow"></div>
-        <p className="text-xs text-gray-500">Jul 16th, 2024</p>
+        <p className="text-xs text-gray-500 shrink-0">{props.date}</p>
       </div>
-      <p className="text-xs text-gray-500 leading-3 my-1">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Saepe quidem
-        mollitia nisi iste veniam eligendi. Amet dignissimos, adipisci veniam
-        quis, dicta, aliquam cumque expedita necessitatibus libero perspiciatis
-      </p>
+      <p className="text-xs text-gray-500 leading-3 my-1">{props.descriptio}</p>
       <div className="flex text-xs mt-3 gap-2">
-        <p className="rounded text-xs px-2 bg-gray-100">Topic</p>
+        <p className="rounded text-xs px-2 bg-gray-100">{props.topic}</p>
         <div className="grow"></div>
-        <p className="text-blue-500">Read More &gt;&gt;</p>
+        <a href={props.link} target="_blank" className="text-blue-500">
+          Read More &gt;&gt;
+        </a>
       </div>
     </div>
   );

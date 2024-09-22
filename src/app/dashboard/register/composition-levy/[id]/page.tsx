@@ -29,7 +29,6 @@ const RefundsData = () => {
       if (composition_response.status && composition_response.data) {
         setComposition(composition_response.data);
         setUser(composition_response.data.createdBy);
-        console.log(composition_response.data.createdBy);
       }
 
       const current_user_respnse = await GetUser({
@@ -40,7 +39,7 @@ const RefundsData = () => {
       }
     };
     init();
-  }, [compositionid]);
+  }, [compositionid, current_user_id]);
   return (
     <>
       <main className="min-h-screen bg-[#f6f7fb] w-full py-2 px-4">
@@ -48,8 +47,8 @@ const RefundsData = () => {
           <div className="flex gap-2">
             <p className="text-lg font-nunito">
               {compostion?.compositionScheme
-                ? "Application to Opt for Composition levy"
-                : " Application for Withdrawal from Composition levy"}
+                ? "Application to Opt for Composition scheme"
+                : " Application for Withdrawal from Composition scheme"}
             </p>
             <div className="grow"></div>
             <p className="text-sm">

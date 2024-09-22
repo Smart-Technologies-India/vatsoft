@@ -79,7 +79,7 @@ const AddNil = async (
       const return_invoice = await prisma.returns_01.create({
         data: {
           rr_number: "",
-          return_type: "ORIGNAL",
+          return_type: "ORIGINAL",
           year: payload.year,
           quarter: payload.quarter,
           month: payload.month,

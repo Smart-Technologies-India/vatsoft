@@ -29,7 +29,7 @@ import dayjs from "dayjs";
 import { RabioInput } from "../inputfields/radioinput";
 import { CreateChallanForm, CreateChallanSchema } from "@/schema/challan";
 import { ToWords } from "to-words";
-import { capitalcase } from "@/utils/methods";
+import { capitalcase, onFormError } from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { Separator } from "@/components/ui/separator";
 import CreateChallan from "@/action/challan/createchallan";
@@ -82,7 +82,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
     });
 
     if (challan_response.status) {
-      toast.success("Annexure I added successfully");
+      toast.success("Challan generated successfully");
       reset({});
       router.push("/dashboard/payments/challan-history");
     } else {
@@ -90,10 +90,6 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
     }
 
     reset({});
-  };
-
-  const onError = (error: FieldErrors<CreateChallanForm>) => {
-    console.log(error);
   };
 
   const getTotalAmount = (): number => {
@@ -115,7 +111,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
 
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmit, onError)}>
+      <form onSubmit={handleSubmit(onSubmit, onFormError)}>
         <div className="p-2 bg-gray-50 mt-2 flex gap-4">
           <div>
             <MultiSelect<CreateChallanForm>
@@ -132,7 +128,9 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
           <Table className="border mt-2">
             <TableHeader>
               <TableRow className="bg-gray-100">
-                <TableHead className="whitespace-nowrap text-center px-2 border"></TableHead>
+                <TableHead className="whitespace-nowrap text-center px-2 border">
+                  Payment of account of
+                </TableHead>
                 <TableHead className="whitespace-nowrap text-center px-2 w-60 border">
                   Tax (&#x20b9;)
                 </TableHead>
@@ -205,7 +203,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
               </TableRow>
               <TableRow>
                 <TableCell className="text-left p-2 border">
-                  Total Challan Amount (In Words):
+                  Total amount paid (in words): Rupees
                 </TableCell>
                 <TableCell className="text-left p-2 border">
                   {capitalcase(toWords.convert(getTotalAmount()))}
@@ -214,7 +212,20 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
             </TableBody>
           </Table>
           <div className="w-96 shrink-0 p-2">
-            <p className="text-sm">
+            <p className="text-center text-xl font-semibold">Form DVAT 20</p>
+            <p className="mt-2 text-sm">
+              (See Rule 28 of the Dadra and Nagar Haveli and Daman and Diu Value
+              Added Tax Rules, 2021)
+            </p>
+            <p className="mt-3 text-sm">
+              Challan for the Dadra and Nagar Haveli and Daman and Diu Value
+              Added Regulation, 2005
+            </p>
+            <p className="mt-3 text-sm">Credited: Consolidated Fund of India</p>
+            <p className="mt-3 text-sm">
+              Head: 0040, Value Added Tax Receipt - Value Added Tax Receipt
+            </p>
+            {/* <p className="text-sm">
               <span className="font-semibold">Note:</span>
               For taxpayer filing VAT on quarterly basis:
             </p>
@@ -231,7 +242,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
               VAT Quarterly. An auto- populated challan amounting to liabilities
               for the quarter net off credit utilization and existing cash
               balance can be generated and used to offset liabilities.
-            </p>
+            </p> */}
             <Separator />
             <div className="mt-2"></div>
 
@@ -241,27 +252,26 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
               required={false}
               placeholder="Enter remark"
             />
+            <div className="w-full flex gap-2 mt-2">
+              <div className="grow"></div>
+              <input
+                type="reset"
+                onClick={(e) => {
+                  e.preventDefault();
+                  reset({});
+                }}
+                value={"Reset"}
+                className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
+              >
+                {isSubmitting ? "Loading...." : "Generate Challan"}
+              </button>
+            </div>
           </div>
-        </div>
-
-        <div className="w-full flex gap-2 mt-2">
-          <div className="grow"></div>
-          <input
-            type="reset"
-            onClick={(e) => {
-              e.preventDefault();
-              reset({});
-            }}
-            value={"Reset"}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
-          />
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
-          >
-            {isSubmitting ? "Loading...." : "Generate Challan"}
-          </button>
         </div>
       </form>
     </>

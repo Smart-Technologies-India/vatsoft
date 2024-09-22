@@ -12,7 +12,7 @@ const Refund = () => {
         <h1 className="text-xl text-left">News and Updates</h1>
       </div>
       <Separator />
-      <h4 className="text-left mt-1 text-sm">Augest 2024</h4>
+      <h4 className="text-left mt-1 text-sm">August 2024</h4>
       <News />
       <News />
       <News />
@@ -20,6 +20,7 @@ const Refund = () => {
     </div>
   );
 };
+
 export default Refund;
 
 const News = () => {

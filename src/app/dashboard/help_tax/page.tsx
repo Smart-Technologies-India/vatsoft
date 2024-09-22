@@ -20,12 +20,12 @@ const Page = () => {
           <DashboardCards
             title="About Us"
             description="Learn more about the VAT department, its mission, and its services."
-            link="/dashboard/help_tax"
+            link="/dashboard/help_tax/about"
           />
           <DashboardCards
             title="Contact Us"
             description="Find contact information and reach out to the VAT department for assistance."
-            link="/dashboard/help_tax"
+            link="/dashboard/help_tax/contact"
           />
         </div>
       </main>

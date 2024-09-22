@@ -40,7 +40,7 @@ const CheckPayment = async (
     }
 
     return createResponse({
-      message: "Payment complted successfully.",
+      message: "Payment completed successfully.",
       functionname,
       data: true,
     });

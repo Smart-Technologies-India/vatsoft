@@ -10,7 +10,7 @@ const Dvat2Page = ({ params }: { params: { dvatid: string } }) => {
         <div className="bg-white w-full p-4 px-8 shadow mt-2">
           <div className="flex gap-2">
             <p className="text-lg font-nunito">
-              Application for Withdrawal from Composition levy
+              DVAT-03 : Application for Withdrawal from Composition scheme
             </p>
             <div className="grow"></div>
             <p className="text-sm">

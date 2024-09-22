@@ -15,12 +15,12 @@ const Page = () => {
           <DashboardCards
             title="My Application"
             description="View and manage all your submitted VAT-related applications."
-            link="/dashboard/user_service"
+            link="/dashboard/register/track-application-status"
           />
           <DashboardCards
             title="View Notice and Order"
             description="Check any notices and orders issued by the VAT department."
-            link="/dashboard/user_service"
+            link="/dashboard/user_service/notice_order"
           />
           <DashboardCards
             title="My Profile"
@@ -30,7 +30,7 @@ const Page = () => {
           <DashboardCards
             title="My Registration"
             description="Review the details of your VAT registration and make necessary updates."
-            link="/dashboard/user_service"
+            link="/dashboard/register/track-application-status"
           />
           <DashboardCards
             title="Search HSN Code"

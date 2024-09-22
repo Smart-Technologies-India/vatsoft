@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/table";
 import GetAllCommodity from "@/action/commodity/getcommodity";
 import Dvat2Update from "@/action/user/register/dvat2";
+import { onFormError } from "@/utils/methods";
 
 type Dvat01ProviderProps = {
   dvatid: number;
@@ -177,10 +178,6 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
     reset({});
   };
 
-  const onError = (error: FieldErrors<Dvat2Form>) => {
-    console.log(error);
-  };
-
   useEffect(() => {
     const init = async () => {
       setCommodityData([]);
@@ -284,7 +281,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
   }, [props.dvatid, reset]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onError)}>
+    <form onSubmit={handleSubmit(onSubmit, onFormError)}>
       <div className="rounded-sm p-4 border border-black mt-6 relative">
         <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
           11 Address for service of notice (If Different From Principle Place of

@@ -4,6 +4,7 @@ import {
   formatDateTime,
   formateDate,
   getPrismaDatabaseDate,
+  onFormError,
 } from "@/utils/methods";
 // import { DevTool } from "@hookform/devtools";
 import {
@@ -125,10 +126,6 @@ const Dvat16ReturnPreview = () => {
     setPaymentBox(false);
   };
 
-  const onError = (error: FieldErrors<SubmitPaymentForm>) => {
-    console.log(error);
-  };
-
   const generatePDF = async () => {
     try {
       // Fetch the PDF from the server
@@ -164,7 +161,7 @@ const Dvat16ReturnPreview = () => {
     <>
       {/* <DevTool control={control} /> */}
       <Modal title="Payment" open={paymentbox} footer={null}>
-        <form onSubmit={handleSubmit(onSubmit, onError)}>
+        <form onSubmit={handleSubmit(onSubmit, onFormError)}>
           <div className="mt-2">
             <p>Bank Name</p>
             <input

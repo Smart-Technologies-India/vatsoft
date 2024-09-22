@@ -6,7 +6,6 @@ import {
   useFormContext,
 } from "react-hook-form";
 
-import { OptionValue } from "@/models/main";
 import { TaxtInput } from "../inputfields/textinput";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
@@ -18,6 +17,7 @@ import GetUncompeltedDvat04 from "@/action/register/getuncomplteddvat04";
 import { dvat04 } from "@prisma/client";
 import registerUser from "@/action/user/register/registeruser";
 import { useRouter } from "next/navigation";
+import { onFormError } from "@/utils/methods";
 
 type RegisterProviderProps = {
   userid: number;
@@ -72,10 +72,6 @@ const Registration = (props: RegisterProviderProps) => {
     reset({});
   };
 
-  const onError = (error: FieldErrors<UserDataForm>) => {
-    console.log(error);
-  };
-
   useEffect(() => {
     const init = async () => {
       const user = await GetUser({ id: props.userid });
@@ -106,7 +102,7 @@ const Registration = (props: RegisterProviderProps) => {
   }, [props.userid, reset]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onError)}>
+    <form onSubmit={handleSubmit(onSubmit, onFormError)}>
       <div className="flex gap-3">
         <div className="flex-1">
           <TaxtInput<UserDataForm>
@@ -173,7 +169,7 @@ const Registration = (props: RegisterProviderProps) => {
             placeholder="Enter Pan Card"
             name="pan"
             required={true}
-            title="7. Pan Card"
+            title="7. Pan Card (In Capital Letters)"
           />
         </div>
         <div className="flex-1">

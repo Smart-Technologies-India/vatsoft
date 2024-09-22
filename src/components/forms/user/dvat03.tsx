@@ -19,6 +19,7 @@ import { toast } from "react-toastify";
 import Dvat3Update from "@/action/user/register/dvat3";
 import { dvat04 } from "@prisma/client";
 import { ApiResponseType } from "@/models/response";
+import { onFormError } from "@/utils/methods";
 
 type Dvat03ProviderProps = {
   dvatid: number;
@@ -76,10 +77,6 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
     reset({});
   };
 
-  const onError = (error: FieldErrors<Dvat3Form>) => {
-    console.log(error);
-  };
-
   useEffect(() => {
     const init = async () => {
       const dvat = await GetDvat04({ id: props.dvatid });
@@ -110,7 +107,7 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
   }, [props.dvatid, reset]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onError)}>
+    <form onSubmit={handleSubmit(onSubmit, onFormError)}>
       <div className="rounded-sm p-4 border border-black mt-6 relative">
         <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
           18 Security

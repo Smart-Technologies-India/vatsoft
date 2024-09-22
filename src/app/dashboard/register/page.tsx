@@ -72,7 +72,7 @@ const Page = () => {
             <>
               {!isRegisterPending && !isProfileCompletd && (
                 <DashboardCards
-                  title="New Registration"
+                  title="DVAT-04 : Application for Registration as a Dealer"
                   description="Initiate the process of registering a new taxpayer account for VAT compliance."
                   link="/dashboard/new-registration/registeruser"
                 />
@@ -90,27 +90,27 @@ const Page = () => {
                     link="/dashboard/register/applicatin_for_filing_clarification"
                   />
                   <DashboardCards
-                    title="Amendment of Registration Core Fields"
+                    title="DVAT-07 : Amendment of Registration"
                     description="Modify critical details in your VAT registration, including business name, type, or ownership changes."
                     link="/dashboard/new-registration/registeruser"
                   />
-                  <DashboardCards
+                  {/* <DashboardCards
                     title="Amendment of Registration Non-Core Fields"
                     description="Update non-essential information in your VAT registration, such as contact details or business address."
                     link="/dashboard/new-registration/registeruser"
-                  />
+                  /> */}
                   <DashboardCards
-                    title="Application to Opt for Composition levy"
-                    description="Apply to join the composition levy scheme, allowing for a simplified VAT payment method with lower compliance burdens."
+                    title="DVAT-01 : Application to Opt for Composition scheme"
+                    description="Apply to join the composition scheme, allowing for a simplified VAT payment method with lower compliance burdens."
                     link="/dashboard/register/composition-levy"
                   />
                   <DashboardCards
-                    title="Application for Withdrawal from Composition levy"
-                    description="Apply to discontinue participation in the composition levy scheme and return to standard VAT payment."
+                    title="DVAT-03 : Application for Withdrawal from Composition scheme "
+                    description="Apply to discontinue participation in the composition scheme and return to standard VAT payment."
                     link="/dashboard/register/without-composition-levy"
                   />
                   <DashboardCards
-                    title="Application for Cancellation of Registration"
+                    title="DVAT-09 : Application for Cancellation of Registration"
                     description="Request the cancellation of your VAT registration if your business is closing or no longer requires VAT registration."
                     link="/dashboard/new-registration/registeruser"
                   />

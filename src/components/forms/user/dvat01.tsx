@@ -6,6 +6,16 @@ import {
   useFormContext,
 } from "react-hook-form";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button as ShButton } from "@/components/ui/button";
+
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { useEffect, useState } from "react";
@@ -22,6 +32,8 @@ import { ApiResponseType } from "@/models/response";
 import { dvat04, NatureOfBusiness, SelectOffice } from "@prisma/client";
 import DvatUpdate from "@/action/user/register/dvat1";
 import { toast } from "react-toastify";
+import { Button, Drawer, RadioChangeEvent } from "antd";
+import { onFormError } from "@/utils/methods";
 
 type Dvat01ProviderProps = {
   dvatid: number;
@@ -49,13 +61,19 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
   ];
 
   const natureOfBusiness: OptionValue[] = [
-    { value: "MANUFACTURING", label: "MANUFACTURING" },
-    { value: "TRADING", label: "TRADING" },
+    { value: "MANUFACTURER", label: "MANUFACTURER" },
+    { value: "TRADER", label: "TRADER" },
     { value: "SERVICE", label: "SERVICE" },
-    { value: "OTHER", label: "OTHER" },
+    { value: "OTHERS", label: "OTHERS" },
+    { value: "WORKS", label: "WORKS" },
   ];
 
   const constitutionOfBusiness: OptionValue[] = [
+    { value: "GOVERNMENT_COMPANY", label: "Goverment Company" },
+    { value: "GOVERNMENT_CORPORATION", label: "Goverment Corporation" },
+    { value: "GOVERNMENT_DEPARTMENT", label: "Goverment Department" },
+    { value: "HUF", label: "Proprietorship" },
+    { value: "PUBLIC_SECTOR", label: "Public Sector" },
     { value: "PROPRIETORSHIP", label: "Proprietorship" },
     { value: "LLP", label: "LLP" },
     { value: "PVT_LTD", label: "Private LTD" },
@@ -64,10 +82,8 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
   ];
 
   const typeOfRegistration: OptionValue[] = [
-    { value: "GST", label: "GST" },
-    { value: "MSME", label: "MSME" },
-    { value: "UDYAM", label: "UDYAM" },
-    { value: "OTHER", label: "OTHER" },
+    { value: "MANDATORY", label: "Mandatory" },
+    { value: "VOLUNTARY", label: "Voluntary" },
   ];
 
   const {
@@ -114,10 +130,6 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
     reset({});
   };
 
-  const onError = (error: FieldErrors<Dvat1Form>) => {
-    console.log(error);
-  };
-
   useEffect(() => {
     const init = async () => {
       const dvat = await GetDvat04({ id: props.dvatid });
@@ -154,7 +166,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
   }, [props.dvatid, reset]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onError)}>
+    <form onSubmit={handleSubmit(onSubmit, onFormError)}>
       <div className="flex gap-3 mt-2">
         <div className="flex-1">
           <MultiSelect<Dvat1Form>
@@ -283,7 +295,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             placeholder="Enter Pan Number"
             name="pan"
             required={true}
-            title="8. Pan Number "
+            title="8. Pan Number (In Capital Case)"
           />
         </div>
         <div className="flex-1">
@@ -400,15 +412,16 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
         </p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 mt-2">
         <div className="grow"></div>
+        <DvatInfoButton />
         <input
           type="reset"
           onClick={() => {
             reset({});
           }}
           value={"Reset"}
-          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
+          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
         />
 
         <button
@@ -416,18 +429,265 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             e.preventDefault();
             router.push(`/dashboard/new-registration/registeruser`);
           }}
-          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
+          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
         >
           Previous
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
+          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
         >
           {isSubmitting ? "Loading...." : "Next"}
         </button>
       </div>
     </form>
+  );
+};
+
+const DvatInfoButton = () => {
+  const [open, setOpen] = useState(false);
+  const showDrawer = () => {
+    setOpen(true);
+  };
+
+  const onClose = () => {
+    setOpen(false);
+  };
+
+  return (
+    <>
+      <Button type="primary" onClick={showDrawer}>
+        Open
+      </Button>
+      <Drawer
+        title="Info"
+        placement={"bottom"}
+        closable={false}
+        onClose={onClose}
+        open={open}
+        key={"bottom"}
+      >
+        <Table className="border mt-2 w-5/6 mx-auto">
+          <TableBody>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Pending for Processing
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Application filed successfully. Pending with Tax Officer for
+                Processing.*
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Pending for Clarification
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Notice for seeking clarification issued by officer. File
+                Clarification within 7 working days of date of notice on portal.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Clarification filed-Pending for Order
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Clarification filed successfully by Applicant. Pending with Tax
+                Officer for Order.*
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Clarification not filed Pending for Order
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Clarification not filed by the Applicant. Pending with Tax
+                Officer for Rejection.*
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">Approved</TableCell>
+              <TableCell className="text-left p-2">
+                Application is Approved. Registration ID and possward emailed to
+                Applicant.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">Rejected</TableCell>
+              <TableCell className="text-left p-2">
+                Application is Rejected by tax officer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">Withdrawn</TableCell>
+              <TableCell className="text-left p-2">
+                Application is withdrawn by the Applicant/Tax payer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="text-left w-60 p-2">
+                Cancelled on Request of Taxpayer
+              </TableCell>
+              <TableCell className="text-left p-2">
+                Registration is cancelled on request to taxpayer.
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </Drawer>
+    </>
   );
 };
