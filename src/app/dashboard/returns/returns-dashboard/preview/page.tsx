@@ -112,6 +112,7 @@ const Dvat16ReturnPreview = () => {
       track_id: data.track_id,
       transaction_id: data.transaction_id,
       rr_number: get_rr_number(),
+      penalty: "0",
     });
 
     if (!response.status) return toast.error(response.message);
