@@ -3,10 +3,10 @@ import getPdfReturn from "@/action/return/getpdfreturn";
 import {
   formatDateTime,
   formateDate,
+  getDaysBetweenDates,
   getPrismaDatabaseDate,
   onFormError,
 } from "@/utils/methods";
-// import { DevTool } from "@hookform/devtools";
 import {
   CategoryOfEntry,
   dvat04,
@@ -20,18 +20,12 @@ import {
   SaleOf,
   SaleOfInterstate,
 } from "@prisma/client";
-import {
-  useParams,
-  usePathname,
-  useRouter,
-  useSearchParams,
-} from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 
 import { Modal } from "antd";
-
-import { useForm, FieldErrors } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
   SubmitPaymentForm,
   SubmitPaymentSchema,
@@ -39,7 +33,7 @@ import {
 import AddPayment from "@/action/return/addpayment";
 import { toast } from "react-toastify";
 import CheckPayment from "@/action/return/checkpayment";
-import { Parentheses, Router } from "lucide-react";
+import AddSubmitPayment from "@/action/return/addsubmitpayment";
 
 interface PercentageOutput {
   increase: string;
@@ -56,10 +50,16 @@ const Dvat16ReturnPreview = () => {
   >();
 
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
-  const [paymentbox, setPaymentBox] = useState<boolean>(false);
+
   const [payment, setPayment] = useState<boolean>(false);
+  const [paymentbox, setPaymentBox] = useState<boolean>(false);
+  const [paymentSubmitBox, setPaymentSubmitBox] = useState<boolean>(false);
 
   const searchparam = useSearchParams();
+
+  const [isAllNil, setAllNil] = useState<boolean>(false);
+  const [lateFees, setLateFees] = useState<number>(0);
+
   useEffect(() => {
     const init = async () => {
       const year: string = searchparam.get("year") ?? "";
@@ -74,6 +74,78 @@ const Dvat16ReturnPreview = () => {
       if (returnformsresponse.status && returnformsresponse.data) {
         setReturn01(returnformsresponse.data.returns_01);
         serReturns_entryData(returnformsresponse.data.returns_entry);
+
+        const dvat_30: boolean =
+          returnformsresponse.data.returns_entry.filter(
+            (val: returns_entry) =>
+              val.dvat_type == DvatType.DVAT_30 && val.isnil == true
+          ).length > 0;
+        const dvat_30a: boolean =
+          returnformsresponse.data.returns_entry.filter(
+            (val: returns_entry) =>
+              val.dvat_type == DvatType.DVAT_30_A && val.isnil == true
+          ).length > 0;
+        const dvat_31: boolean =
+          returnformsresponse.data.returns_entry.filter(
+            (val: returns_entry) =>
+              val.dvat_type == DvatType.DVAT_31 && val.isnil == true
+          ).length > 0;
+        const dvat_31a: boolean =
+          returnformsresponse.data.returns_entry.filter(
+            (val: returns_entry) =>
+              val.dvat_type == DvatType.DVAT_31_A && val.isnil == true
+          ).length > 0;
+
+        if (dvat_30 && dvat_30a && dvat_31 && dvat_31a) {
+          setAllNil(true);
+        }
+
+        const currentDate = new Date();
+
+        const monthNames = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
+
+        // Get the month index from the month name
+        let monthIndex = monthNames.indexOf(
+          returnformsresponse.data.returns_01.month!
+        );
+
+        // Check if it's December (index 11) and increment year if needed
+        let newYear = parseInt(year);
+        if (monthIndex === 11) {
+          newYear += 1;
+          monthIndex = 0; // Set month to January
+        } else {
+          monthIndex += 1; // Otherwise, just increment the month
+        }
+
+        const diff_days = getDaysBetweenDates(
+          new Date(
+            parseInt(returnformsresponse.data.returns_01.year),
+            monthIndex,
+            11
+          ),
+          currentDate
+        );
+        if (
+          returnformsresponse.data.returns_01.rr_number == null ||
+          returnformsresponse.data.returns_01.rr_number == undefined ||
+          returnformsresponse.data.returns_01.rr_number == ""
+        ) {
+          setLateFees(100 * diff_days);
+        }
 
         const payment_response = await CheckPayment({
           id: returnformsresponse.data.returns_01.id ?? 0,
@@ -117,6 +189,7 @@ const Dvat16ReturnPreview = () => {
       track_id: data.track_id,
       transaction_id: data.transaction_id,
       rr_number: get_rr_number(),
+      penalty: lateFees.toString(),
     });
 
     if (!response.status) return toast.error(response.message);
@@ -124,6 +197,21 @@ const Dvat16ReturnPreview = () => {
     toast.success(response.message);
     reset();
     setPaymentBox(false);
+  };
+
+  const onSubmitPayment = async () => {
+    if (return01 == null) return toast.error("There is not return from here");
+
+    const response = await AddSubmitPayment({
+      id: return01.id ?? 0,
+      rr_number: get_rr_number(),
+      penalty: lateFees.toString(),
+    });
+
+    if (!response.status) return toast.error(response.message);
+    toast.success(response.message);
+    reset();
+    setPaymentSubmitBox(false);
   };
 
   const generatePDF = async () => {
@@ -156,11 +244,300 @@ const Dvat16ReturnPreview = () => {
       toast.error("Unable to download pdf try again.");
     }
   };
+  // net payable amount start form here
+  const getInvoicePercentage = (value: string): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE &&
+        val.tax_percent == value
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getSaleOfPercentage = (value: string): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of == SaleOf.WORKS_CONTRACT &&
+        val.tax_percent == value
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const get4_6 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const get4_7 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of == SaleOf.PROCESSED_GOODS
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const get4_9 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
+          val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
+        val.sale_of == SaleOf.GOODS_TAXABLE
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const get5_1 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const get5_2 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.nature_purchase == NaturePurchase.OTHER_GOODS &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const get5_3 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const getCreditNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
+        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getDebitNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
+        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getGoodsReturnsNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
+        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getNetPayable = (): number => {
+    const val: number =
+      parseFloat(getInvoicePercentage("0").decrease) +
+      parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("4").decrease) +
+      parseFloat(getInvoicePercentage("5").decrease) +
+      parseFloat(getInvoicePercentage("6").decrease) +
+      parseFloat(getInvoicePercentage("12.5").decrease) +
+      parseFloat(getInvoicePercentage("15").decrease) +
+      parseFloat(getInvoicePercentage("20").decrease) +
+      parseFloat(getSaleOfPercentage("4").decrease) +
+      parseFloat(getSaleOfPercentage("5").decrease) +
+      parseFloat(getSaleOfPercentage("12.5").decrease) +
+      parseFloat(get4_6().decrease) +
+      parseFloat(get4_7().decrease) -
+      parseFloat(get4_9().decrease) -
+      (parseFloat(get5_1().decrease) +
+        parseFloat(get5_2().decrease) +
+        (parseFloat(getCreditNote().decrease) -
+          parseFloat(getDebitNote().decrease) -
+          parseFloat(getGoodsReturnsNote().decrease)));
+    return val;
+  };
+  // net payable amount end here
 
   return (
     <>
       {/* <DevTool control={control} /> */}
-      <Modal title="Payment" open={paymentbox} footer={null}>
+      <Modal title="Payment" open={paymentbox} footer={null} closeIcon={false}>
         <form onSubmit={handleSubmit(onSubmit, onFormError)}>
           <div className="mt-2">
             <p>Bank Name</p>
@@ -227,7 +604,33 @@ const Dvat16ReturnPreview = () => {
           </div>
         </form>
       </Modal>
-
+      <Modal
+        title="Confirmation"
+        open={paymentSubmitBox}
+        footer={null}
+        closeIcon={false}
+      >
+        <p>Are you sure you want to submit the return?</p>
+        <div className="flex  gap-2 mt-2">
+          <div className="grow"></div>
+          <button
+            disabled={isSubmitting}
+            className="py-1 rounded-md border px-4 text-sm text-gray-600"
+            onClick={(e) => {
+              e.preventDefault();
+              setPaymentSubmitBox(false);
+            }}
+          >
+            Close
+          </button>
+          <button
+            onClick={onSubmitPayment}
+            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
+          >
+            Submit
+          </button>
+        </div>
+      </Modal>
       {return01 && (
         <section className="px-5 relative mainpdf" id="mainpdf">
           <main className="bg-white mt-6 p-4 w-full xl:w-5/6 mx-auto">
@@ -449,7 +852,10 @@ const Dvat16ReturnPreview = () => {
             {/* page 2 end here */}
 
             {/* page 3 start from here */}
-            <CentralSales returnsentrys={returns_entryData ?? []} />
+            <CentralSales
+              returnsentrys={returns_entryData ?? []}
+              return01={return01}
+            />
 
             <table border={1} className="w-5/6 mx-auto mt-4">
               <tbody className="w-full">
@@ -529,14 +935,30 @@ const Dvat16ReturnPreview = () => {
               Download returns
             </button>
             {!payment && (
-              <button
-                className="text-white bg-black py-1 px-4 text-sm"
-                onClick={() => {
-                  setPaymentBox(true);
-                }}
-              >
-                Proceed to Pay
-              </button>
+              <>
+                {(isAllNil && lateFees == 0) ||
+                (!isAllNil && getNetPayable() > 0 && lateFees == 0) ? (
+                  <>
+                    <button
+                      className="text-white bg-black py-1 px-4 text-sm"
+                      onClick={() => {
+                        setPaymentSubmitBox(true);
+                      }}
+                    >
+                      Submit
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="text-white bg-black py-1 px-4 text-sm"
+                    onClick={() => {
+                      setPaymentBox(true);
+                    }}
+                  >
+                    Proceed to Pay
+                  </button>
+                )}
+              </>
             )}
           </div>
         </section>
@@ -2141,10 +2563,56 @@ const NetTax = (props: NetTaxProps) => {
 };
 
 interface CentralSalesProps {
+  return01: returns_01;
   returnsentrys: returns_entry[];
 }
 
 const CentralSales = (props: CentralSalesProps) => {
+  const searchparam = useSearchParams();
+  useEffect(() => {
+    const year: string = searchparam.get("year") ?? "";
+
+    const currentDate = new Date();
+
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    // Get the month index from the month name
+    let monthIndex = monthNames.indexOf(props.return01.month!);
+
+    // Check if it's December (index 11) and increment year if needed
+    let newYear = parseInt(year);
+    if (monthIndex === 11) {
+      newYear += 1;
+      monthIndex = 0; // Set month to January
+    } else {
+      monthIndex += 1; // Otherwise, just increment the month
+    }
+
+    const diff_days = getDaysBetweenDates(
+      new Date(parseInt(props.return01.year), monthIndex, 11),
+      currentDate
+    );
+    if (
+      props.return01.rr_number == null ||
+      props.return01.rr_number == undefined ||
+      props.return01.rr_number == ""
+    ) {
+      setLateFees(100 * diff_days);
+    }
+  }, [props.return01, props.returnsentrys]);
   const getGoodsReturnsNote = (): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
@@ -2701,6 +3169,8 @@ const CentralSales = (props: CentralSalesProps) => {
       decrease,
     };
   };
+  const [lateFees, setLateFees] = useState<number>(0);
+
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
       <thead className="w-full">
@@ -3162,7 +3632,7 @@ const CentralSales = (props: CentralSalesProps) => {
             0
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {lateFees}
           </td>
         </tr>
         <tr className="w-full">
@@ -3230,7 +3700,28 @@ const CentralSales = (props: CentralSalesProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {(
+              parseFloat(getInvoicePercentage("0").decrease) +
+              parseFloat(getInvoicePercentage("1").decrease) +
+              parseFloat(getInvoicePercentage("4").decrease) +
+              parseFloat(getInvoicePercentage("5").decrease) +
+              parseFloat(getInvoicePercentage("6").decrease) +
+              parseFloat(getInvoicePercentage("12.5").decrease) +
+              parseFloat(getInvoicePercentage("15").decrease) +
+              parseFloat(getInvoicePercentage("20").decrease) +
+              parseFloat(getSaleOfPercentage("4").decrease) +
+              parseFloat(getSaleOfPercentage("5").decrease) +
+              parseFloat(getSaleOfPercentage("12.5").decrease) +
+              parseFloat(get4_6().decrease) +
+              parseFloat(get4_7().decrease) -
+              parseFloat(get4_9().decrease) -
+              (parseFloat(get5_1().decrease) +
+                parseFloat(get5_2().decrease) +
+                (parseFloat(getCreditNote().decrease) -
+                  parseFloat(getDebitNote().decrease) -
+                  parseFloat(getGoodsReturnsNote().decrease))) +
+              lateFees
+            ).toFixed(2)}
           </td>
         </tr>
       </tbody>

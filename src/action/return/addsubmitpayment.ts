@@ -5,19 +5,16 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { returns_01 } from "@prisma/client";
 
-interface AddPaymentPayload {
+interface AddSubmitPaymentPayload {
   id: number;
-  bank_name: string;
-  transaction_id: string;
-  track_id: string;
   rr_number: string;
   penalty: string;
 }
 
-const AddPayment = async (
-  payload: AddPaymentPayload
+const AddSubmitPayment = async (
+  payload: AddSubmitPaymentPayload
 ): Promise<ApiResponseType<returns_01 | null>> => {
-  const functionname: string = AddPayment.name;
+  const functionname: string = AddSubmitPayment.name;
   try {
     const isExist = await prisma.returns_01.findFirst({
       where: {
@@ -40,9 +37,6 @@ const AddPayment = async (
         status: "ACTIVE",
       },
       data: {
-        bank_name: payload.bank_name,
-        track_id: payload.track_id,
-        transaction_id: payload.transaction_id,
         transaction_date: addPrismaDatabaseDate(new Date()).toISOString(),
         paymentmode: "ONLINE",
         rr_number: payload.rr_number,
@@ -50,13 +44,13 @@ const AddPayment = async (
     });
     if (!updateresponse) {
       return createResponse({
-        message: "Something Want wrong! Unable to update",
+        message: "Something Want wrong! Unable to submit",
         functionname,
       });
     }
 
     return createResponse({
-      message: "Payment completed successfully.",
+      message: "Form submitted completed successfully.",
       functionname,
       data: updateresponse,
     });
@@ -68,4 +62,4 @@ const AddPayment = async (
   }
 };
 
-export default AddPayment;
+export default AddSubmitPayment;

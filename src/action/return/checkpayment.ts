@@ -1,6 +1,6 @@
 "use server";
 
-import { addPrismaDatabaseDate, errorToString } from "@/utils/methods";
+import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 
@@ -27,10 +27,9 @@ const CheckPayment = async (
     }
 
     if (
-      isExist.track_id == null &&
-      isExist.transaction_id == null &&
-      isExist.bank_name == null &&
-      isExist.transaction_date == null
+      isExist.rr_number == null ||
+      isExist.rr_number == "" ||
+      isExist.rr_number == undefined
     ) {
       return createResponse({
         data: false,

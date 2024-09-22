@@ -273,3 +273,15 @@ const onFormError = <T extends FieldValues>(error: FieldErrors<T>) => {
 };
 
 export { onFormError };
+
+function getDaysBetweenDates(startDate: Date, endDate: Date): number {
+  // Calculate the difference in milliseconds
+  const differenceInTime = endDate.getTime() - startDate.getTime();
+
+  // Convert milliseconds to days
+  const differenceInDays = differenceInTime / (1000 * 3600 * 24);
+
+  return Math.ceil(differenceInDays); // Rounds up to the nearest whole day
+}
+
+export { getDaysBetweenDates };
