@@ -7,7 +7,8 @@ import prisma from "../../../prisma/database";
 import { customAlphabet } from "nanoid";
 
 interface CreateCompositionPayload {
-  userid: number;
+  dvatid: number;
+  createdby: number;
   compositionScheme: boolean;
   turnoverLastFinancialYear: string;
   turnoverCurrentFinancialYear: string;
@@ -25,13 +26,14 @@ const CreateComposition = async (
 
     const composition_response = await prisma.composition.create({
       data: {
+        dvatid: payload.dvatid,
         compositionScheme: payload.compositionScheme,
         status: "PENDING",
         arn: arn,
         dept_user_id: 8,
         turnoverLastFinancialYear: payload.turnoverLastFinancialYear,
         turnoverCurrentFinancialYear: payload.turnoverCurrentFinancialYear,
-        createdById: payload.userid,
+        createdById: payload.createdby,
         ...(payload.remark && { remark: payload.remark }),
       },
     });

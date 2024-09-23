@@ -7,7 +7,8 @@ import prisma from "../../../prisma/database";
 import { customAlphabet } from "nanoid";
 
 interface CreateChallanPayload {
-  userid: number;
+  dvatid: number;
+  createdby: number;
   vat: string;
   cess: string;
   interest: string;
@@ -32,13 +33,14 @@ const CreateChallan = async (
   try {
     const challan = await prisma.challan.create({
       data: {
+        dvatid: payload.dvatid,
         cpin: cpin,
         vat: payload.vat,
         cess: payload.cess,
         interest: payload.interest,
         others: payload.others,
         penalty: payload.penalty,
-        createdById: payload.userid,
+        createdById: payload.createdby,
         expire_date: today,
         total_tax_amount: payload.total_tax_amount,
         status: "ACTIVE",

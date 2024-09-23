@@ -124,8 +124,10 @@ const ChallanData = () => {
               <p className="text-sm  font-medium">{challanData?.cpin}</p>
             </div>
             <div>
-              <p className="text-sm">User Tin Number</p>
-              <p className="text-sm  font-medium">{dvat?.tinNumber}</p>
+              <p className="text-sm">Status</p>
+              <p className="text-sm  font-medium">
+                {challanData?.challanstatus}
+              </p>
             </div>
             <div>
               <p className="text-sm">Challan Generation Date</p>
@@ -144,7 +146,7 @@ const ChallanData = () => {
           <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">
             Details Of Taxpayer
           </div>
-          <div className="p-1 bg-gray-50 grid grid-cols-3 gap-6 justify-between px-4">
+          <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
             <div>
               <p className="text-sm">Name</p>
               <p className="text-sm  font-medium">
@@ -158,6 +160,10 @@ const ChallanData = () => {
             <div>
               <p className="text-sm">Mobile</p>
               <p className="text-sm  font-medium">{user?.mobileOne}</p>
+            </div>
+            <div>
+              <p className="text-sm">User Tin Number</p>
+              <p className="text-sm  font-medium">{dvat?.tinNumber}</p>
             </div>
             <div>
               <p className="text-sm">Address</p>

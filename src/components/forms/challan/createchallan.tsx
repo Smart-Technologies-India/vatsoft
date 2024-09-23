@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MultiSelect } from "../inputfields/multiselect";
 import { OptionValue } from "@/models/main";
@@ -33,6 +33,9 @@ import { capitalcase, onFormError } from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { Separator } from "@/components/ui/separator";
 import CreateChallan from "@/action/challan/createchallan";
+import { dvat04 } from "@prisma/client";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import { set } from "date-fns";
 
 type CreateChallanProviderProps = {
   userid: number;
@@ -64,13 +67,28 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
     reset,
     handleSubmit,
     watch,
-    formState: { errors, isSubmitting },
-    getValues,
+    formState: { isSubmitting },
   } = useFormContext<CreateChallanForm>();
 
+  const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
+  useEffect(() => {
+    const init = async () => {
+      const dvat = await GetUserDvat04({
+        userid: props.userid,
+      });
+      if (dvat.status && dvat.data) {
+        setDvatData(dvat.data);
+      }
+    };
+    init();
+  }, [props.userid]);
+
   const onSubmit = async (data: CreateChallanForm) => {
+    if (dvatdata == null) return toast.error("User Dvat not exist");
+
     const challan_response = await CreateChallan({
-      userid: props.userid,
+      dvatid: dvatdata.id,
+      createdby: props.userid,
       cess: data.cess.toString(),
       vat: data.vat.toString(),
       interest: data.interest.toString(),

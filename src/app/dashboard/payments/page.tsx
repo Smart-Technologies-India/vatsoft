@@ -42,11 +42,15 @@ const Page = () => {
           ].includes(user?.role!) && (
             <>
               <DashboardCards
+                title="DVAT-20 : Create Challan "
+                description="Payment of pending interest and penalty."
+                link="/dashboard/payments/department-saved-challan"
+              />
+              <DashboardCards
                 title="Refunds History"
                 description="View the history of all your VAT retunds and their statuses."
                 link="/dashboard/payments/department-refunds-history"
               />
-
               <DashboardCards
                 title="Challan History"
                 description="View the history of all your VAT payment challans and their statuses."

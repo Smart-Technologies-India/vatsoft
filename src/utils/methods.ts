@@ -285,3 +285,16 @@ function getDaysBetweenDates(startDate: Date, endDate: Date): number {
 }
 
 export { getDaysBetweenDates };
+
+const getPreviousMonth = (date: Date): Date => {
+  const previousMonthDate = new Date(date);
+  previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
+  return previousMonthDate;
+};
+
+const getMonthDifference = (date1: Date, date2: Date): number => {
+  const yearDiff = date2.getFullYear() - date1.getFullYear();
+  const monthDiff = date2.getMonth() - date1.getMonth();
+  return yearDiff * 12 + monthDiff;
+};
+export { getPreviousMonth, getMonthDifference };

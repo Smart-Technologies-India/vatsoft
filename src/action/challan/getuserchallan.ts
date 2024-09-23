@@ -6,7 +6,7 @@ import { challan } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 interface GetUserChallanPayload {
-  userid: number;
+  dvatid: number;
 }
 
 const GetUserChallan = async (
@@ -20,7 +20,7 @@ const GetUserChallan = async (
         status: "ACTIVE",
         deletedAt: null,
         deletedById: null,
-        createdById: payload.userid,
+        dvatid: payload.dvatid,
       },
     });
 

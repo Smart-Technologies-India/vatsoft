@@ -549,6 +549,9 @@ model dvat04 {
   registration registration[]
   annexure1    annexure1[]
   annexure2    annexure2[]
+  challan      challan[]
+  refunds      refunds[]
+  composition  composition[]
 }
 
 model commodity {
@@ -810,6 +813,8 @@ model deparment_doc_upload {
 model challan {
   id               Int           @id @default(autoincrement())
   reason           ChallanReason @default(MONTHLYPAYMENT)
+  dvat             dvat04        @relation(fields: [dvatid], references: [id])
+  dvatid           Int
   cpin             String
   vat              String
   interest         String
@@ -839,6 +844,8 @@ model challan {
 
 model refunds {
   id                   Int          @id @default(autoincrement())
+  dvat                 dvat04       @relation(fields: [dvatid], references: [id])
+  dvatid               Int
   reason               String
   old_grievance_number String?
   oldcpin              String?
@@ -875,6 +882,8 @@ model refunds {
 
 model composition {
   id                           Int               @id @default(autoincrement())
+  dvat                         dvat04            @relation(fields: [dvatid], references: [id])
+  dvatid                       Int
   officer_date                 DateTime?
   compositionScheme            Boolean           @default(false)
   turnoverLastFinancialYear    String?

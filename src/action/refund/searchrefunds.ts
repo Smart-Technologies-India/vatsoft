@@ -6,7 +6,7 @@ import { refunds } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 interface SearchRfundsPayload {
-  userid?: number;
+  dvatid?: number;
   cpin?: string;
   fromdate?: Date;
   todate?: Date;
@@ -23,7 +23,7 @@ const SearchRefunds = async (
         status: "ACTIVE",
         deletedAt: null,
         deletedById: null,
-        ...(payload.userid && { createdById: payload.userid }),
+        ...(payload.dvatid && { dvatid: payload.dvatid }),
         ...(payload.cpin && { cpin: payload.cpin }),
         ...(payload.fromdate &&
           payload.todate && {

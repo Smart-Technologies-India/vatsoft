@@ -14,18 +14,21 @@ import { Radio, DatePicker } from "antd";
 import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
-import { refunds } from "@prisma/client";
+import { dvat04, refunds } from "@prisma/client";
 import { getCookie } from "cookies-next";
 import { formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import GetUserRefunds from "@/action/refund/getuserrefunds";
 import SearchRefunds from "@/action/refund/searchrefunds";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 
 const RefundsHistory = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
+
+  const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 
   enum SearchOption {
     CPIN,
@@ -57,11 +60,16 @@ const RefundsHistory = () => {
   const init = async () => {
     setLoading(true);
 
-    const refunds_resposne = await GetUserRefunds({
+    const dvat = await GetUserDvat04({
       userid: id,
     });
-    if (refunds_resposne.data && refunds_resposne.data) {
-      setRefundsData(refunds_resposne.data);
+    if (dvat.status && dvat.data) {
+      const refunds_resposne = await GetUserRefunds({
+        dvatid: dvat.data.id,
+      });
+      if (refunds_resposne.data && refunds_resposne.data) {
+        setRefundsData(refunds_resposne.data);
+      }
     }
     setSearch(false);
     setLoading(false);
@@ -71,12 +79,17 @@ const RefundsHistory = () => {
     const init = async () => {
       setLoading(true);
 
-      const refunds_resposne = await GetUserRefunds({
+      const dvat = await GetUserDvat04({
         userid: id,
       });
 
-      if (refunds_resposne.data && refunds_resposne.data) {
-        setRefundsData(refunds_resposne.data);
+      if (dvat.status && dvat.data) {
+        const refunds_resposne = await GetUserRefunds({
+          dvatid: dvat.data.id,
+        });
+        if (refunds_resposne.data && refunds_resposne.data) {
+          setRefundsData(refunds_resposne.data);
+        }
       }
 
       setLoading(false);
@@ -93,7 +106,7 @@ const RefundsHistory = () => {
       return toast.error("Enter cpin");
     }
     const search_response = await SearchRefunds({
-      userid: id,
+      dvatid: dvatdata?.id,
       cpin: cpinRef.current?.input?.value,
     });
     if (search_response.status && search_response.data) {
@@ -108,7 +121,7 @@ const RefundsHistory = () => {
     }
 
     const search_response = await SearchRefunds({
-      userid: id,
+      dvatid: dvatdata?.id,
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
     });

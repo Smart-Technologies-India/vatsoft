@@ -6,7 +6,7 @@ import { composition, user } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 interface GetUserCompositionPayload {
-  userid?: number;
+  dvatid?: number;
 }
 
 const GetUserComposition = async (
@@ -21,7 +21,7 @@ const GetUserComposition = async (
       where: {
         deletedAt: null,
         deletedById: null,
-        ...(payload.userid && { createdById: payload.userid }),
+        ...(payload.dvatid && { dvatid: payload.dvatid }),
       },
       include: {
         dept_user: true,

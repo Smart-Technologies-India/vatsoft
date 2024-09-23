@@ -14,13 +14,14 @@ import { Radio, DatePicker } from "antd";
 import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
-import { challan } from "@prisma/client";
+import { challan, dvat04 } from "@prisma/client";
 import GetUserChallan from "@/action/challan/getuserchallan";
 import { getCookie } from "cookies-next";
 import { formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import SearchChallan from "@/action/challan/searchchallan";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 
 const ChallanHistory = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
@@ -54,15 +55,23 @@ const ChallanHistory = () => {
   };
 
   const [challanData, setChallanData] = useState<challan[]>([]);
+  const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
+
   const init = async () => {
     setLoading(true);
 
-    const challan_resposne = await GetUserChallan({
+    const dvat = await GetUserDvat04({
       userid: id,
     });
-    if (challan_resposne.data && challan_resposne.data) {
-      setChallanData(challan_resposne.data);
+    if (dvat.status && dvat.data) {
+      const challan_resposne = await GetUserChallan({
+        dvatid: dvat.data.id,
+      });
+      if (challan_resposne.data && challan_resposne.data) {
+        setChallanData(challan_resposne.data);
+      }
     }
+
     setSearch(false);
     setLoading(false);
   };
@@ -71,12 +80,17 @@ const ChallanHistory = () => {
     const init = async () => {
       setLoading(true);
 
-      const challan_resposne = await GetUserChallan({
+      const dvat = await GetUserDvat04({
         userid: id,
       });
-
-      if (challan_resposne.data && challan_resposne.data) {
-        setChallanData(challan_resposne.data);
+      if (dvat.status && dvat.data) {
+        setDvatData(dvat.data);
+        const challan_resposne = await GetUserChallan({
+          dvatid: dvat.data.id,
+        });
+        if (challan_resposne.data && challan_resposne.data) {
+          setChallanData(challan_resposne.data);
+        }
       }
 
       setLoading(false);
@@ -93,7 +107,7 @@ const ChallanHistory = () => {
       return toast.error("Enter cpin");
     }
     const search_response = await SearchChallan({
-      userid: id,
+      dvatid: dvatdata?.id,
       cpin: cpinRef.current?.input?.value,
     });
     if (search_response.status && search_response.data) {
@@ -108,7 +122,7 @@ const ChallanHistory = () => {
     }
 
     const search_response = await SearchChallan({
-      userid: id,
+      dvatid: dvatdata?.id,
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
     });

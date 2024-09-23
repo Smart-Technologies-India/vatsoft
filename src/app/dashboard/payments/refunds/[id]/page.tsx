@@ -130,8 +130,10 @@ const RefundsData = () => {
               <p className="text-sm  font-medium">{refundsData?.cpin}</p>
             </div>
             <div>
-              <p className="text-sm">User Tin Number</p>
-              <p className="text-sm  font-medium">{dvat?.tinNumber}</p>
+              <p className="text-sm">Status</p>
+              <p className="text-sm  font-medium">
+                {refundsData?.refundsstatus}
+              </p>
             </div>
             <div>
               <p className="text-sm">Refunds Generation Date</p>
@@ -152,6 +154,10 @@ const RefundsData = () => {
           </div>
           <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
             <div>
+              <p className="text-sm">User Tin Number</p>
+              <p className="text-sm  font-medium">{dvat?.tinNumber}</p>
+            </div>
+            <div>
               <p className="text-sm">Name</p>
               <p className="text-sm  font-medium">
                 {user?.firstName} - {user?.lastName}
@@ -171,7 +177,7 @@ const RefundsData = () => {
                 {capitalcase(refundsData?.reason ?? "")}
               </p>
             </div>
-            <div className="col-span-4">
+            <div className="col-span-3">
               <p className="text-sm">Address</p>
               <p className="text-sm  font-medium">{user?.address}</p>
             </div>

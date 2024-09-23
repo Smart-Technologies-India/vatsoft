@@ -31,6 +31,7 @@ import GetUser from "@/action/user/getuser";
 import GetAllUserDvat from "@/action/register/getalluserdvat";
 import Link from "next/link";
 import GetUserComposition from "@/action/composition/getusercompositon";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 
 const TrackAppliation = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
@@ -59,11 +60,16 @@ const TrackAppliation = () => {
         setUser(userresponse.data);
       }
 
-      const composition_response = await GetUserComposition({
+      const dvat = await GetUserDvat04({
         userid: id,
       });
-      if (composition_response.status && composition_response.data) {
-        setCompData(composition_response.data);
+      if (dvat.status && dvat.data) {
+        const composition_response = await GetUserComposition({
+          dvatid: dvat.data.id,
+        });
+        if (composition_response.status && composition_response.data) {
+          setCompData(composition_response.data);
+        }
       }
     };
     init();

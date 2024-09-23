@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import {
@@ -34,6 +35,7 @@ import AddPayment from "@/action/return/addpayment";
 import { toast } from "react-toastify";
 import CheckPayment from "@/action/return/checkpayment";
 import AddSubmitPayment from "@/action/return/addsubmitpayment";
+import CheckLastPayment from "@/action/return/checklastpayment";
 
 interface PercentageOutput {
   increase: string;
@@ -182,6 +184,22 @@ const Dvat16ReturnPreview = () => {
 
   const onSubmit = async (data: SubmitPaymentForm) => {
     if (return01 == null) return toast.error("There is not return from here");
+    const lastPayment = await CheckLastPayment({
+      id: return01.id ?? 0,
+    });
+    if (!lastPayment.status) {
+      toast.error(lastPayment.message);
+      reset();
+      setPaymentBox(false);
+      return;
+    }
+
+    if (lastPayment.data == false) {
+      toast.error(lastPayment.message);
+      reset();
+      setPaymentBox(false);
+      return;
+    }
 
     const response = await AddPayment({
       id: return01.id ?? 0,
@@ -201,6 +219,23 @@ const Dvat16ReturnPreview = () => {
 
   const onSubmitPayment = async () => {
     if (return01 == null) return toast.error("There is not return from here");
+
+    const lastPayment = await CheckLastPayment({
+      id: return01.id ?? 0,
+    });
+    if (!lastPayment.status) {
+      toast.error(lastPayment.message);
+      reset();
+      setPaymentSubmitBox(false);
+      return;
+    }
+
+    if (lastPayment.data == false) {
+      toast.error(lastPayment.message);
+      reset();
+      setPaymentSubmitBox(false);
+      return;
+    }
 
     const response = await AddSubmitPayment({
       id: return01.id ?? 0,

@@ -51,26 +51,6 @@ const Composition = (props: CompositionProviderProps) => {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useFormContext<CompositionForm>();
-
-  const onSubmit = async (data: CompositionForm) => {
-    const compositionresponse = await CreateComposition({
-      userid: props.userid,
-      compositionScheme: props.composition,
-      turnoverCurrentFinancialYear: data.turnoverCurrentFinancialYear,
-      turnoverLastFinancialYear: data.turnoverLastFinancialYear,
-      remark: data.remark,
-    });
-
-    if (compositionresponse.status) {
-      router.push(`/dashboard/register/track-application-status`);
-    } else {
-      toast.error(compositionresponse.message);
-    }
-    await init();
-
-    reset({});
-  };
-
   const [davtData, setDvatData] = useState<dvat04 | null>(null);
   const [isPending, setIsPending] = useState<boolean>(false);
   const init = async () => {
@@ -110,6 +90,28 @@ const Composition = (props: CompositionProviderProps) => {
     };
     init();
   }, [reset, props.userid, props.composition]);
+
+  const onSubmit = async (data: CompositionForm) => {
+    if (davtData == null) return toast.error("User Dvat not exist");
+
+    const compositionresponse = await CreateComposition({
+      dvatid: davtData.id,
+      createdby: props.userid,
+      compositionScheme: props.composition,
+      turnoverCurrentFinancialYear: data.turnoverCurrentFinancialYear,
+      turnoverLastFinancialYear: data.turnoverLastFinancialYear,
+      remark: data.remark,
+    });
+
+    if (compositionresponse.status) {
+      router.push(`/dashboard/register/track-application-status`);
+    } else {
+      toast.error(compositionresponse.message);
+    }
+    await init();
+
+    reset({});
+  };
 
   if (props.composition == davtData?.compositionScheme) {
     return (

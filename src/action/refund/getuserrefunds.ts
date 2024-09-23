@@ -6,7 +6,7 @@ import { refunds } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 interface GetUserRefundsPayload {
-  userid: number;
+  dvatid: number;
 }
 
 const GetUserRefunds = async (
@@ -20,7 +20,7 @@ const GetUserRefunds = async (
         status: "ACTIVE",
         deletedAt: null,
         deletedById: null,
-        createdById: payload.userid,
+        dvatid: payload.dvatid,
       },
     });
 

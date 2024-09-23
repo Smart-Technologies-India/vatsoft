@@ -44,12 +44,11 @@ const ReturnDashboard = () => {
     []
   );
 
-  const [duedate, setDueDate] = useState<Date | null>(null);
+  const [duedate, setDueDate] = useState<Date>(new Date());
 
-  const search = async () => {
+  const search = async (year: string, period: string) => {
     setSearch(true);
 
-    if (!year || !period) return;
     const returnformsresponse = await getPdfReturn({
       year: year,
       month: period,
@@ -86,7 +85,6 @@ const ReturnDashboard = () => {
       setReturn01(returnformsresponse.data.returns_01);
       serReturns_entryData(returnformsresponse.data.returns_entry);
     } else {
-      // setReturn01(null);
       serReturns_entryData([]);
     }
   };
@@ -139,9 +137,9 @@ const ReturnDashboard = () => {
       });
       if (response.status && response.data) {
         setDvatdata(response.data);
-        response.data.compositionScheme
-          ? setPeriod("June")
-          : setPeriod("April");
+        // response.data.compositionScheme
+        //   ? setPeriod("June")
+        //   : setPeriod("April");
       }
 
       const cusQuarter: Quarter = getQuarterList(
@@ -157,7 +155,14 @@ const ReturnDashboard = () => {
           cusQuarter
         ).at(-1)?.value
       );
-      await search();
+      await search(
+        currentDate.getFullYear().toString(),
+        getPeriodList(
+          new Date(),
+          new Date().getFullYear().toString(),
+          cusQuarter
+        ).at(-1)?.value ?? ""
+      );
     };
     init();
   }, [userid]);
@@ -176,13 +181,16 @@ const ReturnDashboard = () => {
 
     const numberOfYears = 8;
     const periodValues: PeriodValue[] = [];
+    const vatLiableDateyaar = davtdata?.vatLiableDate?.getFullYear() ?? 0;
 
     for (let i = 0; i < numberOfYears; i++) {
       const currentYear = startYear - i;
-      periodValues.push({
-        value: currentYear.toString(),
-        label: `${currentYear}-${(currentYear + 1).toString().slice(-2)}`,
-      });
+      if (vatLiableDateyaar - 1 <= currentYear) {
+        periodValues.push({
+          value: currentYear.toString(),
+          label: `${currentYear}-${(currentYear + 1).toString().slice(-2)}`,
+        });
+      }
     }
 
     return periodValues;
@@ -467,7 +475,7 @@ const ReturnDashboard = () => {
 
             <button
               className="bg-[#172e57] px-4  text-white py-1 rounded-md"
-              onClick={search}
+              onClick={() => search(year ?? "", period ?? "")}
             >
               Search
             </button>
@@ -504,7 +512,7 @@ const ReturnDashboard = () => {
                   return01?.rr_number != undefined &&
                   return01?.rr_number != null
                     ? formateDate(return01.filing_datetime)
-                    : formateDate(duedate ?? new Date())}
+                    : formateDate(duedate)}
                 </p>
               </div>
               <div>

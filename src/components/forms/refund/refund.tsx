@@ -27,6 +27,9 @@ import { CreateRefundForm, CreateRefundSchema } from "@/schema/refunds";
 import { Button } from "antd";
 import CreateRefund from "@/action/refund/createrefund";
 import { onFormError } from "@/utils/methods";
+import { useEffect, useState } from "react";
+import { dvat04 } from "@prisma/client";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 
 type CreateChallanProviderProps = {
   userid: number;
@@ -46,6 +49,18 @@ export const CreateRefundProvider = (props: CreateChallanProviderProps) => {
 const CreateRefundPage = (props: CreateChallanProviderProps) => {
   const router = useRouter();
   const toWords = new ToWords();
+  const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
+  useEffect(() => {
+    const init = async () => {
+      const dvat = await GetUserDvat04({
+        userid: props.userid,
+      });
+      if (dvat.status && dvat.data) {
+        setDvatData(dvat.data);
+      }
+    };
+    init();
+  }, [props.userid]);
 
   const refundReason: OptionValue[] = [
     {
@@ -118,8 +133,11 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
   } = useFormContext<CreateRefundForm>();
 
   const onSubmit = async (data: CreateRefundForm) => {
+    if (dvatdata == null) return toast.error("User Dvat not exist");
+
     const challan_response = await CreateRefund({
-      userid: props.userid,
+      dvatid: dvatdata.id ?? 0,
+      createdby: props.userid,
       cess: data.cess.toString(),
       vat: data.vat.toString(),
       interest: data.interest.toString(),

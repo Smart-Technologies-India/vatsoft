@@ -7,7 +7,8 @@ import prisma from "../../../prisma/database";
 import { customAlphabet } from "nanoid";
 
 interface CreateRefundPayload {
-  userid: number;
+  dvatid: number;
+  createdby: number;
   old_grievance_number?: string;
   oldcpin?: string;
   vat: string;
@@ -34,13 +35,14 @@ const CreateRefund = async (
   try {
     const refunds_response = await prisma.refunds.create({
       data: {
+        dvatid: payload.dvatid,
         cpin: cpin,
         vat: payload.vat,
         cess: payload.cess,
         interest: payload.cess,
         others: payload.others,
         penalty: payload.penalty,
-        createdById: payload.userid,
+        createdById: payload.createdby,
         expire_date: today,
         total_tax_amount: payload.total_tax_amount,
         status: "ACTIVE",

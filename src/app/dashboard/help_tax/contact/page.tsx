@@ -11,18 +11,22 @@ const ContactUs = () => {
         </p>
         <h1 className="text-4xl my-3 font-semibold">Contact Us</h1>
         <p className="text-lg leading-5">
-          We&apos;re here to help adn answer any question you
+          We&apos;re here to help and answer any question you
         </p>
         <p className="text-lg leading-5">
-          might have. We look forwar dto hearing from you!
+          might have. We look forward to hearing from you!
         </p>
-        <p className="mt-4 font-semibold flex gap-6 items-center text-gray-500">
-          <MdiMapMarker />
-          <span>Ankersgade 12C, 1, 8000 Aarhus</span>
+        <p className="mt-4 font-semibold flex gap-6 items-center text-gray-500 w-[28rem]">
+          <MdiMapMarker className="shrink-0" />
+          <span>
+            Value Added Tax / Goods and Service Tax Deptt (UTGST), &quot;A&quot;
+            Wing, Second Floor, District Collectorate, Silvassa, U.T of DD & DNH
+            - 396230
+          </span>
         </p>
         <p className="mt-2 font-semibold flex gap-6 items-center text-gray-500">
           <MdiPhone />
-          <span>+91 00000000000</span>
+          <span>0260-2632000</span>
         </p>
         <p className="mt-2 font-semibold flex gap-6 items-center text-gray-500">
           <MdiEmail />
