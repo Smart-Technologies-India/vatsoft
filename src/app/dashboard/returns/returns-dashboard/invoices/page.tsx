@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { dvat04, DvatType, returns_01, returns_entry } from "@prisma/client";
+import { Button } from "antd";
 import { getCookie } from "cookies-next";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -252,8 +253,8 @@ const AddRecord = () => {
             <></>
           ) : (
             <>
-              <button
-                className="text-sm text-white bg-[#172e57] py-1 px-4"
+              <Button
+                type="primary"
                 onClick={() => {
                   route.push(
                     `/dashboard/returns/returns-dashboard/invoices/bluckupload?form=${searchParams.get(
@@ -267,24 +268,24 @@ const AddRecord = () => {
                 }}
               >
                 Bulk Upload
-              </button>
-              <button
-                className="text-sm text-white bg-[#172e57] py-1 px-4"
+              </Button>
+              <Button
+                type="primary"
                 onClick={() => {
                   route.push(getUrl());
                 }}
               >
-                ADD RECORD
-              </button>
+                Add Record
+              </Button>
             </>
           )}
 
-          <button
-            className="text-sm border hover:border-blue-500 hover:text-blue-500 bg-white text-[#172e57] py-1 px-4"
+          <Button
+            // className="text-sm border hover:border-blue-500 hover:text-blue-500 bg-white text-[#172e57] py-1 px-4"
             onClick={() => route.back()}
           >
-            BACK
-          </button>
+            Back
+          </Button>
         </div>
       </div>
     </div>

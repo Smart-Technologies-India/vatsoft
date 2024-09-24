@@ -174,8 +174,8 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
           placeholder="Enter Authorised signatory name"
           name="numberOfOwners"
           required={true}
-          title="19. Number of person having interest in business"
-          extratax="(also place complete Annexure I for each such person)"
+          title="19. Number of Person having interest in Business"
+          extratax="(Please complete Annexure I)"
           onlynumber={true}
         />
       </div>
@@ -186,7 +186,7 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
             placeholder="Enter Managers count"
             name="numberOfManagers"
             required={true}
-            title="20 Number of Managers"
+            title="20. Number of Managers"
             onlynumber={true}
           />
         </div>

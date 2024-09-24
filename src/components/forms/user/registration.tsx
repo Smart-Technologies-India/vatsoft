@@ -566,9 +566,9 @@ const VatNote = (props: VatNoteProps) => {
     if (
       data.vat_officer_note == undefined ||
       data.vat_officer_note == null ||
-      data.vat_officer_note
+      data.vat_officer_note == ""
     ) {
-      return toast.success("VAt officer comment is required.");
+      return toast.error("VAT officer comment is required.");
     }
 
     if (!dvatdata) return toast.error("There is not any dvat form exist.");
@@ -699,7 +699,7 @@ const VatNote = (props: VatNoteProps) => {
       vat_officer_note == null ||
       vat_officer_note == ""
     ) {
-      return toast.error("VAt officer comment is required.");
+      return toast.error("VAT officer comment is required.");
     }
 
     if (!dvatdata) return toast.error("There is not any dvat form exist.");
@@ -983,7 +983,7 @@ const VatNote = (props: VatNoteProps) => {
 
       <div className="rounded-sm p-4 border border-black mt-8 relative">
         <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
-          Vat officer
+          VAT officer
         </span>
 
         <div className="flex gap-3 mt-3">
@@ -1022,10 +1022,10 @@ const VatNote = (props: VatNoteProps) => {
 
         <div className="mt-2">
           <TaxtAreaInput<RegistrationForm>
-            placeholder="Enter Vat officer Comment"
+            placeholder="Enter VAT officer Comment"
             name="vat_officer_note"
             required={true}
-            title="Vat officer Comment"
+            title="VAT officer Comment"
             maxlength={2000}
           />
         </div>

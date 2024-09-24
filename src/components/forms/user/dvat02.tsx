@@ -74,6 +74,7 @@ export const Dvat02Provider = (props: Dvat01ProviderProps) => {
 const Dvat04 = (props: Dvat01ProviderProps) => {
   const router = useRouter();
   const [isSaveAddress, setIsSameAddress] = useState<boolean>(false);
+  const [isNoPlaces, setNoPlaces] = useState<boolean>(false);
   const [dvatdata, setDvatData] = useState<dvat04>();
 
   const [commodity, setCommodity] = useState<commodity[]>([]);
@@ -136,6 +137,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
     reset,
     handleSubmit,
     formState: { errors, isSubmitting },
+    getValues,
   } = useFormContext<Dvat2Form>();
 
   const onSubmit = async (data: Dvat2Form) => {
@@ -366,6 +368,27 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           12 Number of additional places of business within or outside the state{" "}
           <span className="text-rose-500">(Please Complete annexure II)</span>
         </span>
+
+        <div className="text-sm flex gap-1 items-center ml-32 -translate-y-7 bg-white absolute px-1 right-2">
+          <Checkbox
+            value={isNoPlaces}
+            onChange={(value: CheckboxChangeEvent) => {
+              setNoPlaces(value.target.checked);
+
+              if (value) {
+                const currentValues = getValues();
+                reset({
+                  ...currentValues,
+                  additionalGodown: "0",
+                  additionalFactory: "0",
+                  additionalShops: "0",
+                  otherPlaceOfBusiness: "0",
+                });
+              }
+            }}
+          />
+          <p>No additional place of business</p>
+        </div>
         <div className="flex gap-4 mt-2">
           <div className="flex-1">
             <TaxtInput<Dvat2Form>
@@ -374,6 +397,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               required={true}
               title="Godown"
               onlynumber={true}
+              disable={isNoPlaces}
             />
           </div>
           <div className="flex-1">
@@ -383,6 +407,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               required={true}
               title="Factory"
               onlynumber={true}
+              disable={isNoPlaces}
             />
           </div>
         </div>
@@ -394,6 +419,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               required={true}
               title="Shops"
               onlynumber={true}
+              disable={isNoPlaces}
             />
           </div>
           <div className="flex-1">
@@ -403,6 +429,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               required={true}
               title="Other Place of Business"
               onlynumber={true}
+              disable={isNoPlaces}
             />
           </div>
         </div>

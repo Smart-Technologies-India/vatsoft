@@ -144,7 +144,7 @@ export default function LoginPage() {
         <div className="flex-1 grid place-items-center bg-white rounded-r-md">
           <div>
             <h1 className="text-lg font-semibold mt-6 text-center">
-              Welcome to Vat-Soft
+              Welcome to VAT-SMART
             </h1>
             <h1 className="text-sm font-normal pb-2 text-center">
               Login to access your Account

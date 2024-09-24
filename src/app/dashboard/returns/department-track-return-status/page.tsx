@@ -14,7 +14,6 @@ import { Radio, DatePicker } from "antd";
 import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
-import { MaterialSymbolsClose } from "@/components/icons";
 import {
   Drawer,
   DrawerClose,
@@ -24,12 +23,12 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import GetUserTrackPayment from "@/action/return/getusertrackpayment";
 import { getCookie } from "cookies-next";
 import { returns_01 } from "@prisma/client";
 import { capitalcase, formateDate } from "@/utils/methods";
 import GetTrackPayment from "@/action/return/gettrackpayment";
 import Link from "next/link";
+import SearchReturn from "@/action/return/searchreturn";
 
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
@@ -65,11 +64,10 @@ const TrackAppliation = () => {
 
   useEffect(() => {
     const init = async () => {
-      const payment_data = await GetTrackPayment({});
+      const payment_data = await SearchReturn({});
 
       if (payment_data.status && payment_data.data) {
-        // setPaymentData(payment_data.data);
-        console.log(payment_data.data);
+        setPaymentData(payment_data.data);
       }
     };
     init();

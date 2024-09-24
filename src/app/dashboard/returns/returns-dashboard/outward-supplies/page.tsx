@@ -438,7 +438,7 @@ const GSTR = () => {
               className="text-sm border hover:border-blue-500 hover:text-blue-500 bg-white text-[#172e57] py-1 px-4"
               onClick={() => route.back()}
             >
-              BACK
+              Back
             </button>
           </div>
         </div>

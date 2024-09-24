@@ -55,7 +55,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
   const router = useRouter();
 
   const typeOfPerson: OptionValue[] = [
-    { value: "BRACH_OFFICE", label: "BRACH_OFFICE" },
+    { value: "BRANCH_OFFICE", label: "Branch Office" },
     { value: "FACTORY", label: "FACTORY" },
     { value: "GODOWN", label: "GODOWN" },
     { value: "SHOP", label: "SHOP" },

@@ -129,7 +129,7 @@ const DocumentWiseDetails = () => {
         <div className="flex mt-2 gap-2">
           <div className="grow"></div>
           <Button type="default" onClick={() => route.back()}>
-            BACK
+            Back
           </Button>
         </div>
       </div>

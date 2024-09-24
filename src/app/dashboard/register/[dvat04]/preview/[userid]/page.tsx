@@ -336,15 +336,7 @@ const UserRegister = (props: UserRegisterProps) => {
           </div>
           <div className="col-span-2">
             <p className="text-xs font-normal text-gray-500">Address</p>
-            <p className="font-medium text-sm ">
-              {userdata?.lastName ?? ""}
-              Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dolor ex
-              magni recusandae quam. Debitis eos itaque ea fugiat eaque sint
-              perferendis, ex voluptates a! Molestiae repellat, magni facilis
-              sunt explicabo possimus aliquid eos unde? Voluptatem doloremque
-              voluptate aut aperiam cumque, similique ea dolore neque minus sit
-              tempore cupiditate itaque consequatur est nisi dolor iusto dolorem
-            </p>
+            <p className="font-medium text-sm ">{userdata?.address ?? ""}</p>
           </div>
         </div>
       </div>
@@ -781,7 +773,7 @@ const Dvat1Page = (props: Dvat1PageProps) => {
                   {vatLiableDate ? (
                     format(vatLiableDate, "PPP")
                   ) : (
-                    <span>Vat Liable Date</span>
+                    <span>VAT Liable Date</span>
                   )}
                 </Button>
               </PopoverTrigger>
@@ -1219,7 +1211,7 @@ const Dvat2Page = (props: Dvat2PageProps) => {
 
         <div className="rounded-sm p-4 border border-black mt-6 relative">
           <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
-            11 Address for service of notice (If Diffrent From Principle Place
+            11 Address for service of notice (If Different From Principle Place
             of Business)
           </span>
 
@@ -2000,7 +1992,7 @@ const Dvat3Page = (props: Dvat3PageProps) => {
                     {dateOfExpiry ? (
                       format(dateOfExpiry, "PPP")
                     ) : (
-                      <span>VatLiable Date date</span>
+                      <span>VATLiable Date date</span>
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -2022,14 +2014,13 @@ const Dvat3Page = (props: Dvat3PageProps) => {
         </div>
 
         <div className="flex-1 mt-2">
-          <Label htmlFor="numbertofowners" className="text-sm font-normal">
-            19. Number of person having interest in business{" "}
-            <span className="text-red-500">*</span>
-          </Label>
-          <p className="text-red-500 text-sm">
-            (also place complete Annexure I for each such person)
-          </p>
-
+          <div className="flex gap-2">
+            <Label htmlFor="numbertofowners" className="text-sm font-normal">
+              19. Number of Person having interest in Business{" "}
+              <span className="text-red-500">*</span>
+            </Label>
+            <p className="text-red-500 text-sm">(Please complete Annexure I)</p>
+          </div>
           <Input
             ref={numberOfOwnersRef}
             type="text"
@@ -2044,7 +2035,7 @@ const Dvat3Page = (props: Dvat3PageProps) => {
         <div className="flex gap-4 mt-2">
           <div className="flex-1">
             <Label htmlFor="numbertofmanagers" className="text-sm font-normal">
-              20 Number of Managers <span className="text-red-500">*</span>
+              20. Number of Managers <span className="text-red-500">*</span>
             </Label>
             <Input
               ref={numberOfManagersRef}
@@ -2363,12 +2354,12 @@ const Anx1Page = (props: Anx1PageProps) => {
                   <RadioGroupItem
                     value="FEMALE"
                     id="FEMALE"
-                    onClick={() => setGender(Gender.FEAMLE)}
+                    onClick={() => setGender(Gender.FEMALE)}
                   />
                   <Label
                     htmlFor="FEMALE"
                     className="cursor-pointer  text-xs font-normal"
-                    onClick={() => setGender(Gender.FEAMLE)}
+                    onClick={() => setGender(Gender.FEMALE)}
                   >
                     FEMALE
                   </Label>
@@ -2825,7 +2816,7 @@ const Anx2Page = (props: Anx2PageProps) => {
                 </SelectTrigger>
                 <SelectContent className="max-h-64">
                   <SelectGroup>
-                    <SelectItem value={"BRACH_OFFICE"}>
+                    <SelectItem value={"BRANCH_OFFICE"}>
                       Branch Office
                     </SelectItem>
                     <SelectItem value={"FACTORY"}>Factory</SelectItem>

@@ -15,7 +15,6 @@ import { Radio, DatePicker } from "antd";
 import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
-import { MaterialSymbolsClose } from "@/components/icons";
 import {
   Drawer,
   DrawerClose,

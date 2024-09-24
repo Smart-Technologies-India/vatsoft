@@ -24,8 +24,8 @@ const Dvat3Schema = object({
     minLength(1, "Transaction ID is required.")
   ),
   numberOfOwners: pipe(
-    string("Number of person interested in business is required."),
-    minLength(1, "Number of person interested in business is required.")
+    string("Number of Person interested in Business is required."),
+    minLength(1, "Number of Person interested in Business is required.")
   ),
   numberOfManagers: pipe(
     string("Number of Managers is required."),

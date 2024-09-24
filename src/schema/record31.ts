@@ -6,10 +6,10 @@ import {
   SaleOf,
   SaleOfInterstate,
 } from "@prisma/client";
-import { enum_, InferInput, minLength, minValue, number, object, string, pipe } from "valibot"
+import { enum_, InferInput, minLength, minValue, number, object, string, pipe, optional } from "valibot"
 
 const record31Schema = object({
-  rr_number: pipe(string(), minLength(1, "RR Number is required.")),
+  rr_number: optional(string()),
   return_type: enum_(ReturnType, "Return Type is required."),
   year: pipe(string(), minLength(1, "year is required.")),
   quarter: enum_(Quarter, "quarter Type is required."),
@@ -31,7 +31,7 @@ const record31Schema = object({
   amount: pipe(string(), minLength(1, "Amount is required.")),
   description_of_goods: pipe(string(), minLength(1, "Description of goods is required.") ,),
   // remarks: string([minLength(1, "Remarks is required.")]),
-  vatamount: pipe(string(), minLength(1, "Vat Amount is required.")),
+  vatamount: pipe(string(), minLength(1, "VAT Amount is required.")),
   // status: enum_(Status, "File Status is required."),
 });
 

@@ -154,7 +154,7 @@ const RefundsData = () => {
           </div>
           <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
             <div>
-              <p className="text-sm">User Tin Number</p>
+              <p className="text-sm">User TIN Number</p>
               <p className="text-sm  font-medium">{dvat?.tinNumber}</p>
             </div>
             <div>

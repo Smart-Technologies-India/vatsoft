@@ -247,7 +247,7 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
           </TableHeader>
           <TableBody>
             <TableRow>
-              <TableCell className="font-medium p-2 border">Vat Tax</TableCell>
+              <TableCell className="font-medium p-2 border">VAT Tax</TableCell>
               <TableCell className="p-2 border">0.00</TableCell>
               <TableCell className="p-2 border">0.00</TableCell>
               <TableCell className="p-2 border">0.00</TableCell>
@@ -287,7 +287,7 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
           </TableHeader>
           <TableBody>
             <TableRow>
-              <TableCell className="font-medium p-2 border">Vat Tax</TableCell>
+              <TableCell className="font-medium p-2 border">VAT Tax</TableCell>
               <TableCell className="p-2 border">
                 <TaxtInput<CreateRefundForm>
                   name="vat"

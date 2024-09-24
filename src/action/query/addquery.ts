@@ -4,14 +4,14 @@ interface AddQueryPayload {}
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
-import { deparment_doc_upload } from "@prisma/client";
+import { department_doc_upload } from "@prisma/client";
 
 const AddQuery = async (
   payload: AddQueryPayload
-): Promise<ApiResponseType<deparment_doc_upload | null>> => {
+): Promise<ApiResponseType<department_doc_upload | null>> => {
   const functionname: string = AddQuery.name;
   try {
-    const response = await prisma.deparment_doc_upload.create({
+    const response = await prisma.department_doc_upload.create({
       data: {
         path: "test",
         createdById: 1,

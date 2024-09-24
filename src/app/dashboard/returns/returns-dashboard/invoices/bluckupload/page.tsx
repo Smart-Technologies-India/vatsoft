@@ -346,7 +346,7 @@ const BulkUpload = () => {
                     Taxable value
                   </TableHead>
                   <TableHead className="whitespace-nowrap border text-center py-1 h-6 text-xs">
-                    Vat amount
+                    VAT amount
                   </TableHead>
                   <TableHead className="whitespace-nowrap border text-center py-1 h-6 text-xs">
                     Description
@@ -921,7 +921,7 @@ const BulkUpload = () => {
                   className="text-sm border hover:border-blue-500 hover:text-blue-500 bg-white text-[#172e57] py-1 px-4"
                   onClick={() => route.back()}
                 >
-                  BACK
+                  Back
                 </button>
               </div>
             )}

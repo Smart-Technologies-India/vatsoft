@@ -39,7 +39,7 @@ enum Role {
 
 enum Gender {
   MALE
-  FEAMLE
+  FEMALE
   OTHER
 }
 
@@ -162,7 +162,7 @@ enum TitleParticulasOfperson {
 }
 
 enum TypeOfPerson {
-  BRACH_OFFICE
+  BRANCH_OFFICE
   FACTORY
   GODOWN
   SHOP
@@ -280,6 +280,32 @@ enum ChallanReason {
   OTHERS
 }
 
+enum NoticeOrderType {
+  ORDER
+  NOTICE
+}
+
+enum FormType {
+  DVAT10
+  DVAT24
+  DVAT24A
+}
+
+enum OrderNoticeStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  PAID
+  CLOSED
+}
+
+enum Dvat24Reason {
+  NOTFURNISHED
+  INCOMPLETEFURNISHED
+  INCORRECTRETURN
+  NOTCOMPLYRETURN
+}
+
 model user {
   id                    Int        @id @default(autoincrement())
   firstName             String?
@@ -367,9 +393,9 @@ model user {
   returns_entry_deletedBy returns_entry[] @relation("returns_entry_deletedBy")
 
   // department doc upload
-  department_doc_upload_createdBy deparment_doc_upload[] @relation("department_doc_upload_createdBy")
-  department_doc_upload_updatedBy deparment_doc_upload[] @relation("department_doc_upload_updatedBy")
-  department_doc_upload_deletedBy deparment_doc_upload[] @relation("department_doc_upload_deletedBy")
+  department_doc_upload_createdBy department_doc_upload[] @relation("department_doc_upload_createdBy")
+  department_doc_upload_updatedBy department_doc_upload[] @relation("department_doc_upload_updatedBy")
+  department_doc_upload_deletedBy department_doc_upload[] @relation("department_doc_upload_deletedBy")
 
   //challan
   challan_createdBy challan[] @relation("challan_createdBy")
@@ -385,6 +411,13 @@ model user {
   composition_createdBy composition[] @relation("composition_createdBy")
   composition_updatedBy composition[] @relation("composition_updatedBy")
   composition_deletedBy composition[] @relation("composition_deletedBy")
+
+  //order_notice
+  order_notice_createdBy order_notice[] @relation("order_notice_createdBy")
+  order_notice_updatedBy order_notice[] @relation("order_notice_updatedBy")
+  order_notice_deletedBy order_notice[] @relation("order_notice_deletedBy")
+  officer                order_notice[] @relation("officer")
+  issued                 order_notice[] @relation("issued")
 
   registration registration[]
   composition  composition[]
@@ -552,6 +585,7 @@ model dvat04 {
   challan      challan[]
   refunds      refunds[]
   composition  composition[]
+  order_notice order_notice[]
 }
 
 model commodity {
@@ -616,7 +650,7 @@ model annexure2 {
   id                      Int                     @id @default(autoincrement())
   dvat                    dvat04                  @relation(fields: [dvatId], references: [id])
   dvatId                  Int
-  typeOfPerson            TypeOfPerson            @default(BRACH_OFFICE)
+  typeOfPerson            TypeOfPerson            @default(BRANCH_OFFICE)
   name                    String?
   branchName              String?
   contact                 String?
@@ -795,7 +829,7 @@ model returns_entry {
   deletedById            Int?
 }
 
-model deparment_doc_upload {
+model department_doc_upload {
   id          Int       @id @default(autoincrement())
   path        String
   status      Status    @default(ACTIVE)
@@ -811,9 +845,9 @@ model deparment_doc_upload {
 }
 
 model challan {
-  id               Int           @id @default(autoincrement())
-  reason           ChallanReason @default(MONTHLYPAYMENT)
-  dvat             dvat04        @relation(fields: [dvatid], references: [id])
+  id               Int            @id @default(autoincrement())
+  reason           ChallanReason  @default(MONTHLYPAYMENT)
+  dvat             dvat04         @relation(fields: [dvatid], references: [id])
   dvatid           Int
   cpin             String
   vat              String
@@ -827,19 +861,20 @@ model challan {
   transaction_id   String?
   bank_name        String?
   track_id         String?
-  remark           String?       @db.MediumText
-  challanstatus    ChallanStatus @default(CREATED)
-  status           Status        @default(ACTIVE)
+  remark           String?        @db.MediumText
+  challanstatus    ChallanStatus  @default(CREATED)
+  status           Status         @default(ACTIVE)
   expire_date      DateTime
-  createdAt        DateTime      @default(now())
-  createdBy        user          @relation("challan_createdBy", fields: [createdById], references: [id])
+  createdAt        DateTime       @default(now())
+  createdBy        user           @relation("challan_createdBy", fields: [createdById], references: [id])
   createdById      Int
-  updatedAt        DateTime      @updatedAt
-  updatedBy        user?         @relation("challan_updatedBy", fields: [updatedById], references: [id])
+  updatedAt        DateTime       @updatedAt
+  updatedBy        user?          @relation("challan_updatedBy", fields: [updatedById], references: [id])
   updatedById      Int?
   deletedAt        DateTime?
-  deletedBy        user?         @relation("challan_deletedBy", fields: [deletedById], references: [id])
+  deletedBy        user?          @relation("challan_deletedBy", fields: [deletedById], references: [id])
   deletedById      Int?
+  order_notice     order_notice[]
 }
 
 model refunds {
@@ -903,4 +938,44 @@ model composition {
   deletedAt                    DateTime?
   deletedBy                    user?             @relation("composition_deletedBy", fields: [deletedById], references: [id])
   deletedById                  Int?
+}
+
+model order_notice {
+  id                Int             @id @default(autoincrement())
+  dvat              dvat04          @relation(fields: [dvatid], references: [id])
+  dvatid            Int
+  ref_no            String
+  issue_date        DateTime
+  notice_order_type NoticeOrderType @default(NOTICE)
+  form_type         FormType        @default(DVAT10)
+  tax_period_from   DateTime?
+  tax_period_to     DateTime?
+  due_date          DateTime
+  tax               String?
+  interest          String?
+  amount            String?
+  notice            String?
+  description       String?
+  reason_for_notice String
+  dealer_presence   DateTime?
+  challan           challan?        @relation(fields: [challanId], references: [id])
+  challanId         Int?
+  dvat24_reason     Dvat24Reason    @default(NOTFURNISHED)
+  issued            user            @relation("issued", fields: [issuedId], references: [id])
+  issuedId          Int
+
+  officer   user @relation("officer", fields: [officerId], references: [id])
+  officerId Int
+
+  remark      String            @db.MediumText
+  status      OrderNoticeStatus @default(ACTIVE)
+  createdAt   DateTime          @default(now())
+  createdBy   user              @relation("order_notice_createdBy", fields: [createdById], references: [id])
+  createdById Int
+  updatedAt   DateTime          @updatedAt
+  updatedBy   user?             @relation("order_notice_updatedBy", fields: [updatedById], references: [id])
+  updatedById Int?
+  deletedAt   DateTime?
+  deletedBy   user?             @relation("order_notice_deletedBy", fields: [deletedById], references: [id])
+  deletedById Int?
 }

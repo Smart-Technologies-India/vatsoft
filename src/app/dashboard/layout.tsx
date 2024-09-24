@@ -43,6 +43,7 @@ export default function DashboardLayout({
   };
   useEffect(() => {
     init();
+
     // Handle back button (popstate) event
     const handlePopState = () => {
       init(); // Re-run init when the user navigates back to the page

@@ -162,7 +162,7 @@ const ChallanData = () => {
               <p className="text-sm  font-medium">{user?.mobileOne}</p>
             </div>
             <div>
-              <p className="text-sm">User Tin Number</p>
+              <p className="text-sm">User TIN Number</p>
               <p className="text-sm  font-medium">{dvat?.tinNumber}</p>
             </div>
             <div>

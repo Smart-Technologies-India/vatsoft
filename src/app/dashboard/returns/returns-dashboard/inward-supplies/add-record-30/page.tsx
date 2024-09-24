@@ -219,7 +219,7 @@ const AddRecord = () => {
         year: result.output.year,
         month: result.output.month,
         quarter: result.output.quarter,
-        rr_number: result.output.rr_number,
+        rr_number: result.output.rr_number ?? "",
         returnType: result.output.return_type,
         total_tax_amount: result.output.total_tax_amount,
         dvat_type: result.output.dvat_type,
@@ -279,6 +279,18 @@ const AddRecord = () => {
               name="vatno"
               className="px-2 py-1  focus-visible:ring-transparent h-8 placeholder:text-xs rounded-sm mt-1"
               placeholder="Recipient VAT NO."
+              onChange={(e) => {
+                if (!e.target.value) return;
+                tin_user_search(e.target.value);
+              }}
+              onPaste={(e: any) => {
+                if (!e.target.value) return;
+                tin_user_search(e.target.value);
+              }}
+              onSelect={(e: any) => {
+                if (!e.target.value) return;
+                tin_user_search(e.target.value);
+              }}
               onBlur={(e: FocusEvent<HTMLInputElement> | undefined) => {
                 if (!e || !e.target.value) return;
                 tin_user_search(e.target.value);
@@ -579,11 +591,11 @@ const AddRecord = () => {
               className="py-1 px-4 rounded bg-blue-500 text-sm text-white hover:bg-blue-600"
               onClick={addrecord}
             >
-              SAVE
+              Save
             </button>
           )}
           <Button type="default" onClick={() => route.back()}>
-            BACK
+            Back
           </Button>
         </div>
       </div>

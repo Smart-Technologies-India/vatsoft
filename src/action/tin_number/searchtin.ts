@@ -30,7 +30,7 @@ const SearchTin = async (
     return {
       status: true,
       data: tinuser,
-      message: "Tin user data get successfully",
+      message: "TIN user data get successfully",
       functionname: "SearchTin",
     };
   } catch (e) {

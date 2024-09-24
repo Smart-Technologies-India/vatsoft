@@ -22,7 +22,7 @@ import { MultiSelect } from "../inputfields/multiselect";
 import { OptionValue } from "@/models/main";
 import { DateSelect } from "../inputfields/dateselect";
 import { toast } from "react-toastify";
-import { annexure1 } from "@prisma/client";
+import { annexure1, dvat04 } from "@prisma/client";
 import { ApiResponseType } from "@/models/response";
 import { Anx1Form, Anx1Schema } from "@/schema/anx1";
 import { Button, Checkbox, Popover } from "antd";
@@ -34,6 +34,7 @@ import GetAnx1 from "@/action/anx1/getanx1";
 import Anx1Create from "@/action/anx1/addanx1";
 import DeleteAnx1 from "@/action/anx1/deleteanx1";
 import { onFormError } from "@/utils/methods";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 
 type Anx1ProviderProps = {
   dvatid: number;
@@ -64,7 +65,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
 
   const gender: OptionValue[] = [
     { value: "MALE", label: "MALE" },
-    { value: "FEAMLE", label: "FEAMLE" },
+    { value: "FEMALE", label: "FEMALE" },
   ];
 
   const {
@@ -76,6 +77,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
 
   const [isSaveAddress, setIsSameAddress] = useState<boolean>(false);
   const [anx1id, setAnxid] = useState<number>(0);
+  const [dvatData, setDvatData] = useState<dvat04 | null>(null);
 
   const onSubmit = async (data: Anx1Form) => {
     const userrespone: ApiResponseType<annexure1 | null> = await Anx1Create({
@@ -125,6 +127,12 @@ const Anx1 = (props: Anx1ProviderProps) => {
 
   useEffect(() => {
     const init = async () => {
+      const dvat_response = await GetUserDvat04({
+        userid: props.userid,
+      });
+      if (dvat_response.status && dvat_response.data) {
+        setDvatData(dvat_response.data);
+      }
       const getanx1resposne = await GetAnx1({ dvatid: props.dvatid });
 
       if (getanx1resposne.status) {
@@ -474,7 +482,16 @@ const Anx1 = (props: Anx1ProviderProps) => {
               e.preventDefault();
               if (Annexuredata.length === 0)
                 return toast.error("Please add Annexure I");
-              router.push(`/dashboard/new-registration/${props.dvatid}/anx2`);
+              if (
+                dvatData?.additionalGodown == "0" &&
+                dvatData?.additionalFactory == "0" &&
+                dvatData?.additionalShops == "0" &&
+                dvatData?.otherPlaceOfBusiness == "0"
+              ) {
+                router.push(`/dashboard/new-registration/${props.dvatid}/anx3`);
+              } else {
+                router.push(`/dashboard/new-registration/${props.dvatid}/anx2`);
+              }
             }}
             className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
           >

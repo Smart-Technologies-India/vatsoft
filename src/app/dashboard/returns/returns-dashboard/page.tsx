@@ -495,7 +495,7 @@ const ReturnDashboard = () => {
                 </p>
               </div>
               <div>
-                <p className="text-sm">User Tin Number</p>
+                <p className="text-sm">User TIN Number</p>
                 <p className="text-sm  font-medium">{davtdata?.tinNumber}</p>
               </div>
 
@@ -581,9 +581,9 @@ const ReturnDashboard = () => {
           </button>
           {isSearch && (
             <>
-              <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
+              {/* <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
                 Save
-              </button>
+              </button> */}
 
               {ispreview() && (
                 <>

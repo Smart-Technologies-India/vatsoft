@@ -76,6 +76,34 @@ const Sidebar = (props: SidebarProps) => {
         path={path}
         pathcheck={"/dashboard/register"}
       />
+      {!["USER"].includes(props.role) && (
+        <>
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={<Fa6RegularFileLines className="text-gray-300  w-6" />}
+            name="Returns"
+            path={path}
+            pathcheck={"/dashboard/returns"}
+          />
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={
+              <FluentWalletCreditCard20Regular className="text-gray-300 text-xl  w-6" />
+            }
+            name="Payments"
+            path={path}
+            pathcheck={"/dashboard/payments"}
+          />
+
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={<LucideUser className="text-gray-300  w-6" />}
+            name="User Services"
+            path={path}
+            pathcheck={"/dashboard/user_service"}
+          />
+        </>
+      )}
       {isProfileCompletd && ["USER"].includes(props.role) && (
         <>
           <MenuTab
@@ -85,25 +113,26 @@ const Sidebar = (props: SidebarProps) => {
             path={path}
             pathcheck={"/dashboard/returns"}
           />
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={
+              <FluentWalletCreditCard20Regular className="text-gray-300 text-xl  w-6" />
+            }
+            name="Payments"
+            path={path}
+            pathcheck={"/dashboard/payments"}
+          />
+
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={<LucideUser className="text-gray-300  w-6" />}
+            name="User Services"
+            path={path}
+            pathcheck={"/dashboard/user_service"}
+          />
         </>
       )}
-      <MenuTab
-        click={() => props.setIsOpen(false)}
-        icon={
-          <FluentWalletCreditCard20Regular className="text-gray-300 text-xl  w-6" />
-        }
-        name="Payments"
-        path={path}
-        pathcheck={"/dashboard/payments"}
-      />
 
-      <MenuTab
-        click={() => props.setIsOpen(false)}
-        icon={<LucideUser className="text-gray-300  w-6" />}
-        name="User Services"
-        path={path}
-        pathcheck={"/dashboard/user_service"}
-      />
       {["USER"].includes(props.role) && (
         <MenuTab
           click={() => props.setIsOpen(false)}

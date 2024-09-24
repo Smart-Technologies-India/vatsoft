@@ -677,7 +677,7 @@ const Dvat16ReturnPreview = () => {
                 Company Name : {return01?.dvat04.tradename}
               </h1>
               <p className="text-center text-xs  leading-4">
-                Tin Number : {return01?.dvat04.tinNumber} Period (
+                TIN Number : {return01?.dvat04.tinNumber} Period (
                 {return01?.month} {return01?.year})
               </p>
             </div>
@@ -2178,7 +2178,7 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
               Name of the Dealer Fro mwhom Goods Purchased
             </th>
             <th className="border border-black px-1 leading-4 text-[0.6rem] w-[10%] text-left">
-              Tin no of selling dealer
+              TIN no of selling dealer
             </th>
             <th className="border border-black px-1 leading-4 text-[0.6rem] w-[18%] text-left">
               Description of Goods
@@ -2190,7 +2190,7 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
               Total Amount of tax Invoice
             </th>
             <th className="border border-black px-1 leading-4 text-[0.6rem] w-[6%] text-left">
-              Vat Charged
+              VAT Charged
             </th>
             <th className="border border-black px-1 leading-4 text-[0.6rem] w-[6%] text-left">
               Rate of Charged

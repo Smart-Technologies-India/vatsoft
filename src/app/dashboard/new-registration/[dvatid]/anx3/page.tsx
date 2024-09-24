@@ -21,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { ApiResponseType } from "@/models/response";
 import Anx1Update from "@/action/anx1/updateauth";
 import GetAnx1 from "@/action/anx1/getanx1";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 
 const Dvat2Page = () => {
   const { dvatid } = useParams<{ dvatid: string | string[] }>();
@@ -33,6 +34,7 @@ const Dvat2Page = () => {
   const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmit, setIsSubmit] = useState<boolean>(false);
+  const [dvatData, setDvatData] = useState<dvat04 | null>(null);
 
   const [Annexuredata, setAnnexuredata] = useState<annexure1[]>([]);
 
@@ -43,6 +45,13 @@ const Dvat2Page = () => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+
+      const dvat_response = await GetUserDvat04({
+        userid: current_user_id,
+      });
+      if (dvat_response.status && dvat_response.data) {
+        setDvatData(dvat_response.data);
+      }
 
       const user = await GetUser({ id: current_user_id });
 
@@ -143,9 +152,18 @@ const Dvat2Page = () => {
           <div className="p-4 flex gap-2">
             <div className="grow"></div>
             <Button
-              onClick={() =>
-                router.push(`/dashboard/new-registration/${dvat04id}/anx2`)
-              }
+              onClick={() => {
+                if (
+                  dvatData?.additionalGodown == "0" &&
+                  dvatData?.additionalFactory == "0" &&
+                  dvatData?.additionalShops == "0" &&
+                  dvatData?.otherPlaceOfBusiness == "0"
+                ) {
+                  router.push(`/dashboard/new-registration/${dvat04id}/anx1`);
+                } else {
+                  router.push(`/dashboard/new-registration/${dvat04id}/anx2`);
+                }
+              }}
               className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
             >
               Previous

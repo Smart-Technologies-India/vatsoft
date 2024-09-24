@@ -68,7 +68,7 @@ const CreateChallanPage = (props: DepartmentCreateChallanProviderProps) => {
       tinnumberRef.current?.input?.value == undefined ||
       tinnumberRef.current?.input?.value == ""
     ) {
-      return toast.error("Enter tin number in order to search");
+      return toast.error("Enter TIN number in order to search");
     }
 
     const dvat_response = await SearchTinNumber({
@@ -141,8 +141,8 @@ const CreateChallanPage = (props: DepartmentCreateChallanProviderProps) => {
     <>
       <div className="p-2 bg-gray-50 mt-2 flex gap-4">
         <div className="flex gap-4  items-center">
-          <p className="shrink-0">Enter Tin Number : </p>
-          <Input ref={tinnumberRef} placeholder="Tin Number" required={true} />
+          <p className="shrink-0">Enter TIN Number : </p>
+          <Input ref={tinnumberRef} placeholder="TIN Number" required={true} />
           <Button onClick={searchUser} type="primary">
             Search
           </Button>
@@ -155,7 +155,7 @@ const CreateChallanPage = (props: DepartmentCreateChallanProviderProps) => {
           </div>
           <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
             <div>
-              <p className="text-sm">User Tin Number</p>
+              <p className="text-sm">User TIN Number</p>
               <p className="text-sm  font-medium">{dvatdata?.tinNumber}</p>
             </div>
             <div>
