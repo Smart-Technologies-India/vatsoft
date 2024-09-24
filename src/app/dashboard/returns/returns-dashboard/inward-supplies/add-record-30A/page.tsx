@@ -34,6 +34,7 @@ import {
 } from "antd";
 import { getCookie } from "cookies-next";
 import dayjs, { Dayjs } from "dayjs";
+import { customAlphabet } from "nanoid";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FocusEvent, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -193,6 +194,7 @@ const AddRecord = () => {
       setIsSubmit(false);
       return toast.error("Invoice value cannot be less than taxable value");
     }
+    const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstunvxyz", 12);
 
     const result = safeParse(record30ASchema, {
       rr_number: "",
@@ -202,7 +204,7 @@ const AddRecord = () => {
       month: searchParams.get("month")?.toString(),
       total_tax_amount: vatAmount,
       dvat_type: DvatType.DVAT_30_A,
-      urn_number: "",
+      urn_number: nanoid(),
       invoice_number: invoice_numberRef.current?.input?.value,
       total_invoice_number: invoice_numberRef.current?.input?.value,
       invoice_date: invoice_date?.toISOString(),
