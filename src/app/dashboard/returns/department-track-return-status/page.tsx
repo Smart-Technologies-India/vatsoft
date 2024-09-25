@@ -29,6 +29,7 @@ import { capitalcase, formateDate } from "@/utils/methods";
 import GetTrackPayment from "@/action/return/gettrackpayment";
 import Link from "next/link";
 import SearchReturn from "@/action/return/searchreturn";
+import SearchReturnPayment from "@/action/return/searchreturnpayment";
 
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
@@ -64,7 +65,7 @@ const TrackAppliation = () => {
 
   useEffect(() => {
     const init = async () => {
-      const payment_data = await SearchReturn({});
+      const payment_data = await SearchReturnPayment({});
 
       if (payment_data.status && payment_data.data) {
         setPaymentData(payment_data.data);
@@ -101,6 +102,8 @@ const TrackAppliation = () => {
   };
 
   const get_month = (composition: boolean, month: string): string => {
+    console.log(composition);
+    console.log(month);
     if (composition) {
       if (["January", "February", "March"].includes(capitalcase(month))) {
         return "Jan-Mar";
@@ -116,7 +119,7 @@ const TrackAppliation = () => {
         return "Jan-Mar";
       }
     } else {
-      return month.slice(0, -3);
+      return month;
     }
   };
 
@@ -246,7 +249,7 @@ const TrackAppliation = () => {
                   Date of filing
                 </TableHead>
                 <TableHead className="whitespace-nowrap text-center border p-2">
-                  Status
+                  Filing Type
                 </TableHead>
                 <TableHead className="whitespace-nowrap text-center border p-2">
                   Mode of filing
@@ -294,7 +297,7 @@ const TrackAppliation = () => {
                       {formateDate(new Date(val.transaction_date!))}
                     </TableCell>
                     <TableCell className="border text-center p-2">
-                      Filed
+                      {val.compositionScheme ? "COMP" : "REG"}
                     </TableCell>
                     <TableCell className="border text-center p-2">
                       {val.paymentmode}

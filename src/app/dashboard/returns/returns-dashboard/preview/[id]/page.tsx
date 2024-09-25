@@ -20,12 +20,13 @@ import {
   returns_entry,
   SaleOf,
   SaleOfInterstate,
+  user,
 } from "@prisma/client";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 
-import { Modal } from "antd";
+import { Button, Modal } from "antd";
 import { useForm } from "react-hook-form";
 import {
   SubmitPaymentForm,
@@ -59,6 +60,8 @@ const Dvat16ReturnPreview = () => {
 
   const searchparam = useSearchParams();
 
+  const [user, setUser] = useState<user | null>();
+
   const [isAllNil, setAllNil] = useState<boolean>(false);
   const [lateFees, setLateFees] = useState<number>(0);
 
@@ -76,6 +79,7 @@ const Dvat16ReturnPreview = () => {
       if (returnformsresponse.status && returnformsresponse.data) {
         setReturn01(returnformsresponse.data.returns_01);
         serReturns_entryData(returnformsresponse.data.returns_entry);
+        setUser(returnformsresponse.data.returns_01.createdBy);
 
         const dvat_30: boolean =
           returnformsresponse.data.returns_entry.filter(
@@ -627,7 +631,10 @@ const Dvat16ReturnPreview = () => {
             <button
               disabled={isSubmitting}
               className="py-1 rounded-md border px-4 text-sm text-gray-600"
-              onClick={() => setPaymentBox(false)}
+              onClick={(e) => {
+                e.preventDefault();
+                setPaymentBox(false);
+              }}
             >
               Close
             </button>
@@ -957,41 +964,53 @@ const Dvat16ReturnPreview = () => {
           </main>
           <div className="h-20"></div>
           <div className="p-2 shadow bg-white fixed bottom-0 right-0 flex gap-4 items-center hidden-print">
-            <button
-              className="text-white bg-black py-1 px-4 text-sm"
-              onClick={() => router.back()}
-            >
-              Back
-            </button>
-            <button
-              className="text-white bg-black py-1 px-4 text-sm"
-              onClick={generatePDF}
-            >
+            {!["USER"].includes(user?.role!) && <></>}
+
+            <Button onClick={() => router.back()}>Back</Button>
+            <Button type="primary" onClick={generatePDF}>
               Download returns
-            </button>
+            </Button>
+
             {!payment && (
               <>
                 {(isAllNil && lateFees == 0) ||
                 (!isAllNil && getNetPayable() > 0 && lateFees == 0) ? (
                   <>
-                    <button
-                      className="text-white bg-black py-1 px-4 text-sm"
+                    <Button
+                      type="primary"
                       onClick={() => {
                         setPaymentSubmitBox(true);
                       }}
                     >
                       Submit
-                    </button>
+                    </Button>
                   </>
                 ) : (
-                  <button
-                    className="text-white bg-black py-1 px-4 text-sm"
-                    onClick={() => {
+                  <Button
+                    type="primary"
+                    onClick={async () => {
+                      const lastPayment = await CheckLastPayment({
+                        id: return01.id ?? 0,
+                      });
+                      if (!lastPayment.status) {
+                        toast.error(lastPayment.message);
+                        reset();
+                        setPaymentBox(false);
+                        return;
+                      }
+
+                      if (lastPayment.data == false) {
+                        toast.error(lastPayment.message);
+                        reset();
+                        setPaymentBox(false);
+                        return;
+                      }
+
                       setPaymentBox(true);
                     }}
                   >
                     Proceed to Pay
-                  </button>
+                  </Button>
                 )}
               </>
             )}
@@ -2648,28 +2667,6 @@ const CentralSales = (props: CentralSalesProps) => {
       setLateFees(100 * diff_days);
     }
   }, [props.return01, props.returnsentrys]);
-  const getGoodsReturnsNote = (): PercentageOutput => {
-    let increase: string = "0";
-    let decrease: string = "0";
-    const output: returns_entry[] = props.returnsentrys.filter(
-      (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31 &&
-        val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.GOODS_TAXABLE || val.sale_of == SaleOf.TAXABLE)
-    );
-    for (let i = 0; i < output.length; i++) {
-      increase = (
-        parseFloat(increase) + parseFloat(output[i].total_invoice_number ?? "0")
-      ).toFixed(2);
-      decrease = (
-        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
-      ).toFixed(2);
-    }
-    return {
-      increase,
-      decrease,
-    };
-  };
 
   const getLabour = (): PercentageOutput => {
     let increase: string = "0";
@@ -2940,6 +2937,34 @@ const CentralSales = (props: CentralSalesProps) => {
       decrease,
     };
   };
+
+  const getGoodsReturnsNoteTwo = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_30 &&
+        val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
+        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  ///--------------------------------------
   const getInvoicePercentage = (value: string): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
@@ -3179,7 +3204,7 @@ const CentralSales = (props: CentralSalesProps) => {
       decrease,
     };
   };
-  const getGoodsReturnsNoteTwo = (): PercentageOutput => {
+  const getGoodsReturnsNote = (): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(

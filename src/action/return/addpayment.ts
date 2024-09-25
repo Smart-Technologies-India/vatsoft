@@ -25,7 +25,6 @@ const AddPayment = async (
         deletedAt: null,
         deletedById: null,
         status: "ACTIVE",
-        penalty: payload.penalty,
       },
     });
 
@@ -46,6 +45,8 @@ const AddPayment = async (
         transaction_date: addPrismaDatabaseDate(new Date()).toISOString(),
         paymentmode: "ONLINE",
         rr_number: payload.rr_number,
+        penalty: payload.penalty,
+        filing_datetime: new Date(),
       },
     });
     if (!updateresponse) {

@@ -79,28 +79,31 @@ const CheckLastPayment = async (
     });
 
     if (!lastPayment) {
+      console.log(isExist.dvat04.vatLiableDate);
+      console.log(current_payment_date);
       if (isExist.dvat04.vatLiableDate! > current_payment_date) {
         return createResponse({
           data: false,
-          message: "Last payment is not created yet.",
+          message: "Payment is not created.",
           functionname,
         });
       } else {
         const month_dif = getMonthDifference(
-          current_payment_date,
-          isExist.dvat04.vatLiableDate!
+          isExist.dvat04.vatLiableDate!,
+          current_payment_date
         );
 
         if (month_dif <= 1) {
           return createResponse({
             data: true,
-            message: "Last Payment completed successfully",
+            message: "Payment completed successfully",
             functionname,
           });
         } else {
           return createResponse({
             data: false,
-            message: "Last Payment not completed yet.",
+            message:
+              "You have pending returns from previous month.Kindly complete all pending returns before proceeding.",
             functionname,
           });
         }
@@ -114,13 +117,13 @@ const CheckLastPayment = async (
     ) {
       return createResponse({
         data: false,
-        message: `Your year: ${year} month: ${month} Payment not completed yet.`,
+        message: `You have a pending return for period: ${month} - ${year}. Payment not completed. Kindly file previous return before proceeding.`,
         functionname,
       });
     }
 
     return createResponse({
-      message: "Last Payment completed successfully.",
+      message: "Payment completed successfully.",
       functionname,
       data: true,
     });

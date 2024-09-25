@@ -57,7 +57,7 @@ const Sidebar = (props: SidebarProps) => {
         props.isOpen ? "translate-x-0" : "-translate-x-52"
       }  transition-transform duration-300 ease-in-out`}
     >
-      <p className="text-xl font-semibold text-white text-center">VATSOFT</p>
+      <p className="text-xl font-semibold text-white text-center">VATSMART</p>
       <div className="h-4"></div>
 
       <MenuTab

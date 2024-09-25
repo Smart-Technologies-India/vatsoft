@@ -430,12 +430,12 @@ const AddRecord = () => {
               onChange={(value: PurchaseType) => setPurchaseType(value)}
               options={[
                 {
-                  value: "OUTSIDE_INDIA",
-                  label: "Import from outside India",
+                  value: "TAXABLE_RATE",
+                  label: "Taxable at - rate specified",
                 },
                 {
-                  value: "STOCK_TRANSFER",
-                  label: "Stock or consignment tranfer",
+                  value: "UNREGISTERED_DEALER",
+                  label: "Purchase From Unregistered Dealer",
                 },
                 {
                   value: "FORMC_CONCESSION",
@@ -446,14 +446,6 @@ const AddRecord = () => {
                   label: "Against Form C without tax - exempted goods",
                 },
                 {
-                  value: "TAXABLE_RATE",
-                  label: "Taxable at - rate specified",
-                },
-                {
-                  value: "TAXABLE_OTHER",
-                  label: "Taxable at - other rate ",
-                },
-                {
                   value: "FORM_H",
                   label: "Against Form H",
                 },
@@ -462,8 +454,16 @@ const AddRecord = () => {
                   label: "Labour Charges Paid",
                 },
                 {
-                  value: "UNREGISTERED_DEALER",
-                  label: "Purchase From Unregistered Dealer",
+                  value: "STOCK_TRANSFER",
+                  label: "Stock or consignment tranfer",
+                },
+                {
+                  value: "TAXABLE_OTHER",
+                  label: "Taxable at - other rate ",
+                },
+                {
+                  value: "OUTSIDE_INDIA",
+                  label: "Import from outside India",
                 },
               ]}
             />

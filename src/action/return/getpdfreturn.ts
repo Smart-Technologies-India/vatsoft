@@ -8,6 +8,7 @@ import {
   registration,
   returns_01,
   returns_entry,
+  user,
 } from "@prisma/client";
 
 interface getPdfReturnPayload {
@@ -22,6 +23,7 @@ const getPdfReturn = async (
   ApiResponseType<{
     returns_entry: returns_entry[];
     returns_01: returns_01 & {
+      createdBy: user;
       dvat04: dvat04 & { registration: registration[] };
     };
   } | null>
@@ -53,6 +55,7 @@ const getPdfReturn = async (
         month: payload.month,
       },
       include: {
+        createdBy: true,
         dvat04: {
           include: {
             registration: true,

@@ -941,13 +941,13 @@ model composition {
 }
 
 model order_notice {
-  id                Int             @id @default(autoincrement())
-  dvat              dvat04          @relation(fields: [dvatid], references: [id])
+  id                Int               @id @default(autoincrement())
+  dvat              dvat04            @relation(fields: [dvatid], references: [id])
   dvatid            Int
   ref_no            String
-  issue_date        DateTime
-  notice_order_type NoticeOrderType @default(NOTICE)
-  form_type         FormType        @default(DVAT10)
+  issue_date        DateTime          @default(now())
+  notice_order_type NoticeOrderType   @default(NOTICE)
+  form_type         FormType          @default(DVAT10)
   tax_period_from   DateTime?
   tax_period_to     DateTime?
   due_date          DateTime
@@ -956,26 +956,24 @@ model order_notice {
   amount            String?
   notice            String?
   description       String?
-  reason_for_notice String
+  reason_for_notice String?
   dealer_presence   DateTime?
-  challan           challan?        @relation(fields: [challanId], references: [id])
+  challan           challan?          @relation(fields: [challanId], references: [id])
   challanId         Int?
-  dvat24_reason     Dvat24Reason    @default(NOTFURNISHED)
-  issued            user            @relation("issued", fields: [issuedId], references: [id])
+  dvat24_reason     Dvat24Reason      @default(NOTFURNISHED)
+  issued            user              @relation("issued", fields: [issuedId], references: [id])
   issuedId          Int
-
-  officer   user @relation("officer", fields: [officerId], references: [id])
-  officerId Int
-
-  remark      String            @db.MediumText
-  status      OrderNoticeStatus @default(ACTIVE)
-  createdAt   DateTime          @default(now())
-  createdBy   user              @relation("order_notice_createdBy", fields: [createdById], references: [id])
-  createdById Int
-  updatedAt   DateTime          @updatedAt
-  updatedBy   user?             @relation("order_notice_updatedBy", fields: [updatedById], references: [id])
-  updatedById Int?
-  deletedAt   DateTime?
-  deletedBy   user?             @relation("order_notice_deletedBy", fields: [deletedById], references: [id])
-  deletedById Int?
+  officer           user              @relation("officer", fields: [officerId], references: [id])
+  officerId         Int
+  remark            String?           @db.MediumText
+  status            OrderNoticeStatus @default(ACTIVE)
+  createdAt         DateTime          @default(now())
+  createdBy         user              @relation("order_notice_createdBy", fields: [createdById], references: [id])
+  createdById       Int
+  updatedAt         DateTime          @updatedAt
+  updatedBy         user?             @relation("order_notice_updatedBy", fields: [updatedById], references: [id])
+  updatedById       Int?
+  deletedAt         DateTime?
+  deletedBy         user?             @relation("order_notice_deletedBy", fields: [deletedById], references: [id])
+  deletedById       Int?
 }

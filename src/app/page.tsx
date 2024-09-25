@@ -86,7 +86,7 @@ const Home = () => {
     <>
       <main className="bg-[#f8fafe] pb-8">
         <header className="bg-[#05313c] w-full py-2 flex gap-2 px-4 items-center">
-          <h1 className="text-white font-medium text-xl">VATSOFT</h1>
+          <h1 className="text-white font-medium text-xl">VATSMART</h1>
           <div className="w-10"></div>
           <div className="mx-auto">
             <a

@@ -65,7 +65,7 @@ const Page = () => {
             <div className="bg-white p-4 rounded-xl">
               <h1 className="text-sm font-semibold font-nunito leading-3">
                 Welcome {user?.firstName ?? ""} {user?.lastName ?? ""} To
-                VATSOFT Portal
+                VATSMART Portal
               </h1>
               <h1 className="text-xs leading-3 text-gray-500 mt-1">
                 Returns Calender (Last 6 return periods)
