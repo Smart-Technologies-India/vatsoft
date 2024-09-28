@@ -1,4 +1,4 @@
-module.exports = {
+const config = {
   apps: [
     {
       name: "vatsoft",
@@ -7,3 +7,5 @@ module.exports = {
     },
   ],
 };
+
+export default config;
