@@ -5,13 +5,15 @@ interface GetDvat04Payload {
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { dvat04, registration } from "@prisma/client";
+import { dvat04, registration, user } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const GetDvat04 = async (
   payload: GetDvat04Payload
 ): Promise<
-  ApiResponseType<(dvat04 & { registration: registration[] }) | null>
+  ApiResponseType<
+    (dvat04 & { registration: registration[]; createdBy: user }) | null
+  >
 > => {
   const functionname: string = GetDvat04.name;
   try {
@@ -28,6 +30,7 @@ const GetDvat04 = async (
         selectComThree: true,
         selectComFour: true,
         selectComFive: true,
+        createdBy: true,
       },
     });
 

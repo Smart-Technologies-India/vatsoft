@@ -144,9 +144,9 @@ const PreviewPage = () => {
         <div className="bg-white shadow p-2 flex justify-between mt-2">
           {[
             "USER",
-            "DVAT01",
-            "DVAT02",
-            "DVAT03",
+            "DVAT04-1",
+            "DVAT04-2",
+            "DVAT04-3",
             "ANNEXURE-1",
             "ANNEXURE-2",
             "ANNEXURE-3",
@@ -1883,7 +1883,7 @@ const Dvat3Page = (props: Dvat3PageProps) => {
           <div className="flex gap-4 mt-2">
             <div className="flex-1">
               <Label htmlFor="transactionid" className="text-sm font-normal">
-                Transaction Id <span className="text-red-500">*</span>
+                Reference Number <span className="text-red-500">*</span>
               </Label>
               <Input
                 ref={transactionIdRef}

@@ -1,34 +1,37 @@
 "use server";
-interface GetTrackPaymentPayload {}
+interface GetReturnMonthPayload {
+  dvatid: number;
+}
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { returns_01, returns_entry } from "@prisma/client";
+import { return_filing } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
-const GetTrackPayment = async (
-  payload: GetTrackPaymentPayload
-): Promise<ApiResponseType<returns_entry[] | null>> => {
-  const functionname: string = GetTrackPayment.name;
+const GetReturnMonth = async (
+  payload: GetReturnMonthPayload
+): Promise<ApiResponseType<Array<return_filing> | null>> => {
+  const functionname: string = GetReturnMonth.name;
   try {
-    const dvat04response = await prisma.returns_entry.findMany({
+    const dvat04response = await prisma.return_filing.findMany({
       where: {
         deletedAt: null,
         deletedBy: null,
+        dvatid: payload.dvatid,
       },
-      include: {
-        returns_01: true,
+      orderBy: {
+        createdAt: "asc",
       },
     });
 
     if (!dvat04response)
       return createResponse({
-        message: "Invalid user id. Please try again.",
+        message: "There is no returns data",
         functionname,
       });
 
     return createResponse({
-      message: "dvat04 data get successfully",
+      message: "Pending returns data get successfully",
       functionname,
       data: dvat04response,
     });
@@ -40,4 +43,4 @@ const GetTrackPayment = async (
   }
 };
 
-export default GetTrackPayment;
+export default GetReturnMonth;

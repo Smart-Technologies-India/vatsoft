@@ -43,6 +43,7 @@ const CreateChallan = async (
         createdById: payload.createdby,
         expire_date: today,
         total_tax_amount: payload.total_tax_amount,
+        reason: payload.reason,
         status: "ACTIVE",
         challanstatus: "CREATED",
         ...(payload.remark && { remark: payload.remark }),

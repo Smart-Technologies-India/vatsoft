@@ -98,7 +98,7 @@ const Sidebar = (props: SidebarProps) => {
           <MenuTab
             click={() => props.setIsOpen(false)}
             icon={<LucideUser className="text-gray-300  w-6" />}
-            name="User Services"
+            name="Notice And Order"
             path={path}
             pathcheck={"/dashboard/user_service"}
           />

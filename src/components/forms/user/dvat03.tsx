@@ -53,6 +53,9 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
   } = useFormContext<Dvat3Form>();
 
   const onSubmit = async (data: Dvat3Form) => {
+    if (parseInt(data.securityDepositAmount) < 25000) {
+      return toast.error("Amount of Security can not be less then  25000");
+    }
     const userrespone: ApiResponseType<dvat04 | null> = await Dvat3Update({
       id: props.dvatid,
       updatedby: props.userid,
@@ -118,7 +121,7 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
               placeholder="Enter Transaction Id"
               name="transactionId"
               required={true}
-              title="Transaction Id"
+              title="Reference Number"
             />
           </div>
           <div className="flex-1">

@@ -2,12 +2,13 @@
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { order_notice } from "@prisma/client";
+import { Dvat24Reason, order_notice } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import { customAlphabet } from "nanoid";
 
-interface CreateDvat10Payload {
+interface CreateDvat24Payload {
   dvatid: number;
+  dvat24_reason: Dvat24Reason;
   createdby: number;
   remark?: string;
   tax_period_from: Date;
@@ -15,12 +16,15 @@ interface CreateDvat10Payload {
   due_date: Date;
   issuedId: number;
   officerId: number;
+  tax: string;
+  interest: string;
+  returns_01Id: number;
 }
 
-const CreateDvat10 = async (
-  payload: CreateDvat10Payload
+const CreateDvat24 = async (
+  payload: CreateDvat24Payload
 ): Promise<ApiResponseType<order_notice | null>> => {
-  const functionname: string = CreateDvat10.name;
+  const functionname: string = CreateDvat24.name;
   let today = new Date();
   today.setDate(today.getDate() + 3);
 
@@ -30,15 +34,19 @@ const CreateDvat10 = async (
   try {
     const challan = await prisma.order_notice.create({
       data: {
+        returns_01Id: payload.returns_01Id,
         dvatid: payload.dvatid,
         ref_no: ref_no,
-        dvat24_reason: "NOTFURNISHED",
+        dvat24_reason: payload.dvat24_reason,
+        due_date: payload.due_date,
         notice_order_type: "NOTICE",
         status: "PENDING",
         tax_period_from: payload.tax_period_from,
         tax_period_to: payload.tax_period_to,
-        due_date: payload.due_date,
-        form_type: "DVAT10",
+        form_type: "DVAT24",
+        tax: payload.tax,
+        interest: payload.interest,
+        amount: (parseInt(payload.tax) + parseInt(payload.interest)).toString(),
         issuedId: payload.issuedId,
         officerId: payload.officerId,
         createdById: payload.createdby,
@@ -48,8 +56,8 @@ const CreateDvat10 = async (
 
     return createResponse({
       message: challan
-        ? "Challan create successfully"
-        : "Unable to create challan.",
+        ? "DVAT24 create successfully"
+        : "Unable to create DVAT24.",
       functionname: functionname,
       data: challan ?? null,
     });
@@ -61,4 +69,4 @@ const CreateDvat10 = async (
   }
 };
 
-export default CreateDvat10;
+export default CreateDvat24;

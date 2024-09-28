@@ -724,7 +724,7 @@ const VatNote = (props: VatNoteProps) => {
       const resposne = await UpdateDvatStatus({
         id: props.registrationdata.dvat04Id!,
         updatedby: id,
-        status: "APPROVED",
+        status: "PROVISIONAL",
         tinNumber: "26000004000" + dvatdata.id,
       });
       if (resposne.status) {

@@ -12,6 +12,7 @@ type DateSelectProps<T extends FieldValues> = {
   disable?: boolean;
   mindate?: Dayjs;
   maxdate?: Dayjs;
+  format?: string;
 };
 
 export function DateSelect<T extends FieldValues>(props: DateSelectProps<T>) {
@@ -42,6 +43,7 @@ export function DateSelect<T extends FieldValues>(props: DateSelectProps<T>) {
             minDate={props.mindate ? props.mindate : undefined}
             maxDate={props.maxdate ? props.maxdate : undefined}
             placeholder={props.placeholder}
+            format={props.format ? props.format : undefined}
           />
           {error && (
             <p className="text-xs text-red-500">{error.message?.toString()}</p>

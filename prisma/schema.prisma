@@ -419,6 +419,11 @@ model user {
   officer                order_notice[] @relation("officer")
   issued                 order_notice[] @relation("issued")
 
+  //composition
+  return_filing_createdBy return_filing[] @relation("return_filing_createdBy")
+  return_filing_updatedBy return_filing[] @relation("return_filing_updatedBy")
+  return_filing_deletedBy return_filing[] @relation("return_filing_deletedBy")
+
   registration registration[]
   composition  composition[]
   refunds      refunds[]
@@ -578,14 +583,15 @@ model dvat04 {
   deletedBy   user?      @relation("dvat04_deletedBy", fields: [deletedById], references: [id])
   deletedById Int?
 
-  returns_01   returns_01[]
-  registration registration[]
-  annexure1    annexure1[]
-  annexure2    annexure2[]
-  challan      challan[]
-  refunds      refunds[]
-  composition  composition[]
-  order_notice order_notice[]
+  returns_01    returns_01[]
+  registration  registration[]
+  annexure1     annexure1[]
+  annexure2     annexure2[]
+  challan       challan[]
+  refunds       refunds[]
+  composition   composition[]
+  order_notice  order_notice[]
+  return_filing return_filing[]
 }
 
 model commodity {
@@ -789,6 +795,7 @@ model returns_01 {
   deletedById       Int?
 
   returns_entry returns_entry[]
+  order_notice  order_notice[]
 }
 
 model returns_entry {
@@ -944,6 +951,8 @@ model order_notice {
   id                Int               @id @default(autoincrement())
   dvat              dvat04            @relation(fields: [dvatid], references: [id])
   dvatid            Int
+  returns_01        returns_01?       @relation(fields: [returns_01Id], references: [id])
+  returns_01Id      Int?
   ref_no            String
   issue_date        DateTime          @default(now())
   notice_order_type NoticeOrderType   @default(NOTICE)
@@ -976,4 +985,27 @@ model order_notice {
   deletedAt         DateTime?
   deletedBy         user?             @relation("order_notice_deletedBy", fields: [deletedById], references: [id])
   deletedById       Int?
+}
+
+model return_filing {
+  id            Int       @id @default(autoincrement())
+  dvat          dvat04    @relation(fields: [dvatid], references: [id])
+  dvatid        Int
+  year          String
+  month         String
+  filing_status Boolean   @default(false)
+  filing_date   DateTime?
+  due_date      DateTime?
+  status        Status    @default(ACTIVE)
+  createdAt     DateTime  @default(now())
+  createdBy     user      @relation("return_filing_createdBy", fields: [createdById], references: [id])
+  createdById   Int
+  updatedAt     DateTime  @updatedAt
+  updatedBy     user?     @relation("return_filing_updatedBy", fields: [updatedById], references: [id])
+  updatedById   Int?
+  deletedAt     DateTime?
+  deletedBy     user?     @relation("return_filing_deletedBy", fields: [deletedById], references: [id])
+  deletedById   Int?
+
+  @@unique([dvatid, year, month])
 }

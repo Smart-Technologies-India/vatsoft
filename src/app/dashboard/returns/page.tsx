@@ -44,9 +44,14 @@ const Page = () => {
           ].includes(user?.role!) && (
             <>
               <DashboardCards
-                title="Track Return Status"
+                title="Track Filed Status"
                 description="Monitor submitted VAT returns in real-time."
                 link="/dashboard/returns/department-track-return-status"
+              />
+              <DashboardCards
+                title="Track Pending Return"
+                description="Monitor submitted VAT returns in real-time."
+                link="/dashboard/returns/department-pending-return"
               />
             </>
           )}

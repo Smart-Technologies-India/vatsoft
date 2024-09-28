@@ -297,4 +297,27 @@ const getMonthDifference = (date1: Date, date2: Date): number => {
   const monthDiff = date2.getMonth() - date1.getMonth();
   return yearDiff * 12 + monthDiff;
 };
-export { getPreviousMonth, getMonthDifference };
+
+const getDateFromMonth = (args: {
+  year: number;
+  month: string;
+  date: number;
+}): Date => {
+  let monthIndex = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ].indexOf(args.month);
+  return new Date(args.year, monthIndex, args.date);
+};
+
+export { getPreviousMonth, getMonthDifference, getDateFromMonth };

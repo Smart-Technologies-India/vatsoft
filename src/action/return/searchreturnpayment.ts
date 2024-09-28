@@ -2,7 +2,7 @@
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { returns_01 } from "@prisma/client";
+import { dvat04, returns_01 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 interface SearchReturnPaymentPayload {
@@ -10,11 +10,13 @@ interface SearchReturnPaymentPayload {
   rr_number?: string;
   fromdate?: Date;
   todate?: Date;
+  tin?: string;
+  trade?: string;
 }
 
 const SearchReturnPayment = async (
   payload: SearchReturnPaymentPayload
-): Promise<ApiResponseType<returns_01[] | null>> => {
+): Promise<ApiResponseType<Array<returns_01 & { dvat04: dvat04 }> | null>> => {
   const functionname: string = SearchReturnPayment.name;
 
   try {
@@ -33,6 +35,21 @@ const SearchReturnPayment = async (
               lte: payload.todate,
             },
           }),
+        ...(payload.tin || payload.trade
+          ? {
+              dvat04: {
+                ...(payload.tin && { tinNumber: payload.tin }),
+                ...(payload.trade && {
+                  tradename: {
+                    contains: payload.trade,
+                  },
+                }),
+              },
+            }
+          : {}),
+      },
+      include: {
+        dvat04: true,
       },
     });
 

@@ -15,7 +15,6 @@ import {
   returns_01,
   returns_entry,
 } from "@prisma/client";
-
 import { getCookie } from "cookies-next";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
@@ -48,12 +47,6 @@ const ReturnDashboard = () => {
 
   const search = async (year: string, period: string) => {
     setSearch(true);
-
-    const returnformsresponse = await getPdfReturn({
-      year: year,
-      month: period,
-      userid: userid,
-    });
     const monthNames = [
       "January",
       "February",
@@ -81,11 +74,18 @@ const ReturnDashboard = () => {
 
     setDueDate(new Date(parseInt(year), monthIndex, 10));
 
+    const returnformsresponse = await getPdfReturn({
+      year: year,
+      month: period,
+      userid: userid,
+    });
+
     if (returnformsresponse.status && returnformsresponse.data) {
       setReturn01(returnformsresponse.data.returns_01);
       serReturns_entryData(returnformsresponse.data.returns_entry);
     } else {
       serReturns_entryData([]);
+      setReturn01(null);
     }
   };
 
@@ -368,6 +368,15 @@ const ReturnDashboard = () => {
     }
   };
 
+  const ispayment = (): boolean => {
+    return !(
+      return01?.rr_number == null ||
+      return01?.rr_number == undefined ||
+      return01?.rr_number ||
+      ""
+    );
+  };
+
   const salesLocalData = useMemo(
     () => getDvatData(DvatType.DVAT_31),
     [returns_entryData, year, quarter, period] // Include relevant dependencies
@@ -576,37 +585,38 @@ const ReturnDashboard = () => {
         )}
 
         <div className="absolute bottom-2 right-2 rounded shadow bg-white p-1 flex gap-2">
-          <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
+          {/* <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
             Back
-          </button>
+          </button> */}
           {isSearch && (
             <>
               {/* <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
                 Save
               </button> */}
-
+              <button
+                onClick={async () => {
+                  await generatePDF(
+                    `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
+                  );
+                }}
+                className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+              >
+                Download Return
+              </button>
               {ispreview() && (
                 <>
-                  <button
-                    onClick={async () => {
-                      await generatePDF(
-                        `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
-                      );
-                    }}
-                    className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-                  >
-                    Download Return
-                  </button>
-                  <button
-                    onClick={() => {
-                      router.push(
-                        `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
-                      );
-                    }}
-                    className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-                  >
-                    Preview
-                  </button>
+                  {!ispayment() && (
+                    <button
+                      onClick={() => {
+                        router.push(
+                          `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
+                        );
+                      }}
+                      className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                    >
+                      Preview
+                    </button>
+                  )}
                 </>
               )}
             </>

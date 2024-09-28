@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/table";
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MultiSelect } from "../inputfields/multiselect";
 import { OptionValue } from "@/models/main";
 import { DateSelect } from "../inputfields/dateselect";
@@ -21,9 +21,12 @@ import { Button, Input, InputRef } from "antd";
 import { ToWords } from "to-words";
 import { capitalcase, onFormError } from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
-import { dvat04, user } from "@prisma/client";
+import { dvat04, returns_01, user } from "@prisma/client";
 import SearchTinNumber from "@/action/dvat/searchtin";
 import { CreateDvat24Form, CreateDvat24Schema } from "@/schema/dvat24";
+import CreateDvat24A from "@/action/notice_order/createdvat24a";
+import GetReturn01 from "@/action/return/getreturn";
+import dayjs from "dayjs";
 
 type DepartmentCreateDvat24AProviderProps = {
   userid: number;
@@ -45,6 +48,7 @@ export const DepartmentCreateDvat24AProvider = (
 const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
   const router = useRouter();
   const toWords = new ToWords();
+  const searchParams = useSearchParams();
 
   const [isSearch, setSearch] = useState<boolean>(false);
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
@@ -67,6 +71,9 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
       setUser(dvat_response.data.createdBy);
       setDvatData(dvat_response.data);
       setSearch(true);
+    } else {
+      toast.error(dvat_response.message);
+      setSearch(false);
     }
   };
 
@@ -84,28 +91,33 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
     formState: { errors, isSubmitting },
   } = useFormContext<CreateDvat24Form>();
 
+  const [return01Data, setReturn01Data] = useState<
+    (returns_01 & { dvat04: dvat04 }) | null
+  >(null);
+
   const onSubmit = async (data: CreateDvat24Form) => {
-    // const challan_response = await CreateChallan({
-    //   dvatid: dvatdata?.id ?? 0,
-    //   createdby: props.userid,
-    //   cess: data.cess.toString(),
-    //   vat: data.vat.toString(),
-    //   interest: data.interest.toString(),
-    //   others: data.others ?? "0",
-    //   reason: data.reason,
-    //   total_tax_amount: getTotalAmount().toString(),
-    //   penalty: data.penalty.toString(),
-    //   remark: data.remark,
-    // });
+    if (!return01Data) return toast.error("Return 01 not found");
 
-    // if (challan_response.status) {
-    //   toast.success("Challan generated successfully");
-    //   reset({});
-    //   router.push("/dashboard/payments/department-challan-history");
-    // } else {
-    //   toast.error(challan_response.message);
-    // }
+    const dvat24_response = await CreateDvat24A({
+      due_date: new Date(data.due_date),
+      dvat24_reason: data.dvat24_reason,
+      remark: data.remark,
+      interest: data.interest,
+      tax: data.vat,
+      createdby: props.userid,
+      issuedId: props.userid,
+      officerId: props.userid,
+      dvatid: return01Data.dvat04.id,
+      returns_01Id: return01Data.id,
+    });
 
+    if (dvat24_response.status) {
+      toast.success("DVAT 24 created successfully");
+      reset({});
+      router.push("/dashboard/returns/department-track-return-status");
+    } else {
+      toast.error(dvat24_response.message);
+    }
     reset({});
   };
 
@@ -118,18 +130,58 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
 
     return total;
   };
+  useEffect(() => {
+    const returnid: number = parseInt(searchParams.get("returnid") ?? "0");
+    const tinNumber: string = searchParams.get("tin") ?? "";
+
+    const init = async () => {
+      const return01_response = await GetReturn01({
+        id: returnid,
+      });
+      if (return01_response.status && return01_response.data) {
+        setReturn01Data(return01_response.data);
+      }
+      if (!(tinNumber == null || tinNumber == undefined || tinNumber == "")) {
+        reset({
+          dvat24_reason: "NOTFURNISHED",
+          due_date: dayjs(new Date().setDate(new Date().getDate() + 15)).format(
+            "DD/MM/YYYY"
+          ),
+        });
+        const dvat_response = await SearchTinNumber({
+          tinumber: tinNumber,
+        });
+        if (dvat_response.status && dvat_response.data) {
+          setUser(dvat_response.data.createdBy);
+          setDvatData(dvat_response.data);
+          setSearch(true);
+        } else {
+          toast.error(dvat_response.message);
+          setSearch(false);
+        }
+      }
+    };
+
+    init();
+  }, [searchParams, reset]);
 
   return (
     <>
-      <div className="p-2 bg-gray-50 mt-2 flex gap-4">
-        <div className="flex gap-4  items-center">
-          <p className="shrink-0">Enter TIN Number : </p>
-          <Input ref={tinnumberRef} placeholder="TIN Number" required={true} />
-          <Button onClick={searchUser} type="primary">
-            Search
-          </Button>
+      {!isSearch && (
+        <div className="p-2 bg-gray-50 mt-2 flex gap-4">
+          <div className="flex gap-4  items-center">
+            <p className="shrink-0">Enter TIN Number : </p>
+            <Input
+              ref={tinnumberRef}
+              placeholder="TIN Number"
+              required={true}
+            />
+            <Button onClick={searchUser} type="primary">
+              Search
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
       {isSearch && (
         <>
           <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">
@@ -176,6 +228,8 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
                   name="due_date"
                   required={true}
                   title="Due Date"
+                  mindate={dayjs(new Date())}
+                  format="DD/MM/YYYY"
                 />
               </div>
             </div>

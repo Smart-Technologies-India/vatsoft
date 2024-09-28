@@ -1,18 +1,9 @@
 "use client";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MultiSelect } from "../inputfields/multiselect";
 import { OptionValue } from "@/models/main";
 import { DateSelect } from "../inputfields/dateselect";
@@ -21,9 +12,11 @@ import { Button, Input, InputRef } from "antd";
 import { ToWords } from "to-words";
 import { capitalcase, onFormError } from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
-import { dvat04, user } from "@prisma/client";
+import { dvat04, returns_01, user } from "@prisma/client";
 import SearchTinNumber from "@/action/dvat/searchtin";
 import { CreateDvat10Schema, CreateDvat10Form } from "@/schema/dvat10";
+import dayjs from "dayjs";
+import GetReturn01 from "@/action/return/getreturn";
 
 type DepartmentCreateDvat10ProviderProps = {
   userid: number;
@@ -45,11 +38,91 @@ export const DepartmentCreateDvat10Provider = (
 const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
   const router = useRouter();
   const toWords = new ToWords();
+  const searchParams = useSearchParams();
 
   const [isSearch, setSearch] = useState<boolean>(false);
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
   const [user, setUser] = useState<user | null>(null);
   const tinnumberRef = useRef<InputRef>(null);
+  const [isLoading, setLoading] = useState<boolean>(true);
+
+  interface Period {
+    to: string;
+    form: string;
+  }
+
+  const [periodData, setPeriodData] = useState<Period | null>(null);
+  const [return01Data, setReturn01Data] = useState<
+    (returns_01 & { dvat04: dvat04 }) | null
+  >(null);
+
+  const getPeriod = (
+    return_01data: returns_01 & { dvat04: dvat04 }
+  ): {
+    form: Date;
+    to: Date;
+  } => {
+    const iscomp: boolean = return_01data.dvat04.compositionScheme ?? false;
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const from_year: string = return_01data.year;
+    const from_month: string = return_01data.month!;
+    // Get the index of the current month
+    const currentMonthIndex = monthNames.indexOf(from_month);
+    const currentYear = parseInt(from_year);
+
+    // Calculate the 'to' date based on composition scheme
+    let to_year: string;
+    let to_month: string;
+
+    if (iscomp) {
+      // Get last month of the current quarter
+      if (currentMonthIndex >= 9) {
+        // If in Oct-Dec quarter, last month is December
+        to_month = "December";
+        to_year = from_year;
+      } else {
+        // Go to the last month of the previous quarter
+        const lastQuarterMonth =
+          currentMonthIndex - (currentMonthIndex % 3) + 2;
+        to_month = monthNames[lastQuarterMonth];
+        to_year = from_year;
+      }
+    } else {
+      // Get the next month
+      if (currentMonthIndex === 11) {
+        to_month = monthNames[0]; // January of next year
+        to_year = (currentYear + 1).toString();
+      } else {
+        to_month = monthNames[currentMonthIndex + 1];
+        to_year = from_year;
+      }
+    }
+
+    const from_date: Date = new Date(parseInt(from_year), currentMonthIndex, 1);
+    const to_date: Date = new Date(
+      parseInt(to_year),
+      monthNames.indexOf(to_month),
+      0
+    );
+    return {
+      form: from_date,
+      to: to_date,
+    };
+  };
 
   const searchUser = async () => {
     if (
@@ -108,6 +181,48 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
 
     reset({});
   };
+
+  useEffect(() => {
+    const returnid: number = parseInt(searchParams.get("returnid") ?? "0");
+    const tinNumber: string = searchParams.get("tin") ?? "";
+    const init = async () => {
+      setLoading(true);
+      const return01_response = await GetReturn01({
+        id: returnid,
+      });
+      if (return01_response.status && return01_response.data) {
+        setReturn01Data(return01_response.data);
+        const period_response = getPeriod(return01_response.data);
+        setPeriodData({
+          form: period_response.form.toDateString(),
+          to: period_response.to.toDateString(),
+        });
+      }
+
+      if (!(tinNumber == null || tinNumber == undefined || tinNumber == "")) {
+        reset({
+          dvat24_reason: "NOTFURNISHED",
+          due_date: dayjs(new Date().setDate(new Date().getDate() + 15)).format(
+            "DD/MM/YYYY"
+          ),
+        });
+        const dvat_response = await SearchTinNumber({
+          tinumber: tinNumber,
+        });
+        if (dvat_response.status && dvat_response.data) {
+          setUser(dvat_response.data.createdBy);
+          setDvatData(dvat_response.data);
+          setSearch(true);
+        } else {
+          toast.error(dvat_response.message);
+          setSearch(false);
+        }
+      }
+      setLoading(false);
+    };
+
+    init();
+  }, [searchParams, reset]);
 
   return (
     <>
@@ -168,13 +283,15 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
                   title="Due Date"
                 />
               </div>
-              <div>
-                <p className="text-sm font-normal">Tax Period From Date</p>
-                <p className="text-sm font-medium">2024 May</p>
-              </div>
-              <div>
-                <p className="text-sm font-normal">Tax Period To Date</p>
-                <p className="text-sm font-medium">2024 May</p>
+              <div className="grow"></div>
+              <div className=" mt-2">
+                <p className="text-sm font-normal text-center">
+                  Tax Period From - To
+                </p>
+                <p className="text-sm font-medium  text-center">
+                  {dayjs(new Date(periodData?.form!)).format("DD/MM/YYYY")} -{" "}
+                  {dayjs(new Date(periodData?.to!)).format("DD/MM/YYYY")}
+                </p>
               </div>
             </div>
 

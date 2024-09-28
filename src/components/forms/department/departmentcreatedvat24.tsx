@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/table";
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MultiSelect } from "../inputfields/multiselect";
 import { OptionValue } from "@/models/main";
 import { DateSelect } from "../inputfields/dateselect";
@@ -21,9 +21,12 @@ import { Button, Input, InputRef } from "antd";
 import { ToWords } from "to-words";
 import { capitalcase, onFormError } from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
-import { dvat04, user } from "@prisma/client";
+import { dvat04, returns_01, user } from "@prisma/client";
 import SearchTinNumber from "@/action/dvat/searchtin";
 import { CreateDvat24Form, CreateDvat24Schema } from "@/schema/dvat24";
+import CreateDvat24 from "@/action/notice_order/createdvat24";
+import GetReturn01 from "@/action/return/getreturn";
+import dayjs from "dayjs";
 
 type DepartmentCreateDvat24ProviderProps = {
   userid: number;
@@ -45,11 +48,13 @@ export const DepartmentCreateDvat24Provider = (
 const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
   const router = useRouter();
   const toWords = new ToWords();
+  const searchParams = useSearchParams();
 
   const [isSearch, setSearch] = useState<boolean>(false);
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
   const [user, setUser] = useState<user | null>(null);
   const tinnumberRef = useRef<InputRef>(null);
+  const [isLoading, setLoading] = useState<boolean>(true);
 
   const searchUser = async () => {
     if (
@@ -67,44 +72,131 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
       setUser(dvat_response.data.createdBy);
       setDvatData(dvat_response.data);
       setSearch(true);
+    } else {
+      toast.error(dvat_response.message);
+      setSearch(false);
     }
   };
 
   const dvat24_reason: OptionValue[] = [
-    { value: "NOTFURNISHED", label: "NOTFURNISHED" },
-    { value: "INCOMPLETEFURNISHED", label: "INCOMPLETEFURNISHED" },
-    { value: "INCORRECTRETURN", label: "INCORRECTRETURN" },
-    { value: "NOTCOMPLYRETURN", label: "NOTCOMPLYRETURN" },
+    { value: "NOTFURNISHED", label: "NOT FURNISHED" },
+    { value: "INCOMPLETEFURNISHED", label: "IN-COMPLETE FURNISHED" },
+    { value: "INCORRECTRETURN", label: "IN-CORRECT RETURN" },
+    { value: "NOTCOMPLYRETURN", label: "NOT COMPLY RETURN" },
   ];
 
   const {
     reset,
     handleSubmit,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { isSubmitting },
   } = useFormContext<CreateDvat24Form>();
 
-  const onSubmit = async (data: CreateDvat24Form) => {
-    // const challan_response = await CreateChallan({
-    //   dvatid: dvatdata?.id ?? 0,
-    //   createdby: props.userid,
-    //   cess: data.cess.toString(),
-    //   vat: data.vat.toString(),
-    //   interest: data.interest.toString(),
-    //   others: data.others ?? "0",
-    //   reason: data.reason,
-    //   total_tax_amount: getTotalAmount().toString(),
-    //   penalty: data.penalty.toString(),
-    //   remark: data.remark,
-    // });
+  const [return01Data, setReturn01Data] = useState<
+    (returns_01 & { dvat04: dvat04 }) | null
+  >(null);
 
-    // if (challan_response.status) {
-    //   toast.success("Challan generated successfully");
-    //   reset({});
-    //   router.push("/dashboard/payments/department-challan-history");
-    // } else {
-    //   toast.error(challan_response.message);
-    // }
+  interface Period {
+    to: string;
+    form: string;
+  }
+  const [periodData, setPeriodData] = useState<Period | null>(null);
+
+  const getPeriod = (
+    return_01data: returns_01 & { dvat04: dvat04 }
+  ): {
+    form: Date;
+    to: Date;
+  } => {
+    const iscomp: boolean = return_01data.dvat04.compositionScheme ?? false;
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const from_year: string = return_01data.year;
+    const from_month: string = return_01data.month!;
+    // Get the index of the current month
+    const currentMonthIndex = monthNames.indexOf(from_month);
+    const currentYear = parseInt(from_year);
+
+    // Calculate the 'to' date based on composition scheme
+    let to_year: string;
+    let to_month: string;
+
+    if (iscomp) {
+      // Get last month of the current quarter
+      if (currentMonthIndex >= 9) {
+        // If in Oct-Dec quarter, last month is December
+        to_month = "December";
+        to_year = from_year;
+      } else {
+        // Go to the last month of the previous quarter
+        const lastQuarterMonth =
+          currentMonthIndex - (currentMonthIndex % 3) + 2;
+        to_month = monthNames[lastQuarterMonth];
+        to_year = from_year;
+      }
+    } else {
+      // Get the next month
+      if (currentMonthIndex === 11) {
+        to_month = monthNames[0]; // January of next year
+        to_year = (currentYear + 1).toString();
+      } else {
+        to_month = monthNames[currentMonthIndex + 1];
+        to_year = from_year;
+      }
+    }
+
+    const from_date: Date = new Date(parseInt(from_year), currentMonthIndex, 1);
+    const to_date: Date = new Date(
+      parseInt(to_year),
+      monthNames.indexOf(to_month),
+      0
+    );
+    return {
+      form: from_date,
+      to: to_date,
+    };
+  };
+
+  const onSubmit = async (data: CreateDvat24Form) => {
+    if (!return01Data) return toast.error("Return 01 not found");
+
+    const period_respone = getPeriod(return01Data);
+
+    const dvat24_response = await CreateDvat24({
+      due_date: new Date(data.due_date),
+      dvat24_reason: data.dvat24_reason,
+      remark: data.remark,
+      interest: data.interest,
+      tax: data.vat,
+      createdby: props.userid,
+      issuedId: props.userid,
+      officerId: props.userid,
+      dvatid: return01Data.dvat04.id,
+      tax_period_from: period_respone.form,
+      tax_period_to: period_respone.to,
+      returns_01Id: return01Data.id,
+    });
+
+    if (dvat24_response.status) {
+      toast.success("DVAT 24 created successfully");
+      reset({});
+      router.push("/dashboard/returns/department-track-return-status");
+    } else {
+      toast.error(dvat24_response.message);
+    }
 
     reset({});
   };
@@ -119,20 +211,75 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
     return total;
   };
 
+  useEffect(() => {
+    const returnid: number = parseInt(searchParams.get("returnid") ?? "0");
+    const tinNumber: string = searchParams.get("tin") ?? "";
+    const init = async () => {
+      setLoading(true);
+      const return01_response = await GetReturn01({
+        id: returnid,
+      });
+      if (return01_response.status && return01_response.data) {
+        setReturn01Data(return01_response.data);
+        const period_response = getPeriod(return01_response.data);
+        setPeriodData({
+          form: period_response.form.toDateString(),
+          to: period_response.to.toDateString(),
+        });
+      }
+
+      if (!(tinNumber == null || tinNumber == undefined || tinNumber == "")) {
+        reset({
+          dvat24_reason: "INCORRECTRETURN",
+          due_date: dayjs(new Date().setDate(new Date().getDate() + 15)).format(
+            "DD/MM/YYYY"
+          ),
+        });
+        const dvat_response = await SearchTinNumber({
+          tinumber: tinNumber,
+        });
+        if (dvat_response.status && dvat_response.data) {
+          setUser(dvat_response.data.createdBy);
+          setDvatData(dvat_response.data);
+          setSearch(true);
+        } else {
+          toast.error(dvat_response.message);
+          setSearch(false);
+        }
+      }
+      setLoading(false);
+    };
+
+    init();
+  }, [searchParams, reset]);
+
+  if (isLoading)
+    return (
+      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
+        Loading...
+      </div>
+    );
+
   return (
     <>
-      <div className="p-2 bg-gray-50 mt-2 flex gap-4">
-        <div className="flex gap-4  items-center">
-          <p className="shrink-0">Enter TIN Number : </p>
-          <Input ref={tinnumberRef} placeholder="TIN Number" required={true} />
-          <Button onClick={searchUser} type="primary">
-            Search
-          </Button>
+      {!isSearch && (
+        <div className="p-2 bg-gray-50 mt-2 flex gap-4">
+          <div className="flex gap-4  items-center">
+            <p className="shrink-0">Enter TIN Number : </p>
+            <Input
+              ref={tinnumberRef}
+              placeholder="TIN Number"
+              required={true}
+            />
+            <Button onClick={searchUser} type="primary">
+              Search
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
       {isSearch && (
         <>
-          <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">
+          <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-2">
             Details Of Taxpayer
           </div>
           <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
@@ -176,15 +323,19 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
                   name="due_date"
                   required={true}
                   title="Due Date"
+                  mindate={dayjs(new Date())}
+                  format="DD/MM/YYYY"
                 />
               </div>
-              <div>
-                <p className="text-sm font-normal">Tax Period From Date</p>
-                <p className="text-sm font-medium">2024 May</p>
-              </div>
-              <div>
-                <p className="text-sm font-normal">Tax Period To Date</p>
-                <p className="text-sm font-medium">2024 May</p>
+              <div className="grow"></div>
+              <div className=" mt-2">
+                <p className="text-sm font-normal text-center">
+                  Tax Period From - To
+                </p>
+                <p className="text-sm font-medium  text-center">
+                  {dayjs(new Date(periodData?.form!)).format("DD/MM/YYYY")} -{" "}
+                  {dayjs(new Date(periodData?.to!)).format("DD/MM/YYYY")}
+                </p>
               </div>
             </div>
 

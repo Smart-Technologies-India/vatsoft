@@ -480,6 +480,15 @@ const Anx1 = (props: Anx1ProviderProps) => {
           <button
             onClick={(e) => {
               e.preventDefault();
+
+              if (dvatData?.numberOfOwners ?? 0 < Annexuredata.length) {
+                return toast.error(
+                  `Number of Person having intrest in business in ${
+                    dvatData?.numberOfOwners ?? 0
+                  } kindly fill annexure I each number mendtion.`
+                );
+              }
+
               if (Annexuredata.length === 0)
                 return toast.error("Please add Annexure I");
               if (

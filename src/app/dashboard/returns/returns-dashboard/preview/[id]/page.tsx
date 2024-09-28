@@ -37,6 +37,8 @@ import { toast } from "react-toastify";
 import CheckPayment from "@/action/return/checkpayment";
 import AddSubmitPayment from "@/action/return/addsubmitpayment";
 import CheckLastPayment from "@/action/return/checklastpayment";
+import GetUser from "@/action/user/getuser";
+import { getCookie } from "cookies-next";
 
 interface PercentageOutput {
   increase: string;
@@ -47,6 +49,8 @@ const Dvat16ReturnPreview = () => {
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
   const userid = parseInt(Array.isArray(id) ? id[0] : id);
+
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
   const [return01, setReturn01] = useState<
     (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
@@ -67,6 +71,12 @@ const Dvat16ReturnPreview = () => {
 
   useEffect(() => {
     const init = async () => {
+      const user_response = await GetUser({
+        id: current_user_id,
+      });
+      if (user_response.status && user_response.data) {
+        setUser(user_response.data);
+      }
       const year: string = searchparam.get("year") ?? "";
       const month: string = searchparam.get("month") ?? "";
 
@@ -79,7 +89,7 @@ const Dvat16ReturnPreview = () => {
       if (returnformsresponse.status && returnformsresponse.data) {
         setReturn01(returnformsresponse.data.returns_01);
         serReturns_entryData(returnformsresponse.data.returns_entry);
-        setUser(returnformsresponse.data.returns_01.createdBy);
+        // setUser(returnformsresponse.data.returns_01.createdBy);
 
         const dvat_30: boolean =
           returnformsresponse.data.returns_entry.filter(
@@ -217,6 +227,7 @@ const Dvat16ReturnPreview = () => {
     if (!response.status) return toast.error(response.message);
 
     toast.success(response.message);
+    router.push("/dashboard/returns/returns-dashboard");
     reset();
     setPaymentBox(false);
   };
@@ -964,7 +975,30 @@ const Dvat16ReturnPreview = () => {
           </main>
           <div className="h-20"></div>
           <div className="p-2 shadow bg-white fixed bottom-0 right-0 flex gap-4 items-center hidden-print">
-            {!["USER"].includes(user?.role!) && <></>}
+            {!["USER"].includes(user?.role!) && (
+              <>
+                <Button
+                  type="primary"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/returns/department-dvat24?returnid=${return01.id}&tin=${return01.dvat04.tinNumber}`
+                    )
+                  }
+                >
+                  DVAT24
+                </Button>
+                <Button
+                  type="primary"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/returns/department-dvat24a?returnid=${return01.id}&tin=${return01.dvat04.tinNumber}`
+                    )
+                  }
+                >
+                  DVAT24A
+                </Button>
+              </>
+            )}
 
             <Button onClick={() => router.back()}>Back</Button>
             <Button type="primary" onClick={generatePDF}>

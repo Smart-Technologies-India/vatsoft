@@ -1,29 +1,28 @@
 "use server";
-interface GetTrackPaymentPayload {}
+interface GetUserDvat04Payload {}
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { returns_01, returns_entry } from "@prisma/client";
+import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
-const GetTrackPayment = async (
-  payload: GetTrackPaymentPayload
-): Promise<ApiResponseType<returns_entry[] | null>> => {
-  const functionname: string = GetTrackPayment.name;
+const GetAllDvat04 = async (
+  payload: GetUserDvat04Payload
+): Promise<ApiResponseType<dvat04[] | null>> => {
+  const functionname: string = GetAllDvat04.name;
+
   try {
-    const dvat04response = await prisma.returns_entry.findMany({
+    const dvat04response = await prisma.dvat04.findMany({
       where: {
         deletedAt: null,
         deletedBy: null,
-      },
-      include: {
-        returns_01: true,
+        status: "APPROVED",
       },
     });
 
     if (!dvat04response)
       return createResponse({
-        message: "Invalid user id. Please try again.",
+        message: "Invalid id. Please try again.",
         functionname,
       });
 
@@ -40,4 +39,4 @@ const GetTrackPayment = async (
   }
 };
 
-export default GetTrackPayment;
+export default GetAllDvat04;
