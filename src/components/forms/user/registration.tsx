@@ -1,11 +1,6 @@
 "use client";
 import { RegistrationForm, RegistrationSchema } from "@/schema/registraion";
-import {
-  FieldErrors,
-  FormProvider,
-  useForm,
-  useFormContext,
-} from "react-hook-form";
+import { FormProvider, useForm, useFormContext } from "react-hook-form";
 
 import { MultiSelect } from "../inputfields/multiselect";
 import { DateSelect } from "../inputfields/dateselect";
@@ -20,18 +15,28 @@ import { toast } from "react-toastify";
 import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { dvat04, registration, RegistrationStatus, Role } from "@prisma/client";
+import {
+  dvat04,
+  DvatStatus,
+  registration,
+  RegistrationStatus,
+  Role,
+} from "@prisma/client";
 import GetFromDvat from "@/action/registration/getfromdvat";
 import { formateDate, onFormError } from "@/utils/methods";
 import UpdateDvatStatus from "@/action/dvat/updatestatus";
+import { Button } from "antd";
 
 type RegistrationProviderPrpos = {
   dvatid: number;
 };
 
 export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
-  const [registrationdata, setRegistrationData] = useState<registration>();
+  const [registrationdata, setRegistrationData] = useState<
+    (registration & { dvat04: dvat04 }) | null
+  >(null);
   const role = getCookie("role");
+  const router = useRouter();
 
   useEffect(() => {
     const init = async () => {
@@ -43,13 +48,35 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
       }
     };
     init();
-  }, []);
+  }, [props.dvatid]);
 
   const methods = useForm<RegistrationForm>({
     resolver: valibotResolver(RegistrationSchema),
   });
 
-  if (registrationdata?.dept_user_id == 6 && role == Role.VATOFFICER) {
+  if (registrationdata && registrationdata.dvat04.status == "APPROVED") {
+    return <RegistrationPreview registrationdata={registrationdata} />;
+  }
+
+  if (
+    registrationdata &&
+    registrationdata.dvat04.status == "PROVISIONAL" &&
+    role == Role.INSPECTOR
+  ) {
+    return (
+      <FormProvider {...methods}>
+        <Registration dvatid={props.dvatid} />
+      </FormProvider>
+    );
+  }
+
+  if (
+    registrationdata &&
+    registrationdata.dept_user_id == 6 &&
+    role == Role.VATOFFICER &&
+    (registrationdata.dvat04.status == DvatStatus.PENDINGPROCESSING ||
+      registrationdata.dvat04.status == DvatStatus.PROVISIONAL)
+  ) {
     return (
       <FormProvider {...methods}>
         <VatNote registrationdata={registrationdata} />
@@ -57,19 +84,49 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
     );
   }
 
-  if (registrationdata?.dept_user_id == 8 && role == Role.INSPECTOR) {
+  if (
+    registrationdata &&
+    registrationdata.dept_user_id == 8 &&
+    role == Role.INSPECTOR
+  ) {
     return (
       <FormProvider {...methods}>
         <Registration dvatid={props.dvatid} />
       </FormProvider>
     );
   }
-  return <></>;
+
+  if (
+    registrationdata &&
+    registrationdata.dept_user_id == 8 &&
+    role == Role.VATOFFICER
+  ) {
+    return (
+      <div>
+        <p className="font-mono bg-rose-500 bg-opacity-10 px-2 py-1 text-rose-500 border-l-2 border-rose-500">
+          Note: The Dealer Registration File is with Inspector for physical site
+          report.
+        </p>
+        <div className="flex gap-2 mt-2">
+          <button
+            type="button"
+            onClick={() => {
+              router.back();
+            }}
+            className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white"
+          >
+            Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 };
 
 const Registration = (props: RegistrationProviderPrpos) => {
   const id: number = parseInt(getCookie("id") ?? "0");
   const router = useRouter();
+  const role: Role = getCookie("role") as Role;
 
   const [dvatdata, setDvatdata] = useState<
     dvat04 & { registration: registration[] }
@@ -181,6 +238,7 @@ const Registration = (props: RegistrationProviderPrpos) => {
       packing_materials: data.packing_materials,
       dept_user_id: 6,
       status: RegistrationStatus.ACTIVE,
+      dvatstatus: DvatStatus.PENDINGPROCESSING,
     });
 
     if (response.status) {
@@ -212,7 +270,8 @@ const Registration = (props: RegistrationProviderPrpos) => {
       updatedby: id,
       inspector_note: inspector_note,
       dept_user_id: 6,
-      status: RegistrationStatus.BYPASS,
+      status: RegistrationStatus.ACTIVE,
+      dvatstatus: DvatStatus.PROVISIONAL,
     });
 
     if (response.status) {
@@ -361,7 +420,7 @@ const Registration = (props: RegistrationProviderPrpos) => {
         <div className="flex gap-3 mt-3">
           <div className="flex-1">
             <TaxtInput<RegistrationForm>
-              placeholder="Enter Capital proposed"
+              placeholder="Enter Security Deposit Amount"
               name="security_deposit_amount"
               required={true}
               title="a). Security deposit Amount"
@@ -400,10 +459,10 @@ const Registration = (props: RegistrationProviderPrpos) => {
       <div className="flex gap-3 mt-3">
         <div className="flex-1">
           <TaxtAreaInput<RegistrationForm>
-            placeholder="Enter address"
+            placeholder="Enter Name of the peoples"
             name="name_of_person"
             required={false}
-            title="15. Name of the peoples whom  visited at the time of inspection"
+            title="14. Name of the peoples whom  visited at the time of inspection"
           />
         </div>
         <div className="flex-1">
@@ -451,32 +510,45 @@ const Registration = (props: RegistrationProviderPrpos) => {
         />
       </div>
 
-      {dvatdata && dvatdata.registration[0].dept_user_id == 8 && (
-        <div className="flex gap-2 mt-2">
-          <input
-            type="submit"
-            value={"Submit"}
-            disabled={isSubmitting}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
-          />
-          <button
-            type="button"
-            onClick={by_pass}
-            className="py-1 text-sm px-4 bg-blue-500 text-white rounded-md"
-          >
-            Bypass
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              router.back();
-            }}
-            className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white"
-          >
-            Exit
-          </button>
-        </div>
-      )}
+      <div className="flex gap-2 mt-2">
+        {dvatdata && dvatdata.registration[0].dept_user_id == 8 && (
+          <>
+            <input
+              type="submit"
+              value={"Submit"}
+              disabled={isSubmitting}
+              className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
+            />
+            <button
+              type="button"
+              onClick={by_pass}
+              className="py-1 text-sm px-4 bg-blue-500 text-white rounded-md"
+            >
+              Provisional
+            </button>
+          </>
+        )}
+
+        {dvatdata &&
+          dvatdata.status == DvatStatus.PROVISIONAL &&
+          role == Role.INSPECTOR && (
+            <input
+              type="submit"
+              value={"Submit"}
+              disabled={isSubmitting}
+              className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
+            />
+          )}
+        <button
+          type="button"
+          onClick={() => {
+            router.back();
+          }}
+          className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white"
+        >
+          Exit
+        </button>
+      </div>
     </form>
   );
 };
@@ -664,7 +736,7 @@ const VatNote = (props: VatNoteProps) => {
       id: dvatdata.registration[0].id,
       updatedby: id,
       dept_user_id: 8,
-      status: RegistrationStatus.BYPASS,
+      status: RegistrationStatus.ACTIVE,
     });
 
     if (response.status) {
@@ -881,7 +953,7 @@ const VatNote = (props: VatNoteProps) => {
         <div className="flex gap-3 mt-3">
           <div className="flex-1">
             <TaxtInput<RegistrationForm>
-              placeholder="Enter Capital proposed"
+              placeholder="Enter Security Desposite Amount"
               name="security_deposit_amount"
               required={true}
               title="a). Security deposit Amount"
@@ -924,10 +996,10 @@ const VatNote = (props: VatNoteProps) => {
       <div className="flex gap-3 mt-3">
         <div className="flex-1">
           <TaxtAreaInput<RegistrationForm>
-            placeholder="Enter address"
+            placeholder="Enter Name of the peoples"
             name="name_of_person"
             required={false}
-            title="15. Name of the peoples whom  visited at the time of inspection"
+            title="14. Name of the peoples whom  visited at the time of inspection"
             disable={true}
           />
         </div>
@@ -1039,26 +1111,24 @@ const VatNote = (props: VatNoteProps) => {
         >
           Send to Inspector
         </button>
-        {dvatdata &&
-          dvatdata.registration[0].status == RegistrationStatus.BYPASS && (
-            <button
-              onClick={bypass}
-              type="button"
-              className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
-            >
-              Bypass
-            </button>
-          )}
+        {dvatdata && dvatdata.status == DvatStatus.PROVISIONAL && (
+          <button
+            onClick={bypass}
+            type="button"
+            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
+          >
+            Bypass
+          </button>
+        )}
 
-        {dvatdata &&
-          dvatdata.registration[0].status == RegistrationStatus.ACTIVE && (
-            <input
-              type="submit"
-              value={"Approve"}
-              disabled={isSubmitting}
-              className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
-            />
-          )}
+        {dvatdata && dvatdata.status == DvatStatus.PENDINGPROCESSING && (
+          <input
+            type="submit"
+            value={"Approve"}
+            disabled={isSubmitting}
+            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
+          />
+        )}
 
         <button
           onClick={reject}
@@ -1078,5 +1148,221 @@ const VatNote = (props: VatNoteProps) => {
         </button>
       </div>
     </form>
+  );
+};
+
+type RegistrationPreviewProps = {
+  registrationdata: registration;
+};
+
+const RegistrationPreview = (props: RegistrationPreviewProps) => {
+  const router = useRouter();
+
+  return (
+    <div>
+      <div className="rounded-sm p-4 border border-black mt-6 relative">
+        <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
+          Site Report 1
+        </span>
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          <InfoCard
+            title="1. Date of Visit"
+            description={
+              props.registrationdata.date_of_visit
+                ? formateDate(props.registrationdata.date_of_visit)
+                : ""
+            }
+          />
+          <InfoCard
+            title="2. Nature of Business"
+            description={props.registrationdata.natureOfBusiness}
+          />
+          <InfoCard
+            title="3. Date of Commencement of Purchases"
+            description={
+              props.registrationdata.date_of_purchases
+                ? formateDate(props.registrationdata.date_of_purchases)
+                : ""
+            }
+          />
+          <InfoCard
+            title="4. Amount of purchases made in (Rs.)"
+            description={props.registrationdata.amount_of_purchases ?? "0.0"}
+          />
+          <InfoCard
+            title="5. Date of Commencement of Sales"
+            description={
+              props.registrationdata.date_of_sales
+                ? formateDate(props.registrationdata.date_of_sales)
+                : ""
+            }
+          />
+
+          <InfoCard
+            title="6. Amount of Sales made in (Rs.)"
+            description={props.registrationdata.amount_of_sales ?? "0.0"}
+          />
+          <InfoCard
+            title="7. Capital proposed to be invested in (Rs.)"
+            description={props.registrationdata.capital_proposed ?? ""}
+          />
+
+          <InfoCard
+            title="8. Amount of Stock held at the time of visit (Rs.)"
+            description={props.registrationdata.amount_of_stock ?? "0.0"}
+          />
+          <InfoCard
+            title="9. Books of Account Maintained"
+            description={props.registrationdata.books_of_account ?? ""}
+          />
+          <InfoCard
+            title="10. Verification of Originals"
+            description={props.registrationdata.verification_of_originals ?? ""}
+          />
+
+          <InfoCard
+            title="11. Verification of title of place of business"
+            description={props.registrationdata.verification_of_title ?? ""}
+          />
+          <InfoCard
+            title="12. Other Information"
+            description={props.registrationdata.other_information ?? ""}
+          />
+        </div>
+      </div>
+      <div className="rounded-sm p-4 border border-black mt-6 relative">
+        <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
+          Security
+        </span>
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          <InfoCard
+            title="13a) Security Deposit found correct"
+            description={props.registrationdata.security_deposit ? "Yes" : "No"}
+          />
+          <InfoCard
+            title="b). Security deposit Amount"
+            description={
+              props.registrationdata.security_deposit_amount ?? "0.0"
+            }
+          />
+
+          <InfoCard
+            title="c). Security desposit date"
+            description={
+              props.registrationdata.security_deposit_date
+                ? formateDate(props.registrationdata.security_deposit_date)
+                : ""
+            }
+          />
+          <InfoCard
+            title="d). Date of Expiry of Security Deposit"
+            description={
+              props.registrationdata.date_of_expiry_security_deposit
+                ? formateDate(
+                    props.registrationdata.date_of_expiry_security_deposit
+                  )
+                : ""
+            }
+          />
+          <InfoCard
+            title="e). Bank"
+            description={props.registrationdata.bank ?? ""}
+          />
+        </div>
+      </div>
+      <div className="rounded-sm p-4 border border-black mt-6 relative">
+        <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
+          Site Report 2
+        </span>
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          <InfoCard
+            title="15. Name of the peoples whom  visited at the time of inspection"
+            description={props.registrationdata.name_of_person ?? ""}
+          />
+          <InfoCard
+            title="15. Plant and Machinery"
+            description={props.registrationdata.plant_and_machinery ?? ""}
+          />
+          <InfoCard
+            title="16. Address of the place(s) visited for inspection (If not same as principle Place of Business please specify below)"
+            description={props.registrationdata.address ?? ""}
+          />
+          <InfoCard
+            title="17. Raw Materials"
+            description={props.registrationdata.raw_materials ?? ""}
+          />
+          <InfoCard
+            title="18. Packing Materials"
+            description={props.registrationdata.packing_materials ?? ""}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-sm p-4 border border-black mt-6 relative">
+        <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
+          Inspector Note
+        </span>
+        <InfoCard
+          title="Inspector Comments"
+          description={props.registrationdata.inspector_note ?? ""}
+        />
+      </div>
+
+      <div className="rounded-sm p-4 border border-black mt-6 relative">
+        <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
+          VAT officer
+        </span>
+        <h1 className="text-lg font-semibold text-center mt-4"></h1>
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          <InfoCard
+            title="Registration Payment Date"
+            description={
+              props.registrationdata.registration_date
+                ? formateDate(props.registrationdata.registration_date)
+                : ""
+            }
+          />
+          <InfoCard
+            title="Necessary payments (Reg. Fees, PT and Security Deposits etc.), if applicable have beeen received?"
+            description={
+              props.registrationdata.necessary_payments ? "Yes" : "No"
+            }
+          />
+
+          <InfoCard
+            title="All Documents Uploaded?"
+            description={props.registrationdata.all_doc_upload ? "Yes" : "No"}
+          />
+          <InfoCard
+            title="All Appointments Closed?"
+            description={props.registrationdata.all_appointment ? "Yes" : "No"}
+          />
+          <InfoCard
+            title="VAT officer Comment"
+            description={props.registrationdata.vat_officer_note ?? ""}
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-4 mt-2">
+        <Button
+          type="primary"
+          onClick={() => {
+            router.back();
+          }}
+        >
+          Back
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const InfoCard = (args: { title: string; description: string }) => {
+  return (
+    <div className="rounded-md p-2">
+      <p className="text-sm">{args.title}</p>
+      <p className="text-sm font-semibold">{args.description}</p>
+    </div>
   );
 };

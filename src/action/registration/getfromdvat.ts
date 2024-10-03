@@ -3,7 +3,7 @@
 import { addPrismaDatabaseDate, errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
-import { registration, returns_01 } from "@prisma/client";
+import { dvat04, registration, returns_01 } from "@prisma/client";
 
 interface GetFromDvatPayload {
   id: number;
@@ -11,7 +11,7 @@ interface GetFromDvatPayload {
 
 const GetFromDvat = async (
   payload: GetFromDvatPayload
-): Promise<ApiResponseType<registration | null>> => {
+): Promise<ApiResponseType<(registration & { dvat04: dvat04 }) | null>> => {
   const functionname: string = GetFromDvat.name;
   try {
     const is_exist = await prisma.registration.findFirst({
@@ -19,6 +19,9 @@ const GetFromDvat = async (
         dvat04Id: payload.id,
         deletedAt: null,
         deletedById: null,
+      },
+      include: {
+        dvat04: true,
       },
     });
 

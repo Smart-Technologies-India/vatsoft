@@ -1703,7 +1703,7 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
               Date of purchase
             </th>
             <th className="border border-black px-1 leading-4 text-[0.6rem] w-[18%] text-left">
-              Name of the Dealer Fro mwhom Goods Purchased
+              Name of the Dealer From whom Goods Purchased
             </th>
             <th className="border border-black px-1 leading-4 text-[0.6rem] w-[10%] text-left">
               TIN no of selling dealer

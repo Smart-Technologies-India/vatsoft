@@ -58,7 +58,7 @@ import {
 } from "@/components/ui/table";
 
 import { Textarea } from "@/components/ui/textarea";
-import { handleNumberChange } from "@/utils/methods";
+import { capitalcase, formateDate, handleNumberChange } from "@/utils/methods";
 import { Checkbox } from "@/components/ui/checkbox";
 import GetAnx1ById from "@/action/anx1/getanxbyid";
 import GetDvat from "@/action/user/register/getdvat";
@@ -152,6 +152,35 @@ const PreviewPage = () => {
               </div>
             );
           })}
+        </div>
+        <div className="bg-white w-full px-4 py-2 shadow-sm font-normal p-1 flex justify-between gap-6 mt-4 border">
+          {dvat04Data?.status == "APPROVED" ||
+          dvat04Data?.status == "PROVISIONAL" ? (
+            <div>
+              <p className="text-sm">TIN Number</p>
+              <p className="text-sm  font-medium">{dvat04Data?.tinNumber}</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm">RR Number</p>
+              <p className="text-sm  font-medium">
+                {dvat04Data?.tempregistrationnumber}
+              </p>
+            </div>
+          )}
+
+          <div>
+            <p className="text-sm">Name</p>
+            <p className="text-sm  font-medium">{dvat04Data?.name}</p>
+          </div>
+          <div>
+            <p className="text-sm">Trade Name</p>
+            <p className="text-sm  font-medium">{dvat04Data?.tradename}</p>
+          </div>
+          <div>
+            <p className="text-sm">Status</p>
+            {capitalcase(dvat04Data?.status ?? "")}
+          </div>
         </div>
 
         <div className="bg-white mx-auto shadow mt-4">
@@ -2075,8 +2104,6 @@ interface Anx1PageProps {
 const Anx1Page = (props: Anx1PageProps) => {
   const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
-  // const [anx1id, setAnxid] = useState<number>(0);
-
   const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -2124,8 +2151,9 @@ const Anx1Page = (props: Anx1PageProps) => {
 
       const getanx1resposne = await GetAnx1({ dvatid: props.dvatid });
 
-      if (getanx1resposne.status) {
-        setAnnexuredata(getanx1resposne.data!);
+      if (getanx1resposne.status && getanx1resposne.data) {
+        setAnnexuredata(getanx1resposne.data);
+        edit(getanx1resposne.data[0].id);
       }
       setIsLoading(false);
     };
@@ -2197,7 +2225,7 @@ const Anx1Page = (props: Anx1PageProps) => {
           <div className="flex gap-4 items-end mt-2">
             <div className="flex-1">
               <Label htmlFor="deposittype" className="text-sm font-normal">
-                Title Particulars of person{" "}
+                Title Particulars of person
                 <span className="text-rose-500">*</span>
               </Label>
               <Select
@@ -2702,6 +2730,7 @@ const Anx2Page = (props: Anx2PageProps) => {
 
       if (getanx2resposne.status && getanx2resposne.data) {
         setAnnexuredata(getanx2resposne.data);
+        edit(getanx2resposne.data[0].id);
       }
 
       setIsLoading(false);

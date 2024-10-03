@@ -28,13 +28,16 @@ import { getCookie } from "cookies-next";
 import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import GetAllNotice from "@/action/notice_order/getallnotice";
-import { order_notice } from "@prisma/client";
+import { FormType, order_notice } from "@prisma/client";
+import GetUserNotice from "@/action/notice_order/getusernotice";
+import { capitalcase, formateDate } from "@/utils/methods";
+import Link from "next/link";
 const { RangePicker } = DatePicker;
 
 const SupplierDetails = () => {
   const router = useRouter();
 
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -110,6 +113,32 @@ const SupplierDetails = () => {
     // }
   };
 
+  const [noticeData, setNoticeData] = useState<order_notice[]>([]);
+
+  useEffect(() => {
+    const init = async () => {
+      const notice_respone = await GetUserNotice({
+        userid: current_user_id,
+      });
+      if (notice_respone.status && notice_respone.data) {
+        setNoticeData(notice_respone.data);
+      }
+    };
+    init();
+  }, [current_user_id]);
+  const getLink = (type: FormType, id: number): string => {
+    switch (type) {
+      case FormType.DVAT10:
+        return `/dashboard/returns/dvat10?id=${id}`;
+      case FormType.DVAT24:
+        return `/dashboard/returns/dvat24?id=${id}`;
+      case FormType.DVAT24A:
+        return `/dashboard/returns/dvat24a?id=${id}`;
+      default:
+        return `/dashboard/returns/dvat10?id=${id}`;
+    }
+  };
+
   return (
     <>
       <div className="p-6">
@@ -171,9 +200,7 @@ const SupplierDetails = () => {
           <Table className="border mt-2">
             <TableHeader>
               <TableRow className="bg-gray-100">
-                <TableHead className="text-center">
-                  Notice/Demand Order Id
-                </TableHead>
+                <TableHead className="">Notice/Demand Order Id</TableHead>
                 <TableHead className="whitespace-nowrap text-center">
                   Issued By
                 </TableHead>
@@ -184,52 +211,44 @@ const SupplierDetails = () => {
                 <TableHead className="text-center">Date of Issuance</TableHead>
                 <TableHead className="text-center">Due Date</TableHead>
                 <TableHead className="text-center">Amount of Demand</TableHead>
+                <TableHead className="text-center">Status</TableHead>
                 <TableHead className="text-center">Download</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell className="text-center">2693943821</TableCell>
-                <TableCell className="text-center">System Generated</TableCell>
-                <TableCell className="text-center">Notice</TableCell>
-                <TableCell className="text-center">
-                  Notice to return defulter u/s 64 for not filing return
-                </TableCell>
-                <TableCell className="text-center">25/05/2024</TableCell>
-                <TableCell className="text-center">10/10/2024</TableCell>
-                <TableCell className="text-center">NA</TableCell>
-                <TableCell className="text-center text-blue-500">
-                  <MdiDownload />
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center">2693943821</TableCell>
-                <TableCell className="text-center">System Generated</TableCell>
-                <TableCell className="text-center">Notice</TableCell>
-                <TableCell className="text-center">
-                  Notice to return defulter u/s 64 for not filing return
-                </TableCell>
-                <TableCell className="text-center">25/05/2024</TableCell>
-                <TableCell className="text-center">10/10/2024</TableCell>
-                <TableCell className="text-center">NA</TableCell>
-                <TableCell className="text-center text-blue-500">
-                  <MdiDownload />
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-center">26989473821</TableCell>
-                <TableCell className="text-center">System Generated</TableCell>
-                <TableCell className="text-center">Notice</TableCell>
-                <TableCell className="text-center">
-                  Notice to return defulter u/s 64 for not filing return
-                </TableCell>
-                <TableCell className="text-center">25/05/2024</TableCell>
-                <TableCell className="text-center">10/10/2024</TableCell>
-                <TableCell className="text-center">NA</TableCell>
-                <TableCell className="text-center text-blue-500">
-                  <MdiDownload />
-                </TableCell>
-              </TableRow>
+              {noticeData.map((val: order_notice, index: number) => (
+                <TableRow key={index}>
+                  <TableCell className="text-center">
+                    <Link
+                      href={getLink(val.form_type, val.id)}
+                      className="text-blue-500"
+                    >
+                      {val.ref_no.toUpperCase()}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    System Generated
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {capitalcase(val.notice_order_type)}
+                  </TableCell>
+                  <TableCell className="text-center">{val.form_type}</TableCell>
+                  <TableCell className="text-center">
+                    {formateDate(val.issue_date)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {formateDate(val.due_date)}
+                  </TableCell>
+                  <TableCell className="text-center">{val.amount}</TableCell>
+                  <TableCell className="text-center">
+                    {" "}
+                    {capitalcase(val.status)}
+                  </TableCell>
+                  <TableCell className="text-center text-blue-500">
+                    <MdiDownload />
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
           <div className="flex mt-2 gap-2">

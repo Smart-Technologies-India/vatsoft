@@ -24,15 +24,8 @@ import {
 } from "@prisma/client";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { valibotResolver } from "@hookform/resolvers/valibot";
-
 import { Button, Modal } from "antd";
-import { useForm } from "react-hook-form";
-import {
-  SubmitPaymentForm,
-  SubmitPaymentSchema,
-} from "@/schema/subtmitpayment";
-import AddPayment from "@/action/return/addpayment";
+
 import { toast } from "react-toastify";
 import CheckPayment from "@/action/return/checkpayment";
 import AddSubmitPayment from "@/action/return/addsubmitpayment";
@@ -59,7 +52,6 @@ const Dvat16ReturnPreview = () => {
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
 
   const [payment, setPayment] = useState<boolean>(false);
-  const [paymentbox, setPaymentBox] = useState<boolean>(false);
   const [paymentSubmitBox, setPaymentSubmitBox] = useState<boolean>(false);
 
   const searchparam = useSearchParams();
@@ -177,15 +169,6 @@ const Dvat16ReturnPreview = () => {
     init();
   }, [searchparam, userid]);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-  } = useForm<SubmitPaymentForm>({
-    resolver: valibotResolver(SubmitPaymentSchema),
-  });
-
   const get_rr_number = (): string => {
     const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
     const today = new Date();
@@ -196,42 +179,6 @@ const Dvat16ReturnPreview = () => {
     return `${rr_no}${month}${day}${return_id}`;
   };
 
-  const onSubmit = async (data: SubmitPaymentForm) => {
-    if (return01 == null) return toast.error("There is not return from here");
-    const lastPayment = await CheckLastPayment({
-      id: return01.id ?? 0,
-    });
-    if (!lastPayment.status) {
-      toast.error(lastPayment.message);
-      reset();
-      setPaymentBox(false);
-      return;
-    }
-
-    if (lastPayment.data == false) {
-      toast.error(lastPayment.message);
-      reset();
-      setPaymentBox(false);
-      return;
-    }
-
-    const response = await AddPayment({
-      id: return01.id ?? 0,
-      bank_name: data.bank_name,
-      track_id: data.track_id,
-      transaction_id: data.transaction_id,
-      rr_number: get_rr_number(),
-      penalty: lateFees.toString(),
-    });
-
-    if (!response.status) return toast.error(response.message);
-
-    toast.success(response.message);
-    router.push("/dashboard/returns/returns-dashboard");
-    reset();
-    setPaymentBox(false);
-  };
-
   const onSubmitPayment = async () => {
     if (return01 == null) return toast.error("There is not return from here");
 
@@ -240,14 +187,12 @@ const Dvat16ReturnPreview = () => {
     });
     if (!lastPayment.status) {
       toast.error(lastPayment.message);
-      reset();
       setPaymentSubmitBox(false);
       return;
     }
 
     if (lastPayment.data == false) {
       toast.error(lastPayment.message);
-      reset();
       setPaymentSubmitBox(false);
       return;
     }
@@ -260,7 +205,6 @@ const Dvat16ReturnPreview = () => {
 
     if (!response.status) return toast.error(response.message);
     toast.success(response.message);
-    reset();
     setPaymentSubmitBox(false);
   };
 
@@ -587,76 +531,7 @@ const Dvat16ReturnPreview = () => {
   return (
     <>
       {/* <DevTool control={control} /> */}
-      <Modal title="Payment" open={paymentbox} footer={null} closeIcon={false}>
-        <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-          <div className="mt-2">
-            <p>Bank Name</p>
-            <input
-              className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                errors.bank_name ? "border-red-500" : "hover:border-blue-500"
-              }`}
-              placeholder="Bank Name"
-              {...register("bank_name")}
-              type="text"
-            />
-            {errors.bank_name && (
-              <p className="text-xs text-red-500">
-                {errors.bank_name.message?.toString()}
-              </p>
-            )}
-          </div>
-          <div className="mt-2">
-            <p>Transaction Id</p>
-            <input
-              className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500 ${
-                errors.transaction_id
-                  ? "border-red-500"
-                  : "hover:border-blue-500"
-              }`}
-              placeholder="Transaction id"
-              {...register("transaction_id")}
-            />
-            {errors.transaction_id && (
-              <p className="text-xs text-red-500">
-                {errors.transaction_id.message?.toString()}
-              </p>
-            )}
-          </div>
-          <div className="mt-2">
-            <p>Track Id</p>
-            <input
-              className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                errors.track_id ? "border-red-500" : "hover:border-blue-500"
-              }`}
-              placeholder="Track Id"
-              {...register("track_id")}
-            />
-            {errors.track_id && (
-              <p className="text-xs text-red-500">
-                {errors.track_id.message?.toString()}
-              </p>
-            )}
-          </div>
-          <div className="flex  gap-2 mt-2">
-            <div className="grow"></div>
-            <button
-              disabled={isSubmitting}
-              className="py-1 rounded-md border px-4 text-sm text-gray-600"
-              onClick={(e) => {
-                e.preventDefault();
-                setPaymentBox(false);
-              }}
-            >
-              Close
-            </button>
-            <input
-              type="submit"
-              value={"Submit"}
-              className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
-            />
-          </div>
-        </form>
-      </Modal>
+
       <Modal
         title="Confirmation"
         open={paymentSubmitBox}
@@ -667,10 +542,8 @@ const Dvat16ReturnPreview = () => {
         <div className="flex  gap-2 mt-2">
           <div className="grow"></div>
           <button
-            disabled={isSubmitting}
             className="py-1 rounded-md border px-4 text-sm text-gray-600"
-            onClick={(e) => {
-              e.preventDefault();
+            onClick={() => {
               setPaymentSubmitBox(false);
             }}
           >
@@ -1028,19 +901,16 @@ const Dvat16ReturnPreview = () => {
                       });
                       if (!lastPayment.status) {
                         toast.error(lastPayment.message);
-                        reset();
-                        setPaymentBox(false);
                         return;
                       }
 
                       if (lastPayment.data == false) {
                         toast.error(lastPayment.message);
-                        reset();
-                        setPaymentBox(false);
                         return;
                       }
-
-                      setPaymentBox(true);
+                      router.push(
+                        `/dashboard/returns/returns-dashboard/preview/${return01.id}/challan-payment`
+                      );
                     }}
                   >
                     Proceed to Pay
@@ -2228,7 +2098,7 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
               Date of purchase
             </th>
             <th className="border border-black px-1 leading-4 text-[0.6rem] w-[18%] text-left">
-              Name of the Dealer Fro mwhom Goods Purchased
+              Name of the Dealer From whom Goods Purchased
             </th>
             <th className="border border-black px-1 leading-4 text-[0.6rem] w-[10%] text-left">
               TIN no of selling dealer
@@ -2657,6 +2527,7 @@ interface CentralSalesProps {
 
 const CentralSales = (props: CentralSalesProps) => {
   const searchparam = useSearchParams();
+
   useEffect(() => {
     const year: string = searchparam.get("year") ?? "";
 

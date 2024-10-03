@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -59,7 +60,7 @@ import {
 } from "@/components/ui/table";
 
 import { Textarea } from "@/components/ui/textarea";
-import { handleNumberChange } from "@/utils/methods";
+import { capitalcase, formateDate, handleNumberChange } from "@/utils/methods";
 import { Checkbox } from "@/components/ui/checkbox";
 import GetAnx1ById from "@/action/anx1/getanxbyid";
 import GetDvat from "@/action/user/register/getdvat";
@@ -166,6 +167,37 @@ const PreviewPage = () => {
             );
           })}
         </div>
+        <div className="bg-white w-full px-4 py-2 shadow-sm font-normal p-1 flex justify-between gap-6 mt-4 border">
+          {dvat04Data?.status == "APPROVED" ||
+          dvat04Data?.status == "PROVISIONAL" ? (
+            <div>
+              <p className="text-sm">TIN Number</p>
+              <p className="text-sm  font-medium">{dvat04Data?.tinNumber}</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm">RR Number</p>
+              <p className="text-sm  font-medium">
+                {dvat04Data?.tempregistrationnumber}
+              </p>
+            </div>
+          )}
+
+          <div>
+            <p className="text-sm">Name</p>
+            <p className="text-sm  font-medium">{dvat04Data?.name}</p>
+          </div>
+          <div>
+            <p className="text-sm">Trade Name</p>
+            <p className="text-sm  font-medium">{dvat04Data?.tradename}</p>
+          </div>
+          <div>
+            <p className="text-sm">Status</p>
+            <p className="text-sm  font-medium">
+              {capitalcase(dvat04Data?.status ?? "")}
+            </p>
+          </div>
+        </div>
 
         <div className="bg-white mx-auto shadow mt-4">
           {pageIndex == 1 && <UserRegister userid={user_id} />}
@@ -200,24 +232,28 @@ const PreviewPage = () => {
             {pageIndex == 7 && (
               <Button
                 onClick={async () => {
-                  if (
-                    dvat04Data?.registration[0].dept_user_id == 8 &&
-                    role == Role.INSPECTOR
-                  ) {
-                    router.push(
-                      `/dashboard/register/${dvat04Data!.id}/register`
-                    );
-                  } else if (
-                    dvat04Data?.registration[0].dept_user_id == 6 &&
-                    role == Role.VATOFFICER
-                  ) {
-                    router.push(
-                      `/dashboard/register/${dvat04Data!.id}/register`
-                    );
-                  } else if (dvat04Data?.status == "NONE") {
+                  // if (
+                  //   dvat04Data?.registration[0].dept_user_id == 8 &&
+                  //   role == Role.INSPECTOR
+                  // ) {
+                  //   router.push(
+                  //     `/dashboard/register/${dvat04Data!.id}/register`
+                  //   );
+                  // } else if (
+                  //   dvat04Data?.registration[0].dept_user_id == 6 &&
+                  //   role == Role.VATOFFICER
+                  // ) {
+                  //   router.push(
+                  //     `/dashboard/register/${dvat04Data!.id}/register`
+                  //   );
+                  // } else
+
+                  if (dvat04Data?.status == "NONE" && role == Role.USER) {
                     setOpen(true);
                   } else {
-                    router.push("/dashboard");
+                    router.push(
+                      `/dashboard/register/${dvat04Data!.id}/register`
+                    );
                   }
                 }}
                 // onClick={() => router.push("/dashboard")}
@@ -2159,8 +2195,9 @@ const Anx1Page = (props: Anx1PageProps) => {
 
       const getanx1resposne = await GetAnx1({ dvatid: props.dvatid });
 
-      if (getanx1resposne.status) {
-        setAnnexuredata(getanx1resposne.data!);
+      if (getanx1resposne.status && getanx1resposne.data) {
+        setAnnexuredata(getanx1resposne.data);
+        edit(getanx1resposne.data[0].id);
       }
       setIsLoading(false);
     };
@@ -2736,6 +2773,7 @@ const Anx2Page = (props: Anx2PageProps) => {
 
       if (getanx2resposne.status && getanx2resposne.data) {
         setAnnexuredata(getanx2resposne.data);
+        edit(getanx2resposne.data[0].id);
       }
 
       setIsLoading(false);

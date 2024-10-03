@@ -28,7 +28,7 @@ const CreateDvat10 = async (
   const ref_no: string = nanoid();
 
   try {
-    const challan = await prisma.order_notice.create({
+    const order_notice = await prisma.order_notice.create({
       data: {
         dvatid: payload.dvatid,
         ref_no: ref_no,
@@ -47,11 +47,11 @@ const CreateDvat10 = async (
     });
 
     return createResponse({
-      message: challan
+      message: order_notice
         ? "DVAT10 create successfully"
         : "Unable to create DVAT10.",
       functionname: functionname,
-      data: challan ?? null,
+      data: order_notice ?? null,
     });
   } catch (e) {
     return createResponse({

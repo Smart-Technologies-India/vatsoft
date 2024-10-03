@@ -187,24 +187,27 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
     const tinNumber: string = searchParams.get("tin") ?? "";
     const init = async () => {
       setLoading(true);
-      const return01_response = await GetReturn01({
-        id: returnid,
-      });
-      if (return01_response.status && return01_response.data) {
-        setReturn01Data(return01_response.data);
-        const period_response = getPeriod(return01_response.data);
-        setPeriodData({
-          form: period_response.form.toDateString(),
-          to: period_response.to.toDateString(),
+
+      if (!(returnid == null || returnid == undefined)) {
+        const return01_response = await GetReturn01({
+          id: returnid,
         });
+        if (return01_response.status && return01_response.data) {
+          setReturn01Data(return01_response.data);
+          const period_response = getPeriod(return01_response.data);
+          setPeriodData({
+            form: period_response.form.toDateString(),
+            to: period_response.to.toDateString(),
+          });
+        }
       }
 
       if (!(tinNumber == null || tinNumber == undefined || tinNumber == "")) {
         reset({
           dvat24_reason: "NOTFURNISHED",
-          due_date: dayjs(new Date().setDate(new Date().getDate() + 15)).format(
-            "DD/MM/YYYY"
-          ),
+          due_date: dayjs(
+            new Date().setDate(new Date().getDate() + 15)
+          ).toISOString(),
         });
         const dvat_response = await SearchTinNumber({
           tinumber: tinNumber,
@@ -226,15 +229,21 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
 
   return (
     <>
-      <div className="p-2 bg-gray-50 mt-2 flex gap-4">
-        <div className="flex gap-4  items-center">
-          <p className="shrink-0">Enter TIN Number : </p>
-          <Input ref={tinnumberRef} placeholder="TIN Number" required={true} />
-          <Button onClick={searchUser} type="primary">
-            Search
-          </Button>
+      {!isSearch && (
+        <div className="p-2 bg-gray-50 mt-2 flex gap-4">
+          <div className="flex gap-4  items-center">
+            <p className="shrink-0">Enter TIN Number : </p>
+            <Input
+              ref={tinnumberRef}
+              placeholder="TIN Number"
+              required={true}
+            />
+            <Button onClick={searchUser} type="primary">
+              Search
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
       {isSearch && (
         <>
           <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">

@@ -7,7 +7,7 @@ import Marquee from "react-fast-marquee";
 
 import { RowData } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
-import { Select } from "antd";
+import { Checkbox, Modal, Select } from "antd";
 import {
   dvat04,
   DvatType,
@@ -20,6 +20,7 @@ import getPdfReturn from "@/action/return/getpdfreturn";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { toast } from "react-toastify";
 import { formateDate } from "@/utils/methods";
+import { CheckboxChangeEvent } from "antd/es/checkbox";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -337,7 +338,23 @@ const ReturnDashboard = () => {
 
     return false;
   };
+  const isanynil = (): boolean => {
+    const dvat_30 = returns_entryData.some(
+      (val: returns_entry) => val.dvat_type == DvatType.DVAT_30 && val.isnil
+    );
+    const dvat_30A = returns_entryData.some(
+      (val: returns_entry) => val.dvat_type == DvatType.DVAT_30_A && val.isnil
+    );
+    const dvat_31 = returns_entryData.some(
+      (val: returns_entry) => val.dvat_type == DvatType.DVAT_31 && val.isnil
+    );
+    const dvat_31A = returns_entryData.some(
+      (val: returns_entry) => val.dvat_type == DvatType.DVAT_31_A && val.isnil
+    );
 
+    // Return true if any of the conditions are true
+    return dvat_30 || dvat_30A || dvat_31 || dvat_31A;
+  };
   const generatePDF = async (path: string) => {
     try {
       // Fetch the PDF from the server
@@ -372,8 +389,7 @@ const ReturnDashboard = () => {
     return !(
       return01?.rr_number == null ||
       return01?.rr_number == undefined ||
-      return01?.rr_number ||
-      ""
+      return01?.rr_number == ""
     );
   };
 
@@ -397,8 +413,56 @@ const ReturnDashboard = () => {
     [returns_entryData, year, quarter, period]
   );
 
+  const [nilBox, setNilBox] = useState<boolean>(false);
+
+  const [isAccept, setIsAccept] = useState<boolean>(false);
+
+  const nilSubmit = () => {
+    if (!isAccept) {
+      return toast.error("First accept the terms and conditions");
+    }
+    router.push(
+      `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
+    );
+  };
+
   return (
     <>
+      <Modal title="Confirmation" open={nilBox} footer={null} closeIcon={false}>
+        <div>
+          <p>
+            You have declared nil filing for a return type. You may be penalized
+            if any irregularity found in the declaration of the same.
+          </p>
+
+          <div className="text-sm flex gap-1 items-center bg-white">
+            <Checkbox
+              value={isAccept}
+              onChange={(value: CheckboxChangeEvent) => {
+                setIsAccept(value.target.checked);
+              }}
+            />
+            <p>I accept the terms and conditions</p>
+          </div>
+        </div>
+        <div className="flex  gap-2 mt-2">
+          <div className="grow"></div>
+          <button
+            className="py-1 rounded-md border px-4 text-sm text-gray-600"
+            onClick={() => {
+              setNilBox(false);
+            }}
+          >
+            Close
+          </button>
+          <button
+            onClick={nilSubmit}
+            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
+          >
+            Submit
+          </button>
+        </div>
+      </Modal>
       <main className="w-full p-4 relative h-full grow xl:w-5/6 xl:mx-auto">
         <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4">
           <h1>File Returns</h1>
@@ -585,32 +649,30 @@ const ReturnDashboard = () => {
         )}
 
         <div className="absolute bottom-2 right-2 rounded shadow bg-white p-1 flex gap-2">
-          {/* <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
-            Back
-          </button> */}
           {isSearch && (
             <>
-              {/* <button className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]">
-                Save
-              </button> */}
-              <button
-                onClick={async () => {
-                  await generatePDF(
-                    `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
-                  );
-                }}
-                className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-              >
-                Download Return
-              </button>
               {ispreview() && (
                 <>
+                  <button
+                    onClick={async () => {
+                      await generatePDF(
+                        `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
+                      );
+                    }}
+                    className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                  >
+                    Download Return
+                  </button>
                   {!ispayment() && (
                     <button
                       onClick={() => {
-                        router.push(
-                          `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
-                        );
+                        if (isanynil()) {
+                          setNilBox(true);
+                        } else {
+                          router.push(
+                            `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
+                          );
+                        }
                       }}
                       className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
                     >

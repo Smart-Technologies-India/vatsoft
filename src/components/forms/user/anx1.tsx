@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import {
   FieldErrors,
@@ -135,8 +136,9 @@ const Anx1 = (props: Anx1ProviderProps) => {
       }
       const getanx1resposne = await GetAnx1({ dvatid: props.dvatid });
 
-      if (getanx1resposne.status) {
-        setAnnexuredata(getanx1resposne.data!);
+      if (getanx1resposne.status && getanx1resposne.data) {
+        setAnnexuredata(getanx1resposne.data);
+        edit(getanx1resposne.data[0].id);
       }
     };
     init();

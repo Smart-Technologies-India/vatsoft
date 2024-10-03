@@ -48,11 +48,45 @@ const AddPayment = async (
         penalty: payload.penalty,
         filing_datetime: new Date(),
       },
+      include: {
+        dvat04: true,
+      },
     });
     if (!updateresponse) {
       return createResponse({
         message: "Something Want wrong! Unable to update",
         functionname,
+      });
+    }
+
+    if (updateresponse.dvat04.compositionScheme) {
+      const monthsToUpdate = getMonthGroup(updateresponse.month ?? "");
+      await prisma.return_filing.updateMany({
+        where: {
+          filing_status: false,
+          dvatid: updateresponse.dvat04Id,
+          filing_date: null,
+          year: updateresponse.year,
+          month: { in: monthsToUpdate },
+        },
+        data: {
+          filing_date: new Date(),
+          filing_status: true,
+        },
+      });
+    } else {
+      await prisma.return_filing.updateMany({
+        where: {
+          filing_status: false,
+          dvatid: updateresponse.dvat04Id,
+          filing_date: null,
+          year: updateresponse.year,
+          month: updateresponse.month ?? "",
+        },
+        data: {
+          filing_date: new Date(),
+          filing_status: true,
+        },
       });
     }
 
@@ -70,3 +104,21 @@ const AddPayment = async (
 };
 
 export default AddPayment;
+
+const getMonthGroup = (currentMonth: string): string[] => {
+  const monthGroups = [
+    ["April", "May", "June"],
+    ["July", "August", "September"],
+    ["October", "November", "December"],
+    ["January", "February", "March"],
+  ];
+
+  // Find the group that contains the current month
+  for (const group of monthGroups) {
+    if (group.includes(currentMonth)) {
+      return group;
+    }
+  }
+
+  return [];
+};

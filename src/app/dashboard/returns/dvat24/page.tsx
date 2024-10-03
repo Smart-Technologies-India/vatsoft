@@ -65,7 +65,7 @@ const Dvat24Page = () => {
 
     return total;
   };
-  const getReason = (reason: Dvat24Reason): string => {
+  const getReason = (reason: Dvat24Reason | undefined): string => {
     switch (reason) {
       case Dvat24Reason.INCOMPLETEFURNISHED:
         return "In Complete Furnished";
@@ -121,13 +121,13 @@ const Dvat24Page = () => {
             <div>
               <p className="text-sm">Reason For Notice</p>
               <p className="text-sm  font-medium">
-                {getReason(data?.notice.dvat24_reason!)}
+                {getReason(data?.notice.dvat24_reason)}
               </p>
             </div>
             <div>
               <p className="text-sm">Status</p>
               <p className="text-sm  font-medium">
-                {capitalcase(data?.notice.status!)}
+                {capitalcase(data?.notice.status ?? "")}
               </p>
             </div>
 
@@ -227,6 +227,17 @@ const Dvat24Page = () => {
 
               <div className="w-full flex gap-2 mt-2">
                 <div className="grow"></div>
+
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    router.push(
+                      `/dashboard/payments/saved-challan/${data?.notice.challanId}`
+                    );
+                  }}
+                >
+                  {data?.notice.status == "PAID" ? "View Challan" : "Pay"}
+                </Button>
                 <Button
                   onClick={() => {
                     router.back();

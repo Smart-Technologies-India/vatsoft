@@ -4,6 +4,7 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import {
+  DvatStatus,
   NatureOfBusiness,
   registration,
   RegistrationStatus,
@@ -53,6 +54,7 @@ interface UpdateRegistrationPayload {
   necessary_payments?: boolean;
 
   status: RegistrationStatus;
+  dvatstatus?: DvatStatus;
 }
 
 const UpdateRegistration = async (
@@ -73,11 +75,10 @@ const UpdateRegistration = async (
         functionname,
       });
 
-    const annexure1response = await prisma.registration.update({
+    const registration_response = await prisma.registration.update({
       where: {
         id: is_exist.id,
       },
-
       data: {
         status: payload.status,
         ...(payload.updatedby && { updatedById: payload.updatedby }),
@@ -182,15 +183,34 @@ const UpdateRegistration = async (
       },
     });
 
-    if (!annexure1response)
+    if (!registration_response)
       return createResponse({
-        message: "Annexure 1 update failed. Please try again.",
+        message: "Registration update failed. Please try again.",
         functionname,
       });
 
+    if (payload.dvatstatus) {
+      const udpate_dvat_response = await prisma.dvat04.update({
+        where: {
+          id: registration_response.dvat04Id,
+          deletedAt: null,
+          deletedById: null,
+        },
+        data: {
+          status: payload.dvatstatus,
+        },
+      });
+
+      if (!udpate_dvat_response)
+        return createResponse({
+          message: "Dvat04 status update failed. Please try again.",
+          functionname,
+        });
+    }
+
     return createResponse({
-      data: annexure1response,
-      message: "Annexure 1 updated successfully",
+      data: registration_response,
+      message: "Registration updated successfully",
       functionname,
     });
   } catch (e) {

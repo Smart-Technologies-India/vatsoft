@@ -30,7 +30,37 @@ const CreateDvat24A = async (
   const ref_no: string = nanoid();
 
   try {
-    const challan = await prisma.order_notice.create({
+    const cpin: string = nanoid();
+
+    const challan = await prisma.challan.create({
+      data: {
+        dvatid: payload.dvatid,
+        cpin: cpin,
+        vat: payload.tax,
+        cess: "0",
+        interest: payload.interest,
+        others: "0",
+        penalty: "0",
+        createdById: payload.createdby,
+        expire_date: today,
+        total_tax_amount: (
+          parseInt(payload.tax) + parseInt(payload.interest)
+        ).toString(),
+        reason: "DEMAND",
+        status: "ACTIVE",
+        challanstatus: "CREATED",
+        ...(payload.remark && { remark: payload.remark }),
+      },
+    });
+
+    if (!challan) {
+      return createResponse({
+        message: "Failed to create challan for DVAT24A Order Notice",
+        functionname: functionname,
+      });
+    }
+
+    const order_notice_response = await prisma.order_notice.create({
       data: {
         dvatid: payload.dvatid,
         ref_no: ref_no,
@@ -46,16 +76,22 @@ const CreateDvat24A = async (
         officerId: payload.officerId,
         createdById: payload.createdby,
         returns_01Id: payload.returns_01Id,
+        challanId: challan.id,
         ...(payload.remark && { remark: payload.remark }),
       },
     });
 
+    if (!order_notice_response) {
+      return createResponse({
+        message: "Unable to create DVAT24.",
+        functionname: functionname,
+      });
+    }
+
     return createResponse({
-      message: challan
-        ? "DVAT24A create successfully"
-        : "Unable to create DVAT24A.",
+      message: "DVAT24A create successfully",
       functionname: functionname,
-      data: challan ?? null,
+      data: order_notice_response,
     });
   } catch (e) {
     return createResponse({

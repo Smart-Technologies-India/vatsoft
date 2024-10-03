@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import {
   FieldErrors,
@@ -26,8 +27,6 @@ import { annexure2 } from "@prisma/client";
 import { ApiResponseType } from "@/models/response";
 import { Anx2Form, Anx2Schema } from "@/schema/anx2";
 import { Button, Checkbox, Popover } from "antd";
-import { CheckboxChangeEvent } from "antd/es/checkbox";
-import dayjs from "dayjs";
 import { RabioInput } from "../inputfields/radioinput";
 import GetAnx2ById from "@/action/anx2/getanxbyid";
 import GetAnx2 from "@/action/anx2/getanx2";
@@ -109,18 +108,18 @@ const Anx1 = (props: Anx2ProviderProps) => {
     }
   };
 
+  const [Annexuredata, setAnnexuredata] = useState<annexure2[]>([]);
+
   useEffect(() => {
     const init = async () => {
-      const getanx1resposne = await GetAnx2({ dvatid: props.dvatid });
-
-      if (getanx1resposne.status) {
-        setAnnexuredata(getanx1resposne.data!);
+      const getanx2resposne = await GetAnx2({ dvatid: props.dvatid });
+      if (getanx2resposne.status && getanx2resposne.data) {
+        setAnnexuredata(getanx2resposne.data);
+        edit(getanx2resposne.data[0].id);
       }
     };
     init();
   }, [props.dvatid]);
-
-  const [Annexuredata, setAnnexuredata] = useState<annexure2[]>([]);
 
   const edit = async (id: number) => {
     setAnxid(id);

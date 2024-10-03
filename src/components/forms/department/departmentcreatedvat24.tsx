@@ -229,11 +229,16 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
       }
 
       if (!(tinNumber == null || tinNumber == undefined || tinNumber == "")) {
+        console.log(
+          dayjs(new Date().setDate(new Date().getDate() + 15)).format(
+            "DD/MM/YYYY"
+          )
+        );
         reset({
           dvat24_reason: "INCORRECTRETURN",
-          due_date: dayjs(new Date().setDate(new Date().getDate() + 15)).format(
-            "DD/MM/YYYY"
-          ),
+          due_date: dayjs(
+            new Date().setDate(new Date().getDate() + 15)
+          ).toString(),
         });
         const dvat_response = await SearchTinNumber({
           tinumber: tinNumber,

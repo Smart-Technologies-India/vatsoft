@@ -55,6 +55,7 @@ const AddTempRegNo = async (
         dept_user_id: 8,
         physicalVerification: false,
         createdById: payload.userid,
+        status: "ACTIVE",
       },
     });
     if (!createregistration)

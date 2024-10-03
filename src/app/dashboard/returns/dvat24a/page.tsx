@@ -214,6 +214,16 @@ const Dvat24APage = () => {
               <div className="w-full flex gap-2 mt-2">
                 <div className="grow"></div>
                 <Button
+                  type="primary"
+                  onClick={() => {
+                    router.push(
+                      `/dashboard/payments/saved-challan/${data?.notice.challanId}`
+                    );
+                  }}
+                >
+                  {data?.notice.status == "PAID" ? "View Challan" : "Pay"}
+                </Button>
+                <Button
                   onClick={() => {
                     router.back();
                   }}

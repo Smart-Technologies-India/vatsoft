@@ -102,6 +102,13 @@ const Sidebar = (props: SidebarProps) => {
             path={path}
             pathcheck={"/dashboard/user_service"}
           />
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={<LucideUser className="text-gray-300  w-6" />}
+            name="Dealer Compliance"
+            path={path}
+            pathcheck={"/dashboard/dealer_compliance"}
+          />
         </>
       )}
       {isProfileCompletd && ["USER"].includes(props.role) && (

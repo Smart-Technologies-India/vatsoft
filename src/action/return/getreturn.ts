@@ -5,12 +5,16 @@ interface GetReturn01Payload {
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { returns_01, dvat04 } from "@prisma/client";
+import { returns_01, dvat04, registration } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const GetReturn01 = async (
   payload: GetReturn01Payload
-): Promise<ApiResponseType<(returns_01 & { dvat04: dvat04 }) | null>> => {
+): Promise<
+  ApiResponseType<
+    (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
+  >
+> => {
   const functionname: string = GetReturn01.name;
   try {
     const return01response = await prisma.returns_01.findFirst({
@@ -20,7 +24,12 @@ const GetReturn01 = async (
         id: payload.id,
       },
       include: {
-        dvat04: true,
+        dvat04: {
+          include: {
+            registration: true,
+          },
+        },
+        returns_entry: true,
       },
     });
 

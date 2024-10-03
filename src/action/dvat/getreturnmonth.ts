@@ -5,12 +5,12 @@ interface GetReturnMonthPayload {
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { return_filing } from "@prisma/client";
+import { dvat04, return_filing } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const GetReturnMonth = async (
   payload: GetReturnMonthPayload
-): Promise<ApiResponseType<Array<return_filing> | null>> => {
+): Promise<ApiResponseType<Array<return_filing & { dvat: dvat04 }> | null>> => {
   const functionname: string = GetReturnMonth.name;
   try {
     const dvat04response = await prisma.return_filing.findMany({
@@ -18,6 +18,9 @@ const GetReturnMonth = async (
         deletedAt: null,
         deletedBy: null,
         dvatid: payload.dvatid,
+      },
+      include: {
+        dvat: true,
       },
       orderBy: {
         createdAt: "asc",

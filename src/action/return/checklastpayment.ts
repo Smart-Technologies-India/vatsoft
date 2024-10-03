@@ -79,12 +79,11 @@ const CheckLastPayment = async (
     });
 
     if (!lastPayment) {
-      console.log(isExist.dvat04.vatLiableDate);
-      console.log(current_payment_date);
       if (isExist.dvat04.vatLiableDate! > current_payment_date) {
         return createResponse({
           data: false,
-          message: "Payment is not created.",
+          message:
+            "You are not eligible to pay return for this period.Kindly contact administration.",
           functionname,
         });
       } else {

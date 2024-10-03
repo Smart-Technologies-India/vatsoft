@@ -2,7 +2,6 @@
 "use client";
 
 import { capitalcase, formateDate } from "@/utils/methods";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -19,6 +18,9 @@ import GetDvat04 from "@/action/register/getdvat04";
 import GetPendingReturn from "@/action/dvat/getpendingreturn";
 import GetPendingChallan from "@/action/challan/getPendingChallan";
 import GetReturnMonth from "@/action/dvat/getreturnmonth";
+import { getCookie } from "cookies-next";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import GetUser from "@/action/user/getuser";
 
 enum Status {
   INACTIVE,
@@ -34,8 +36,6 @@ interface ItemsType {
   filing_date?: Date | null;
   filing_status: boolean;
   status: Status;
-  userid?: string;
-  year?: string;
 }
 
 interface yearsDetails {
@@ -45,10 +45,8 @@ interface yearsDetails {
 }
 
 const ShopView = () => {
-  const { id } = useParams<{ id: string | string[] }>();
-  const dvat04id = parseInt(Array.isArray(id) ? id[0] : id);
-
   const router = useRouter();
+  const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -70,8 +68,6 @@ const ShopView = () => {
     pending: 0,
   });
 
-  const [returnMonth, setReturnMonth] = useState<return_filing[]>([]);
-
   const [returndetails, setRetuirnsDetails] = useState<yearsDetails[]>([]);
 
   const monthNames = [
@@ -89,9 +85,7 @@ const ShopView = () => {
     "December",
   ];
 
-  const setRentMonthDetails = (
-    value: Array<return_filing & { dvat: dvat04 }>
-  ) => {
+  const setRentMonthDetails = (value: return_filing[]) => {
     const years: number[] = value.map((item) => parseInt(item.year));
     const uniqueyears: number[] = years.filter((value, index, self) => {
       return self.indexOf(value) === index;
@@ -107,12 +101,11 @@ const ShopView = () => {
         const displayYear = adjustedMonth < 3 ? year + 1 : year; // Adjust year for Jan-Mar
         const monthDate = new Date(displayYear, adjustedMonth, 1);
 
-        const getdata: (return_filing & { dvat: dvat04 }) | undefined =
-          value.find(
-            (item: return_filing & { dvat: dvat04 }) =>
-              item.year == year.toString() &&
-              item.month == monthNames[adjustedMonth]
-          );
+        const getdata: return_filing | undefined = value.find(
+          (item: return_filing) =>
+            item.year == year.toString() &&
+            item.month == monthNames[adjustedMonth]
+        );
         if (getdata) {
           ret_filing.push({
             name: monthDate.toLocaleString("default", { month: "long" }),
@@ -126,8 +119,6 @@ const ShopView = () => {
               : getdata.due_date! < currentdate
               ? Status.PENDING
               : Status.DUE,
-            userid: getdata.dvat.createdById.toString(),
-            year: year.toString(),
           });
         } else {
           ret_filing.push({
@@ -153,39 +144,47 @@ const ShopView = () => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
-      const dvat_response = await GetDvat04({
-        id: dvat04id,
+
+      const dvat_response = await GetUserDvat04({
+        userid: current_user_id,
       });
+
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);
-        setUser(dvat_response.data.createdBy);
+
+        const user_response = await GetUser({
+          id: current_user_id,
+        });
+        if (user_response.status && user_response.data) {
+          setUser(user_response.data);
+        }
+
+        const pendingreturn_response = await GetPendingReturn({
+          dvatid: dvat_response.data.id,
+        });
+        if (pendingreturn_response.status && pendingreturn_response.data) {
+          setPendingReturn(pendingreturn_response.data);
+        }
+
+        const pendingchallan_response = await GetPendingChallan({
+          dvatid: dvat_response.data.id,
+        });
+        if (pendingchallan_response.status && pendingchallan_response.data) {
+          setPendingChallan(pendingchallan_response.data);
+        }
+
+        const returnmonth_response = await GetReturnMonth({
+          dvatid: dvat_response.data.id,
+        });
+        if (returnmonth_response.status && returnmonth_response.data) {
+          setRentMonthDetails(returnmonth_response.data);
+        }
       }
 
-      const pendingreturn_response = await GetPendingReturn({
-        dvatid: dvat04id,
-      });
-      if (pendingreturn_response.status && pendingreturn_response.data) {
-        setPendingReturn(pendingreturn_response.data);
-      }
-
-      const pendingchallan_response = await GetPendingChallan({
-        dvatid: dvat04id,
-      });
-      if (pendingchallan_response.status && pendingchallan_response.data) {
-        setPendingChallan(pendingchallan_response.data);
-      }
-
-      const returnmonth_response = await GetReturnMonth({
-        dvatid: dvat04id,
-      });
-      if (returnmonth_response.status && returnmonth_response.data) {
-        setReturnMonth(returnmonth_response.data);
-        setRentMonthDetails(returnmonth_response.data);
-      }
       setIsLoading(false);
     };
     init();
-  }, [dvat04id]);
+  }, [current_user_id]);
 
   if (isLoading)
     return (
@@ -250,16 +249,6 @@ const ShopView = () => {
           <div className="border-b border-gray-300 flex items-center pr-2 gap-2">
             <p className="text-xl p-2  font-semibold">Return Details</p>
             <div className="grow"></div>
-
-            <Button type="primary" onClick={() => {}}>
-              DVAT10
-            </Button>
-            <Button type="primary" onClick={() => {}}>
-              DVAT24
-            </Button>
-            <Button type="primary" onClick={() => {}}>
-              DVAT24A
-            </Button>
           </div>
           <div className="px-4 py-2 grid grid-cols-2 gap-4 mt-2">
             <p className="text-xs leading-3">
@@ -315,9 +304,6 @@ const ShopView = () => {
                   key={index}
                   name={item.name}
                   status={item.status}
-                  tinnumber={dvatData?.tinNumber ?? ""}
-                  userid={item.userid}
-                  year={item.year}
                 />
               ))}
             </div>
@@ -333,47 +319,21 @@ export default ShopView;
 interface PropertiesDeatilsProps {
   name: string;
   status: Status;
-  userid?: string;
-  year?: string;
-  tinnumber: string;
 }
 
 const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
-  const getQuarter = (): string => {
-    // Define the mapping of months to quarters
-    const quarterMap: {
-      [key: string]: "QUARTER1" | "QUARTER2" | "QUARTER3" | "QUARTER4";
-    } = {
-      April: "QUARTER1",
-      May: "QUARTER1",
-      June: "QUARTER1",
-      July: "QUARTER2",
-      August: "QUARTER2",
-      September: "QUARTER2",
-      October: "QUARTER3",
-      November: "QUARTER3",
-      December: "QUARTER3",
-      January: "QUARTER4",
-      February: "QUARTER4",
-      March: "QUARTER4",
-    };
-
-    // Return the corresponding quarter for the given month
-    return quarterMap[props.name] || "QUARTER1";
-  };
-
   const textname = (): string => {
     switch (props.status) {
       case Status.PAID:
-        return "On Time Filing";
+        return "Paid";
       case Status.DUE:
         return "Due";
       case Status.LATE:
-        return "Late Filing";
+        return "Late";
       case Status.INACTIVE:
         return "Inactive";
       case Status.PENDING:
-        return "Pending Filing";
+        return "Pending";
       default:
         return "Due";
     }
@@ -420,47 +380,15 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
     }
   };
 
-  if (props.status == Status.PAID || props.status == Status.LATE) {
-    return (
-      <Link
-        href={`/dashboard/returns/returns-dashboard/preview/${
-          props.userid
-        }?form=30A&year=${props.year}&quarter=${getQuarter()}&month=${
-          props.name
-        }&sidebar=no`}
-        className={`p-1 flex items-center justify-start min-w-28 bg-[#F5F5F5] rounded-md gap-2`}
-      >
-        <Component />
-        <div>
-          <p className={`text-xs text-black`}>{props.name}</p>
-          <p className={`text-xs text-gray-500`}>{textname()}</p>
-        </div>
-      </Link>
-    );
-  } else if (props.status == Status.PENDING) {
-    return (
-      <Link
-        href={`/dashboard/returns/department-dvat10?tin=${props.tinnumber}`}
-        className={`p-1 flex items-center justify-start min-w-28 bg-[#F5F5F5] rounded-md gap-2`}
-      >
-        <Component />
-        <div>
-          <p className={`text-xs text-black`}>{props.name}</p>
-          <p className={`text-xs text-gray-500`}>{textname()}</p>
-        </div>
-      </Link>
-    );
-  } else {
-    return (
-      <div
-        className={`p-1 flex items-center justify-start min-w-28 bg-[#F5F5F5] rounded-md gap-2`}
-      >
-        <Component />
-        <div>
-          <p className={`text-xs text-black`}>{props.name}</p>
-          <p className={`text-xs text-gray-500`}>{textname()}</p>
-        </div>
+  return (
+    <div
+      className={`p-1 flex items-center justify-start min-w-28 bg-[#F5F5F5] rounded-md gap-2`}
+    >
+      <Component />
+      <div>
+        <p className={`text-xs text-black`}>{props.name}</p>
+        <p className={`text-xs text-gray-500`}>{textname()}</p>
       </div>
-    );
-  }
+    </div>
+  );
 };

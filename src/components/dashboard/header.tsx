@@ -1,5 +1,6 @@
 "use client";
 import {
+  FluentArrowSyncCircle24Regular,
   MaterialSymbolsCloseSmall,
   SolarHamburgerMenuOutline,
   TablerHome,
@@ -18,6 +19,9 @@ import {
 import { deleteCookie } from "cookies-next";
 import { usePathname, useRouter } from "next/navigation";
 import { logoutbtn } from "@/methods/user";
+import ReturnFiling from "@/action/dashboard/return_filing";
+import { toast } from "react-toastify";
+import { Role } from "@prisma/client";
 
 interface NavbarProps {
   isOpen: boolean;
@@ -83,6 +87,20 @@ const Navbar = (props: NavbarProps) => {
 
       <p className="text-lg font-medium text-gray-600">{returnTitle()}</p>
       <div className="grow"></div>
+      {props.role != Role.USER && (
+        <FluentArrowSyncCircle24Regular
+          className="text-xl cursor-pointer text-gray-500"
+          onClick={async () => {
+            const response = await ReturnFiling();
+            if (response.data && response.status) {
+              toast.success("Data update successfully.");
+            } else {
+              console.log(response.message);
+            }
+          }}
+        />
+      )}
+
       <TablerHome
         className="text-xl cursor-pointer text-gray-500"
         onClick={() => {

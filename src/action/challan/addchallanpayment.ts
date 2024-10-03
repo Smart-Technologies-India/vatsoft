@@ -52,6 +52,33 @@ const AddChallanPayment = async (
       },
     });
 
+    if (!response) {
+      return createResponse({
+        message: "Challan Payment Failed.",
+        functionname: functionname,
+      });
+    }
+
+    const udpate_order_notice = await prisma.order_notice.findFirst({
+      where: {
+        status: "PENDING",
+        challanId: response.id,
+        deletedAt: null,
+        deletedBy: null,
+      },
+    });
+
+    if (udpate_order_notice) {
+      await prisma.order_notice.update({
+        where: {
+          id: udpate_order_notice.id,
+        },
+        data: {
+          status: "PAID",
+        },
+      });
+    }
+
     return createResponse({
       message: response
         ? "Challan payment completed successfully"
