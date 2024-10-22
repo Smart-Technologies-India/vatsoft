@@ -2,7 +2,7 @@
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { dvat04, returns_01 } from "@prisma/client";
+import { dvat04, returns_01, SelectOffice } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 interface SearchReturnPaymentPayload {
@@ -12,6 +12,7 @@ interface SearchReturnPaymentPayload {
   todate?: Date;
   tin?: string;
   trade?: string;
+  dept: SelectOffice;
 }
 
 const SearchReturnPayment = async (
@@ -25,6 +26,15 @@ const SearchReturnPayment = async (
         status: "ACTIVE",
         deletedAt: null,
         deletedById: null,
+        dvat04: {
+          selectOffice: payload.dept,
+          ...(payload.tin && { tinNumber: payload.tin }),
+          ...(payload.trade && {
+            tradename: {
+              contains: payload.trade,
+            },
+          }),
+        },
         NOT: [{ transaction_id: null, track_id: null }],
         ...(payload.userid && { createdById: payload.userid }),
         ...(payload.rr_number && { rr_number: payload.rr_number }),
@@ -35,18 +45,6 @@ const SearchReturnPayment = async (
               lte: payload.todate,
             },
           }),
-        ...(payload.tin || payload.trade
-          ? {
-              dvat04: {
-                ...(payload.tin && { tinNumber: payload.tin }),
-                ...(payload.trade && {
-                  tradename: {
-                    contains: payload.trade,
-                  },
-                }),
-              },
-            }
-          : {}),
       },
       include: {
         dvat04: true,

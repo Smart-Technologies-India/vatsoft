@@ -8,6 +8,8 @@ import {
   registration,
   returns_01,
   returns_entry,
+  state,
+  tin_number_master,
   user,
 } from "@prisma/client";
 
@@ -21,7 +23,9 @@ const getPdfReturn = async (
   payload: getPdfReturnPayload
 ): Promise<
   ApiResponseType<{
-    returns_entry: returns_entry[];
+    returns_entry: Array<
+      returns_entry & { seller_tin_number: tin_number_master }
+    >;
     returns_01: returns_01 & {
       createdBy: user;
       dvat04: dvat04 & { registration: registration[] };
@@ -46,13 +50,14 @@ const getPdfReturn = async (
       };
     }
 
-    const return01response = await prisma.returns_01.findFirst({
+    let return01response = await prisma.returns_01.findFirst({
       where: {
         deletedAt: null,
         deletedById: null,
         dvat04Id: dvat04resonse.id,
         year: payload.year,
         month: payload.month,
+        return_type: "REVISED",
       },
       include: {
         createdBy: true,
@@ -63,6 +68,27 @@ const getPdfReturn = async (
         },
       },
     });
+
+    if (!return01response) {
+      return01response = await prisma.returns_01.findFirst({
+        where: {
+          deletedAt: null,
+          deletedById: null,
+          dvat04Id: dvat04resonse.id,
+          year: payload.year,
+          month: payload.month,
+          return_type: "ORIGINAL",
+        },
+        include: {
+          createdBy: true,
+          dvat04: {
+            include: {
+              registration: true,
+            },
+          },
+        },
+      });
+    }
 
     if (!return01response) {
       return {
@@ -78,6 +104,7 @@ const getPdfReturn = async (
         deletedAt: null,
         deletedById: null,
         returns_01Id: return01response.id,
+        status: "ACTIVE",
       },
       include: {
         seller_tin_number: true,

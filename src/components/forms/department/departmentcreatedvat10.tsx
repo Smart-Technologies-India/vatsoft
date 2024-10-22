@@ -325,7 +325,14 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
                   placeholder="Enter remark"
                 />
                 <div className="w-full flex gap-2 mt-2">
-                  <div className="grow"></div>
+                  {/* <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      router.back();
+                    }}
+                  >
+                    Back
+                  </Button> */}
                   <input
                     type="reset"
                     onClick={(e) => {

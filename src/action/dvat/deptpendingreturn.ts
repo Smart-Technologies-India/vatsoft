@@ -1,9 +1,11 @@
 "use server";
-interface DeptPendingReturnPayload {}
+interface DeptPendingReturnPayload {
+  dept: SelectOffice;
+}
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { dvat04 } from "@prisma/client";
+import { dvat04, SelectOffice } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 interface ResponseType {
@@ -21,6 +23,9 @@ const DeptPendingReturn = async (
       where: {
         deletedAt: null,
         deletedBy: null,
+        dvat: {
+          selectOffice: payload.dept,
+        },
       },
       include: {
         dvat: true,

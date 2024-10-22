@@ -1,6 +1,7 @@
 "use client";
 import {
   FluentArrowSyncCircle24Regular,
+  IcBaselineArrowBack,
   MaterialSymbolsCloseSmall,
   SolarHamburgerMenuOutline,
   TablerHome,
@@ -16,12 +17,12 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 
-import { deleteCookie } from "cookies-next";
 import { usePathname, useRouter } from "next/navigation";
 import { logoutbtn } from "@/methods/user";
 import ReturnFiling from "@/action/dashboard/return_filing";
 import { toast } from "react-toastify";
 import { Role } from "@prisma/client";
+import { Tooltip } from "antd";
 
 interface NavbarProps {
   isOpen: boolean;
@@ -65,6 +66,28 @@ const Navbar = (props: NavbarProps) => {
     }
   };
 
+  const canBack = (): boolean => {
+    const searchPath = path.endsWith("/") ? path.slice(0, -1) : path;
+
+    switch (searchPath) {
+      case "/dashboard":
+        return false;
+      case "/dashboard/register":
+        return false;
+      case "/dashboard/returns":
+        return false;
+      case "/dashboard/payments":
+        return false;
+      case "/dashboard/user_service":
+        return false;
+      case "/dashboard/help_tax":
+        return false;
+
+      default:
+        return true;
+    }
+  };
+
   return (
     <nav
       className={`py-1 px-4 w-full hidden-print  ${
@@ -84,6 +107,18 @@ const Navbar = (props: NavbarProps) => {
           />
         )}
       </div>
+      {canBack() && (
+        <>
+          <Tooltip title="Go to previous page">
+            <IcBaselineArrowBack
+              className="hidden md:block cursor-pointer text-2xl"
+              onClick={() => {
+                router.back();
+              }}
+            />
+          </Tooltip>
+        </>
+      )}
 
       <p className="text-lg font-medium text-gray-600">{returnTitle()}</p>
       <div className="grow"></div>

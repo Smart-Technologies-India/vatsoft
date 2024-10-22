@@ -644,7 +644,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
                 Commodity
               </TableHead>
               <TableHead className=" text-sm font-normal h-8">
-                Delear&apos;s description
+              Dealer&apos;s description
               </TableHead>
               <TableHead className="w-[100px] text-sm font-normal h-8">
                 Action

@@ -109,6 +109,7 @@ const ChallanHistory = () => {
     const search_response = await SearchChallan({
       dvatid: dvatdata?.id,
       cpin: cpinRef.current?.input?.value,
+      dept: dvatdata?.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setChallanData(search_response.data);
@@ -125,6 +126,7 @@ const ChallanHistory = () => {
       dvatid: dvatdata?.id,
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
+      dept: dvatdata?.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setChallanData(search_response.data);

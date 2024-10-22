@@ -39,84 +39,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
+import OfficerDashboard from "@/action/dashboard/officerdashboard";
+import Last15Received from "@/action/dashboard/last15received";
+import { format, subMonths } from "date-fns";
 
 const Page = () => {
-  const options: any = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        barThickness: 10,
-        categoryPercentage: 0.8,
-        barPercentage: 0.9,
-        ticks: {
-          font: {
-            size: 12,
-          },
-          precision: 0,
-        },
-      },
-      y: {
-        ticks: {
-          font: {
-            size: 12,
-          },
-        },
-      },
-    },
-    indexAxis: "x",
-    elements: {
-      bar: {
-        borderWidth: 2,
-        categorySpacing: 0,
-      },
-    },
-    plugins: {
-      datalabels: {
-        anchor: "end",
-        align: "end",
-        color: "#1e293b",
-        font: {
-          size: 10,
-        },
-        formatter: function (value: any) {
-          return value;
-        },
-      },
-
-      labels: {
-        color: "white",
-      },
-      title: {
-        display: false,
-      },
-      legend: {
-        labels: {
-          font: {
-            size: 14,
-          },
-        },
-      },
-    },
-  };
-
-  const dataset: any = {
-    labels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    datasets: [
-      {
-        label: "Receivable",
-        data: [46, 34, 45, 36, 84, 34, 24, 34, 45, 36, 84, 34],
-        backgroundColor: "#95acbe",
-        borderWidth: 0,
-      },
-      {
-        label: "Received",
-        data: [52, 83, 63, 45, 34, 36, 34, 36, 84, 34, 24, 34],
-        backgroundColor: "#31363f",
-        borderWidth: 0,
-      },
-    ],
-  };
   const id: number = parseInt(getCookie("id") ?? "0");
   const router = useRouter();
   const [user, setUser] = useState<user | null>(null);
@@ -263,145 +190,7 @@ const Page = () => {
         </>
       ) : (
         <>
-          <main className="p-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-              <DashboardCard
-                name="Total Dealer"
-                count={"156"}
-                color="bg-rose-500"
-                subtitle="Total Dealer Count"
-              >
-                <Fa6RegularBuilding className="text-xl text-white" />
-              </DashboardCard>
-              <DashboardCard
-                name="Fuel Dealer"
-                count={"72"}
-                color="bg-green-500"
-                subtitle="Fuel Dealer Count"
-              >
-                <FluentMdl2Home className="text-xl text-white" />
-              </DashboardCard>
-              <DashboardCard
-                name="Liquor Dealer"
-                count={"84"}
-                color="bg-orange-500"
-                subtitle="Liquor Dealer Count"
-              >
-                <RiAuctionLine className="text-xl text-white" />
-              </DashboardCard>
-              <DashboardCard
-                name="Reg/Comp"
-                count={"132/24"}
-                color="bg-blue-500"
-                subtitle="Reg/Comp Count"
-              >
-                <MaterialSymbolsPersonRounded className="text-xl text-white" />
-              </DashboardCard>
-              <DashboardCard
-                name="Last Month Received"
-                count={numberWithIndianFormat(274354749)}
-                color="bg-teal-500"
-                subtitle="Total Tax Received"
-                isruppy={true}
-              >
-                <RiMoneyRupeeCircleLine className="text-xl text-white" />
-              </DashboardCard>
-              <DashboardCard
-                name="This Month Received"
-                count={numberWithIndianFormat(294393832)}
-                color="bg-violet-500"
-                subtitle="Total Tax Received"
-                isruppy={true}
-              >
-                <RiMoneyRupeeCircleLine className="text-xl text-white" />
-              </DashboardCard>
-              <DashboardCard
-                name="Filed Return"
-                count={"112"}
-                color="bg-pink-500"
-                subtitle="Successful Return"
-              >
-                <IcOutlineReceiptLong className="text-xl text-white" />
-              </DashboardCard>
-              <DashboardCard
-                name="Pending Return"
-                count={"44"}
-                color="bg-cyan-500"
-                subtitle="Pending Return"
-              >
-                <Fa6RegularHourglassHalf className="text-xl text-white" />
-              </DashboardCard>
-            </div>
-            <div className="grid grid-cols-6 gap-2 mt-2">
-              <div className="bg-white h-80 shadow-sm rounded-md p-4 col-span-6 lg:col-span-4">
-                <Bar options={options} data={dataset} />
-              </div>
-              <div className="bg-white h-80 shadow-sm rounded-md p-4 col-span-6 lg:col-span-2 flex flex-col">
-                <h1>Current Month Rent Information</h1>
-                <Separator className="shrink-0" />
-                <div className="grow"></div>
-                <h1 className="text-2xl text-gray-500">
-                  {numberWithIndianFormat(274354749)}
-                </h1>
-                <div className="flex gap-2 text-gray-500 text-xs">
-                  <p>Tax Received September</p>
-                  <div className="grow"></div>
-                </div>
-                <ProgressBar
-                  className="my-2"
-                  completed={numberWithIndianFormat(274354749)}
-                  bgColor={"#22c55e"}
-                  baseBgColor="#eeeeee"
-                  borderRadius="4px"
-                  labelSize="10px"
-                  height="8px"
-                  isLabelVisible={false}
-                />
-                <div className="grow"></div>
-                <h1 className="text-2xl text-gray-500">
-                  {numberWithIndianFormat(294393832)}
-                </h1>
-                <div className="flex gap-2 text-gray-500 text-xs">
-                  <p>Tax Received August</p>
-                  <div className="grow"></div>
-                </div>
-                <ProgressBar
-                  className="my-2"
-                  completed={numberWithIndianFormat(294393832)}
-                  bgColor={"#f43f5e"}
-                  baseBgColor="#eeeeee"
-                  borderRadius="4px"
-                  labelSize="10px"
-                  height="8px"
-                  isLabelVisible={false}
-                />
-                <div className="grow"></div>
-
-                <h1 className="text-2xl text-gray-500">902834</h1>
-                <div className="flex gap-2 text-gray-500 text-xs">
-                  <p>Total Payment in period</p>
-                  <div className="grow"></div>
-                  {/* <p>
-                    {getpercentage(
-                      monthinfo.collect - monthinfo.total,
-                      monthinfo.lastmonthcollect - monthinfo.lastmonthtotal
-                    )}
-                  </p> */}
-                </div>
-                {/* <ProgressBar
-                  className="my-2"
-                  completed={20}
-                  bgColor="#f43f5e"
-                  baseBgColor="#eeeeee"
-                  borderRadius="4px"
-                  labelSize="10px"
-                  height="8px"
-                  isLabelVisible={false}
-                /> */}
-                <div className="grow"></div>
-              </div>
-            </div>
-          </main>
+          <OfficerDashboardPage />
         </>
       )}
     </>
@@ -538,5 +327,257 @@ const DashboardCard = (props: DashboardCardProps) => {
         </div>
       </div>
     </div>
+  );
+};
+
+const OfficerDashboardPage = () => {
+  interface ResponseData {
+    totaldealer: number;
+    fueldealer: number;
+    liquoredealer: number;
+    reg: number;
+    comp: number;
+    last_month_received: number;
+    this_month_received: number;
+    filed_return: number;
+    pending_return: number;
+    today_received: number;
+  }
+
+  const [countData, setCountData] = useState<ResponseData>({
+    totaldealer: 0,
+    fueldealer: 0,
+    liquoredealer: 0,
+    reg: 0,
+    comp: 0,
+    last_month_received: 0,
+    this_month_received: 0,
+    filed_return: 0,
+    pending_return: 0,
+    today_received: 0,
+  });
+
+  interface Last15DayData {
+    date: Date; // Date object
+    amount: number; // Total amount for the day
+  }
+
+  const [last15Day, setLast15Day] = useState<Last15DayData[]>([]);
+
+  useEffect(() => {
+    const init = async () => {
+      const count_data_response = await OfficerDashboard({});
+      if (count_data_response.status && count_data_response.data) {
+        setCountData(count_data_response.data);
+      }
+
+      const last15days = await Last15Received({});
+      if (last15days.status && last15days.data) {
+        setLast15Day(last15days.data);
+      }
+    };
+    init();
+  }, []);
+
+  const dataset: any = {
+    labels: last15Day
+      .map((val: Last15DayData) => format(val.date, "dd MMM"))
+      .reverse(),
+    datasets: [
+      {
+        label: "Receivable",
+        data: last15Day.map((val: Last15DayData) => val.amount).reverse(),
+        backgroundColor: "#95acbe",
+        borderWidth: 0,
+        barPercentage: 0.6,
+      },
+    ],
+  };
+
+  const options: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        barThickness: 10,
+        categoryPercentage: 0.8,
+        barPercentage: 0.4,
+        padding: 25,
+        borderWidth: 2,
+        ticks: {
+          font: {
+            size: 12,
+          },
+          precision: 0,
+        },
+      },
+      y: {
+        ticks: {
+          font: {
+            size: 12,
+          },
+        },
+      },
+    },
+    indexAxis: "x",
+    elements: {
+      bar: {
+        borderWidth: 1,
+        categorySpacing: 0,
+      },
+    },
+    plugins: {
+      datalabels: {
+        anchor: "end",
+        align: "end",
+        color: "#1e293b",
+        font: {
+          size: 10,
+        },
+        formatter: function (value: any) {
+          return value;
+        },
+      },
+
+      labels: {
+        color: "white",
+      },
+      title: {
+        display: false,
+      },
+      legend: {
+        labels: {
+          font: {
+            size: 14,
+          },
+        },
+      },
+    },
+  };
+
+  return (
+    <main className="p-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <DashboardCard
+          name="Total Dealer"
+          count={countData.totaldealer.toString()}
+          color="bg-rose-500"
+          subtitle="Total Dealer Count"
+        >
+          <Fa6RegularBuilding className="text-xl text-white" />
+        </DashboardCard>
+        <DashboardCard
+          name="Fuel/Liquor Dealer"
+          count={`${countData.fueldealer}/${countData.liquoredealer}`}
+          color="bg-green-500"
+          subtitle="Fuel/Liquor Dealer Count"
+        >
+          <FluentMdl2Home className="text-xl text-white" />
+        </DashboardCard>
+
+        <DashboardCard
+          name="Reg/Comp"
+          count={`${countData.reg}/${countData.comp}`}
+          color="bg-blue-500"
+          subtitle="Reg/Comp Count"
+        >
+          <MaterialSymbolsPersonRounded className="text-xl text-white" />
+        </DashboardCard>
+        <DashboardCard
+          name="Today Received"
+          count={numberWithIndianFormat(countData.today_received)}
+          color="bg-orange-500"
+          subtitle="Today Tax Received"
+          isruppy={true}
+        >
+          <RiAuctionLine className="text-xl text-white" />
+        </DashboardCard>
+        <DashboardCard
+          name="Last Month Received"
+          count={numberWithIndianFormat(countData.last_month_received)}
+          color="bg-teal-500"
+          subtitle="Total Tax Received"
+          isruppy={true}
+        >
+          <RiMoneyRupeeCircleLine className="text-xl text-white" />
+        </DashboardCard>
+        <DashboardCard
+          name="This Month Received"
+          count={numberWithIndianFormat(countData.this_month_received)}
+          color="bg-violet-500"
+          subtitle="Total Tax Received"
+          isruppy={true}
+        >
+          <RiMoneyRupeeCircleLine className="text-xl text-white" />
+        </DashboardCard>
+        <DashboardCard
+          name="Filed Return"
+          count={countData.filed_return.toString()}
+          color="bg-pink-500"
+          subtitle="Successful Return count"
+        >
+          <IcOutlineReceiptLong className="text-xl text-white" />
+        </DashboardCard>
+        <DashboardCard
+          name="Total Pending Return"
+          count={countData.pending_return.toString()}
+          color="bg-cyan-500"
+          subtitle="Total Pending Return count"
+        >
+          <Fa6RegularHourglassHalf className="text-xl text-white" />
+        </DashboardCard>
+      </div>
+      <div className="grid grid-cols-6 gap-2 mt-2">
+        <div className="bg-white h-80 shadow-sm rounded-md p-4 col-span-6 lg:col-span-4">
+          <Bar options={options} data={dataset} />
+        </div>
+        <div className="bg-white h-80 shadow-sm rounded-md p-4 col-span-6 lg:col-span-2 flex flex-col">
+          <h1>Current Month Received Information</h1>
+          <Separator className="shrink-0" />
+          <div className="grow"></div>
+          <div
+            className={`${
+              countData.last_month_received < countData.this_month_received
+                ? "bg-emerald-500 text-emerald-500"
+                : "bg-rose-500 text-rose-500"
+            } p-2 bg-opacity-10 `}
+          >
+            <h1 className="text-2xl">
+              {numberWithIndianFormat(countData.this_month_received)}
+            </h1>
+            <p className="text-sm">
+              Payment Received in {format(new Date(), "MMMM")}
+            </p>
+          </div>
+          <div className="grow"></div>
+
+          <div
+            className={`${
+              countData.last_month_received > countData.this_month_received
+                ? "bg-emerald-500 text-emerald-500"
+                : "bg-rose-500 text-rose-500"
+            } p-2 bg-opacity-10`}
+          >
+            <h1 className="text-2xl">
+              {numberWithIndianFormat(countData.last_month_received)}
+            </h1>
+            <p className="text-sm">
+              Payment Received in {format(subMonths(new Date(), 1), "MMMM")}
+            </p>
+          </div>
+          <div className="grow"></div>
+          <div className={`bg-gray-500 p-2 bg-opacity-10 text-gray-500`}>
+            <h1 className="text-2xl text-gray-500">
+              {numberWithIndianFormat(
+                countData.this_month_received - countData.last_month_received
+              )}
+            </h1>
+            <p className="text-sm">Total Payment in period</p>
+          </div>
+
+          <div className="grow"></div>
+        </div>
+      </div>
+    </main>
   );
 };

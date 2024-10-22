@@ -108,6 +108,7 @@ const RefundsHistory = () => {
     const search_response = await SearchRefunds({
       dvatid: dvatdata?.id,
       cpin: cpinRef.current?.input?.value,
+      dept: dvatdata?.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setRefundsData(search_response.data);
@@ -124,6 +125,7 @@ const RefundsHistory = () => {
       dvatid: dvatdata?.id,
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
+      dept: dvatdata?.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setRefundsData(search_response.data);

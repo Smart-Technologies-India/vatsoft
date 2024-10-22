@@ -348,7 +348,7 @@ const RefundsData = () => {
                       )}
                     </div>
                     <div className="flex  gap-2 mt-2">
-                      <div className="grow"></div>
+                      {/* <div className="grow"></div>
                       <Button
                         onClick={(e) => {
                           e.preventDefault();
@@ -356,7 +356,7 @@ const RefundsData = () => {
                         }}
                       >
                         Back
-                      </Button>
+                      </Button> */}
                       <Button
                         disabled={isSubmitting}
                         onClick={(e) => {

@@ -75,33 +75,6 @@ const TrackAppliation = () => {
     init();
   }, [id]);
 
-  // enum SearchOption {
-  //   ARN,
-  //   SRN_FRN,
-  //   SUBMISSION,
-  // }
-  // const [searchOption, setSeachOption] = useState<SearchOption>(
-  //   SearchOption.ARN
-  // );
-
-  // const onChange = (e: RadioChangeEvent) => {
-  //   setSeachOption(e.target.value);
-  // };
-
-  // const arnRef = useRef<InputRef>(null);
-  // const srnRef = useRef<InputRef>(null);
-
-  // const [searchDate, setSearchDate] = useState<
-  //   [Dayjs | null, Dayjs | null] | null
-  // >(null);
-
-  // const onChangeDate = (
-  //   dates: [Dayjs | null, Dayjs | null] | null,
-  //   dateStrings: [string, string]
-  // ) => {
-  //   setSearchDate(dates);
-  // };
-
   return (
     <>
       <div className="p-6">
@@ -201,140 +174,106 @@ const TrackAppliation = () => {
               </DrawerContent>
             </Drawer>
           </div>
-          {/* <Radio.Group
-            onChange={onChange}
-            value={searchOption}
-            className="mt-2"
-          >
-            <Radio value={SearchOption.ARN}>ARN</Radio>
-            <Radio value={SearchOption.SRN_FRN}>SRN/FRN</Radio>
-            <Radio value={SearchOption.SUBMISSION}>Submission Period</Radio>
-          </Radio.Group>
-          <div className="mt-2"></div>
-          {(() => {
-            switch (searchOption) {
-              case SearchOption.ARN:
-                return (
-                  <div className="flex gap-2">
-                    <Input
-                      className="w-60"
-                      ref={arnRef}
-                      placeholder={"Enter ARN Number"}
-                    />
-                    <Button type="primary">Search</Button>
-                  </div>
-                );
-              case SearchOption.SRN_FRN:
-                return (
-                  <div className="flex gap-2">
-                    <Input
-                      className="w-60"
-                      ref={srnRef}
-                      placeholder={"Enter SRN/FRN Number"}
-                    />
-                    <Button type="primary">Search</Button>
-                  </div>
-                );
-              case SearchOption.SUBMISSION:
-                return (
-                  <div className="flex gap-2">
-                    <RangePicker onChange={onChangeDate} />
-                    <Button type="primary">Search</Button>
-                  </div>
-                );
-              default:
-                return null;
-            }
-          })()}{" "}
-          <div className="text-blue-400 bg-blue-500 bg-opacity-10 border border-blue-300 mt-2 text-sm p-2 flex gap-2 items-center">
-            <p className="flex-1">Search Result Based on Date range</p>
-            <MaterialSymbolsClose className="text-xl cursor-pointer" />
-          </div> */}
-          <Table className="border mt-2">
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="whitespace-nowrap border">ARN</TableHead>
-                <TableHead className="whitespace-nowrap text-center border">
-                  Form No.
-                </TableHead>
-                <TableHead className="text-center border">
-                  Form Description
-                </TableHead>
-                <TableHead className="text-center border">
-                  Submission Date
-                </TableHead>
-                <TableHead className="text-center border">Status</TableHead>
-                <TableHead className="text-center border">
-                  Assigned To
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.map((val: any, index: number) => {
-                return (
-                  <TableRow key={index}>
-                    <TableCell className="text-center border">
-                      <Link
-                        href={`/dashboard/register/${val.id}/preview`}
-                        className="text-blue-500"
-                      >
-                        {val.tempregistrationnumber}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-center border">VAT-04</TableCell>
-                    <TableCell className="text-center border">
-                      Application For new Registration
-                    </TableCell>
-                    <TableCell className="text-center border">
-                      {formateDate(new Date(val.createdAt))}
-                    </TableCell>
-                    <TableCell className="text-center border">
-                      {val.status}
-                    </TableCell>
-                    <TableCell className="text-center border">
-                      {val.registration[0].dept_user.firstName} -{" "}
-                      {val.registration[0].dept_user.lastName}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
 
-              {compdata.map(
-                (val: composition & { dept_user: user }, index: number) => {
-                  return (
-                    <TableRow key={index}>
-                      <TableCell className="text-center border">
-                        <Link
-                          href={`/dashboard/register/composition-levy/${val.id}`}
-                          className="text-blue-500"
-                        >
-                          {val.arn}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-center border">
-                        {val.compositionScheme ? "COMP-IN" : "COMP-OUT"}
-                      </TableCell>
-                      <TableCell className="text-center border">
-                        {val.compositionScheme
-                          ? "Migration to composition Scheme"
-                          : "Migration to regular scheme"}
-                      </TableCell>
-                      <TableCell className="text-center border">
-                        {formateDate(new Date(val.createdAt))}
-                      </TableCell>
-                      <TableCell className="text-center border">
-                        {val.status}
-                      </TableCell>
-                      <TableCell className="text-center border">
-                        {val.dept_user.firstName ?? ""} -{" "}
-                        {val.dept_user.lastName ?? ""}
-                      </TableCell>
-                    </TableRow>
-                  );
-                }
-              )}
-            </TableBody>
-          </Table>
+          {data.length == 0 ? (
+            <>
+              <p className="bg-rose-500 bg-opacity-10 text-rose-500 mt-2 px-2 py-1 border border-rose-500">
+                There is no record
+              </p>
+            </>
+          ) : (
+            <>
+              <Table className="border mt-2">
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="whitespace-nowrap border">
+                      ARN
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border">
+                      Form No.
+                    </TableHead>
+                    <TableHead className="text-center border">
+                      Form Description
+                    </TableHead>
+                    <TableHead className="text-center border">
+                      Submission Date
+                    </TableHead>
+                    <TableHead className="text-center border">Status</TableHead>
+                    <TableHead className="text-center border">
+                      Assigned To
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.map((val: any, index: number) => {
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="text-center border">
+                          <Link
+                            href={`/dashboard/register/${val.id}/preview`}
+                            className="text-blue-500"
+                          >
+                            {val.tempregistrationnumber}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-center border">
+                          VAT-04
+                        </TableCell>
+                        <TableCell className="text-center border">
+                          Application For new Registration
+                        </TableCell>
+                        <TableCell className="text-center border">
+                          {formateDate(new Date(val.createdAt))}
+                        </TableCell>
+                        <TableCell className="text-center border">
+                          {val.status}
+                        </TableCell>
+                        <TableCell className="text-center border">
+                          {val.registration[0].dept_user.firstName} -{" "}
+                          {val.registration[0].dept_user.lastName}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+
+                  {compdata.map(
+                    (val: composition & { dept_user: user }, index: number) => {
+                      return (
+                        <TableRow key={index}>
+                          <TableCell className="text-center border">
+                            <Link
+                              href={`/dashboard/register/composition-levy/${val.id}`}
+                              className="text-blue-500"
+                            >
+                              {val.arn}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="text-center border">
+                            {val.compositionScheme ? "COMP-IN" : "COMP-OUT"}
+                          </TableCell>
+                          <TableCell className="text-center border">
+                            {val.compositionScheme
+                              ? "Migration to composition Scheme"
+                              : "Migration to regular scheme"}
+                          </TableCell>
+                          <TableCell className="text-center border">
+                            {formateDate(new Date(val.createdAt))}
+                          </TableCell>
+                          <TableCell className="text-center border">
+                            {val.status}
+                          </TableCell>
+                          <TableCell className="text-center border">
+                            {val.dept_user.firstName ?? ""} -{" "}
+                            {val.dept_user.lastName ?? ""}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+                  )}
+                </TableBody>
+              </Table>
+            </>
+          )}
         </div>
       </div>
     </>

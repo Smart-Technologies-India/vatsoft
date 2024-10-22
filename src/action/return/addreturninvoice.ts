@@ -45,6 +45,7 @@ interface AddReturnInvoicePayload {
   vatamount?: string;
   remark?: string;
   description_of_goods?: string;
+  quantity: number;
 }
 
 const AddReturnInvoice = async (
@@ -56,8 +57,20 @@ const AddReturnInvoice = async (
         year: payload.year,
         month: payload.month,
         createdById: payload.createdById,
+        return_type: "REVISED",
       },
     });
+
+    if (!returnInvoice) {
+      returnInvoice = await prisma.returns_01.findFirst({
+        where: {
+          year: payload.year,
+          month: payload.month,
+          createdById: payload.createdById,
+          return_type: "ORIGINAL",
+        },
+      });
+    }
 
     if (!returnInvoice) {
       const dvat04 = await prisma.dvat04.findFirst({
@@ -115,6 +128,7 @@ const AddReturnInvoice = async (
         description_of_goods: payload.description_of_goods,
         status: Status.ACTIVE,
         createdById: payload.createdById,
+        quantity: payload.quantity,
       },
     });
 

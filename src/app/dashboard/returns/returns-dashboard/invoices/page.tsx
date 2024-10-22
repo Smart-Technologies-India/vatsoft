@@ -1,7 +1,6 @@
 "use client";
 
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
-import AddNil from "@/action/return/addnil";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import { MdiPlusCircle } from "@/components/icons";
 import {
@@ -12,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formateDate } from "@/utils/methods";
 import { dvat04, DvatType, returns_01, returns_entry } from "@prisma/client";
 import { Button } from "antd";
 import { getCookie } from "cookies-next";
@@ -116,6 +116,41 @@ const AddRecord = () => {
     return result;
   };
 
+  const getUrlTin = (tin: string): string => {
+    const formType = searchParams.get("form");
+    switch (formType) {
+      case "30":
+        return `/dashboard/returns/returns-dashboard/inward-supplies/add-record-30?form=${searchParams.get(
+          "form"
+        )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
+          "quarter"
+        )}&month=${searchParams.get("month")}&tin=${tin}`;
+
+      case "30A":
+        return `/dashboard/returns/returns-dashboard/inward-supplies/add-record-30A?form=${searchParams.get(
+          "form"
+        )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
+          "quarter"
+        )}&month=${searchParams.get("month")}&tin=${tin}`;
+
+      case "31":
+        return `/dashboard/returns/returns-dashboard/outward-supplies/add-record-31?form=${searchParams.get(
+          "form"
+        )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
+          "quarter"
+        )}&month=${searchParams.get("month")}&tin=${tin}`;
+
+      case "31A":
+        return `/dashboard/returns/returns-dashboard/outward-supplies/add-record-31A?form=${searchParams.get(
+          "form"
+        )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
+          "quarter"
+        )}&month=${searchParams.get("month")}&tin=${tin}`;
+
+      default:
+        return "";
+    }
+  };
   const getUrl = (): string => {
     const formType = searchParams.get("form");
     switch (formType) {
@@ -152,31 +187,84 @@ const AddRecord = () => {
     }
   };
 
+  const payment_complted = () => {
+    return (
+      return01 != null &&
+      return01.rr_number != "" &&
+      return01.rr_number != undefined &&
+      return01.rr_number != null
+    );
+  };
+
+  const getDueDate = () => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const year: number = parseInt(searchParams.get("year")!);
+    const month: string = searchParams.get("month")!;
+    const day = 11;
+
+    return formateDate(new Date(year, monthNames.indexOf(month) + 1, day));
+  };
+
+  const getTaxPerios = (): string => {
+    if (dvatdata?.compositionScheme) {
+      switch (searchParams.get("month") ?? "") {
+        case "June":
+          return "April - June";
+        case "September":
+          return "July - September";
+        case "December":
+          return "October - December";
+        case "March":
+          return "January - March";
+        default:
+          return "April - June";
+      }
+    } else {
+      return searchParams.get("month") ?? "";
+    }
+  };
+
   return (
     <div className="p-2 mt-4">
-      <div className="bg-white p-4 flex text-xs justify-between shadow">
+      <div className="bg-white p-4 flex text-xs justify-between">
         <div>
-          <p>VAT NO. {dvatdata?.tinNumber}</p>
+          <p>VAT No. - {dvatdata?.tinNumber}</p>
           <p>FY - {searchParams.get("year")}</p>
         </div>
         <div>
           <p>Legal Name - {dvatdata?.name}</p>
-          <p>Tax Period - {searchParams.get("month")}</p>
+          <p>Tax Period - {getTaxPerios()}</p>
         </div>
         <div>
           <p>Trade Name - {dvatdata?.tradename}</p>
-          <p>Status - Filed</p>
+          <p>Status - {payment_complted() ? "Filed" : "Not Filed"} </p>
+        </div>
+        <div>
+          <p>Indicates Mandatory Fields</p>
+          <p>Due Date - {getDueDate()}</p>
         </div>
       </div>
       <div className="bg-white p-2 shadow mt-2">
         <div className="bg-blue-500 p-2 text-white">Record Details</div>
 
         {getDvatData().length == 0 ? (
-          <>
-            <p className="bg-rose-500 bg-opacity-10 rounded-md text-rose-500 mt-2 px-2 py-1 border border-rose-500">
-              There is no record
-            </p>
-          </>
+          <p className="bg-rose-500 bg-opacity-10 rounded-md text-rose-500 mt-2 px-2 py-1 border border-rose-500">
+            There is no record
+          </p>
         ) : (
           <>
             <Table className="border mt-2">
@@ -218,9 +306,15 @@ const AddRecord = () => {
                       <TableCell className="p-2 border text-center">
                         <Link
                           className="text-blue-500"
-                          href={
-                            "/dashboard/returns/returns-dashboard/invoices/document-wise-details"
-                          }
+                          href={`/dashboard/returns/returns-dashboard/invoices/document-wise-details?form=${searchParams.get(
+                            "form"
+                          )}&year=${searchParams.get(
+                            "year"
+                          )}&quarter=${searchParams.get(
+                            "quarter"
+                          )}&month=${searchParams.get("month")}&sellertin=${
+                            val.seller_tin_number.tin_number
+                          }`}
                         >
                           {val.count}
                         </Link>
@@ -229,7 +323,11 @@ const AddRecord = () => {
                         0
                       </TableCell>
                       <TableCell className="p-2 border text-center">
-                        <Link href={getUrl()}>
+                        <Link
+                          href={getUrlTin(
+                            val.seller_tin_number.tin_number.toString()
+                          )}
+                        >
                           <div className="mx-auto bg-green-500 w-5 h-5 grid place-items-center">
                             <MdiPlusCircle className="text-white text-sm" />
                           </div>
@@ -280,12 +378,12 @@ const AddRecord = () => {
             </>
           )}
 
-          <Button
+          {/* <Button
             // className="text-sm border hover:border-blue-500 hover:text-blue-500 bg-white text-[#172e57] py-1 px-4"
             onClick={() => route.back()}
           >
             Back
-          </Button>
+          </Button> */}
         </div>
       </div>
     </div>

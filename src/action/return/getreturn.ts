@@ -17,11 +17,12 @@ const GetReturn01 = async (
 > => {
   const functionname: string = GetReturn01.name;
   try {
-    const return01response = await prisma.returns_01.findFirst({
+    let return01response = await prisma.returns_01.findFirst({
       where: {
         deletedAt: null,
         deletedBy: null,
         id: payload.id,
+        return_type: "REVISED",
       },
       include: {
         dvat04: {
@@ -33,11 +34,30 @@ const GetReturn01 = async (
       },
     });
 
-    if (!return01response)
+    if (!return01response) {
+      return01response = await prisma.returns_01.findFirst({
+        where: {
+          deletedAt: null,
+          deletedBy: null,
+          id: payload.id,
+          return_type: "ORIGINAL",
+        },
+        include: {
+          dvat04: {
+            include: {
+              registration: true,
+            },
+          },
+          returns_entry: true,
+        },
+      });
+    }
+    if (!return01response) {
       return createResponse({
         message: "Invalid return id. Please try again.",
         functionname,
       });
+    }
 
     return createResponse({
       message: "Return data get successfully",

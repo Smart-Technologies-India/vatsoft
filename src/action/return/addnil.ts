@@ -42,8 +42,22 @@ const AddNil = async (
         month: payload.month,
         status: Status.ACTIVE,
         createdById: payload.createdById,
+        return_type: "REVISED",
       },
     });
+
+    if (!return_res) {
+      return_res = await prisma.returns_01.findFirst({
+        where: {
+          year: payload.year,
+          quarter: payload.quarter,
+          month: payload.month,
+          status: Status.ACTIVE,
+          createdById: payload.createdById,
+          return_type: "ORIGINAL",
+        },
+      });
+    }
 
     if (return_res) {
       const returnentryresponse = await prisma.returns_entry.create({

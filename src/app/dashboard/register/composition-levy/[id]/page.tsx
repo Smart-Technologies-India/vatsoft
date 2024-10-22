@@ -117,7 +117,7 @@ const RefundsData = () => {
           {compostion?.status == CompositionStatus.PENDING ? (
             curretnuser?.role == Role.USER ? (
               <div className="flex mt-2">
-                <div className="grow"></div>
+                {/* <div className="grow"></div>
                 <Button
                   onClick={(e) => {
                     e.preventDefault();
@@ -125,7 +125,7 @@ const RefundsData = () => {
                   }}
                 >
                   Back
-                </Button>
+                </Button> */}
               </div>
             ) : (
               <CompositionDeptProvider
@@ -158,7 +158,7 @@ const RefundsData = () => {
                   <p className="text-sm  font-medium">{compostion?.status}</p>
                 </div>
               </div>
-              <div className="flex mt-2">
+              {/* <div className="flex mt-2">
                 <div className="grow"></div>
                 <Button
                   onClick={(e) => {
@@ -168,7 +168,7 @@ const RefundsData = () => {
                 >
                   Back
                 </Button>
-              </div>
+              </div> */}
             </>
           )}
         </div>

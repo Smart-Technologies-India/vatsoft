@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { RegistrationForm, RegistrationSchema } from "@/schema/registraion";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
@@ -17,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   dvat04,
+  Dvat04Commodity,
   DvatStatus,
   registration,
   RegistrationStatus,
@@ -26,6 +28,7 @@ import GetFromDvat from "@/action/registration/getfromdvat";
 import { formateDate, onFormError } from "@/utils/methods";
 import UpdateDvatStatus from "@/action/dvat/updatestatus";
 import { Button } from "antd";
+import GetDeptUser from "@/action/user/getdeptuser";
 
 type RegistrationProviderPrpos = {
   dvatid: number;
@@ -36,6 +39,8 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
     (registration & { dvat04: dvat04 }) | null
   >(null);
   const role = getCookie("role");
+  const id: number = parseInt(getCookie("id") ?? "0");
+
   const router = useRouter();
 
   useEffect(() => {
@@ -55,7 +60,12 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
   });
 
   if (registrationdata && registrationdata.dvat04.status == "APPROVED") {
-    return <RegistrationPreview registrationdata={registrationdata} />;
+    return (
+      <RegistrationPreview
+        registrationdata={registrationdata}
+        commodity={registrationdata.dvat04.commodity ?? Dvat04Commodity.OTHER}
+      />
+    );
   }
 
   if (
@@ -72,21 +82,24 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
 
   if (
     registrationdata &&
-    registrationdata.dept_user_id == 6 &&
+    registrationdata.dept_user_id == id &&
     role == Role.VATOFFICER &&
     (registrationdata.dvat04.status == DvatStatus.PENDINGPROCESSING ||
       registrationdata.dvat04.status == DvatStatus.PROVISIONAL)
   ) {
     return (
       <FormProvider {...methods}>
-        <VatNote registrationdata={registrationdata} />
+        <VatNote
+          registrationdata={registrationdata}
+          commodity={registrationdata.dvat04.commodity}
+        />
       </FormProvider>
     );
   }
 
   if (
     registrationdata &&
-    registrationdata.dept_user_id == 8 &&
+    registrationdata.dept_user_id == id &&
     role == Role.INSPECTOR
   ) {
     return (
@@ -98,7 +111,7 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
 
   if (
     registrationdata &&
-    registrationdata.dept_user_id == 8 &&
+    registrationdata.dept_user_id == id &&
     role == Role.VATOFFICER
   ) {
     return (
@@ -107,7 +120,7 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
           Note: The Dealer Registration File is with Inspector for physical site
           report.
         </p>
-        <div className="flex gap-2 mt-2">
+        {/* <div className="flex gap-2 mt-2">
           <button
             type="button"
             onClick={() => {
@@ -117,8 +130,16 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
           >
             Back
           </button>
-        </div>
+        </div> */}
       </div>
+    );
+  }
+
+  if (registrationdata) {
+    return (
+      <FormProvider {...methods}>
+        <Registration dvatid={props.dvatid} />
+      </FormProvider>
     );
   }
 };
@@ -208,47 +229,53 @@ const Registration = (props: RegistrationProviderPrpos) => {
     )
       return toast.error("Inspector Note is required");
 
-    const response = await UpdateRegistration({
-      id: dvatdata.registration[0].id,
-      updatedby: id,
-      inspector_note: data.inspector_note,
-      date_of_visit: new Date(data.date_of_visit),
-      natureOfBusiness: data.natureOfBusiness,
-      date_of_purchases: new Date(data.date_of_purchases),
-      amount_of_purchases: data.amount_of_purchases,
-      date_of_sales: new Date(data.date_of_sales),
-      amount_of_sales: data.amount_of_sales,
-      capital_proposed: data.capital_proposed,
-      amount_of_stock: data.amount_of_stock,
-      books_of_account: data.books_of_account,
-      verification_of_originals: data.verification_of_originals,
-      verification_of_title: data.verification_of_title,
-      other_information: data.other_information,
-      security_deposit: data.security_deposit,
-      security_deposit_amount: data.security_deposit_amount,
-      security_deposit_date: new Date(data.security_deposit_date),
-      date_of_expiry_security_deposit: new Date(
-        data.date_of_expiry_security_deposit
-      ),
-      bank: data.bank,
-      name_of_person: data.name_of_person,
-      address: data.address,
-      plant_and_machinery: data.plant_and_machinery,
-      raw_materials: data.raw_materials,
-      packing_materials: data.packing_materials,
-      dept_user_id: 6,
-      status: RegistrationStatus.ACTIVE,
-      dvatstatus: DvatStatus.PENDINGPROCESSING,
+    const dept_response = await GetDeptUser({
+      dept: dvatdata.selectOffice!,
+      role: "VATOFFICER",
     });
 
-    if (response.status) {
-      router.push("/dashboard/register/department-track-application-status");
-    } else {
-      toast.error(response.message);
-    }
+    if (dept_response.status && dept_response.data) {
+      const response = await UpdateRegistration({
+        id: dvatdata.registration[0].id,
+        updatedby: id,
+        inspector_note: data.inspector_note,
+        date_of_visit: new Date(data.date_of_visit),
+        natureOfBusiness: data.natureOfBusiness,
+        date_of_purchases: new Date(data.date_of_purchases),
+        amount_of_purchases: data.amount_of_purchases,
+        date_of_sales: new Date(data.date_of_sales),
+        amount_of_sales: data.amount_of_sales,
+        capital_proposed: data.capital_proposed,
+        amount_of_stock: data.amount_of_stock,
+        books_of_account: data.books_of_account,
+        verification_of_originals: data.verification_of_originals,
+        verification_of_title: data.verification_of_title,
+        other_information: data.other_information,
+        security_deposit: data.security_deposit,
+        security_deposit_amount: data.security_deposit_amount,
+        security_deposit_date: new Date(data.security_deposit_date),
+        date_of_expiry_security_deposit: new Date(
+          data.date_of_expiry_security_deposit
+        ),
+        bank: data.bank,
+        name_of_person: data.name_of_person,
+        address: data.address,
+        plant_and_machinery: data.plant_and_machinery,
+        raw_materials: data.raw_materials,
+        packing_materials: data.packing_materials,
+        dept_user_id: dept_response.data.id,
+        status: RegistrationStatus.ACTIVE,
+        dvatstatus: DvatStatus.PENDINGPROCESSING,
+      });
 
-    // toast.success(response.message);
-    reset();
+      if (response.status) {
+        router.push("/dashboard/register/department-track-application-status");
+      } else {
+        toast.error(response.message);
+      }
+    } else {
+      toast.error(dept_response.message);
+    }
   };
 
   const by_pass = async () => {
@@ -265,23 +292,29 @@ const Registration = (props: RegistrationProviderPrpos) => {
     )
       return toast.error("Inspector Note is required.");
 
-    const response = await UpdateRegistration({
-      id: dvatdata.registration[0].id,
-      updatedby: id,
-      inspector_note: inspector_note,
-      dept_user_id: 6,
-      status: RegistrationStatus.ACTIVE,
-      dvatstatus: DvatStatus.PROVISIONAL,
+    const dept_response = await GetDeptUser({
+      dept: dvatdata.selectOffice!,
+      role: "VATOFFICER",
     });
 
-    if (response.status) {
-      router.push("/dashboard/register/department-track-application-status");
-    } else {
-      toast.error(response.message);
-    }
+    if (dept_response.status && dept_response.data) {
+      const response = await UpdateRegistration({
+        id: dvatdata.registration[0].id,
+        updatedby: id,
+        inspector_note: inspector_note,
+        dept_user_id: dept_response.data.id,
+        status: RegistrationStatus.ACTIVE,
+        dvatstatus: DvatStatus.PROVISIONAL,
+      });
 
-    // toast.success(response.message);
-    reset();
+      if (response.status) {
+        router.push("/dashboard/register/department-track-application-status");
+      } else {
+        toast.error(response.message);
+      }
+    } else {
+      toast.error(dept_response.message);
+    }
   };
 
   const natureOfBusiness: OptionValue[] = [
@@ -290,6 +323,12 @@ const Registration = (props: RegistrationProviderPrpos) => {
     { value: "SERVICE", label: "SERVICE" },
     { value: "OTHERS", label: "OTHERS" },
     { value: "WORKS", label: "WORKS" },
+  ];
+
+  const commodity: OptionValue[] = [
+    { value: "LIQUOR", label: "Liquor" },
+    { value: "FUEL", label: "Fuel" },
+    { value: "OTHERS", label: "Others" },
   ];
 
   return (
@@ -474,15 +513,15 @@ const Registration = (props: RegistrationProviderPrpos) => {
           />
         </div>
       </div>
-      <div className="mt-2">
-        <TaxtAreaInput<RegistrationForm>
-          placeholder="Enter address"
-          name="address"
-          required={false}
-          title="16. Address of the place(s) visited for inspection (If not same as principle Place of Business please specify below)"
-        />
-      </div>
       <div className="flex gap-3 mt-3">
+        <div className="flex-1">
+          <TaxtAreaInput<RegistrationForm>
+            placeholder="Enter address"
+            name="address"
+            required={false}
+            title="16. Address of the place(s) visited for inspection (If not same as principle Place of Business please specify below)"
+          />
+        </div>
         <div className="flex-1">
           <TaxtAreaInput<RegistrationForm>
             placeholder="Enter Raw Materials"
@@ -491,12 +530,24 @@ const Registration = (props: RegistrationProviderPrpos) => {
             title="17. Raw Materials"
           />
         </div>
+      </div>
+
+      <div className="flex gap-3 mt-3">
         <div className="flex-1">
-          <TaxtAreaInput<RegistrationForm>
+          <TaxtInput<RegistrationForm>
             placeholder="Enter Packing materials"
             name="packing_materials"
             required={true}
             title="18. Packing Materials"
+          />
+        </div>
+        <div className="flex-1">
+          <MultiSelect<RegistrationForm>
+            name={"commodity"}
+            options={commodity}
+            placeholder="Select the business commodity"
+            title="19. Commodity"
+            required={true}
           />
         </div>
       </div>
@@ -511,7 +562,7 @@ const Registration = (props: RegistrationProviderPrpos) => {
       </div>
 
       <div className="flex gap-2 mt-2">
-        {dvatdata && dvatdata.registration[0].dept_user_id == 8 && (
+        {dvatdata && dvatdata.registration[0].dept_user_id == id && (
           <>
             <input
               type="submit"
@@ -554,6 +605,7 @@ const Registration = (props: RegistrationProviderPrpos) => {
 };
 
 type VatNoteProps = {
+  commodity: Dvat04Commodity | null;
   registrationdata: registration;
 };
 const VatNote = (props: VatNoteProps) => {
@@ -608,8 +660,14 @@ const VatNote = (props: VatNoteProps) => {
       plant_and_machinery: props.registrationdata.plant_and_machinery!,
       raw_materials: props.registrationdata.raw_materials!,
       packing_materials: props.registrationdata.packing_materials!,
-
       inspector_note: props.registrationdata.inspector_note!,
+      commodity: props.commodity!,
+      vat_officer_note: props.registrationdata.vat_officer_note!,
+      registration_date:
+        props.registrationdata.registration_date!.toISOString(),
+      all_appointment: props.registrationdata.all_appointment!,
+      all_doc_upload: props.registrationdata.all_doc_upload!,
+      necessary_payments: props.registrationdata.necessary_payments!,
     });
 
     const init = async () => {
@@ -622,7 +680,7 @@ const VatNote = (props: VatNoteProps) => {
       }
     };
     init();
-  }, [props.registrationdata, reset]);
+  }, [props.registrationdata]);
 
   const onSubmit = async (data: RegistrationForm) => {
     if (!data.registration_date) {
@@ -647,62 +705,69 @@ const VatNote = (props: VatNoteProps) => {
     if (dvatdata.registration.length == 0)
       return toast.error("There is not any regirstion form exist.");
 
-    const response = await UpdateRegistration({
-      id: dvatdata.registration[0].id,
-      updatedby: id,
-      inspector_note: data.inspector_note,
-      date_of_visit: new Date(data.date_of_visit),
-      natureOfBusiness: data.natureOfBusiness,
-      date_of_purchases: new Date(data.date_of_purchases),
-      amount_of_purchases: data.amount_of_purchases,
-      date_of_sales: new Date(data.date_of_sales),
-      amount_of_sales: data.amount_of_sales,
-      capital_proposed: data.capital_proposed,
-      amount_of_stock: data.amount_of_stock,
-      books_of_account: data.books_of_account,
-      verification_of_originals: data.verification_of_originals,
-      verification_of_title: data.verification_of_title,
-      other_information: data.other_information,
-      security_deposit: data.security_deposit,
-      security_deposit_amount: data.security_deposit_amount,
-      security_deposit_date: new Date(data.security_deposit_date),
-      date_of_expiry_security_deposit: new Date(
-        data.date_of_expiry_security_deposit
-      ),
-      bank: data.bank,
-      name_of_person: data.name_of_person,
-      address: data.address,
-      plant_and_machinery: data.plant_and_machinery,
-      raw_materials: data.raw_materials,
-      packing_materials: data.packing_materials,
-      necessary_payments: data.necessary_payments,
-      all_appointment: data.all_appointment,
-      all_doc_upload: data.all_doc_upload,
-      registration_date: new Date(data.registration_date!),
-      vat_officer_note: data.vat_officer_note,
-
-      dept_user_id: 6,
-      status: RegistrationStatus.ACTIVE,
+    const dept_response = await GetDeptUser({
+      role: Role.VATOFFICER,
+      dept: dvatdata.selectOffice!,
     });
 
-    if (response.status) {
-      const resposne = await UpdateDvatStatus({
-        id: props.registrationdata.dvat04Id!,
+    if (dept_response.data && dept_response.status) {
+      const response = await UpdateRegistration({
+        id: dvatdata.registration[0].id,
         updatedby: id,
-        status: "APPROVED",
-        tinNumber: "26000004000" + dvatdata.id,
-      });
-      if (resposne.status) {
-        toast.success(resposne.message);
-      } else {
-        toast.error(resposne.message);
-      }
-    } else {
-      toast.error(response.message);
-    }
-    router.back();
+        inspector_note: data.inspector_note,
+        date_of_visit: new Date(data.date_of_visit),
+        natureOfBusiness: data.natureOfBusiness,
+        date_of_purchases: new Date(data.date_of_purchases),
+        amount_of_purchases: data.amount_of_purchases,
+        date_of_sales: new Date(data.date_of_sales),
+        amount_of_sales: data.amount_of_sales,
+        capital_proposed: data.capital_proposed,
+        amount_of_stock: data.amount_of_stock,
+        books_of_account: data.books_of_account,
+        verification_of_originals: data.verification_of_originals,
+        verification_of_title: data.verification_of_title,
+        other_information: data.other_information,
+        security_deposit: data.security_deposit,
+        security_deposit_amount: data.security_deposit_amount,
+        security_deposit_date: new Date(data.security_deposit_date),
+        date_of_expiry_security_deposit: new Date(
+          data.date_of_expiry_security_deposit
+        ),
+        bank: data.bank,
+        name_of_person: data.name_of_person,
+        address: data.address,
+        plant_and_machinery: data.plant_and_machinery,
+        raw_materials: data.raw_materials,
+        packing_materials: data.packing_materials,
+        necessary_payments: data.necessary_payments,
+        all_appointment: data.all_appointment,
+        all_doc_upload: data.all_doc_upload,
+        registration_date: new Date(data.registration_date!),
+        vat_officer_note: data.vat_officer_note,
 
-    reset();
+        dept_user_id: dept_response.data.id,
+        status: RegistrationStatus.ACTIVE,
+      });
+
+      if (response.status) {
+        const resposne = await UpdateDvatStatus({
+          id: props.registrationdata.dvat04Id!,
+          updatedby: id,
+          status: "APPROVED",
+          tinNumber: "26000004000" + dvatdata.id,
+        });
+        if (resposne.status) {
+          toast.success(resposne.message);
+        } else {
+          toast.error(resposne.message);
+        }
+      } else {
+        toast.error(response.message);
+      }
+      router.back();
+    } else {
+      toast.error(dept_response.message);
+    }
   };
 
   const reject = async () => {
@@ -726,27 +791,39 @@ const VatNote = (props: VatNoteProps) => {
     { value: "WORKS", label: "WORKS" },
   ];
 
+  const commodity: OptionValue[] = [
+    { value: "LIQUOR", label: "Liquor" },
+    { value: "FUEL", label: "Fuel" },
+    { value: "OTHERS", label: "Others" },
+  ];
+
   const send_back = async () => {
     if (!dvatdata) return toast.error("There is not any dvat form exist.");
 
     if (dvatdata.registration.length == 0)
       return toast.error("There is not any regirstion form exist with.");
 
-    const response = await UpdateRegistration({
-      id: dvatdata.registration[0].id,
-      updatedby: id,
-      dept_user_id: 8,
-      status: RegistrationStatus.ACTIVE,
+    const dept_response = await GetDeptUser({
+      role: Role.INSPECTOR,
+      dept: dvatdata.selectOffice!,
     });
 
-    if (response.status) {
-      router.push("/dashboard/register/department-track-application-status");
-    } else {
-      toast.error(response.message);
-    }
+    if (dept_response.data && dept_response.status) {
+      const response = await UpdateRegistration({
+        id: dvatdata.registration[0].id,
+        updatedby: id,
+        dept_user_id: dept_response.data.id,
+        status: RegistrationStatus.ACTIVE,
+      });
 
-    // toast.success(response.message);
-    reset();
+      if (response.status) {
+        router.push("/dashboard/register/department-track-application-status");
+      } else {
+        toast.error(response.message);
+      }
+    } else {
+      toast.error(dept_response.message);
+    }
   };
   const bypass = async () => {
     const {
@@ -953,7 +1030,7 @@ const VatNote = (props: VatNoteProps) => {
         <div className="flex gap-3 mt-3">
           <div className="flex-1">
             <TaxtInput<RegistrationForm>
-              placeholder="Enter Security Desposite Amount"
+              placeholder="Enter Security Deposit Amount"
               name="security_deposit_amount"
               required={true}
               title="a). Security deposit Amount"
@@ -1013,16 +1090,16 @@ const VatNote = (props: VatNoteProps) => {
           />
         </div>
       </div>
-      <div className="mt-2">
-        <TaxtAreaInput<RegistrationForm>
-          placeholder="Enter address"
-          name="address"
-          required={false}
-          title="16. Address of the place(s) visited for inspection (If not same as principle Place of Business please specify below)"
-          disable={true}
-        />
-      </div>
       <div className="flex gap-3 mt-3">
+        <div className="flex-1">
+          <TaxtAreaInput<RegistrationForm>
+            placeholder="Enter address"
+            name="address"
+            required={false}
+            title="16. Address of the place(s) visited for inspection (If not same as principle Place of Business please specify below)"
+            disable={true}
+          />
+        </div>
         <div className="flex-1">
           <TaxtAreaInput<RegistrationForm>
             placeholder="Enter Raw Materials"
@@ -1032,12 +1109,25 @@ const VatNote = (props: VatNoteProps) => {
             disable={true}
           />
         </div>
+      </div>
+      <div className="flex gap-3 mt-3">
         <div className="flex-1">
-          <TaxtAreaInput<RegistrationForm>
+          <TaxtInput<RegistrationForm>
             placeholder="Enter Packing materials"
             name="packing_materials"
             required={true}
             title="18. Packing Materials"
+            disable={true}
+          />
+        </div>
+
+        <div className="flex-1">
+          <MultiSelect<RegistrationForm>
+            name={"commodity"}
+            options={commodity}
+            placeholder="Select the business commodity"
+            title="19. Commodity"
+            required={true}
             disable={true}
           />
         </div>
@@ -1153,6 +1243,7 @@ const VatNote = (props: VatNoteProps) => {
 
 type RegistrationPreviewProps = {
   registrationdata: registration;
+  commodity: Dvat04Commodity;
 };
 
 const RegistrationPreview = (props: RegistrationPreviewProps) => {
@@ -1295,6 +1386,7 @@ const RegistrationPreview = (props: RegistrationPreviewProps) => {
             title="18. Packing Materials"
             description={props.registrationdata.packing_materials ?? ""}
           />
+          <InfoCard title="19. Commodity" description={props.commodity} />
         </div>
       </div>
 
@@ -1344,7 +1436,7 @@ const RegistrationPreview = (props: RegistrationPreviewProps) => {
         </div>
       </div>
 
-      <div className="flex gap-4 mt-2">
+      {/* <div className="flex gap-4 mt-2">
         <Button
           type="primary"
           onClick={() => {
@@ -1353,7 +1445,7 @@ const RegistrationPreview = (props: RegistrationPreviewProps) => {
         >
           Back
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };

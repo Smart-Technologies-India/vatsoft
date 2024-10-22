@@ -14,14 +14,17 @@ import { Radio, DatePicker } from "antd";
 import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
-import { challan } from "@prisma/client";
+import { challan, user } from "@prisma/client";
 import { formateDate } from "@/utils/methods";
 import { toast } from "react-toastify";
 import SearchChallan from "@/action/challan/searchchallan";
-import GetAllChallan from "@/action/challan/getallchallan";
+import GetDeptChallan from "@/action/challan/getdeptchallan";
+import GetUser from "@/action/user/getuser";
+import { getCookie } from "cookies-next";
+// import GetAllChallan from "@/action/challan/getallchallan";
 
 const ChallanHistory = () => {
-  // const id: number = parseInt(getCookie("id") ?? "0");
+  const id: number = parseInt(getCookie("id") ?? "0");
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -52,31 +55,45 @@ const ChallanHistory = () => {
   };
 
   const [challanData, setChallanData] = useState<challan[]>([]);
+
+  const [user, setUpser] = useState<user | null>(null);
+
   const init = async () => {
     setLoading(true);
 
-    const challan_resposne = await GetAllChallan({});
-    if (challan_resposne.data && challan_resposne.data) {
-      setChallanData(challan_resposne.data);
+    const userrespone = await GetUser({ id: id });
+    if (userrespone.status && userrespone.data) {
+      setUpser(userrespone.data);
+
+      const challan_resposne = await GetDeptChallan({
+        dept: userrespone.data.selectOffice!,
+      });
+      if (challan_resposne.data && challan_resposne.data) {
+        setChallanData(challan_resposne.data);
+      }
+      setSearch(false);
+      setLoading(false);
     }
-    setSearch(false);
-    setLoading(false);
   };
 
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const userrespone = await GetUser({ id: id });
+      if (userrespone.status && userrespone.data) {
+        setUpser(userrespone.data);
+        const challan_resposne = await GetDeptChallan({
+          dept: userrespone.data.selectOffice!,
+        });
 
-      const challan_resposne = await GetAllChallan({});
-
-      if (challan_resposne.data && challan_resposne.data) {
-        setChallanData(challan_resposne.data);
+        if (challan_resposne.data && challan_resposne.data) {
+          setChallanData(challan_resposne.data);
+        }
       }
-
       setLoading(false);
     };
     init();
-  }, []);
+  }, [id]);
 
   const cpinsearch = async () => {
     if (
@@ -88,6 +105,7 @@ const ChallanHistory = () => {
     }
     const search_response = await SearchChallan({
       cpin: cpinRef.current?.input?.value,
+      dept: user?.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setChallanData(search_response.data);
@@ -103,6 +121,7 @@ const ChallanHistory = () => {
     const search_response = await SearchChallan({
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
+      dept: user?.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setChallanData(search_response.data);

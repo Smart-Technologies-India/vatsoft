@@ -9,6 +9,7 @@ type RabioInputProps<T extends FieldValues> = {
   required: boolean;
   options: OptionValue[];
   extratax?: JSX.Element;
+  disable?: boolean;
 };
 
 export function RabioInput<T extends FieldValues>(props: RabioInputProps<T>) {
@@ -41,6 +42,7 @@ export function RabioInput<T extends FieldValues>(props: RabioInputProps<T>) {
                     value={val.value}
                     checked={field.value === val.value}
                     onChange={() => field.onChange(val.value)}
+                    disabled={props.disable ?? false}
                   />
                   <p className="text-sm">{capitalcase(val.label)}</p>
                 </label>

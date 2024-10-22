@@ -238,13 +238,13 @@ const Dvat24Page = () => {
                 >
                   {data?.notice.status == "PAID" ? "View Challan" : "Pay"}
                 </Button>
-                <Button
+                {/* <Button
                   onClick={() => {
                     router.back();
                   }}
                 >
                   Back
-                </Button>
+                </Button> */}
               </div>
             </div>
           </div>

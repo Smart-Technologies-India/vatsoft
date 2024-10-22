@@ -19,15 +19,27 @@ const AddPayment = async (
 ): Promise<ApiResponseType<returns_01 | null>> => {
   const functionname: string = AddPayment.name;
   try {
-    const isExist = await prisma.returns_01.findFirst({
+    let isExist = await prisma.returns_01.findFirst({
       where: {
         id: payload.id,
         deletedAt: null,
         deletedById: null,
         status: "ACTIVE",
+        return_type: "REVISED",
       },
     });
 
+    if (!isExist) {
+      isExist = await prisma.returns_01.findFirst({
+        where: {
+          id: payload.id,
+          deletedAt: null,
+          deletedById: null,
+          status: "ACTIVE",
+          return_type: "ORIGINAL",
+        },
+      });
+    }
     if (!isExist) {
       return createResponse({ message: "Invalid Id, try again", functionname });
     }

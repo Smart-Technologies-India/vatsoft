@@ -26,11 +26,12 @@ import {
 } from "@/components/ui/drawer";
 import GetUserTrackPayment from "@/action/return/getusertrackpayment";
 import { getCookie } from "cookies-next";
-import { returns_01 } from "@prisma/client";
+import { dvat04, returns_01 } from "@prisma/client";
 import { capitalcase, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import SearchReturnPayment from "@/action/return/searchreturnpayment";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
@@ -59,8 +60,17 @@ const TrackAppliation = () => {
   };
 
   const [paymentData, setPaymentData] = useState<returns_01[]>([]);
+  const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 
   const init = async () => {
+    const dvat_response = await GetUserDvat04({
+      userid: userid,
+    });
+
+    if (dvat_response.data && dvat_response.status) {
+      setDvatData(dvat_response.data);
+    }
+
     const payment_data = await GetUserTrackPayment({
       user_id: userid,
     });
@@ -71,6 +81,13 @@ const TrackAppliation = () => {
   };
   useEffect(() => {
     const init = async () => {
+      const dvat_response = await GetUserDvat04({
+        userid: userid,
+      });
+
+      if (dvat_response.data && dvat_response.status) {
+        setDvatData(dvat_response.data);
+      }
       const payment_data = await GetUserTrackPayment({
         user_id: userid,
       });
@@ -144,6 +161,7 @@ const TrackAppliation = () => {
     const search_response = await SearchReturnPayment({
       userid: userid,
       rr_number: arnRef.current?.input?.value,
+      dept: dvatdata?.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setPaymentData(search_response.data);
@@ -160,7 +178,9 @@ const TrackAppliation = () => {
       userid: userid,
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
+      dept: dvatdata?.selectOffice!,
     });
+
     if (search_response.status && search_response.data) {
       setPaymentData(search_response.data);
       setSearch(true);

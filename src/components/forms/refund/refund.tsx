@@ -152,7 +152,6 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
 
     if (challan_response.status) {
       toast.success("Refund request submitted successfully");
-      reset({});
       router.back();
     } else {
       toast.error(challan_response.message);
@@ -364,14 +363,14 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
 
         <div className="w-full flex gap-2 mt-2">
           <div className="grow"></div>
-          <Button
+          {/* <Button
             onClick={(e) => {
               e.preventDefault();
               router.back();
             }}
           >
             Back
-          </Button>
+          </Button> */}
           <input
             type="reset"
             onClick={(e) => {

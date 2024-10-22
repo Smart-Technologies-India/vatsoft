@@ -14,13 +14,14 @@ import { Radio, DatePicker } from "antd";
 import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
-import { refunds } from "@prisma/client";
+import { refunds, user } from "@prisma/client";
 import { getCookie } from "cookies-next";
 import { formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import SearchRefunds from "@/action/refund/searchrefunds";
-import GetAllRefunds from "@/action/refund/getallrefunds";
+import GetDeptRefunds from "@/action/refund/getdeptrefunds";
+import GetUser from "@/action/user/getuser";
 
 const RefundsHistory = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
@@ -52,14 +53,22 @@ const RefundsHistory = () => {
   ) => {
     setSearchDate(dates);
   };
+  const [user, setUpser] = useState<user | null>(null);
 
   const [refundsData, setRefundsData] = useState<refunds[]>([]);
   const init = async () => {
     setLoading(true);
 
-    const refunds_resposne = await GetAllRefunds({});
-    if (refunds_resposne.data && refunds_resposne.data) {
-      setRefundsData(refunds_resposne.data);
+    const userrespone = await GetUser({ id: id });
+    if (userrespone.status && userrespone.data) {
+      setUpser(userrespone.data);
+
+      const refunds_resposne = await GetDeptRefunds({
+        dept: userrespone.data.selectOffice!,
+      });
+      if (refunds_resposne.data && refunds_resposne.data) {
+        setRefundsData(refunds_resposne.data);
+      }
     }
     setSearch(false);
     setLoading(false);
@@ -69,16 +78,23 @@ const RefundsHistory = () => {
     const init = async () => {
       setLoading(true);
 
-      const refunds_resposne = await GetAllRefunds({});
+      const userrespone = await GetUser({ id: id });
+      if (userrespone.status && userrespone.data) {
+        setUpser(userrespone.data);
 
-      if (refunds_resposne.data && refunds_resposne.data) {
-        setRefundsData(refunds_resposne.data);
+        const refunds_resposne = await GetDeptRefunds({
+          dept: userrespone.data.selectOffice!,
+        });
+
+        if (refunds_resposne.data && refunds_resposne.data) {
+          setRefundsData(refunds_resposne.data);
+        }
       }
 
       setLoading(false);
     };
     init();
-  }, []);
+  }, [id]);
 
   const cpinsearch = async () => {
     if (
@@ -90,6 +106,7 @@ const RefundsHistory = () => {
     }
     const search_response = await SearchRefunds({
       cpin: cpinRef.current?.input?.value,
+      dept: user!.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setRefundsData(search_response.data);
@@ -105,6 +122,7 @@ const RefundsHistory = () => {
     const search_response = await SearchRefunds({
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
+      dept: user!.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setRefundsData(search_response.data);

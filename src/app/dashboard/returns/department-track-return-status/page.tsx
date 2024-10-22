@@ -26,14 +26,17 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { getCookie } from "cookies-next";
-import { dvat04, returns_01 } from "@prisma/client";
+import { dvat04, returns_01, user } from "@prisma/client";
 import { capitalcase, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import SearchReturnPayment from "@/action/return/searchreturnpayment";
 import { toast } from "react-toastify";
+import GetUser from "@/action/user/getuser";
+import { useRouter } from "next/navigation";
 
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
+  const router = useRouter();
 
   enum SearchOption {
     ARN,
@@ -64,16 +67,24 @@ const TrackAppliation = () => {
     Array<returns_01 & { dvat04: dvat04 }>
   >([]);
 
+  const [user, setUpser] = useState<user | null>(null);
+
   useEffect(() => {
     const init = async () => {
-      const payment_data = await SearchReturnPayment({});
+      const userrespone = await GetUser({ id: userid });
+      if (userrespone.status && userrespone.data) {
+        setUpser(userrespone.data);
+        const payment_data = await SearchReturnPayment({
+          dept: userrespone.data.selectOffice!,
+        });
 
-      if (payment_data.status && payment_data.data) {
-        setPaymentData(payment_data.data);
+        if (payment_data.status && payment_data.data) {
+          setPaymentData(payment_data.data);
+        }
       }
     };
     init();
-  }, []);
+  }, [userid]);
   const get_years = (month: string, year: string): string => {
     const monthNames = [
       "January",
@@ -127,7 +138,9 @@ const TrackAppliation = () => {
   const tradeRef = useRef<InputRef>(null);
 
   const init = async () => {
-    const payment_data = await SearchReturnPayment({});
+    const payment_data = await SearchReturnPayment({
+      dept: user?.selectOffice!,
+    });
 
     if (payment_data.status && payment_data.data) {
       setPaymentData(payment_data.data);
@@ -145,6 +158,7 @@ const TrackAppliation = () => {
     }
     const search_response = await SearchReturnPayment({
       rr_number: arnRef.current?.input?.value,
+      dept: user?.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setPaymentData(search_response.data);
@@ -160,6 +174,7 @@ const TrackAppliation = () => {
     const search_response = await SearchReturnPayment({
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
+      dept: user?.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setPaymentData(search_response.data);
@@ -177,6 +192,7 @@ const TrackAppliation = () => {
     }
     const search_response = await SearchReturnPayment({
       tin: tinRef.current?.input?.value,
+      dept: user?.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setPaymentData(search_response.data);
@@ -193,6 +209,7 @@ const TrackAppliation = () => {
     }
     const search_response = await SearchReturnPayment({
       trade: tradeRef.current?.input?.value,
+      dept: user?.selectOffice!,
     });
     if (search_response.status && search_response.data) {
       setPaymentData(search_response.data);
@@ -384,94 +401,113 @@ const TrackAppliation = () => {
             })()}
           </div>
 
-          <Table className="border mt-2">
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  ARN
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Return Type
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Financial Year
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Tax Period
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Date of filing
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Filing Type
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  TIN Number
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Trade Name
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Dealer Name
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paymentData.map(
-                (val: returns_01 & { dvat04: dvat04 }, index: number) => {
-                  return (
-                    <TableRow key={index}>
-                      <TableCell className="border text-center p-2">
-                        <Link
-                          href={`/dashboard/returns/returns-dashboard/preview/${val.createdById}?form=30A&year=${val.year}&quarter=${val.quarter}&month=${val.month}&sidebar=no`}
-                          className="text-blue-500"
-                        >
-                          {val.rr_number}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="border text-center p-2">
-                        {val.return_type}
-                      </TableCell>
-                      <TableCell className="border text-center p-2">
-                        {get_years(
-                          new Date(val.transaction_date!).toLocaleString(
-                            "en-US",
-                            {
-                              month: "long",
-                            }
-                          ),
-                          val.year
-                        )}
-                      </TableCell>
-                      <TableCell className="border text-center p-2">
-                        {get_month(
-                          val.compositionScheme ?? false,
-                          new Date(val.transaction_date!).toLocaleString(
-                            "en-US",
-                            {
-                              month: "short",
-                            }
-                          )
-                        )}
-                      </TableCell>
-                      <TableCell className="border text-center p-2">
-                        {formateDate(new Date(val.transaction_date!))}
-                      </TableCell>
-                      <TableCell className="border text-center p-2">
-                        {val.compositionScheme ? "COMP" : "REG"}
-                      </TableCell>
-                      <TableCell className="border text-center p-2">
-                        {val.dvat04.tinNumber}
-                      </TableCell>
-                      <TableCell className="border text-center p-2">
-                        {val.dvat04.tradename}
-                      </TableCell>
-                    </TableRow>
-                  );
-                }
-              )}
-            </TableBody>
-          </Table>
+          {paymentData.length == 0 ? (
+            <>
+              <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
+                <p className="flex-1">There is no Payment Challan.</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <Table className="border mt-2">
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      ARN
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Return Type
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Financial Year
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Tax Period
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Date of filing
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Filing Type
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      TIN Number
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Trade Name
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Dealer Name
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paymentData.map(
+                    (val: returns_01 & { dvat04: dvat04 }, index: number) => {
+                      return (
+                        <TableRow key={index}>
+                          <TableCell className="border text-center p-2">
+                            <Link
+                              href={`/dashboard/returns/returns-dashboard/preview/${val.createdById}?form=30A&year=${val.year}&quarter=${val.quarter}&month=${val.month}&sidebar=no`}
+                              className="text-blue-500"
+                            >
+                              {val.rr_number}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="border text-center p-2">
+                            {val.return_type}
+                          </TableCell>
+                          <TableCell className="border text-center p-2">
+                            {get_years(
+                              new Date(val.transaction_date!).toLocaleString(
+                                "en-US",
+                                {
+                                  month: "long",
+                                }
+                              ),
+                              val.year
+                            )}
+                          </TableCell>
+                          <TableCell className="border text-center p-2">
+                            {get_month(
+                              val.compositionScheme ?? false,
+                              new Date(val.transaction_date!).toLocaleString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                }
+                              )
+                            )}
+                          </TableCell>
+                          <TableCell className="border text-center p-2">
+                            {formateDate(new Date(val.transaction_date!))}
+                          </TableCell>
+                          <TableCell className="border text-center p-2">
+                            {val.compositionScheme ? "COMP" : "REG"}
+                          </TableCell>
+                          <TableCell className="border text-center p-2">
+                            {val.dvat04.tinNumber}
+                          </TableCell>
+                          <TableCell className="border text-center p-2">
+                            {val.dvat04.tradename}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+                  )}
+                </TableBody>
+              </Table>
+            </>
+          )}
+          {/* <div className="mt-2"></div>
+          <Button
+            onClick={(e) => {
+              e.preventDefault();
+              router.back();
+            }}
+          >
+            Back
+          </Button> */}
         </div>
       </div>
     </>

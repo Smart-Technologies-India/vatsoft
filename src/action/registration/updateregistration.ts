@@ -4,6 +4,7 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import {
+  Dvat04Commodity,
   DvatStatus,
   NatureOfBusiness,
   registration,
@@ -55,6 +56,7 @@ interface UpdateRegistrationPayload {
 
   status: RegistrationStatus;
   dvatstatus?: DvatStatus;
+  commodity?: Dvat04Commodity;
 }
 
 const UpdateRegistration = async (
@@ -189,7 +191,7 @@ const UpdateRegistration = async (
         functionname,
       });
 
-    if (payload.dvatstatus) {
+    if (payload.dvatstatus || payload.commodity) {
       const udpate_dvat_response = await prisma.dvat04.update({
         where: {
           id: registration_response.dvat04Id,
@@ -197,7 +199,8 @@ const UpdateRegistration = async (
           deletedById: null,
         },
         data: {
-          status: payload.dvatstatus,
+          ...(payload.dvatstatus && { status: payload.dvatstatus }),
+          ...(payload.commodity && { commodity: payload.commodity }),
         },
       });
 

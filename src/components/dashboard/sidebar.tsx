@@ -2,6 +2,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import {
   Fa6RegularFileLines,
+  FluentCalendarDataBar32Light,
   FluentMdl2ViewDashboard,
   FluentNotepadPerson16Regular,
   FluentPersonSupport20Regular,
@@ -109,6 +110,16 @@ const Sidebar = (props: SidebarProps) => {
             path={path}
             pathcheck={"/dashboard/dealer_compliance"}
           />
+
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={
+              <FluentCalendarDataBar32Light className="text-gray-300  w-6" />
+            }
+            name="Commodity"
+            path={path}
+            pathcheck={"/dashboard/commodity_master"}
+          />
         </>
       )}
       {isProfileCompletd && ["USER"].includes(props.role) && (
@@ -185,7 +196,7 @@ const Sidebar = (props: SidebarProps) => {
           />
           <MenuTab
             icco={<MdiStorefrontOutline className="text-gray-300  w-6" />}
-            name="Rent"
+            name="Tax"
             path={path}
             pathcheck={"/dashboard/userrent"}
           />

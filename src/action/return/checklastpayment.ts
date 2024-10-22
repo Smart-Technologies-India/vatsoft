@@ -18,18 +18,33 @@ const CheckLastPayment = async (
 ): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = CheckLastPayment.name;
   try {
-    const isExist = await prisma.returns_01.findFirst({
+    let isExist = await prisma.returns_01.findFirst({
       where: {
         id: payload.id,
         deletedAt: null,
         deletedById: null,
         status: "ACTIVE",
+        return_type: "REVISED",
       },
       include: {
         dvat04: true,
       },
     });
 
+    if (!isExist) {
+      isExist = await prisma.returns_01.findFirst({
+        where: {
+          id: payload.id,
+          deletedAt: null,
+          deletedById: null,
+          status: "ACTIVE",
+          return_type: "ORIGINAL",
+        },
+        include: {
+          dvat04: true,
+        },
+      });
+    }
     if (!isExist) {
       return createResponse({ message: "Invalid Id, try again", functionname });
     }
@@ -67,7 +82,7 @@ const CheckLastPayment = async (
     );
     const userid = isExist.createdById;
 
-    const lastPayment = await prisma.returns_01.findFirst({
+    let lastPayment = await prisma.returns_01.findFirst({
       where: {
         deletedAt: null,
         deletedById: null,
@@ -75,10 +90,23 @@ const CheckLastPayment = async (
         createdById: userid,
         year: year,
         month: month,
+        return_type: "REVISED",
       },
     });
 
     if (!lastPayment) {
+      lastPayment = await prisma.returns_01.findFirst({
+        where: {
+          deletedAt: null,
+          deletedById: null,
+          status: "ACTIVE",
+          createdById: userid,
+          year: year,
+          month: month,
+          return_type: "ORIGINAL",
+        },
+      });
+
       if (isExist.dvat04.vatLiableDate! > current_payment_date) {
         return createResponse({
           data: false,

@@ -27,11 +27,13 @@ import { getCookie } from "cookies-next";
 import { formateDate } from "@/utils/methods";
 import GetUser from "@/action/user/getuser";
 import Link from "next/link";
-import GetAllDvat from "@/action/register/getalldvat";
 import GetUserComposition from "@/action/composition/getusercompositon";
+import GetAllDvatByDept from "@/action/register/getdvatbydept";
+import { useRouter } from "next/navigation";
 
 const TrackAppliation = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
 
   const [data, setData] = useState<any[]>([]);
   const [user, setUser] = useState<user>();
@@ -41,17 +43,18 @@ const TrackAppliation = () => {
 
   useEffect(() => {
     const init = async () => {
-      const response = await GetAllDvat({});
-      if (response.data && response.status) {
-        setData(response.data);
-      }
-
       const userresponse = await GetUser({
         id: id,
       });
 
       if (userresponse.data && userresponse.status) {
         setUser(userresponse.data);
+        const response = await GetAllDvatByDept({
+          dept: userresponse.data.selectOffice!,
+        });
+        if (response.data && response.status) {
+          setData(response.data);
+        }
       }
 
       const composition_response = await GetUserComposition({});
@@ -321,6 +324,15 @@ const TrackAppliation = () => {
               )}
             </TableBody>
           </Table>
+          {/* <div className="mt-2"></div>
+          <Button
+            onClick={(e) => {
+              e.preventDefault();
+              router.back();
+            }}
+          >
+            Back
+          </Button> */}
         </div>
       </div>
     </>

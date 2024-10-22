@@ -2,7 +2,7 @@
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { refunds } from "@prisma/client";
+import { refunds, SelectOffice } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 interface SearchRfundsPayload {
@@ -10,6 +10,7 @@ interface SearchRfundsPayload {
   cpin?: string;
   fromdate?: Date;
   todate?: Date;
+  dept: SelectOffice;
 }
 
 const SearchRefunds = async (

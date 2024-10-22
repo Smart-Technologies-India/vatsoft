@@ -251,7 +251,7 @@ const SupplierDetails = () => {
               ))}
             </TableBody>
           </Table>
-          <div className="flex mt-2 gap-2">
+          {/* <div className="flex mt-2 gap-2">
             <div className="grow"></div>
             <Button
               onClick={(e) => {
@@ -262,7 +262,7 @@ const SupplierDetails = () => {
             >
               Back
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
     </>

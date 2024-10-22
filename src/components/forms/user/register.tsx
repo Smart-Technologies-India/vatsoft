@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import {
   FieldErrors,
@@ -99,7 +100,7 @@ const Registration = (props: RegisterProviderProps) => {
         setDvat(dvat04_response.data);
     };
     init();
-  }, [props.userid, reset]);
+  }, [props.userid]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onFormError)}>

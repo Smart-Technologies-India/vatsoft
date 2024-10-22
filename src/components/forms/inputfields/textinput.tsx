@@ -44,7 +44,7 @@ export function TaxtInput<T extends FieldValues>(props: TaxtInputProps<T>) {
             showCount={props.maxlength ? true : undefined}
             maxLength={props.maxlength ?? undefined}
             status={error ? "error" : undefined}
-            className="w-full mt-1"
+            className="w-full"
             value={field.value}
             disabled={props.disable ?? false}
             onChange={(e) => {

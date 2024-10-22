@@ -148,7 +148,6 @@ const Dvat16ReturnPreview = () => {
       // Programmatically click the link to trigger the download
       link.click();
     } catch (error) {
-      console.error("Failed to download PDF:", error);
     }
   };
 

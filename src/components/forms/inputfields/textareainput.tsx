@@ -20,7 +20,6 @@ export function TaxtAreaInput<T extends FieldValues>(
     formState: { errors },
   } = useFormContext();
 
-  // Get the error for this specific field
   const error = errors[props.name as keyof typeof errors];
   return (
     <Controller

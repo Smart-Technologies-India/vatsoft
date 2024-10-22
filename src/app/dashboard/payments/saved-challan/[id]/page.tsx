@@ -340,15 +340,15 @@ const ChallanData = () => {
                       )}
                     </div>
                     <div className="flex  gap-2 mt-2">
-                      <div className="grow"></div>
-                      <Button
+                      {/* <div className="grow"></div> */}
+                      {/* <Button
                         onClick={(e) => {
                           e.preventDefault();
                           router.back();
                         }}
                       >
                         Back
-                      </Button>
+                      </Button> */}
                       <Button
                         disabled={isSubmitting}
                         onClick={(e) => {

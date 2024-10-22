@@ -24,12 +24,13 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { getCookie } from "cookies-next";
-import { dvat04 } from "@prisma/client";
+import { dvat04, user } from "@prisma/client";
 import { capitalcase } from "@/utils/methods";
 import DeptPendingReturn from "@/action/dvat/deptpendingreturn";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import SearchDeptPendingReturn from "@/action/dvat/searchdeptpendingreturn";
+import GetUser from "@/action/user/getuser";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -61,30 +62,17 @@ const TrackAppliation = () => {
     [Dayjs | null, Dayjs | null] | null
   >(null);
 
-  const onChangeDate = (
-    dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
-  ) => {
-    setSearchDate(dates);
-  };
-
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
 
+  const [user, setUpser] = useState<user | null>(null);
+
   const init = async () => {
-    const payment_data = await DeptPendingReturn({});
-
-    if (payment_data.status && payment_data.data) {
-      const sortedData = payment_data.data.sort(
-        (a: ResponseType, b: ResponseType) => b.pending - a.pending
-      );
-      setDvatData(sortedData);
-    }
-    setSearch(false);
-  };
-
-  useEffect(() => {
-    const init = async () => {
-      const payment_data = await DeptPendingReturn({});
+    const userrespone = await GetUser({ id: userid });
+    if (userrespone.status && userrespone.data) {
+      setUpser(userrespone.data);
+      const payment_data = await DeptPendingReturn({
+        dept: userrespone.data.selectOffice!,
+      });
 
       if (payment_data.status && payment_data.data) {
         const sortedData = payment_data.data.sort(
@@ -92,9 +80,30 @@ const TrackAppliation = () => {
         );
         setDvatData(sortedData);
       }
+    }
+    setSearch(false);
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      const userrespone = await GetUser({ id: userid });
+      if (userrespone.status && userrespone.data) {
+        console.log(userrespone.data);
+        setUpser(userrespone.data);
+        const payment_data = await DeptPendingReturn({
+          dept: userrespone.data.selectOffice!,
+        });
+
+        if (payment_data.status && payment_data.data) {
+          const sortedData = payment_data.data.sort(
+            (a: ResponseType, b: ResponseType) => b.pending - a.pending
+          );
+          setDvatData(sortedData);
+        }
+      }
     };
     init();
-  }, []);
+  }, [userid]);
   const get_years = (month: string, year: string): string => {
     const monthNames = [
       "January",

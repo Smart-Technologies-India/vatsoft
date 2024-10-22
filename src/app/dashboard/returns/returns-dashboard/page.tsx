@@ -2,7 +2,7 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Marquee from "react-fast-marquee";
 
 import { RowData } from "@tanstack/react-table";
@@ -21,6 +21,7 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { toast } from "react-toastify";
 import { formateDate } from "@/utils/methods";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
+import CreateReturnRevised from "@/action/return/createreturnrevised";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -414,6 +415,7 @@ const ReturnDashboard = () => {
   );
 
   const [nilBox, setNilBox] = useState<boolean>(false);
+  const [rrbox, setRRBox] = useState<boolean>(false);
 
   const [isAccept, setIsAccept] = useState<boolean>(false);
 
@@ -426,8 +428,60 @@ const ReturnDashboard = () => {
     );
   };
 
+  const returnRevised = async () => {
+    if (return01 == null)
+      return toast.error("There is not any return revised selected");
+    const response = await CreateReturnRevised({
+      id: return01.id,
+    });
+
+    if (!response.status) {
+      toast.error(response.message);
+    } else {
+      toast.success(response.message);
+    }
+
+    setRRBox(false);
+    search(year ?? "", period ?? "");
+  };
+
   return (
     <>
+      <Modal title="Confirmation" open={rrbox} footer={null} closeIcon={false}>
+        <div>
+          <p>
+            You have declared nil filing for a return type. You may be penalized
+            if any irregularity found in the declaration of the same.
+          </p>
+
+          <div className="text-sm flex gap-1 items-center bg-white">
+            <Checkbox
+              value={isAccept}
+              onChange={(value: CheckboxChangeEvent) => {
+                setIsAccept(value.target.checked);
+              }}
+            />
+            <p>I accept the terms and conditions</p>
+          </div>
+        </div>
+        <div className="flex  gap-2 mt-2">
+          <div className="grow"></div>
+          <button
+            className="py-1 rounded-md border px-4 text-sm text-gray-600"
+            onClick={() => {
+              setRRBox(false);
+            }}
+          >
+            Close
+          </button>
+          <button
+            onClick={returnRevised}
+            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
+          >
+            Return Revised
+          </button>
+        </div>
+      </Modal>
       <Modal title="Confirmation" open={nilBox} footer={null} closeIcon={false}>
         <div>
           <p>
@@ -556,7 +610,7 @@ const ReturnDashboard = () => {
         </div>
         {isSearch && (
           <>
-            <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-4 gap-6 justify-between mt-4 border">
+            <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-5 gap-6 justify-between mt-4 border">
               <div>
                 <p className="text-sm">RR Number</p>
                 <p className="text-sm  font-medium">
@@ -596,6 +650,12 @@ const ReturnDashboard = () => {
                   return01?.rr_number != null
                     ? "Filed"
                     : "Due - Not Filed"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm">Return Type</p>
+                <p className="text-sm  font-medium">
+                  {return01?.return_type ?? "ORIGINAL"}
                 </p>
               </div>
             </div>
@@ -663,6 +723,17 @@ const ReturnDashboard = () => {
                   >
                     Download Return
                   </button>
+
+                  {ispayment() && (
+                    <button
+                      onClick={() => {
+                        setRRBox(true);
+                      }}
+                      className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                    >
+                      Revised Return
+                    </button>
+                  )}
                   {!ispayment() && (
                     <button
                       onClick={() => {

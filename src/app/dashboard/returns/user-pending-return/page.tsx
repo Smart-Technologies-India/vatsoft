@@ -200,13 +200,13 @@ const ShopView = () => {
           <div className="flex gap-2 p-2 border-b border-gray-300">
             <p className="text-xl  font-semibold">Dealer Details</p>
             <div className="grow"></div>
-            <Button
+            {/* <Button
               onClick={() => {
                 router.back();
               }}
             >
               Back
-            </Button>
+            </Button> */}
           </div>
 
           <div className="px-4 py-2 grid grid-cols-2 gap-4 mt-2">

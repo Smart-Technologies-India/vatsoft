@@ -1,4 +1,4 @@
-import { NatureOfBusiness } from "@prisma/client";
+import { Dvat04Commodity, NatureOfBusiness } from "@prisma/client";
 import {
   InferInput,
   minLength,
@@ -110,6 +110,7 @@ const RegistrationSchema = object({
   all_doc_upload: optional(boolean()),
   all_appointment: optional(boolean()),
   necessary_payments: optional(boolean()),
+  commodity: enum_(Dvat04Commodity, "Select Commodity"),
 });
 
 type RegistrationForm = InferInput<typeof RegistrationSchema>;

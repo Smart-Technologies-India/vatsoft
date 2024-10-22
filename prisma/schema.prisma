@@ -35,6 +35,9 @@ enum Role {
   ACCOUNTANT
   USER
   CA
+  OIDC
+  OIDC1
+  EXCISE
 }
 
 enum Gender {
@@ -95,8 +98,8 @@ enum DvatStatus {
 
 enum SelectOffice {
   Dadra_Nagar_Haveli
-  Branch_Office
-  Head_Office
+  DAMAN
+  DIU
 }
 
 enum NatureOfBusiness {
@@ -306,23 +309,29 @@ enum Dvat24Reason {
   NOTCOMPLYRETURN
 }
 
+enum Dvat04Commodity {
+  LIQUOR
+  FUEL
+  OTHER
+}
+
 model user {
-  id                    Int        @id @default(autoincrement())
+  id                    Int           @id @default(autoincrement())
   firstName             String?
   lastName              String?
-  mobileOne             String     @unique
+  mobileOne             String        @unique
   mobileTwo             String?
-  email                 String?    @unique
-  pan                   String?    @unique
-  aadhar                String?    @unique
+  email                 String?       @unique
+  pan                   String?       @unique
+  aadhar                String?       @unique
   password              String?
   otp                   String?
-  role                  Role       @default(USER)
+  role                  Role          @default(USER)
   designation           String?
-  isAuthorisedSignatory Boolean    @default(false)
+  isAuthorisedSignatory Boolean       @default(false)
   signatoreUploadPath   String?
-  isAllowedLogin        Boolean    @default(true)
-  gender                Gender     @default(OTHER)
+  isAllowedLogin        Boolean       @default(true)
+  gender                Gender        @default(OTHER)
   dob                   DateTime?
   passportNumber        String?
   buildingName          String?
@@ -330,9 +339,10 @@ model user {
   address               String?
   city                  String?
   pincode               String?
-  status                UserStatus @default(ACTIVE)
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
+  selectOffice          SelectOffice? @default(Dadra_Nagar_Haveli)
+  status                UserStatus    @default(ACTIVE)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
   deletedAt             DateTime?
 
   document document[]
@@ -424,9 +434,18 @@ model user {
   return_filing_updatedBy return_filing[] @relation("return_filing_updatedBy")
   return_filing_deletedBy return_filing[] @relation("return_filing_deletedBy")
 
-  registration registration[]
-  composition  composition[]
-  refunds      refunds[]
+  commodity_master_createdBy commodity_master[] @relation("commodity_master_createdBy")
+  commodity_master_updatedBy commodity_master[] @relation("commodity_master_updatedBy")
+  commodity_master_deletedBy commodity_master[] @relation("commodity_master_deletedBy")
+
+  user_commodity_master_createdBy user_commodity_master[] @relation("user_commodity_master_createdBy")
+  user_commodity_master_updatedBy user_commodity_master[] @relation("user_commodity_master_updatedBy")
+  user_commodity_master_deletedBy user_commodity_master[] @relation("user_commodity_master_deletedBy")
+
+  registration          registration[]
+  composition           composition[]
+  refunds               refunds[]
+  user_commodity_master user_commodity_master[]
 }
 
 model change {
@@ -489,6 +508,7 @@ model dvat04 {
   tinNumber              String?
   certificateNumber      String?
   certificateDate        DateTime?
+  commodity              Dvat04Commodity? @default(OTHER)
 
   // form 1
   name                         String?
@@ -583,15 +603,16 @@ model dvat04 {
   deletedBy   user?      @relation("dvat04_deletedBy", fields: [deletedById], references: [id])
   deletedById Int?
 
-  returns_01    returns_01[]
-  registration  registration[]
-  annexure1     annexure1[]
-  annexure2     annexure2[]
-  challan       challan[]
-  refunds       refunds[]
-  composition   composition[]
-  order_notice  order_notice[]
-  return_filing return_filing[]
+  returns_01            returns_01[]
+  registration          registration[]
+  annexure1             annexure1[]
+  annexure2             annexure2[]
+  challan               challan[]
+  refunds               refunds[]
+  composition           composition[]
+  order_notice          order_notice[]
+  return_filing         return_filing[]
+  user_commodity_master user_commodity_master[]
 }
 
 model commodity {
@@ -823,6 +844,7 @@ model returns_entry {
   vatamount              String?
   remarks                String?
   description_of_goods   String?
+  quantity               Int?
   isnil                  Boolean               @default(false)
   status                 Status                @default(ACTIVE)
   createdAt              DateTime              @default(now())
@@ -1008,4 +1030,45 @@ model return_filing {
   deletedById   Int?
 
   @@unique([dvatid, year, month])
+}
+
+model commodity_master {
+  id                    Int              @id @default(autoincrement())
+  product_name          String
+  product_type          Dvat04Commodity? @default(OTHER)
+  mrp                   String
+  sale_price            String
+  oidc_price            String
+  oidc_discount_percent String
+  taxable_at            String
+  description           String
+  remark                String?
+  status                Status           @default(ACTIVE)
+  createdAt             DateTime         @default(now())
+  createdBy             user             @relation("commodity_master_createdBy", fields: [createdById], references: [id])
+  createdById           Int
+  updatedAt             DateTime         @updatedAt
+  updatedBy             user?            @relation("commodity_master_updatedBy", fields: [updatedById], references: [id])
+  updatedById           Int?
+  deletedAt             DateTime?
+  deletedBy             user?            @relation("commodity_master_deletedBy", fields: [deletedById], references: [id])
+  deletedById           Int?
+}
+
+model user_commodity_master {
+  id          Int       @id @default(autoincrement())
+  dvat        dvat04    @relation(fields: [dvatid], references: [id])
+  dvatid      Int
+  user        user      @relation(fields: [user_id], references: [id])
+  user_id     Int
+  status      Status    @default(ACTIVE)
+  createdAt   DateTime  @default(now())
+  createdBy   user      @relation("user_commodity_master_createdBy", fields: [createdById], references: [id])
+  createdById Int
+  updatedAt   DateTime  @updatedAt
+  updatedBy   user?     @relation("user_commodity_master_updatedBy", fields: [updatedById], references: [id])
+  updatedById Int?
+  deletedAt   DateTime?
+  deletedBy   user?     @relation("user_commodity_master_deletedBy", fields: [deletedById], references: [id])
+  deletedById Int?
 }

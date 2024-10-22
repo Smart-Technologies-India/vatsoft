@@ -180,7 +180,7 @@ const Dvat10Page = () => {
                   </div>
                 )}
 
-              <div className="w-full flex gap-2 mt-2">
+              {/* <div className="w-full flex gap-2 mt-2">
                 <div className="grow"></div>
                 <Button
                   onClick={() => {
@@ -189,7 +189,7 @@ const Dvat10Page = () => {
                 >
                   Back
                 </Button>
-              </div>
+              </div> */}
             </div>
             <div>
               <p className="mt-3 text-sm">

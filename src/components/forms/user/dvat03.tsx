@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import {
   FieldErrors,
@@ -107,7 +108,7 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
       }
     };
     init();
-  }, [props.dvatid, reset]);
+  }, [props.dvatid]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onFormError)}>

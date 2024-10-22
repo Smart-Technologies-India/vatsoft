@@ -2,7 +2,7 @@
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { challan } from "@prisma/client";
+import { challan, SelectOffice } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 interface SearchChallanPayload {
@@ -10,6 +10,7 @@ interface SearchChallanPayload {
   cpin?: string;
   fromdate?: Date;
   todate?: Date;
+  dept: SelectOffice;
 }
 
 const SearchChallan = async (
@@ -23,6 +24,9 @@ const SearchChallan = async (
         status: "ACTIVE",
         deletedAt: null,
         deletedById: null,
+        dvat: {
+          selectOffice: payload.dept,
+        },
         ...(payload.dvatid && { dvatid: payload.dvatid }),
         ...(payload.cpin && { cpin: payload.cpin }),
         ...(payload.fromdate &&

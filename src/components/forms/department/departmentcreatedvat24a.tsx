@@ -142,12 +142,6 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
         setReturn01Data(return01_response.data);
       }
       if (!(tinNumber == null || tinNumber == undefined || tinNumber == "")) {
-        reset({
-          dvat24_reason: "NOTFURNISHED",
-          due_date: dayjs(new Date().setDate(new Date().getDate() + 15)).format(
-            "DD/MM/YYYY"
-          ),
-        });
         const dvat_response = await SearchTinNumber({
           tinumber: tinNumber,
         });
@@ -159,6 +153,12 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
           toast.error(dvat_response.message);
           setSearch(false);
         }
+        reset({
+          dvat24_reason: "NOTFURNISHED",
+          due_date: dayjs(new Date().setDate(new Date().getDate() + 15)).format(
+            "DD/MM/YYYY"
+          ),
+        });
       }
     };
 
@@ -307,7 +307,14 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
                   placeholder="Enter remark"
                 />
                 <div className="w-full flex gap-2 mt-2">
-                  <div className="grow"></div>
+                  {/* <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      router.back();
+                    }}
+                  >
+                    Back
+                  </Button> */}
                   <input
                     type="reset"
                     onClick={(e) => {

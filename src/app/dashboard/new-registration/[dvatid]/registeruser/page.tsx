@@ -14,7 +14,7 @@ import { safeParse } from "valibot";
 import { UserDataSchema } from "@/schema/userdata";
 import { useParams, useRouter } from "next/navigation";
 import registerUser from "@/action/user/register/registeruser";
-const UserRegister = () => {
+const UserRegister = (): JSX.Element => {
   const { registerid } = useParams<{ registerid: string | string[] }>();
   const registeridString = Array.isArray(registerid)
     ? registerid[0]

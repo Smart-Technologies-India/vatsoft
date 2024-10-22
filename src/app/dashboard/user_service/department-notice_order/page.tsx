@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import {
   GgInfo,
@@ -5,7 +6,7 @@ import {
   MdiDownload,
   TablerRefresh,
 } from "@/components/icons";
-import { Radio, DatePicker } from "antd";
+import { Radio, DatePicker, Select } from "antd";
 
 import { Button, Input, InputRef, RadioChangeEvent } from "antd";
 import {
@@ -27,10 +28,13 @@ import { useRouter } from "next/navigation";
 import { getCookie } from "cookies-next";
 import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
-import { FormType, order_notice } from "@prisma/client";
-import GetAllNotice from "@/action/notice_order/getallnotice";
+import { FormType, order_notice, user } from "@prisma/client";
+// import GetAllNotice from "@/action/notice_order/getallnotice";
 import { capitalcase, formateDate } from "@/utils/methods";
 import Link from "next/link";
+import GetDeptNotice from "@/action/notice_order/getdeptnotice";
+import GetUser from "@/action/user/getuser";
+import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
 const { RangePicker } = DatePicker;
 
 const SupplierDetails = () => {
@@ -53,7 +57,7 @@ const SupplierDetails = () => {
     setSeachOption(e.target.value);
   };
 
-  const typeRef = useRef<InputRef>(null);
+  // const typeRef = useRef<InputRef>(null);
 
   const [searchDate, setSearchDate] = useState<
     [Dayjs | null, Dayjs | null] | null
@@ -68,32 +72,41 @@ const SupplierDetails = () => {
   const init = async () => {
     setLoading(true);
 
-    // const challan_resposne = await GetUserChallan({
-    //   userid: id,
-    // });
-    // if (challan_resposne.data && challan_resposne.data) {
-    //   setChallanData(challan_resposne.data);
-    // }
+    const userrespone = await GetUser({ id: id });
+    if (userrespone.status && userrespone.data) {
+      setUpser(userrespone.data);
+
+      const notice_respone = await GetDeptNotice({
+        dept: user?.selectOffice!,
+      });
+
+      if (notice_respone.status && notice_respone.data) {
+        setNoticeData(notice_respone.data);
+      }
+      setLoading(false);
+    }
     setSearch(false);
     setLoading(false);
   };
 
+  const [formtype, setFormtype] = useState<FormType | null>(null);
+
+  const onFormType = (value: string) => {
+    setFormtype(value as FormType);
+  };
+
   const typesearch = async () => {
-    if (
-      typeRef.current?.input?.value == undefined ||
-      typeRef.current?.input?.value == null ||
-      typeRef.current?.input?.value == ""
-    ) {
-      return toast.error("Enter type");
+    if (formtype == null) {
+      return toast.error("Select From Type.");
     }
-    // const search_response = await SearchChallan({
-    //   userid: id,
-    //   cpin: cpinRef.current?.input?.value,
-    // });
-    // if (search_response.status && search_response.data) {
-    //   setChallanData(search_response.data);
-    //   setSearch(true);
-    // }
+    const search_response = await SearchNoticeOrder({
+      dept: user?.selectOffice!,
+      form_type: formtype,
+    });
+    if (search_response.status && search_response.data) {
+      setNoticeData(search_response.data);
+      setSearch(true);
+    }
   };
 
   const datesearch = async () => {
@@ -101,29 +114,39 @@ const SupplierDetails = () => {
       return toast.error("Select state date and end date");
     }
 
-    // const search_response = await SearchChallan({
-    //   userid: id,
-    //   fromdate: searchDate[0]?.toDate(),
-    //   todate: searchDate[1]?.toDate(),
-    // });
-    // if (search_response.status && search_response.data) {
-    //   setChallanData(search_response.data);
-    //   setSearch(true);
-    // }
+    const search_response = await SearchNoticeOrder({
+      fromdate: searchDate[0]?.toDate(),
+      todate: searchDate[1]?.toDate(),
+      dept: user?.selectOffice!,
+    });
+    if (search_response.status && search_response.data) {
+      setNoticeData(search_response.data);
+      setSearch(true);
+    }
   };
 
   const [noticeData, setNoticeData] = useState<order_notice[]>([]);
+  const [user, setUpser] = useState<user | null>(null);
 
   useEffect(() => {
     const init = async () => {
-      const notice_respone = await GetAllNotice({});
-      console.log(notice_respone);
-      if (notice_respone.status && notice_respone.data) {
-        setNoticeData(notice_respone.data);
+      setLoading(true);
+      const userrespone = await GetUser({ id: id });
+      if (userrespone.status && userrespone.data) {
+        setUpser(userrespone.data);
+
+        const notice_respone = await GetDeptNotice({
+          dept: user?.selectOffice!,
+        });
+
+        if (notice_respone.status && notice_respone.data) {
+          setNoticeData(notice_respone.data);
+        }
+        setLoading(false);
       }
     };
     init();
-  }, []);
+  }, [id]);
   const getLink = (type: FormType, id: number): string => {
     switch (type) {
       case FormType.DVAT10:
@@ -136,6 +159,13 @@ const SupplierDetails = () => {
         return `/dashboard/returns/dvat10?id=${id}`;
     }
   };
+
+  if (isLoading)
+    return (
+      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
+        Loading...
+      </div>
+    );
   return (
     <>
       <div className="p-6">
@@ -156,11 +186,27 @@ const SupplierDetails = () => {
                 case SearchOption.TYPE:
                   return (
                     <div className="flex gap-2">
-                      <Input
-                        className="w-60"
-                        ref={typeRef}
-                        placeholder={"Enter Type"}
+                      <Select
+                        showSearch
+                        placeholder="Select From Type"
+                        optionFilterProp="label"
+                        onChange={onFormType}
+                        options={[
+                          {
+                            value: FormType.DVAT10,
+                            label: "DVAT 10",
+                          },
+                          {
+                            value: FormType.DVAT24,
+                            label: "DVAT24",
+                          },
+                          {
+                            value: FormType.DVAT24A,
+                            label: "DVAT 24A",
+                          },
+                        ]}
                       />
+
                       <Button onClick={typesearch} type="primary">
                         Search
                       </Button>
@@ -194,61 +240,79 @@ const SupplierDetails = () => {
           <p className="text-sm mt-2">
             List of Notices & Orders issued by Authorities
           </p>
-          <Table className="border mt-2">
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="">Notice/Demand Order Id</TableHead>
-                <TableHead className="whitespace-nowrap text-center">
-                  Issued By
-                </TableHead>
-                <TableHead className="text-center">Type</TableHead>
-                <TableHead className="text-center">
-                  Notice/ Order Description
-                </TableHead>
-                <TableHead className="text-center">Date of Issuance</TableHead>
-                <TableHead className="text-center">Due Date</TableHead>
-                <TableHead className="text-center">Amount of Demand</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-center">Download</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {noticeData.map((val: order_notice, index: number) => (
-                <TableRow key={index}>
-                  <TableCell className="text-center">
-                    <Link
-                      href={getLink(val.form_type, val.id)}
-                      className="text-blue-500"
-                    >
-                      {val.ref_no.toUpperCase()}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    System Generated
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {capitalcase(val.notice_order_type)}
-                  </TableCell>
-                  <TableCell className="text-center">{val.form_type}</TableCell>
-                  <TableCell className="text-center">
-                    {formateDate(val.issue_date)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {formateDate(val.due_date)}
-                  </TableCell>
-                  <TableCell className="text-center">{val.amount}</TableCell>
-                  <TableCell className="text-center">
-                    {" "}
-                    {capitalcase(val.status)}
-                  </TableCell>
-                  <TableCell className="text-center text-blue-500">
-                    <MdiDownload />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <div className="flex mt-2 gap-2">
+          {noticeData.length == 0 ? (
+            <>
+              <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
+                <p className="flex-1">There is no Notice and Order.</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <Table className="border mt-2">
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="">Notice/Demand Order Id</TableHead>
+                    <TableHead className="whitespace-nowrap text-center">
+                      Issued By
+                    </TableHead>
+                    <TableHead className="text-center">Type</TableHead>
+                    <TableHead className="text-center">
+                      Notice/ Order Description
+                    </TableHead>
+                    <TableHead className="text-center">
+                      Date of Issuance
+                    </TableHead>
+                    <TableHead className="text-center">Due Date</TableHead>
+                    <TableHead className="text-center">
+                      Amount of Demand
+                    </TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Download</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {noticeData.map((val: order_notice, index: number) => (
+                    <TableRow key={index}>
+                      <TableCell className="text-center">
+                        <Link
+                          href={getLink(val.form_type, val.id)}
+                          className="text-blue-500"
+                        >
+                          {val.ref_no.toUpperCase()}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        System Generated
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {capitalcase(val.notice_order_type)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {val.form_type}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {formateDate(val.issue_date)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {formateDate(val.due_date)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {val.amount}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {" "}
+                        {capitalcase(val.status)}
+                      </TableCell>
+                      <TableCell className="text-center text-blue-500">
+                        <MdiDownload />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
+          )}
+          {/* <div className="flex mt-2 gap-2">
             <div className="grow"></div>
             <Button
               onClick={(e) => {
@@ -259,7 +323,7 @@ const SupplierDetails = () => {
             >
               Back
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
     </>

@@ -873,7 +873,7 @@ const Dvat16ReturnPreview = () => {
               </>
             )}
 
-            <Button onClick={() => router.back()}>Back</Button>
+            {/* <Button onClick={() => router.back()}>Back</Button> */}
             <Button type="primary" onClick={generatePDF}>
               Download returns
             </Button>

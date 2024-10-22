@@ -434,12 +434,12 @@ const InwardSupplies = () => {
               </button>
             )}
 
-            <button
+            {/* <button
               className="text-sm border hover:border-blue-500 hover:text-blue-500 bg-white text-[#172e57] py-1 px-4"
               onClick={() => route.back()}
             >
               Back
-            </button>
+            </button> */}
           </div>
         </div>
       </main>

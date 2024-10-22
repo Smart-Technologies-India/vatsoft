@@ -49,10 +49,26 @@ const AddTempRegNo = async (
         functionname,
       });
 
+    const dept_to_assign = await prisma.user.findFirst({
+      where: {
+        deletedAt: null,
+        status: "ACTIVE",
+        selectOffice: updateresponse.selectOffice,
+        role: "INSPECTOR",
+      },
+    });
+
+    if (!dept_to_assign) {
+      return createResponse({
+        message: "No officer found.",
+        functionname,
+      });
+    }
+
     const createregistration = await prisma.registration.create({
       data: {
         dvat04Id: updateresponse.id,
-        dept_user_id: 8,
+        dept_user_id: dept_to_assign.id,
         physicalVerification: false,
         createdById: payload.userid,
         status: "ACTIVE",

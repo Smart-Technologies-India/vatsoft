@@ -2,7 +2,7 @@ import { FormSteps } from "@/components/formstepts";
 
 import { RegisterProvider } from "@/components/forms/user/register";
 import { cookies } from "next/headers";
-const UserRegister = () => {
+const UserRegister = (): JSX.Element => {
   const id: number = parseInt(cookies().get("id")?.value ?? "0");
 
   return (

@@ -24,12 +24,13 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { getCookie } from "cookies-next";
-import { dvat04 } from "@prisma/client";
+import { dvat04, user } from "@prisma/client";
 import { capitalcase } from "@/utils/methods";
 import DeptPendingReturn from "@/action/dvat/deptpendingreturn";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import SearchDeptPendingReturn from "@/action/dvat/searchdeptpendingreturn";
+import GetUser from "@/action/user/getuser";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -70,21 +71,15 @@ const TrackAppliation = () => {
 
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
 
+  const [user, setUpser] = useState<user | null>(null);
+
   const init = async () => {
-    const payment_data = await DeptPendingReturn({});
-
-    if (payment_data.status && payment_data.data) {
-      const sortedData = payment_data.data.sort(
-        (a: ResponseType, b: ResponseType) => b.pending - a.pending
-      );
-      setDvatData(sortedData);
-    }
-    setSearch(false);
-  };
-
-  useEffect(() => {
-    const init = async () => {
-      const payment_data = await DeptPendingReturn({});
+    const userrespone = await GetUser({ id: userid });
+    if (userrespone.status && userrespone.data) {
+      setUpser(userrespone.data);
+      const payment_data = await DeptPendingReturn({
+        dept: userrespone.data.selectOffice!,
+      });
 
       if (payment_data.status && payment_data.data) {
         const sortedData = payment_data.data.sort(
@@ -92,9 +87,29 @@ const TrackAppliation = () => {
         );
         setDvatData(sortedData);
       }
+    }
+    setSearch(false);
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      const userrespone = await GetUser({ id: userid });
+      if (userrespone.status && userrespone.data) {
+        setUpser(userrespone.data);
+        const payment_data = await DeptPendingReturn({
+          dept: userrespone.data.selectOffice!,
+        });
+
+        if (payment_data.status && payment_data.data) {
+          const sortedData = payment_data.data.sort(
+            (a: ResponseType, b: ResponseType) => b.pending - a.pending
+          );
+          setDvatData(sortedData);
+        }
+      }
     };
     init();
-  }, []);
+  }, [userid]);
   const get_years = (month: string, year: string): string => {
     const monthNames = [
       "January",
@@ -357,65 +372,75 @@ const TrackAppliation = () => {
             })()}
           </div>
 
-          <Table className="border mt-2">
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  TIN Number
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Trade Name
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Composition
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Last Filing Period
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Pending Returns
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  View
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dvatData.map((val: ResponseType, index: number) => {
-                return (
-                  <TableRow key={index}>
-                    <TableCell className="border text-center p-2">
-                      {val.dvat04.tinNumber}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.dvat04.tradename}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.dvat04.compositionScheme ? "COMP" : "REG"}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.lastfiling}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.pending}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      <Button
-                        type="primary"
-                        onClick={() => {
-                          route.push(
-                            `/dashboard/returns/department-pending-return/${val.dvat04.id}`
-                          );
-                        }}
-                      >
-                        View
-                      </Button>
-                    </TableCell>
+          {dvatData.length == 0 ? (
+            <>
+              <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
+                <p className="flex-1">There is no Payment return.</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <Table className="border mt-2">
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      TIN Number
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Trade Name
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Composition
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Last Filing Period
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Pending Returns
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      View
+                    </TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {dvatData.map((val: ResponseType, index: number) => {
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="border text-center p-2">
+                          {val.dvat04.tinNumber}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          {val.dvat04.tradename}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          {val.dvat04.compositionScheme ? "COMP" : "REG"}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          {val.lastfiling}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          {val.pending}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          <Button
+                            type="primary"
+                            onClick={() => {
+                              route.push(
+                                `/dashboard/returns/department-pending-return/${val.dvat04.id}`
+                              );
+                            }}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </>
+          )}
         </div>
       </div>
     </>

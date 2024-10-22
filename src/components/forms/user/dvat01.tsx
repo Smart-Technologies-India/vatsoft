@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import {
   FieldErrors,
@@ -95,6 +96,20 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
   } = useFormContext<Dvat1Form>();
 
   const onSubmit = async (data: Dvat1Form) => {
+    if (data.annualTurnoverCategory) {
+      if (parseInt(data.turnoverLastFinancialYear) > 500000) {
+        return toast.error(
+          "Last financial year annual turnover should be less then 5 Lacs"
+        );
+      }
+    } else {
+      if (parseInt(data.turnoverLastFinancialYear) < 499999) {
+        return toast.error(
+          "Last financial year annual turnover should be 5 Lacs or above"
+        );
+      }
+    }
+
     const userrespone: ApiResponseType<dvat04 | null> = await DvatUpdate({
       id: props.dvatid,
       updatedby: props.userid,
@@ -163,7 +178,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
       }
     };
     init();
-  }, [props.dvatid, reset]);
+  }, [props.dvatid]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onFormError)}>
@@ -360,7 +375,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
         </div>
         <p className="text-xs bg-rose-500 bg-opacity-10 shadow px-2 py-1 rounded-sm mt-2 text-rose-500">
           Note: If you have more than one place of
-          business/factory/godown/warehourse, fill up form Additional Business
+          business/factory/godown/warehouse, fill up form Additional Business
           Places
         </p>
       </div>

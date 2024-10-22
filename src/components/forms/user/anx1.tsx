@@ -36,6 +36,7 @@ import Anx1Create from "@/action/anx1/addanx1";
 import DeleteAnx1 from "@/action/anx1/deleteanx1";
 import { onFormError } from "@/utils/methods";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 
 type Anx1ProviderProps = {
   dvatid: number;
@@ -128,7 +129,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
 
   useEffect(() => {
     const init = async () => {
-      const dvat_response = await GetUserDvat04({
+      const dvat_response = await GetUserDvat04Anx({
         userid: props.userid,
       });
       if (dvat_response.status && dvat_response.data) {
@@ -482,8 +483,10 @@ const Anx1 = (props: Anx1ProviderProps) => {
           <button
             onClick={(e) => {
               e.preventDefault();
+              
+              const numofown: number = dvatData?.numberOfOwners ?? 0;
 
-              if (dvatData?.numberOfOwners ?? 0 < Annexuredata.length) {
+              if (numofown  < Annexuredata.length) {
                 return toast.error(
                   `Number of Person having intrest in business in ${
                     dvatData?.numberOfOwners ?? 0

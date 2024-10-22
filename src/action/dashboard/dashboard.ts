@@ -61,16 +61,30 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
     // Handle potential underflow of month
     const year = date.getFullYear();
 
-    const formdata = await prisma.returns_01.findFirst({
+    let formdata = await prisma.returns_01.findFirst({
       where: {
         deletedAt: null,
         deletedById: null,
         status: "ACTIVE",
         createdById: userid,
         year: year.toString(),
+        return_type: "REVISED",
         month: date.toLocaleString("default", { month: "long" }),
       },
     });
+    if (!formdata) {
+      formdata = await prisma.returns_01.findFirst({
+        where: {
+          deletedAt: null,
+          deletedById: null,
+          status: "ACTIVE",
+          createdById: userid,
+          year: year.toString(),
+          return_type: "ORIGINAL",
+          month: date.toLocaleString("default", { month: "long" }),
+        },
+      });
+    }
 
     let completed: boolean = false;
     let filed_on: Date = new Date();

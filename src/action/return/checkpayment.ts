@@ -13,15 +13,27 @@ const CheckPayment = async (
 ): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = CheckPayment.name;
   try {
-    const isExist = await prisma.returns_01.findFirst({
+    let isExist = await prisma.returns_01.findFirst({
       where: {
         id: payload.id,
         deletedAt: null,
         deletedById: null,
         status: "ACTIVE",
+        return_type: "REVISED",
       },
     });
 
+    if (!isExist) {
+      isExist = await prisma.returns_01.findFirst({
+        where: {
+          id: payload.id,
+          deletedAt: null,
+          deletedById: null,
+          status: "ACTIVE",
+          return_type: "ORIGINAL",
+        },
+      });
+    }
     if (!isExist) {
       return createResponse({ message: "Invalid Id, try again", functionname });
     }

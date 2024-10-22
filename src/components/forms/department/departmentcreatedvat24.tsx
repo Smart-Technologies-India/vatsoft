@@ -229,11 +229,6 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
       }
 
       if (!(tinNumber == null || tinNumber == undefined || tinNumber == "")) {
-        console.log(
-          dayjs(new Date().setDate(new Date().getDate() + 15)).format(
-            "DD/MM/YYYY"
-          )
-        );
         reset({
           dvat24_reason: "INCORRECTRETURN",
           due_date: dayjs(
@@ -418,7 +413,14 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
                   placeholder="Enter remark"
                 />
                 <div className="w-full flex gap-2 mt-2">
-                  <div className="grow"></div>
+                  {/* <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      router.back();
+                    }}
+                  >
+                    Back
+                  </Button> */}
                   <input
                     type="reset"
                     onClick={(e) => {

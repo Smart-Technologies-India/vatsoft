@@ -104,14 +104,14 @@ const Composition = (props: CompositionProviderProps) => {
 
       <div className="flex gap-2 mt-2">
         <div className="grow"></div>
-        <Button
+        {/* <Button
           onClick={(e) => {
             e.preventDefault();
             router.back();
           }}
         >
           Back
-        </Button>
+        </Button> */}
         <input
           type="reset"
           onClick={(e) => {
