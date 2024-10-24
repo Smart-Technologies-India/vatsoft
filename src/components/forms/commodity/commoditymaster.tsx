@@ -103,7 +103,6 @@ const CommodityMaster = (props: CompositionProviderProps) => {
   }, [props.id]);
 
   const onSubmit = async (data: CommodityMasterForm) => {
-    console.log("data ---->");
     if (props.id) {
       const comm_response = await UpdateCommodityMaster({
         id: props.id,

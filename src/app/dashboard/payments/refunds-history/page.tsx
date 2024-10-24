@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input } from "antd";
+import { Button, Input, Pagination } from "antd";
 import {
   Table,
   TableBody,
@@ -28,7 +28,15 @@ const RefundsHistory = () => {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
-  const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
+  const [pagination, setPaginatin] = useState<{
+    take: number;
+    skip: number;
+    total: number;
+  }>({
+    take: 10,
+    skip: 0,
+    total: 0,
+  });
 
   enum SearchOption {
     CPIN,
@@ -66,14 +74,23 @@ const RefundsHistory = () => {
     if (dvat.status && dvat.data) {
       const refunds_resposne = await GetUserRefunds({
         dvatid: dvat.data.id,
+        take: 10,
+        skip: 0,
       });
-      if (refunds_resposne.data && refunds_resposne.data) {
-        setRefundsData(refunds_resposne.data);
+      if (refunds_resposne.data && refunds_resposne.data.result) {
+        setRefundsData(refunds_resposne.data.result);
+        setPaginatin({
+          skip: refunds_resposne.data.skip,
+          take: refunds_resposne.data.take,
+          total: refunds_resposne.data.total,
+        });
       }
     }
     setSearch(false);
     setLoading(false);
   };
+
+  const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -84,11 +101,19 @@ const RefundsHistory = () => {
       });
 
       if (dvat.status && dvat.data) {
+        setDvatData(dvat.data);
         const refunds_resposne = await GetUserRefunds({
           dvatid: dvat.data.id,
+          take: 10,
+          skip: 0,
         });
-        if (refunds_resposne.data && refunds_resposne.data) {
-          setRefundsData(refunds_resposne.data);
+        if (refunds_resposne.data && refunds_resposne.data.result) {
+          setRefundsData(refunds_resposne.data.result);
+          setPaginatin({
+            skip: refunds_resposne.data.skip,
+            take: refunds_resposne.data.take,
+            total: refunds_resposne.data.total,
+          });
         }
       }
 
@@ -109,9 +134,16 @@ const RefundsHistory = () => {
       dvatid: dvatdata?.id,
       cpin: cpinRef.current?.input?.value,
       dept: dvatdata?.selectOffice!,
+      take: 10,
+      skip: 0,
     });
-    if (search_response.status && search_response.data) {
-      setRefundsData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setRefundsData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -126,10 +158,85 @@ const RefundsHistory = () => {
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
       dept: dvatdata?.selectOffice!,
+      take: 10,
+      skip: 0,
     });
-    if (search_response.status && search_response.data) {
-      setRefundsData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setRefundsData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
+    }
+  };
+
+  const onChangePageCount = async (page: number, pagesize: number) => {
+    if (isSearch) {
+      if (searchOption == SearchOption.CPIN) {
+        if (
+          cpinRef.current?.input?.value == undefined ||
+          cpinRef.current?.input?.value == null ||
+          cpinRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter cpin");
+        }
+        const search_response = await SearchRefunds({
+          dvatid: dvatdata?.id,
+          cpin: cpinRef.current?.input?.value,
+          dept: dvatdata?.selectOffice!,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setRefundsData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.DATE) {
+        if (searchDate == null || searchDate.length <= 1) {
+          return toast.error("Select state date and end date");
+        }
+
+        const search_response = await SearchRefunds({
+          dvatid: dvatdata?.id,
+          fromdate: searchDate[0]?.toDate(),
+          todate: searchDate[1]?.toDate(),
+          dept: dvatdata?.selectOffice!,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setRefundsData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      }
+    } else {
+      const refunds_resposne = await GetUserRefunds({
+        dvatid: dvatdata!.id,
+        take: pagesize,
+        skip: pagesize * (page - 1),
+      });
+      if (refunds_resposne.status && refunds_resposne.data.result) {
+        setRefundsData(refunds_resposne.data.result);
+        setPaginatin({
+          skip: refunds_resposne.data.skip,
+          take: refunds_resposne.data.take,
+          total: refunds_resposne.data.total,
+        });
+      }
     }
   };
 
@@ -150,6 +257,7 @@ const RefundsHistory = () => {
               onChange={onChange}
               value={searchOption}
               className="mt-2"
+              disabled={isSearch}
             >
               <Radio value={SearchOption.CPIN}>CPIN</Radio>
               <Radio value={SearchOption.DATE}>DATE</Radio>
@@ -164,13 +272,16 @@ const RefundsHistory = () => {
                         className="w-60"
                         ref={cpinRef}
                         placeholder={"Enter CPIN"}
+                        disabled={isSearch}
                       />
-                      <Button onClick={cpinsearch} type="primary">
-                        Search
-                      </Button>
-                      {isSearch && (
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={cpinsearch} type="primary">
+                          Search
                         </Button>
                       )}
                     </div>
@@ -179,13 +290,18 @@ const RefundsHistory = () => {
                 case SearchOption.DATE:
                   return (
                     <div className="flex gap-2">
-                      <RangePicker onChange={onChangeDate} />
-                      <Button type="primary" onClick={datesearch}>
-                        Search
-                      </Button>
-                      {isSearch && (
+                      <RangePicker
+                        onChange={onChangeDate}
+                        disabled={isSearch}
+                      />
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button type="primary" onClick={datesearch}>
+                          Search
                         </Button>
                       )}
                     </div>
@@ -203,67 +319,95 @@ const RefundsHistory = () => {
           )}
 
           {refundsData.length > 0 && (
-            <Table className="border mt-2">
-              <TableHeader>
-                <TableRow className="bg-gray-100">
-                  <TableHead className="whitespace-nowrap text-center px-2">
-                    CPIN
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center w-36  px-2">
-                    Created On
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center  px-2">
-                    Amount
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center  px-2">
-                    Mode
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center  px-2">
-                    Expire Date
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center  px-2">
-                    Deposit Date
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center  px-2">
-                    Deposit Status
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {refundsData.map((val: refunds, index: number) => (
-                  <TableRow key={index}>
-                    <TableCell className="text-center p-2">
-                      <Link
-                        className="text-blue-500"
-                        href={`/dashboard/payments/refunds/${val.id}`}
-                      >
-                        {val.cpin}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {formateDate(new Date(val.createdAt))}
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {val.total_tax_amount}
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {val.paymentmode ?? "-"}
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {formateDate(new Date(val.expire_date))}
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {val.transaction_date
-                        ? formateDate(new Date(val.transaction_date))
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {val.refundsstatus}
-                    </TableCell>
+            <>
+              <Table className="border mt-2">
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="whitespace-nowrap text-center px-2">
+                      CPIN
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center w-36  px-2">
+                      Created On
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center  px-2">
+                      Amount
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center  px-2">
+                      Mode
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center  px-2">
+                      Expire Date
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center  px-2">
+                      Deposit Date
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center  px-2">
+                      Deposit Status
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {refundsData.map((val: refunds, index: number) => (
+                    <TableRow key={index}>
+                      <TableCell className="text-center p-2">
+                        <Link
+                          className="text-blue-500"
+                          href={`/dashboard/payments/refunds/${val.id}`}
+                        >
+                          {val.cpin}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {formateDate(new Date(val.createdAt))}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {val.total_tax_amount}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {val.paymentmode ?? "-"}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {formateDate(new Date(val.expire_date))}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {val.transaction_date
+                          ? formateDate(new Date(val.transaction_date))
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {val.refundsstatus}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="mt-2"></div>
+              <div className="lg:hidden">
+                <Pagination
+                  align="center"
+                  defaultCurrent={1}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  total={pagination.total}
+                  showTotal={(total: number) => `Total ${total} items`}
+                />
+              </div>
+              <div className="hidden lg:block">
+                <Pagination
+                  showQuickJumper
+                  align="center"
+                  defaultCurrent={1}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                  total={pagination.total}
+                  responsive={true}
+                  showTotal={(total: number, range: number[]) =>
+                    `${range[0]}-${range[1]} of ${total} items`
+                  }
+                />
+              </div>
+            </>
           )}
         </div>
       </div>

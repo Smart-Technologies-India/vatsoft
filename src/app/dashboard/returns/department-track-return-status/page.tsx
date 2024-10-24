@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input } from "antd";
+import { Button, Input, Pagination } from "antd";
 
 import { Button as ShButton } from "@/components/ui/button";
 import {
@@ -36,7 +36,15 @@ import { useRouter } from "next/navigation";
 
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
-  const router = useRouter();
+  const [pagination, setPaginatin] = useState<{
+    take: number;
+    skip: number;
+    total: number;
+  }>({
+    take: 10,
+    skip: 0,
+    total: 0,
+  });
 
   enum SearchOption {
     ARN,
@@ -76,10 +84,17 @@ const TrackAppliation = () => {
         setUpser(userrespone.data);
         const payment_data = await SearchReturnPayment({
           dept: userrespone.data.selectOffice!,
+          take: 10,
+          skip: 0,
         });
 
-        if (payment_data.status && payment_data.data) {
-          setPaymentData(payment_data.data);
+        if (payment_data.status && payment_data.data.result) {
+          setPaymentData(payment_data.data.result);
+          setPaginatin({
+            skip: payment_data.data.skip,
+            take: payment_data.data.take,
+            total: payment_data.data.total,
+          });
         }
       }
     };
@@ -140,10 +155,17 @@ const TrackAppliation = () => {
   const init = async () => {
     const payment_data = await SearchReturnPayment({
       dept: user?.selectOffice!,
+      take: 10,
+      skip: 0,
     });
 
-    if (payment_data.status && payment_data.data) {
-      setPaymentData(payment_data.data);
+    if (payment_data.status && payment_data.data.result) {
+      setPaymentData(payment_data.data.result);
+      setPaginatin({
+        skip: payment_data.data.skip,
+        take: payment_data.data.take,
+        total: payment_data.data.total,
+      });
     }
     setSearch(false);
   };
@@ -159,9 +181,16 @@ const TrackAppliation = () => {
     const search_response = await SearchReturnPayment({
       rr_number: arnRef.current?.input?.value,
       dept: user?.selectOffice!,
+      take: 10,
+      skip: 0,
     });
-    if (search_response.status && search_response.data) {
-      setPaymentData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setPaymentData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -175,9 +204,16 @@ const TrackAppliation = () => {
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
       dept: user?.selectOffice!,
+      take: 10,
+      skip: 0,
     });
-    if (search_response.status && search_response.data) {
-      setPaymentData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setPaymentData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -193,9 +229,16 @@ const TrackAppliation = () => {
     const search_response = await SearchReturnPayment({
       tin: tinRef.current?.input?.value,
       dept: user?.selectOffice!,
+      take: 10,
+      skip: 0,
     });
-    if (search_response.status && search_response.data) {
-      setPaymentData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setPaymentData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -210,10 +253,132 @@ const TrackAppliation = () => {
     const search_response = await SearchReturnPayment({
       trade: tradeRef.current?.input?.value,
       dept: user?.selectOffice!,
+      take: 10,
+      skip: 0,
     });
-    if (search_response.status && search_response.data) {
-      setPaymentData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setPaymentData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
+    }
+  };
+
+  const onChangePageCount = async (page: number, pagesize: number) => {
+    if (isSearch) {
+      if (searchOption == SearchOption.ARN) {
+        if (
+          arnRef.current?.input?.value == undefined ||
+          arnRef.current?.input?.value == null ||
+          arnRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter arn number");
+        }
+        const search_response = await SearchReturnPayment({
+          rr_number: arnRef.current?.input?.value,
+          dept: user?.selectOffice!,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setPaymentData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.RETURN) {
+        if (searchDate == null || searchDate.length <= 1) {
+          return toast.error("Select state date and end date");
+        }
+
+        const search_response = await SearchReturnPayment({
+          fromdate: searchDate[0]?.toDate(),
+          todate: searchDate[1]?.toDate(),
+          dept: user?.selectOffice!,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setPaymentData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.TIN) {
+        if (
+          tinRef.current?.input?.value == undefined ||
+          tinRef.current?.input?.value == null ||
+          tinRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter TIN Number");
+        }
+        const search_response = await SearchReturnPayment({
+          tin: tinRef.current?.input?.value,
+          dept: user?.selectOffice!,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setPaymentData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.TRADE) {
+        if (
+          tinRef.current?.input?.value == undefined ||
+          tinRef.current?.input?.value == null ||
+          tinRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter TIN Number");
+        }
+        const search_response = await SearchReturnPayment({
+          tin: tinRef.current?.input?.value,
+          dept: user?.selectOffice!,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setPaymentData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      }
+    } else {
+      const payment_data = await SearchReturnPayment({
+        dept: user?.selectOffice!,
+        take: pagesize,
+        skip: pagesize * (page - 1),
+      });
+
+      if (payment_data.status && payment_data.data.result) {
+        setPaymentData(payment_data.data.result);
+        setPaginatin({
+          skip: payment_data.data.skip,
+          take: payment_data.data.take,
+          total: payment_data.data.total,
+        });
+      }
     }
   };
 
@@ -316,14 +481,17 @@ const TrackAppliation = () => {
               </DrawerContent>
             </Drawer>
           </div>
-          <div className="p-2 bg-gray-50 mt-2">
-            <Radio.Group onChange={onChange} value={searchOption}>
+          <div className="p-2 bg-gray-50 mt-2 flex gap-2 items-center">
+            <Radio.Group
+              onChange={onChange}
+              value={searchOption}
+              disabled={isSearch}
+            >
               <Radio value={SearchOption.ARN}>ARN</Radio>
               <Radio value={SearchOption.RETURN}>Tax Period</Radio>
               <Radio value={SearchOption.TIN}>Tin Number</Radio>
               <Radio value={SearchOption.TRADE}>Trade Name</Radio>
             </Radio.Group>
-            <div className="h-2"></div>
             {(() => {
               switch (searchOption) {
                 case SearchOption.ARN:
@@ -333,13 +501,16 @@ const TrackAppliation = () => {
                         className="w-60"
                         ref={arnRef}
                         placeholder={"Enter ARN"}
+                        disabled={isSearch}
                       />
-                      <Button onClick={cpinsearch} type="primary">
-                        Search
-                      </Button>
-                      {isSearch && (
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={cpinsearch} type="primary">
+                          Search
                         </Button>
                       )}
                     </div>
@@ -348,13 +519,18 @@ const TrackAppliation = () => {
                 case SearchOption.RETURN:
                   return (
                     <div className="flex gap-2">
-                      <RangePicker onChange={onChangeDate} />
-                      <Button type="primary" onClick={datesearch}>
-                        Search
-                      </Button>
-                      {isSearch && (
+                      <RangePicker
+                        onChange={onChangeDate}
+                        disabled={isSearch}
+                      />
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button type="primary" onClick={datesearch}>
+                          Search
                         </Button>
                       )}
                     </div>
@@ -366,13 +542,16 @@ const TrackAppliation = () => {
                         className="w-60"
                         ref={tinRef}
                         placeholder={"Enter TIN Number"}
+                        disabled={isSearch}
                       />
-                      <Button onClick={tinsearch} type="primary">
-                        Search
-                      </Button>
-                      {isSearch && (
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={tinsearch} type="primary">
+                          Search
                         </Button>
                       )}
                     </div>
@@ -383,14 +562,17 @@ const TrackAppliation = () => {
                       <Input
                         className="w-60"
                         ref={tradeRef}
+                        disabled={isSearch}
                         placeholder={"Enter Trade Name"}
                       />
-                      <Button onClick={tradesearch} type="primary">
-                        Search
-                      </Button>
-                      {isSearch && (
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={tradesearch} type="primary">
+                          Search
                         </Button>
                       )}
                     </div>
@@ -497,6 +679,32 @@ const TrackAppliation = () => {
                   )}
                 </TableBody>
               </Table>
+              <div className="mt-2"></div>
+              <div className="lg:hidden">
+                <Pagination
+                  align="center"
+                  defaultCurrent={1}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  total={pagination.total}
+                  showTotal={(total: number) => `Total ${total} items`}
+                />
+              </div>
+              <div className="hidden lg:block">
+                <Pagination
+                  showQuickJumper
+                  align="center"
+                  defaultCurrent={1}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                  total={pagination.total}
+                  responsive={true}
+                  showTotal={(total: number, range: number[]) =>
+                    `${range[0]}-${range[1]} of ${total} items`
+                  }
+                />
+              </div>
             </>
           )}
           {/* <div className="mt-2"></div>

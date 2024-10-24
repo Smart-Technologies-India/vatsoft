@@ -88,7 +88,6 @@ const TrackAppliation = () => {
     const init = async () => {
       const userrespone = await GetUser({ id: userid });
       if (userrespone.status && userrespone.data) {
-        console.log(userrespone.data);
         setUpser(userrespone.data);
         const payment_data = await DeptPendingReturn({
           dept: userrespone.data.selectOffice!,
@@ -299,10 +298,13 @@ const TrackAppliation = () => {
               </DrawerContent>
             </Drawer>
           </div>
-          <div className="p-2 bg-gray-50 mt-2">
-            <Radio.Group onChange={onChange} value={searchOption}>
+          <div className="p-2 bg-gray-50 mt-2 flex gap-2 items-center">
+            <Radio.Group
+              onChange={onChange}
+              value={searchOption}
+              disabled={isSearch}
+            >
               <Radio value={SearchOption.TIN}>TIN</Radio>
-              {/* <Radio value={SearchOption.PERIOD}>Return Filing Period</Radio> */}
               <Radio value={SearchOption.NAME}>Trade Name</Radio>
             </Radio.Group>
             <div className="h-2"></div>
@@ -315,32 +317,21 @@ const TrackAppliation = () => {
                         className="w-60"
                         ref={arnRef}
                         placeholder={"Enter TIN"}
+                        disabled={isSearch}
                       />
-                      <Button onClick={arnsearch} type="primary">
-                        Search
-                      </Button>
-                      {isSearch && (
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={arnsearch} type="primary">
+                          Search
                         </Button>
                       )}
                     </div>
                   );
 
-                // case SearchOption.PERIOD:
-                //   return (
-                //     <div className="flex gap-2">
-                //       <RangePicker onChange={onChangeDate} />
-                //       <Button type="primary" onClick={datesearch}>
-                //         Search
-                //       </Button>
-                //       {isSearch && (
-                //         <Button onClick={init} type="primary">
-                //           Reset
-                //         </Button>
-                //       )}
-                //     </div>
-                //   );
                 case SearchOption.NAME:
                   return (
                     <div className="flex gap-2">
@@ -348,13 +339,16 @@ const TrackAppliation = () => {
                         className="w-60"
                         ref={nameRef}
                         placeholder={"Enter Trade Name"}
+                        disabled={isSearch}
                       />
-                      <Button onClick={namesearch} type="primary">
-                        Search
-                      </Button>
-                      {isSearch && (
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={namesearch} type="primary">
+                          Search
                         </Button>
                       )}
                     </div>

@@ -1,15 +1,16 @@
 "use server";
+
+import { errorToString } from "@/utils/methods";
+import { dvat04 } from "@prisma/client";
+import prisma from "../../../prisma/database";
+import { ApiResponseType, createResponse } from "@/models/response";
+
 interface DeptPendingReturnPayload {
   arnnumber?: string;
   tradename?: string;
   fromdate?: Date;
   todate?: Date;
 }
-
-import { errorToString } from "@/utils/methods";
-import { ApiResponseType, createResponse } from "@/models/response";
-import { dvat04 } from "@prisma/client";
-import prisma from "../../../prisma/database";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -30,16 +31,8 @@ const SearchDeptPendingReturn = async (
           ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
           ...(payload.tradename && {
             OR: [
-              {
-                tradename: {
-                  contains: payload.tradename,
-                },
-              },
-              {
-                name: {
-                  contains: payload.tradename,
-                },
-              },
+              { tradename: { contains: payload.tradename } },
+              { name: { contains: payload.tradename } },
             ],
           }),
         },
@@ -96,7 +89,6 @@ const SearchDeptPendingReturn = async (
       }
     }
 
-    // Convert Map to an array
     const res = Array.from(resMap.values());
 
     return createResponse({

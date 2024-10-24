@@ -129,9 +129,7 @@ const Navbar = (props: NavbarProps) => {
             const response = await ReturnFiling();
             if (response.data && response.status) {
               toast.success("Data update successfully.");
-            } else {
-              console.log(response.message);
-            }
+            } 
           }}
         />
       )}

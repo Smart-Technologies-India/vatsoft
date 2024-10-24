@@ -33,7 +33,6 @@ import { useRouter } from "next/navigation";
 
 const TrackAppliation = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
-  const router = useRouter();
 
   const [data, setData] = useState<any[]>([]);
   const [user, setUser] = useState<user>();
@@ -64,33 +63,6 @@ const TrackAppliation = () => {
     };
     init();
   }, [id]);
-
-  // enum SearchOption {
-  //   ARN,
-  //   SRN_FRN,
-  //   SUBMISSION,
-  // }
-  // const [searchOption, setSeachOption] = useState<SearchOption>(
-  //   SearchOption.ARN
-  // );
-
-  // const onChange = (e: RadioChangeEvent) => {
-  //   setSeachOption(e.target.value);
-  // };
-
-  // const arnRef = useRef<InputRef>(null);
-  // const srnRef = useRef<InputRef>(null);
-
-  // const [searchDate, setSearchDate] = useState<
-  //   [Dayjs | null, Dayjs | null] | null
-  // >(null);
-
-  // const onChangeDate = (
-  //   dates: [Dayjs | null, Dayjs | null] | null,
-  //   dateStrings: [string, string]
-  // ) => {
-  //   setSearchDate(dates);
-  // };
 
   return (
     <>

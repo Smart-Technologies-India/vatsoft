@@ -1,38 +1,62 @@
 "use server";
-interface GetAllCommodityMasterPayload {}
 
 import { errorToString } from "@/utils/methods";
-import { ApiResponseType, createResponse } from "@/models/response";
 import { commodity_master } from "@prisma/client";
 import prisma from "../../../prisma/database";
+import {
+  createPaginationResponse,
+  PaginationResponse,
+} from "@/models/response";
+
+interface GetAllCommodityMasterPayload {
+  take: number;
+  skip: number;
+}
 
 const GetAllCommodityMaster = async (
   payload: GetAllCommodityMasterPayload
-): Promise<ApiResponseType<commodity_master[] | null>> => {
+): Promise<PaginationResponse<commodity_master[] | null>> => {
   const functionname: string = GetAllCommodityMaster.name;
 
+  console.log(payload);
+
   try {
-    const commodity_master = await prisma.commodity_master.findMany({
-      where: {
-        deletedAt: null,
-        deletedById: null,
-      },
-    });
+    const [commodity_master, totalCount] = await Promise.all([
+      prisma.commodity_master.findMany({
+        where: {
+          deletedAt: null,
+          deletedById: null,
+        },
+        take: payload.take,
+        skip: payload.skip,
+      }),
+      prisma.commodity_master.count({
+        where: {
+          deletedAt: null,
+          deletedById: null,
+        },
+      }),
+    ]);
+
+    console.log(commodity_master);
 
     if (!commodity_master) {
-      return createResponse({
+      return createPaginationResponse({
         message: "Invalid id. Please try again.",
         functionname,
       });
     }
 
-    return createResponse({
-      message: "User data get successfully",
+    return createPaginationResponse({
+      message: "All Commodity Data get successfully",
       functionname,
       data: commodity_master,
+      take: payload.take,
+      skip: payload.skip,
+      total: totalCount ?? 0,
     });
   } catch (e) {
-    return createResponse({
+    return createPaginationResponse({
       message: errorToString(e),
       functionname,
     });

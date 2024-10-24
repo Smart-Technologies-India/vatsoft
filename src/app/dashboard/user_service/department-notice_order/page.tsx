@@ -1,12 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import {
-  GgInfo,
-  MaterialSymbolsClose,
   MdiDownload,
-  TablerRefresh,
 } from "@/components/icons";
-import { Radio, DatePicker, Select } from "antd";
+import { Radio, DatePicker, Select, Pagination } from "antd";
 
 import { Button, Input, InputRef, RadioChangeEvent } from "antd";
 import {
@@ -17,36 +14,37 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  useActionState,
-  useEffect,
-  useOptimistic,
-  useRef,
-  useState,
-} from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { getCookie } from "cookies-next";
 import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { FormType, order_notice, user } from "@prisma/client";
-// import GetAllNotice from "@/action/notice_order/getallnotice";
 import { capitalcase, formateDate } from "@/utils/methods";
 import Link from "next/link";
-import GetDeptNotice from "@/action/notice_order/getdeptnotice";
 import GetUser from "@/action/user/getuser";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
 const { RangePicker } = DatePicker;
 
 const SupplierDetails = () => {
-  const router = useRouter();
-
   const id: number = parseInt(getCookie("id") ?? "0");
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
+  const [pagination, setPaginatin] = useState<{
+    take: number;
+    skip: number;
+    total: number;
+  }>({
+    take: 10,
+    skip: 0,
+    total: 0,
+  });
+
   enum SearchOption {
     TYPE,
     DATE,
+    TIN,
+    ORDER,
   }
 
   const [searchOption, setSeachOption] = useState<SearchOption>(
@@ -56,8 +54,6 @@ const SupplierDetails = () => {
   const onChange = (e: RadioChangeEvent) => {
     setSeachOption(e.target.value);
   };
-
-  // const typeRef = useRef<InputRef>(null);
 
   const [searchDate, setSearchDate] = useState<
     [Dayjs | null, Dayjs | null] | null
@@ -69,6 +65,106 @@ const SupplierDetails = () => {
   ) => {
     setSearchDate(dates);
   };
+  const orderRef = useRef<InputRef>(null);
+
+  const ordersearch = async () => {
+    if (
+      orderRef.current?.input?.value == undefined ||
+      orderRef.current?.input?.value == null ||
+      orderRef.current?.input?.value == ""
+    ) {
+      return toast.error("Enter Notice/Order id number");
+    }
+    const search_response = await SearchNoticeOrder({
+      dept: user?.selectOffice!,
+      order: orderRef.current?.input?.value,
+      take: 10,
+      skip: 0,
+    });
+    if (search_response.status && search_response.data.result) {
+      setNoticeData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      setSearch(true);
+    }
+  };
+
+  const tinRef = useRef<InputRef>(null);
+
+  const tinsearch = async () => {
+    if (
+      tinRef.current?.input?.value == undefined ||
+      tinRef.current?.input?.value == null ||
+      tinRef.current?.input?.value == ""
+    ) {
+      return toast.error("Enter Tin number");
+    }
+    const search_response = await SearchNoticeOrder({
+      dept: user?.selectOffice!,
+      tin: tinRef.current?.input?.value,
+      take: 10,
+      skip: 0,
+    });
+    if (search_response.status && search_response.data.result) {
+      setNoticeData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      setSearch(true);
+    }
+  };
+
+  const typesearch = async () => {
+    if (formtype == null) {
+      return toast.error("Select Type.");
+    }
+
+    const search_response = await SearchNoticeOrder({
+      dept: user?.selectOffice!,
+      form_type: formtype,
+      take: 10,
+      skip: 0,
+    });
+
+    if (search_response.status && search_response.data.result) {
+      setNoticeData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      setSearch(true);
+    }
+  };
+
+  const datesearch = async () => {
+    if (searchDate == null || searchDate.length <= 1) {
+      return toast.error("Select state date and end date");
+    }
+
+    const search_response = await SearchNoticeOrder({
+      dept: user?.selectOffice!,
+      fromdate: searchDate[0]?.toDate(),
+      todate: searchDate[1]?.toDate(),
+      take: 10,
+      skip: 0,
+    });
+    if (search_response.status && search_response.data.result) {
+      setNoticeData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      setSearch(true);
+    }
+  };
+
   const init = async () => {
     setLoading(true);
 
@@ -76,12 +172,18 @@ const SupplierDetails = () => {
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
 
-      const notice_respone = await GetDeptNotice({
+      const notice_response = await SearchNoticeOrder({
         dept: user?.selectOffice!,
+        take: pagination.take,
+        skip: pagination.skip,
       });
-
-      if (notice_respone.status && notice_respone.data) {
-        setNoticeData(notice_respone.data);
+      if (notice_response.status && notice_response.data.result) {
+        setNoticeData(notice_response.data.result);
+        setPaginatin({
+          skip: pagination.skip,
+          take: pagination.take,
+          total: notice_response.data.total,
+        });
       }
       setLoading(false);
     }
@@ -95,36 +197,6 @@ const SupplierDetails = () => {
     setFormtype(value as FormType);
   };
 
-  const typesearch = async () => {
-    if (formtype == null) {
-      return toast.error("Select From Type.");
-    }
-    const search_response = await SearchNoticeOrder({
-      dept: user?.selectOffice!,
-      form_type: formtype,
-    });
-    if (search_response.status && search_response.data) {
-      setNoticeData(search_response.data);
-      setSearch(true);
-    }
-  };
-
-  const datesearch = async () => {
-    if (searchDate == null || searchDate.length <= 1) {
-      return toast.error("Select state date and end date");
-    }
-
-    const search_response = await SearchNoticeOrder({
-      fromdate: searchDate[0]?.toDate(),
-      todate: searchDate[1]?.toDate(),
-      dept: user?.selectOffice!,
-    });
-    if (search_response.status && search_response.data) {
-      setNoticeData(search_response.data);
-      setSearch(true);
-    }
-  };
-
   const [noticeData, setNoticeData] = useState<order_notice[]>([]);
   const [user, setUpser] = useState<user | null>(null);
 
@@ -135,18 +207,137 @@ const SupplierDetails = () => {
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
 
-        const notice_respone = await GetDeptNotice({
+        const notice_response = await SearchNoticeOrder({
           dept: user?.selectOffice!,
+          take: pagination.take,
+          skip: pagination.skip,
         });
-
-        if (notice_respone.status && notice_respone.data) {
-          setNoticeData(notice_respone.data);
+        if (notice_response.status && notice_response.data.result) {
+          setNoticeData(notice_response.data.result);
+          setPaginatin({
+            skip: pagination.skip,
+            take: pagination.take,
+            total: notice_response.data.total,
+          });
         }
+
         setLoading(false);
       }
     };
     init();
   }, [id]);
+
+  const onChangePageCount = async (page: number, pagesize: number) => {
+    if (isSearch) {
+      if (searchOption == SearchOption.TYPE) {
+        if (formtype == null) {
+          return toast.error("Select Type.");
+        }
+        const search_response = await SearchNoticeOrder({
+          dept: user?.selectOffice!,
+
+          form_type: formtype,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setNoticeData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.DATE) {
+        if (searchDate == null || searchDate.length <= 1) {
+          return toast.error("Select state date and end date");
+        }
+
+        const search_response = await SearchNoticeOrder({
+          dept: user?.selectOffice!,
+
+          fromdate: searchDate[0]?.toDate(),
+          todate: searchDate[1]?.toDate(),
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setNoticeData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.TIN) {
+        if (
+          tinRef.current?.input?.value == undefined ||
+          tinRef.current?.input?.value == null ||
+          tinRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter Tin number");
+        }
+        const search_response = await SearchNoticeOrder({
+          dept: user?.selectOffice!,
+          tin: tinRef.current?.input?.value,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setNoticeData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.ORDER) {
+        if (
+          orderRef.current?.input?.value == undefined ||
+          orderRef.current?.input?.value == null ||
+          orderRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter Notice/Order id number");
+        }
+        const search_response = await SearchNoticeOrder({
+          dept: user?.selectOffice!,
+          order: orderRef.current?.input?.value,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setNoticeData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      }
+    } else {
+      const search_response = await SearchNoticeOrder({
+        dept: user?.selectOffice!,
+        take: pagesize,
+        skip: pagesize * (page - 1),
+      });
+      if (search_response.status && search_response.data.result) {
+        setNoticeData(search_response.data.result);
+        setPaginatin({
+          skip: search_response.data.skip,
+          take: search_response.data.take,
+          total: search_response.data.total,
+        });
+      }
+    }
+  };
   const getLink = (type: FormType, id: number): string => {
     switch (type) {
       case FormType.DVAT10:
@@ -171,16 +362,18 @@ const SupplierDetails = () => {
       <div className="p-6">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white">Notices and Orders</div>
-          <div className="p-2 bg-gray-50 mt-2">
+          <div className="p-2 bg-gray-50 mt-2 flex gap-2">
             <Radio.Group
               onChange={onChange}
               value={searchOption}
               className="mt-2"
+              disabled={isSearch}
             >
               <Radio value={SearchOption.TYPE}>Type</Radio>
               <Radio value={SearchOption.DATE}>Period</Radio>
+              <Radio value={SearchOption.TIN}>TIN Number</Radio>
+              <Radio value={SearchOption.ORDER}>Notice/Demand Order Id</Radio>
             </Radio.Group>
-            <div className="mt-2"></div>
             {(() => {
               switch (searchOption) {
                 case SearchOption.TYPE:
@@ -188,9 +381,10 @@ const SupplierDetails = () => {
                     <div className="flex gap-2">
                       <Select
                         showSearch
-                        placeholder="Select From Type"
+                        placeholder="Select Type"
                         optionFilterProp="label"
                         onChange={onFormType}
+                        disabled={isSearch}
                         options={[
                           {
                             value: FormType.DVAT10,
@@ -207,7 +401,11 @@ const SupplierDetails = () => {
                         ]}
                       />
 
-                      <Button onClick={typesearch} type="primary">
+                      <Button
+                        onClick={typesearch}
+                        type="primary"
+                        disabled={isSearch}
+                      >
                         Search
                       </Button>
                       {isSearch && (
@@ -221,13 +419,58 @@ const SupplierDetails = () => {
                 case SearchOption.DATE:
                   return (
                     <div className="flex gap-2">
-                      <RangePicker onChange={onChangeDate} />
+                      <RangePicker
+                        onChange={onChangeDate}
+                        disabled={isSearch}
+                      />
                       <Button type="primary" onClick={datesearch}>
                         Search
                       </Button>
                       {isSearch && (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      )}
+                    </div>
+                  );
+                case SearchOption.TIN:
+                  return (
+                    <div className="flex gap-2">
+                      <Input
+                        className="w-60"
+                        ref={tinRef}
+                        placeholder={"Enter Tin Number"}
+                        disabled={isSearch}
+                      />
+
+                      {isSearch ? (
+                        <Button onClick={init} type="primary">
+                          Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={tinsearch} type="primary">
+                          Search
+                        </Button>
+                      )}
+                    </div>
+                  );
+                case SearchOption.ORDER:
+                  return (
+                    <div className="flex gap-2">
+                      <Input
+                        className="w-60"
+                        ref={orderRef}
+                        placeholder={"Enter Notice/Demand Order Id"}
+                        disabled={isSearch}
+                      />
+
+                      {isSearch ? (
+                        <Button onClick={init} type="primary">
+                          Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={ordersearch} type="primary">
+                          Search
                         </Button>
                       )}
                     </div>
@@ -312,6 +555,32 @@ const SupplierDetails = () => {
               </Table>
             </>
           )}
+          <div className="mt-2"></div>
+          <div className="lg:hidden">
+            <Pagination
+              align="center"
+              defaultCurrent={1}
+              onChange={onChangePageCount}
+              showSizeChanger
+              total={pagination.total}
+              showTotal={(total: number) => `Total ${total} items`}
+            />
+          </div>
+          <div className="hidden lg:block">
+            <Pagination
+              showQuickJumper
+              align="center"
+              defaultCurrent={1}
+              onChange={onChangePageCount}
+              showSizeChanger
+              pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+              total={pagination.total}
+              responsive={true}
+              showTotal={(total: number, range: number[]) =>
+                `${range[0]}-${range[1]} of ${total} items`
+              }
+            />
+          </div>
           {/* <div className="flex mt-2 gap-2">
             <div className="grow"></div>
             <Button

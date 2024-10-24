@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { commodity_master, Status } from "@prisma/client";
-import { Button, Drawer, Popover } from "antd";
+import { Button, Drawer, Pagination, Popover } from "antd";
 import { getCookie } from "cookies-next";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -20,14 +20,32 @@ import { toast } from "react-toastify";
 const CommodityMaster = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
 
+  const [pagination, setPaginatin] = useState<{
+    take: number;
+    skip: number;
+    total: number;
+  }>({
+    take: 10,
+    skip: 0,
+    total: 0,
+  });
+
   const [commodty, setCommodity] = useState<commodity_master[]>([]);
   const [isLoading, setLoading] = useState<boolean>(true);
   const init = async () => {
     setLoading(true);
-    const commodtiy_resonse = await GetAllCommodityMaster({});
+    const commodtiy_resonse = await GetAllCommodityMaster({
+      take: 10,
+      skip: 0,
+    });
 
-    if (commodtiy_resonse.status && commodtiy_resonse.data) {
-      setCommodity(commodtiy_resonse.data);
+    if (commodtiy_resonse.status && commodtiy_resonse.data.result) {
+      setCommodity(commodtiy_resonse.data.result);
+      setPaginatin({
+        skip: commodtiy_resonse.data.skip,
+        take: commodtiy_resonse.data.take,
+        total: commodtiy_resonse.data.total,
+      });
     }
     setLoading(false);
   };
@@ -35,10 +53,18 @@ const CommodityMaster = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const commodtiy_resonse = await GetAllCommodityMaster({});
+      const commodtiy_resonse = await GetAllCommodityMaster({
+        take: 10,
+        skip: 0,
+      });
 
-      if (commodtiy_resonse.status && commodtiy_resonse.data) {
-        setCommodity(commodtiy_resonse.data);
+      if (commodtiy_resonse.status && commodtiy_resonse.data.result) {
+        setCommodity(commodtiy_resonse.data.result);
+        setPaginatin({
+          skip: commodtiy_resonse.data.skip,
+          take: commodtiy_resonse.data.take,
+          total: commodtiy_resonse.data.total,
+        });
       }
       setLoading(false);
     };
@@ -96,6 +122,22 @@ const CommodityMaster = () => {
 
   const [addBox, setAddBox] = useState<boolean>(false);
   const [commid, setCommid] = useState<number>();
+
+  const onChangePageCount = async (page: number, pagesize: number) => {
+    const commodtiy_resonse = await GetAllCommodityMaster({
+      take: pagesize,
+      skip: pagesize * (page - 1),
+    });
+
+    if (commodtiy_resonse.status && commodtiy_resonse.data.result) {
+      setCommodity(commodtiy_resonse.data.result);
+      setPaginatin({
+        skip: commodtiy_resonse.data.skip,
+        take: commodtiy_resonse.data.take,
+        total: commodtiy_resonse.data.total,
+      });
+    }
+  };
 
   if (isLoading)
     return (
@@ -336,7 +378,13 @@ const CommodityMaster = () => {
                         handleOpenChange(newOpen, index)
                       }
                     >
-                      <button className={`${val.status == Status.ACTIVE?"bg-rose-500 hover:bg-rose-500":"bg-emerald-500 hover:bg-emerald-500"}  w-14 text-white rounded-sm text-sm`}>
+                      <button
+                        className={`${
+                          val.status == Status.ACTIVE
+                            ? "bg-rose-500 hover:bg-rose-500"
+                            : "bg-emerald-500 hover:bg-emerald-500"
+                        }  w-14 text-white rounded-sm text-sm`}
+                      >
                         {val.status == Status.ACTIVE ? "Inactive" : "Active"}
                       </button>
                     </Popover>
@@ -345,6 +393,32 @@ const CommodityMaster = () => {
               ))}
             </TableBody>
           </Table>
+          <div className="mt-2"></div>
+          <div className="lg:hidden">
+            <Pagination
+              align="center"
+              defaultCurrent={1}
+              onChange={onChangePageCount}
+              showSizeChanger
+              total={pagination.total}
+              showTotal={(total: number) => `Total ${total} items`}
+            />
+          </div>
+          <div className="hidden lg:block">
+            <Pagination
+              showQuickJumper
+              align="center"
+              defaultCurrent={1}
+              onChange={onChangePageCount}
+              showSizeChanger
+              pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+              total={pagination.total}
+              responsive={true}
+              showTotal={(total: number, range: number[]) =>
+                `${range[0]}-${range[1]} of ${total} items`
+              }
+            />
+          </div>
         </div>
       </main>
     </>

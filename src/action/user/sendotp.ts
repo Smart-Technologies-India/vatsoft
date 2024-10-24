@@ -22,7 +22,7 @@ const SendOtp = async (
       where: { status: "ACTIVE", deletedAt: null, mobileOne: payload.mobile },
     });
 
-    const otp = Math.floor(1000 + Math.random() * 9000);
+    const otp = Math.floor(100000 + Math.random() * 900000);
 
     const response = await axios.post(
       `https://mobicomm.dove-sms.com//submitsms.jsp?user=SmartT&key=8b85ee3e9fXX&mobile=${payload.mobile}&message=OTP for Login is ${otp}. Please use this OTP to access your account. Thank you - DDD Gov.&senderid=DDDGOV&accusage=1&entityid=1401551570000053588&tempid=1407170486529658764`,

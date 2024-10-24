@@ -10,9 +10,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
-import { Radio, DatePicker, Button, Input } from "antd";
+import { Radio, Button, Input } from "antd";
 import { useEffect, useRef, useState } from "react";
-const { RangePicker } = DatePicker;
+
 import type { Dayjs } from "dayjs";
 import {
   Drawer,
@@ -41,6 +41,16 @@ interface ResponseType {
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
   const route = useRouter();
+
+  const [pagination, setPaginatin] = useState<{
+    take: number;
+    skip: number;
+    total: number;
+  }>({
+    take: 10,
+    skip: 0,
+    total: 0,
+  });
 
   enum SearchOption {
     TIN,
@@ -305,13 +315,15 @@ const TrackAppliation = () => {
               </DrawerContent>
             </Drawer>
           </div>
-          <div className="p-2 bg-gray-50 mt-2">
-            <Radio.Group onChange={onChange} value={searchOption}>
+          <div className="p-2 bg-gray-50 mt-2 flex gap-2 items-center">
+            <Radio.Group
+              onChange={onChange}
+              value={searchOption}
+              disabled={isSearch}
+            >
               <Radio value={SearchOption.TIN}>TIN</Radio>
-              {/* <Radio value={SearchOption.PERIOD}>Return Filing Period</Radio> */}
               <Radio value={SearchOption.NAME}>Trade Name</Radio>
             </Radio.Group>
-            <div className="h-2"></div>
             {(() => {
               switch (searchOption) {
                 case SearchOption.TIN:
@@ -321,32 +333,21 @@ const TrackAppliation = () => {
                         className="w-60"
                         ref={arnRef}
                         placeholder={"Enter TIN"}
+                        disabled={isSearch}
                       />
-                      <Button onClick={arnsearch} type="primary">
-                        Search
-                      </Button>
-                      {isSearch && (
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={arnsearch} type="primary">
+                          Search
                         </Button>
                       )}
                     </div>
                   );
 
-                // case SearchOption.PERIOD:
-                //   return (
-                //     <div className="flex gap-2">
-                //       <RangePicker onChange={onChangeDate} />
-                //       <Button type="primary" onClick={datesearch}>
-                //         Search
-                //       </Button>
-                //       {isSearch && (
-                //         <Button onClick={init} type="primary">
-                //           Reset
-                //         </Button>
-                //       )}
-                //     </div>
-                //   );
                 case SearchOption.NAME:
                   return (
                     <div className="flex gap-2">
@@ -354,13 +355,16 @@ const TrackAppliation = () => {
                         className="w-60"
                         ref={nameRef}
                         placeholder={"Enter Trade Name"}
+                        disabled={isSearch}
                       />
-                      <Button onClick={namesearch} type="primary">
-                        Search
-                      </Button>
-                      {isSearch && (
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={namesearch} type="primary">
+                          Search
                         </Button>
                       )}
                     </div>
@@ -375,7 +379,7 @@ const TrackAppliation = () => {
           {dvatData.length == 0 ? (
             <>
               <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-                <p className="flex-1">There is no Payment return.</p>
+                <p className="flex-1">There is no Pending Return.</p>
               </div>
             </>
           ) : (

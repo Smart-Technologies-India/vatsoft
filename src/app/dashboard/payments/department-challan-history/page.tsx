@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input } from "antd";
+import { Button, Input, Pagination } from "antd";
 import {
   Table,
   TableBody,
@@ -27,6 +27,16 @@ const ChallanHistory = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
+
+  const [pagination, setPaginatin] = useState<{
+    take: number;
+    skip: number;
+    total: number;
+  }>({
+    take: 10,
+    skip: 0,
+    total: 0,
+  });
 
   enum SearchOption {
     CPIN,
@@ -67,9 +77,16 @@ const ChallanHistory = () => {
 
       const challan_resposne = await GetDeptChallan({
         dept: userrespone.data.selectOffice!,
+        take: 10,
+        skip: 0,
       });
-      if (challan_resposne.data && challan_resposne.data) {
-        setChallanData(challan_resposne.data);
+      if (challan_resposne.data && challan_resposne.data.result) {
+        setChallanData(challan_resposne.data.result);
+        setPaginatin({
+          skip: challan_resposne.data.skip,
+          take: challan_resposne.data.take,
+          total: challan_resposne.data.total,
+        });
       }
       setSearch(false);
       setLoading(false);
@@ -84,10 +101,17 @@ const ChallanHistory = () => {
         setUpser(userrespone.data);
         const challan_resposne = await GetDeptChallan({
           dept: userrespone.data.selectOffice!,
+          take: 10,
+          skip: 0,
         });
 
-        if (challan_resposne.data && challan_resposne.data) {
-          setChallanData(challan_resposne.data);
+        if (challan_resposne.data && challan_resposne.data.result) {
+          setChallanData(challan_resposne.data.result);
+          setPaginatin({
+            skip: challan_resposne.data.skip,
+            take: challan_resposne.data.take,
+            total: challan_resposne.data.total,
+          });
         }
       }
       setLoading(false);
@@ -106,9 +130,16 @@ const ChallanHistory = () => {
     const search_response = await SearchChallan({
       cpin: cpinRef.current?.input?.value,
       dept: user?.selectOffice!,
+      take: 10,
+      skip: 0,
     });
-    if (search_response.status && search_response.data) {
-      setChallanData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setChallanData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -122,10 +153,83 @@ const ChallanHistory = () => {
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
       dept: user?.selectOffice!,
+      take: 10,
+      skip: 0,
     });
-    if (search_response.status && search_response.data) {
-      setChallanData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setChallanData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
+    }
+  };
+
+  const onChangePageCount = async (page: number, pagesize: number) => {
+    if (isSearch) {
+      if (searchOption == SearchOption.CPIN) {
+        if (
+          cpinRef.current?.input?.value == undefined ||
+          cpinRef.current?.input?.value == null ||
+          cpinRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter cpin");
+        }
+        const search_response = await SearchChallan({
+          cpin: cpinRef.current?.input?.value,
+          dept: user?.selectOffice!,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setChallanData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.DATE) {
+        if (searchDate == null || searchDate.length <= 1) {
+          return toast.error("Select state date and end date");
+        }
+
+        const search_response = await SearchChallan({
+          fromdate: searchDate[0]?.toDate(),
+          todate: searchDate[1]?.toDate(),
+          dept: user?.selectOffice!,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setChallanData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      }
+    } else {
+      const challan_resposne = await GetDeptChallan({
+        dept: user!.selectOffice!,
+        take: pagesize,
+        skip: pagesize * (page - 1),
+      });
+      if (challan_resposne.status && challan_resposne.data.result) {
+        setChallanData(challan_resposne.data.result);
+        setPaginatin({
+          skip: challan_resposne.data.skip,
+          take: challan_resposne.data.take,
+          total: challan_resposne.data.total,
+        });
+      }
     }
   };
 
@@ -141,11 +245,12 @@ const ChallanHistory = () => {
       <div className="p-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white">Challan History</div>
-          <div className="p-2 bg-gray-50 mt-2">
+          <div className="p-2 bg-gray-50 mt-2 flex gap-2 items-center">
             <Radio.Group
               onChange={onChange}
               value={searchOption}
               className="mt-2"
+              disabled={isSearch}
             >
               <Radio value={SearchOption.CPIN}>CPIN</Radio>
               <Radio value={SearchOption.DATE}>DATE</Radio>
@@ -160,13 +265,16 @@ const ChallanHistory = () => {
                         className="w-60"
                         ref={cpinRef}
                         placeholder={"Enter CPIN"}
+                        disabled={isSearch}
                       />
-                      <Button onClick={cpinsearch} type="primary">
-                        Search
-                      </Button>
-                      {isSearch && (
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={cpinsearch} type="primary">
+                          Search
                         </Button>
                       )}
                     </div>
@@ -175,13 +283,18 @@ const ChallanHistory = () => {
                 case SearchOption.DATE:
                   return (
                     <div className="flex gap-2">
-                      <RangePicker onChange={onChangeDate} />
-                      <Button type="primary" onClick={datesearch}>
-                        Search
-                      </Button>
-                      {isSearch && (
+                      <RangePicker
+                        onChange={onChangeDate}
+                        disabled={isSearch}
+                      />
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button type="primary" onClick={datesearch}>
+                          Search
                         </Button>
                       )}
                     </div>
@@ -203,73 +316,101 @@ const ChallanHistory = () => {
           )}
 
           {challanData.length > 0 && (
-            <Table className="border mt-2">
-              <TableHeader>
-                <TableRow className="bg-gray-100">
-                  <TableHead className="whitespace-nowrap text-center px-2">
-                    CPIN
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center w-36  px-2">
-                    Created On
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center  px-2">
-                    Amount
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center  px-2">
-                    Mode
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center  px-2">
-                    Challan Reason
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center  px-2">
-                    Expire Date
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center  px-2">
-                    Deposit Date
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap text-center  px-2">
-                    Deposit Status
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {challanData.map((val: challan, index: number) => (
-                  <TableRow key={index}>
-                    <TableCell className="text-center p-2">
-                      {val.cpin}
-                      {/* <Link
+            <>
+              <Table className="border mt-2">
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="whitespace-nowrap text-center px-2">
+                      CPIN
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center w-36  px-2">
+                      Created On
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center  px-2">
+                      Amount
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center  px-2">
+                      Mode
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center  px-2">
+                      Challan Reason
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center  px-2">
+                      Expire Date
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center  px-2">
+                      Deposit Date
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center  px-2">
+                      Deposit Status
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {challanData.map((val: challan, index: number) => (
+                    <TableRow key={index}>
+                      <TableCell className="text-center p-2">
+                        {val.cpin}
+                        {/* <Link
                         className="text-blue-500"
                         href={`/dashboard/payments/saved-challan/${val.id}`}
                       >
                       </Link> */}
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {formateDate(new Date(val.createdAt))}
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {val.total_tax_amount}
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {val.paymentmode ?? "-"}
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {val.reason}
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {formateDate(new Date(val.expire_date))}
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {val.transaction_date
-                        ? formateDate(new Date(val.transaction_date))
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-center p-2">
-                      {val.challanstatus}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {formateDate(new Date(val.createdAt))}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {val.total_tax_amount}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {val.paymentmode ?? "-"}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {val.reason}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {formateDate(new Date(val.expire_date))}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {val.transaction_date
+                          ? formateDate(new Date(val.transaction_date))
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {val.challanstatus}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="mt-2"></div>
+              <div className="lg:hidden">
+                <Pagination
+                  align="center"
+                  defaultCurrent={1}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  total={pagination.total}
+                  showTotal={(total: number) => `Total ${total} items`}
+                />
+              </div>
+              <div className="hidden lg:block">
+                <Pagination
+                  showQuickJumper
+                  align="center"
+                  defaultCurrent={1}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                  total={pagination.total}
+                  responsive={true}
+                  showTotal={(total: number, range: number[]) =>
+                    `${range[0]}-${range[1]} of ${total} items`
+                  }
+                />
+              </div>
+            </>
           )}
         </div>
       </div>

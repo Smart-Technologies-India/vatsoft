@@ -1,40 +1,59 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { ApiResponseType, createResponse } from "@/models/response";
 import { refunds, SelectOffice } from "@prisma/client";
 import prisma from "../../../prisma/database";
+import { createPaginationResponse, PaginationResponse } from "@/models/response";
 
 interface GetDeptRefundsPayload {
   dept: SelectOffice;
+  skip: number;
+  take: number;
 }
 
 const GetDeptRefunds = async (
   payload: GetDeptRefundsPayload
-): Promise<ApiResponseType<refunds[] | null>> => {
+): Promise<PaginationResponse<refunds[] | null>> => {
   const functionname: string = GetDeptRefunds.name;
 
   try {
-    const refunds_response = await prisma.refunds.findMany({
-      where: {
-        status: "ACTIVE",
-        deletedAt: null,
-        deletedById: null,
-        dvat: {
-          selectOffice: payload.dept,
+    const [refunds_response, totalCount] = await Promise.all([
+      prisma.refunds.findMany({
+        where: {
+          status: "ACTIVE",
+          deletedAt: null,
+          deletedById: null,
+          dvat: {
+            selectOffice: payload.dept,
+          },
         },
-      },
-    });
+        skip: payload.skip,
+        take: payload.take,
+      }),
+      prisma.refunds.count({
+        where: {
+          status: "ACTIVE",
+          deletedAt: null,
+          deletedById: null,
+          dvat: {
+            selectOffice: payload.dept,
+          },
+        },
+      }),
+    ]);
 
-    return createResponse({
+    return createPaginationResponse({
       message: refunds_response
         ? "All refunds Get successfully"
         : "Unable to get refunds.",
       functionname: functionname,
       data: refunds_response ?? null,
+      skip: payload.skip,
+      take: payload.take,
+      total: totalCount,
     });
   } catch (e) {
-    return createResponse({
+    return createPaginationResponse({
       message: errorToString(e),
       functionname,
     });

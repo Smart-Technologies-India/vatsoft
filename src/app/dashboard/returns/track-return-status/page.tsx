@@ -1,5 +1,5 @@
 "use client";
-import { Button, Input } from "antd";
+import { Button, Input, Pagination } from "antd";
 
 import { Button as ShButton } from "@/components/ui/button";
 import {
@@ -35,6 +35,18 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [isLoading, setLoading] = useState<boolean>(true);
+  const [isSearch, setSearch] = useState<boolean>(false);
+
+  const [pagination, setPaginatin] = useState<{
+    take: number;
+    skip: number;
+    total: number;
+  }>({
+    take: 10,
+    skip: 0,
+    total: 0,
+  });
 
   enum SearchOption {
     ARN,
@@ -63,6 +75,7 @@ const TrackAppliation = () => {
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 
   const init = async () => {
+    setLoading(true);
     const dvat_response = await GetUserDvat04({
       userid: userid,
     });
@@ -73,14 +86,23 @@ const TrackAppliation = () => {
 
     const payment_data = await GetUserTrackPayment({
       user_id: userid,
+      take: 10,
+      skip: 0,
     });
 
-    if (payment_data.status && payment_data.data) {
-      setPaymentData(payment_data.data);
+    if (payment_data.status && payment_data.data.result) {
+      setPaymentData(payment_data.data.result);
+      setPaginatin({
+        skip: payment_data.data.skip,
+        take: payment_data.data.take,
+        total: payment_data.data.total,
+      });
     }
+    setLoading(false);
   };
   useEffect(() => {
     const init = async () => {
+      setLoading(true);
       const dvat_response = await GetUserDvat04({
         userid: userid,
       });
@@ -90,11 +112,19 @@ const TrackAppliation = () => {
       }
       const payment_data = await GetUserTrackPayment({
         user_id: userid,
+        take: 10,
+        skip: 0,
       });
 
-      if (payment_data.status && payment_data.data) {
-        setPaymentData(payment_data.data);
+      if (payment_data.status && payment_data.data.result) {
+        setPaymentData(payment_data.data.result);
+        setPaginatin({
+          skip: payment_data.data.skip,
+          take: payment_data.data.take,
+          total: payment_data.data.total,
+        });
       }
+      setLoading(false);
     };
     init();
   }, [userid]);
@@ -147,7 +177,6 @@ const TrackAppliation = () => {
     }
   };
 
-  const [isSearch, setSearch] = useState<boolean>(false);
   const arnRef = useRef<InputRef>(null);
 
   const cpinsearch = async () => {
@@ -162,9 +191,16 @@ const TrackAppliation = () => {
       userid: userid,
       rr_number: arnRef.current?.input?.value,
       dept: dvatdata?.selectOffice!,
+      take: 10,
+      skip: 0,
     });
-    if (search_response.status && search_response.data) {
-      setPaymentData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setPaymentData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -179,13 +215,100 @@ const TrackAppliation = () => {
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
       dept: dvatdata?.selectOffice!,
+      take: 10,
+      skip: 0,
     });
 
-    if (search_response.status && search_response.data) {
-      setPaymentData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setPaymentData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
+
+  const onChangePageCount = async (page: number, pagesize: number) => {
+    if (isSearch) {
+      if (searchOption == SearchOption.ARN) {
+        if (
+          arnRef.current?.input?.value == undefined ||
+          arnRef.current?.input?.value == null ||
+          arnRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter arn number");
+        }
+        const search_response = await SearchReturnPayment({
+          userid: userid,
+          rr_number: arnRef.current?.input?.value,
+          dept: dvatdata?.selectOffice!,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setPaymentData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.RETURN) {
+        if (searchDate == null || searchDate.length <= 1) {
+          return toast.error("Select state date and end date");
+        }
+
+        if (searchDate == null || searchDate.length <= 1) {
+          return toast.error("Select state date and end date");
+        }
+
+        const search_response = await SearchReturnPayment({
+          userid: userid,
+          fromdate: searchDate[0]?.toDate(),
+          todate: searchDate[1]?.toDate(),
+          dept: dvatdata?.selectOffice!,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setPaymentData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      }
+    } else {
+      const payment_data = await GetUserTrackPayment({
+        user_id: userid,
+        take: pagesize,
+        skip: pagesize * (page - 1),
+      });
+
+      if (payment_data.status && payment_data.data.result) {
+        setPaymentData(payment_data.data.result);
+        setPaginatin({
+          skip: payment_data.data.skip,
+          take: payment_data.data.take,
+          total: payment_data.data.total,
+        });
+      }
+    }
+  };
+
+  if (isLoading)
+    return (
+      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
+        Loading...
+      </div>
+    );
 
   return (
     <>
@@ -286,8 +409,12 @@ const TrackAppliation = () => {
               </DrawerContent>
             </Drawer>
           </div>
-          <div className="p-2 bg-gray-50 mt-2">
-            <Radio.Group onChange={onChange} value={searchOption}>
+          <div className="p-2 bg-gray-50 mt-2 items-center flex gap-2">
+            <Radio.Group
+              onChange={onChange}
+              value={searchOption}
+              disabled={isSearch}
+            >
               <Radio value={SearchOption.ARN}>ARN</Radio>
               <Radio value={SearchOption.RETURN}>Return Filing Period</Radio>
             </Radio.Group>
@@ -300,13 +427,16 @@ const TrackAppliation = () => {
                         className="w-60"
                         ref={arnRef}
                         placeholder={"Enter CPIN"}
+                        disabled={isSearch}
                       />
-                      <Button onClick={cpinsearch} type="primary">
-                        Search
-                      </Button>
-                      {isSearch && (
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={cpinsearch} type="primary">
+                          Search
                         </Button>
                       )}
                     </div>
@@ -315,13 +445,18 @@ const TrackAppliation = () => {
                 case SearchOption.RETURN:
                   return (
                     <div className="flex gap-2">
-                      <RangePicker onChange={onChangeDate} />
-                      <Button type="primary" onClick={datesearch}>
-                        Search
-                      </Button>
-                      {isSearch && (
+                      <RangePicker
+                        onChange={onChangeDate}
+                        disabled={isSearch}
+                      />
+
+                      {isSearch ? (
                         <Button onClick={init} type="primary">
                           Reset
+                        </Button>
+                      ) : (
+                        <Button type="primary" onClick={datesearch}>
+                          Search
                         </Button>
                       )}
                     </div>
@@ -410,6 +545,32 @@ const TrackAppliation = () => {
               })}
             </TableBody>
           </Table>
+          <div className="mt-2"></div>
+          <div className="lg:hidden">
+            <Pagination
+              align="center"
+              defaultCurrent={1}
+              onChange={onChangePageCount}
+              showSizeChanger
+              total={pagination.total}
+              showTotal={(total: number) => `Total ${total} items`}
+            />
+          </div>
+          <div className="hidden lg:block">
+            <Pagination
+              showQuickJumper
+              align="center"
+              defaultCurrent={1}
+              onChange={onChangePageCount}
+              showSizeChanger
+              pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+              total={pagination.total}
+              responsive={true}
+              showTotal={(total: number, range: number[]) =>
+                `${range[0]}-${range[1]} of ${total} items`
+              }
+            />
+          </div>
         </div>
       </div>
     </>
