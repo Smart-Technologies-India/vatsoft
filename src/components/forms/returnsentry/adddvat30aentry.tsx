@@ -38,7 +38,6 @@ import {
 import { Button } from "antd";
 import GetAllCommodityMaster from "@/action/commoditymaster/getallcommoditymaster";
 import { onFormError } from "@/utils/methods";
-import AddReturnInvoice from "@/action/return/addreturninvoice";
 import { getCookie } from "cookies-next";
 import { customAlphabet } from "nanoid";
 import dayjs from "dayjs";
@@ -46,6 +45,7 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetAllState from "@/action/state/getallstate";
 import { record30AForm, record30ASchema } from "@/schema/record30A";
 import AddMultiReturnInvoice from "@/action/return/addmultireturninvoice";
+import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 
 type AddDvat30AEntryProviderProps = {};
 export const AddDvat30AEntryProvider = (
@@ -183,7 +183,7 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
 
       if (response.status && response.data) {
         setDvatdata(response.data);
-        const commodity_resposen = await GetAllCommodityMaster({});
+        const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
           const filterdata = commodity_resposen.data.filter(
             (val: commodity_master) =>

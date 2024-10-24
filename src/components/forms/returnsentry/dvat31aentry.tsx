@@ -40,6 +40,7 @@ import { record31AForm, record31ASchema } from "@/schema/record31A";
 import GetAllState from "@/action/state/getallstate";
 import getReturnEntryById from "@/action/return/getreturnentrybyid";
 import UpdateReturnEntry from "@/action/return/updatereturnentry";
+import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 
 type CreateDvat31AEntryProviderProps = {};
 export const CreateDvat31AEntryProvider = (
@@ -192,7 +193,7 @@ const CreateDvat31AEntry = (props: CreateDvat31AEntryProviderProps) => {
 
       if (response.status && response.data) {
         setDvatdata(response.data);
-        const commodity_resposen = await GetAllCommodityMaster({});
+        const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
           const filterdata = commodity_resposen.data.filter(
             (val: commodity_master) =>

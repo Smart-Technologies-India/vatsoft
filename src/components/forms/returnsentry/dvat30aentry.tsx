@@ -40,6 +40,7 @@ import GetAllState from "@/action/state/getallstate";
 import { record30AForm, record30ASchema } from "@/schema/record30A";
 import getReturnEntryById from "@/action/return/getreturnentrybyid";
 import UpdateReturnEntry from "@/action/return/updatereturnentry";
+import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 
 type CreateDvat30AEntryProviderProps = {};
 export const CreateDvat30AEntryProvider = (
@@ -176,7 +177,7 @@ const CreateDvat30AEntry = (props: CreateDvat30AEntryProviderProps) => {
 
       if (response.status && response.data) {
         setDvatdata(response.data);
-        const commodity_resposen = await GetAllCommodityMaster({});
+        const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
           const filterdata = commodity_resposen.data.filter(
             (val: commodity_master) =>

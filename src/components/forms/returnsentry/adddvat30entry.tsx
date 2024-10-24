@@ -45,6 +45,7 @@ import { Label } from "@/components/ui/label";
 import { RabioInput } from "../inputfields/radioinput";
 import AddMultiReturnInvoice from "@/action/return/addmultireturninvoice";
 import { Button } from "antd";
+import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 
 type AddDvat30EntryProviderProps = {};
 export const AddDvat30EntryProvider = (props: AddDvat30EntryProviderProps) => {
@@ -172,7 +173,7 @@ const AddDvat30Entry = (props: AddDvat30EntryProviderProps) => {
 
       if (response.status && response.data) {
         setDvatdata(response.data);
-        const commodity_resposen = await GetAllCommodityMaster({});
+        const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
           const filterdata = commodity_resposen.data.filter(
             (val: commodity_master) =>

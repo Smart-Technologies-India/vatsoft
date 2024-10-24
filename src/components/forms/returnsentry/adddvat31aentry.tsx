@@ -48,6 +48,7 @@ import GetAllState from "@/action/state/getallstate";
 import getReturnEntryById from "@/action/return/getreturnentrybyid";
 import UpdateReturnEntry from "@/action/return/updatereturnentry";
 import AddMultiReturnInvoice from "@/action/return/addmultireturninvoice";
+import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 
 type AddDvat31AEntryProviderProps = {};
 export const AddDvat31AEntryProvider = (
@@ -201,7 +202,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
 
       if (response.status && response.data) {
         setDvatdata(response.data);
-        const commodity_resposen = await GetAllCommodityMaster({});
+        const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
           const filterdata = commodity_resposen.data.filter(
             (val: commodity_master) =>

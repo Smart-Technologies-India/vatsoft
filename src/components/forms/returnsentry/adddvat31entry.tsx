@@ -45,6 +45,7 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import useTreeSelectStyle from "antd/es/tree-select/style";
 import { Button } from "antd";
 import AddMultiReturnInvoice from "@/action/return/addmultireturninvoice";
+import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 
 type AddDvat31EntryProviderProps = {};
 export const AddDvat31EntryProvider = (props: AddDvat31EntryProviderProps) => {
@@ -160,7 +161,7 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
 
       if (response.status && response.data) {
         setDvatdata(response.data);
-        const commodity_resposen = await GetAllCommodityMaster({});
+        const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
           const filterdata = commodity_resposen.data.filter(
             (val: commodity_master) =>

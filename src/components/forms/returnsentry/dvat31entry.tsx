@@ -41,6 +41,7 @@ import dayjs from "dayjs";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import getReturnEntryById from "@/action/return/getreturnentrybyid";
 import UpdateReturnEntry from "@/action/return/updatereturnentry";
+import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 
 type CreateDvat31EntryProviderProps = {};
 export const CreateDvat31EntryProvider = (
@@ -156,7 +157,7 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
 
       if (response.status && response.data) {
         setDvatdata(response.data);
-        const commodity_resposen = await GetAllCommodityMaster({});
+        const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
           const filterdata = commodity_resposen.data.filter(
             (val: commodity_master) =>
