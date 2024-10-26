@@ -1,17 +1,13 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { annexure1, dvat04, user, commodity, annexure2 } from "@prisma/client";
-
-import { useEffect, useRef, useState } from "react";
-import GetUser from "@/action/user/getuser";
+import { dvat04 } from "@prisma/client";
+import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next";
 import { toast } from "react-toastify";
 import { useParams, useRouter } from "next/navigation";
-
 import { capitalcase } from "@/utils/methods";
-
-import { Button, Drawer, Modal } from "antd";
+import { Button, Modal } from "antd";
 import { customAlphabet } from "nanoid";
 import GetDvat04 from "@/action/register/getdvat04";
 import AddTempRegNo from "@/action/register/addtempregno";
@@ -58,6 +54,36 @@ const PreviewPage = () => {
     init();
   }, [dvatid]);
 
+  const generatePDF = async (path: string) => {
+    try {
+      // Fetch the PDF from the server
+
+      const response = await fetch("/api/getpdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: path }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+
+      const blob = await response.blob();
+
+      // Create a link element for the download
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = "output.pdf";
+
+      // Programmatically click the link to trigger the download
+      link.click();
+    } catch (error) {
+      toast.error("Unable to download pdf try again.");
+    }
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -67,7 +93,7 @@ const PreviewPage = () => {
 
   return (
     <>
-      <main className="min-h-screen bg-[#f6f7fb] w-full py-2 px-6">
+      <main className="min-h-screen bg-[#f6f7fb] w-full py-2 px-6" id="mainpdf">
         <div className="bg-white w-full px-4 py-2 shadow-sm font-normal p-1 flex justify-between gap-6 mt-4 border">
           {dvat04Data?.status == "APPROVED" ||
           dvat04Data?.status == "PROVISIONAL" ? (
@@ -103,12 +129,21 @@ const PreviewPage = () => {
           <Dvat1Page />
           <Dvat2Page />
           <Dvat3Page />
-          <Anx1Page dvatid={dvatid} />
-          <Anx2Page dvatid={dvatid} />
+          <Anx1Page dvatid={dvatid} extend={false} />
+          <Anx2Page dvatid={dvatid} extend={false} />
           <Anx3Page dvatid={dvatid} />
 
-          <div className="flex p-4">
-            <div className="grow"></div>
+          <div className="flex p-4 gap-4">
+            <Button
+              onClick={async () => {
+                await generatePDF(
+                  `/dashboard/register/pdfview/${dvatid}/${current_user_id}?sidebar=no`
+                );
+              }}
+              type="primary"
+            >
+              Print
+            </Button>
 
             {dvat04Data?.status == "NONE" ? (
               <>

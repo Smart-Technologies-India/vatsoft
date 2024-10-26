@@ -3,7 +3,10 @@
 import { errorToString } from "@/utils/methods";
 import { dvat04, SelectOffice } from "@prisma/client";
 import prisma from "../../../prisma/database";
-import { ApiResponseType, createResponse } from "@/models/response";
+import {
+  createPaginationResponse,
+  PaginationResponse,
+} from "@/models/response";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -13,11 +16,13 @@ interface ResponseType {
 
 interface DeptPendingReturnPayload {
   dept: SelectOffice;
+  skip: number;
+  take: number;
 }
 
 const DeptPendingReturn = async (
   payload: DeptPendingReturnPayload
-): Promise<ApiResponseType<Array<ResponseType> | null>> => {
+): Promise<PaginationResponse<Array<ResponseType> | null>> => {
   const functionname: string = DeptPendingReturn.name;
   try {
     const dvat04response = await prisma.return_filing.findMany({
@@ -37,7 +42,7 @@ const DeptPendingReturn = async (
     });
 
     if (!dvat04response)
-      return createResponse({
+      return createPaginationResponse({
         message: "There is no returns data",
         functionname,
       });
@@ -82,13 +87,18 @@ const DeptPendingReturn = async (
     // Convert Map to an array
     const res = Array.from(resMap.values());
 
-    return createResponse({
+    const paginatedData = res.slice(payload.skip, payload.skip + payload.take);
+
+    return createPaginationResponse({
       message: "Pending returns data get successfully",
       functionname,
-      data: res,
+      data: paginatedData,
+      skip: payload.skip,
+      take: payload.take,
+      total: res.length ?? 0,
     });
   } catch (e) {
-    return createResponse({
+    return createPaginationResponse({
       message: errorToString(e),
       functionname,
     });

@@ -18,7 +18,6 @@ const GetAllCommodityMaster = async (
 ): Promise<PaginationResponse<commodity_master[] | null>> => {
   const functionname: string = GetAllCommodityMaster.name;
 
-  console.log(payload);
 
   try {
     const [commodity_master, totalCount] = await Promise.all([
@@ -38,7 +37,6 @@ const GetAllCommodityMaster = async (
       }),
     ]);
 
-    console.log(commodity_master);
 
     if (!commodity_master) {
       return createPaginationResponse({

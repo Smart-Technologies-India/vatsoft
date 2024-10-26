@@ -1,5 +1,5 @@
 import { validateAadharCard, validatePanCard } from "@/utils/methods";
-import { DepositType, Gender, TitleParticulasOfperson } from "@prisma/client";
+import { Gender, TitleParticulasOfperson } from "@prisma/client";
 import {
   email,
   enum_,
@@ -9,29 +9,8 @@ import {
   object,
   string,
   pipe,
-  custom,
   check,
 } from "valibot";
-
-// titleParticulasOfperson TitleParticulasOfperson @default(PROPRIETOR)
-// nameOfPerson            String?
-// dateOfBirth             DateTime?
-// gender                  Gender                  @default(MALE)
-// fatherName              String?
-// panNumber               String?
-// aadharNumber            String?
-// designation             String?
-// eductionQualification   String?
-// rbuildingName           String?
-// rareaName               String?
-// rvillageName            String?
-// rpincode                String?
-// pbuildingName           String?
-// pareaName               String?
-// pvillageName            String?
-// ppincode                String?
-// contact                 String?
-// email                   String?
 
 const Anx1Schema = object({
   titleParticulasOfperson: enum_(

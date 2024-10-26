@@ -21,6 +21,7 @@ import SearchChallan from "@/action/challan/searchchallan";
 import GetDeptChallan from "@/action/challan/getdeptchallan";
 import GetUser from "@/action/user/getuser";
 import { getCookie } from "cookies-next";
+import Link from "next/link";
 // import GetAllChallan from "@/action/challan/getallchallan";
 
 const ChallanHistory = () => {
@@ -350,7 +351,16 @@ const ChallanHistory = () => {
                   {challanData.map((val: challan, index: number) => (
                     <TableRow key={index}>
                       <TableCell className="text-center p-2">
-                        {val.cpin}
+                        {val.challanstatus == "PAID" ? (
+                          <Link
+                            className="text-blue-500"
+                            href={`/dashboard/payments/saved-challan/${val.id}`}
+                          >
+                            {val.cpin}
+                          </Link>
+                        ) : (
+                          val.cpin
+                        )}
                         {/* <Link
                         className="text-blue-500"
                         href={`/dashboard/payments/saved-challan/${val.id}`}

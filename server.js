@@ -33,6 +33,5 @@ app.prepare().then(() => {
 //       }
 //     );
 //   } catch (error) {}
-//   console.log("Running a task every day at midnight");
 //   // Add your task logic here, e.g., database cleanup, sending emails, etc.
 // });

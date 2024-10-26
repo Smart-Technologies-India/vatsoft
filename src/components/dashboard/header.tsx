@@ -22,7 +22,19 @@ import { logoutbtn } from "@/methods/user";
 import ReturnFiling from "@/action/dashboard/return_filing";
 import { toast } from "react-toastify";
 import { Role } from "@prisma/client";
-import { Tooltip } from "antd";
+import { Drawer, Tooltip } from "antd";
+import { useRef, useState } from "react";
+import { getCookie } from "cookies-next";
+import ChangePassword from "@/action/user/changepassword";
+import { safeParse } from "valibot";
+import {
+  ForgetPasswordForm,
+  ForgetpasswordSchema,
+} from "@/schema/forgetpassword";
+import { FormProvider, useForm } from "react-hook-form";
+import { valibotResolver } from "@hookform/resolvers/valibot";
+import { TaxtInput } from "../forms/inputfields/textinput";
+import { onFormError } from "@/utils/methods";
 
 interface NavbarProps {
   isOpen: boolean;
@@ -88,6 +100,16 @@ const Navbar = (props: NavbarProps) => {
     }
   };
 
+  const [open, setOpen] = useState(false);
+
+  const showDrawer = () => {
+    setOpen(true);
+  };
+
+  const onClose = () => {
+    setOpen(false);
+  };
+
   return (
     <nav
       className={`py-1 px-4 w-full hidden-print  ${
@@ -129,7 +151,7 @@ const Navbar = (props: NavbarProps) => {
             const response = await ReturnFiling();
             if (response.data && response.status) {
               toast.success("Data update successfully.");
-            } 
+            }
           }}
         />
       )}
@@ -155,6 +177,9 @@ const Navbar = (props: NavbarProps) => {
       <SolarBellBold className="text-2xl md:block hidden" />
       <SolarLightbulbMinimalisticBold className="text-xl md:block hidden" /> */}
       <div>
+        <Drawer closeIcon={null} onClose={onClose} open={open}>
+          <PasswordComponent onClose={onClose} />
+        </Drawer>
         <DropdownMenu>
           <DropdownMenuTrigger asChild className="px-1">
             <Button variant="ghost" className="gap-2 flex text-right">
@@ -166,19 +191,19 @@ const Navbar = (props: NavbarProps) => {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem
-                onClick={() => router.push("/dashboard/changepassword")}
-                className="cursor-pointer"
-              >
-                Change Password
-              </DropdownMenuItem>
-              {/* <DropdownMenuItem>
-              Keyboard shortcuts
-              <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
-            </DropdownMenuItem> */}
-            </DropdownMenuGroup>
+            {props.role != Role.USER && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onClick={showDrawer}
+                    className="cursor-pointer"
+                  >
+                    Change Password
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </>
+            )}
             <DropdownMenuSeparator />
             {/* <DropdownMenuGroup>
             <DropdownMenuItem>Team</DropdownMenuItem>
@@ -220,3 +245,70 @@ const Navbar = (props: NavbarProps) => {
 };
 
 export default Navbar;
+
+interface PasswordComponentProps {
+  onClose: () => void;
+}
+const PasswordComponent = (props: PasswordComponentProps) => {
+  // const {
+  //   reset,
+  //   handleSubmit,
+  //   formState: { errors, isSubmitting },
+  // };
+
+  const methods = useForm<ForgetPasswordForm>({
+    resolver: valibotResolver(ForgetpasswordSchema),
+  });
+
+  const onSubmit = async (data: ForgetPasswordForm) => {
+    const passwordrespone = await ChangePassword({
+      id: parseInt(getCookie("id") ?? "0"),
+      password: data.password,
+    });
+
+    if (passwordrespone.status) {
+      toast.success(passwordrespone.message);
+      props.onClose();
+    } else {
+      toast.error(passwordrespone.message);
+    }
+  };
+
+  return (
+    <>
+      <h1 className="text-2xl font-semibold mb-2 border-b border-gray-300 pb-2">
+        Change Password
+      </h1>
+
+      <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit(onSubmit, onFormError)}>
+          <div className="mt-2">
+            <TaxtInput<ForgetPasswordForm>
+              title="Password"
+              required={true}
+              name="password"
+              placeholder="Enter Password"
+            />
+          </div>
+
+          <div className="mt-2">
+            <TaxtInput<ForgetPasswordForm>
+              title="Re-Password"
+              required={true}
+              name="repassword"
+              placeholder="Enter Re-Password"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={methods.formState.isSubmitting}
+            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
+          >
+            {methods.formState.isSubmitting ? "Loading...." : "Update"}
+          </button>
+        </form>
+      </FormProvider>
+    </>
+  );
+};

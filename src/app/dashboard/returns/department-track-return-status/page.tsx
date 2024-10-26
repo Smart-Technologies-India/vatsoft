@@ -1,7 +1,6 @@
 "use client";
 
 import { Button, Input, Pagination } from "antd";
-
 import { Button as ShButton } from "@/components/ui/button";
 import {
   Table,
@@ -32,7 +31,6 @@ import Link from "next/link";
 import SearchReturnPayment from "@/action/return/searchreturnpayment";
 import { toast } from "react-toastify";
 import GetUser from "@/action/user/getuser";
-import { useRouter } from "next/navigation";
 
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
@@ -100,6 +98,7 @@ const TrackAppliation = () => {
     };
     init();
   }, [userid]);
+
   const get_years = (month: string, year: string): string => {
     const monthNames = [
       "January",
@@ -147,6 +146,7 @@ const TrackAppliation = () => {
       return month;
     }
   };
+
   const [isSearch, setSearch] = useState<boolean>(false);
   const arnRef = useRef<InputRef>(null);
   const tinRef = useRef<InputRef>(null);
@@ -384,7 +384,7 @@ const TrackAppliation = () => {
 
   return (
     <>
-      <div className="p-6">
+      <div className="px-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white flex">
             <p>Track Filed Return</p>
@@ -481,7 +481,7 @@ const TrackAppliation = () => {
               </DrawerContent>
             </Drawer>
           </div>
-          <div className="p-2 bg-gray-50 mt-2 flex gap-2 items-center">
+          <div className="mt-2 flex gap-2 items-center">
             <Radio.Group
               onChange={onChange}
               value={searchOption}
@@ -593,7 +593,7 @@ const TrackAppliation = () => {
             <>
               <Table className="border mt-2">
                 <TableHeader>
-                  <TableRow className="bg-gray-100">
+                  <TableRow className="bg-gray-100 p-2">
                     <TableHead className="whitespace-nowrap text-center border p-2">
                       ARN
                     </TableHead>

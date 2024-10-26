@@ -152,6 +152,7 @@ const CommodityMaster = (props: CompositionProviderProps) => {
         Loading...
       </div>
     );
+
   return (
     <form onSubmit={handleSubmit(onSubmit, onFormError)}>
       <div className="mt-2">

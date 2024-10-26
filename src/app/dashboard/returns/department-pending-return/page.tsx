@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
-import { Radio, Button, Input } from "antd";
+import { Radio, Button, Input, Pagination } from "antd";
 import { useEffect, useRef, useState } from "react";
 
 import type { Dayjs } from "dayjs";
@@ -41,6 +41,8 @@ interface ResponseType {
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
   const route = useRouter();
+  const [isLoading, setLoading] = useState<boolean>(true);
+  const [isSearch, setSearch] = useState<boolean>(false);
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -64,7 +66,6 @@ const TrackAppliation = () => {
     setSeachOption(e.target.value);
   };
 
-  const [isSearch, setSearch] = useState<boolean>(false);
   const arnRef = useRef<InputRef>(null);
   const nameRef = useRef<InputRef>(null);
 
@@ -89,13 +90,20 @@ const TrackAppliation = () => {
       setUpser(userrespone.data);
       const payment_data = await DeptPendingReturn({
         dept: userrespone.data.selectOffice!,
+        take: 10,
+        skip: 0,
       });
 
-      if (payment_data.status && payment_data.data) {
-        const sortedData = payment_data.data.sort(
+      if (payment_data.status && payment_data.data.result) {
+        const sortedData = payment_data.data.result.sort(
           (a: ResponseType, b: ResponseType) => b.pending - a.pending
         );
         setDvatData(sortedData);
+        setPaginatin({
+          skip: payment_data.data.skip,
+          take: payment_data.data.take,
+          total: payment_data.data.total,
+        });
       }
     }
     setSearch(false);
@@ -103,20 +111,29 @@ const TrackAppliation = () => {
 
   useEffect(() => {
     const init = async () => {
+      setLoading(true);
       const userrespone = await GetUser({ id: userid });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
         const payment_data = await DeptPendingReturn({
           dept: userrespone.data.selectOffice!,
+          take: 10,
+          skip: 0,
         });
 
-        if (payment_data.status && payment_data.data) {
-          const sortedData = payment_data.data.sort(
+        if (payment_data.status && payment_data.data.result) {
+          const sortedData = payment_data.data.result.sort(
             (a: ResponseType, b: ResponseType) => b.pending - a.pending
           );
           setDvatData(sortedData);
+          setPaginatin({
+            skip: payment_data.data.skip,
+            take: payment_data.data.take,
+            total: payment_data.data.total,
+          });
         }
       }
+      setLoading(false);
     };
     init();
   }, [userid]);
@@ -177,9 +194,16 @@ const TrackAppliation = () => {
     }
     const search_response = await SearchDeptPendingReturn({
       arnnumber: arnRef.current?.input?.value,
+      take: 10,
+      skip: 0,
     });
-    if (search_response.status && search_response.data) {
-      setDvatData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -192,9 +216,16 @@ const TrackAppliation = () => {
     const search_response = await SearchDeptPendingReturn({
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
+      take: 10,
+      skip: 0,
     });
-    if (search_response.status && search_response.data) {
-      setDvatData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -209,12 +240,91 @@ const TrackAppliation = () => {
     }
     const search_response = await SearchDeptPendingReturn({
       tradename: nameRef.current?.input?.value,
+      take: 10,
+      skip: 0,
     });
-    if (search_response.status && search_response.data) {
-      setDvatData(search_response.data);
+    if (search_response.status && search_response.data.result) {
+      setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
+  const onChangePageCount = async (page: number, pagesize: number) => {
+    if (isSearch) {
+      if (searchOption == SearchOption.TIN) {
+        if (
+          arnRef.current?.input?.value == undefined ||
+          arnRef.current?.input?.value == null ||
+          arnRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter arn number");
+        }
+        const search_response = await SearchDeptPendingReturn({
+          arnnumber: arnRef.current?.input?.value,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setDvatData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.NAME) {
+        if (
+          nameRef.current?.input?.value == undefined ||
+          nameRef.current?.input?.value == null ||
+          nameRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter TIN Number");
+        }
+        const search_response = await SearchDeptPendingReturn({
+          tradename: nameRef.current?.input?.value,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setDvatData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      }
+    } else {
+      const payment_data = await DeptPendingReturn({
+        dept: user!.selectOffice!,
+        take: pagesize,
+        skip: pagesize * (page - 1),
+      });
+      if (payment_data.status && payment_data.data.result) {
+        setDvatData(payment_data.data.result);
+        setPaginatin({
+          skip: payment_data.data.skip,
+          take: payment_data.data.take,
+          total: payment_data.data.total,
+        });
+      }
+    }
+  };
+
+  if (isLoading)
+    return (
+      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
+        Loading...
+      </div>
+    );
 
   return (
     <>
@@ -443,6 +553,32 @@ const TrackAppliation = () => {
                   })}
                 </TableBody>
               </Table>
+              <div className="mt-2"></div>
+              <div className="lg:hidden">
+                <Pagination
+                  align="center"
+                  defaultCurrent={1}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  total={pagination.total}
+                  showTotal={(total: number) => `Total ${total} items`}
+                />
+              </div>
+              <div className="hidden lg:block">
+                <Pagination
+                  showQuickJumper
+                  align="center"
+                  defaultCurrent={1}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                  total={pagination.total}
+                  responsive={true}
+                  showTotal={(total: number, range: number[]) =>
+                    `${range[0]}-${range[1]} of ${total} items`
+                  }
+                />
+              </div>
             </>
           )}
         </div>

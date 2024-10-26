@@ -119,7 +119,7 @@ const Composition = (props: CompositionProviderProps) => {
         <p className="text-rose-500 text-sm p-2 bg-rose-500 bg-opacity-10 border-2 border-rose-500 mt-2">
           {props.composition
             ? "The provided VAT Number already registered under compostion scheme"
-            : "The provided VAT Number already registered under regular compostion scheme"}
+            : "The provided VAT Number already registered under regular scheme"}
         </p>
       </div>
     );
@@ -129,7 +129,7 @@ const Composition = (props: CompositionProviderProps) => {
     return (
       <div>
         <p className="text-rose-500 text-sm p-2 bg-rose-500 bg-opacity-10 border-2 border-rose-500 mt-2">
-          Your VAT Number registered compostion scheme is panding.
+          Your Application to Opt for Composition scheme is under process.
         </p>
       </div>
     );

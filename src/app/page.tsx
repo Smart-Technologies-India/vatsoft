@@ -667,7 +667,7 @@ const LoginComponent = () => {
                 id="otp"
                 type="text"
                 ref={otpRef}
-                maxLength={4}
+                maxLength={6}
                 onChange={handleNumberChange}
               />
               {isLogin ? (

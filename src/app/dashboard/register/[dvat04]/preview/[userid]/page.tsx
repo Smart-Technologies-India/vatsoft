@@ -13,7 +13,15 @@ import { customAlphabet } from "nanoid";
 import GetDvat04 from "@/action/register/getdvat04";
 import AddTempRegNo from "@/action/register/addtempregno";
 import { getCookie } from "cookies-next";
-import { Anx1Page, Anx2Page, Anx3Page, Dvat1Page, Dvat2Page, Dvat3Page, UserRegister } from "@/components/preview/returnpreview";
+import {
+  Anx1Page,
+  Anx2Page,
+  Anx3Page,
+  Dvat1Page,
+  Dvat2Page,
+  Dvat3Page,
+  UserRegister,
+} from "@/components/preview/returnpreview";
 
 const nanoid = customAlphabet("1234567890", 12);
 
@@ -108,8 +116,8 @@ const PreviewPage = () => {
           <Dvat1Page userid={user_id} />
           <Dvat2Page userid={user_id} />
           <Dvat3Page userid={user_id} />
-          <Anx1Page userid={user_id} dvatid={dvatid} />
-          <Anx2Page userid={user_id} dvatid={dvatid} />
+          <Anx1Page userid={user_id} dvatid={dvatid} extend={false} />
+          <Anx2Page userid={user_id} dvatid={dvatid} extend={false} />
           <Anx3Page userid={user_id} dvatid={dvatid} />
 
           <div className="flex p-4 gap-2">

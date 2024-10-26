@@ -3,7 +3,7 @@
 import GetChallan from "@/action/challan/getchallan";
 import { challan, dvat04, user } from "@prisma/client";
 import { getCookie } from "cookies-next";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -21,7 +21,7 @@ import {
   onFormError,
 } from "@/utils/methods";
 import { Separator } from "@/components/ui/separator";
-import { FieldErrors, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
   SubmitPaymentForm,
   SubmitPaymentSchema,
@@ -34,10 +34,14 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { Button } from "antd";
 
 const ChallanData = () => {
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
   const challanid = parseInt(Array.isArray(id) ? id[0] : id);
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const current_user_id: number = parseInt(
+    searchParams.get("userid") || getCookie("id") || "0",
+    10
+  );
   const [isLoading, setLoading] = useState<boolean>(true);
 
   const [user, setUser] = useState<user | null>(null);
@@ -102,6 +106,36 @@ const ChallanData = () => {
     router.back();
   };
 
+  const generatePDF = async (path: string) => {
+    try {
+      // Fetch the PDF from the server
+
+      const response = await fetch("/api/getpdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: path }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+
+      const blob = await response.blob();
+
+      // Create a link element for the download
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = "output.pdf";
+
+      // Programmatically click the link to trigger the download
+      link.click();
+    } catch (error) {
+      toast.error("Unable to download pdf try again.");
+    }
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -111,7 +145,7 @@ const ChallanData = () => {
 
   return (
     <>
-      <div className="p-2">
+      <div className="p-2 mainpdf" id="mainpdf">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white">Challan</div>
 
@@ -283,6 +317,18 @@ const ChallanData = () => {
                       </p>
                     </div>
                   </div>
+                  <div className="mt-2"></div>
+                  <Button
+                    className="hidden-print"
+                    type="primary"
+                    onClick={async (e) => {
+                      await generatePDF(
+                        `/dashboard/payments/saved-challan/${challanid}?sidebar=no&userid=${current_user_id}`
+                      );
+                    }}
+                  >
+                    Print
+                  </Button>
                 </>
               ) : (
                 <>
