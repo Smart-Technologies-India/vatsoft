@@ -57,6 +57,7 @@ const TrackAppliation = () => {
     TIN,
     NAME,
   }
+  
   const [searchOption, setSeachOption] = useState<SearchOption>(
     SearchOption.TIN
   );
