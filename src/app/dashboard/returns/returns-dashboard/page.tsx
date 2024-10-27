@@ -19,7 +19,7 @@ import { getCookie } from "cookies-next";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { toast } from "react-toastify";
-import { formateDate } from "@/utils/methods";
+import { formateDate, generatePDF } from "@/utils/methods";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
 import CreateReturnRevised from "@/action/return/createreturnrevised";
 
@@ -356,35 +356,6 @@ const ReturnDashboard = () => {
     // Return true if any of the conditions are true
     return dvat_30 || dvat_30A || dvat_31 || dvat_31A;
   };
-  const generatePDF = async (path: string) => {
-    try {
-      // Fetch the PDF from the server
-
-      const response = await fetch("/api/getpdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url: path }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate PDF");
-      }
-
-      const blob = await response.blob();
-
-      // Create a link element for the download
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = "output.pdf";
-
-      // Programmatically click the link to trigger the download
-      link.click();
-    } catch (error) {
-      toast.error("Unable to download pdf try again.");
-    }
-  };
 
   const ispayment = (): boolean => {
     return !(
@@ -424,7 +395,7 @@ const ReturnDashboard = () => {
       return toast.error("First accept the terms and conditions");
     }
     router.push(
-      `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
+      `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}`
     );
   };
 
@@ -741,7 +712,7 @@ const ReturnDashboard = () => {
                           setNilBox(true);
                         } else {
                           router.push(
-                            `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
+                            `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}`
                           );
                         }
                       }}

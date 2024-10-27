@@ -18,6 +18,7 @@ import {
   capitalcase,
   formatDateTime,
   formateDate,
+  generatePDF,
   onFormError,
 } from "@/utils/methods";
 import { Separator } from "@/components/ui/separator";
@@ -104,36 +105,6 @@ const ChallanData = () => {
 
     toast.success(response.message);
     router.back();
-  };
-
-  const generatePDF = async (path: string) => {
-    try {
-      // Fetch the PDF from the server
-
-      const response = await fetch("/api/getpdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url: path }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate PDF");
-      }
-
-      const blob = await response.blob();
-
-      // Create a link element for the download
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = "output.pdf";
-
-      // Programmatically click the link to trigger the download
-      link.click();
-    } catch (error) {
-      toast.error("Unable to download pdf try again.");
-    }
   };
 
   if (isLoading)
@@ -327,7 +298,7 @@ const ChallanData = () => {
                       );
                     }}
                   >
-                    Print
+                    Download Challan
                   </Button>
                 </>
               ) : (

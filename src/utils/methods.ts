@@ -1,5 +1,6 @@
 import CryptoJS from "crypto-js";
 import { FieldErrors, FieldValues } from "react-hook-form";
+import { toast } from "react-toastify";
 
 /**
  * Converts an error object or string to a string format.
@@ -255,7 +256,6 @@ export { validateAadharCard, validatePanCard };
 const onFormError = <T extends FieldValues>(error: FieldErrors<T>) => {
   const firstErrorMessage = Object.values(error)[0]?.message;
 
-
   setTimeout(() => {
     if (firstErrorMessage) {
       const errorElement = Array.from(document.querySelectorAll("p")).find(
@@ -322,3 +322,35 @@ const getDateFromMonth = (args: {
 };
 
 export { getPreviousMonth, getMonthDifference, getDateFromMonth };
+
+const generatePDF = async (path: string) => {
+  try {
+    // Fetch the PDF from the server
+
+    const response = await fetch("/api/getpdf", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ url: path }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to generate PDF");
+    }
+
+    const blob = await response.blob();
+
+    // Create a link element for the download
+    const link = document.createElement("a");
+    link.href = window.URL.createObjectURL(blob);
+    link.download = "output.pdf";
+
+    // Programmatically click the link to trigger the download
+    link.click();
+  } catch (error) {
+    toast.error("Unable to download pdf try again.");
+  }
+};
+
+export { generatePDF };

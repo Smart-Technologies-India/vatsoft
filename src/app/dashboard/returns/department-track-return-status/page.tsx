@@ -630,7 +630,7 @@ const TrackAppliation = () => {
                         <TableRow key={index}>
                           <TableCell className="border text-center p-2">
                             <Link
-                              href={`/dashboard/returns/returns-dashboard/preview/${val.createdById}?form=30A&year=${val.year}&quarter=${val.quarter}&month=${val.month}&sidebar=no`}
+                              href={`/dashboard/returns/returns-dashboard/preview/${val.createdById}?form=30A&year=${val.year}&quarter=${val.quarter}&month=${val.month}`}
                               className="text-blue-500"
                             >
                               {val.rr_number}

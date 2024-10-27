@@ -79,13 +79,16 @@ export default function DashboardLayout({
           !isbluck ? "md:pl-52" : ""
         }  min-h-screen flex flex-col`}
       >
-        <Navbar
-          role={userdata?.role as Role}
-          isOpen={isOpen}
-          setIsOpen={setIsOpen}
-          name={userdata?.firstName ?? ""}
-          isbluck={isbluck}
-        ></Navbar>
+        {!isbluck && (
+          <Navbar
+            role={userdata?.role as Role}
+            isOpen={isOpen}
+            setIsOpen={setIsOpen}
+            name={userdata?.firstName ?? ""}
+            isbluck={isbluck}
+          ></Navbar>
+        )}
+
         <div className="h-10"></div>
         {children}
 

@@ -81,7 +81,7 @@ const Dvat24APage = () => {
   };
   return (
     <>
-      <div className="p-2">
+      <div className="p-2"  id="mainpdf">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white">DVAT 24-A Notice</div>
           <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-2">

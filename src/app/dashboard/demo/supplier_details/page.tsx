@@ -19,7 +19,7 @@ const supplierDetails = () => {
   // const actionstatus = useActionState()
   return (
     <>
-      <div className="p-6">
+      <div className="p-3 py-2">
         <div className="bg-white p-4 flex text-xs justify-between shadow">
           <div>
             <p>VAT NO. - 26456456434</p>

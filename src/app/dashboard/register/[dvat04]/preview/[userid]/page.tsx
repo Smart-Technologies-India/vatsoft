@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { useParams, useRouter } from "next/navigation";
 
-import { capitalcase } from "@/utils/methods";
+import { capitalcase, generatePDF } from "@/utils/methods";
 import { Button, Modal } from "antd";
 import { customAlphabet } from "nanoid";
 import GetDvat04 from "@/action/register/getdvat04";
@@ -121,6 +121,19 @@ const PreviewPage = () => {
           <Anx3Page userid={user_id} dvatid={dvatid} />
 
           <div className="flex p-4 gap-2">
+            <Button
+              onClick={async () => {
+                console.log(
+                  `/dashboard/register/pdfview/${dvatid}/${current_user_id}?sidebar=no`
+                );
+                await generatePDF(
+                  `/dashboard/register/pdfview/${dvatid}/${user_id}?sidebar=no`
+                );
+              }}
+              type="primary"
+            >
+              Print
+            </Button>
             {/* <Button
               onClick={(e) => {
                 e.preventDefault();

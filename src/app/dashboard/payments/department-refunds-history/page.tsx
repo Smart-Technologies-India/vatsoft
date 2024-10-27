@@ -16,12 +16,13 @@ const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
 import { refunds, user } from "@prisma/client";
 import { getCookie } from "cookies-next";
-import { formateDate } from "@/utils/methods";
+import { formateDate, generatePDF } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import SearchRefunds from "@/action/refund/searchrefunds";
 import GetDeptRefunds from "@/action/refund/getdeptrefunds";
 import GetUser from "@/action/user/getuser";
+import { MdiDownload } from "@/components/icons";
 
 const RefundsHistory = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
@@ -317,26 +318,29 @@ const RefundsHistory = () => {
               <Table className="border mt-2">
                 <TableHeader>
                   <TableRow className="bg-gray-100">
-                    <TableHead className="whitespace-nowrap text-center px-2">
+                    <TableHead className="whitespace-nowrap text-center border px-2">
                       CPIN
                     </TableHead>
-                    <TableHead className="whitespace-nowrap text-center w-36  px-2">
+                    <TableHead className="whitespace-nowrap text-center w-36 border px-2">
                       Created On
                     </TableHead>
-                    <TableHead className="whitespace-nowrap text-center  px-2">
+                    <TableHead className="whitespace-nowrap text-center border px-2">
                       Amount
                     </TableHead>
-                    <TableHead className="whitespace-nowrap text-center  px-2">
+                    <TableHead className="whitespace-nowrap text-center border px-2">
                       Mode
                     </TableHead>
-                    <TableHead className="whitespace-nowrap text-center  px-2">
+                    <TableHead className="whitespace-nowrap text-center border px-2">
                       Expire Date
                     </TableHead>
-                    <TableHead className="whitespace-nowrap text-center  px-2">
+                    <TableHead className="whitespace-nowrap text-center border  px-2">
                       Deposit Date
                     </TableHead>
-                    <TableHead className="whitespace-nowrap text-center  px-2">
+                    <TableHead className="whitespace-nowrap text-center border  px-2">
                       Deposit Status
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Download
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -370,6 +374,16 @@ const RefundsHistory = () => {
                       </TableCell>
                       <TableCell className="text-center p-2">
                         {val.refundsstatus}
+                      </TableCell>
+                      <TableCell className="text-center text-blue-500 border p-2">
+                        <MdiDownload
+                          className="cursor-pointer"
+                          onClick={() =>
+                            generatePDF(
+                              `/dashboard/payments/refunds/${val.id}?sidebar=no`
+                            )
+                          }
+                        />
                       </TableCell>
                     </TableRow>
                   ))}

@@ -262,7 +262,6 @@ const RefundsHistory = () => {
               <Radio value={SearchOption.CPIN}>CPIN</Radio>
               <Radio value={SearchOption.DATE}>DATE</Radio>
             </Radio.Group>
-            <div className="mt-2"></div>
             {(() => {
               switch (searchOption) {
                 case SearchOption.CPIN:

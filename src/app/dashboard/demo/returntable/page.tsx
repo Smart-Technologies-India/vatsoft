@@ -13,7 +13,7 @@ import {
 const ReturnTable = () => {
   return (
     <>
-      <div className="p-6">
+      <div className="p-3 py-2">
         <div className="bg-white p-2 shadow">
           <div className="bg-blue-500 p-2 text-white">
             3.1 Details of Outward Supplies and inward supplies and inward

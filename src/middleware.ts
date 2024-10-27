@@ -10,12 +10,12 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(
       "/dashboard/returns/returns-dashboard/preview"
     ) ||
-    request.nextUrl.pathname.startsWith(
-      "/dashboard/payments/saved-challan/"
-    ) || 
-    request.nextUrl.pathname.startsWith(
-      "/dashboard/register/pdfview/"
-    )
+    request.nextUrl.pathname.startsWith("/dashboard/payments/saved-challan/") ||
+    request.nextUrl.pathname.startsWith("/dashboard/register/pdfview/") ||
+    request.nextUrl.pathname.startsWith("/dashboard/returns/dvat24") ||
+    request.nextUrl.pathname.startsWith("/dashboard/returns/dvat24a") ||
+    request.nextUrl.pathname.startsWith("/dashboard/returns/dvat10") ||
+    request.nextUrl.pathname.startsWith("/dashboard/payments/refunds")
   ) {
     NextResponse.next();
   } else if (!id && request.nextUrl.pathname.startsWith("/dashboard")) {

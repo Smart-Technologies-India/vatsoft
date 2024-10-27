@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next";
 import { toast } from "react-toastify";
 import { useParams, useRouter } from "next/navigation";
-import { capitalcase } from "@/utils/methods";
+import { capitalcase, generatePDF } from "@/utils/methods";
 import { Button, Modal } from "antd";
 import { customAlphabet } from "nanoid";
 import GetDvat04 from "@/action/register/getdvat04";
@@ -53,36 +53,6 @@ const PreviewPage = () => {
     };
     init();
   }, [dvatid]);
-
-  const generatePDF = async (path: string) => {
-    try {
-      // Fetch the PDF from the server
-
-      const response = await fetch("/api/getpdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url: path }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate PDF");
-      }
-
-      const blob = await response.blob();
-
-      // Create a link element for the download
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = "output.pdf";
-
-      // Programmatically click the link to trigger the download
-      link.click();
-    } catch (error) {
-      toast.error("Unable to download pdf try again.");
-    }
-  };
 
   if (isLoading)
     return (
@@ -136,13 +106,14 @@ const PreviewPage = () => {
           <div className="flex p-4 gap-4">
             <Button
               onClick={async () => {
+               
                 await generatePDF(
                   `/dashboard/register/pdfview/${dvatid}/${current_user_id}?sidebar=no`
                 );
               }}
               type="primary"
             >
-              Print
+              Download
             </Button>
 
             {dvat04Data?.status == "NONE" ? (

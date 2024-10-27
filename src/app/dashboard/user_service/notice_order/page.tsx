@@ -18,7 +18,7 @@ import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { FormType, order_notice } from "@prisma/client";
 import GetUserNotice from "@/action/notice_order/getusernotice";
-import { capitalcase, formateDate } from "@/utils/methods";
+import { capitalcase, formateDate, generatePDF } from "@/utils/methods";
 import Link from "next/link";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
 const { RangePicker } = DatePicker;
@@ -283,6 +283,20 @@ const SupplierDetails = () => {
     }
   };
 
+  const downloadNoticeOrder = async (type: FormType, id: number) => {
+    switch (type) {
+      case FormType.DVAT10:
+        await generatePDF(`/dashboard/returns/dvat10?id=${id}&sidebar=no`);
+        break;
+      case FormType.DVAT24:
+        await generatePDF(`/dashboard/returns/dvat24?id=${id}&sidebar=no`);
+        break;
+      case FormType.DVAT24A:
+        await generatePDF(`/dashboard/returns/dvat24a?id=${id}&sidebar=no`);
+        break;
+    }
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -456,7 +470,14 @@ const SupplierDetails = () => {
                     {capitalcase(val.status)}
                   </TableCell>
                   <TableCell className="p-2 border text-center text-blue-500">
-                    <MdiDownload />
+                    {val.status == "PAID" && (
+                      <MdiDownload
+                        className="cursor-pointer"
+                        onClick={async () => {
+                          await downloadNoticeOrder(val.form_type, val.id);
+                        }}
+                      />
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

@@ -57,7 +57,7 @@ const TrackAppliation = () => {
 
   return (
     <>
-      <div className="p-6">
+      <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white flex">
             <p>Application For Filing Clarification</p>

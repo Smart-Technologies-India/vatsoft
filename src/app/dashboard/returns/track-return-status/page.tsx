@@ -312,7 +312,7 @@ const TrackAppliation = () => {
 
   return (
     <>
-      <div className="p-6">
+      <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white flex">
             <p>Track Return Status</p>
@@ -499,7 +499,7 @@ const TrackAppliation = () => {
                   <TableRow key={index}>
                     <TableCell className="border text-center p-2">
                       <Link
-                        href={`/dashboard/returns/returns-dashboard/preview/${val.createdById}?form=30A&year=${val.year}&quarter=${val.quarter}&month=${val.month}&sidebar=no`}
+                        href={`/dashboard/returns/returns-dashboard/preview/${val.createdById}?form=30A&year=${val.year}&quarter=${val.quarter}&month=${val.month}`}
                         className="text-blue-500"
                       >
                         {val.rr_number}

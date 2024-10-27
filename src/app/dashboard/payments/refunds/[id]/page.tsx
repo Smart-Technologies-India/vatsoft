@@ -17,6 +17,7 @@ import {
   capitalcase,
   formatDateTime,
   formateDate,
+  generatePDF,
   onFormError,
 } from "@/utils/methods";
 import { Separator } from "@/components/ui/separator";
@@ -117,7 +118,7 @@ const RefundsData = () => {
 
   return (
     <>
-      <div className="p-2">
+      <div className="p-2" id="mainpdf">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white">Refunds</div>
 
@@ -285,6 +286,17 @@ const RefundsData = () => {
                       </p>
                     </div>
                   </div>
+                  <Button
+                    className="mt-2 hidden-print"
+                    type="primary"
+                    onClick={() =>
+                      generatePDF(
+                        `/dashboard/payments/refunds/${refundsData.id}?sidebar=no`
+                      )
+                    }
+                  >
+                    Download receipt
+                  </Button>
                 </>
               ) : currentUser?.role == Role.USER ? (
                 <>
@@ -358,6 +370,7 @@ const RefundsData = () => {
                         Back
                       </Button> */}
                       <Button
+                        className="hidden-print"
                         disabled={isSubmitting}
                         onClick={(e) => {
                           e.preventDefault();
@@ -369,7 +382,7 @@ const RefundsData = () => {
                       <input
                         type="submit"
                         value={"Pay Refunds"}
-                        className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
+                        className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer hidden-print"
                       />
                     </div>
                   </form>

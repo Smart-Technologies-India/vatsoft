@@ -1,8 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-import {
-  MdiDownload,
-} from "@/components/icons";
+import { MdiDownload } from "@/components/icons";
 import { Radio, DatePicker, Select, Pagination } from "antd";
 
 import { Button, Input, InputRef, RadioChangeEvent } from "antd";
@@ -19,7 +17,7 @@ import { getCookie } from "cookies-next";
 import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { FormType, order_notice, user } from "@prisma/client";
-import { capitalcase, formateDate } from "@/utils/methods";
+import { capitalcase, formateDate, generatePDF } from "@/utils/methods";
 import Link from "next/link";
 import GetUser from "@/action/user/getuser";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
@@ -350,6 +348,19 @@ const SupplierDetails = () => {
         return `/dashboard/returns/dvat10?id=${id}`;
     }
   };
+  const downloadNoticeOrder = async (type: FormType, id: number) => {
+    switch (type) {
+      case FormType.DVAT10:
+        await generatePDF(`/dashboard/returns/dvat10?id=${id}&sidebar=no`);
+        break;
+      case FormType.DVAT24:
+        await generatePDF(`/dashboard/returns/dvat24?id=${id}&sidebar=no`);
+        break;
+      case FormType.DVAT24A:
+        await generatePDF(`/dashboard/returns/dvat24a?id=${id}&sidebar=no`);
+        break;
+    }
+  };
 
   if (isLoading)
     return (
@@ -359,9 +370,11 @@ const SupplierDetails = () => {
     );
   return (
     <>
-      <div className="p-6">
+      <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white">Notices and Orders</div>
+          <div className="bg-blue-500 p-2 text-white">
+            List of Notices & Orders issued by Authorities
+          </div>
           <div className="p-2 bg-gray-50 mt-2 flex gap-2">
             <Radio.Group
               onChange={onChange}
@@ -480,9 +493,6 @@ const SupplierDetails = () => {
               }
             })()}
           </div>
-          <p className="text-sm mt-2">
-            List of Notices & Orders issued by Authorities
-          </p>
           {noticeData.length == 0 ? (
             <>
               <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
@@ -495,28 +505,36 @@ const SupplierDetails = () => {
                 <TableHeader>
                   <TableRow className="bg-gray-100">
                     <TableHead className="">Notice/Demand Order Id</TableHead>
-                    <TableHead className="whitespace-nowrap text-center">
+                    <TableHead className="whitespace-nowrap text-center border p-2">
                       Issued By
                     </TableHead>
-                    <TableHead className="text-center">Type</TableHead>
-                    <TableHead className="text-center">
+                    <TableHead className="text-center border p-2">
+                      Type
+                    </TableHead>
+                    <TableHead className="text-center border p-2">
                       Notice/ Order Description
                     </TableHead>
-                    <TableHead className="text-center">
+                    <TableHead className="text-center border p-2">
                       Date of Issuance
                     </TableHead>
-                    <TableHead className="text-center">Due Date</TableHead>
-                    <TableHead className="text-center">
+                    <TableHead className="text-center border p-2">
+                      Due Date
+                    </TableHead>
+                    <TableHead className="text-center border p-2">
                       Amount of Demand
                     </TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-center">Download</TableHead>
+                    <TableHead className="text-center border p-2">
+                      Status
+                    </TableHead>
+                    <TableHead className="text-center border p-2">
+                      Download
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {noticeData.map((val: order_notice, index: number) => (
                     <TableRow key={index}>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center border p-2">
                         <Link
                           href={getLink(val.form_type, val.id)}
                           className="text-blue-500"
@@ -524,30 +542,34 @@ const SupplierDetails = () => {
                           {val.ref_no.toUpperCase()}
                         </Link>
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center whitespace-nowrap  border p-2">
                         System Generated
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center border p-2">
                         {capitalcase(val.notice_order_type)}
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center border p-2">
                         {val.form_type}
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center whitespace-nowrap border p-2">
                         {formateDate(val.issue_date)}
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center whitespace-nowrap border p-2">
                         {formateDate(val.due_date)}
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center border p-2">
                         {val.amount}
                       </TableCell>
-                      <TableCell className="text-center">
-                        {" "}
+                      <TableCell className="text-center border p-2">
                         {capitalcase(val.status)}
                       </TableCell>
-                      <TableCell className="text-center text-blue-500">
-                        <MdiDownload />
+                      <TableCell className="text-center text-blue-500 border p-2">
+                        <MdiDownload
+                          className="cursor-pointer"
+                          onClick={async () => {
+                            await downloadNoticeOrder(val.form_type, val.id);
+                          }}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}

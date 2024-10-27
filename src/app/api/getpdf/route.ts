@@ -26,6 +26,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
       displayHeaderFooter: false,
       headerTemplate: "",
       footerTemplate: "",
+      waitForFonts: true,
     });
 
     await browser.close();
@@ -38,7 +39,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
     });
     return response;
   } catch (error) {
-    console.log(error);
     return NextResponse.json(
       { error: "Failed to generate PDF" },
       { status: 500 }

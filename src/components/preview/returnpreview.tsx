@@ -1037,8 +1037,7 @@ interface Anx3PageProps {
 }
 
 export const Anx3Page = (props: Anx3PageProps) => {
-  const current_user_id: number =
-    props.userid ?? parseInt(getCookie("id") ?? "0");
+  const current_user_id: number = props.userid ?? parseInt(getCookie("id") ?? "0");
 
   const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
