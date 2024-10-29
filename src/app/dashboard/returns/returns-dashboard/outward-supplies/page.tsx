@@ -24,7 +24,7 @@ import {
 import getPdfReturn from "@/action/return/getpdfreturn";
 import AddNil from "@/action/return/addnil";
 import { toast } from "react-toastify";
-import { Modal } from "antd";
+import { Button, Modal } from "antd";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { formateDate } from "@/utils/methods";
 
@@ -408,17 +408,15 @@ const GSTR = () => {
           <div className="flex mt-2 gap-2">
             <div className="grow"></div>
             {is_empty() && payment_complted() == false ? (
-              <button
-                className="text-sm text-white bg-[#172e57] py-1 px-4"
-                onClick={() => setOpen(true)}
-              >
+              <Button size="small" type="primary" onClick={() => setOpen(true)}>
                 Declare Nil Invoice
-              </button>
+              </Button>
             ) : null}
 
             {!isnil() && (
-              <button
-                className="text-sm text-white bg-[#172e57] py-1 px-4"
+              <Button
+                size="small"
+                type="primary"
                 onClick={() => {
                   route.push(
                     `/dashboard/returns/returns-dashboard/invoices?form=${searchParams.get(
@@ -432,7 +430,7 @@ const GSTR = () => {
                 }}
               >
                 View All
-              </button>
+              </Button>
             )}
             {/* <button
               className="text-sm border hover:border-blue-500 hover:text-blue-500 bg-white text-[#172e57] py-1 px-4"

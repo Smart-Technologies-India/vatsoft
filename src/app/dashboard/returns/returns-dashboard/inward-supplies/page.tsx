@@ -23,7 +23,7 @@ import { useEffect, useState } from "react";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import AddNil from "@/action/return/addnil";
 import { toast } from "react-toastify";
-import { Modal } from "antd";
+import { Button, Modal } from "antd";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { formateDate } from "@/utils/methods";
 
@@ -405,19 +405,36 @@ const InwardSupplies = () => {
             </TableBody>
           </Table>
           <div className="flex mt-2 gap-2">
-            <div className="grow"></div>
-            {is_empty() && payment_complted() == false ? (
-              <button
-                className="text-sm text-white bg-[#172e57] py-1 px-4"
-                onClick={() => setOpen(true)}
+            {/* {getdvattype() == DvatType.DVAT_30 && (
+              <Button
+                type="primary"
+                onClick={() => {
+                  route.push(
+                    `/dashboard/returns/returns-dashboard/inward-supplies/oidc-sale?form=${searchParams.get(
+                      "form"
+                    )}&year=${searchParams.get(
+                      "year"
+                    )}&quarter=${searchParams.get(
+                      "quarter"
+                    )}&month=${searchParams.get("month")}`
+                  );
+                }}
+                size="small"
               >
+                View OIDC Sale
+              </Button>
+            )} */}
+
+            {is_empty() && payment_complted() == false ? (
+              <Button type="primary" onClick={() => setOpen(true)} size="small">
                 Declare Nil Invoice
-              </button>
+              </Button>
             ) : null}
 
             {!isnil() && (
-              <button
-                className="text-sm text-white bg-[#172e57] py-1 px-4"
+              <Button
+                type="primary"
+                size="small"
                 onClick={() => {
                   route.push(
                     `/dashboard/returns/returns-dashboard/invoices?form=${searchParams.get(
@@ -431,7 +448,7 @@ const InwardSupplies = () => {
                 }}
               >
                 View All
-              </button>
+              </Button>
             )}
 
             {/* <button

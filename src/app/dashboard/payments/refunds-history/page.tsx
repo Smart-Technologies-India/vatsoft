@@ -16,7 +16,7 @@ const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
 import { dvat04, refunds } from "@prisma/client";
 import { getCookie } from "cookies-next";
-import { formateDate } from "@/utils/methods";
+import { encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import GetUserRefunds from "@/action/refund/getuserrefunds";
@@ -252,7 +252,7 @@ const RefundsHistory = () => {
       <div className="p-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white">Refunds History</div>
-          <div className="p-2 bg-gray-50 mt-2">
+          <div className="p-2 bg-gray-50 mt-2 flex gap-2">
             <Radio.Group
               onChange={onChange}
               value={searchOption}
@@ -351,7 +351,7 @@ const RefundsHistory = () => {
                       <TableCell className="text-center p-2">
                         <Link
                           className="text-blue-500"
-                          href={`/dashboard/payments/refunds/${val.id}`}
+                          href={`/dashboard/payments/refunds/${encryptURLData(val.id.toString())}`}
                         >
                           {val.cpin}
                         </Link>

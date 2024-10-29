@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { capitalcase } from "@/utils/methods";
+import { capitalcase, decryptURLData } from "@/utils/methods";
 import {
   dvat04,
   Dvat24Reason,
@@ -35,7 +35,8 @@ const Dvat10Page = () => {
 
   const [data, setData] = useState<ResponseType | null>(null);
   useEffect(() => {
-    const id: string | null = searchParam.get("id");
+    const id: string = decryptURLData(searchParam.get("id") ?? "", router);
+
     const init = async () => {
       if (!id) {
         return router.back();

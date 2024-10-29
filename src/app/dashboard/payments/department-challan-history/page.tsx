@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
 import { challan, user } from "@prisma/client";
-import { formateDate } from "@/utils/methods";
+import { encryptURLData, formateDate } from "@/utils/methods";
 import { toast } from "react-toastify";
 import SearchChallan from "@/action/challan/searchchallan";
 import GetDeptChallan from "@/action/challan/getdeptchallan";
@@ -354,18 +354,15 @@ const ChallanHistory = () => {
                         {val.challanstatus == "PAID" ? (
                           <Link
                             className="text-blue-500"
-                            href={`/dashboard/payments/saved-challan/${val.id}`}
+                            href={`/dashboard/payments/saved-challan/${encryptURLData(
+                              val.id.toString()
+                            )}`}
                           >
                             {val.cpin}
                           </Link>
                         ) : (
                           val.cpin
                         )}
-                        {/* <Link
-                        className="text-blue-500"
-                        href={`/dashboard/payments/saved-challan/${val.id}`}
-                      >
-                      </Link> */}
                       </TableCell>
                       <TableCell className="text-center p-2">
                         {formateDate(new Date(val.createdAt))}

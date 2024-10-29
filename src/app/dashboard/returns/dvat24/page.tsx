@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { capitalcase } from "@/utils/methods";
+import { capitalcase, decryptURLData, encryptURLData } from "@/utils/methods";
 import {
   dvat04,
   Dvat24Reason,
@@ -35,7 +35,7 @@ const Dvat24Page = () => {
 
   const [data, setData] = useState<ResponseType | null>(null);
   useEffect(() => {
-    const id: string | null = searchParam.get("id");
+    const id: string = decryptURLData(searchParam.get("id") ?? "", router);
     const init = async () => {
       if (!id) {
         return router.back();
@@ -81,7 +81,7 @@ const Dvat24Page = () => {
   };
   return (
     <>
-      <div className="p-2"  id="mainpdf">
+      <div className="p-2" id="mainpdf">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white">DVAT 24 Notice</div>
           <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-2">
@@ -232,7 +232,9 @@ const Dvat24Page = () => {
                   type="primary"
                   onClick={() => {
                     router.push(
-                      `/dashboard/payments/saved-challan/${data?.notice.challanId}`
+                      `/dashboard/payments/saved-challan/${encryptURLData(
+                        data?.notice.challanId!.toString() ?? ""
+                      )}`
                     );
                   }}
                 >

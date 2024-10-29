@@ -15,6 +15,8 @@ import {
 import { ToWords } from "to-words";
 import {
   capitalcase,
+  decryptURLData,
+  encryptURLData,
   formatDateTime,
   formateDate,
   generatePDF,
@@ -37,7 +39,9 @@ import GetUser from "@/action/user/getuser";
 const RefundsData = () => {
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
-  const refundsid = parseInt(Array.isArray(id) ? id[0] : id);
+  const refundsid = parseInt(
+    decryptURLData(Array.isArray(id) ? id[0] : id, router)
+  );
   const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const [isLoading, setLoading] = useState<boolean>(true);
 
@@ -291,7 +295,9 @@ const RefundsData = () => {
                     type="primary"
                     onClick={() =>
                       generatePDF(
-                        `/dashboard/payments/refunds/${refundsData.id}?sidebar=no`
+                        `/dashboard/payments/refunds/${encryptURLData(
+                          refundsData.id.toString()
+                        )}?sidebar=no`
                       )
                     }
                   >

@@ -18,7 +18,7 @@ import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { FormType, order_notice } from "@prisma/client";
 import GetUserNotice from "@/action/notice_order/getusernotice";
-import { capitalcase, formateDate, generatePDF } from "@/utils/methods";
+import { capitalcase, encryptURLData, formateDate, generatePDF } from "@/utils/methods";
 import Link from "next/link";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
 const { RangePicker } = DatePicker;
@@ -187,13 +187,13 @@ const SupplierDetails = () => {
   const getLink = (type: FormType, id: number): string => {
     switch (type) {
       case FormType.DVAT10:
-        return `/dashboard/returns/dvat10?id=${id}`;
+        return `/dashboard/returns/dvat10?id=${encryptURLData(id.toString())}`;
       case FormType.DVAT24:
-        return `/dashboard/returns/dvat24?id=${id}`;
+        return `/dashboard/returns/dvat24?id=${encryptURLData(id.toString())}`;
       case FormType.DVAT24A:
-        return `/dashboard/returns/dvat24a?id=${id}`;
+        return `/dashboard/returns/dvat24a?id=${encryptURLData(id.toString())}`;
       default:
-        return `/dashboard/returns/dvat10?id=${id}`;
+        return `/dashboard/returns/dvat10?id=${encryptURLData(id.toString())}`;
     }
   };
 

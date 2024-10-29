@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { capitalcase, formateDate } from "@/utils/methods";
+import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -423,9 +423,9 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
   if (props.status == Status.PAID || props.status == Status.LATE) {
     return (
       <Link
-        href={`/dashboard/returns/returns-dashboard/preview/${
-          props.userid
-        }?form=30A&year=${props.year}&quarter=${getQuarter()}&month=${
+        href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+          props.userid!.toString()
+        )}?form=30A&year=${props.year}&quarter=${getQuarter()}&month=${
           props.name
         }`}
         className={`p-1 flex items-center justify-start min-w-28 bg-[#F5F5F5] rounded-md gap-2`}

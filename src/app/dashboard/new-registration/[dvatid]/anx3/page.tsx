@@ -22,6 +22,7 @@ import { ApiResponseType } from "@/models/response";
 import Anx1Update from "@/action/anx1/updateauth";
 import GetAnx1 from "@/action/anx1/getanx1";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import { encryptURLData } from "@/utils/methods";
 
 const Dvat2Page = () => {
   const { dvatid } = useParams<{ dvatid: string | string[] }>();
@@ -39,7 +40,7 @@ const Dvat2Page = () => {
   const [Annexuredata, setAnnexuredata] = useState<annexure1[]>([]);
 
   const handelSubmit = () => {
-    router.push(`/dashboard/register/${dvat04id}/preview`);
+    router.push(`/dashboard/register/${encryptURLData(dvat04id.toString())}/preview`);
   };
 
   useEffect(() => {

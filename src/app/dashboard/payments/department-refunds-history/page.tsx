@@ -16,7 +16,7 @@ const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
 import { refunds, user } from "@prisma/client";
 import { getCookie } from "cookies-next";
-import { formateDate, generatePDF } from "@/utils/methods";
+import { encryptURLData, formateDate, generatePDF } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import SearchRefunds from "@/action/refund/searchrefunds";
@@ -350,7 +350,9 @@ const RefundsHistory = () => {
                       <TableCell className="text-center p-2">
                         <Link
                           className="text-blue-500"
-                          href={`/dashboard/payments/refunds/${val.id}`}
+                          href={`/dashboard/payments/refunds/${encryptURLData(
+                            val.id.toString()
+                          )}`}
                         >
                           {val.cpin}
                         </Link>
@@ -380,7 +382,9 @@ const RefundsHistory = () => {
                           className="cursor-pointer"
                           onClick={() =>
                             generatePDF(
-                              `/dashboard/payments/refunds/${val.id}?sidebar=no`
+                              `/dashboard/payments/refunds/${encryptURLData(
+                                val.id.toString()
+                              )}?sidebar=no`
                             )
                           }
                         />

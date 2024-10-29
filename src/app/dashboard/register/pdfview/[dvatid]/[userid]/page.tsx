@@ -3,8 +3,8 @@
 
 import { dvat04, registration } from "@prisma/client";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { capitalcase } from "@/utils/methods";
+import { useParams, useRouter } from "next/navigation";
+import { capitalcase, decryptURLData } from "@/utils/methods";
 import GetDvat04 from "@/action/register/getdvat04";
 import { getCookie } from "cookies-next";
 import {
@@ -16,8 +16,6 @@ import {
   Dvat3Page,
   UserRegister,
 } from "@/components/preview/returnpreview";
-import { Button } from "antd";
-import { toast } from "react-toastify";
 
 const PreviewPage = () => {
   const { dvatid, userid } = useParams<{
@@ -25,13 +23,15 @@ const PreviewPage = () => {
     userid: string | string[];
   }>();
 
+  const router = useRouter();
+
   const role = getCookie("role");
 
   const dvatidString = Array.isArray(dvatid) ? dvatid[0] : dvatid;
-  const dvat_id: number = parseInt(dvatidString);
+  const dvat_id: number = parseInt(decryptURLData(dvatidString, router));
 
   const useridString = Array.isArray(userid) ? userid[0] : userid;
-  const user_id: number = parseInt(useridString);
+  const user_id: number = parseInt(decryptURLData(useridString, router));
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -53,8 +53,6 @@ const PreviewPage = () => {
     };
     init();
   }, []);
-
- 
 
   if (isLoading)
     return (
@@ -107,8 +105,6 @@ const PreviewPage = () => {
           <Anx2Page userid={user_id} dvatid={dvat_id} extend={true} />
           <Anx3Page userid={user_id} dvatid={dvat_id} />
         </div>
-
-        
       </main>
     </>
   );

@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/drawer";
 import { composition, dvat04, user } from "@prisma/client";
 import { getCookie } from "cookies-next";
-import { formateDate } from "@/utils/methods";
+import { encryptURLData, formateDate } from "@/utils/methods";
 import GetUser from "@/action/user/getuser";
 import Link from "next/link";
 import GetUserComposition from "@/action/composition/getusercompositon";
@@ -237,7 +237,11 @@ const TrackAppliation = () => {
                   <TableRow key={index}>
                     <TableCell className="text-center border">
                       <Link
-                        href={`/dashboard/register/${val.id}/preview/${val.createdById}`}
+                        href={`/dashboard/register/${encryptURLData(
+                          val.id.toString()
+                        )}/preview/${encryptURLData(
+                          val.createdById.toString()
+                        )}`}
                         className="text-blue-500"
                       >
                         {val.tempregistrationnumber}

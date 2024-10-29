@@ -10,11 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Radio, DatePicker } from "antd";
-import { useEffect, useRef, useState } from "react";
-const { RangePicker } = DatePicker;
-import type { Dayjs } from "dayjs";
-import { MaterialSymbolsClose } from "@/components/icons";
+import { useEffect, useState } from "react";
+
 import {
   Drawer,
   DrawerClose,
@@ -26,7 +23,7 @@ import {
 } from "@/components/ui/drawer";
 import { composition, dvat04, user } from "@prisma/client";
 import { getCookie } from "cookies-next";
-import { formateDate } from "@/utils/methods";
+import { encryptURLData, formateDate } from "@/utils/methods";
 import GetUser from "@/action/user/getuser";
 import GetAllUserDvat from "@/action/register/getalluserdvat";
 import Link from "next/link";
@@ -210,7 +207,9 @@ const TrackAppliation = () => {
                       <TableRow key={index}>
                         <TableCell className="text-center border">
                           <Link
-                            href={`/dashboard/register/${val.id}/preview`}
+                            href={`/dashboard/register/${encryptURLData(
+                              val.id.toString()
+                            )}/preview`}
                             className="text-blue-500"
                           >
                             {val.tempregistrationnumber}

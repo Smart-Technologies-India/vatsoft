@@ -19,7 +19,7 @@ import { getCookie } from "cookies-next";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { toast } from "react-toastify";
-import { formateDate, generatePDF } from "@/utils/methods";
+import { encryptURLData, formateDate, generatePDF } from "@/utils/methods";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
 import CreateReturnRevised from "@/action/return/createreturnrevised";
 
@@ -395,7 +395,9 @@ const ReturnDashboard = () => {
       return toast.error("First accept the terms and conditions");
     }
     router.push(
-      `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}`
+      `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+        userid.toString()
+      )}?form=30A&year=${year}&quarter=${quarter}&month=${period}`
     );
   };
 
@@ -687,7 +689,9 @@ const ReturnDashboard = () => {
                   <button
                     onClick={async () => {
                       await generatePDF(
-                        `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
+                        `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                          userid.toString()
+                        )}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
                       );
                     }}
                     className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
@@ -712,7 +716,9 @@ const ReturnDashboard = () => {
                           setNilBox(true);
                         } else {
                           router.push(
-                            `/dashboard/returns/returns-dashboard/preview/${userid}?form=30A&year=${year}&quarter=${quarter}&month=${period}`
+                            `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                              userid.toString()
+                            )}?form=30A&year=${year}&quarter=${quarter}&month=${period}`
                           );
                         }
                       }}

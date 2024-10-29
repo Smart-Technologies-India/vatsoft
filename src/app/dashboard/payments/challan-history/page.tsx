@@ -17,7 +17,7 @@ import type { Dayjs } from "dayjs";
 import { challan, dvat04 } from "@prisma/client";
 import GetUserChallan from "@/action/challan/getuserchallan";
 import { getCookie } from "cookies-next";
-import { formateDate } from "@/utils/methods";
+import { encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import SearchChallan from "@/action/challan/searchchallan";
@@ -359,7 +359,7 @@ const ChallanHistory = () => {
                       <TableCell className="text-center p-2">
                         <Link
                           className="text-blue-500"
-                          href={`/dashboard/payments/saved-challan/${val.id}`}
+                          href={`/dashboard/payments/saved-challan/${encryptURLData(val.id.toString())}`}
                         >
                           {val.cpin}
                         </Link>

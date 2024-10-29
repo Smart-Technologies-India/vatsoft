@@ -1,4 +1,6 @@
 import CryptoJS from "crypto-js";
+import { Router } from "lucide-react";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { FieldErrors, FieldValues } from "react-hook-form";
 import { toast } from "react-toastify";
 
@@ -354,3 +356,32 @@ const generatePDF = async (path: string) => {
 };
 
 export { generatePDF };
+
+const secretKey = "knf92fg#G$%2Ij309pwkn4gf#WTF#WCc2@#$WTfwe4gFVD";
+
+// Helper functions for URL-safe Base64 encoding and decoding
+const toBase64Url = (str: string): string =>
+  str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+const fromBase64Url = (str: string): string =>
+  str.replace(/-/g, "+").replace(/_/g, "/") + "==".slice(str.length % 4 || 4);
+
+export const encryptURLData = (data: string): string => {
+  console.log(data);
+  const encryptedData = CryptoJS.AES.encrypt(data, secretKey).toString();
+  return toBase64Url(encryptedData);
+};
+
+export const decryptURLData = (
+  cipherText: string,
+  router: AppRouterInstance
+): string => {
+  try {
+    const decodedCipherText = fromBase64Url(cipherText); // Convert back from URL-safe Base64
+    const bytes = CryptoJS.AES.decrypt(decodedCipherText, secretKey);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  } catch (e) {
+    router.back();
+    return "";
+  }
+};

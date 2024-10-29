@@ -2,11 +2,12 @@
 "use client";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import {
+  decryptURLData,
+  encryptURLData,
   formatDateTime,
   formateDate,
   getDaysBetweenDates,
   getPrismaDatabaseDate,
-  onFormError,
 } from "@/utils/methods";
 import {
   CategoryOfEntry,
@@ -41,7 +42,9 @@ interface PercentageOutput {
 const Dvat16ReturnPreview = () => {
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
-  const userid = parseInt(Array.isArray(id) ? id[0] : id);
+  const userid: number = parseInt(
+    decryptURLData(Array.isArray(id) ? id[0] : id, router)
+  );
 
   const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
@@ -909,7 +912,9 @@ const Dvat16ReturnPreview = () => {
                         return;
                       }
                       router.push(
-                        `/dashboard/returns/returns-dashboard/preview/${return01.id}/challan-payment`
+                        `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                          return01.id.toString()
+                        )}/challan-payment`
                       );
                     }}
                   >

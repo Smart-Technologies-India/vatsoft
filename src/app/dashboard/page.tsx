@@ -19,7 +19,6 @@ import {
   RiMoneyRupeeCircleLine,
 } from "@/components/icons";
 import { Separator } from "@/components/ui/separator";
-import ProgressBar from "@ramonak/react-progress-bar";
 
 import { Chart as ChartJS, registerables } from "chart.js";
 import { Bar } from "react-chartjs-2";
@@ -38,7 +37,6 @@ import { getCookie } from "cookies-next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import OfficerDashboard from "@/action/dashboard/officerdashboard";
 import Last15Received from "@/action/dashboard/last15received";
 import { format, subMonths } from "date-fns";
@@ -91,7 +89,6 @@ const Page = () => {
                     Returns Calender (Last 6 return periods)
                   </h1>
                 </div>
-
                 {/* second section start from here */}
                 <div className="w-full mt-2">
                   <div className="flex w-full gap-2">

@@ -7,7 +7,12 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { useParams, useRouter } from "next/navigation";
 
-import { capitalcase, generatePDF } from "@/utils/methods";
+import {
+  capitalcase,
+  decryptURLData,
+  encryptURLData,
+  generatePDF,
+} from "@/utils/methods";
 import { Button, Modal } from "antd";
 import { customAlphabet } from "nanoid";
 import GetDvat04 from "@/action/register/getdvat04";
@@ -30,19 +35,18 @@ const PreviewPage = () => {
     dvat04: string | string[];
     userid: string | string[];
   }>();
+  const router = useRouter();
 
   const role = getCookie("role");
 
   const dvatidString = Array.isArray(dvat04) ? dvat04[0] : dvat04;
-  const dvatid: number = parseInt(dvatidString);
+  const dvatid: number = parseInt(decryptURLData(dvatidString, router));
 
   const useridString = Array.isArray(userid) ? userid[0] : userid;
-  const user_id: number = parseInt(useridString);
+  const user_id: number = parseInt(decryptURLData(useridString, router));
 
   const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const tempregno: string = nanoid();
-
-  const router = useRouter();
 
   // const [pageIndex, setPageIndex] = useState<number>(1);
 
@@ -123,16 +127,15 @@ const PreviewPage = () => {
           <div className="flex p-4 gap-2">
             <Button
               onClick={async () => {
-                console.log(
-                  `/dashboard/register/pdfview/${dvatid}/${current_user_id}?sidebar=no`
-                );
                 await generatePDF(
-                  `/dashboard/register/pdfview/${dvatid}/${user_id}?sidebar=no`
+                  `/dashboard/register/pdfview/${encryptURLData(
+                    dvatid.toString()
+                  )}/${encryptURLData(user_id.toString())}?sidebar=no`
                 );
               }}
               type="primary"
             >
-              Print
+              Download
             </Button>
             {/* <Button
               onClick={(e) => {
@@ -146,22 +149,6 @@ const PreviewPage = () => {
             <Button
               type="primary"
               onClick={async () => {
-                // if (
-                //   dvat04Data?.registration[0].dept_user_id == 8 &&
-                //   role == Role.INSPECTOR
-                // ) {
-                //   router.push(
-                //     `/dashboard/register/${dvat04Data!.id}/register`
-                //   );
-                // } else if (
-                //   dvat04Data?.registration[0].dept_user_id == 6 &&
-                //   role == Role.VATOFFICER
-                // ) {
-                //   router.push(
-                //     `/dashboard/register/${dvat04Data!.id}/register`
-                //   );
-                // } else
-
                 if (dvat04Data?.status == "NONE" && role == Role.USER) {
                   setOpen(true);
                 } else {
@@ -180,7 +167,6 @@ const PreviewPage = () => {
         open={open}
         onOk={async () => {
           setOpen(false);
-
           const response = await AddTempRegNo({
             tempregno: tempregno,
             id: dvat04Data?.id ?? 0,

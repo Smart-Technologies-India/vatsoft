@@ -17,7 +17,7 @@ import { getCookie } from "cookies-next";
 import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { FormType, order_notice, user } from "@prisma/client";
-import { capitalcase, formateDate, generatePDF } from "@/utils/methods";
+import { capitalcase, encryptURLData, formateDate, generatePDF } from "@/utils/methods";
 import Link from "next/link";
 import GetUser from "@/action/user/getuser";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
@@ -339,25 +339,25 @@ const SupplierDetails = () => {
   const getLink = (type: FormType, id: number): string => {
     switch (type) {
       case FormType.DVAT10:
-        return `/dashboard/returns/dvat10?id=${id}`;
+        return `/dashboard/returns/dvat10?id=${encryptURLData(id.toString())}`;
       case FormType.DVAT24:
-        return `/dashboard/returns/dvat24?id=${id}`;
+        return `/dashboard/returns/dvat24?id=${encryptURLData(id.toString())}`;
       case FormType.DVAT24A:
-        return `/dashboard/returns/dvat24a?id=${id}`;
+        return `/dashboard/returns/dvat24a?id=${encryptURLData(id.toString())}`;
       default:
-        return `/dashboard/returns/dvat10?id=${id}`;
+        return `/dashboard/returns/dvat10?id=${encryptURLData(id.toString())}`;
     }
   };
   const downloadNoticeOrder = async (type: FormType, id: number) => {
     switch (type) {
       case FormType.DVAT10:
-        await generatePDF(`/dashboard/returns/dvat10?id=${id}&sidebar=no`);
+        await generatePDF(`/dashboard/returns/dvat10?id=${encryptURLData(id.toString())}&sidebar=no`);
         break;
       case FormType.DVAT24:
-        await generatePDF(`/dashboard/returns/dvat24?id=${id}&sidebar=no`);
+        await generatePDF(`/dashboard/returns/dvat24?id=${encryptURLData(id.toString())}&sidebar=no`);
         break;
       case FormType.DVAT24A:
-        await generatePDF(`/dashboard/returns/dvat24a?id=${id}&sidebar=no`);
+        await generatePDF(`/dashboard/returns/dvat24a?id=${encryptURLData(id.toString())}&sidebar=no`);
         break;
     }
   };

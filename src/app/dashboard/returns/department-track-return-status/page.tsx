@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/drawer";
 import { getCookie } from "cookies-next";
 import { dvat04, returns_01, user } from "@prisma/client";
-import { capitalcase, formateDate } from "@/utils/methods";
+import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import SearchReturnPayment from "@/action/return/searchreturnpayment";
 import { toast } from "react-toastify";
@@ -630,7 +630,11 @@ const TrackAppliation = () => {
                         <TableRow key={index}>
                           <TableCell className="border text-center p-2">
                             <Link
-                              href={`/dashboard/returns/returns-dashboard/preview/${val.createdById}?form=30A&year=${val.year}&quarter=${val.quarter}&month=${val.month}`}
+                              href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                                val.createdById.toString()
+                              )}?form=30A&year=${val.year}&quarter=${
+                                val.quarter
+                              }&month=${val.month}`}
                               className="text-blue-500"
                             >
                               {val.rr_number}

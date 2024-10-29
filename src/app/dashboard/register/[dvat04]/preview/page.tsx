@@ -6,7 +6,12 @@ import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next";
 import { toast } from "react-toastify";
 import { useParams, useRouter } from "next/navigation";
-import { capitalcase, generatePDF } from "@/utils/methods";
+import {
+  capitalcase,
+  decryptURLData,
+  encryptURLData,
+  generatePDF,
+} from "@/utils/methods";
 import { Button, Modal } from "antd";
 import { customAlphabet } from "nanoid";
 import GetDvat04 from "@/action/register/getdvat04";
@@ -24,14 +29,13 @@ import {
 const nanoid = customAlphabet("1234567890", 12);
 
 const PreviewPage = () => {
+  const router = useRouter();
   const { dvat04 } = useParams<{ dvat04: string | string[] }>();
   const dvatidString = Array.isArray(dvat04) ? dvat04[0] : dvat04;
 
-  const dvatid: number = parseInt(dvatidString);
+  const dvatid: number = parseInt(decryptURLData(dvatidString, router));
   const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const tempregno: string = nanoid();
-
-  const router = useRouter();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -106,9 +110,10 @@ const PreviewPage = () => {
           <div className="flex p-4 gap-4">
             <Button
               onClick={async () => {
-               
                 await generatePDF(
-                  `/dashboard/register/pdfview/${dvatid}/${current_user_id}?sidebar=no`
+                  `/dashboard/register/pdfview/${encryptURLData(
+                    dvatid.toString()
+                  )}/${encryptURLData(current_user_id.toString())}?sidebar=no`
                 );
               }}
               type="primary"

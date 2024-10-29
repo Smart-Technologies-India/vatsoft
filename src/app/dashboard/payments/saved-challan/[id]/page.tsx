@@ -16,6 +16,8 @@ import {
 import { ToWords } from "to-words";
 import {
   capitalcase,
+  decryptURLData,
+  encryptURLData,
   formatDateTime,
   formateDate,
   generatePDF,
@@ -38,7 +40,10 @@ const ChallanData = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
-  const challanid = parseInt(Array.isArray(id) ? id[0] : id);
+  const challanid: number = parseInt(
+    decryptURLData(Array.isArray(id) ? id[0] : id, router)
+  );
+
   const current_user_id: number = parseInt(
     searchParams.get("userid") || getCookie("id") || "0",
     10
@@ -294,7 +299,9 @@ const ChallanData = () => {
                     type="primary"
                     onClick={async (e) => {
                       await generatePDF(
-                        `/dashboard/payments/saved-challan/${challanid}?sidebar=no&userid=${current_user_id}`
+                        `/dashboard/payments/saved-challan/${encryptURLData(
+                          challanid.toString()
+                        )}?sidebar=no&userid=${current_user_id}`
                       );
                     }}
                   >

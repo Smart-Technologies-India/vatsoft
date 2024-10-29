@@ -19,6 +19,7 @@ import dayjs from "dayjs";
 import { ToWords } from "to-words";
 import {
   capitalcase,
+  decryptURLData,
   formateDate,
   getDaysBetweenDates,
   onFormError,
@@ -60,7 +61,7 @@ interface PercentageOutput {
 }
 
 type DvatChallanPaymentProps = {
-  returnid: number;
+  returnid: string;
 };
 // export const CreateChallanProvider = (props: CreateChallanProviderProps) => {
 //   const methods = useForm<CreateChallanForm>({
@@ -92,7 +93,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   useEffect(() => {
     const init = async () => {
       const returns_response = await GetReturn01({
-        id: props.returnid,
+        id: parseInt(decryptURLData(props.returnid, router)),
       });
       if (returns_response.status && returns_response.data) {
         setReturn01(returns_response.data);
