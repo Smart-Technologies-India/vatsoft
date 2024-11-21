@@ -409,7 +409,7 @@ const TrackAppliation = () => {
               </DrawerContent>
             </Drawer>
           </div>
-          <div className="p-2 bg-gray-50 mt-2 items-center flex gap-2">
+          <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
             <Radio.Group
               onChange={onChange}
               value={searchOption}

@@ -1,9 +1,9 @@
 "use client";
 const AboutUs = () => {
   return (
-    <main className="px-6  bg-white m-4 rounded-lg w-full xl:w-5/6 xl:mx-auto">
-      <h1 className="border-b-2 mt-2 font-semibold text-3xl py-1">History</h1>
-      <p className="mt-4 font-normal text-lg leading-5">
+    <main className="px-6  bg-white m-4 rounded-lg xl:w-5/6 xl:mx-auto">
+      <h1 className="border-b-2 mt-2 font-semibold text-2xl py-1">History</h1>
+      <p className="mt-4 font-normal text-sm leading-5">
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The Union Territory (U.T). of Daman & Diu
         is a centrally administered territory without legislature. The territory
         was under Portugal Rule up to its liberation i.e. up to 19/12/1961. The
@@ -13,7 +13,7 @@ const AboutUs = () => {
         exemption of tax to avoid unhealthy competition of prices among the
         neighboring States; it was decided to impose sales tax in the U.T.
       </p>
-      <p className="mt-4 font-normal text-lg leading-5">
+      <p className="mt-4 font-normal text-sm leading-5">
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Accordingly, the Daman & Diu Sales Tax Act
         & Rules, 1964 and rules made there under and Central Sales Tax Act, 1956
         for Sales Tax came in to force from 1964. Further with the
@@ -22,7 +22,7 @@ const AboutUs = () => {
         effect from 01.04.2005. Thus at present following tax laws are in force.
       </p>
 
-      <ul className="list-disc ml-8 mt-4 text-lg">
+      <ul className="list-disc ml-8 mt-4 text-sm">
         <li>The Daman & Diu Sales Tax Act, 1964 (up to 31.03.2005)</li>
         <li>The Daman & Diu Sales Tax Rules, 1964 (up to 31.03.2005)</li>
         <li>The Central Sales Tax Act , 1956</li>
@@ -30,23 +30,23 @@ const AboutUs = () => {
         <li>The Daman & Diu Value Added Tax Regulation, 2005</li>
       </ul>
 
-      <p className="mt-4 font-normal text-lg leading-5">
+      <p className="mt-4 font-normal text-sm leading-5">
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The Department of Value Added Tax falls
         under the Finance Department, Administration of the U.T of Daman & Diu.
         The prime responsibility of the department is overlooking the Revenue
         administration of the Commercial Taxes Acts.
       </p>
 
-      <p className="mt-4 font-normal text-lg leading-5">
+      <p className="mt-4 font-normal text-sm leading-5">
         The Department of Value Added Tax, Administration of Daman & Diu,
         administers the following Acts:
       </p>
-      <ol className="list-decimal ml-12 mt-2 text-lg">
+      <ol className="list-decimal ml-12 mt-2 text-sm">
         <li>The Daman & Diu Value Added Tax Regulation, 2005</li>
         <li>The Daman & Diu Sales Tax Act & Rules, 1964</li>
         <li>The Central Sales Tax Act , 1956 </li>
       </ol>
-      <p className="mt-4 font-normal text-lg leading-5">
+      <p className="mt-4 font-normal text-sm leading-5">
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value Added Tax is a major source of
         revenue for the Union Territory (U.T) of Daman & Diu. Sales Tax is the
         most important source of revenue for the UT of Daman & Diu. During
@@ -62,7 +62,7 @@ const AboutUs = () => {
         registered with this department as traders and manufactures (70% dealer
         are the manufactures).
       </p>
-      <p className="mt-4 font-normal text-lg leading-5">
+      <p className="mt-4 font-normal text-sm leading-5">
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;There are three stages in taxation. The
         first is the incidence of tax, the second is quantification or
         assessment of tax and the third is the recovery of tax. A dealer liable

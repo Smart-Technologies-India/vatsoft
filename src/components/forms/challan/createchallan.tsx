@@ -142,7 +142,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
           </div>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           <Table className="border mt-2">
             <TableHeader>
               <TableRow className="bg-gray-100">
@@ -229,7 +229,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
               </TableRow>
             </TableBody>
           </Table>
-          <div className="w-96 shrink-0 p-2">
+          <div className="lg:w-96 shrink-0 p-2">
             <p className="text-center text-xl font-semibold">Form DVAT 20</p>
             <p className="mt-2 text-sm">
               (See Rule 28 of the Dadra and Nagar Haveli and Daman and Diu Value

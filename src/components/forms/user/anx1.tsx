@@ -206,7 +206,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
           <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
             Particulars Of Person Having Interest In the Business
           </span>
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <MultiSelect<Anx1Form>
                 placeholder="Title Particulars of person"
@@ -226,7 +226,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
             </div>
           </div>
 
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <DateSelect<Anx1Form>
                 placeholder="Date Of Birth"
@@ -250,7 +250,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
             </div>
           </div>
 
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <TaxtInput<Anx1Form>
                 placeholder="Enter Father's Name"
@@ -268,7 +268,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
               />
             </div>
           </div>
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <TaxtInput<Anx1Form>
                 placeholder="Enter Aadhar No."
@@ -300,7 +300,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
           <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
             Residential Address
           </span>
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <TaxtInput<Anx1Form>
                 placeholder="Building Name/ Number"
@@ -318,7 +318,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
               />
             </div>
           </div>
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <TaxtInput<Anx1Form>
                 placeholder="Village/ Town"
@@ -366,7 +366,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
             <p>as above</p>
           </div>
 
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <TaxtInput<Anx1Form>
                 placeholder="Building Name/ Number"
@@ -386,7 +386,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
               />
             </div>
           </div>
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <TaxtInput<Anx1Form>
                 placeholder="Village/ Town"
@@ -415,7 +415,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
             Contact Details
           </span>
 
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <TaxtInput<Anx1Form>
                 placeholder="Contact Number"
@@ -483,10 +483,10 @@ const Anx1 = (props: Anx1ProviderProps) => {
           <button
             onClick={(e) => {
               e.preventDefault();
-              
+
               const numofown: number = dvatData?.numberOfOwners ?? 0;
 
-              if (numofown  < Annexuredata.length) {
+              if (numofown < Annexuredata.length) {
                 return toast.error(
                   `Number of Person having intrest in business in ${
                     dvatData?.numberOfOwners ?? 0

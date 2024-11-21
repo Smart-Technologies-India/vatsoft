@@ -182,7 +182,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-      <div className="flex gap-3 mt-2">
+      <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
         <div className="flex-1">
           <MultiSelect<Dvat1Form>
             name={"selectOffice"}
@@ -194,7 +194,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
         </div>
         <div className="flex-1"></div>
       </div>
-      <div className="flex gap-3 mt-2">
+      <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
         <div className="flex-1">
           <TaxtInput<Dvat1Form>
             placeholder="Enter name of dealer"
@@ -212,7 +212,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           />
         </div>
       </div>
-      <div className="flex gap-3 mt-2">
+      <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
         <div className="flex-1">
           <MultiSelect<Dvat1Form>
             name={"natureOfBusiness"}
@@ -236,7 +236,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
         <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
           5. Registration
         </span>
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <MultiSelect<Dvat1Form>
               name={"typeOfRegistration"}
@@ -260,7 +260,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
         <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
           6. Turnover
         </span>
-        <div className="flex gap-4 mt-2 items-end">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <YesNoRabioInput<Dvat1Form>
               title="a). Annual Turnover Category"
@@ -271,7 +271,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             />
           </div>
         </div>
-        <div className="flex gap-4 mt-2 items-end">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat1Form>
               placeholder="Enter Last finacial year turnover"
@@ -292,7 +292,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           </div>
         </div>
       </div>
-      <div className="flex gap-4 mt-2">
+      <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
         <div className="flex-1">
           <DateSelect<Dvat1Form>
             placeholder="Select Date"
@@ -304,7 +304,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
         </div>
         <div className="flex-1"></div>
       </div>
-      <div className="flex gap-4 mt-2">
+      <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
         <div className="flex-1">
           <TaxtInput<Dvat1Form>
             placeholder="Enter Pan Number"
@@ -327,7 +327,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
         <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
           10 Principle place of Business
         </span>
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat1Form>
               placeholder="Enter Building number"
@@ -345,7 +345,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             />
           </div>
         </div>
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat1Form>
               placeholder="Enter city"
@@ -383,7 +383,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
         <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
           Contact Details
         </span>
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat1Form>
               placeholder="Enter Mobile Number"
@@ -404,7 +404,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             />
           </div>
         </div>
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat1Form>
               placeholder="Email"

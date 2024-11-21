@@ -4,8 +4,8 @@ import Image from "next/image";
 
 const ContactUs = () => {
   return (
-    <main className="px-6 flex bg-white m-4 rounded-lg w-full xl:w-5/6 xl:mx-auto">
-      <div className=" py-16">
+    <main className="px-6  flex flex-col lg:flex-row bg-white m-4 rounded-lg xl:w-5/6 xl:mx-auto">
+      <div className=" py-16 order-2 lg:order-1">
         <p className="text-emerald-500 text-sm font-semibold">
           How can we help you?
         </p>
@@ -34,7 +34,7 @@ const ContactUs = () => {
         </p>
       </div>
       <div className="grow"></div>
-      <div className="shrink-0 relative w-80 h-80">
+      <div className="shrink-0 relative w-80 h-80 order-1 lg:order-2 gird place-items-center">
         <Image fill={true} alt="error" src={"/contact.png"} />
       </div>
     </main>

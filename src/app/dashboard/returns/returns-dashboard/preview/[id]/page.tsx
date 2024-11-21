@@ -3704,12 +3704,12 @@ interface InterStateTradeProps {
 }
 
 const InterStateTrade = (props: InterStateTradeProps) => {
-  const get10_1 = (): PercentageOutput => {
+  const get10_1 = (dvattype: DvatType): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31_A &&
+        val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.FORMF
     );
@@ -3726,12 +3726,12 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       decrease,
     };
   };
-  const get10_2 = (): PercentageOutput => {
+  const get10_2 = (dvattype: DvatType): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31_A &&
+        val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.FORMC
     );
@@ -3748,12 +3748,12 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       decrease,
     };
   };
-  const get10_3 = (): PercentageOutput => {
+  const get10_3 = (dvattype: DvatType): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31_A &&
+        val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.FORMI
     );
@@ -3770,12 +3770,12 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       decrease,
     };
   };
-  const get10_4 = (): PercentageOutput => {
+  const get10_4 = (dvattype: DvatType): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31_A &&
+        val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.FORMH
     );
@@ -3792,12 +3792,12 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       decrease,
     };
   };
-  const get10_6 = (): PercentageOutput => {
+  const get10_6 = (dvattype: DvatType): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31_A &&
+        val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE
     );
@@ -3814,12 +3814,12 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       decrease,
     };
   };
-  const get10_7 = (): PercentageOutput => {
+  const get10_7 = (dvattype: DvatType): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31_A &&
+        val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.EXPORT_OUTOF_INDIA
     );
@@ -3855,10 +3855,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             R10.1 Stock Transfer outside D&NH - Against F form
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_1().increase}
+            {get10_1(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {get10_1(DvatType.DVAT_30_A).increase}
           </td>
         </tr>
         <tr className="w-full">
@@ -3866,10 +3866,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             R10.2 Against C Forms
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_2().increase}
+            {get10_2(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {get10_2(DvatType.DVAT_30_A).increase}
           </td>
         </tr>
         <tr className="w-full">
@@ -3877,10 +3877,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             R10.3 Against I Forms
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_3().increase}
+            {get10_3(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {get10_3(DvatType.DVAT_30_A).increase}
           </td>
         </tr>
         <tr className="w-full">
@@ -3888,10 +3888,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             R10.4 Against H Forms
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_4().increase}
+            {get10_4(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {get10_3(DvatType.DVAT_31_A).increase}
           </td>
         </tr>
         <tr className="w-full">
@@ -3910,10 +3910,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             R10.6 Capital goods
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_6().increase}
+            {get10_6(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {get10_6(DvatType.DVAT_30_A).increase}
           </td>
         </tr>
         <tr className="w-full">
@@ -3921,10 +3921,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             R10.7 Export to/Import from outside India
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_7().increase}
+            {get10_7(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {get10_7(DvatType.DVAT_30_A).increase}
           </td>
         </tr>
         <tr className="w-full">
@@ -3966,16 +3966,23 @@ const InterStateTrade = (props: InterStateTradeProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
-              parseFloat(get10_1().increase) +
-              parseFloat(get10_2().increase) +
-              parseFloat(get10_3().increase) +
-              parseFloat(get10_4().increase) +
-              parseFloat(get10_6().increase) +
-              parseFloat(get10_7().increase)
+              parseFloat(get10_1(DvatType.DVAT_31_A).increase) +
+              parseFloat(get10_2(DvatType.DVAT_31_A).increase) +
+              parseFloat(get10_3(DvatType.DVAT_31_A).increase) +
+              parseFloat(get10_4(DvatType.DVAT_31_A).increase) +
+              parseFloat(get10_6(DvatType.DVAT_31_A).increase) +
+              parseFloat(get10_7(DvatType.DVAT_31_A).increase)
             ).toFixed(2)}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {(
+              parseFloat(get10_1(DvatType.DVAT_30_A).increase) +
+              parseFloat(get10_2(DvatType.DVAT_30_A).increase) +
+              parseFloat(get10_3(DvatType.DVAT_30_A).increase) +
+              parseFloat(get10_4(DvatType.DVAT_30_A).increase) +
+              parseFloat(get10_6(DvatType.DVAT_30_A).increase) +
+              parseFloat(get10_7(DvatType.DVAT_30_A).increase)
+            ).toFixed(2)}
           </td>
         </tr>
       </tbody>

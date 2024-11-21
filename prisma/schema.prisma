@@ -442,6 +442,22 @@ model user {
   user_commodity_master_updatedBy user_commodity_master[] @relation("user_commodity_master_updatedBy")
   user_commodity_master_deletedBy user_commodity_master[] @relation("user_commodity_master_deletedBy")
 
+  news_createdBy news[] @relation("news_createdBy")
+  news_updatedBy news[] @relation("news_updatedBy")
+  news_deletedBy news[] @relation("news_deletedBy")
+
+  holiday_createdBy holiday[] @relation("holiday_createdBy")
+  holiday_updatedBy holiday[] @relation("holiday_updatedBy")
+  holiday_deletedBy holiday[] @relation("holiday_deletedBy")
+
+  parctitioner_createdBy parctitioner[] @relation("parctitioner_createdBy")
+  parctitioner_updatedBy parctitioner[] @relation("parctitioner_updatedBy")
+  parctitioner_deletedBy parctitioner[] @relation("parctitioner_deletedBy")
+
+  hsncode_createdBy hsncode[] @relation("hsncode_createdBy")
+  hsncode_updatedBy hsncode[] @relation("hsncode_updatedBy")
+  hsncode_deletedBy hsncode[] @relation("hsncode_deletedBy")
+
   registration          registration[]
   composition           composition[]
   refunds               refunds[]
@@ -510,6 +526,8 @@ model dvat04 {
   certificateDate        DateTime?
   commodity              Dvat04Commodity? @default(OTHER)
 
+  tin_master                   tin_number_master       @relation(fields: [tin_master_id], references: [id])
+  tin_master_id                Int                     @default(1)
   // form 1
   name                         String?
   tradename                    String?
@@ -779,6 +797,7 @@ model tin_number_master {
   deletedAt      DateTime?
 
   returns_entry returns_entry[]
+  dvat04        dvat04[]
 }
 
 model returns_01 {
@@ -1071,4 +1090,80 @@ model user_commodity_master {
   deletedAt   DateTime?
   deletedBy   user?     @relation("user_commodity_master_deletedBy", fields: [deletedById], references: [id])
   deletedById Int?
+}
+
+model news {
+  id           Int       @id @default(autoincrement())
+  title        String
+  descrilption String    @db.MediumText
+  topic        String
+  postdate     DateTime
+  status       Status    @default(ACTIVE)
+  createdAt    DateTime  @default(now())
+  createdBy    user      @relation("news_createdBy", fields: [createdById], references: [id])
+  createdById  Int
+  updatedAt    DateTime  @updatedAt
+  updatedBy    user?     @relation("news_updatedBy", fields: [updatedById], references: [id])
+  updatedById  Int?
+  deletedAt    DateTime?
+  deletedBy    user?     @relation("news_deletedBy", fields: [deletedById], references: [id])
+  deletedById  Int?
+}
+
+model holiday {
+  id           Int       @id @default(autoincrement())
+  state        String
+  descrilption String    @db.MediumText
+  date         DateTime
+  status       Status    @default(ACTIVE)
+  createdAt    DateTime  @default(now())
+  createdBy    user      @relation("holiday_createdBy", fields: [createdById], references: [id])
+  createdById  Int
+  updatedAt    DateTime  @updatedAt
+  updatedBy    user?     @relation("holiday_updatedBy", fields: [updatedById], references: [id])
+  updatedById  Int?
+  deletedAt    DateTime?
+  deletedBy    user?     @relation("holiday_deletedBy", fields: [deletedById], references: [id])
+  deletedById  Int?
+}
+
+model parctitioner {
+  id                 Int       @id @default(autoincrement())
+  gsp_name           String
+  business_spoc_name String
+  email              String
+  mobile             String
+  address            String    @db.MediumText
+  priority           Int       @default(0)
+  status             Status    @default(ACTIVE)
+  createdAt          DateTime  @default(now())
+  createdBy          user      @relation("parctitioner_createdBy", fields: [createdById], references: [id])
+  createdById        Int
+  updatedAt          DateTime  @updatedAt
+  updatedBy          user?     @relation("parctitioner_updatedBy", fields: [updatedById], references: [id])
+  updatedById        Int?
+  deletedAt          DateTime?
+  deletedBy          user?     @relation("parctitioner_deletedBy", fields: [deletedById], references: [id])
+  deletedById        Int?
+}
+
+model hsncode {
+  id               Int       @id @default(autoincrement())
+  head             String
+  description      String
+  hsncode          String
+  tech_description String
+  trade1           String
+  trade2           String
+  trade3           String
+  status           Status    @default(ACTIVE)
+  createdAt        DateTime  @default(now())
+  createdBy        user      @relation("hsncode_createdBy", fields: [createdById], references: [id])
+  createdById      Int
+  updatedAt        DateTime  @updatedAt
+  updatedBy        user?     @relation("hsncode_updatedBy", fields: [updatedById], references: [id])
+  updatedById      Int?
+  deletedAt        DateTime?
+  deletedBy        user?     @relation("hsncode_deletedBy", fields: [deletedById], references: [id])
+  deletedById      Int?
 }

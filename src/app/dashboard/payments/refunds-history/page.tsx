@@ -252,7 +252,7 @@ const RefundsHistory = () => {
       <div className="p-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white">Refunds History</div>
-          <div className="p-2 bg-gray-50 mt-2 flex gap-2">
+          <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
             <Radio.Group
               onChange={onChange}
               value={searchOption}
@@ -351,7 +351,9 @@ const RefundsHistory = () => {
                       <TableCell className="text-center p-2">
                         <Link
                           className="text-blue-500"
-                          href={`/dashboard/payments/refunds/${encryptURLData(val.id.toString())}`}
+                          href={`/dashboard/payments/refunds/${encryptURLData(
+                            val.id.toString()
+                          )}`}
                         >
                           {val.cpin}
                         </Link>

@@ -175,7 +175,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
             Particulars Of Person Having Interest In the Business
           </span>
 
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <TaxtInput<Anx2Form>
                 placeholder="Enter Father's Name"
@@ -194,7 +194,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
               />
             </div>
           </div>
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <TaxtInput<Anx2Form>
                 placeholder="Branch Name"
@@ -219,7 +219,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
           <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
             Address
           </span>
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <TaxtInput<Anx2Form>
                 placeholder="Building Name/ Number"
@@ -237,7 +237,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
               />
             </div>
           </div>
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <TaxtInput<Anx2Form>
                 placeholder="Village/ Town"
@@ -257,7 +257,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
               />
             </div>
           </div>
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <DateSelect<Anx2Form>
                 placeholder="Date of Establishment"
@@ -290,8 +290,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
           <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
             Registration No. of Branch
           </span>
-
-          <div className="flex gap-4 mt-2">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
             <div className="flex-1">
               <TaxtInput<Anx2Form>
                 placeholder="Under State Act"

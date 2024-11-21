@@ -55,7 +55,7 @@ export const UserRegister = (props: UserRegisterProps): JSX.Element => {
           <TableBody>
             <TableRow>
               <TableCell className="text-center p-2" colSpan={5}>
-                <p className="text-lg font-nunito">User Registration</p>
+                <p className="text-lg font-nunito">User Details</p>
               </TableCell>
             </TableRow>
             <TableRow className="bg-gray-100">

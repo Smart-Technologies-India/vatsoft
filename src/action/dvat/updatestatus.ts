@@ -16,7 +16,7 @@ const UpdateDvatStatus = async (
   payload: UpdateDvatStatusPayload
 ): Promise<ApiResponseType<dvat04 | null>> => {
   const functionname: string = UpdateDvatStatus.name;
-
+  
   try {
     const is_exist = await prisma.dvat04.findFirst({
       where: {
@@ -32,6 +32,26 @@ const UpdateDvatStatus = async (
         functionname,
       });
 
+    let tin_master_id: number = 1;
+
+    if (payload.tinNumber) {
+      const tin_master = await prisma.tin_number_master.create({
+        data: {
+          name_of_dealer: is_exist.tradename ?? "",
+          tin_number: payload.tinNumber,
+          status: "ACTIVE",
+        },
+      });
+
+      if (!tin_master) {
+        return createResponse({
+          message: "Unable to create tin number. Please try again.",
+          functionname,
+        });
+      }
+      tin_master_id = tin_master.id;
+    }
+
     const dvatresponse = await prisma.dvat04.update({
       where: {
         id: is_exist.id,
@@ -41,6 +61,7 @@ const UpdateDvatStatus = async (
         status: payload.status,
         updatedById: payload.updatedby,
         ...(payload.tinNumber && { tinNumber: payload.tinNumber }),
+        ...(payload.tinNumber && { tin_master_id: tin_master_id }),
       },
     });
 

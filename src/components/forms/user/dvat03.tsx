@@ -116,7 +116,7 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
         <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
           18 Security
         </span>
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat3Form>
               placeholder="Enter Transaction Id"
@@ -135,7 +135,7 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
             />
           </div>
         </div>
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat3Form>
               placeholder="Enter Bank Name"
@@ -153,7 +153,7 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
             />
           </div>
         </div>
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <MultiSelect<Dvat3Form>
               placeholder="Enter Deposit type"
@@ -184,7 +184,7 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
         />
       </div>
 
-      <div className="flex gap-4 mt-2">
+      <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
         <div className="flex-1">
           <TaxtInput<Dvat3Form>
             placeholder="Enter Managers count"
@@ -204,7 +204,7 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
           />
         </div>
       </div>
-      <div className="flex gap-4 mt-2">
+      <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
         <div className="flex-1">
           <TaxtInput<Dvat3Form>
             placeholder="Enter Manager Name"

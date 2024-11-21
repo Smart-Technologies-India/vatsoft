@@ -289,7 +289,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           11 Address for service of notice (If Different From Principle Place of
           Business)
         </span>
-        <div className="text-sm flex gap-1 items-center">
+        <div className="text-sm flex gap-1 md:mt-2 items-center">
           <Checkbox
             onChange={(value: CheckboxChangeEvent) => {
               setIsSameAddress(value.target.checked);
@@ -308,7 +308,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           <p>Same as Principle Place Of Business</p>
         </div>
 
-        <div className="flex gap-4 items-end mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat2Form>
               placeholder="Building Name"
@@ -329,7 +329,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           </div>
         </div>
 
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat2Form>
               placeholder="City"
@@ -389,7 +389,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           />
           <p>No additional place of business</p>
         </div>
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat2Form>
               placeholder="Godown"
@@ -411,7 +411,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             />
           </div>
         </div>
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat2Form>
               placeholder="Shops"
@@ -440,7 +440,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           13 Details of main Bank Account
         </span>
 
-        <div className="flex gap-4 items-end">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row items-end">
           <div className="flex-1">
             <TaxtInput<Dvat2Form>
               placeholder="Bank Name"
@@ -460,7 +460,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           </div>
         </div>
 
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat2Form>
               placeholder="IFSC Code"
@@ -496,7 +496,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           on date of application)
         </span>
 
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat2Form>
               placeholder="Own Capital"
@@ -514,7 +514,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             />
           </div>
         </div>
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat2Form>
               placeholder="Loan From Other"
@@ -533,7 +533,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           </div>
         </div>
 
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat2Form>
               placeholder="Land & Building"
@@ -558,7 +558,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           15 Description of top 5 Items you deal or propose to deal in
         </span>
 
-        <div className="flex gap-4 mt-2">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <Label htmlFor="commodity" className="text-sm font-normal">
               Commodity
@@ -644,7 +644,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
                 Commodity
               </TableHead>
               <TableHead className=" text-sm font-normal h-8">
-              Dealer&apos;s description
+                Dealer&apos;s description
               </TableHead>
               <TableHead className="w-[100px] text-sm font-normal h-8">
                 Action
@@ -682,7 +682,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
         ) : null}
       </div>
 
-      <div className="flex gap-4 mt-2">
+      <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
         <div className="flex-1">
           <MultiSelect<Dvat2Form>
             name={"accountingBasis"}

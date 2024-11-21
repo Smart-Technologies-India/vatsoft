@@ -663,8 +663,10 @@ const VatNote = (props: VatNoteProps) => {
       inspector_note: props.registrationdata.inspector_note!,
       commodity: props.commodity!,
       vat_officer_note: props.registrationdata.vat_officer_note!,
-      registration_date:
-        props.registrationdata.registration_date!.toISOString(),
+      registration_date: props.registrationdata.registration_date
+        ? props.registrationdata.registration_date!.toISOString()
+        : undefined,
+
       all_appointment: props.registrationdata.all_appointment!,
       all_doc_upload: props.registrationdata.all_doc_upload!,
       necessary_payments: props.registrationdata.necessary_payments!,
@@ -1193,7 +1195,7 @@ const VatNote = (props: VatNoteProps) => {
         </div>
       </div>
 
-      <div className="flex gap-4 mt-2">
+      <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
         <button
           onClick={send_back}
           type="button"

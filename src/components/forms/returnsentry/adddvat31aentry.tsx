@@ -390,7 +390,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-        <div className="flex gap-4 mt-1">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<record31AForm>
               name="recipient_vat_no"
@@ -408,7 +408,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
             </p>
           </div>
         </div>
-        <div className="flex gap-4 mt-1">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <MultiSelect<record31AForm>
               placeholder="Select Category of Entry"
@@ -430,7 +430,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
             />
           </div>
         </div>
-        <div className="flex gap-4 mt-1">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <DateSelect<record31AForm>
               name="invoice_date"
@@ -475,7 +475,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
             />
           </div>
         </div>
-        <div className="flex gap-4 mt-1">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <MultiSelect<record31AForm>
               placeholder="Select nature of sale transaction"
@@ -494,7 +494,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
             </p>
           </div>
         </div>
-        <div className="flex gap-4 mt-1">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtAreaInput<record31AForm>
               name="remarks"

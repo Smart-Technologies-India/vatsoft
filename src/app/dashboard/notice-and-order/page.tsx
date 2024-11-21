@@ -56,7 +56,7 @@ const ChallanHistory = () => {
       <div className="p-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white">Notice and Order</div>
-          <div className="p-2 bg-gray-50 mt-2">
+          <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
             <Radio.Group
               onChange={onChange}
               value={searchOption}

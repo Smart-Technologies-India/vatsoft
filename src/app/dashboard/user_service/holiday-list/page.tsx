@@ -7,25 +7,37 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useActionState, useOptimistic, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCookie } from "cookies-next";
 import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
-import {
-  GgInfo,
-  MaterialSymbolsClose,
-  TablerRefresh,
-} from "@/components/icons";
-import { Radio, DatePicker } from "antd";
+import { DatePicker, Drawer, Pagination } from "antd";
 
-import { Button, Input, InputRef, RadioChangeEvent } from "antd";
+import { Button, InputRef } from "antd";
+import { HolidayMasterProvider } from "@/components/forms/holiday/holiday";
+import GetAllHoliday from "@/action/holiday/getallholiday";
+import { holiday, Role } from "@prisma/client";
+import { format } from "date-fns";
 const { RangePicker } = DatePicker;
 
 const Refund = () => {
   const router = useRouter();
 
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const userid: number = parseFloat(getCookie("id") ?? "0");
+
+  const role = getCookie("role");
+
+  const [pagination, setPaginatin] = useState<{
+    take: number;
+    skip: number;
+    total: number;
+  }>({
+    take: 10,
+    skip: 0,
+    total: 0,
+  });
+
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -41,16 +53,24 @@ const Refund = () => {
   ) => {
     setSearchDate(dates);
   };
+
   const init = async () => {
     setLoading(true);
+    const holiday_resonse = await GetAllHoliday({
+      take: 10,
+      skip: 0,
+    });
 
-    // const challan_resposne = await GetUserChallan({
-    //   userid: id,
-    // });
-    // if (challan_resposne.data && challan_resposne.data) {
-    //   setChallanData(challan_resposne.data);
-    // }
+    if (holiday_resonse.status && holiday_resonse.data.result) {
+      setHoliay(holiday_resonse.data.result);
+      setPaginatin({
+        skip: holiday_resonse.data.skip,
+        take: holiday_resonse.data.take,
+        total: holiday_resonse.data.total,
+      });
+    }
     setSearch(false);
+
     setLoading(false);
   };
 
@@ -77,11 +97,139 @@ const Refund = () => {
       return toast.error("Select state date and end date");
     }
   };
+
+  const [holidaydata, setHoliay] = useState<holiday[]>([]);
+
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      const holiday_resonse = await GetAllHoliday({
+        take: 10,
+        skip: 0,
+      });
+
+      if (holiday_resonse.status && holiday_resonse.data.result) {
+        setHoliay(holiday_resonse.data.result);
+        setPaginatin({
+          skip: holiday_resonse.data.skip,
+          take: holiday_resonse.data.take,
+          total: holiday_resonse.data.total,
+        });
+      }
+      setLoading(false);
+    };
+    init();
+  }, []);
+
+  const [addBox, setAddBox] = useState<boolean>(false);
+  const [holidayid, setHolidayid] = useState<number>();
+
+  const onChangePageCount = async (page: number, pagesize: number) => {
+    const holiday_response = await GetAllHoliday({
+      take: pagesize,
+      skip: pagesize * (page - 1),
+    });
+
+    if (holiday_response.status && holiday_response.data.result) {
+      setHoliay(holiday_response.data.result);
+      setPaginatin({
+        skip: holiday_response.data.skip,
+        take: holiday_response.data.take,
+        total: holiday_response.data.total,
+      });
+    }
+  };
+
+  type GroupedByMonth = {
+    month: string;
+    data: holiday[];
+  };
+
+  function groupByMonth(data: holiday[]): GroupedByMonth[] {
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const groupedData = data.reduce(
+      (acc: Record<string, GroupedByMonth>, item: holiday) => {
+        const monthIndex = item.date.getMonth();
+        const monthName = months[monthIndex];
+
+        // Check if the month group already exists, if not create it
+        if (!acc[monthName]) {
+          acc[monthName] = { month: monthName, data: [] };
+        }
+
+        // Add the item to the corresponding month group
+        acc[monthName].data.push(item);
+
+        return acc;
+      },
+      {}
+    );
+
+    // Convert the result to an array
+    return Object.values(groupedData);
+  }
+
+  if (isLoading)
+    return (
+      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
+        Loading...
+      </div>
+    );
+
   return (
     <main className="p-6">
+      <Drawer
+        placement="right"
+        closeIcon={null}
+        onClose={() => {
+          setAddBox(false);
+        }}
+        open={addBox}
+      >
+        <p className="text-lg text-left">
+          {holidayid ? "Update" : "Add"} Holiday
+        </p>
+        <HolidayMasterProvider
+          userid={userid}
+          id={holidayid}
+          setAddBox={setAddBox}
+          setHolidayid={setHolidayid}
+          init={init}
+        />
+      </Drawer>
       <div className="w-full bg-white p-4">
-        <div className="bg-blue-500 p-2 text-white">Holiday List</div>
-        <div className="p-2 bg-gray-50 mt-2">
+        <div className="flex gap-2">
+          <p className="text-lg font-semibold">Holiday List</p>
+          <div className="grow"></div>
+          {role != Role.USER && (
+            <Button
+              size="small"
+              type="primary"
+              className="bg-blue-500 hover:bg-blue-500 w-14"
+              onClick={() => {
+                setHolidayid(undefined);
+                setAddBox(true);
+              }}
+            >
+              Add
+            </Button>
+          )}
+        </div>
+        {/* <div className="p-2 bg-gray-50 mt-2">
           <div className="text-lg my-1">Filter By</div>
           <div className="flex gap-2">
             <Input className="w-60" ref={typeRef} placeholder={"Select year"} />
@@ -99,7 +247,7 @@ const Refund = () => {
               </Button>
             )}
           </div>
-        </div>
+        </div> */}
         <Table className="border mt-2">
           <TableHeader>
             <TableRow className="bg-gray-200">
@@ -115,70 +263,61 @@ const Refund = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow>
-              <TableCell
-                className="p-1 border bg-gray-100 px-4 text-left"
-                colSpan={3}
-              >
-                January
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="p-2 border text-center">
-                06/01/2024, Saturday
-              </TableCell>
-              <TableCell className="p-2 border text-center">Saturday</TableCell>
-              <TableCell className="p-2 border text-center">Centre</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="p-2 border text-center">
-                14/01/2024, Sunday
-              </TableCell>
-              <TableCell className="p-2 border text-center">Sunday</TableCell>
-              <TableCell className="p-2 border text-center">
-                Gujarat/Center
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="p-2 border text-center">
-                20/01/2024, Saturday
-              </TableCell>
-              <TableCell className="p-2 border text-center">Saturday</TableCell>
-              <TableCell className="p-2 border text-center">Centre</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell
-                className="p-1 border bg-gray-100 px-4 text-left"
-                colSpan={3}
-              >
-                March
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="p-2 border text-center">
-                06/01/2024, Saturday
-              </TableCell>
-              <TableCell className="p-2 border text-center">Saturday</TableCell>
-              <TableCell className="p-2 border text-center">Centre</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="p-2 border text-center">
-                14/01/2024, Sunday
-              </TableCell>
-              <TableCell className="p-2 border text-center">Sunday</TableCell>
-              <TableCell className="p-2 border text-center">
-                Gujarat/Center
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="p-2 border text-center">
-                20/01/2024, Saturday
-              </TableCell>
-              <TableCell className="p-2 border text-center">Saturday</TableCell>
-              <TableCell className="p-2 border text-center">Centre</TableCell>
-            </TableRow>
+            {groupByMonth(holidaydata).map(
+              (val: GroupedByMonth, index: number) => (
+                <>
+                  <TableRow key={index}>
+                    <TableCell
+                      className="p-1 border bg-gray-100 px-4 text-left"
+                      colSpan={3}
+                    >
+                      {val.month}
+                    </TableCell>
+                  </TableRow>
+                  {val.data.map((val: holiday, index: number) => (
+                    <TableRow key={index}>
+                      <TableCell className="p-2 border text-center">
+                        {format(val.date, "dd/LL/uuu, EEEE")}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center">
+                        {val.descrilption}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center">
+                        {val.state}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </>
+              )
+            )}
           </TableBody>
         </Table>
+        <div className="mt-2"></div>
+        <div className="lg:hidden">
+          <Pagination
+            align="center"
+            defaultCurrent={1}
+            onChange={onChangePageCount}
+            showSizeChanger
+            total={pagination.total}
+            showTotal={(total: number) => `Total ${total} items`}
+          />
+        </div>
+        <div className="hidden lg:block">
+          <Pagination
+            showQuickJumper
+            align="center"
+            defaultCurrent={1}
+            onChange={onChangePageCount}
+            showSizeChanger
+            pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+            total={pagination.total}
+            responsive={true}
+            showTotal={(total: number, range: number[]) =>
+              `${range[0]}-${range[1]} of ${total} items`
+            }
+          />
+        </div>
       </div>
     </main>
   );

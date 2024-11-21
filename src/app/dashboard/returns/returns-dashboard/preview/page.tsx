@@ -3,6 +3,7 @@ import getPdfReturn from "@/action/return/getpdfreturn";
 import {
   formatDateTime,
   formateDate,
+  getDaysBetweenDates,
   getPrismaDatabaseDate,
   onFormError,
 } from "@/utils/methods";
@@ -147,8 +148,7 @@ const Dvat16ReturnPreview = () => {
 
       // Programmatically click the link to trigger the download
       link.click();
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   return (
@@ -440,7 +440,10 @@ const Dvat16ReturnPreview = () => {
           {/* page 2 end here */}
 
           {/* page 3 start from here */}
-          <CentralSales returnsentrys={returns_entryData ?? []} />
+          <CentralSales
+            returnsentrys={returns_entryData ?? []}
+            return01={return01!}
+          />
 
           <table border={1} className="w-5/6 mx-auto mt-4">
             <tbody className="w-full">
@@ -2125,10 +2128,58 @@ const NetTax = (props: NetTaxProps) => {
 };
 
 interface CentralSalesProps {
+  return01: returns_01;
   returnsentrys: returns_entry[];
 }
 
 const CentralSales = (props: CentralSalesProps) => {
+  const searchparam = useSearchParams();
+
+  useEffect(() => {
+    const year: string = searchparam.get("year") ?? "";
+
+    const currentDate = new Date();
+
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    // Get the month index from the month name
+    let monthIndex = monthNames.indexOf(props.return01.month!);
+
+    // Check if it's December (index 11) and increment year if needed
+    let newYear = parseInt(year);
+    if (monthIndex === 11) {
+      newYear += 1;
+      monthIndex = 0; // Set month to January
+    } else {
+      monthIndex += 1; // Otherwise, just increment the month
+    }
+
+    const diff_days = getDaysBetweenDates(
+      new Date(parseInt(props.return01.year), monthIndex, 11),
+      currentDate
+    );
+    if (
+      props.return01.rr_number == null ||
+      props.return01.rr_number == undefined ||
+      props.return01.rr_number == ""
+    ) {
+      setLateFees(100 * diff_days);
+    }
+  }, [props.return01, props.returnsentrys]);
+
   const getGoodsReturnsNote = (): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
@@ -2685,6 +2736,9 @@ const CentralSales = (props: CentralSalesProps) => {
       decrease,
     };
   };
+
+  const [lateFees, setLateFees] = useState<number>(0);
+
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
       <thead className="w-full">
@@ -3146,7 +3200,7 @@ const CentralSales = (props: CentralSalesProps) => {
             0
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {lateFees}
           </td>
         </tr>
         <tr className="w-full">
@@ -3214,7 +3268,28 @@ const CentralSales = (props: CentralSalesProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {(
+              parseFloat(getInvoicePercentage("0").decrease) +
+              parseFloat(getInvoicePercentage("1").decrease) +
+              parseFloat(getInvoicePercentage("4").decrease) +
+              parseFloat(getInvoicePercentage("5").decrease) +
+              parseFloat(getInvoicePercentage("6").decrease) +
+              parseFloat(getInvoicePercentage("12.5").decrease) +
+              parseFloat(getInvoicePercentage("15").decrease) +
+              parseFloat(getInvoicePercentage("20").decrease) +
+              parseFloat(getSaleOfPercentage("4").decrease) +
+              parseFloat(getSaleOfPercentage("5").decrease) +
+              parseFloat(getSaleOfPercentage("12.5").decrease) +
+              parseFloat(get4_6().decrease) +
+              parseFloat(get4_7().decrease) -
+              parseFloat(get4_9().decrease) -
+              (parseFloat(get5_1().decrease) +
+                parseFloat(get5_2().decrease) +
+                (parseFloat(getCreditNote().decrease) -
+                  parseFloat(getDebitNote().decrease) -
+                  parseFloat(getGoodsReturnsNote().decrease))) +
+              lateFees
+            ).toFixed(2)}
           </td>
         </tr>
       </tbody>
@@ -3227,12 +3302,12 @@ interface InterStateTradeProps {
 }
 
 const InterStateTrade = (props: InterStateTradeProps) => {
-  const get10_1 = (): PercentageOutput => {
+  const get10_1 = (dvattype: DvatType): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31_A &&
+        val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.FORMF
     );
@@ -3249,12 +3324,12 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       decrease,
     };
   };
-  const get10_2 = (): PercentageOutput => {
+  const get10_2 = (dvattype: DvatType): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31_A &&
+        val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.FORMC
     );
@@ -3271,12 +3346,12 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       decrease,
     };
   };
-  const get10_3 = (): PercentageOutput => {
+  const get10_3 = (dvattype: DvatType): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31_A &&
+        val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.FORMI
     );
@@ -3293,12 +3368,12 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       decrease,
     };
   };
-  const get10_4 = (): PercentageOutput => {
+  const get10_4 = (dvattype: DvatType): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31_A &&
+        val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.FORMH
     );
@@ -3315,12 +3390,12 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       decrease,
     };
   };
-  const get10_6 = (): PercentageOutput => {
+  const get10_6 = (dvattype: DvatType): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31_A &&
+        val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE
     );
@@ -3337,12 +3412,12 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       decrease,
     };
   };
-  const get10_7 = (): PercentageOutput => {
+  const get10_7 = (dvattype: DvatType): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31_A &&
+        val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.EXPORT_OUTOF_INDIA
     );
@@ -3378,10 +3453,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             R10.1 Stock Transfer outside D&NH - Against F form
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_1().increase}
+            {get10_1(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {get10_1(DvatType.DVAT_30_A).increase}
           </td>
         </tr>
         <tr className="w-full">
@@ -3389,10 +3464,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             R10.2 Against C Forms
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_2().increase}
+            {get10_2(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {get10_2(DvatType.DVAT_30_A).increase}
           </td>
         </tr>
         <tr className="w-full">
@@ -3400,10 +3475,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             R10.3 Against I Forms
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_3().increase}
+            {get10_3(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {get10_3(DvatType.DVAT_30_A).increase}
           </td>
         </tr>
         <tr className="w-full">
@@ -3411,10 +3486,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             R10.4 Against H Forms
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_4().increase}
+            {get10_4(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {get10_3(DvatType.DVAT_31_A).increase}
           </td>
         </tr>
         <tr className="w-full">
@@ -3433,10 +3508,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             R10.6 Capital goods
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_6().increase}
+            {get10_6(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {get10_6(DvatType.DVAT_30_A).increase}
           </td>
         </tr>
         <tr className="w-full">
@@ -3444,10 +3519,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             R10.7 Export to/Import from outside India
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_7().increase}
+            {get10_7(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {get10_7(DvatType.DVAT_30_A).increase}
           </td>
         </tr>
         <tr className="w-full">
@@ -3489,16 +3564,23 @@ const InterStateTrade = (props: InterStateTradeProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
-              parseFloat(get10_1().increase) +
-              parseFloat(get10_2().increase) +
-              parseFloat(get10_3().increase) +
-              parseFloat(get10_4().increase) +
-              parseFloat(get10_6().increase) +
-              parseFloat(get10_7().increase)
+              parseFloat(get10_1(DvatType.DVAT_31_A).increase) +
+              parseFloat(get10_2(DvatType.DVAT_31_A).increase) +
+              parseFloat(get10_3(DvatType.DVAT_31_A).increase) +
+              parseFloat(get10_4(DvatType.DVAT_31_A).increase) +
+              parseFloat(get10_6(DvatType.DVAT_31_A).increase) +
+              parseFloat(get10_7(DvatType.DVAT_31_A).increase)
             ).toFixed(2)}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {(
+              parseFloat(get10_1(DvatType.DVAT_30_A).increase) +
+              parseFloat(get10_2(DvatType.DVAT_30_A).increase) +
+              parseFloat(get10_3(DvatType.DVAT_30_A).increase) +
+              parseFloat(get10_4(DvatType.DVAT_30_A).increase) +
+              parseFloat(get10_6(DvatType.DVAT_30_A).increase) +
+              parseFloat(get10_7(DvatType.DVAT_30_A).increase)
+            ).toFixed(2)}
           </td>
         </tr>
       </tbody>

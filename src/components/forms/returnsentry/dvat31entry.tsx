@@ -3,11 +3,7 @@
 import { record31Form, record31Schema } from "@/schema/record31";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  FormProvider,
-  useForm,
-  useFormContext,
-} from "react-hook-form";
+import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { TaxtInput } from "../inputfields/textinput";
 import { MultiSelect } from "../inputfields/multiselect";
 import { OptionValue } from "@/models/main";
@@ -333,7 +329,7 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-        <div className="flex gap-4 mt-1">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<record31Form>
               name="recipient_vat_no"
@@ -350,7 +346,7 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
             </p>
           </div>
         </div>
-        <div className="flex gap-4 mt-1">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <MultiSelect<record31Form>
               placeholder="Select Category of Entry"
@@ -370,7 +366,7 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
             />
           </div>
         </div>
-        <div className="flex gap-4 mt-1">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <DateSelect<record31Form>
               name="invoice_date"
@@ -413,7 +409,7 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
             />
           </div>
         </div>
-        <div className="flex gap-4 mt-1">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <MultiSelect<record31Form>
               placeholder="Select nature of sale transaction"
@@ -425,7 +421,7 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
           </div>
           <div className="flex-1"></div>
         </div>
-        <div className="flex gap-4 mt-1">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtAreaInput<record31Form>
               name="remarks"

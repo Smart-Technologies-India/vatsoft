@@ -46,11 +46,13 @@ const Page = () => {
   const router = useRouter();
   const [user, setUser] = useState<user | null>(null);
   const [month, setMonth] = useState<any[]>([]);
+  const [isLoading, setLoading] = useState<boolean>(true);
 
   const [isProfileCompletd, setIsProfileCompleted] = useState<boolean>(false);
 
   useEffect(() => {
     const init = async () => {
+      setLoading(true);
       const userresponse = await GetUser({ id: id });
       if (userresponse.status) setUser(userresponse.data!);
 
@@ -68,10 +70,18 @@ const Page = () => {
       if (profile_response.status && profile_response.data) {
         setIsProfileCompleted(profile_response.data.registration);
       }
+      setLoading(false);
     };
 
     init();
   }, [id]);
+
+  if (isLoading)
+    return (
+      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
+        Loading...
+      </div>
+    );
 
   return (
     <>
@@ -79,7 +89,7 @@ const Page = () => {
         <>
           <main className="relative min-h-[calc(100vh-2.5rem)]">
             <div className="pb-10 relative">
-              <div className="mx-auto px-4  w-4/6 py-6 relative">
+              <div className="mx-auto md:px-4 px-6 md:w-4/6 py-6 relative">
                 <div className="bg-white p-4 rounded-xl">
                   <h1 className="text-sm font-semibold font-nunito leading-3">
                     Welcome {user?.firstName ?? ""} {user?.lastName ?? ""} To
@@ -97,8 +107,8 @@ const Page = () => {
                         <div className="text-sm font-semibold font-nunito leading-3 py-1 w-full text-gray-500  rounded-xl">
                           VAT
                         </div>
-                        <div className="glow"></div>
-                        <LucideArrowRight className="text-xl text-blue-500" />
+                        {/* <div className="glow"></div>
+                        <LucideArrowRight className="text-xl text-blue-500" /> */}
                       </div>
                       {month.map((val: any, index: number) => (
                         <RentCard
@@ -126,7 +136,7 @@ const Page = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 mt-2 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4  md:grid-cols-2 lg:grid-cols-4 mt-2 gap-2">
                   <ButtonCard
                     title="Return Dashboard"
                     icon={
@@ -153,7 +163,7 @@ const Page = () => {
                     icon={
                       <FluentChannelSubtract48Regular className="text-blue-500 text-lg" />
                     }
-                    link="/dashboard/annual-return"
+                    link="/dashboard/returns/user-pending-return"
                   />
                 </div>
               </div>
@@ -219,24 +229,25 @@ const RentCard = (props: RentCardProps) => {
             props.filestatus == FileStatus.FILED ? "bg-teal-500" : "bg-rose-500"
           }`}
         ></div>
-
-        {props.filestatus == FileStatus.FILED ? (
-          <>
-            <div className="leading-3 w-8 h-8 rounded-full bg-teal-500 bg-opacity-30 text-teal-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
-              {props.month}
-              <br />
-              {props.year}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="leading-3 w-8 h-8 rounded-full bg-rose-500 bg-opacity-30 text-rose-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
-              {props.month}
-              <br />
-              {props.year}
-            </div>
-          </>
-        )}
+        <div className="hidden md:block">
+          {props.filestatus == FileStatus.FILED ? (
+            <>
+              <div className="leading-3 w-8 h-8 rounded-full bg-teal-500 bg-opacity-30 text-teal-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
+                {props.month}
+                <br />
+                {props.year}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="leading-3 w-8 h-8 rounded-full bg-rose-500 bg-opacity-30 text-rose-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
+                {props.month}
+                <br />
+                {props.year}
+              </div>
+            </>
+          )}
+        </div>
         <h1 className="text-xs font-semibold font-nunito leading-3">
           {props.title}
         </h1>

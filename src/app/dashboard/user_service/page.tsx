@@ -24,7 +24,7 @@ const Page = () => {
   return (
     <>
       <main className="bg-gradient-to-l py-4 px-4 rounded-md mt-4 w-full xl:w-5/6 xl:mx-auto">
-        <div className=" grid grid-cols-3 justify-between items-center py-1  mx-auto gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 justify-between items-center py-1  mx-auto gap-4">
           {[
             "SYSTEM",
             "ADMIN",
@@ -53,7 +53,7 @@ const Page = () => {
               <DashboardCards
                 title="View/Download certificate"
                 description="Access and download your VAT registration certificate."
-                link="/dashboard/user_service"
+                link="/dashboard/register/track-application-status"
               />
               <DashboardCards
                 title="My Application"
@@ -68,17 +68,17 @@ const Page = () => {
               <DashboardCards
                 title="My Profile"
                 description="Update and manage your personal and business profile information."
-                link="/dashboard/user_service"
+                link="/dashboard/user_service/profile"
               />
-              <DashboardCards
+              {/* <DashboardCards
                 title="My Registration"
                 description="Review the details of your VAT registration and make necessary updates."
                 link="/dashboard/register/track-application-status"
-              />
+              /> */}
               <DashboardCards
                 title="Search HSN Code"
                 description="Find the Harmonized System of Nomenclature (HSN) code for goods and services."
-                link="/dashboard/user_service"
+                link="/dashboard/user_service/hsn_code"
               />
               <DashboardCards
                 title="Holiday List"
@@ -88,7 +88,7 @@ const Page = () => {
               <DashboardCards
                 title="Locate VAT Practitioner"
                 description="Find a registered VAT practitioner to assist with your VAT compliance."
-                link="/dashboard/user_service"
+                link="/dashboard/user_service/paractitioner"
               />
             </>
           )}

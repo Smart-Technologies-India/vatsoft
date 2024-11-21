@@ -30,7 +30,7 @@ export function YesNoRabioInput<T extends FieldValues>(
             {props.title}
             {props.required && <span className="text-rose-500">*</span>}
           </Label>
-          <div className="flex gap-4 mt-1 items-center">
+          <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row ">
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="radio"

@@ -375,7 +375,7 @@ const SupplierDetails = () => {
           <div className="bg-blue-500 p-2 text-white">
             List of Notices & Orders issued by Authorities
           </div>
-          <div className="p-2 bg-gray-50 mt-2 flex gap-2">
+          <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
             <Radio.Group
               onChange={onChange}
               value={searchOption}

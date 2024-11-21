@@ -180,7 +180,7 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-        <div className="flex gap-4 mt-1">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <p className="text-sm font-normal">Payment Type</p>
             <p className="text-sm font-medium">Refund Against ITC</p>
@@ -196,7 +196,7 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
           </div>
         </div>
 
-        <div className="flex gap-4 mt-1">
+        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<CreateRefundForm>
               name="oldcpin"

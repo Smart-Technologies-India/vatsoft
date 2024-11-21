@@ -104,7 +104,7 @@ const Registration = (props: RegisterProviderProps) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-      <div className="flex gap-3">
+      <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
         <div className="flex-1">
           <TaxtInput<UserDataForm>
             placeholder="Enter first name"
@@ -122,7 +122,7 @@ const Registration = (props: RegisterProviderProps) => {
           />
         </div>
       </div>
-      <div className="flex gap-3 mt-2">
+      <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
         <div className="flex-1">
           <TaxtInput<UserDataForm>
             placeholder="Enter Email"
@@ -164,7 +164,7 @@ const Registration = (props: RegisterProviderProps) => {
         </div>
       </div>
 
-      <div className="flex gap-3 mt-2">
+      <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
         <div className="flex-1">
           <TaxtInput<UserDataForm>
             placeholder="Enter Pan Card"

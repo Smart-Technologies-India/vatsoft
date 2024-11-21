@@ -18,7 +18,12 @@ import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { FormType, order_notice } from "@prisma/client";
 import GetUserNotice from "@/action/notice_order/getusernotice";
-import { capitalcase, encryptURLData, formateDate, generatePDF } from "@/utils/methods";
+import {
+  capitalcase,
+  encryptURLData,
+  formateDate,
+  generatePDF,
+} from "@/utils/methods";
 import Link from "next/link";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
 const { RangePicker } = DatePicker;
@@ -311,7 +316,7 @@ const SupplierDetails = () => {
           <div className="bg-blue-500 p-2 text-white">
             List of Notices & Orders issued by Authorities
           </div>
-          <div className="p-2 bg-gray-50 mt-2 flex gap-2 items-center">
+          <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
             <Radio.Group
               onChange={onChange}
               disabled={isSearch}

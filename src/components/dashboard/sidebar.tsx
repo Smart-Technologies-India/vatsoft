@@ -151,15 +151,13 @@ const Sidebar = (props: SidebarProps) => {
         </>
       )}
 
-      {["USER"].includes(props.role) && (
-        <MenuTab
-          click={() => props.setIsOpen(false)}
-          icon={<FluentPersonSupport20Regular className="text-gray-300  w-6" />}
-          name="Tax Payers Facility"
-          path={path}
-          pathcheck={"/dashboard/help_tax"}
-        />
-      )}
+      <MenuTab
+        click={() => props.setIsOpen(false)}
+        icon={<FluentPersonSupport20Regular className="text-gray-300  w-6" />}
+        name="Tax Payers Facility"
+        path={path}
+        pathcheck={"/dashboard/help_tax"}
+      />
       {/* <MenuTab
         icco={<Fa6RegularFileLines className="text-gray-300  w-6" />}
         name="Downloads"

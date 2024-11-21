@@ -240,7 +240,7 @@ const AddRecord = () => {
 
   return (
     <div className="p-2 mt-4">
-      <div className="bg-white p-4 flex text-xs justify-between">
+      <div className="bg-white p-4 grid place-items-center grid-cols-2 md:grid-cols-2 lg:grid-cols-4 text-xs gap-4 justify-between">
         <div>
           <p>VAT No. - {dvatdata?.tinNumber}</p>
           <p>FY - {searchParams.get("year")}</p>
@@ -351,7 +351,7 @@ const AddRecord = () => {
             <></>
           ) : (
             <>
-              <Button
+              {/* <Button
                 type="primary"
                 onClick={() => {
                   route.push(
@@ -366,7 +366,7 @@ const AddRecord = () => {
                 }}
               >
                 Bulk Upload
-              </Button>
+              </Button> */}
               <Button
                 type="primary"
                 onClick={() => {

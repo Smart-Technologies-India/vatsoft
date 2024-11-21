@@ -4,7 +4,6 @@
 import { Label } from "@/components/ui/label";
 import { useEffect, useMemo, useState } from "react";
 import Marquee from "react-fast-marquee";
-
 import { RowData } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { Checkbox, Modal, Select } from "antd";
@@ -497,7 +496,7 @@ const ReturnDashboard = () => {
             This is a banner can be used for official updates and notifications.
           </Marquee>
 
-          <div className="flex w-full gap-4 items-end mt-4">
+          <div className="flex flex-col sm:flex-row w-full gap-4 items-end mt-4">
             <div className="grid items-center gap-1.5 w-full">
               <Label htmlFor="duedate">
                 Financial Year <span className="text-rose-500">*</span>
@@ -583,7 +582,7 @@ const ReturnDashboard = () => {
         </div>
         {isSearch && (
           <>
-            <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-5 gap-6 justify-between mt-4 border">
+            <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-between mt-4 border">
               <div>
                 <p className="text-sm">RR Number</p>
                 <p className="text-sm  font-medium">
@@ -632,7 +631,7 @@ const ReturnDashboard = () => {
                 </p>
               </div>
             </div>
-            <div className="grid w-full grid-cols-4 gap-4 mt-4">
+            <div className="grid w-full grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
               <Card
                 title={"Sales Local"}
                 subtitle={"Form 31"}

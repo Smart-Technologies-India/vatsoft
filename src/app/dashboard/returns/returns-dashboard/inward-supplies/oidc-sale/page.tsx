@@ -336,7 +336,7 @@ const OIDCSales = () => {
             <></>
           ) : (
             <>
-              <Button
+              {/* <Button
                 type="primary"
                 onClick={() => {
                   route.push(
@@ -351,7 +351,7 @@ const OIDCSales = () => {
                 }}
               >
                 Bulk Upload
-              </Button>
+              </Button> */}
               <Button
                 type="primary"
                 onClick={() => {
