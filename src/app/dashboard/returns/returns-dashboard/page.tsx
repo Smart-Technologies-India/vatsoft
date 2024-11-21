@@ -391,7 +391,7 @@ const ReturnDashboard = () => {
 
   const nilSubmit = () => {
     if (!isAccept) {
-      return toast.error("First accept the terms and conditions");
+      return toast.error("Kindly accept the terms and conditions.");
     }
     router.push(
       `/dashboard/returns/returns-dashboard/preview/${encryptURLData(

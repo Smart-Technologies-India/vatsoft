@@ -1,8 +1,6 @@
 "use server";
 import prisma from "../../../prisma/database";
 
-import utc from "dayjs/plugin/utc";
-
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import dayjs, { Dayjs } from "dayjs";
@@ -36,32 +34,81 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
     // Use Promise.all to handle multiple upserts concurrently
     await Promise.all(
       dvat_response.map(async (dvat) => {
-        // Determine the correct month based on compositionScheme
-        const duedate: Date = dvat.compositionScheme
-          ? GetCompDueDate(currentYear, currentMonth).toDate()
-          : nextMonthDate.toDate(); // Convert Day.js object to Date object
+        const liableDate: Dayjs = dayjs(dvat.vatLiableDate ?? new Date());
+        const startMonth = liableDate.startOf("month");
+        const endMonth = currentdate.startOf("month");
 
-        // Perform upsert operation
-        await prisma.return_filing.upsert({
-          where: {
-            dvatid_year_month: {
-              // Composite unique index (assuming it exists in your schema)
-              dvatid: dvat.id,
-              year: currentYear,
-              month: currentMonth,
-            },
-          },
-          create: {
-            createdById: 1,
-            filing_status: false,
-            dvatid: dvat.id,
-            year: currentYear,
-            month: currentMonth,
-            status: "ACTIVE",
-            due_date: duedate.toISOString(),
-          },
-          update: {}, // Empty update: do nothing if the record already exists
-        });
+        const months: Dayjs[] = [];
+        let monthIterator = startMonth;
+
+        while (
+          monthIterator.isBefore(endMonth) ||
+          monthIterator.isSame(endMonth)
+        ) {
+          months.push(monthIterator);
+          monthIterator = monthIterator.add(1, "month");
+        }
+
+        // Loop over each month and check/create records
+        await Promise.all(
+          months.map(async (month) => {
+            const year = month.year().toString();
+            const monthName = month.format("MMMM");
+
+            // Determine the due date based on the compositionScheme
+            const dueDate = dvat.compositionScheme
+              ? GetCompDueDate(year, monthName).toDate()
+              : month.add(1, "month").date(28).toDate();
+
+            // Check and perform upsert
+            await prisma.return_filing.upsert({
+              where: {
+                dvatid_year_month: {
+                  dvatid: dvat.id,
+                  year,
+                  month: monthName,
+                },
+              },
+              create: {
+                createdById: 1,
+                filing_status: false,
+                dvatid: dvat.id,
+                year,
+                month: monthName,
+                status: "ACTIVE",
+                due_date: dueDate.toISOString(),
+              },
+              update: {}, // Do nothing if record already exists
+            });
+          })
+        );
+
+        // Determine the correct month based on compositionScheme
+        // const duedate: Date = dvat.compositionScheme
+        //   ? GetCompDueDate(currentYear, currentMonth).toDate()
+        //   : nextMonthDate.toDate(); // Convert Day.js object to Date object
+
+        // // Perform upsert operation
+        // await prisma.return_filing.upsert({
+        //   where: {
+        //     dvatid_year_month: {
+        //       // Composite unique index (assuming it exists in your schema)
+        //       dvatid: dvat.id,
+        //       year: currentYear,
+        //       month: currentMonth,
+        //     },
+        //   },
+        //   create: {
+        //     createdById: 1,
+        //     filing_status: false,
+        //     dvatid: dvat.id,
+        //     year: currentYear,
+        //     month: currentMonth,
+        //     status: "ACTIVE",
+        //     due_date: duedate.toISOString(),
+        //   },
+        //   update: {}, // Empty update: do nothing if the record already exists
+        // });
       })
     );
 

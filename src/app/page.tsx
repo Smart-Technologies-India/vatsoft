@@ -420,8 +420,8 @@ const Home = () => {
         </section>
       </main>
 
-      <div className="mx-auto md:w-5/6 py-4 px-6 md:px-0 min-h-screen">
-        <section className="mx-auto max-w-6xl px-4">
+      <div className="mx-auto md:w-5/6 py-4 px-6 md:px-0">
+        <section className="mx-auto">
           <h1 className="text-center text-3xl font-semibold text-[#1096b7] mb-8">
             Upcoming Due Dates
           </h1>
