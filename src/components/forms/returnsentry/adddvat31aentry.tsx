@@ -375,7 +375,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
       month: searchParams.get("month")!.toString(),
       rr_number: "",
       total_tax_amount: vatAmount,
-      dvat_type: DvatType.DVAT_30_A,
+      dvat_type: DvatType.DVAT_31_A,
       urn_number: nanoid(),
       dvat_data: returnData,
     });

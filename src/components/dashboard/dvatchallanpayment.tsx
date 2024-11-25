@@ -1,6 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-import { useFormContext } from "react-hook-form";
-
 import {
   Table,
   TableBody,
@@ -11,21 +10,17 @@ import {
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { OptionValue } from "@/models/main";
 import { toast } from "react-toastify";
-import { Button, Modal } from "antd";
-import { CheckboxChangeEvent } from "antd/es/checkbox";
-import dayjs from "dayjs";
+import { Button } from "antd";
 import { ToWords } from "to-words";
 import {
   capitalcase,
   decryptURLData,
   formateDate,
   getDaysBetweenDates,
+  isNegative,
   onFormError,
 } from "@/utils/methods";
-import { Separator } from "@/components/ui/separator";
-import CreateChallan from "@/action/challan/createchallan";
 import {
   CategoryOfEntry,
   dvat04,
@@ -39,11 +34,7 @@ import {
   SaleOf,
   user,
 } from "@prisma/client";
-import GetUserDvat04 from "@/action/dvat/getuserdvat";
-import { set } from "date-fns";
-import GetDvat04 from "@/action/register/getdvat04";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-
 import { useForm } from "react-hook-form";
 import {
   SubmitPaymentForm,
@@ -63,6 +54,7 @@ interface PercentageOutput {
 type DvatChallanPaymentProps = {
   returnid: string;
 };
+
 // export const CreateChallanProvider = (props: CreateChallanProviderProps) => {
 //   const methods = useForm<CreateChallanForm>({
 //     resolver: valibotResolver(CreateChallanSchema),
@@ -84,6 +76,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   >();
 
   const [lateFees, setLateFees] = useState<number>(0);
+  const [DiffDays, setDiffDays] = useState<number>(0);
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
     []
   );
@@ -120,7 +113,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       }
     };
     init();
-  }, [props.returnid]);
+  }, []);
 
   const getLateFees = (year: string, month: string, rr_number: string) => {
     const currentDate = new Date();
@@ -156,6 +149,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       new Date(newYear, monthIndex, 11),
       currentDate
     );
+    setDiffDays(diff_days);
+
     if (rr_number == null || rr_number == undefined || rr_number == "") {
       setLateFees(100 * diff_days);
     }
@@ -181,9 +176,11 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
   const onSubmit = async (data: SubmitPaymentForm) => {
     if (return01 == null) return toast.error("There is not return from here");
+
     const lastPayment = await CheckLastPayment({
       id: return01.id ?? 0,
     });
+
     if (!lastPayment.status) {
       toast.error(lastPayment.message);
       reset();
@@ -203,10 +200,12 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       transaction_id: data.transaction_id,
       rr_number: get_rr_number(),
       penalty: lateFees.toString(),
+      ...(isNegative(getValue()) && {
+        pending_payment: getValue().toFixed()
+      }),
     });
 
     if (!response.status) return toast.error(response.message);
-
     toast.success(response.message);
     router.push("/dashboard/returns/returns-dashboard");
     reset();
@@ -486,6 +485,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       parseFloat(getInvoicePercentage("5").decrease) +
       parseFloat(getInvoicePercentage("6").decrease) +
       parseFloat(getInvoicePercentage("12.5").decrease) +
+      parseFloat(getInvoicePercentage("12.75").decrease) +
+      parseFloat(getInvoicePercentage("13.5").decrease) +
       parseFloat(getInvoicePercentage("15").decrease) +
       parseFloat(getInvoicePercentage("20").decrease) +
       parseFloat(getSaleOfPercentage("4").decrease) +
@@ -500,6 +501,67 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
           parseFloat(getDebitNote().decrease) -
           parseFloat(getGoodsReturnsNote().decrease)))
     );
+  };
+
+  const getValue = () => {
+    return (
+      parseFloat(getInvoicePercentage("0").decrease) +
+      parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("4").decrease) +
+      parseFloat(getInvoicePercentage("5").decrease) +
+      parseFloat(getInvoicePercentage("6").decrease) +
+      parseFloat(getInvoicePercentage("12.5").decrease) +
+      parseFloat(getInvoicePercentage("12.75").decrease) +
+      parseFloat(getInvoicePercentage("13.5").decrease) +
+      parseFloat(getInvoicePercentage("15").decrease) +
+      parseFloat(getInvoicePercentage("20").decrease) +
+      parseFloat(getSaleOfPercentage("4").decrease) +
+      parseFloat(getSaleOfPercentage("5").decrease) +
+      parseFloat(getSaleOfPercentage("12.5").decrease) +
+      parseFloat(get4_6().decrease) +
+      parseFloat(get4_7().decrease) -
+      parseFloat(get4_9().decrease) -
+      (parseFloat(get5_1().decrease) +
+        parseFloat(get5_2().decrease) +
+        (parseFloat(getCreditNote().decrease) -
+          parseFloat(getDebitNote().decrease) -
+          parseFloat(getGoodsReturnsNote().decrease))) +
+      (((parseFloat(getInvoicePercentage("0").decrease) +
+        parseFloat(getInvoicePercentage("1").decrease) +
+        parseFloat(getInvoicePercentage("4").decrease) +
+        parseFloat(getInvoicePercentage("5").decrease) +
+        parseFloat(getInvoicePercentage("6").decrease) +
+        parseFloat(getInvoicePercentage("12.5").decrease) +
+        parseFloat(getInvoicePercentage("12.75").decrease) +
+        parseFloat(getInvoicePercentage("13.5").decrease) +
+        parseFloat(getInvoicePercentage("15").decrease) +
+        parseFloat(getInvoicePercentage("20").decrease) +
+        parseFloat(getSaleOfPercentage("4").decrease) +
+        parseFloat(getSaleOfPercentage("5").decrease) +
+        parseFloat(getSaleOfPercentage("12.5").decrease) +
+        parseFloat(get4_6().decrease) +
+        parseFloat(get4_7().decrease) -
+        parseFloat(get4_9().decrease) -
+        (parseFloat(get5_1().decrease) +
+          parseFloat(get5_2().decrease) +
+          (parseFloat(getCreditNote().decrease) -
+            parseFloat(getDebitNote().decrease) -
+            parseFloat(getGoodsReturnsNote().decrease)))) *
+        0.15) /
+        365) *
+        DiffDays +
+      lateFees +
+      0 -
+      0
+    );
+  };
+
+  const isPayment = (): boolean => {
+    let res: boolean =
+      return01!.rr_number == null ||
+      return01!.rr_number == undefined ||
+      return01!.rr_number == "";
+    return res == false;
   };
 
   return (

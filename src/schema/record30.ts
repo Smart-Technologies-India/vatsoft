@@ -46,7 +46,7 @@ const record30Schema = object({
   // status: enum_(Status, "File Status is required."),
 
   recipient_vat_no: pipe(
-    string(),
+    string("Recipient VAT NO is required."),
     minLength(1, "Recipient VAT NO is required.")
   ),
   category_of_entry: enum_(CategoryOfEntry, "Category of entry is required."),

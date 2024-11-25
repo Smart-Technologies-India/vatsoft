@@ -4,6 +4,7 @@ import { addPrismaDatabaseDate, errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { returns_01 } from "@prisma/client";
+import { customAlphabet } from "nanoid";
 
 interface AddPaymentPayload {
   id: number;
@@ -12,12 +13,16 @@ interface AddPaymentPayload {
   track_id: string;
   rr_number: string;
   penalty: string;
+  pending_payment?: string;
 }
 
 const AddPayment = async (
   payload: AddPaymentPayload
 ): Promise<ApiResponseType<returns_01 | null>> => {
   const functionname: string = AddPayment.name;
+  const nanoid = customAlphabet("1234567890", 12);
+
+  const cpin: string = nanoid();
   try {
     let isExist = await prisma.returns_01.findFirst({
       where: {
@@ -59,6 +64,10 @@ const AddPayment = async (
         rr_number: payload.rr_number,
         penalty: payload.penalty,
         filing_datetime: new Date(),
+        challan_number: cpin,
+        ...(payload.pending_payment && {
+          pending_payment: payload.pending_payment,
+        }),
       },
       include: {
         dvat04: true,

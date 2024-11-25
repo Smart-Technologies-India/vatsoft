@@ -424,7 +424,7 @@ const InwardSupplies = () => {
                 View OIDC Sale
               </Button>
             )} */}
-            <div className="flex mt-2 gap-2">
+            <div className="flex mt-2 gap-2 w-full">
               <div className="grow"></div>
               {is_empty() && payment_complted() == false ? (
                 <Button
