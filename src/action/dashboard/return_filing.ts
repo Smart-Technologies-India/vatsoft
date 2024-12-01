@@ -1,7 +1,7 @@
 "use server";
 import prisma from "../../../prisma/database";
 
-import { errorToString } from "@/utils/methods";
+import { due_date_of_month, errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import dayjs, { Dayjs } from "dayjs";
 
@@ -11,7 +11,7 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
     const currentdate = dayjs();
     const currentMonth = currentdate.format("MMMM"); // Get the current month name
     const currentYear = currentdate.year().toString();
-    const nextMonthDate = currentdate.add(1, "month").date(28);
+    const nextMonthDate = currentdate.add(1, "month").date(due_date_of_month);
 
     const dvat_response = await prisma.dvat04.findMany({
       where: {
@@ -58,7 +58,7 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
             // Determine the due date based on the compositionScheme
             const dueDate = dvat.compositionScheme
               ? GetCompDueDate(year, monthName).toDate()
-              : month.add(1, "month").date(28).toDate();
+              : month.add(1, "month").date(due_date_of_month).toDate();
 
             // Check and perform upsert
             await prisma.return_filing.upsert({

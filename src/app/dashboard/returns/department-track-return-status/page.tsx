@@ -586,7 +586,7 @@ const TrackAppliation = () => {
           {paymentData.length == 0 ? (
             <>
               <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-                <p className="flex-1">There is no Payment Challan.</p>
+                <p className="flex-1">There is no Filed Return.</p>
               </div>
             </>
           ) : (

@@ -11,6 +11,7 @@ import {
   dvat04,
   DvatType,
   Quarter,
+  return_filing,
   returns_01,
   returns_entry,
 } from "@prisma/client";
@@ -21,6 +22,7 @@ import { toast } from "react-toastify";
 import { encryptURLData, formateDate, generatePDF } from "@/utils/methods";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
 import CreateReturnRevised from "@/action/return/createreturnrevised";
+import GetUserLastPandingReturn from "@/action/return/userlastpandingreturn";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -126,11 +128,38 @@ const ReturnDashboard = () => {
     };
   };
 
+  const [lastPending, setLastPending] = useState<return_filing | null>(null);
+
   useEffect(() => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
     // setDateValue(currentDate);
-    const currentDate: Date = new Date();
+    let currentDate: Date = new Date();
     setYear(currentDate.getFullYear().toString());
     const init = async () => {
+      const lastPendingResponse = await GetUserLastPandingReturn({
+        userid: userid,
+      });
+
+      if (lastPendingResponse.status && lastPendingResponse.data) {
+        setLastPending(lastPendingResponse.data);
+        setYear(lastPendingResponse.data.due_date!.getFullYear().toString());
+        currentDate = lastPendingResponse.data.due_date!;
+      }
+
       const response = await GetUserDvat04({
         userid: userid,
       });
@@ -140,30 +169,33 @@ const ReturnDashboard = () => {
         //   ? setPeriod("June")
         //   : setPeriod("April");
 
+        // const cusQuarter: Quarter = getQuarterList(
+        //   new Date(),
+        //   new Date().getFullYear().toString(),
+        //   response.data.vatLiableDate ?? new Date()
+        // ).at(-1)?.value as Quarter;
+
         const cusQuarter: Quarter = getQuarterList(
-          new Date(),
-          new Date().getFullYear().toString(),
-          response.data.vatLiableDate ?? new Date()
+          currentDate,
+          currentDate.getFullYear().toString(),
+          response.data.vatLiableDate ?? currentDate
         ).at(-1)?.value as Quarter;
 
         setQuarter(cusQuarter);
-        setPeriod(
-          getPeriodList(
-            new Date(),
-            new Date().getFullYear().toString(),
-            cusQuarter,
-            response.data.vatLiableDate ?? new Date()
-          ).at(-1)?.value
-        );
+
+        // setPeriod(
+        //   getPeriodList(
+        //     new Date(),
+        //     new Date().getFullYear().toString(),
+        //     cusQuarter,
+        //     response.data.vatLiableDate ?? new Date()
+        //   ).at(-1)?.value
+        // );
+        setPeriod(monthNames[currentDate.getMonth()]);
 
         await search(
           currentDate.getFullYear().toString(),
-          getPeriodList(
-            new Date(),
-            new Date().getFullYear().toString(),
-            cusQuarter,
-            response.data.vatLiableDate ?? new Date()
-          ).at(-1)?.value ?? ""
+          monthNames[currentDate.getMonth()]
         );
       }
     };
@@ -204,45 +236,6 @@ const ReturnDashboard = () => {
 
     return periodValues;
   };
-
-  // const getYearList = (dateValue: Date): PeriodValue[] => {
-  //   const year: number = dateValue.getFullYear();
-  //   const month: number = dateValue.getMonth();
-  //   const day: number = dateValue.getDate();
-  //   const liableDate: Date = davtdata?.vatLiableDate ?? new Date();
-
-  //   console.log(liableDate);
-
-  //   const startYear = month >= 2 && day >= 1 ? year : year - 1;
-
-  //   const numberOfYears = 8;
-  //   const periodValues: PeriodValue[] = [];
-
-  //   // const vatLiableDateyaar = davtdata?.vatLiableDate?.getFullYear() ?? 0;
-  //   // for (let i = 0; i < numberOfYears; i++) {
-  //   //   const currentYear = startYear - i;
-  //   //   if (vatLiableDateyaar - 1 <= currentYear) {
-  //   //     periodValues.push({
-  //   //       value: currentYear.toString(),
-  //   //       label: `${currentYear}-${(currentYear + 1).toString().slice(-2)}`,
-  //   //     });
-  //   //   }
-  //   // }
-
-  //   for (let i = 0; i < numberOfYears; i++) {
-  //     const currentYear = startYear - i;
-  //     const currentYearStartDate = new Date(currentYear, 2, 1); // March 1st of the current year
-
-  //     if (currentYearStartDate >= liableDate) {
-  //       periodValues.push({
-  //         value: currentYear.toString(),
-  //         label: `${currentYear}-${(currentYear + 1).toString().slice(-2)}`,
-  //       });
-  //     }
-  //   }
-
-  //   return periodValues;
-  // };
 
   const getQuarterList = (
     dateValue: Date,
@@ -308,77 +301,6 @@ const ReturnDashboard = () => {
 
     return resultQuarters;
   };
-
-  // const getPeriodList = (
-  //   dateValue: Date,
-  //   year: string,
-  //   quarter: Quarter,
-  //   vatLiableDate: Date
-  // ): PeriodValue[] => {
-  //   const currentYear: number = dateValue.getFullYear();
-  //   const month: number = dateValue.getMonth();
-
-  //   const monthNames = [
-  //     "January",
-  //     "February",
-  //     "March",
-  //     "April",
-  //     "May",
-  //     "June",
-  //     "July",
-  //     "August",
-  //     "September",
-  //     "October",
-  //     "November",
-  //     "December",
-  //   ];
-
-  //   const periods: PeriodValue[] = [];
-
-  //   let startMonth: number;
-
-  //   switch (quarter) {
-  //     case Quarter.QUARTER1:
-  //       startMonth = 3; // April
-  //       // startMonth = davtdata?.compositionScheme ? 5 : 3;
-  //       break;
-  //     case Quarter.QUARTER2:
-  //       // startMonth = davtdata?.compositionScheme ? 8 : 6;
-  //       startMonth = 6; // July
-  //       break;
-  //     case Quarter.QUARTER3:
-  //       // startMonth = davtdata?.compositionScheme ? 11 : 9;
-  //       startMonth = 9; // October
-  //       break;
-  //     case Quarter.QUARTER4:
-  //       // startMonth = davtdata?.compositionScheme ? 2 : 0;
-  //       startMonth = 0; // January
-  //       break;
-  //     default:
-  //       return [];
-  //   }
-
-  //   for (let i = 0; i < 3; i++) {
-  //     const periodMonth = (startMonth + i) % 12;
-  //     const periodName = monthNames[periodMonth];
-
-  //     if (parseInt(year ?? "0") != currentYear) {
-  //       periods.push({
-  //         value: periodName,
-  //         label: periodName,
-  //       });
-  //     } else {
-  //       if (month + 1 >= periodMonth) {
-  //         periods.push({
-  //           value: periodName,
-  //           label: periodName,
-  //         });
-  //       }
-  //     }
-  //   }
-
-  //   return periods;
-  // };
 
   const getPeriodList = (
     dateValue: Date,
@@ -733,55 +655,94 @@ const ReturnDashboard = () => {
         </div>
         {isSearch && (
           <>
-            <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-between mt-4 border">
-              <div>
-                <p className="text-sm">RR Number</p>
-                <p className="text-sm  font-medium">
-                  {return01?.rr_number == null ||
-                  return01?.rr_number == undefined ||
-                  return01?.rr_number == ""
-                    ? "N/A"
-                    : return01?.rr_number}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm">User TIN Number</p>
-                <p className="text-sm  font-medium">{davtdata?.tinNumber}</p>
-              </div>
+            {lastPending != null ? (
+              <>
+                <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-between mt-4 border">
+                  <div>
+                    <p className="text-sm">RR Number</p>
+                    <p className="text-sm  font-medium">N/A</p>
+                  </div>
+                  <div>
+                    <p className="text-sm">User TIN Number</p>
+                    <p className="text-sm  font-medium">
+                      {davtdata?.tinNumber}
+                    </p>
+                  </div>
 
-              <div>
-                <p className="text-sm">
-                  {return01?.rr_number != "" &&
-                  return01?.rr_number != undefined &&
-                  return01?.rr_number != null
-                    ? "Filed Date"
-                    : "Filing Date"}
-                </p>
-                <p className="text-sm  font-medium">
-                  {return01?.rr_number != "" &&
-                  return01?.rr_number != undefined &&
-                  return01?.rr_number != null
-                    ? formateDate(return01.filing_datetime)
-                    : formateDate(duedate)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm">Status</p>
-                <p className="text-sm  font-medium">
-                  {return01?.rr_number != "" &&
-                  return01?.rr_number != undefined &&
-                  return01?.rr_number != null
-                    ? "Filed"
-                    : "Due - Not Filed"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm">Return Type</p>
-                <p className="text-sm  font-medium">
-                  {return01?.return_type ?? "ORIGINAL"}
-                </p>
-              </div>
-            </div>
+                  <div>
+                    <p className="text-sm">Filing Date</p>
+                    <p className="text-sm  font-medium">
+                      {formateDate(lastPending.due_date!)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm">Status</p>
+                    <p className="text-sm  font-medium">Due - Not Filed</p>
+                  </div>
+                  <div>
+                    <p className="text-sm">Return Type</p>
+                    <p className="text-sm  font-medium">
+                      {return01?.return_type ?? "ORIGINAL"}
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-between mt-4 border">
+                  <div>
+                    <p className="text-sm">RR Number</p>
+                    <p className="text-sm  font-medium">
+                      {return01?.rr_number == null ||
+                      return01?.rr_number == undefined ||
+                      return01?.rr_number == ""
+                        ? "N/A"
+                        : return01?.rr_number}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm">User TIN Number</p>
+                    <p className="text-sm  font-medium">
+                      {davtdata?.tinNumber}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm">
+                      {return01?.rr_number != "" &&
+                      return01?.rr_number != undefined &&
+                      return01?.rr_number != null
+                        ? "Filed Date"
+                        : "Filing Date"}
+                    </p>
+                    <p className="text-sm  font-medium">
+                      {return01?.rr_number != "" &&
+                      return01?.rr_number != undefined &&
+                      return01?.rr_number != null
+                        ? formateDate(return01.filing_datetime)
+                        : formateDate(duedate)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm">Status</p>
+                    <p className="text-sm  font-medium">
+                      {return01?.rr_number != "" &&
+                      return01?.rr_number != undefined &&
+                      return01?.rr_number != null
+                        ? "Filed"
+                        : "Due - Not Filed"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm">Return Type</p>
+                    <p className="text-sm  font-medium">
+                      {return01?.return_type ?? "ORIGINAL"}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+
             <div className="grid w-full grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
               <Card
                 title={"Sales Local"}

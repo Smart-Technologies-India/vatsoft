@@ -4,6 +4,16 @@ import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.share
 import { FieldErrors, FieldValues } from "react-hook-form";
 import { toast } from "react-toastify";
 
+const due_date_of_month = 28;
+
+const get28thDate = (): Date => {
+  const today = new Date(); // Get the current date
+  const year = today.getFullYear();
+  const month = today.getMonth(); // 0-based month index
+  return new Date(year, month, due_date_of_month); // Set the date to the 28th of the current month
+};
+export { due_date_of_month, get28thDate };
+
 /**
  * Converts an error object or string to a string format.
  * If the input is a string, it converts it to uppercase.
@@ -367,7 +377,6 @@ const fromBase64Url = (str: string): string =>
   str.replace(/-/g, "+").replace(/_/g, "/") + "==".slice(str.length % 4 || 4);
 
 export const encryptURLData = (data: string): string => {
-  console.log(data);
   const encryptedData = CryptoJS.AES.encrypt(data, secretKey).toString();
   return toBase64Url(encryptedData);
 };

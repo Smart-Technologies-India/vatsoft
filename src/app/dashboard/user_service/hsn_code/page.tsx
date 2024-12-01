@@ -220,8 +220,10 @@ const HSNCode = () => {
         <p className="text-sm font-semibold my-2">
           <span className="text-rose-500">Node: </span>
           If HSN of any Goods/Service is otherwise valid but not available here,
-          kindly raise a ticket on GST Self-service Portal:
-          <a href="#" className="text-blue-500 px-2 font-normal">https://selfservice.gstsystem.in/</a>
+          kindly raise a ticket on VAT Self-service Portal:
+          <a href="#" className="text-blue-500 px-2 font-normal">
+            https://vatsmart.in
+          </a>
         </p>
         <p className="text-sm font-semibold">Disclaimer:</p>
         <ol className="text-xs space-y-1 list-decimal ml-6 mt-1">
@@ -242,16 +244,16 @@ const HSNCode = () => {
             output displayed is dependent on the input provided by the user.
             These descriptions as part of Search HSN facility have been provided
             purely as a measure of Taxpayers&apos; facilitation and are not
-            legally binding on the GST department
+            legally binding on the VAT department
           </li>
           <li>
             Though all efforts have been made to ensure the accuracy and
             currency Of the Search HSN facility, the same should not be
             construed as a statement Of law or used for any !ega/ purposes or
-            any litigation as a legal and binding advice from the GST
-            department/GSTN. GSTN hereby expressly disowns and repudiates any
-            claims or liabilities (including but not limited to any third party
-            claim or liability, of any nature,
+            any litigation as a legal and binding advice from the VAT
+            department. VAT department hereby expressly disowns and repudiates
+            any claims or liabilities (including but not limited to any third
+            party claim or liability, of any nature,
           </li>
         </ol>
       </div>

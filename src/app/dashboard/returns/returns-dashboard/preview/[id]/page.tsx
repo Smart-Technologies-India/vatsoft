@@ -814,7 +814,13 @@ const Dvat16ReturnPreview = () => {
                   type="primary"
                   onClick={() =>
                     router.push(
-                      `/dashboard/returns/department-dvat24?returnid=${return01.id}&tin=${return01.dvat04.tinNumber}`
+                      `/dashboard/returns/department-dvat24?returnid=${encryptURLData(
+                        return01.id.toString()
+                      )}&tin=${encryptURLData(
+                        return01.dvat04.tinNumber
+                          ? return01.dvat04.tinNumber.toString()
+                          : ""
+                      )}`
                     )
                   }
                 >
@@ -824,7 +830,13 @@ const Dvat16ReturnPreview = () => {
                   type="primary"
                   onClick={() =>
                     router.push(
-                      `/dashboard/returns/department-dvat24a?returnid=${return01.id}&tin=${return01.dvat04.tinNumber}`
+                      `/dashboard/returns/department-dvat24a?returnid=${encryptURLData(
+                        return01.id.toString()
+                      )}&tin=${encryptURLData(
+                        return01.dvat04.tinNumber
+                          ? return01.dvat04.tinNumber.toString()
+                          : ""
+                      )}`
                     )
                   }
                 >

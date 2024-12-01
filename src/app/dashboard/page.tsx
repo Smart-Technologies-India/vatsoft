@@ -23,7 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { Chart as ChartJS, registerables } from "chart.js";
 import { Bar } from "react-chartjs-2";
 
-import numberWithIndianFormat, { formateDate } from "@/utils/methods";
+import numberWithIndianFormat, { due_date_of_month, formateDate } from "@/utils/methods";
 
 ChartJS.register(...registerables);
 
@@ -218,7 +218,9 @@ interface RentCardProps {
 const RentCard = (props: RentCardProps) => {
   const getnextmonth = () => {
     const date: Date = new Date(props.date);
-    const res: Date = new Date(date.setMonth(date.getMonth() + 1, 28));
+    const res: Date = new Date(
+      date.setMonth(date.getMonth() + 1, due_date_of_month)
+    );
     return formateDate(res);
   };
   return (

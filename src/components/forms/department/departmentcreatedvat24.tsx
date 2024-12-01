@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 
@@ -19,7 +20,7 @@ import { DateSelect } from "../inputfields/dateselect";
 import { toast } from "react-toastify";
 import { Button, Input, InputRef } from "antd";
 import { ToWords } from "to-words";
-import { capitalcase, onFormError } from "@/utils/methods";
+import { capitalcase, decryptURLData, onFormError } from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { dvat04, returns_01, user } from "@prisma/client";
 import SearchTinNumber from "@/action/dvat/searchtin";
@@ -212,8 +213,13 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
   };
 
   useEffect(() => {
-    const returnid: number = parseInt(searchParams.get("returnid") ?? "0");
-    const tinNumber: string = searchParams.get("tin") ?? "";
+    const returnid: number = parseInt(
+      decryptURLData(searchParams.get("returnid") ?? "0", router)
+    );
+    const tinNumber: string = decryptURLData(
+      searchParams.get("tin") ?? "",
+      router
+    );
     const init = async () => {
       setLoading(true);
       const return01_response = await GetReturn01({
@@ -251,7 +257,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
     };
 
     init();
-  }, [searchParams, reset]);
+  }, []);
 
   if (isLoading)
     return (

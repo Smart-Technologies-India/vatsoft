@@ -1,20 +1,27 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
+import {
+  capitalcase,
+  encryptURLData,
+  formateDate,
+  get28thDate,
+} from "@/utils/methods";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   AntDesignCheckOutlined,
+  AntDesignMenuOutlined,
   CarbonWarningSquare,
   Fa6RegularCalendarXmark,
   Fa6RegularHourglassHalf,
+  FluentMoreVertical20Regular,
   MaterialSymbolsCalendarClockRounded,
   MaterialSymbolsDoNotDisturbOnOutline,
 } from "@/components/icons";
 import { dvat04, return_filing, user } from "@prisma/client";
-import { Button } from "antd";
+import { Button, Popover } from "antd";
 import GetDvat04 from "@/action/register/getdvat04";
 import GetPendingReturn from "@/action/dvat/getpendingreturn";
 import GetPendingChallan from "@/action/challan/getPendingChallan";
@@ -36,6 +43,7 @@ interface ItemsType {
   status: Status;
   userid?: string;
   year?: string;
+  returnid?: number;
 }
 
 interface yearsDetails {
@@ -97,7 +105,7 @@ const ShopView = () => {
       return self.indexOf(value) === index;
     });
 
-    const currentdate = new Date();
+    const currentdate: Date = get28thDate();
 
     const monthdetails: yearsDetails[] = uniqueyears.map((year: number) => {
       const ret_filing: ItemsType[] = [];
@@ -128,6 +136,7 @@ const ShopView = () => {
               : Status.DUE,
             userid: getdata.dvat.createdById.toString(),
             year: year.toString(),
+            returnid: getdata.id,
           });
         } else {
           ret_filing.push({
@@ -249,17 +258,6 @@ const ShopView = () => {
         <div className="bg-white rounded-sm shadow-sm pb-4">
           <div className="border-b border-gray-300 flex items-center pr-2 gap-2">
             <p className="text-xl p-2  font-semibold">Return Details</p>
-            <div className="grow"></div>
-
-            <Button type="primary" onClick={() => {}}>
-              DVAT10
-            </Button>
-            <Button type="primary" onClick={() => {}}>
-              DVAT24
-            </Button>
-            <Button type="primary" onClick={() => {}}>
-              DVAT24A
-            </Button>
           </div>
           <div className="px-4 py-2 grid grid-cols-2 gap-4 mt-2">
             <p className="text-xs leading-3">
@@ -318,6 +316,7 @@ const ShopView = () => {
                   tinnumber={dvatData?.tinNumber ?? ""}
                   userid={item.userid}
                   year={item.year}
+                  returnid={item.returnid}
                 />
               ))}
             </div>
@@ -336,9 +335,11 @@ interface PropertiesDeatilsProps {
   userid?: string;
   year?: string;
   tinnumber: string;
+  returnid?: number;
 }
 
 const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
+  const router = useRouter();
   const getQuarter = (): string => {
     // Define the mapping of months to quarters
     const quarterMap: {
@@ -422,12 +423,7 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
 
   if (props.status == Status.PAID || props.status == Status.LATE) {
     return (
-      <Link
-        href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-          props.userid!.toString()
-        )}?form=30A&year=${props.year}&quarter=${getQuarter()}&month=${
-          props.name
-        }`}
+      <div
         className={`p-1 flex items-center justify-start min-w-28 bg-[#F5F5F5] rounded-md gap-2`}
       >
         <Component />
@@ -435,12 +431,62 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
           <p className={`text-xs text-black`}>{props.name}</p>
           <p className={`text-xs text-gray-500`}>{textname()}</p>
         </div>
-      </Link>
+        <div className="grow"></div>
+        <div className="text-xl">
+          <Popover
+            content={
+              <div className="flex gap-2 flex-col">
+                <Button
+                  type="primary"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                        props.userid!.toString()
+                      )}?form=30A&year=${
+                        props.year
+                      }&quarter=${getQuarter()}&month=${props.name}`
+                    )
+                  }
+                >
+                  View
+                </Button>
+                <Button
+                  type="primary"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/returns/department-dvat24?returnid=${encryptURLData(
+                        props.returnid ? props.returnid.toString() : ""
+                      )}&tin=${encryptURLData(props.tinnumber)}`
+                    )
+                  }
+                >
+                  DVAT24
+                </Button>
+                <Button
+                  type="primary"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/returns/department-dvat24a?returnid=${encryptURLData(
+                        props.returnid ? props.returnid.toString() : ""
+                      )}&tin=${encryptURLData(props.tinnumber)}`
+                    )
+                  }
+                >
+                  DVAT24A
+                </Button>
+              </div>
+            }
+            title="Action"
+            trigger="hover"
+          >
+            <FluentMoreVertical20Regular />
+          </Popover>
+        </div>
+      </div>
     );
   } else if (props.status == Status.PENDING) {
     return (
-      <Link
-        href={`/dashboard/returns/department-dvat10?tin=${props.tinnumber}`}
+      <div
         className={`p-1 flex items-center justify-start min-w-28 bg-[#F5F5F5] rounded-md gap-2`}
       >
         <Component />
@@ -448,7 +494,46 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
           <p className={`text-xs text-black`}>{props.name}</p>
           <p className={`text-xs text-gray-500`}>{textname()}</p>
         </div>
-      </Link>
+        <div className="grow"></div>
+        <div className="text-xl">
+          <Popover
+            content={
+              <div className="flex gap-2 flex-col">
+                <Button
+                  type="primary"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                        props.userid!.toString()
+                      )}?form=30A&year=${
+                        props.year
+                      }&quarter=${getQuarter()}&month=${props.name}`
+                    )
+                  }
+                >
+                  View
+                </Button>
+                <Button
+                  type="primary"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/returns/department-dvat10?returnid=${encryptURLData(
+                        props.returnid ? props.returnid.toString() : ""
+                      )}&tin=${encryptURLData(props.tinnumber)}`
+                    )
+                  }
+                >
+                  DVAT10
+                </Button>
+              </div>
+            }
+            title="Action"
+            trigger="hover"
+          >
+            <FluentMoreVertical20Regular />
+          </Popover>
+        </div>
+      </div>
     );
   } else {
     return (

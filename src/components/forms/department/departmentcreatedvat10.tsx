@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 
@@ -10,7 +11,7 @@ import { DateSelect } from "../inputfields/dateselect";
 import { toast } from "react-toastify";
 import { Button, Input, InputRef } from "antd";
 import { ToWords } from "to-words";
-import { capitalcase, onFormError } from "@/utils/methods";
+import { capitalcase, decryptURLData, onFormError } from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { dvat04, returns_01, user } from "@prisma/client";
 import SearchTinNumber from "@/action/dvat/searchtin";
@@ -183,8 +184,13 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
   };
 
   useEffect(() => {
-    const returnid: number = parseInt(searchParams.get("returnid") ?? "0");
-    const tinNumber: string = searchParams.get("tin") ?? "";
+    const returnid: number = parseInt(
+      decryptURLData(searchParams.get("returnid") ?? "0", router)
+    );
+    const tinNumber: string = decryptURLData(
+      searchParams.get("tin") ?? "",
+      router
+    );
     const init = async () => {
       setLoading(true);
 
@@ -225,7 +231,13 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
     };
 
     init();
-  }, [searchParams, reset]);
+  }, []);
+  if (isLoading)
+    return (
+      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
+        Loading...
+      </div>
+    );
 
   return (
     <>
