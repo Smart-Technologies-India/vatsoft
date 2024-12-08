@@ -78,7 +78,7 @@ const ShopView = () => {
     pending: 0,
   });
 
-  const [returnMonth, setReturnMonth] = useState<return_filing[]>([]);
+  // const [returnMonth, setReturnMonth] = useState<return_filing[]>([]);
 
   const [returndetails, setRetuirnsDetails] = useState<yearsDetails[]>([]);
 
@@ -188,7 +188,7 @@ const ShopView = () => {
         dvatid: dvat04id,
       });
       if (returnmonth_response.status && returnmonth_response.data) {
-        setReturnMonth(returnmonth_response.data);
+        // setReturnMonth(returnmonth_response.data);
         setRentMonthDetails(returnmonth_response.data);
       }
       setIsLoading(false);
@@ -285,13 +285,13 @@ const ShopView = () => {
               </span>
             </p>
             <p className="text-xs leading-3">
-              Challan Pending <br />
+              Demand Pending <br />
               <span className="text-sm text-gray-500 font-medium">
                 {pendingchallan.count}
               </span>
             </p>
             <p className="text-xs leading-3">
-              Challan Amount Pending <br />
+              Demand Amount Pending <br />
               <span className="text-sm text-gray-500 font-medium">
                 {pendingchallan.pending}
               </span>
@@ -340,6 +340,7 @@ interface PropertiesDeatilsProps {
 
 const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
   const router = useRouter();
+
   const getQuarter = (): string => {
     // Define the mapping of months to quarters
     const quarterMap: {
@@ -517,9 +518,9 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
                   type="primary"
                   onClick={() =>
                     router.push(
-                      `/dashboard/returns/department-dvat10?returnid=${encryptURLData(
-                        props.returnid ? props.returnid.toString() : ""
-                      )}&tin=${encryptURLData(props.tinnumber)}`
+                      `/dashboard/returns/department-dvat10?tin=${encryptURLData(
+                        props.tinnumber
+                      )}`
                     )
                   }
                 >

@@ -11,13 +11,13 @@ import { DateSelect } from "../inputfields/dateselect";
 import { toast } from "react-toastify";
 import { Button, Input, InputRef } from "antd";
 import { ToWords } from "to-words";
-import { capitalcase, decryptURLData, onFormError } from "@/utils/methods";
+import { decryptURLData, onFormError } from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { dvat04, returns_01, user } from "@prisma/client";
 import SearchTinNumber from "@/action/dvat/searchtin";
 import { CreateDvat10Schema, CreateDvat10Form } from "@/schema/dvat10";
 import dayjs from "dayjs";
-import GetReturn01 from "@/action/return/getreturn";
+import CreateDvat10 from "@/action/notice_order/createdvat10";
 
 type DepartmentCreateDvat10ProviderProps = {
   userid: number;
@@ -53,9 +53,9 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
   }
 
   const [periodData, setPeriodData] = useState<Period | null>(null);
-  const [return01Data, setReturn01Data] = useState<
-    (returns_01 & { dvat04: dvat04 }) | null
-  >(null);
+  // const [return01Data, setReturn01Data] = useState<
+  //   (returns_01 & { dvat04: dvat04 }) | null
+  // >(null);
 
   const getPeriod = (
     return_01data: returns_01 & { dvat04: dvat04 }
@@ -125,24 +125,78 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
     };
   };
 
-  const searchUser = async () => {
-    if (
-      tinnumberRef.current?.input?.value == null ||
-      tinnumberRef.current?.input?.value == undefined ||
-      tinnumberRef.current?.input?.value == ""
-    ) {
-      return toast.error("Enter TIN number in order to search");
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const getPeriodNoReturnId = (
+    year: string,
+    month: string,
+    dvat04: dvat04
+  ): {
+    form: Date;
+    to: Date;
+  } => {
+    const iscomp: boolean = dvat04.compositionScheme ?? false;
+
+    const from_year: string = year;
+    const from_month: string = month;
+    // Get the index of the current month
+    const currentMonthIndex = monthNames.indexOf(from_month);
+    const currentYear = parseInt(from_year);
+
+    // Calculate the 'to' date based on composition scheme
+    let to_year: string;
+    let to_month: string;
+
+    if (iscomp) {
+      // Get last month of the current quarter
+      if (currentMonthIndex >= 9) {
+        // If in Oct-Dec quarter, last month is December
+        to_month = "December";
+        to_year = from_year;
+      } else {
+        // Go to the last month of the previous quarter
+        const lastQuarterMonth =
+          currentMonthIndex - (currentMonthIndex % 3) + 2;
+        to_month = monthNames[lastQuarterMonth];
+        to_year = from_year;
+      }
+    } else {
+      // Get the next month
+      if (currentMonthIndex === 11) {
+        to_month = monthNames[0]; // January of next year
+        to_year = (currentYear + 1).toString();
+      } else {
+        to_month = monthNames[currentMonthIndex + 1];
+        to_year = from_year;
+      }
     }
 
-    const dvat_response = await SearchTinNumber({
-      tinumber: tinnumberRef.current.input.value,
-    });
-    if (dvat_response.status && dvat_response.data) {
-      setUser(dvat_response.data.createdBy);
-      setDvatData(dvat_response.data);
-      setSearch(true);
-    }
+    const from_date: Date = new Date(parseInt(from_year), currentMonthIndex, 1);
+    const to_date: Date = new Date(
+      parseInt(to_year),
+      monthNames.indexOf(to_month),
+      0
+    );
+    return {
+      form: from_date,
+      to: to_date,
+    };
   };
+
+  const searchUser = async () => {};
 
   const dvat24_reason: OptionValue[] = [
     { value: "NOTFURNISHED", label: "NOTFURNISHED" },
@@ -159,54 +213,53 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
   } = useFormContext<CreateDvat10Form>();
 
   const onSubmit = async (data: CreateDvat10Form) => {
-    // const challan_response = await CreateChallan({
-    //   dvatid: dvatdata?.id ?? 0,
-    //   createdby: props.userid,
-    //   cess: data.cess.toString(),
-    //   vat: data.vat.toString(),
-    //   interest: data.interest.toString(),
-    //   others: data.others ?? "0",
-    //   reason: data.reason,
-    //   total_tax_amount: getTotalAmount().toString(),
-    //   penalty: data.penalty.toString(),
-    //   remark: data.remark,
-    // });
+    if (!dvatdata) return toast.error("User Dvat not found");
 
-    // if (challan_response.status) {
-    //   toast.success("Challan generated successfully");
-    //   reset({});
-    //   router.push("/dashboard/payments/department-challan-history");
-    // } else {
-    //   toast.error(challan_response.message);
-    // }
+    const currentday = new Date();
+
+    const period_response = getPeriodNoReturnId(
+      currentday.getFullYear().toString(),
+      monthNames[currentday.getMonth()],
+      dvatdata
+    );
+
+    // dvatid: number;
+    // createdby: number;
+    // remark?: string;
+    // tax_period_from: Date;
+    // tax_period_to: Date;
+    // due_date: Date;
+    // issuedId: number;
+    // officerId: number;
+    const dvat24_response = await CreateDvat10({
+      dvatid: dvatdata?.id,
+      createdby: props.userid,
+      tax_period_from: period_response.form,
+      tax_period_to: period_response.to,
+      due_date: new Date(data.due_date),
+      issuedId: props.userid,
+      officerId: props.userid,
+      remark: data.remark,
+    });
+
+    if (dvat24_response.status) {
+      toast.success("DVAT 24 created successfully");
+      reset({});
+      router.push("/dashboard/returns/department-track-return-status");
+    } else {
+      toast.error(dvat24_response.message);
+    }
 
     reset({});
   };
 
   useEffect(() => {
-    const returnid: number = parseInt(
-      decryptURLData(searchParams.get("returnid") ?? "0", router)
-    );
     const tinNumber: string = decryptURLData(
       searchParams.get("tin") ?? "",
       router
     );
     const init = async () => {
       setLoading(true);
-
-      if (!(returnid == null || returnid == undefined)) {
-        const return01_response = await GetReturn01({
-          id: returnid,
-        });
-        if (return01_response.status && return01_response.data) {
-          setReturn01Data(return01_response.data);
-          const period_response = getPeriod(return01_response.data);
-          setPeriodData({
-            form: period_response.form.toDateString(),
-            to: period_response.to.toDateString(),
-          });
-        }
-      }
 
       if (!(tinNumber == null || tinNumber == undefined || tinNumber == "")) {
         reset({
@@ -219,6 +272,16 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
           tinumber: tinNumber,
         });
         if (dvat_response.status && dvat_response.data) {
+          const currentday = new Date();
+          const period_response = getPeriodNoReturnId(
+            currentday.getFullYear().toString(),
+            monthNames[currentday.getMonth()],
+            dvat_response.data
+          );
+          setPeriodData({
+            form: period_response.form.toDateString(),
+            to: period_response.to.toDateString(),
+          });
           setUser(dvat_response.data.createdBy);
           setDvatData(dvat_response.data);
           setSearch(true);
@@ -227,11 +290,13 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
           setSearch(false);
         }
       }
+
       setLoading(false);
     };
 
     init();
   }, []);
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">

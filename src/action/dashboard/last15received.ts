@@ -3,9 +3,12 @@
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
 
-interface Last15ReceivedPayload {}
+interface Last15ReceivedPayload {
+  selectOffice: SelectOffice;
+}
 
 import prisma from "../../../prisma/database";
+import { SelectOffice } from "@prisma/client";
 
 interface ResponseData {
   date: Date; // Date object
@@ -44,6 +47,9 @@ const Last15Received = async (
 
       const dayReceivedData = await prisma.returns_01.findMany({
         where: {
+          dvat04: {
+            selectOffice: payload.selectOffice,
+          },
           deletedAt: null,
           deletedBy: null,
           status: "ACTIVE",

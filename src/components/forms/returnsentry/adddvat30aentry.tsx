@@ -36,7 +36,6 @@ import {
   tin_number_master,
 } from "@prisma/client";
 import { Button } from "antd";
-import GetAllCommodityMaster from "@/action/commoditymaster/getallcommoditymaster";
 import { onFormError } from "@/utils/methods";
 import { getCookie } from "cookies-next";
 import { customAlphabet } from "nanoid";
@@ -302,11 +301,11 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
       description_of_goods: "",
       quantity: "",
     });
-    setLock(true);
+    // setLock(true);
     setCommodityMasterData(null);
   };
 
-  const [isLock, setLock] = useState<boolean>(false);
+  // const [isLock, setLock] = useState<boolean>(false);
 
   interface DvatDataType {
     invoice_number: string;
@@ -373,7 +372,7 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
               numdes={true}
               title="Recipient VAT NO."
               placeholder="Recipient VAT NO."
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
           <div className="flex-1">
@@ -391,7 +390,7 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
               required={true}
               title="Category of Entry"
               options={categoryOfEntry}
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
           <div className="flex-1">
@@ -401,7 +400,7 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
               numdes={true}
               title="Invoice no."
               placeholder="Invoice no."
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
         </div>
@@ -436,7 +435,7 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
                 ).end,
                 dateFormat
               )}
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
           <div className="flex-1">
@@ -446,7 +445,7 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
               numdes={true}
               title="Total invoice value"
               placeholder="Total invoice value"
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
         </div>
@@ -461,7 +460,7 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
                 value: value.id.toString(),
                 label: `${value.code} - ${value.name}`,
               }))}
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
           <div className="flex-1">
@@ -471,7 +470,7 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
               required={true}
               title="Purchase Type"
               options={purchase_type}
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
         </div>
@@ -482,7 +481,7 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
               required={true}
               title="Remarks"
               placeholder="Remarks"
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
         </div>

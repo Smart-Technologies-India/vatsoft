@@ -35,17 +35,14 @@ import {
   SaleOfInterstate,
   tin_number_master,
 } from "@prisma/client";
-import GetAllCommodityMaster from "@/action/commoditymaster/getallcommoditymaster";
 import { onFormError } from "@/utils/methods";
-import AddReturnInvoice from "@/action/return/addreturninvoice";
 import { getCookie } from "cookies-next";
 import { customAlphabet } from "nanoid";
 import dayjs from "dayjs";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
-import useTreeSelectStyle from "antd/es/tree-select/style";
-import { Button } from "antd";
 import AddMultiReturnInvoice from "@/action/return/addmultireturninvoice";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
+import { Button } from "antd";
 
 type AddDvat31EntryProviderProps = {};
 export const AddDvat31EntryProvider = (props: AddDvat31EntryProviderProps) => {
@@ -295,11 +292,11 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
       description_of_goods: "",
       quantity: "",
     });
-    setLock(true);
+    // setLock(true);
     setCommodityMasterData(null);
   };
 
-  const [isLock, setLock] = useState<boolean>(false);
+  // const [isLock, setLock] = useState<boolean>(false);
 
   interface DvatDataType {
     invoice_number: string;
@@ -365,9 +362,9 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
               name="recipient_vat_no"
               required={true}
               numdes={true}
-              title="Recipient VAT NO."
+              title="Recipient VAT NO. (For Unregistered use 26000000000)"
               placeholder="Recipient VAT NO."
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
           <div className="flex-1">
@@ -385,7 +382,7 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
               required={true}
               title="Category of Entry"
               options={categoryOfEntry}
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
           <div className="flex-1">
@@ -395,7 +392,7 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
               numdes={true}
               title="Invoice no."
               placeholder="Invoice no."
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
         </div>
@@ -430,7 +427,7 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
                 ).end,
                 dateFormat
               )}
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
           <div className="flex-1">
@@ -440,7 +437,7 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
               numdes={true}
               title="Total invoice value"
               placeholder="Total invoice value"
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
         </div>
@@ -452,7 +449,7 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
               required={true}
               title="Nature of sale transaction"
               options={saleOf}
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
           <div className="flex-1"></div>
@@ -464,7 +461,7 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
               required={true}
               title="Remarks"
               placeholder="Remarks"
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
         </div>

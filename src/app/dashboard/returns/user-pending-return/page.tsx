@@ -276,13 +276,13 @@ const ShopView = () => {
               </span>
             </p>
             <p className="text-xs leading-3">
-              Challan Pending <br />
+              Demand Pending <br />
               <span className="text-sm text-gray-500 font-medium">
                 {pendingchallan.count}
               </span>
             </p>
             <p className="text-xs leading-3">
-              Challan Amount Pending <br />
+              Demand Amount Pending <br />
               <span className="text-sm text-gray-500 font-medium">
                 {pendingchallan.pending}
               </span>

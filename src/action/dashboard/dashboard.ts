@@ -20,10 +20,11 @@ const DashboardMonth = async (
 ): Promise<ApiResponseType<ResponseDate[] | null>> => {
   const functionname: string = DashboardMonth.name;
   try {
+    const data = await getLastSixMonths(payload.userid);
     return createResponse({
       message: "this is a message",
       functionname,
-      data: await getLastSixMonths(payload.userid),
+      data: data,
     });
   } catch (e) {
     return createResponse({
@@ -44,6 +45,7 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
       deletedById: null,
     },
   });
+
   if (!dvat) return [];
 
   const iscomp: boolean = dvat.compositionScheme ?? false;
@@ -55,10 +57,13 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
   const startYear = currentDate.getFullYear();
 
   for (let i = 5, j = 0; i >= 0; i--, j++) {
-    const date = new Date(startYear, startMonth - i, 1);
+    const date = new Date(Date.UTC(startYear, startMonth - i, 1, 0, 0, 0, 0));
+    let fill_date = new Date(
+      Date.UTC(startYear, startMonth - i, 1, 0, 0, 0, 0)
+    );
 
     // Stop counting if the date is before liableDate
-    if (date < liableDate) break;
+    if (date < liableDate) continue;
 
     const year = date.getFullYear();
 
@@ -104,22 +109,47 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
       }
     } else if (iscomp) {
       if (
-        ["June", "September", "December", "March"].includes(
+        ["October", "November", "December"].includes(
           date.toLocaleString("default", { month: "long" })
         )
       ) {
+        fill_date = new Date(Date.UTC(year, 10, 31, 23, 59, 59, 999)); // December 31
+        completed = false;
+      } else if (
+        ["July", "August", "September"].includes(
+          date.toLocaleString("default", { month: "long" })
+        )
+      ) {
+        fill_date = new Date(Date.UTC(year, 7, 30, 23, 59, 59, 999)); // September 30
+        completed = false;
+      } else if (
+        ["April", "May", "June"].includes(
+          date.toLocaleString("default", { month: "long" })
+        )
+      ) {
+        fill_date = new Date(Date.UTC(year, 4, 30, 23, 59, 59, 999)); // June 30
+        completed = false;
+      } else {
+        fill_date = new Date(Date.UTC(year, 1, 31, 23, 59, 59, 999)); // March 31
         completed = false;
       }
+
+      // if (
+      //   ["June", "September", "December", "March"].includes(
+      //     date.toLocaleString("default", { month: "long" })
+      //   )
+      // ) {
+      //   completed = false;
+      // }
     }
 
     response_data.push({
       month: date.toLocaleString("default", { month: "short" }),
       year: year,
-      date: completed ? filed_on.toISOString() : date.toISOString(),
+      date: completed ? filed_on.toISOString() : fill_date.toISOString(),
       completed: completed,
     });
   }
-
   // Remove trailing months not in the composition scheme if needed
   for (let i = response_data.length - 1; i >= 0; i--) {
     if (

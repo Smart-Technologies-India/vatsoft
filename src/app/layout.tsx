@@ -3,6 +3,7 @@ import "./globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { nunito, roboto } from "../utils/fonts";
+import NextTopLoader from "nextjs-toploader";
 
 export const metadata: Metadata = {
   title: "VAT DD DNH",
@@ -21,6 +22,7 @@ export default function RootLayout({
       className={`${nunito} ${roboto} `}
     >
       <body>
+        <NextTopLoader showSpinner={false} />
         {children}
         <ToastContainer />
       </body>

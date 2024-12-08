@@ -1586,3 +1586,37 @@ export function FluentMoreVertical20Regular(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function FluentBuildingBank48Regular(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 48 48"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="M24 14.001a2 2 0 1 0 0-4a2 2 0 0 0 0 4m1.346-9.554a2.25 2.25 0 0 0-2.692 0L6.71 16.349c-1.35 1.007-.637 3.152 1.046 3.152H9v12.005a5.25 5.25 0 0 0-3 4.744v3.5c0 .69.56 1.25 1.25 1.25h33.5c.69 0 1.25-.56 1.25-1.25v-3.5a5.25 5.25 0 0 0-3-4.744V19.5h1.244c1.684 0 2.396-2.145 1.047-3.152zM36.5 31H32V19.5h4.5zm-7 0h-4.25V19.5h4.25zm-6.75 0H18.5V19.5h4.25zM16 31h-4.5V19.5H16zm-5.986-14L24 6.561l13.985 10.44zM8.5 36.251a2.75 2.75 0 0 1 2.75-2.75h25.5a2.75 2.75 0 0 1 2.75 2.75v2.25h-31z"
+      ></path>
+    </svg>
+  );
+}
+
+export function FluentCalendar12Regular(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 12 12"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="M3 5.5a.5.5 0 1 1 1 0a.5.5 0 0 1-1 0M3.5 7a.5.5 0 1 0 0 1a.5.5 0 0 0 0-1M5 5.5a.5.5 0 1 1 1 0a.5.5 0 0 1-1 0M5.5 7a.5.5 0 1 0 0 1a.5.5 0 0 0 0-1M7 5.5a.5.5 0 1 1 1 0a.5.5 0 0 1-1 0m-6-2A2.5 2.5 0 0 1 3.5 1h5A2.5 2.5 0 0 1 11 3.5v5A2.5 2.5 0 0 1 8.5 11h-5A2.5 2.5 0 0 1 1 8.5zM3.5 2a1.5 1.5 0 0 0-1.415 1h7.83A1.5 1.5 0 0 0 8.5 2zM10 4H2v4.5A1.5 1.5 0 0 0 3.5 10h5A1.5 1.5 0 0 0 10 8.5z"
+      ></path>
+    </svg>
+  );
+}

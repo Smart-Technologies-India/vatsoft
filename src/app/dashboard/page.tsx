@@ -13,7 +13,6 @@ import {
   FluentNotePin20Regular,
   FluentWalletCreditCard20Regular,
   IcOutlineReceiptLong,
-  LucideArrowRight,
   MaterialSymbolsPersonRounded,
   RiAuctionLine,
   RiMoneyRupeeCircleLine,
@@ -23,7 +22,10 @@ import { Separator } from "@/components/ui/separator";
 import { Chart as ChartJS, registerables } from "chart.js";
 import { Bar } from "react-chartjs-2";
 
-import numberWithIndianFormat, { due_date_of_month, formateDate } from "@/utils/methods";
+import numberWithIndianFormat, {
+  due_date_of_month,
+  formateDate,
+} from "@/utils/methods";
 
 ChartJS.register(...registerables);
 
@@ -40,6 +42,7 @@ import { useEffect, useState } from "react";
 import OfficerDashboard from "@/action/dashboard/officerdashboard";
 import Last15Received from "@/action/dashboard/last15received";
 import { format, subMonths } from "date-fns";
+import { Flex, Radio, RadioChangeEvent } from "antd";
 
 const Page = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
@@ -373,21 +376,28 @@ const OfficerDashboardPage = () => {
   }
 
   const [last15Day, setLast15Day] = useState<Last15DayData[]>([]);
+  const [city, setCity] = useState<"Dadra_Nagar_Haveli" | "DAMAN" | "DIU">(
+    "Dadra_Nagar_Haveli"
+  );
 
   useEffect(() => {
     const init = async () => {
-      const count_data_response = await OfficerDashboard({});
+      const count_data_response = await OfficerDashboard({
+        selectOffice: city,
+      });
       if (count_data_response.status && count_data_response.data) {
         setCountData(count_data_response.data);
       }
 
-      const last15days = await Last15Received({});
+      const last15days = await Last15Received({
+        selectOffice: city,
+      });
       if (last15days.status && last15days.data) {
         setLast15Day(last15days.data);
       }
     };
     init();
-  }, []);
+  }, [city]);
 
   const dataset: any = {
     labels: last15Day
@@ -465,8 +475,30 @@ const OfficerDashboardPage = () => {
     },
   };
 
+  const onCityChange = (e: RadioChangeEvent) => {
+    setCity(e.target.value);
+  };
+
+  const citys = [
+    { label: "DNH", value: "Dadra_Nagar_Haveli" },
+    { label: "DD", value: "DAMAN" },
+    { label: "DIU", value: "DIU" },
+  ];
+
   return (
     <main className="p-6">
+      <div className="mb-2">
+        <Radio.Group
+          block
+          options={citys}
+          size="small"
+          value={city}
+          onChange={onCityChange}
+          defaultValue="DNH"
+          optionType="button"
+          buttonStyle="solid"
+        />
+      </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         <DashboardCard
           name="Total Dealer"

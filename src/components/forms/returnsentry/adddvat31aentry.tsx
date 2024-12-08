@@ -326,11 +326,11 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
       description_of_goods: "",
       quantity: "",
     });
-    setLock(true);
+    // setLock(true);
     setCommodityMasterData(null);
   };
 
-  const [isLock, setLock] = useState<boolean>(false);
+  // const [isLock, setLock] = useState<boolean>(false);
 
   interface DvatDataType {
     invoice_number: string;
@@ -396,9 +396,9 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
               name="recipient_vat_no"
               required={true}
               numdes={true}
-              title="Recipient VAT NO."
+              title="Recipient VAT NO. (For Unregistered use 24000000000)"
               placeholder="Recipient VAT NO."
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
           <div className="flex-1">
@@ -416,7 +416,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
               required={true}
               title="Category of Entry"
               options={categoryOfEntry}
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
           <div className="flex-1">
@@ -426,7 +426,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
               numdes={true}
               title="Invoice no."
               placeholder="Invoice no."
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
         </div>
@@ -461,7 +461,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
                 ).end,
                 dateFormat
               )}
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
           <div className="flex-1">
@@ -471,7 +471,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
               numdes={true}
               title="Total invoice value"
               placeholder="Total invoice value"
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
         </div>
@@ -483,7 +483,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
               required={true}
               title="Select nature of sale transaction"
               options={sale_of_interstate}
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
           <div className="flex-1">
@@ -501,7 +501,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
               required={true}
               title="Remarks"
               placeholder="Remarks"
-              disable={isLock}
+              // disable={isLock}
             />
           </div>
         </div>

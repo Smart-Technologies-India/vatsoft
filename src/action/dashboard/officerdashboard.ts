@@ -3,9 +3,12 @@
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
 
-interface OfficerDashboardPayload {}
+interface OfficerDashboardPayload {
+  selectOffice: SelectOffice;
+}
 
 import prisma from "../../../prisma/database";
+import { SelectOffice } from "@prisma/client";
 
 interface ResponseData {
   totaldealer: number;
@@ -26,6 +29,7 @@ const OfficerDashboard = async (
   try {
     const total_dealer = await prisma.dvat04.count({
       where: {
+        selectOffice: payload.selectOffice,
         deletedAt: null,
         deletedBy: null,
         status: "APPROVED",
@@ -34,6 +38,8 @@ const OfficerDashboard = async (
 
     const fueldealer = await prisma.dvat04.count({
       where: {
+        selectOffice: payload.selectOffice,
+
         deletedAt: null,
         deletedBy: null,
         commodity: "FUEL",
@@ -43,6 +49,7 @@ const OfficerDashboard = async (
 
     const liquoredealer = await prisma.dvat04.count({
       where: {
+        selectOffice: payload.selectOffice,
         deletedAt: null,
         deletedBy: null,
         commodity: "LIQUOR",
@@ -51,6 +58,7 @@ const OfficerDashboard = async (
     });
     const reg = await prisma.dvat04.count({
       where: {
+        selectOffice: payload.selectOffice,
         deletedAt: null,
         deletedBy: null,
         compositionScheme: false,
@@ -59,6 +67,7 @@ const OfficerDashboard = async (
     });
     const comp = await prisma.dvat04.count({
       where: {
+        selectOffice: payload.selectOffice,
         deletedAt: null,
         deletedBy: null,
         compositionScheme: true,
@@ -67,6 +76,9 @@ const OfficerDashboard = async (
     });
     const filed_return = await prisma.return_filing.count({
       where: {
+        dvat: {
+          selectOffice: payload.selectOffice,
+        },
         deletedAt: null,
         deletedBy: null,
         NOT: [
@@ -79,6 +91,9 @@ const OfficerDashboard = async (
 
     const pending_return = await prisma.return_filing.count({
       where: {
+        dvat: {
+          selectOffice: payload.selectOffice,
+        },
         deletedAt: null,
         deletedBy: null,
         filing_date: null,
@@ -115,6 +130,9 @@ const OfficerDashboard = async (
     // Count records received last month
     const last_month_received_data = await prisma.returns_01.findMany({
       where: {
+        dvat04: {
+          selectOffice: payload.selectOffice,
+        },
         deletedAt: null,
         deletedBy: null,
         status: "ACTIVE",
@@ -136,6 +154,9 @@ const OfficerDashboard = async (
     // Count records received this month
     const this_month_received_data = await prisma.returns_01.findMany({
       where: {
+        dvat04: {
+          selectOffice: payload.selectOffice,
+        },
         deletedAt: null,
         deletedBy: null,
         status: "ACTIVE",
@@ -179,6 +200,9 @@ const OfficerDashboard = async (
     // Count records received today
     const today_received_data = await prisma.returns_01.findMany({
       where: {
+        dvat04: {
+          selectOffice: payload.selectOffice,
+        },
         deletedAt: null,
         deletedBy: null,
         status: "ACTIVE",

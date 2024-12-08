@@ -69,7 +69,7 @@ const GetPendingReturn = async (
           // If dvat does not exist, create a new entry
           resMap.set(currentDvat.id, {
             dvat04: currentDvat,
-            lastfiling: currentLastFiling,
+            lastfiling: filingStatus ? currentLastFiling : "N/A",
             pending: !filingStatus && dueDate && dueDate < currentDate ? 1 : 0,
           });
         }

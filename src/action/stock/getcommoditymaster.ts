@@ -18,7 +18,7 @@ const GetCommodityMaster = async (
       where: {
         deletedAt: null,
         deletedById: null,
-        id: parseInt(payload.id ? payload.id.toString() : "0"),
+        id: payload.id,
       },
     });
 

@@ -152,7 +152,7 @@ const CreateDvat30AEntry = (props: CreateDvat30AEntryProviderProps) => {
     return { start: formattedStart, end: formattedEnd };
   };
 
-  const [davtdata, setDvatdata] = useState<dvat04>();
+  const [davtdata, setDvatdata] = useState<dvat04 | null>(null);
 
   const {
     reset,

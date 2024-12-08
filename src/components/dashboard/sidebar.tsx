@@ -2,6 +2,8 @@
 import { usePathname, useRouter } from "next/navigation";
 import {
   Fa6RegularFileLines,
+  FluentBuildingBank48Regular,
+  FluentCalendar12Regular,
   FluentCalendarDataBar32Light,
   FluentMdl2ViewDashboard,
   FluentNotepadPerson16Regular,
@@ -158,6 +160,27 @@ const Sidebar = (props: SidebarProps) => {
         path={path}
         pathcheck={"/dashboard/help_tax"}
       />
+
+      {isProfileCompletd && ["USER"].includes(props.role) && (
+        <>
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={<FluentCalendar12Regular className="text-gray-300  w-6" />}
+            name="Daily Sale"
+            path={path}
+            pathcheck={"/dashboard/stock/view_sale"}
+          />
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={
+              <FluentBuildingBank48Regular className="text-gray-300 text-xl  w-6" />
+            }
+            name="Stock"
+            path={path}
+            pathcheck={"/dashboard/stock"}
+          />
+        </>
+      )}
       {/* <MenuTab
         icco={<Fa6RegularFileLines className="text-gray-300  w-6" />}
         name="Downloads"

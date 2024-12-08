@@ -2,7 +2,13 @@
 
 import { Button, Collapse, Drawer } from "antd";
 import Marquee from "react-fast-marquee";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formateDate, handleNumberChange } from "@/utils/methods";
@@ -23,7 +29,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { ChevronDown } from "lucide-react";
+import LoadingPage from "./loading";
 
 const Home = () => {
   const faqs = [
