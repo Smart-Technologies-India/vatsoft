@@ -70,17 +70,6 @@ const CreateDailySale = async (
       if (!seller_dvat.tinNumber) {
         throw new Error("Seller Dvat TIN number is not set.");
       }
-      const saller_response = await prisma.tin_number_master.findFirst({
-        where: {
-          status: "ACTIVE",
-          deletedAt: null,
-          tin_number: seller_dvat.tinNumber,
-        },
-      });
-
-      if (!saller_response) {
-        throw new Error("Seller tin number not found.");
-      }
 
       const daily_sale_response = await prisma.daily_sale.create({
         data: {
@@ -152,6 +141,17 @@ const CreateDailySale = async (
           purchaser_response.tin_number.startsWith("25") ||
           purchaser_response.tin_number.startsWith("26")
         ) {
+          const saller_response = await prisma.tin_number_master.findFirst({
+            where: {
+              status: "ACTIVE",
+              deletedAt: null,
+              tin_number: seller_dvat.tinNumber,
+            },
+          });
+
+          if (!saller_response) {
+            throw new Error("Seller tin number not found.");
+          }
           const create_response = await prisma.daily_purchase.create({
             data: {
               dvat04Id: userstock.id,
