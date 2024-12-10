@@ -23,39 +23,32 @@ import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
-import CreateDailyPurchase from "@/action/stock/createdailypuchase";
+import CreateMaterial from "@/action/stock/creatematerial";
+// import CreateDailyPurchase from "@/action/stock/createdailypuchase";
 
-type DailyPurchaseProviderProps = {
+type AddMaterialProviderProps = {
   userid: number;
   setAddBox: Dispatch<SetStateAction<boolean>>;
   init: () => Promise<void>;
 };
-export const DailyPurchaseMasterProvider = (
-  props: DailyPurchaseProviderProps
-) => {
+export const AddMaterialProvider = (props: AddMaterialProviderProps) => {
   const methods = useForm<DailyPurchaseMasterForm>({
     resolver: valibotResolver(DailyPurchaseMasterSchema),
   });
 
   return (
     <FormProvider {...methods}>
-      <DailyPurchaseMaster
+      <AddMaterial
         userid={props.userid}
-        // id={props.id}
         setAddBox={props.setAddBox}
-        // setCommid={props.setCommid}
         init={props.init}
       />
     </FormProvider>
   );
 };
 
-const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
+const AddMaterial = (props: AddMaterialProviderProps) => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
-
-  const taxable_at: OptionValue[] = [
-    0, 1, 2, 4, 5, 6, 12.5, 12.75, 13.5, 15, 20,
-  ].map((val: number) => ({ value: `${val}`, label: `${val}%` }));
 
   const {
     reset,
@@ -90,18 +83,10 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         setDvatdata(response.data);
         const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
-          if (response.data.commodity == "OIDC") {
-            const filterdata = commodity_resposen.data.filter(
-              (val: commodity_master) => val.product_type == "LIQUOR"
-            );
-            setCommodityMaster(filterdata);
-          } else {
-            const filterdata = commodity_resposen.data.filter(
-              (val: commodity_master) =>
-                val.product_type == response.data!.commodity
-            );
-            setCommodityMaster(filterdata);
-          }
+          const filterdata = commodity_resposen.data.filter(
+            (val: commodity_master) => val.product_type == "MANUFACTURER"
+          );
+          setCommodityMaster(filterdata);
         }
       }
 
@@ -241,7 +226,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
       return toast.error("Seller Vat Number not found.");
-    const stock_response = await CreateDailyPurchase({
+    const stock_response = await CreateMaterial({
       amount_unit: data.amount_unit,
       invoice_date: new Date(data.invoice_date),
       invoice_number: data.invoice_number,
@@ -272,7 +257,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
       return toast.error("Seller Vat Number not found.");
-    const stock_response = await CreateDailyPurchase({
+    const stock_response = await CreateMaterial({
       amount_unit: data.amount_unit,
       invoice_date: new Date(data.invoice_date),
       invoice_number: data.invoice_number,

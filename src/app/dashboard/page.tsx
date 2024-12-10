@@ -228,7 +228,7 @@ const RentCard = (props: RentCardProps) => {
   };
   return (
     <div className="flex w-full my-2 px-3 py-1 rounded-md items-center gap-2 bg-white justify-between ">
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center w-32">
         <div
           className={`h-10 w-1 rounded-sm ${
             props.filestatus == FileStatus.FILED ? "bg-teal-500" : "bg-rose-500"
@@ -237,7 +237,7 @@ const RentCard = (props: RentCardProps) => {
         <div className="hidden md:block">
           {props.filestatus == FileStatus.FILED ? (
             <>
-              <div className="leading-3 w-8 h-8 rounded-full bg-teal-500 bg-opacity-30 text-teal-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
+              <div className="leading-3 w-8 h-8 rounded-full bg-teal-500 bg-opacity-30 text-teal-500 grid place-items-center text-[0.7rem] font-medium tracking-wider text-center">
                 {props.month}
                 <br />
                 {props.year}
@@ -245,7 +245,7 @@ const RentCard = (props: RentCardProps) => {
             </>
           ) : (
             <>
-              <div className="leading-3 w-8 h-8 rounded-full bg-rose-500 bg-opacity-30 text-rose-500 grid place-items-center text-[0.7rem] font-medium tracking-wider">
+              <div className="leading-3 w-8 h-8 rounded-full bg-rose-500 bg-opacity-30 text-rose-500 grid place-items-center text-[0.7rem] font-medium tracking-wider text-center">
                 {props.month}
                 <br />
                 {props.year}
@@ -258,7 +258,7 @@ const RentCard = (props: RentCardProps) => {
         </h1>
       </div>
 
-      <p className="text-xs font-normal text-gray-600 font-nunito leading-3 mt-1 w-16 text-center">
+      <p className="text-xs font-normal text-gray-600 font-nunito leading-3 mt-1 w-16  text-center">
         {props.status}
       </p>
       <div className="w-20 ">

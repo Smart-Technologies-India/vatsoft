@@ -1,6 +1,8 @@
 "use client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetAllStock from "@/action/stock/getallstock";
+import { AddMaterialProvider } from "@/components/forms/addmaterial/addmaterial";
+import { CreateStockProvider } from "@/components/forms/createstock/createstock";
 import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
 import {
   Table,
@@ -14,6 +16,7 @@ import { commodity_master, dvat04, stock } from "@prisma/client";
 import { Button, Drawer, Pagination } from "antd";
 import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
+import { addListener } from "process";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -93,56 +96,9 @@ const CommodityMaster = () => {
     init();
   }, [userid]);
 
-  // const [open, setOpen] = useState(false);
-  // const [comm, setComm] = useState<commodity_master | null>(null);
-  // const showDrawer = async (id: number) => {
-  //   const data = await GetCommodityMaster({ id: id });
-
-  //   if (data.status && data.data) {
-  //     setOpen(true);
-  //     setComm(data.data);
-  //   } else {
-  //     toast.error(data.message);
-  //   }
-  // };
-  // const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
-  //   {}
-  // );
-  // const handleOpenChange = (newOpen: boolean, index: number) => {
-  //   setOpenPopovers((prev) => ({
-  //     ...prev,
-  //     [index]: newOpen,
-  //   }));
-  // };
-
-  // const handelClose = (index: number) => {
-  //   setOpenPopovers((prev) => ({
-  //     ...prev,
-  //     [index]: false,
-  //   }));
-  // };
-
-  // const handleCloseAll = () => {
-  //   setOpenPopovers((prev) =>
-  //     Object.fromEntries(Object.keys(prev).map((key) => [key, false]))
-  //   );
-  // };
-  // const commoditystatus = async (id: number, state: Status) => {
-  //   const delete_commodity = await UpdateCommodityMaster({
-  //     id: id,
-  //     updatedById: userid,
-  //     status: state,
-  //   });
-  //   if (delete_commodity.status) {
-  //     toast.success(delete_commodity.message);
-  //     await init();
-  //   } else {
-  //     toast.error(delete_commodity.message);
-  //   }
-  //   handleCloseAll();
-  // };
-
   const [addBox, setAddBox] = useState<boolean>(false);
+  const [stockBox, setStockBox] = useState<boolean>(false);
+  const [materialBox, setMaterialBox] = useState<boolean>(false);
   // const [commid, setCommid] = useState<number>();
 
   const onChangePageCount = async (page: number, pagesize: number) => {
@@ -175,16 +131,44 @@ const CommodityMaster = () => {
         placement="right"
         closeIcon={null}
         onClose={() => {
+          setMaterialBox(false);
+        }}
+        open={materialBox}
+      >
+        <p className="text-lg text-left">Add Row Material</p>
+        <AddMaterialProvider
+          userid={userid}
+          setAddBox={setMaterialBox}
+          init={init}
+        />
+      </Drawer>
+      <Drawer
+        placement="right"
+        closeIcon={null}
+        onClose={() => {
           setAddBox(false);
         }}
         open={addBox}
       >
-        <p className="text-lg text-left">Add Stock</p>
+        <p className="text-lg text-left">Add Purchase</p>
         <DailyPurchaseMasterProvider
           userid={userid}
-          // id={commid}
           setAddBox={setAddBox}
-          // setCommid={setCommid}
+          init={init}
+        />
+      </Drawer>
+      <Drawer
+        placement="right"
+        closeIcon={null}
+        onClose={() => {
+          setStockBox(false);
+        }}
+        open={stockBox}
+      >
+        <p className="text-lg text-left">Add Stock</p>
+        <CreateStockProvider
+          userid={userid}
+          setAddBox={setStockBox}
           init={init}
         />
       </Drawer>
@@ -194,21 +178,41 @@ const CommodityMaster = () => {
           <div className="flex gap-2">
             <p className="text-lg font-semibold items-center">Stock</p>
             <div className="grow"></div>
-            {/* {dvatdata &&
-              (dvatdata.commodity == "OIDC" ||
-                dvatdata.commodity == "FUEL") && ( */}
+            {dvatdata && dvatdata.commodity == "MANUFACTURER" && (
+              <>
+                <Button
+                  size="small"
+                  type="primary"
+                  className="bg-blue-500 hover:bg-blue-500"
+                  onClick={() => {
+                    setStockBox(true);
+                  }}
+                >
+                  Add Stock
+                </Button>
+                <Button
+                  size="small"
+                  type="primary"
+                  className="bg-blue-500 hover:bg-blue-500"
+                  onClick={() => {
+                    setMaterialBox(true);
+                  }}
+                >
+                  Add Raw Material
+                </Button>
+              </>
+            )}
             <Button
               size="small"
               type="primary"
-              className="bg-blue-500 hover:bg-blue-500 w-14"
+              className="bg-blue-500 hover:bg-blue-500"
               onClick={() => {
                 // setCommid(undefined);
                 setAddBox(true);
               }}
             >
-              Add
+              Add Purchase
             </Button>
-            {/* )} */}
 
             <Button
               size="small"
@@ -238,16 +242,6 @@ const CommodityMaster = () => {
                     <TableHead className="whitespace-nowrap border text-center p-2">
                       Description
                     </TableHead>
-
-                    {/* <TableHead className="whitespace-nowrap border text-center p-2">
-                  Sale Price
-                </TableHead>
-                <TableHead className="whitespace-nowrap border text-center p-2">
-                  Taxable At
-                </TableHead>
-                <TableHead className="whitespace-nowrap border text-center p-2 w-52">
-                  Action
-                </TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -269,90 +263,6 @@ const CommodityMaster = () => {
                         <TableCell className="p-2 border text-left">
                           {val.commodity_master.description}
                         </TableCell>
-
-                        {/* <TableCell className="p-2 border text-center">
-                    {val.sale_price}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.taxable_at}%
-                  </TableCell>
-                  <TableCell className="p-2 text-center grid grid-cols-3 gap-2">
-                    <Button
-                      size="small"
-                      type="primary"
-                      className="bg-blue-500 hover:bg-blue-500 w-14"
-                      onClick={() => {
-                        showDrawer(val.id);
-                      }}
-                    >
-                      View
-                    </Button>
-                    <button
-                      onClick={() => {
-                        setCommid(val.id);
-                        setAddBox(true);
-                      }}
-                      className="bg-indigo-500 hover:bg-indigo-400 w-14 text-white rounded-sm"
-                    >
-                      Edit
-                    </button>
-
-                    <Popover
-                      content={
-                        <div className="flex flex-col gap-2">
-                          <p>
-                            Are you sure you want to{" "}
-                            {val.status == Status.ACTIVE
-                              ? "Inactive"
-                              : "Active"}{" "}
-                            this Commodity
-                          </p>
-                          <div className="flex gap-2">
-                            <Button
-                              type="primary"
-                              size="small"
-                              onClick={() => {
-                                commoditystatus(
-                                  val.id,
-                                  val.status == Status.ACTIVE
-                                    ? Status.INACTIVE
-                                    : Status.ACTIVE
-                                );
-                              }}
-                            >
-                              YES
-                            </Button>
-                            <Button
-                              size="small"
-                              onClick={() => {
-                                handelClose(index);
-                              }}
-                            >
-                              No
-                            </Button>
-                          </div>
-                        </div>
-                      }
-                      title={
-                        val.status == Status.ACTIVE ? "Inactive" : "Active"
-                      }
-                      trigger="click"
-                      open={!!openPopovers[index]} // Open state for each row
-                      onOpenChange={(newOpen) =>
-                        handleOpenChange(newOpen, index)
-                      }
-                    >
-                      <button
-                        className={`${
-                          val.status == Status.ACTIVE
-                            ? "bg-rose-500 hover:bg-rose-500"
-                            : "bg-emerald-500 hover:bg-emerald-500"
-                        }  w-14 text-white rounded-sm text-sm`}
-                      >
-                        {val.status == Status.ACTIVE ? "Inactive" : "Active"}
-                      </button>
-                    </Popover>
-                  </TableCell> */}
                       </TableRow>
                     )
                   )}

@@ -4,7 +4,7 @@ import { FormProvider, useForm, useFormContext } from "react-hook-form";
 
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { MultiSelect } from "../inputfields/multiselect";
 import { OptionValue } from "@/models/main";
 import { toast } from "react-toastify";
@@ -18,6 +18,8 @@ import { DailySaleForm, DailySaleSchema } from "@/schema/daily_sale";
 import CreateDailySale from "@/action/stock/createdailysale";
 import GetUserCommodity from "@/action/stock/usercommodity";
 import SearchTin from "@/action/tin_number/searchtin";
+import { Input, InputRef, Modal } from "antd";
+import CreateTinNumber from "@/action/tin_number/createtin";
 
 type DailySaleProviderProps = {
   userid: number;
@@ -135,7 +137,8 @@ const DailySale = (props: DailySaleProviderProps) => {
       if (recipient_vat_no && (recipient_vat_no ?? "").length < 2) {
         if (recipient_vat_no.length >= 11) {
           toast.dismiss();
-          toast.error("Invalid DVAT no.");
+          // toast.error("Invalid DVAT no.");
+          setTinBox(true);
         }
         setTinData(null);
         return;
@@ -149,7 +152,8 @@ const DailySale = (props: DailySaleProviderProps) => {
         setTinData(tinresponse.data);
       } else {
         if ((recipient_vat_no ?? "").length >= 11) {
-          toast.error("Invalid DVAT no.");
+          // toast.error("Invalid DVAT no.");
+          setTinBox(true);
         }
         setTinData(null);
       }
@@ -274,6 +278,32 @@ const DailySale = (props: DailySaleProviderProps) => {
 
   const [submitType, setSubmitType] = useState<string>("");
 
+  const [tinBox, setTinBox] = useState(false);
+
+  const tinnname = useRef<InputRef>(null);
+
+  const createTin = async () => {
+    if (
+      tinnname.current?.input?.value == undefined ||
+      tinnname.current?.input?.value == null ||
+      tinnname.current?.input?.value == ""
+    ) {
+      return toast.error("Enter Dealer Name");
+    }
+    const response = await CreateTinNumber({
+      name: tinnname.current.input.value,
+      tinumber: getValues("recipient_vat_no"),
+    });
+
+    if (response.status && response.data) {
+      toast.success(response.message);
+      setTinData(response.data);
+    } else {
+      toast.error(response.message);
+    }
+    setTinBox(false);
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -282,146 +312,159 @@ const DailySale = (props: DailySaleProviderProps) => {
     );
 
   return (
-    <form
-      onSubmit={handleSubmit((data) => {
-        if (submitType === "submit") {
-          onSubmit(data);
-        } else if (submitType === "addNew") {
-          addNew(data);
-        }
-      }, onFormError)}
-    >
-      <div className="mt-2">
-        <TaxtInput<DailySaleForm>
-          placeholder="Seller Vat Number"
-          name="recipient_vat_no"
-          required={true}
-          title="Seller Vat Number"
-        />
-      </div>
-      {tindata != null && (
+    <>
+      <Modal
+        title="Create New TIN Master"
+        open={tinBox}
+        onOk={createTin}
+        onCancel={() => setTinBox(false)}
+      >
+        <p>This Tin Number not exist. Do you want to create it?</p>
+        <Input ref={tinnname} placeholder="Enter The name of the dealer." />
+      </Modal>
+      <form
+        onSubmit={handleSubmit((data) => {
+          if (submitType === "submit") {
+            onSubmit(data);
+          } else if (submitType === "addNew") {
+            addNew(data);
+          }
+        }, onFormError)}
+      >
         <div className="mt-2">
-          <p className="text-sm font-normal">Name as in Master</p>
-          <p className="font-semibold text-lg">
-            {tindata?.name_of_dealer ?? ""}
-          </p>
-        </div>
-      )}
-      <div className="mt-2">
-        <TaxtInput<DailySaleForm>
-          name="invoice_number"
-          required={true}
-          numdes={true}
-          title="Invoice no."
-          placeholder="Invoice no."
-        />
-      </div>
-      <div className="mt-2">
-        <DateSelect<DailySaleForm>
-          name="invoice_date"
-          required={true}
-          title="Invoice Date"
-          placeholder="Select Invoice Date"
-          // mindate={dayjs(getMonthDateas().start, dateFormat)}
-          // maxdate={dayjs(getMonthDateas().end, dateFormat)}
-        />
-      </div>
-      <div className="mt-2">
-        <div className="mt-2">
-          <MultiSelect<DailySaleForm>
-            placeholder="Select Items details"
-            name="description_of_goods"
+          <TaxtInput<DailySaleForm>
+            placeholder="Seller Vat Number"
+            name="recipient_vat_no"
             required={true}
-            title="Items details"
-            options={commodityMaster.map(
-              (val: commodity_master, index: number) => ({
-                value: val.id.toString(),
-                label: val.product_name,
-              })
-            )}
+            title="Seller Vat Number"
           />
         </div>
-      </div>
-      <div className="mt-2">
-        <TaxtInput<DailySaleForm>
-          title="Quantity"
-          required={true}
-          name="quantity"
-          placeholder="Enter Quantity"
-          onlynumber={true}
-        />
-      </div>
-      <div className="mt-2">
-        <TaxtInput<DailySaleForm>
-          placeholder="Enter amount"
-          name="amount_unit"
-          required={true}
-          title="Enter amount"
-          disable={isLiquore}
-          onlynumber={true}
-        />
-      </div>
-      <div className="flex gap-1 items-center">
-        <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
-          <p className="text-xs font-normal">Taxable Rate (%)</p>
-          <p className="text-sm font-semibold">
-            {commoditymaster != null ? commoditymaster.taxable_at + "%" : "0%"}
-          </p>
+        {tindata != null && (
+          <div className="mt-2">
+            <p className="text-sm font-normal">Name as in Master</p>
+            <p className="font-semibold text-lg">
+              {tindata?.name_of_dealer ?? ""}
+            </p>
+          </div>
+        )}
+        <div className="mt-2">
+          <TaxtInput<DailySaleForm>
+            name="invoice_number"
+            required={true}
+            numdes={true}
+            title="Invoice no."
+            placeholder="Invoice no."
+          />
         </div>
-        <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
-          <p className="text-xs font-normal">Taxable Value</p>
-          <p className="text-sm font-semibold">{taxableValue}</p>
+        <div className="mt-2">
+          <DateSelect<DailySaleForm>
+            name="invoice_date"
+            required={true}
+            title="Invoice Date"
+            placeholder="Select Invoice Date"
+            // mindate={dayjs(getMonthDateas().start, dateFormat)}
+            // maxdate={dayjs(getMonthDateas().end, dateFormat)}
+          />
         </div>
-        <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
-          <p className="text-xs font-normal">VAT Amount</p>
-          <p className="text-sm font-semibold">{vatamount}</p>
+        <div className="mt-2">
+          <div className="mt-2">
+            <MultiSelect<DailySaleForm>
+              placeholder="Select Items details"
+              name="description_of_goods"
+              required={true}
+              title="Items details"
+              options={commodityMaster.map(
+                (val: commodity_master, index: number) => ({
+                  value: val.id.toString(),
+                  label: val.product_name,
+                })
+              )}
+            />
+          </div>
         </div>
-      </div>
+        <div className="mt-2">
+          <TaxtInput<DailySaleForm>
+            title="Quantity"
+            required={true}
+            name="quantity"
+            placeholder="Enter Quantity"
+            onlynumber={true}
+          />
+        </div>
+        <div className="mt-2">
+          <TaxtInput<DailySaleForm>
+            placeholder="Enter amount"
+            name="amount_unit"
+            required={true}
+            title="Enter amount"
+            disable={isLiquore}
+            onlynumber={true}
+          />
+        </div>
+        <div className="flex gap-1 items-center">
+          <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
+            <p className="text-xs font-normal">Taxable Rate (%)</p>
+            <p className="text-sm font-semibold">
+              {commoditymaster != null
+                ? commoditymaster.taxable_at + "%"
+                : "0%"}
+            </p>
+          </div>
+          <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
+            <p className="text-xs font-normal">Taxable Value</p>
+            <p className="text-sm font-semibold">{taxableValue}</p>
+          </div>
+          <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
+            <p className="text-xs font-normal">VAT Amount</p>
+            <p className="text-sm font-semibold">{vatamount}</p>
+          </div>
+        </div>
 
-      <div className="flex gap-2">
-        <button
-          type="reset"
-          onClick={(e) => {
-            e.preventDefault();
-            props.setAddBox(false);
-            // props.setCommid(undefined);
-          }}
-          className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white mt-2 cursor-pointer"
-        >
-          Close
-        </button>
-        <input
-          type="reset"
-          onClick={(e) => {
-            e.preventDefault();
-            reset({
-              amount_unit: "",
-              description_of_goods: undefined,
-              invoice_date: "",
-              invoice_number: undefined,
-              quantity: "",
-            });
-          }}
-          value={"Reset"}
-          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
-        />
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          onClick={() => setSubmitType("submit")}
-          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
-        >
-          {isSubmitting ? "Loading...." : "Submit"}
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          onClick={() => setSubmitType("addNew")}
-          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
-        >
-          {isSubmitting ? "Loading...." : "Add More"}
-        </button>
-      </div>
-    </form>
+        <div className="flex gap-2">
+          <button
+            type="reset"
+            onClick={(e) => {
+              e.preventDefault();
+              props.setAddBox(false);
+              // props.setCommid(undefined);
+            }}
+            className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white mt-2 cursor-pointer"
+          >
+            Close
+          </button>
+          <input
+            type="reset"
+            onClick={(e) => {
+              e.preventDefault();
+              reset({
+                amount_unit: "",
+                description_of_goods: undefined,
+                invoice_date: "",
+                invoice_number: undefined,
+                quantity: "",
+              });
+            }}
+            value={"Reset"}
+            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
+          />
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            onClick={() => setSubmitType("submit")}
+            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
+          >
+            {isSubmitting ? "Loading...." : "Submit"}
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            onClick={() => setSubmitType("addNew")}
+            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
+          >
+            {isSubmitting ? "Loading...." : "Add More"}
+          </button>
+        </div>
+      </form>
+    </>
   );
 };

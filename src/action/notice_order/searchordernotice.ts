@@ -16,6 +16,7 @@ interface SearchNoticeOrderPayload {
   form_type?: FormType;
   tin?: string;
   order?: string;
+  dvatid?: number;
   skip: number;
   take: number;
 }
@@ -33,6 +34,7 @@ const SearchNoticeOrder = async (
           deletedById: null,
           dvat: {
             ...(payload.userid && { createdById: payload.userid }),
+            ...(payload.dvatid && { id: payload.dvatid }),
             ...(payload.dept && { selectOffice: payload.dept }),
             ...(payload.tin && {
               tinNumber: {
@@ -65,6 +67,7 @@ const SearchNoticeOrder = async (
           deletedById: null,
           dvat: {
             ...(payload.userid && { createdById: payload.userid }),
+            ...(payload.dvatid && { id: payload.dvatid }),
             ...(payload.dept && { selectOffice: payload.dept }),
             ...(payload.tin && {
               tinNumber: {

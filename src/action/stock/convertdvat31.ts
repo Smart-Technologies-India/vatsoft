@@ -43,7 +43,7 @@ const ConvertDvat31 = async (
 
   try {
     const result: returns_01 = await prisma.$transaction(async (prisma) => {
-      const data_to_create = await prisma.daily_sale.findMany({
+      const lowestMonth = await prisma.daily_sale.findFirst({
         where: {
           deletedAt: null,
           deletedBy: null,
@@ -51,13 +51,51 @@ const ConvertDvat31 = async (
           dvat04Id: payload.dvatid,
           is_dvat_31: false,
         },
+        orderBy: {
+          invoice_date: "asc", // Sort by date to get the earliest month
+        },
+        select: {
+          invoice_date: true,
+        },
+      });
+
+      if (!lowestMonth) {
+        throw new Error("No records found");
+      }
+
+      const targetDate = new Date(lowestMonth.invoice_date);
+      const targetMonth = new Date(lowestMonth.invoice_date)
+        .toISOString()
+        .slice(0, 7); // Extract YYYY-MM format
+
+      const year = parseInt(targetMonth.split("-")[0], 10);
+      const month = parseInt(targetMonth.split("-")[1], 10);
+
+      // Calculate the first day of the next month
+      const startOfNextMonth = new Date(year, month, 1); // Year and month are 0-indexed in JS Date
+
+      // Calculate the last day of the target month
+      const endOfMonth = new Date(startOfNextMonth.getTime() - 1);
+
+      const data_to_create = await prisma.daily_sale.findMany({
+        where: {
+          deletedAt: null,
+          deletedBy: null,
+          status: "ACTIVE",
+          dvat04Id: payload.dvatid,
+          is_dvat_31: false,
+          invoice_date: {
+            gte: new Date(`${targetMonth}-01`),
+            lt: endOfMonth,
+          },
+        },
         include: {
           seller_tin_number: true,
         },
       });
 
       if (data_to_create.length == 0) {
-        throw new Error("There is no remaning daily purchase");
+        throw new Error("There is no remaning daily sale");
       }
 
       const update_response = await prisma.daily_sale.updateMany({
@@ -67,6 +105,10 @@ const ConvertDvat31 = async (
           status: "ACTIVE",
           dvat04Id: payload.dvatid,
           is_dvat_31: false,
+          invoice_date: {
+            gte: new Date(`${targetMonth}-01`),
+            lt: endOfMonth,
+          },
         },
         data: {
           is_dvat_31: true,
@@ -77,12 +119,12 @@ const ConvertDvat31 = async (
       if (!update_response) {
         throw new Error("Something want wrong unable to update.");
       }
-      const current_date = new Date();
+      // const current_date = new Date();
 
       let returnInvoice = await prisma.returns_01.findFirst({
         where: {
-          year: current_date.getFullYear().toString(),
-          month: monthNames[current_date.getMonth()],
+          year: targetDate.getFullYear().toString(),
+          month: monthNames[targetDate.getMonth()],
           createdById: payload.createdById,
           return_type: "REVISED",
         },
@@ -91,8 +133,8 @@ const ConvertDvat31 = async (
       if (!returnInvoice) {
         returnInvoice = await prisma.returns_01.findFirst({
           where: {
-            year: current_date.getFullYear().toString(),
-            month: monthNames[current_date.getMonth()],
+            year: targetDate.getFullYear().toString(),
+            month: monthNames[targetDate.getMonth()],
             createdById: payload.createdById,
             return_type: "ORIGINAL",
           },
@@ -112,9 +154,9 @@ const ConvertDvat31 = async (
           data: {
             rr_number: "",
             return_type: ReturnType.ORIGINAL,
-            year: current_date.getFullYear().toString(),
-            month: monthNames[current_date.getMonth()],
-            quarter: getQuarter(monthNames[current_date.getMonth()]) as Quarter,
+            year: targetDate.getFullYear().toString(),
+            month: monthNames[targetDate.getMonth()],
+            quarter: getQuarter(monthNames[targetDate.getMonth()]) as Quarter,
             dvat04Id: dvat04.id,
             filing_datetime: new Date(),
             file_status: Status.ACTIVE,

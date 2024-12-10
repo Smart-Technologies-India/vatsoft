@@ -12,34 +12,28 @@ import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
 
 import { getCookie } from "cookies-next";
-import {
-  DailyPurchaseMasterForm,
-  DailyPurchaseMasterSchema,
-} from "@/schema/daily_purchase";
+
 import dayjs from "dayjs";
-import { DateSelect } from "../inputfields/dateselect";
-import SearchTin from "@/action/tin_number/searchtin";
 import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
-import CreateDailyPurchase from "@/action/stock/createdailypuchase";
+import CreateStock from "@/action/stock/createstock";
+import { CreateStockForm, CreateStockSchema } from "@/schema/create_stock";
 
-type DailyPurchaseProviderProps = {
+type CreateStockProviderProps = {
   userid: number;
   setAddBox: Dispatch<SetStateAction<boolean>>;
   init: () => Promise<void>;
 };
-export const DailyPurchaseMasterProvider = (
-  props: DailyPurchaseProviderProps
-) => {
-  const methods = useForm<DailyPurchaseMasterForm>({
-    resolver: valibotResolver(DailyPurchaseMasterSchema),
+export const CreateStockProvider = (props: CreateStockProviderProps) => {
+  const methods = useForm<CreateStockForm>({
+    resolver: valibotResolver(CreateStockSchema),
   });
 
   return (
     <FormProvider {...methods}>
-      <DailyPurchaseMaster
+      <CreateStockData
         userid={props.userid}
         // id={props.id}
         setAddBox={props.setAddBox}
@@ -50,7 +44,7 @@ export const DailyPurchaseMasterProvider = (
   );
 };
 
-const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
+const CreateStockData = (props: CreateStockProviderProps) => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
 
   const taxable_at: OptionValue[] = [
@@ -63,7 +57,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     watch,
     formState: { errors, isSubmitting },
     getValues,
-  } = useFormContext<DailyPurchaseMasterForm>();
+  } = useFormContext<CreateStockForm>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [davtdata, setDvatdata] = useState<dvat04 | null>(null);
@@ -76,10 +70,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     reset({
       amount_unit: "",
       description_of_goods: undefined,
-      invoice_date: "",
-      invoice_number: undefined,
       quantity: "",
-      recipient_vat_no: "",
     });
     const init = async () => {
       const response = await GetUserDvat04({
@@ -90,21 +81,12 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         setDvatdata(response.data);
         const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
-          if (response.data.commodity == "OIDC") {
-            const filterdata = commodity_resposen.data.filter(
-              (val: commodity_master) => val.product_type == "LIQUOR"
-            );
-            setCommodityMaster(filterdata);
-          } else {
-            const filterdata = commodity_resposen.data.filter(
-              (val: commodity_master) =>
-                val.product_type == response.data!.commodity
-            );
-            setCommodityMaster(filterdata);
-          }
+          const filterdata = commodity_resposen.data.filter(
+            (val: commodity_master) => val.product_type == "LIQUOR"
+          );
+          setCommodityMaster(filterdata);
         }
       }
-
       setIsLoading(false);
     };
     init();
@@ -160,42 +142,10 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
 
   const dateFormat = "YYYY-MM-DD";
 
-  const recipient_vat_no: string = watch("recipient_vat_no");
-
-  const [tindata, setTinData] = useState<tin_number_master | null>(null);
   const [commoditymaster, setCommoditymaster] =
     useState<commodity_master | null>(null);
   const [vatamount, setVatAmount] = useState<string>("0");
   const [taxableValue, setTaxableValue] = useState<string>("0");
-
-  useEffect(() => {
-    const init = async () => {
-      if (
-        recipient_vat_no &&
-        (recipient_vat_no ?? "").length > 2 &&
-        (recipient_vat_no.startsWith("25") == true ||
-          recipient_vat_no.startsWith("26") == true)
-      ) {
-        if (recipient_vat_no.length >= 11) {
-          toast.dismiss();
-          toast.error("Invalid DVAT no.");
-        }
-        setTinData(null);
-        return;
-      }
-
-      const tinresponse = await SearchTin({
-        tinumber: recipient_vat_no,
-      });
-
-      if (tinresponse.status && tinresponse.data) {
-        setTinData(tinresponse.data);
-      } else {
-        setTinData(null);
-      }
-    };
-    init();
-  }, [recipient_vat_no]);
 
   const description_of_goods = watch("description_of_goods");
   const quantity = watch("quantity");
@@ -234,24 +184,20 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     );
   }, [quantity, amount_unit, commoditymaster]);
 
-  const onSubmit = async (data: DailyPurchaseMasterForm) => {
+  const onSubmit = async (data: CreateStockForm) => {
     if (davtdata == null || davtdata == undefined)
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
-    if (tindata == null || tindata == undefined)
-      return toast.error("Seller Vat Number not found.");
-    const stock_response = await CreateDailyPurchase({
+
+    const stock_response = await CreateStock({
       amount_unit: data.amount_unit,
-      invoice_date: new Date(data.invoice_date),
-      invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,
       quantity: parseInt(data.quantity),
       vatamount: vatamount,
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
-      seller_tin_id: tindata.id,
       amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(0),
     });
 
@@ -265,24 +211,19 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     props.setAddBox(false);
   };
 
-  const addNew = async (data: DailyPurchaseMasterForm) => {
+  const addNew = async (data: CreateStockForm) => {
     if (davtdata == null || davtdata == undefined)
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
-    if (tindata == null || tindata == undefined)
-      return toast.error("Seller Vat Number not found.");
-    const stock_response = await CreateDailyPurchase({
+    const stock_response = await CreateStock({
       amount_unit: data.amount_unit,
-      invoice_date: new Date(data.invoice_date),
-      invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,
       quantity: parseInt(data.quantity),
       vatamount: vatamount,
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
-      seller_tin_id: tindata.id,
       amount: vatamount,
     });
 
@@ -326,44 +267,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       }, onFormError)}
     >
       <div className="mt-2">
-        <TaxtInput<DailyPurchaseMasterForm>
-          placeholder="Seller Vat Number"
-          name="recipient_vat_no"
-          required={true}
-          title="Seller Vat Number"
-        />
-      </div>
-      {tindata != null && (
         <div className="mt-2">
-          <p className="text-sm font-normal">Name as in Master</p>
-          <p className="font-semibold text-lg">
-            {tindata?.name_of_dealer ?? ""}
-          </p>
-        </div>
-      )}
-
-      <div className="mt-2">
-        <TaxtInput<DailyPurchaseMasterForm>
-          name="invoice_number"
-          required={true}
-          numdes={true}
-          title="Invoice no."
-          placeholder="Invoice no."
-        />
-      </div>
-      <div className="mt-2">
-        <DateSelect<DailyPurchaseMasterForm>
-          name="invoice_date"
-          required={true}
-          title="Invoice Date"
-          placeholder="Select Invoice Date"
-          // mindate={dayjs(getMonthDateas().start, dateFormat)}
-          // maxdate={dayjs(getMonthDateas().end, dateFormat)}
-        />
-      </div>
-      <div className="mt-2">
-        <div className="mt-2">
-          <MultiSelect<DailyPurchaseMasterForm>
+          <MultiSelect<CreateStockForm>
             placeholder="Select Items details"
             name="description_of_goods"
             required={true}
@@ -378,7 +283,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         </div>
       </div>
       <div className="mt-2">
-        <TaxtInput<DailyPurchaseMasterForm>
+        <TaxtInput<CreateStockForm>
           title="Quantity"
           required={true}
           name="quantity"
@@ -387,7 +292,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         />
       </div>
       <div className="mt-2">
-        <TaxtInput<DailyPurchaseMasterForm>
+        <TaxtInput<CreateStockForm>
           placeholder="Enter amount"
           name="amount_unit"
           required={true}
@@ -431,10 +336,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             reset({
               amount_unit: "",
               description_of_goods: undefined,
-              invoice_date: "",
-              invoice_number: undefined,
               quantity: "",
-              recipient_vat_no: "",
             });
           }}
           value={"Reset"}

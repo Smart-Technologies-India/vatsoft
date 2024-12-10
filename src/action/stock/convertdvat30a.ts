@@ -45,6 +45,39 @@ const ConvertDvat30A = async (
 
   try {
     const result: returns_01 = await prisma.$transaction(async (prisma) => {
+      const lowestMonth = await prisma.daily_purchase.findFirst({
+        where: {
+          deletedAt: null,
+          deletedBy: null,
+          status: "ACTIVE",
+          dvat04Id: payload.dvatid,
+          is_dvat_30a: false,
+        },
+        orderBy: {
+          invoice_date: "asc", // Sort by date to get the earliest month
+        },
+        select: {
+          invoice_date: true,
+        },
+      });
+
+      if (!lowestMonth) {
+        throw new Error("No records found");
+      }
+      const targetDate = new Date(lowestMonth.invoice_date);
+      const targetMonth = new Date(lowestMonth.invoice_date)
+        .toISOString()
+        .slice(0, 7); // Extract YYYY-MM format
+
+      const year = parseInt(targetMonth.split("-")[0], 10);
+      const month = parseInt(targetMonth.split("-")[1], 10);
+
+      // Calculate the first day of the next month
+      const startOfNextMonth = new Date(year, month, 1); // Year and month are 0-indexed in JS Date
+
+      // Calculate the last day of the target month
+      const endOfMonth = new Date(startOfNextMonth.getTime() - 1);
+
       const data_to_create = await prisma.daily_purchase.findMany({
         where: {
           deletedAt: null,
@@ -52,6 +85,10 @@ const ConvertDvat30A = async (
           status: "ACTIVE",
           dvat04Id: payload.dvatid,
           is_dvat_30a: false,
+          invoice_date: {
+            gte: new Date(`${targetMonth}-01`), // Start of the month
+            lt: endOfMonth, // End of the month
+          },
         },
         include: {
           seller_tin_number: true,
@@ -69,6 +106,10 @@ const ConvertDvat30A = async (
           status: "ACTIVE",
           dvat04Id: payload.dvatid,
           is_dvat_30a: false,
+          invoice_date: {
+            gte: new Date(`${targetMonth}-01`), // Start of the month
+            lt: endOfMonth, // End of the month
+          },
         },
         data: {
           is_dvat_30a: true,
@@ -79,12 +120,12 @@ const ConvertDvat30A = async (
       if (!update_response) {
         throw new Error("Something want wrong unable to update.");
       }
-      const current_date = new Date();
+      // const current_date = new Date();
 
       let returnInvoice = await prisma.returns_01.findFirst({
         where: {
-          year: current_date.getFullYear().toString(),
-          month: monthNames[current_date.getMonth()],
+          year: targetDate.getFullYear().toString(),
+          month: monthNames[targetDate.getMonth()],
           createdById: payload.createdById,
           return_type: "REVISED",
         },
@@ -93,8 +134,8 @@ const ConvertDvat30A = async (
       if (!returnInvoice) {
         returnInvoice = await prisma.returns_01.findFirst({
           where: {
-            year: current_date.getFullYear().toString(),
-            month: monthNames[current_date.getMonth()],
+            year: targetDate.getFullYear().toString(),
+            month: monthNames[targetDate.getMonth()],
             createdById: payload.createdById,
             return_type: "ORIGINAL",
           },
@@ -114,9 +155,9 @@ const ConvertDvat30A = async (
           data: {
             rr_number: "",
             return_type: ReturnType.ORIGINAL,
-            year: current_date.getFullYear().toString(),
-            month: monthNames[current_date.getMonth()],
-            quarter: getQuarter(monthNames[current_date.getMonth()]) as Quarter,
+            year: targetDate.getFullYear().toString(),
+            month: monthNames[targetDate.getMonth()],
+            quarter: getQuarter(monthNames[targetDate.getMonth()]) as Quarter,
             dvat04Id: dvat04.id,
             filing_datetime: new Date(),
             file_status: Status.ACTIVE,

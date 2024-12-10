@@ -30,6 +30,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import SearchDeptPendingReturn from "@/action/dvat/searchdeptpendingreturn";
 import GetUser from "@/action/user/getuser";
+import Link from "next/link";
+import { encryptURLData } from "@/utils/methods";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -494,8 +496,14 @@ const TrackAppliation = () => {
                         <TableCell className="border text-center p-2">
                           {val.pending}
                         </TableCell>
-                        <TableCell className="border text-center p-2">
-                          {val.notice}
+                        <TableCell className="border text-center text-blue-500 p-2">
+                          <Link
+                            href={`/dashboard/returns/department-pending-return/notice/${encryptURLData(
+                              val.dvat04.id.toString()
+                            )}`}
+                          >
+                            {val.notice}
+                          </Link>
                         </TableCell>
                         <TableCell className="border text-center p-2">
                           <Button

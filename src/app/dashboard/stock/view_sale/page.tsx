@@ -52,7 +52,7 @@ const DocumentWiseDetails = () => {
   const userid: number = parseInt(getCookie("id") ?? "0");
 
   const init = async () => {
-    setLoading(true);
+    // setLoading(true);
 
     const dvat_response = await GetUserDvat04({
       userid: userid,
@@ -75,7 +75,7 @@ const DocumentWiseDetails = () => {
         setDailySale(daily_sale_response.data.result);
       }
     }
-    setLoading(false);
+    // setLoading(false);
   };
 
   useEffect(() => {

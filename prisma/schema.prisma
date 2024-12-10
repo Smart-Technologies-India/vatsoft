@@ -314,6 +314,7 @@ enum Dvat04Commodity {
   FUEL
   OTHER
   OIDC
+  MANUFACTURER
 }
 
 model user {
