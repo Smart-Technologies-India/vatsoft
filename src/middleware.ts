@@ -15,7 +15,8 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/dashboard/returns/dvat24") ||
     request.nextUrl.pathname.startsWith("/dashboard/returns/dvat24a") ||
     request.nextUrl.pathname.startsWith("/dashboard/returns/dvat10") ||
-    request.nextUrl.pathname.startsWith("/dashboard/payments/refunds")
+    request.nextUrl.pathname.startsWith("/dashboard/payments/refunds") ||
+    request.nextUrl.pathname.startsWith("/dashboard/cform")
   ) {
     NextResponse.next();
   } else if (!id && request.nextUrl.pathname.startsWith("/dashboard")) {

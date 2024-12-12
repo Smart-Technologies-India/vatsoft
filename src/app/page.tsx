@@ -2,13 +2,7 @@
 
 import { Button, Collapse, Drawer } from "antd";
 import Marquee from "react-fast-marquee";
-import {
-  Suspense,
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formateDate, handleNumberChange } from "@/utils/methods";
@@ -29,7 +23,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import LoadingPage from "./loading";
 
 const Home = () => {
   const faqs = [
@@ -601,6 +594,43 @@ const NewsCard = (props: NewsCardProps) => {
 // };
 
 const LoginComponent = () => {
+  enum TimerStatus {
+    COMPLETED,
+    RUNNING,
+  }
+
+  const [counter, setCounter] = useState<number>(60);
+  const [status, setStatus] = useState<TimerStatus>(TimerStatus.COMPLETED);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startTimer = () => {
+    if (status === TimerStatus.RUNNING) return;
+
+    setStatus(TimerStatus.RUNNING);
+    intervalRef.current = setInterval(() => {
+      setCounter((prevCounter) => {
+        if (prevCounter <= 0) {
+          stopTimer();
+          return 0;
+        }
+        return prevCounter - 1;
+      });
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setStatus(TimerStatus.COMPLETED);
+  };
+
+  const resetTimer = () => {
+    stopTimer();
+    setCounter(60); // Reset to initial value
+  };
+
   const router = useRouter();
 
   const [isLogin, setIsLogin] = useState<boolean>(false);
@@ -636,7 +666,8 @@ const LoginComponent = () => {
       setIsLogin(false);
       return;
     }
-
+    setCounter(60);
+    startTimer();
     toast.success(response.message);
     setIsOtpSent(true);
     setOtpResponse(response.data!);
@@ -786,6 +817,22 @@ const LoginComponent = () => {
                 <Button onClick={verifyOtp} type="primary" className="mt-2">
                   Verify OTP
                 </Button>
+              )}
+              {status == TimerStatus.COMPLETED ? (
+                <p className="text-center mt-2">
+                  Didn&apos;t receive a OTP?
+                  <button
+                    onClick={sendOtp}
+                    className="underline font-semibold px-2 text-blue-500"
+                  >
+                    Resend OTP
+                  </button>
+                </p>
+              ) : (
+                <p className="text-center mt-2">
+                  Resend OTP in 00:
+                  {counter.toString().length == 1 ? `0${counter}` : counter}
+                </p>
               )}
             </>
           ) : (

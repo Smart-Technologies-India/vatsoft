@@ -89,7 +89,7 @@ export default function DashboardLayout({
           ></Navbar>
         )}
 
-        <div className="h-10"></div>
+        {!isbluck && <div className="h-10"></div>}
         {children}
 
         {isOpen && (

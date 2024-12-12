@@ -59,6 +59,25 @@
 } */
 
 @media print {
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  .print-page {
+    height: 1123px; /* A4 height in pixels at 96 DPI */
+    width: 794px; /* A4 width in pixels at 96 DPI */
+    page-break-after: always; /* Ensures each page starts on a new sheet */
+  }
+
+  .print-page:last-child {
+    page-break-after: auto; /* Avoids blank page after the last div */
+  }
+
+  @page {
+    size: A4;
+    margin: 0; /* No margins for full-page printing */
+  }
+
   .hidden-print {
     display: none !important;
   }

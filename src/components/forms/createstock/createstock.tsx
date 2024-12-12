@@ -7,14 +7,11 @@ import { valibotResolver } from "@hookform/resolvers/valibot";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { MultiSelect } from "../inputfields/multiselect";
 import { OptionValue } from "@/models/main";
-
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
-
 import { getCookie } from "cookies-next";
-
 import dayjs from "dayjs";
-import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
+import { commodity_master, dvat04 } from "@prisma/client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
@@ -26,6 +23,7 @@ type CreateStockProviderProps = {
   setAddBox: Dispatch<SetStateAction<boolean>>;
   init: () => Promise<void>;
 };
+
 export const CreateStockProvider = (props: CreateStockProviderProps) => {
   const methods = useForm<CreateStockForm>({
     resolver: valibotResolver(CreateStockSchema),
@@ -35,9 +33,7 @@ export const CreateStockProvider = (props: CreateStockProviderProps) => {
     <FormProvider {...methods}>
       <CreateStockData
         userid={props.userid}
-        // id={props.id}
         setAddBox={props.setAddBox}
-        // setCommid={props.setCommid}
         init={props.init}
       />
     </FormProvider>

@@ -472,6 +472,18 @@ model user {
   stock_updatedBy stock[] @relation("stock_updatedBy")
   stock_deletedBy stock[] @relation("stock_deletedBy")
 
+  manufacturer_purchase_createdBy manufacturer_purchase[] @relation("manufacturer_purchase_createdBy")
+  manufacturer_purchase_updatedBy manufacturer_purchase[] @relation("manufacturer_purchase_updatedBy")
+  manufacturer_purchase_deletedBy manufacturer_purchase[] @relation("manufacturer_purchase_deletedBy")
+
+  edit_sale_createdBy edit_sale[] @relation("edit_sale_createdBy")
+  edit_sale_updatedBy edit_sale[] @relation("edit_sale_updatedBy")
+  edit_sale_deletedBy edit_sale[] @relation("edit_sale_deletedBy")
+
+  edit_purchase_createdBy edit_purchase[] @relation("edit_purchase_createdBy")
+  edit_purchase_updatedBy edit_purchase[] @relation("edit_purchase_updatedBy")
+  edit_purchase_deletedBy edit_purchase[] @relation("edit_purchase_deletedBy")
+
   registration          registration[]
   composition           composition[]
   refunds               refunds[]
@@ -648,6 +660,9 @@ model dvat04 {
   daily_sale            daily_sale[]
   daily_purchase        daily_purchase[]
   stock                 stock[]
+  manufacturer_purchase manufacturer_purchase[]
+  edit_sale             edit_sale[]
+  edit_purchase         edit_purchase[]
 }
 
 model commodity {
@@ -817,6 +832,8 @@ model tin_number_master {
   dvat04         dvat04[]
   daily_purchase daily_purchase[]
   daily_sale     daily_sale[]
+  edit_sale      edit_sale[]
+  edit_purchase  edit_purchase[]
 }
 
 model returns_01 {
@@ -1075,9 +1092,9 @@ model return_filing {
 }
 
 model commodity_master {
-  id                    Int              @id @default(autoincrement())
+  id                    Int                     @id @default(autoincrement())
   product_name          String
-  product_type          Dvat04Commodity? @default(OTHER)
+  product_type          Dvat04Commodity?        @default(OTHER)
   mrp                   String
   sale_price            String
   oidc_price            String
@@ -1085,20 +1102,23 @@ model commodity_master {
   taxable_at            String
   description           String
   remark                String?
-  status                Status           @default(ACTIVE)
-  createdAt             DateTime         @default(now())
-  createdBy             user             @relation("commodity_master_createdBy", fields: [createdById], references: [id])
+  status                Status                  @default(ACTIVE)
+  createdAt             DateTime                @default(now())
+  createdBy             user                    @relation("commodity_master_createdBy", fields: [createdById], references: [id])
   createdById           Int
-  updatedAt             DateTime         @updatedAt
-  updatedBy             user?            @relation("commodity_master_updatedBy", fields: [updatedById], references: [id])
+  updatedAt             DateTime                @updatedAt
+  updatedBy             user?                   @relation("commodity_master_updatedBy", fields: [updatedById], references: [id])
   updatedById           Int?
   deletedAt             DateTime?
-  deletedBy             user?            @relation("commodity_master_deletedBy", fields: [deletedById], references: [id])
+  deletedBy             user?                   @relation("commodity_master_deletedBy", fields: [deletedById], references: [id])
   deletedById           Int?
   returns_entry         returns_entry[]
   daily_sale            daily_sale[]
   daily_purchase        daily_purchase[]
   stock                 stock[]
+  manufacturer_purchase manufacturer_purchase[]
+  edit_sale             edit_sale[]
+  edit_purchase         edit_purchase[]
 }
 
 model user_commodity_master {
@@ -1222,6 +1242,7 @@ model daily_sale {
   deletedAt           DateTime?
   deletedBy           user?             @relation("daily_sale_deletedBy", fields: [deletedById], references: [id])
   deletedById         Int?
+  edit_sale           edit_sale[]
 }
 
 model daily_purchase {
@@ -1251,6 +1272,7 @@ model daily_purchase {
   deletedAt           DateTime?
   deletedBy           user?             @relation("daily_purchase_deletedBy", fields: [deletedById], references: [id])
   deletedById         Int?
+  edit_purchase       edit_purchase[]
 }
 
 model stock {
@@ -1272,4 +1294,91 @@ model stock {
   deletedAt          DateTime?
   deletedBy          user?            @relation("stock_deletedBy", fields: [deletedById], references: [id])
   deletedById        Int?
+}
+
+model manufacturer_purchase {
+  id                 Int              @id @default(autoincrement())
+  dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
+  dvat04Id           Int
+  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
+  commodity_masterId Int
+  quantity           Int
+  tax_percent        String
+  amount_unit        String
+  amount             String
+  vatamount          String
+  status             Status           @default(ACTIVE)
+  createdAt          DateTime         @default(now())
+  createdBy          user             @relation("manufacturer_purchase_createdBy", fields: [createdById], references: [id])
+  createdById        Int
+  updatedAt          DateTime         @updatedAt
+  updatedBy          user?            @relation("manufacturer_purchase_updatedBy", fields: [updatedById], references: [id])
+  updatedById        Int?
+  deletedAt          DateTime?
+  deletedBy          user?            @relation("manufacturer_purchase_deletedBy", fields: [deletedById], references: [id])
+  deletedById        Int?
+}
+
+model edit_sale {
+  id                  Int               @id @default(autoincrement())
+  sale                daily_sale        @relation(fields: [saleId], references: [id])
+  saleId              Int
+  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
+  dvat04Id            Int
+  invoice_number      String
+  invoice_date        DateTime
+  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
+  commodity_masterId  Int
+  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
+  seller_tin_numberId Int
+  amount_unit         String
+  quantity            Int
+  tax_percent         String
+  amount              String
+  vatamount           String
+  is_dvat_31          Boolean           @default(false)
+  is_local            Boolean           @default(false)
+  is_delete           Boolean           @default(false)
+  status              Status            @default(ACTIVE)
+  createdAt           DateTime          @default(now())
+  createdBy           user              @relation("edit_sale_createdBy", fields: [createdById], references: [id])
+  createdById         Int
+  updatedAt           DateTime          @updatedAt
+  updatedBy           user?             @relation("edit_sale_updatedBy", fields: [updatedById], references: [id])
+  updatedById         Int?
+  deletedAt           DateTime?
+  deletedBy           user?             @relation("edit_sale_deletedBy", fields: [deletedById], references: [id])
+  deletedById         Int?
+}
+
+model edit_purchase {
+  id                  Int               @id @default(autoincrement())
+  purchase            daily_purchase    @relation(fields: [purchaseId], references: [id])
+  purchaseId          Int
+  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
+  dvat04Id            Int
+  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
+  seller_tin_numberId Int
+  invoice_number      String
+  invoice_date        DateTime
+  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
+  commodity_masterId  Int
+  quantity            Int
+  tax_percent         String
+  amount_unit         String
+  amount              String
+  vatamount           String
+  is_local            Boolean           @default(false)
+  is_dvat_30a         Boolean           @default(false)
+  is_delete           Boolean           @default(false)
+  status              Status            @default(ACTIVE)
+  createdAt           DateTime          @default(now())
+  createdBy           user              @relation("edit_purchase_createdBy", fields: [createdById], references: [id])
+  createdById         Int
+  updatedAt           DateTime          @updatedAt
+  updatedBy           user?             @relation("edit_purchase_updatedBy", fields: [updatedById], references: [id])
+  updatedById         Int?
+  deletedAt           DateTime?
+  deletedBy           user?             @relation("edit_purchase_deletedBy", fields: [deletedById], references: [id])
+  deletedById         Int?
 }

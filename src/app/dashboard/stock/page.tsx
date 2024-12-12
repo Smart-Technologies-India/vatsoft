@@ -224,6 +224,18 @@ const CommodityMaster = () => {
             >
               View Purchase
             </Button>
+            {dvatdata && dvatdata.commodity == "MANUFACTURER" && (
+              <Button
+                size="small"
+                type="primary"
+                onClick={() => {
+                  router.push("/dashboard/stock/manufacturer_purchase");
+                }}
+                className="bg-blue-500 text-white hover:bg-blue-500  rounded text-sm px-2"
+              >
+                Manufacturer Purchase
+              </Button>
+            )}
           </div>
           {stocks.length != 0 ? (
             <>
