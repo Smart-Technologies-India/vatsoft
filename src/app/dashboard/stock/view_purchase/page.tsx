@@ -1,6 +1,7 @@
 "use client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import ConvertDvat30A from "@/action/stock/convertdvat30a";
+import DeletePurchase from "@/action/stock/deletepurchase";
 import GetUserDailyPurchase from "@/action/stock/getuserdailypurchase";
 import {
   Table,
@@ -10,19 +11,38 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formateDate } from "@/utils/methods";
+import { encryptURLData, formateDate } from "@/utils/methods";
 import {
   commodity_master,
   daily_purchase,
   dvat04,
   tin_number_master,
 } from "@prisma/client";
-import { Button, Modal, Pagination } from "antd";
+import { Button, Modal, Pagination, Popover } from "antd";
 import { getCookie } from "cookies-next";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const DocumentWiseDetails = () => {
+  const route = useRouter();
+  const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
+    {}
+  );
+  const handleOpenChange = (newOpen: boolean, index: number) => {
+    setOpenPopovers((prev) => ({
+      ...prev,
+      [index]: newOpen,
+    }));
+  };
+
+  const handelClose = (index: number) => {
+    setOpenPopovers((prev) => ({
+      ...prev,
+      [index]: false,
+    }));
+  };
+
   const [isLoading, setLoading] = useState<boolean>(true);
 
   const [pagination, setPaginatin] = useState<{
@@ -147,6 +167,22 @@ const DocumentWiseDetails = () => {
     }
   };
 
+  const [deletebox, setDeleteBox] = useState<boolean>(false);
+  const delete_purchase_entry = async (id: number) => {
+    const response = await DeletePurchase({
+      id: id,
+      deletedById: userid,
+    });
+    if (response.data && response.status) {
+      toast.success(response.message);
+    } else {
+      toast.error(response.message);
+    }
+
+    await init();
+    setDeleteBox(false);
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -221,6 +257,9 @@ const DocumentWiseDetails = () => {
                     <TableHead className="border text-center">
                       Vat Amount
                     </TableHead>
+                    <TableHead className="w-28 border text-center">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -259,6 +298,75 @@ const DocumentWiseDetails = () => {
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.vatamount}
+                        </TableCell>
+                        <TableCell className="p-2 border text-center">
+                          <Popover
+                            content={
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  onClick={() => {
+                                    setDeleteBox(true);
+                                    handelClose(index);
+                                  }}
+                                  className="text-sm bg-white border hover:border-rose-500 hover:text-rose-500 text-[#172e57] py-1 px-4"
+                                >
+                                  Delete
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    route.push(
+                                      `/dashboard/stock/edit_purchase/${encryptURLData(
+                                        val.id.toString()
+                                      )}`
+                                    );
+                                  }}
+                                  className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4"
+                                >
+                                  Update
+                                </button>
+                              </div>
+                            }
+                            title="Actions"
+                            trigger="click"
+                            open={!!openPopovers[index]} // Open state for each row
+                            onOpenChange={(newOpen) =>
+                              handleOpenChange(newOpen, index)
+                            }
+                          >
+                            <button className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4">
+                              Actions
+                            </button>
+                          </Popover>
+                          <Modal
+                            title="Confirmation"
+                            open={deletebox}
+                            footer={null}
+                            closeIcon={false}
+                          >
+                            <div>
+                              <p>
+                                Are you sure you want to delete this purchase
+                                entry
+                              </p>
+                            </div>
+                            <div className="flex  gap-2 mt-2">
+                              <div className="grow"></div>
+                              <button
+                                className="py-1 rounded-md border px-4 text-sm text-gray-600"
+                                onClick={() => {
+                                  setDeleteBox(false);
+                                }}
+                              >
+                                Close
+                              </button>
+                              <button
+                                onClick={() => delete_purchase_entry(val.id)}
+                                className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </Modal>
                         </TableCell>
                       </TableRow>
                     )

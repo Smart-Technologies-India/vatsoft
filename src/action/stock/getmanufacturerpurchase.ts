@@ -1,12 +1,7 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import {
-  commodity_master,
-  daily_purchase,
-  manufacturer_purchase,
-  tin_number_master,
-} from "@prisma/client";
+import { commodity_master, manufacturer_purchase } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import {
   createPaginationResponse,

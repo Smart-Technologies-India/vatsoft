@@ -484,6 +484,10 @@ model user {
   edit_purchase_updatedBy edit_purchase[] @relation("edit_purchase_updatedBy")
   edit_purchase_deletedBy edit_purchase[] @relation("edit_purchase_deletedBy")
 
+  edit_manufacturer_createdBy edit_manufacturer[] @relation("edit_manufacturer_createdBy")
+  edit_manufacturer_updatedBy edit_manufacturer[] @relation("edit_manufacturer_updatedBy")
+  edit_manufacturer_deletedBy edit_manufacturer[] @relation("edit_manufacturer_deletedBy")
+
   registration          registration[]
   composition           composition[]
   refunds               refunds[]
@@ -663,6 +667,7 @@ model dvat04 {
   manufacturer_purchase manufacturer_purchase[]
   edit_sale             edit_sale[]
   edit_purchase         edit_purchase[]
+  edit_manufacturer     edit_manufacturer[]
 }
 
 model commodity {
@@ -1119,6 +1124,7 @@ model commodity_master {
   manufacturer_purchase manufacturer_purchase[]
   edit_sale             edit_sale[]
   edit_purchase         edit_purchase[]
+  edit_manufacturer     edit_manufacturer[]
 }
 
 model user_commodity_master {
@@ -1297,26 +1303,27 @@ model stock {
 }
 
 model manufacturer_purchase {
-  id                 Int              @id @default(autoincrement())
-  dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
+  id                 Int                 @id @default(autoincrement())
+  dvat04             dvat04              @relation(fields: [dvat04Id], references: [id])
   dvat04Id           Int
-  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
+  commodity_master   commodity_master    @relation(fields: [commodity_masterId], references: [id])
   commodity_masterId Int
   quantity           Int
   tax_percent        String
   amount_unit        String
   amount             String
   vatamount          String
-  status             Status           @default(ACTIVE)
-  createdAt          DateTime         @default(now())
-  createdBy          user             @relation("manufacturer_purchase_createdBy", fields: [createdById], references: [id])
+  status             Status              @default(ACTIVE)
+  createdAt          DateTime            @default(now())
+  createdBy          user                @relation("manufacturer_purchase_createdBy", fields: [createdById], references: [id])
   createdById        Int
-  updatedAt          DateTime         @updatedAt
-  updatedBy          user?            @relation("manufacturer_purchase_updatedBy", fields: [updatedById], references: [id])
+  updatedAt          DateTime            @updatedAt
+  updatedBy          user?               @relation("manufacturer_purchase_updatedBy", fields: [updatedById], references: [id])
   updatedById        Int?
   deletedAt          DateTime?
-  deletedBy          user?            @relation("manufacturer_purchase_deletedBy", fields: [deletedById], references: [id])
+  deletedBy          user?               @relation("manufacturer_purchase_deletedBy", fields: [deletedById], references: [id])
   deletedById        Int?
+  edit_manufacturer  edit_manufacturer[]
 }
 
 model edit_sale {
@@ -1381,4 +1388,30 @@ model edit_purchase {
   deletedAt           DateTime?
   deletedBy           user?             @relation("edit_purchase_deletedBy", fields: [deletedById], references: [id])
   deletedById         Int?
+}
+
+model edit_manufacturer {
+  id                 Int                   @id @default(autoincrement())
+  manufacturer       manufacturer_purchase @relation(fields: [manufacturerId], references: [id])
+  manufacturerId     Int
+  dvat04             dvat04                @relation(fields: [dvat04Id], references: [id])
+  dvat04Id           Int
+  commodity_master   commodity_master      @relation(fields: [commodity_masterId], references: [id])
+  commodity_masterId Int
+  quantity           Int
+  tax_percent        String
+  amount_unit        String
+  amount             String
+  vatamount          String
+  is_delete          Boolean               @default(false)
+  status             Status                @default(ACTIVE)
+  createdAt          DateTime              @default(now())
+  createdBy          user                  @relation("edit_manufacturer_createdBy", fields: [createdById], references: [id])
+  createdById        Int
+  updatedAt          DateTime              @updatedAt
+  updatedBy          user?                 @relation("edit_manufacturer_updatedBy", fields: [updatedById], references: [id])
+  updatedById        Int?
+  deletedAt          DateTime?
+  deletedBy          user?                 @relation("edit_manufacturer_deletedBy", fields: [deletedById], references: [id])
+  deletedById        Int?
 }
