@@ -830,13 +830,13 @@ model state {
 }
 
 model tin_number_master {
-  id             Int       @id @default(autoincrement())
+  id             Int              @id @default(autoincrement())
   tin_number     String
   name_of_dealer String
   state          String?
-  status         Status    @default(ACTIVE)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  status         Status           @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
   deletedAt      DateTime?
   returns_entry  returns_entry[]
   dvat04         dvat04[]
@@ -1112,6 +1112,7 @@ model commodity_master {
   taxable_at            String
   description           String
   remark                String?
+  crate_size            Int                     @default(0)
   status                Status                  @default(ACTIVE)
   createdAt             DateTime                @default(now())
   createdBy             user                    @relation("commodity_master_createdBy", fields: [createdById], references: [id])
