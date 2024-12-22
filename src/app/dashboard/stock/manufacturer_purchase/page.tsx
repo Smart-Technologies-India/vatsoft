@@ -245,7 +245,7 @@ const ManufacturerStockData = () => {
                                 <button
                                   onClick={() => {
                                     route.push(
-                                      `/dashboard/stock/edit_purchase/${encryptURLData(
+                                      `/dashboard/stock/edit_manufacturer/${encryptURLData(
                                         val.id.toString()
                                       )}`
                                     );

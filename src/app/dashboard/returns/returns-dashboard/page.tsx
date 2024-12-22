@@ -398,7 +398,8 @@ const ReturnDashboard = () => {
       returns_entryData.filter(
         (val: returns_entry) => val.dvat_type == DvatType.DVAT_31_A
       ).length > 0;
-    if (dvat_30 && dvat_30A && dvat_31 && dvat_31A) return true;
+
+    if (dvat_30 && dvat_30A && dvat_31 && dvat_31) return true;
 
     return false;
   };
@@ -480,6 +481,9 @@ const ReturnDashboard = () => {
     setRRBox(false);
     search(year ?? "", period ?? "");
   };
+
+  console.log("preview" + ispreview());
+  console.log("payment" + ispayment());
 
   return (
     <>
@@ -811,14 +815,28 @@ const ReturnDashboard = () => {
                   </button>
 
                   {ispayment() && (
-                    <button
-                      onClick={() => {
-                        setRRBox(true);
-                      }}
-                      className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-                    >
-                      Revised Return
-                    </button>
+                    <>
+                      <button
+                        onClick={() => {
+                          setRRBox(true);
+                        }}
+                        className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                      >
+                        Revised Return
+                      </button>
+                      <button
+                        onClick={async () => {
+                          router.push(
+                            `/dashboard/cform/${encryptURLData(
+                              userid.toString()
+                            )}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
+                          );
+                        }}
+                        className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                      >
+                        C-FORM
+                      </button>
+                    </>
                   )}
                   {!ispayment() && (
                     <button

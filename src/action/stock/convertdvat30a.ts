@@ -185,7 +185,7 @@ const ConvertDvat30A = async (
             total_invoice_number: val.amount,
             commodity_masterId: val.commodity_masterId,
             ...(val.is_local && {
-              purchase_type: PurchaseType.TAXABLE_RATE,
+              purchase_type: PurchaseType.FORMC_CONCESSION,
               place_of_supply: parseInt(
                 val.seller_tin_number.tin_number.substring(0, 2)
               ),

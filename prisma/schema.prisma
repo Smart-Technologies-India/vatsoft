@@ -488,6 +488,10 @@ model user {
   edit_manufacturer_updatedBy edit_manufacturer[] @relation("edit_manufacturer_updatedBy")
   edit_manufacturer_deletedBy edit_manufacturer[] @relation("edit_manufacturer_deletedBy")
 
+  cform_createdBy cform[] @relation("cform_createdBy")
+  cform_updatedBy cform[] @relation("cform_updatedBy")
+  cform_deletedBy cform[] @relation("cform_deletedBy")
+
   registration          registration[]
   composition           composition[]
   refunds               refunds[]
@@ -668,6 +672,7 @@ model dvat04 {
   edit_sale             edit_sale[]
   edit_purchase         edit_purchase[]
   edit_manufacturer     edit_manufacturer[]
+  cform                 cform[]
 }
 
 model commodity {
@@ -828,11 +833,11 @@ model tin_number_master {
   id             Int       @id @default(autoincrement())
   tin_number     String
   name_of_dealer String
+  state          String?
   status         Status    @default(ACTIVE)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
-
   returns_entry  returns_entry[]
   dvat04         dvat04[]
   daily_purchase daily_purchase[]
@@ -1414,4 +1419,31 @@ model edit_manufacturer {
   deletedAt          DateTime?
   deletedBy          user?                 @relation("edit_manufacturer_deletedBy", fields: [deletedById], references: [id])
   deletedById        Int?
+}
+
+model cform {
+  id              Int        @id @default(autoincrement())
+  dvat04          dvat04     @relation(fields: [dvat04Id], references: [id])
+  dvat04Id        Int
+  office_of_issue String
+  date_of_issue   DateTime
+  valid_date      DateTime
+  sr_no           String
+  seller_tin_no   String
+  seller_name     String
+  seller_address  String
+  amount          String
+  cform_type      ReturnType @default(ORIGINAL)
+  from_period     DateTime
+  to_period       DateTime
+  status          Status     @default(ACTIVE)
+  createdAt       DateTime   @default(now())
+  createdBy       user       @relation("cform_createdBy", fields: [createdById], references: [id])
+  createdById     Int
+  updatedAt       DateTime   @updatedAt
+  updatedBy       user?      @relation("cform_updatedBy", fields: [updatedById], references: [id])
+  updatedById     Int?
+  deletedAt       DateTime?
+  deletedBy       user?      @relation("cform_deletedBy", fields: [deletedById], references: [id])
+  deletedById     Int?
 }

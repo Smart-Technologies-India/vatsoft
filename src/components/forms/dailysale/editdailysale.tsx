@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
+
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
@@ -9,46 +10,47 @@ import { OptionValue } from "@/models/main";
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
 import { getCookie } from "cookies-next";
-import {
-  DailyPurchaseMasterForm,
-  DailyPurchaseMasterSchema,
-} from "@/schema/daily_purchase";
-import dayjs from "dayjs";
 import { DateSelect } from "../inputfields/dateselect";
-import SearchTin from "@/action/tin_number/searchtin";
-import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
+import {
+  commodity_master,
+  daily_sale,
+  dvat04,
+  tin_number_master,
+} from "@prisma/client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
-import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
-import CreateDailyPurchase from "@/action/stock/createdailypuchase";
+import { DailySaleForm, DailySaleSchema } from "@/schema/daily_sale";
+import CreateDailySale from "@/action/stock/createdailysale";
+import GetUserCommodity from "@/action/stock/usercommodity";
+import SearchTin from "@/action/tin_number/searchtin";
 import { Input, InputRef, Modal } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
+import { useRouter } from "next/navigation";
+import EditSale from "@/action/stock/editsale";
 
-type DailyPurchaseProviderProps = {
+type EditDailySaleProviderProps = {
+  id: number;
   userid: number;
-  setAddBox: Dispatch<SetStateAction<boolean>>;
-  init: () => Promise<void>;
+  data: daily_sale & {
+    commodity_master: commodity_master;
+    seller_tin_number: tin_number_master;
+  };
 };
-export const DailyPurchaseMasterProvider = (
-  props: DailyPurchaseProviderProps
-) => {
-  const methods = useForm<DailyPurchaseMasterForm>({
-    resolver: valibotResolver(DailyPurchaseMasterSchema),
+export const EditDailySaleProvider = (props: EditDailySaleProviderProps) => {
+  const methods = useForm<DailySaleForm>({
+    resolver: valibotResolver(DailySaleSchema),
   });
 
   return (
     <FormProvider {...methods}>
-      <DailyPurchaseMaster
-        userid={props.userid}
-        setAddBox={props.setAddBox}
-        init={props.init}
-      />
+      <EditDailySale userid={props.userid} id={props.id} data={props.data} />
     </FormProvider>
   );
 };
 
-const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
+const EditDailySale = (props: EditDailySaleProviderProps) => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
+  const router = useRouter();
 
   const {
     reset,
@@ -56,7 +58,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     watch,
     formState: { isSubmitting },
     getValues,
-  } = useFormContext<DailyPurchaseMasterForm>();
+    setValue,
+  } = useFormContext<DailySaleForm>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [davtdata, setDvatdata] = useState<dvat04 | null>(null);
@@ -67,34 +70,45 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
 
   useEffect(() => {
     reset({
-      amount_unit: "",
-      description_of_goods: undefined,
-      invoice_date: "",
-      invoice_number: undefined,
-      quantity: "",
-      recipient_vat_no: "",
+      amount_unit: props.data.amount_unit,
+      description_of_goods: props.data.commodity_master.product_name,
+      invoice_date: props.data.invoice_date.toISOString(),
+      invoice_number: props.data.invoice_number,
+      quantity: props.data.quantity.toString(),
     });
     const init = async () => {
+      const commmaster = await GetCommodityMaster({
+        id: props.data.commodity_master.id,
+      });
+      if (commmaster.status && commmaster.data) {
+        setCommoditymaster(commmaster.data);
+        if (commmaster.data.product_type == "LIQUOR") {
+          setLiquore(true);
+          setValue("amount_unit", commmaster.data.sale_price);
+        }
+      }
+
+      const tin_response = await SearchTin({
+        tinumber: "26000000000",
+      });
+
+      setValue("recipient_vat_no", "26000000000");
+
+      if (tin_response.status && tin_response.data) {
+        setTinData(tin_response.data);
+      }
+
       const response = await GetUserDvat04({
         userid: userid,
       });
 
       if (response.status && response.data) {
         setDvatdata(response.data);
-        const commodity_resposen = await AllCommodityMaster({});
+        const commodity_resposen = await GetUserCommodity({
+          dvatid: response.data.id,
+        });
         if (commodity_resposen.status && commodity_resposen.data) {
-          if (response.data.commodity == "OIDC") {
-            const filterdata = commodity_resposen.data.filter(
-              (val: commodity_master) => val.product_type == "LIQUOR"
-            );
-            setCommodityMaster(filterdata);
-          } else {
-            const filterdata = commodity_resposen.data.filter(
-              (val: commodity_master) =>
-                val.product_type == response.data!.commodity
-            );
-            setCommodityMaster(filterdata);
-          }
+          setCommodityMaster(commodity_resposen.data);
         }
       }
 
@@ -103,25 +117,25 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     init();
   }, []);
 
-  const recipient_vat_no: string = watch("recipient_vat_no");
-
   const [tindata, setTinData] = useState<tin_number_master | null>(null);
   const [commoditymaster, setCommoditymaster] =
     useState<commodity_master | null>(null);
   const [vatamount, setVatAmount] = useState<string>("0");
   const [taxableValue, setTaxableValue] = useState<string>("0");
 
+  const [isLiquore, setLiquore] = useState<boolean>(false);
+
+  const recipient_vat_no: string = watch("recipient_vat_no") ?? "";
   useEffect(() => {
+    if (!recipient_vat_no) {
+      return;
+    }
     const init = async () => {
-      if (
-        recipient_vat_no &&
-        (recipient_vat_no ?? "").length > 2 &&
-        (recipient_vat_no.startsWith("25") == true ||
-          recipient_vat_no.startsWith("26") == true)
-      ) {
+      if (recipient_vat_no && (recipient_vat_no ?? "").length < 2) {
         if (recipient_vat_no.length >= 11) {
           toast.dismiss();
-          toast.error("Invalid DVAT no.");
+          // toast.error("Invalid DVAT no.");
+          setTinBox(true);
         }
         setTinData(null);
         return;
@@ -134,7 +148,10 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       if (tinresponse.status && tinresponse.data) {
         setTinData(tinresponse.data);
       } else {
-        setTinBox(true);
+        if ((recipient_vat_no ?? "").length >= 11) {
+          // toast.error("Invalid DVAT no.");
+          setTinBox(true);
+        }
         setTinData(null);
       }
     };
@@ -154,6 +171,10 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       });
       if (commmaster.status && commmaster.data) {
         setCommoditymaster(commmaster.data);
+        if (commmaster.data.product_type == "LIQUOR") {
+          setLiquore(true);
+          setValue("amount_unit", commmaster.data.sale_price);
+        }
       }
     };
     init();
@@ -178,14 +199,16 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     );
   }, [quantity, amount_unit, commoditymaster]);
 
-  const onSubmit = async (data: DailyPurchaseMasterForm) => {
+  const onSubmit = async (data: DailySaleForm) => {
     if (davtdata == null || davtdata == undefined)
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
       return toast.error("Seller Vat Number not found.");
-    const stock_response = await CreateDailyPurchase({
+
+    const stock_response = await EditSale({
+      id: props.id,
       amount_unit: data.amount_unit,
       invoice_date: new Date(data.invoice_date),
       invoice_number: data.invoice_number,
@@ -201,56 +224,11 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
 
     if (stock_response.status) {
       toast.success(stock_response.message);
+      router.back();
     } else {
-      return toast.error(stock_response.message);
+      toast.error(stock_response.message);
     }
-
-    await props.init();
-    props.setAddBox(false);
   };
-
-  const addNew = async (data: DailyPurchaseMasterForm) => {
-    if (davtdata == null || davtdata == undefined)
-      return toast.error("User Dvat not found.");
-    if (commoditymaster == null || commoditymaster == undefined)
-      return toast.error("Commodity Master not found.");
-    if (tindata == null || tindata == undefined)
-      return toast.error("Seller Vat Number not found.");
-    const stock_response = await CreateDailyPurchase({
-      amount_unit: data.amount_unit,
-      invoice_date: new Date(data.invoice_date),
-      invoice_number: data.invoice_number,
-      dvatid: davtdata?.id,
-      createdById: userid,
-      quantity: parseInt(data.quantity),
-      vatamount: vatamount,
-      commodityid: commoditymaster.id,
-      tax_percent: commoditymaster.taxable_at,
-      seller_tin_id: tindata.id,
-      amount: vatamount,
-    });
-
-    if (stock_response.status) {
-      toast.success(stock_response.message);
-    } else {
-      return toast.error(stock_response.message);
-    }
-
-    const currentValues = getValues();
-
-    reset({
-      ...currentValues,
-      quantity: "",
-      amount_unit: "",
-      description_of_goods: undefined,
-    });
-    setVatAmount("0");
-    setTaxableValue("0");
-
-    await props.init();
-  };
-
-  const [submitType, setSubmitType] = useState<string>("");
 
   const [tinBox, setTinBox] = useState(false);
 
@@ -296,17 +274,9 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         <p>This Tin Number not exist. Do you want to create it?</p>
         <Input ref={tinnname} placeholder="Enter The name of the dealer." />
       </Modal>
-      <form
-        onSubmit={handleSubmit((data) => {
-          if (submitType === "submit") {
-            onSubmit(data);
-          } else if (submitType === "addNew") {
-            addNew(data);
-          }
-        }, onFormError)}
-      >
+      <form onSubmit={handleSubmit(onSubmit, onFormError)}>
         <div className="mt-2">
-          <TaxtInput<DailyPurchaseMasterForm>
+          <TaxtInput<DailySaleForm>
             placeholder="Seller Vat Number"
             name="recipient_vat_no"
             required={true}
@@ -321,9 +291,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             </p>
           </div>
         )}
-
         <div className="mt-2">
-          <TaxtInput<DailyPurchaseMasterForm>
+          <TaxtInput<DailySaleForm>
             name="invoice_number"
             required={true}
             numdes={true}
@@ -332,7 +301,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           />
         </div>
         <div className="mt-2">
-          <DateSelect<DailyPurchaseMasterForm>
+          <DateSelect<DailySaleForm>
             name="invoice_date"
             required={true}
             title="Invoice Date"
@@ -343,7 +312,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         </div>
         <div className="mt-2">
           <div className="mt-2">
-            <MultiSelect<DailyPurchaseMasterForm>
+            <MultiSelect<DailySaleForm>
               placeholder="Select Items details"
               name="description_of_goods"
               required={true}
@@ -358,7 +327,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           </div>
         </div>
         <div className="mt-2">
-          <TaxtInput<DailyPurchaseMasterForm>
+          <TaxtInput<DailySaleForm>
             title="Quantity"
             required={true}
             name="quantity"
@@ -367,11 +336,12 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           />
         </div>
         <div className="mt-2">
-          <TaxtInput<DailyPurchaseMasterForm>
+          <TaxtInput<DailySaleForm>
             placeholder="Enter amount"
             name="amount_unit"
             required={true}
             title="Enter amount"
+            disable={isLiquore}
             onlynumber={true}
           />
         </div>
@@ -395,17 +365,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         </div>
 
         <div className="flex gap-2">
-          <button
-            type="reset"
-            onClick={(e) => {
-              e.preventDefault();
-              props.setAddBox(false);
-              // props.setCommid(undefined);
-            }}
-            className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white mt-2 cursor-pointer"
-          >
-            Close
-          </button>
           <input
             type="reset"
             onClick={(e) => {
@@ -416,7 +375,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
                 invoice_date: "",
                 invoice_number: undefined,
                 quantity: "",
-                recipient_vat_no: "",
               });
             }}
             value={"Reset"}
@@ -425,18 +383,9 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           <button
             type="submit"
             disabled={isSubmitting}
-            onClick={() => setSubmitType("submit")}
             className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
           >
-            {isSubmitting ? "Loading...." : "Submit"}
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            onClick={() => setSubmitType("addNew")}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
-          >
-            {isSubmitting ? "Loading...." : "Add More"}
+            {isSubmitting ? "Loading...." : "Update"}
           </button>
         </div>
       </form>

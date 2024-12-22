@@ -103,26 +103,6 @@ const DailySale = (props: DailySaleProviderProps) => {
     init();
   }, []);
 
-  interface GetMonthDateas {
-    start: string;
-    end: string;
-  }
-
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-
   const [tindata, setTinData] = useState<tin_number_master | null>(null);
   const [commoditymaster, setCommoditymaster] =
     useState<commodity_master | null>(null);

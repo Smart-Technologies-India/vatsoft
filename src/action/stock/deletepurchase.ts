@@ -16,7 +16,6 @@ const DeletePurchase = async (
 
   try {
     const result: daily_purchase = await prisma.$transaction(async (prisma) => {
-      console.log(payload.id);
       let is_exist = await prisma.daily_purchase.findFirst({
         where: {
           id: payload.id,

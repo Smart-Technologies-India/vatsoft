@@ -348,6 +348,8 @@ const OfficerDashboardPage = () => {
     totaldealer: number;
     fueldealer: number;
     liquoredealer: number;
+    manufacturer:number;
+    oidcdealer:number;
     reg: number;
     comp: number;
     last_month_received: number;
@@ -361,6 +363,8 @@ const OfficerDashboardPage = () => {
     totaldealer: 0,
     fueldealer: 0,
     liquoredealer: 0,
+    manufacturer: 0,
+    oidcdealer: 0,
     reg: 0,
     comp: 0,
     last_month_received: 0,
@@ -500,31 +504,38 @@ const OfficerDashboardPage = () => {
         />
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <DashboardCard
-          name="Total Dealer"
-          count={countData.totaldealer.toString()}
-          color="bg-rose-500"
-          subtitle="Total Dealer Count"
-        >
-          <Fa6RegularBuilding className="text-xl text-white" />
-        </DashboardCard>
-        <DashboardCard
-          name="Fuel/Liquor Dealer"
-          count={`${countData.fueldealer}/${countData.liquoredealer}`}
-          color="bg-green-500"
-          subtitle="Fuel/Liquor Dealer Count"
-        >
-          <FluentMdl2Home className="text-xl text-white" />
-        </DashboardCard>
+        <Link href={"/dashboard/dealer_compliance"}>
+          <DashboardCard
+            name="Total Dealer"
+            count={countData.totaldealer.toString()}
+            color="bg-rose-500"
+            subtitle="Total Dealer Count"
+          >
+            <Fa6RegularBuilding className="text-xl text-white" />
+          </DashboardCard>
+        </Link>
+        <Link href={"/dashboard/dealer_compliance"}>
+          <DashboardCard
+            name="Fuel/Liquor/Manufacturer Dealer"
+            count={`${countData.fueldealer} FL/${countData.liquoredealer} LQ/${countData.manufacturer} MF`}
+            color="bg-green-500"
+            subtitle="Fuel/Liquor/Manufacturer Count"
+          >
+            <FluentMdl2Home className="text-xl text-white" />
+          </DashboardCard>
+        </Link>
 
-        <DashboardCard
-          name="Reg/Comp"
-          count={`${countData.reg}/${countData.comp}`}
-          color="bg-blue-500"
-          subtitle="Reg/Comp Count"
-        >
-          <MaterialSymbolsPersonRounded className="text-xl text-white" />
-        </DashboardCard>
+        <Link href={"/dashboard/dealer_compliance"}>
+          <DashboardCard
+            name="Reg/Comp"
+            count={`${countData.reg}/${countData.comp}`}
+            color="bg-blue-500"
+            subtitle="Reg/Comp Count"
+          >
+            <MaterialSymbolsPersonRounded className="text-xl text-white" />
+          </DashboardCard>
+        </Link>
+
         <DashboardCard
           name="Today Received"
           count={numberWithIndianFormat(countData.today_received)}
@@ -552,22 +563,26 @@ const OfficerDashboardPage = () => {
         >
           <RiMoneyRupeeCircleLine className="text-xl text-white" />
         </DashboardCard>
-        <DashboardCard
-          name="Filed Return"
-          count={countData.filed_return.toString()}
-          color="bg-pink-500"
-          subtitle="Successful Return count"
-        >
-          <IcOutlineReceiptLong className="text-xl text-white" />
-        </DashboardCard>
-        <DashboardCard
-          name="Total Pending Return"
-          count={countData.pending_return.toString()}
-          color="bg-cyan-500"
-          subtitle="Total Pending Return count"
-        >
-          <Fa6RegularHourglassHalf className="text-xl text-white" />
-        </DashboardCard>
+        <Link href={"/dashboard/returns/department-track-return-status"}>
+          <DashboardCard
+            name="Filed Return"
+            count={countData.filed_return.toString()}
+            color="bg-pink-500"
+            subtitle="Successful Return count"
+          >
+            <IcOutlineReceiptLong className="text-xl text-white" />
+          </DashboardCard>
+        </Link>
+        <Link href={"/dashboard/returns/department-pending-return"}>
+          <DashboardCard
+            name="Total Pending Return"
+            count={countData.pending_return.toString()}
+            color="bg-cyan-500"
+            subtitle="Total Pending Return count"
+          >
+            <Fa6RegularHourglassHalf className="text-xl text-white" />
+          </DashboardCard>
+        </Link>
       </div>
       <div className="grid grid-cols-6 gap-2 mt-2">
         <div className="bg-white h-80 shadow-sm rounded-md p-4 col-span-6 lg:col-span-4">

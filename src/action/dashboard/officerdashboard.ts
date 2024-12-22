@@ -14,6 +14,8 @@ interface ResponseData {
   totaldealer: number;
   fueldealer: number;
   liquoredealer: number;
+  manufacturer: number;
+  oidcdealer: number;
   reg: number;
   comp: number;
   last_month_received: number;
@@ -53,6 +55,24 @@ const OfficerDashboard = async (
         deletedAt: null,
         deletedBy: null,
         commodity: "LIQUOR",
+        status: "APPROVED",
+      },
+    });
+    const manufacturer = await prisma.dvat04.count({
+      where: {
+        selectOffice: payload.selectOffice,
+        deletedAt: null,
+        deletedBy: null,
+        commodity: "MANUFACTURER",
+        status: "APPROVED",
+      },
+    });
+    const oidcdealer = await prisma.dvat04.count({
+      where: {
+        selectOffice: payload.selectOffice,
+        deletedAt: null,
+        deletedBy: null,
+        commodity: "OIDC",
         status: "APPROVED",
       },
     });
@@ -224,6 +244,8 @@ const OfficerDashboard = async (
       totaldealer: total_dealer,
       fueldealer: fueldealer,
       liquoredealer: liquoredealer,
+      manufacturer: manufacturer,
+      oidcdealer: oidcdealer,
       reg: reg,
       comp: comp,
       last_month_received: isNaN(last_month_received) ? 0 : last_month_received,

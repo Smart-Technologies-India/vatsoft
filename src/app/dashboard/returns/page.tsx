@@ -53,6 +53,11 @@ const Page = () => {
                 description="Monitor submitted VAT returns in real-time."
                 link="/dashboard/returns/department-pending-return"
               />
+              <DashboardCards
+                title="CFORM"
+                description="Check your CFORM status and ensure all filings meet regulatory requirements."
+                link={`/dashboard/returns/department-cform-status`}
+              />
             </>
           )}
           {["USER"].includes(user?.role!) && (
@@ -72,6 +77,11 @@ const Page = () => {
                 title="Return Compliance"
                 description="Check your VAT return compliance status and ensure all filings meet regulatory requirements."
                 link={`/dashboard/returns/user-pending-return`}
+              />
+              <DashboardCards
+                title="CFORM"
+                description="Check your CFORM status and ensure all filings meet regulatory requirements."
+                link={`/dashboard/returns/cform-status`}
               />
             </>
           )}

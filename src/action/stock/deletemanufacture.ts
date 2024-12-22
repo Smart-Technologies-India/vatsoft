@@ -17,7 +17,6 @@ const DeleteManufacture = async (
   try {
     const result: manufacturer_purchase = await prisma.$transaction(
       async (prisma) => {
-        console.log(payload.id);
         let is_exist = await prisma.manufacturer_purchase.findFirst({
           where: {
             id: payload.id,
