@@ -32,16 +32,19 @@ const GetUserLastPandingReturn = async (
     const respose = await prisma.return_filing.findFirst({
       where: {
         dvatid: dvat04response.id,
-        filing_status: false,
-        filing_date: null,
+        filing_status: true,
+        filing_date: {
+          not: null,
+        },
         status: "ACTIVE",
         deletedAt: null,
         deletedById: null,
       },
       orderBy: {
-        due_date: "asc",
+        due_date: "desc",
       },
     });
+
 
     if (!respose) {
       return createResponse({

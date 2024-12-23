@@ -1423,10 +1423,10 @@ model edit_manufacturer {
 }
 
 model cform {
-  id              Int        @id @default(autoincrement())
-  dvat04          dvat04     @relation(fields: [dvat04Id], references: [id])
+  id              Int           @id @default(autoincrement())
+  dvat04          dvat04        @relation(fields: [dvat04Id], references: [id])
   dvat04Id        Int
-  office_of_issue String
+  office_of_issue SelectOffice? @default(Dadra_Nagar_Haveli)
   date_of_issue   DateTime
   valid_date      DateTime
   sr_no           String
@@ -1434,17 +1434,17 @@ model cform {
   seller_name     String
   seller_address  String
   amount          String
-  cform_type      ReturnType @default(ORIGINAL)
+  cform_type      ReturnType    @default(ORIGINAL)
   from_period     DateTime
   to_period       DateTime
-  status          Status     @default(ACTIVE)
-  createdAt       DateTime   @default(now())
-  createdBy       user       @relation("cform_createdBy", fields: [createdById], references: [id])
+  status          Status        @default(ACTIVE)
+  createdAt       DateTime      @default(now())
+  createdBy       user          @relation("cform_createdBy", fields: [createdById], references: [id])
   createdById     Int
-  updatedAt       DateTime   @updatedAt
-  updatedBy       user?      @relation("cform_updatedBy", fields: [updatedById], references: [id])
+  updatedAt       DateTime      @updatedAt
+  updatedBy       user?         @relation("cform_updatedBy", fields: [updatedById], references: [id])
   updatedById     Int?
   deletedAt       DateTime?
-  deletedBy       user?      @relation("cform_deletedBy", fields: [deletedById], references: [id])
+  deletedBy       user?         @relation("cform_deletedBy", fields: [deletedById], references: [id])
   deletedById     Int?
 }

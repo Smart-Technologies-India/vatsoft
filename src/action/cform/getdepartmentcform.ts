@@ -8,7 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
-interface GetUserCformPayload {
+interface GetDepartmentCformPayload {
   dept: SelectOffice;
   fromdate?: Date;
   todate?: Date;
@@ -17,10 +17,10 @@ interface GetUserCformPayload {
   skip: number;
 }
 
-const GetUserCform = async (
-  payload: GetUserCformPayload
+const GetDepartmentCform = async (
+  payload: GetDepartmentCformPayload
 ): Promise<PaginationResponse<Array<cform> | null>> => {
-  const functionname: string = GetUserCform.name;
+  const functionname: string = GetDepartmentCform.name;
 
   try {
     const [cform_data, totalCount] = await Promise.all([
@@ -87,4 +87,4 @@ const GetUserCform = async (
   }
 };
 
-export default GetUserCform;
+export default GetDepartmentCform;

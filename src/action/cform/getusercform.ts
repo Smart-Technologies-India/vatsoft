@@ -28,6 +28,7 @@ const GetUserCform = async (
           status: "ACTIVE",
           dvat04Id: payload.dvatid,
         },
+
         take: payload.take,
         skip: payload.skip,
       }),

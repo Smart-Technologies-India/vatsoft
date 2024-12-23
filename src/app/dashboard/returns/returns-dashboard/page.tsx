@@ -154,11 +154,13 @@ const ReturnDashboard = () => {
         userid: userid,
       });
 
+      console.log(lastPendingResponse);
       if (lastPendingResponse.status && lastPendingResponse.data) {
         setLastPending(lastPendingResponse.data);
         setYear(lastPendingResponse.data.due_date!.getFullYear().toString());
         currentDate = lastPendingResponse.data.due_date!;
       }
+      console.log(currentDate);
 
       const response = await GetUserDvat04({
         userid: userid,
@@ -175,13 +177,24 @@ const ReturnDashboard = () => {
         //   response.data.vatLiableDate ?? new Date()
         // ).at(-1)?.value as Quarter;
 
+        console.log(
+          getQuarterList(
+            currentDate,
+            currentDate.getFullYear().toString(),
+            response.data.vatLiableDate ?? currentDate
+          )
+        );
+
         const cusQuarter: Quarter = getQuarterList(
           currentDate,
           currentDate.getFullYear().toString(),
           response.data.vatLiableDate ?? currentDate
         ).at(-1)?.value as Quarter;
-
-        setQuarter(cusQuarter);
+        console.log(monthNames[currentDate.getMonth()]);
+        setQuarter(
+          getQuarterForMonth(monthNames[currentDate.getMonth()]) ??
+            Quarter.QUARTER1
+        );
 
         // setPeriod(
         //   getPeriodList(
@@ -482,8 +495,24 @@ const ReturnDashboard = () => {
     search(year ?? "", period ?? "");
   };
 
-  console.log("preview" + ispreview());
-  console.log("payment" + ispayment());
+  function getQuarterForMonth(month: string): Quarter | undefined {
+    const monthToQuarterMap: { [key: string]: Quarter } = {
+      January: Quarter.QUARTER4,
+      February: Quarter.QUARTER4,
+      March: Quarter.QUARTER4,
+      April: Quarter.QUARTER1,
+      May: Quarter.QUARTER1,
+      June: Quarter.QUARTER1,
+      July: Quarter.QUARTER1,
+      August: Quarter.QUARTER2,
+      September: Quarter.QUARTER2,
+      October: Quarter.QUARTER3,
+      November: Quarter.QUARTER3,
+      December: Quarter.QUARTER3,
+    };
+
+    return monthToQuarterMap[month] || undefined;
+  }
 
   return (
     <>
@@ -598,28 +627,57 @@ const ReturnDashboard = () => {
                 )}
                 onChange={(val: Quarter) => {
                   if (!val) return;
+                  if (!davtdata) return;
                   setQuarter(val);
 
                   switch (val.toString() as Quarter) {
                     case Quarter.QUARTER1:
-                      davtdata?.compositionScheme
+                      davtdata.compositionScheme
                         ? setPeriod("June")
-                        : setPeriod("April");
+                        : setPeriod(
+                            getPeriodList(
+                              new Date(),
+                              year!,
+                              Quarter.QUARTER1,
+                              davtdata.vatLiableDate ?? new Date()
+                            )[0].value
+                          );
                       break;
                     case Quarter.QUARTER2:
-                      davtdata?.compositionScheme
+                      davtdata.compositionScheme
                         ? setPeriod("September")
-                        : setPeriod("July");
+                        : setPeriod(
+                            getPeriodList(
+                              new Date(),
+                              year!,
+                              Quarter.QUARTER2,
+                              davtdata.vatLiableDate ?? new Date()
+                            )[0].value
+                          );
                       break;
                     case Quarter.QUARTER3:
-                      davtdata?.compositionScheme
+                      davtdata.compositionScheme
                         ? setPeriod("December")
-                        : setPeriod("October");
+                        : setPeriod(
+                            getPeriodList(
+                              new Date(),
+                              year!,
+                              Quarter.QUARTER3,
+                              davtdata.vatLiableDate ?? new Date()
+                            )[0].value
+                          );
                       break;
                     case Quarter.QUARTER4:
-                      davtdata?.compositionScheme
+                      davtdata.compositionScheme
                         ? setPeriod("March")
-                        : setPeriod("January");
+                        : setPeriod(
+                            getPeriodList(
+                              new Date(),
+                              year!,
+                              Quarter.QUARTER4,
+                              davtdata.vatLiableDate ?? new Date()
+                            )[0].value
+                          );
                       break;
                     default:
                       break;
@@ -659,7 +717,7 @@ const ReturnDashboard = () => {
         </div>
         {isSearch && (
           <>
-            {lastPending != null ? (
+            {/* {lastPending != null ? (
               <>
                 <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-between mt-4 border">
                   <div>
@@ -691,61 +749,59 @@ const ReturnDashboard = () => {
                   </div>
                 </div>
               </>
-            ) : (
-              <>
-                <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-between mt-4 border">
-                  <div>
-                    <p className="text-sm">RR Number</p>
-                    <p className="text-sm  font-medium">
-                      {return01?.rr_number == null ||
-                      return01?.rr_number == undefined ||
-                      return01?.rr_number == ""
-                        ? "N/A"
-                        : return01?.rr_number}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm">User TIN Number</p>
-                    <p className="text-sm  font-medium">
-                      {davtdata?.tinNumber}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm">
-                      {return01?.rr_number != "" &&
-                      return01?.rr_number != undefined &&
-                      return01?.rr_number != null
-                        ? "Filed Date"
-                        : "Filing Date"}
-                    </p>
-                    <p className="text-sm  font-medium">
-                      {return01?.rr_number != "" &&
-                      return01?.rr_number != undefined &&
-                      return01?.rr_number != null
-                        ? formateDate(return01.filing_datetime)
-                        : formateDate(duedate)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm">Status</p>
-                    <p className="text-sm  font-medium">
-                      {return01?.rr_number != "" &&
-                      return01?.rr_number != undefined &&
-                      return01?.rr_number != null
-                        ? "Filed"
-                        : "Due - Not Filed"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm">Return Type</p>
-                    <p className="text-sm  font-medium">
-                      {return01?.return_type ?? "ORIGINAL"}
-                    </p>
-                  </div>
+            ) : ( */}
+            <>
+              <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-between mt-4 border">
+                <div>
+                  <p className="text-sm">RR Number</p>
+                  <p className="text-sm  font-medium">
+                    {return01?.rr_number == null ||
+                    return01?.rr_number == undefined ||
+                    return01?.rr_number == ""
+                      ? "N/A"
+                      : return01?.rr_number}
+                  </p>
                 </div>
-              </>
-            )}
+                <div>
+                  <p className="text-sm">User TIN Number</p>
+                  <p className="text-sm  font-medium">{davtdata?.tinNumber}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm">
+                    {return01?.rr_number != "" &&
+                    return01?.rr_number != undefined &&
+                    return01?.rr_number != null
+                      ? "Filed Date"
+                      : "Filing Date"}
+                  </p>
+                  <p className="text-sm  font-medium">
+                    {return01?.rr_number != "" &&
+                    return01?.rr_number != undefined &&
+                    return01?.rr_number != null
+                      ? formateDate(return01.filing_datetime)
+                      : formateDate(duedate)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm">Status</p>
+                  <p className="text-sm  font-medium">
+                    {return01?.rr_number != "" &&
+                    return01?.rr_number != undefined &&
+                    return01?.rr_number != null
+                      ? "Filed"
+                      : "Due - Not Filed"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm">Return Type</p>
+                  <p className="text-sm  font-medium">
+                    {return01?.return_type ?? "ORIGINAL"}
+                  </p>
+                </div>
+              </div>
+            </>
+            {/* )} */}
 
             <div className="grid w-full grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
               <Card
@@ -801,30 +857,29 @@ const ReturnDashboard = () => {
             <>
               {ispreview() && (
                 <>
-                  <button
-                    onClick={async () => {
-                      await generatePDF(
-                        `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                          userid.toString()
-                        )}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
-                      );
-                    }}
-                    className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-                  >
-                    Download Return
-                  </button>
-
                   {ispayment() && (
                     <>
+                      <button
+                        onClick={async () => {
+                          await generatePDF(
+                            `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                              userid.toString()
+                            )}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
+                          );
+                        }}
+                        className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                      >
+                        Download Return
+                      </button>
                       <button
                         onClick={() => {
                           setRRBox(true);
                         }}
                         className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
                       >
-                        Revised Return
+                        Revise Return
                       </button>
-                      <button
+                      {/* <button
                         onClick={async () => {
                           router.push(
                             `/dashboard/cform/${encryptURLData(
@@ -835,7 +890,7 @@ const ReturnDashboard = () => {
                         className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
                       >
                         C-FORM
-                      </button>
+                      </button> */}
                     </>
                   )}
                   {!ispayment() && (

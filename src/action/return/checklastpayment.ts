@@ -66,10 +66,9 @@ const CheckLastPayment = async (
 
     // Get the month index from the month name
     let monthIndex = monthNames.indexOf(isExist.month!);
+
     const current_payment_date = new Date(
-      parseInt(isExist.year),
-      monthIndex,
-      1
+      Date.UTC(parseInt(isExist.year), monthIndex, 1)
     );
 
     const year: string = getPreviousMonth(current_payment_date)
@@ -107,6 +106,15 @@ const CheckLastPayment = async (
         },
       });
 
+      if (!lastPayment) {
+        return createResponse({
+          data: false,
+          message:
+            "You have pending returns from previous month. Kindly complete all pending returns before proceeding.",
+          functionname,
+        });
+      }
+
       if (isExist.dvat04.vatLiableDate! > current_payment_date) {
         return createResponse({
           data: false,
@@ -114,27 +122,28 @@ const CheckLastPayment = async (
             "You are not eligible to pay return for this period.Kindly contact administration.",
           functionname,
         });
-      } else {
-        const month_dif = getMonthDifference(
-          isExist.dvat04.vatLiableDate!,
-          current_payment_date
-        );
-
-        if (month_dif <= 1) {
-          return createResponse({
-            data: true,
-            message: "Payment completed successfully",
-            functionname,
-          });
-        } else {
-          return createResponse({
-            data: false,
-            message:
-              "You have pending returns from previous month.Kindly complete all pending returns before proceeding.",
-            functionname,
-          });
-        }
       }
+      // else {
+      //   const month_dif = getMonthDifference(
+      //     isExist.dvat04.vatLiableDate!,
+      //     current_payment_date
+      //   );
+
+      //   if (month_dif <= 1) {
+      //     return createResponse({
+      //       data: true,
+      //       message: "Payment completed successfully",
+      //       functionname,
+      //     });
+      //   } else {
+      //     return createResponse({
+      //       data: false,
+      //       message:
+      //         "You have pending returns from previous month. Kindly complete all pending returns before proceeding.",
+      //       functionname,
+      //     });
+      //   }
+      // }
     }
 
     if (

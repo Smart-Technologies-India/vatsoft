@@ -1,6 +1,5 @@
 "use client";
 
-import IsRegisterPedning from "@/action/register/isregisterpending";
 import GetUser from "@/action/user/getuser";
 import DashboardCards from "@/components/dashboard/cards/dashboardcard";
 import { user } from "@prisma/client";

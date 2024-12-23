@@ -24,14 +24,13 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import GetUserTrackPayment from "@/action/return/getusertrackpayment";
 import { getCookie } from "cookies-next";
-import { dvat04, returns_01 } from "@prisma/client";
+import { cform, dvat04, returns_01 } from "@prisma/client";
 import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
-import SearchReturnPayment from "@/action/return/searchreturnpayment";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import GetUserCform from "@/action/cform/getusercform";
 
 const TrackAppliation = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
@@ -71,7 +70,7 @@ const TrackAppliation = () => {
     setSearchDate(dates);
   };
 
-  const [paymentData, setPaymentData] = useState<returns_01[]>([]);
+  const [cformData, setCformData] = useState<Array<cform>>([]);
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 
   const init = async () => {
@@ -82,22 +81,22 @@ const TrackAppliation = () => {
 
     if (dvat_response.data && dvat_response.status) {
       setDvatData(dvat_response.data);
-    }
-
-    const payment_data = await GetUserTrackPayment({
-      user_id: userid,
-      take: 10,
-      skip: 0,
-    });
-
-    if (payment_data.status && payment_data.data.result) {
-      setPaymentData(payment_data.data.result);
-      setPaginatin({
-        skip: payment_data.data.skip,
-        take: payment_data.data.take,
-        total: payment_data.data.total,
+      const cform_data = await GetUserCform({
+        dvatid: dvat_response.data.id,
+        take: 10,
+        skip: 0,
       });
+
+      if (cform_data.status && cform_data.data.result) {
+        setCformData(cform_data.data.result);
+        setPaginatin({
+          skip: cform_data.data.skip,
+          take: cform_data.data.take,
+          total: cform_data.data.total,
+        });
+      }
     }
+
     setLoading(false);
   };
   useEffect(() => {
@@ -109,21 +108,22 @@ const TrackAppliation = () => {
 
       if (dvat_response.data && dvat_response.status) {
         setDvatData(dvat_response.data);
-      }
-      const payment_data = await GetUserTrackPayment({
-        user_id: userid,
-        take: 10,
-        skip: 0,
-      });
-
-      if (payment_data.status && payment_data.data.result) {
-        setPaymentData(payment_data.data.result);
-        setPaginatin({
-          skip: payment_data.data.skip,
-          take: payment_data.data.take,
-          total: payment_data.data.total,
+        const cform_data = await GetUserCform({
+          dvatid: dvat_response.data.id,
+          take: 10,
+          skip: 0,
         });
+
+        if (cform_data.status && cform_data.data.result) {
+          setCformData(cform_data.data.result);
+          setPaginatin({
+            skip: cform_data.data.skip,
+            take: cform_data.data.take,
+            total: cform_data.data.total,
+          });
+        }
       }
+
       setLoading(false);
     };
     init();
@@ -187,22 +187,22 @@ const TrackAppliation = () => {
     ) {
       return toast.error("Enter arn number");
     }
-    const search_response = await SearchReturnPayment({
-      userid: userid,
-      rr_number: arnRef.current?.input?.value,
-      dept: dvatdata?.selectOffice!,
-      take: 10,
-      skip: 0,
-    });
-    if (search_response.status && search_response.data.result) {
-      setPaymentData(search_response.data.result);
-      setPaginatin({
-        skip: search_response.data.skip,
-        take: search_response.data.take,
-        total: search_response.data.total,
-      });
-      setSearch(true);
-    }
+    // const search_response = await SearchReturnPayment({
+    //   userid: userid,
+    //   rr_number: arnRef.current?.input?.value,
+    //   dept: dvatdata?.selectOffice!,
+    //   take: 10,
+    //   skip: 0,
+    // });
+    // if (search_response.status && search_response.data.result) {
+    //   setPaymentData(search_response.data.result);
+    //   setPaginatin({
+    //     skip: search_response.data.skip,
+    //     take: search_response.data.take,
+    //     total: search_response.data.total,
+    //   });
+    //   setSearch(true);
+    // }
   };
 
   const datesearch = async () => {
@@ -210,27 +210,28 @@ const TrackAppliation = () => {
       return toast.error("Select state date and end date");
     }
 
-    const search_response = await SearchReturnPayment({
-      userid: userid,
-      fromdate: searchDate[0]?.toDate(),
-      todate: searchDate[1]?.toDate(),
-      dept: dvatdata?.selectOffice!,
-      take: 10,
-      skip: 0,
-    });
+    // const search_response = await SearchReturnPayment({
+    //   userid: userid,
+    //   fromdate: searchDate[0]?.toDate(),
+    //   todate: searchDate[1]?.toDate(),
+    //   dept: dvatdata?.selectOffice!,
+    //   take: 10,
+    //   skip: 0,
+    // });
 
-    if (search_response.status && search_response.data.result) {
-      setPaymentData(search_response.data.result);
-      setPaginatin({
-        skip: search_response.data.skip,
-        take: search_response.data.take,
-        total: search_response.data.total,
-      });
-      setSearch(true);
-    }
+    // if (search_response.status && search_response.data.result) {
+    //   setPaymentData(search_response.data.result);
+    //   setPaginatin({
+    //     skip: search_response.data.skip,
+    //     take: search_response.data.take,
+    //     total: search_response.data.total,
+    //   });
+    //   setSearch(true);
+    // }
   };
 
   const onChangePageCount = async (page: number, pagesize: number) => {
+    if (!dvatdata) return;
     if (isSearch) {
       if (searchOption == SearchOption.ARN) {
         if (
@@ -240,23 +241,23 @@ const TrackAppliation = () => {
         ) {
           return toast.error("Enter arn number");
         }
-        const search_response = await SearchReturnPayment({
-          userid: userid,
-          rr_number: arnRef.current?.input?.value,
-          dept: dvatdata?.selectOffice!,
-          take: pagesize,
-          skip: pagesize * (page - 1),
-        });
+        // const search_response = await SearchReturnPayment({
+        //   userid: userid,
+        //   rr_number: arnRef.current?.input?.value,
+        //   dept: dvatdata?.selectOffice!,
+        //   take: pagesize,
+        //   skip: pagesize * (page - 1),
+        // });
 
-        if (search_response.status && search_response.data.result) {
-          setPaymentData(search_response.data.result);
-          setPaginatin({
-            skip: search_response.data.skip,
-            take: search_response.data.take,
-            total: search_response.data.total,
-          });
-          setSearch(true);
-        }
+        // if (search_response.status && search_response.data.result) {
+        //   setPaymentData(search_response.data.result);
+        //   setPaginatin({
+        //     skip: search_response.data.skip,
+        //     take: search_response.data.take,
+        //     total: search_response.data.total,
+        //   });
+        //   setSearch(true);
+        // }
       } else if (searchOption == SearchOption.RETURN) {
         if (searchDate == null || searchDate.length <= 1) {
           return toast.error("Select state date and end date");
@@ -266,38 +267,38 @@ const TrackAppliation = () => {
           return toast.error("Select state date and end date");
         }
 
-        const search_response = await SearchReturnPayment({
-          userid: userid,
-          fromdate: searchDate[0]?.toDate(),
-          todate: searchDate[1]?.toDate(),
-          dept: dvatdata?.selectOffice!,
-          take: pagesize,
-          skip: pagesize * (page - 1),
-        });
+        // const search_response = await SearchReturnPayment({
+        //   userid: userid,
+        //   fromdate: searchDate[0]?.toDate(),
+        //   todate: searchDate[1]?.toDate(),
+        //   dept: dvatdata?.selectOffice!,
+        //   take: pagesize,
+        //   skip: pagesize * (page - 1),
+        // });
 
-        if (search_response.status && search_response.data.result) {
-          setPaymentData(search_response.data.result);
-          setPaginatin({
-            skip: search_response.data.skip,
-            take: search_response.data.take,
-            total: search_response.data.total,
-          });
-          setSearch(true);
-        }
+        // if (search_response.status && search_response.data.result) {
+        //   setPaymentData(search_response.data.result);
+        //   setPaginatin({
+        //     skip: search_response.data.skip,
+        //     take: search_response.data.take,
+        //     total: search_response.data.total,
+        //   });
+        //   setSearch(true);
+        // }
       }
     } else {
-      const payment_data = await GetUserTrackPayment({
-        user_id: userid,
+      const cform_data = await GetUserCform({
+        dvatid: dvatdata.id,
         take: pagesize,
         skip: pagesize * (page - 1),
       });
 
-      if (payment_data.status && payment_data.data.result) {
-        setPaymentData(payment_data.data.result);
+      if (cform_data.status && cform_data.data.result) {
+        setCformData(cform_data.data.result);
         setPaginatin({
-          skip: payment_data.data.skip,
-          take: payment_data.data.take,
-          total: payment_data.data.total,
+          skip: cform_data.data.skip,
+          take: cform_data.data.take,
+          total: cform_data.data.total,
         });
       }
     }
@@ -315,7 +316,7 @@ const TrackAppliation = () => {
       <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white flex">
-            <p>Track Return Status</p>
+            <p>Track C-Form</p>
             <div className="grow"></div>
 
             <Drawer>
@@ -488,26 +489,29 @@ const TrackAppliation = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paymentData.map((val: returns_01, index: number) => {
+              {cformData.map((val: cform, index: number) => {
                 return (
                   <TableRow key={index}>
                     <TableCell className="border text-center p-2">
                       <Link
                         href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                          val.createdById.toString()
-                        )}?form=30A&year=${val.year}&quarter=${
-                          val.quarter
-                        }&month=${val.month}`}
+                          val.id.toString()
+                        )}`}
                         className="text-blue-500"
                       >
-                        {val.rr_number}
+                        {val.sr_no}
                       </Link>
                     </TableCell>
                     <TableCell className="border text-center p-2">
-                      {val.return_type}
+                      {val.office_of_issue}
                     </TableCell>
                     <TableCell className="border text-center p-2">
-                      {get_years(
+                      {new Date(val.date_of_issue!).toLocaleString("en-US", {
+                        year: "numeric",
+                      })}
+                    </TableCell>
+                    <TableCell className="border text-center p-2">
+                      {/* {get_years(
                         new Date(val.transaction_date!).toLocaleString(
                           "en-US",
                           {
@@ -516,21 +520,11 @@ const TrackAppliation = () => {
                         ),
                         val.year
                       )}
+                 */}
+                      {formateDate(new Date(val.date_of_issue!))}
                     </TableCell>
                     <TableCell className="border text-center p-2">
-                      {val.month}
-                      {/* {get_month(
-                        val.compositionScheme ?? false,
-                        new Date(val.transaction_date!).toLocaleString(
-                          "en-US",
-                          {
-                            month: "short",
-                          }
-                        )
-                      )} */}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {formateDate(new Date(val.transaction_date!))}
+                      {val.seller_name}
                     </TableCell>
                   </TableRow>
                 );

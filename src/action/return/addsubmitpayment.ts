@@ -3,7 +3,14 @@
 import { addPrismaDatabaseDate, errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
-import { returns_01 } from "@prisma/client";
+import {
+  CategoryOfEntry,
+  DvatType,
+  PurchaseType,
+  returns_01,
+  ReturnType,
+  SelectOffice,
+} from "@prisma/client";
 
 interface AddSubmitPaymentPayload {
   id: number;
@@ -16,91 +23,204 @@ const AddSubmitPayment = async (
 ): Promise<ApiResponseType<returns_01 | null>> => {
   const functionname: string = AddSubmitPayment.name;
   try {
-    let isExist = await prisma.returns_01.findFirst({
-      where: {
-        id: payload.id,
-        deletedAt: null,
-        deletedById: null,
-        status: "ACTIVE",
-        penalty: payload.penalty,
-        return_type: "REVISED",
-      },
-    });
-
-    if (!isExist) {
-      isExist = await prisma.returns_01.findFirst({
+    const result: returns_01 = await prisma.$transaction(async (prisma) => {
+      let isExist = await prisma.returns_01.findFirst({
         where: {
           id: payload.id,
           deletedAt: null,
           deletedById: null,
           status: "ACTIVE",
           penalty: payload.penalty,
-          return_type: "ORIGINAL",
+          return_type: "REVISED",
+        },
+        include: {
+          dvat04: true,
         },
       });
-    }
-    if (!isExist) {
-      return createResponse({ message: "Invalid Id, try again", functionname });
-    }
-    const updateresponse = await prisma.returns_01.update({
-      where: {
-        id: payload.id,
-        deletedAt: null,
-        deletedById: null,
-        status: "ACTIVE",
-      },
-      data: {
-        transaction_date: addPrismaDatabaseDate(new Date()).toISOString(),
-        paymentmode: "ONLINE",
-        rr_number: payload.rr_number,
-        filing_datetime: new Date(),
-      },
-      include: {
-        dvat04: true,
-      },
-    });
-    if (!updateresponse) {
-      return createResponse({
-        message: "Something Want wrong! Unable to submit",
-        functionname,
-      });
-    }
 
-    if (updateresponse.dvat04.compositionScheme) {
-      const monthsToUpdate = getMonthGroup(updateresponse.month ?? "");
-      await prisma.return_filing.updateMany({
+      if (!isExist) {
+        isExist = await prisma.returns_01.findFirst({
+          where: {
+            id: payload.id,
+            deletedAt: null,
+            deletedById: null,
+            status: "ACTIVE",
+            penalty: payload.penalty,
+            return_type: "ORIGINAL",
+          },
+          include: {
+            dvat04: true,
+          },
+        });
+      }
+      if (!isExist) {
+        throw new Error("Invalid Id, try again");
+      }
+      const updateresponse = await prisma.returns_01.update({
         where: {
-          filing_status: false,
-          dvatid: updateresponse.dvat04Id,
-          filing_date: null,
-          year: updateresponse.year,
-          month: { in: monthsToUpdate },
+          id: payload.id,
+          deletedAt: null,
+          deletedById: null,
+          status: "ACTIVE",
         },
         data: {
-          filing_date: new Date(),
-          filing_status: true,
+          transaction_date: addPrismaDatabaseDate(new Date()).toISOString(),
+          paymentmode: "ONLINE",
+          rr_number: payload.rr_number,
+          filing_datetime: new Date(),
+        },
+        include: {
+          dvat04: true,
         },
       });
-    } else {
-      await prisma.return_filing.updateMany({
-        where: {
-          filing_status: false,
-          dvatid: updateresponse.dvat04Id,
-          filing_date: null,
-          year: updateresponse.year,
-          month: updateresponse.month ?? "",
-        },
-        data: {
-          filing_date: new Date(),
-          filing_status: true,
-        },
-      });
-    }
+      if (!updateresponse) {
+        throw new Error("Something Want wrong! Unable to submit");
+      }
+
+      if (updateresponse.dvat04.compositionScheme) {
+        const monthsToUpdate = getMonthGroup(updateresponse.month ?? "");
+        await prisma.return_filing.updateMany({
+          where: {
+            filing_status: false,
+            dvatid: updateresponse.dvat04Id,
+            filing_date: null,
+            year: updateresponse.year,
+            month: { in: monthsToUpdate },
+          },
+          data: {
+            filing_date: new Date(),
+            filing_status: true,
+          },
+        });
+      } else {
+        await prisma.return_filing.updateMany({
+          where: {
+            filing_status: false,
+            dvatid: updateresponse.dvat04Id,
+            filing_date: null,
+            year: updateresponse.year,
+            month: updateresponse.month ?? "",
+          },
+          data: {
+            filing_date: new Date(),
+            filing_status: true,
+          },
+        });
+      }
+
+      if (
+        ["March", "June", "September", "December"].includes(isExist.month ?? "")
+      ) {
+        const monthsToUpdate = getMonthGroup(isExist.month ?? "");
+
+        // step 1 : get all entry
+        const returnEntry = await prisma.returns_entry.findMany({
+          where: {
+            dvat_type: DvatType.DVAT_30_A,
+            category_of_entry: CategoryOfEntry.INVOICE,
+            purchase_type: PurchaseType.FORMC_CONCESSION,
+            status: "ACTIVE",
+            deletedAt: null,
+            deletedById: null,
+            returns_01: {
+              dvat04Id: isExist.dvat04Id,
+              year:
+                isExist.month == "March"
+                  ? (parseInt(isExist.year) + 1).toString()
+                  : isExist.year,
+              month: { in: monthsToUpdate },
+            },
+          },
+          include: {
+            seller_tin_number: true,
+          },
+        });
+
+        // step 2 : get all entry
+        const groupedData = returnEntry.reduce<
+          Record<
+            number,
+            {
+              seller_tin_numberId: number;
+              totalAmount: number;
+              entries: typeof returnEntry;
+            }
+          >
+        >((acc, entry) => {
+          const sellerId = entry.seller_tin_numberId;
+          const amount = parseFloat(entry.amount || "0");
+
+          if (!acc[sellerId]) {
+            acc[sellerId] = {
+              seller_tin_numberId: sellerId,
+              totalAmount: 0,
+              entries: [],
+            };
+          }
+
+          acc[sellerId].totalAmount += amount;
+          acc[sellerId].entries.push(entry);
+
+          return acc;
+        }, {});
+
+        const flatData = Object.values(groupedData).flatMap((group) =>
+          group.entries.map((entry) => ({
+            ...entry,
+            amount: group.totalAmount.toString(), // Overwrite or add the total amount
+          }))
+        );
+
+        const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
+
+        const lastcform = await prisma.cform.findFirst({
+          where: {
+            status: "ACTIVE",
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        if (!lastcform) {
+          throw new Error("there is no C-Form exist");
+        }
+
+        const create_response = await prisma.cform.createMany({
+          data: flatData.map((val: any, index: number) => ({
+            amount: val.amount,
+            dvat04Id: isExist.dvat04Id,
+            office_of_issue: isExist.dvat04.selectOffice,
+            date_of_issue: dates.toDate,
+            valid_date: isExist.dvat04.certificateDate!,
+            sr_no: getsrno(
+              val.dvat04.selectOffice,
+              parseInt(lastcform.sr_no.split("/").pop() ?? "0"),
+              index
+            ),
+            seller_address: val.seller_tin_number.state ?? "",
+            seller_name: val.seller_tin_number.name_of_dealer ?? "",
+            seller_tin_no: val.seller_tin_number.tin_number ?? "",
+            cform_type: ReturnType.ORIGINAL,
+            from_period: dates.fromDate,
+            to_period: dates.toDate,
+            status: "ACTIVE",
+            createdById: isExist.createdById,
+          })),
+        });
+
+        if (!create_response) {
+          throw new Error("C-Forms note create try again.");
+        }
+      }
+
+      return updateresponse;
+    });
 
     return createResponse({
       message: "Form submitted completed successfully.",
       functionname,
-      data: updateresponse,
+      data: result,
     });
   } catch (e) {
     return createResponse({
@@ -128,4 +248,65 @@ const getMonthGroup = (currentMonth: string): string[] => {
   }
 
   return [];
+};
+
+function getFromDateAndToDate(
+  year: string,
+  month: string
+): { fromDate: string; toDate: string } {
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // Get the current month index
+  const monthIndex = monthNames.indexOf(month);
+  if (monthIndex === -1) {
+    throw new Error("Invalid month name");
+  }
+
+  // Calculate the `toDate`
+  const toYear = month === "March" ? parseInt(year) + 1 : parseInt(year);
+  const toDate = new Date(toYear, monthIndex + 1, 0); // Last day of the month
+
+  // Calculate the `fromDate` (current month - 2 months)
+  const fromDate = new Date(parseInt(year), monthIndex - 2, 1); // First day of the month
+
+  // Format the dates to DD-MM-YYYY
+  const formatDate = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  return {
+    fromDate: formatDate(fromDate),
+    toDate: formatDate(toDate),
+  };
+}
+
+const getsrno = (
+  selectOffice: SelectOffice,
+  id: number,
+  index: number
+): string => {
+  let pre =
+    selectOffice == SelectOffice.Dadra_Nagar_Haveli
+      ? "DHN"
+      : selectOffice == SelectOffice.DAMAN
+      ? "DD"
+      : "DIU";
+
+  return `${pre}/C/${id + index}`;
 };
