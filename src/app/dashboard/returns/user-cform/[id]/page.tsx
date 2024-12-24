@@ -24,16 +24,26 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { getCookie } from "cookies-next";
-import { cform, dvat04, returns_01 } from "@prisma/client";
-import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
+import { cform, dvat04 } from "@prisma/client";
+import {
+  capitalcase,
+  decryptURLData,
+  encryptURLData,
+  formateDate,
+} from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUserCform from "@/action/cform/getusercform";
+import { useParams, useRouter } from "next/navigation";
 
 const TrackAppliation = () => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const router = useRouter();
+  const { id } = useParams<{ id: string | string[] }>();
+  const userid: number = parseInt(
+    decryptURLData(Array.isArray(id) ? id[0] : id, router)
+  );
+
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -354,8 +364,98 @@ const TrackAppliation = () => {
           <div className="bg-blue-500 p-2 text-white flex">
             <p>Track C-Form</p>
             <div className="grow"></div>
-          </div>
 
+            {/* <Drawer>
+              <DrawerTrigger>Info</DrawerTrigger>
+              <DrawerContent>
+                <DrawerHeader className="px-0 py-2">
+                  <DrawerTitle>
+                    <p className="w-5/6 mx-auto">Meaning of status</p>
+                  </DrawerTitle>
+                </DrawerHeader>
+                <Table className="border mt-2 w-5/6 mx-auto">
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="text-left w-60 p-2">
+                        Pending for Processing
+                      </TableCell>
+                      <TableCell className="text-left p-2">
+                        Application filed successfully. Pending with Tax Officer
+                        for Processing.*
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="text-left w-60 p-2">
+                        Pending for Clarification
+                      </TableCell>
+                      <TableCell className="text-left p-2">
+                        Notice for seeking clarification issued by officer. File
+                        Clarification within 7 working days of date of notice on
+                        portal.
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="text-left w-60 p-2">
+                        Clarification filed-Pending for Order
+                      </TableCell>
+                      <TableCell className="text-left p-2">
+                        Clarification filed successfully by Applicant. Pending
+                        with Tax Officer for Order.*
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="text-left w-60 p-2">
+                        Clarification not filed Pending for Order
+                      </TableCell>
+                      <TableCell className="text-left p-2">
+                        Clarification not filed by the Applicant. Pending with
+                        Tax Officer for Rejection.*
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="text-left w-60 p-2">
+                        Approved
+                      </TableCell>
+                      <TableCell className="text-left p-2">
+                        Application is Approved. Registration ID and possward
+                        emailed to Applicant.
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="text-left w-60 p-2">
+                        Rejected
+                      </TableCell>
+                      <TableCell className="text-left p-2">
+                        Application is Rejected by tax officer.
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="text-left w-60 p-2">
+                        Withdrawn
+                      </TableCell>
+                      <TableCell className="text-left p-2">
+                        Application is withdrawn by the Applicant/Tax payer.
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="text-left w-60 p-2">
+                        Cancelled on Request of Taxpayer
+                      </TableCell>
+                      <TableCell className="text-left p-2">
+                        Registration is cancelled on request to taxpayer.
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+
+                <DrawerFooter>
+                  <DrawerClose>
+                    <ShButton variant="outline">Close</ShButton>
+                  </DrawerClose>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer> */}
+          </div>
           {cformData.length == 0 && (
             <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
               <p className="flex-1">There is no C-Form.</p>

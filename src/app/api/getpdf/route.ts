@@ -14,10 +14,12 @@ export async function POST(req: NextRequest, res: NextResponse) {
       waitUntil: "networkidle2",
     });
 
+    console.log(`http://localhost:3000/${url}`);
+
     await page.waitForSelector("#mainpdf", {
       visible: true,
     });
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    await new Promise((resolve) => setTimeout(resolve, 20000));
 
     // Generate the PDF from the page
     const pdf = await page.pdf({
@@ -28,7 +30,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
       footerTemplate: "",
       waitForFonts: true,
     });
-
     await browser.close();
 
     const response = new NextResponse(pdf, {
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
     });
     return response;
   } catch (error) {
+    console.log(error);
     return NextResponse.json(
       { error: "Failed to generate PDF" },
       { status: 500 }

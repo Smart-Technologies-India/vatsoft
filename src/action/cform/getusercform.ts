@@ -9,6 +9,8 @@ import {
 } from "@/models/response";
 
 interface GetUserCformPayload {
+  name?: string;
+  tin?: string;
   dvatid: number;
   take: number;
   skip: number;
@@ -27,6 +29,16 @@ const GetUserCform = async (
           deletedById: null,
           status: "ACTIVE",
           dvat04Id: payload.dvatid,
+          ...(payload.tin && {
+            seller_tin_no: {
+              contains: payload.tin,
+            },
+          }),
+          ...(payload.name && {
+            seller_name: {
+              contains: payload.name,
+            },
+          }),
         },
 
         take: payload.take,

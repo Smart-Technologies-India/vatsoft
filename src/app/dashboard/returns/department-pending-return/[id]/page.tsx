@@ -3,6 +3,7 @@
 
 import {
   capitalcase,
+  decryptURLData,
   encryptURLData,
   formateDate,
   get28thDate,
@@ -54,9 +55,10 @@ interface yearsDetails {
 
 const ShopView = () => {
   const { id } = useParams<{ id: string | string[] }>();
-  const dvat04id = parseInt(Array.isArray(id) ? id[0] : id);
-
   const router = useRouter();
+  const dvat04id = parseInt(
+    decryptURLData(Array.isArray(id) ? id[0] : id, router)
+  );
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -209,14 +211,21 @@ const ShopView = () => {
         <div className="bg-white rounded-sm shadow-sm pb-4">
           <div className="flex gap-2 p-2 border-b border-gray-300">
             <p className="text-xl  font-semibold">Dealer Details</p>
-            {/* <div className="grow"></div>
+            <div className="grow"></div>
             <Button
+              size="small"
+              type="primary"
               onClick={() => {
-                router.back();
+                if (!dvatData) return;
+                router.push(
+                  `/dashboard/returns/user-stock/${encryptURLData(
+                    dvatData.createdById.toString()
+                  )}`
+                );
               }}
             >
-              Back
-            </Button> */}
+              Stock
+            </Button>
           </div>
 
           <div className="px-4 py-2 grid grid-cols-2 gap-4 mt-2">
@@ -258,6 +267,21 @@ const ShopView = () => {
         <div className="bg-white rounded-sm shadow-sm pb-4">
           <div className="border-b border-gray-300 flex items-center pr-2 gap-2">
             <p className="text-xl p-2  font-semibold">Return Details</p>
+            <div className="grow"></div>
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => {
+                if (!dvatData) return;
+                router.push(
+                  `/dashboard/returns/user-cform/${encryptURLData(
+                    dvatData.createdById.toString()
+                  )}`
+                );
+              }}
+            >
+              C-Form
+            </Button>
           </div>
           <div className="px-4 py-2 grid grid-cols-2 gap-4 mt-2">
             <p className="text-xs leading-3">

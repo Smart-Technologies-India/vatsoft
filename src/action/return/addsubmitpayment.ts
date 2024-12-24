@@ -186,31 +186,64 @@ const AddSubmitPayment = async (
           throw new Error("there is no C-Form exist");
         }
 
-        const create_response = await prisma.cform.createMany({
-          data: flatData.map((val: any, index: number) => ({
-            amount: val.amount,
-            dvat04Id: isExist.dvat04Id,
-            office_of_issue: isExist.dvat04.selectOffice,
-            date_of_issue: dates.toDate,
-            valid_date: isExist.dvat04.certificateDate!,
-            sr_no: getsrno(
-              val.dvat04.selectOffice,
-              parseInt(lastcform.sr_no.split("/").pop() ?? "0"),
-              index
-            ),
-            seller_address: val.seller_tin_number.state ?? "",
-            seller_name: val.seller_tin_number.name_of_dealer ?? "",
-            seller_tin_no: val.seller_tin_number.tin_number ?? "",
-            cform_type: ReturnType.ORIGINAL,
-            from_period: dates.fromDate,
-            to_period: dates.toDate,
-            status: "ACTIVE",
-            createdById: isExist.createdById,
-          })),
+        const cformResponses = await Promise.all(
+          flatData.map((val: any, index: number) =>
+            prisma.cform.create({
+              data: {
+                amount: val.amount,
+                dvat04Id: isExist.dvat04Id,
+                office_of_issue: isExist.dvat04.selectOffice,
+                date_of_issue: dates.toDate,
+                valid_date: isExist.dvat04.certificateDate!,
+                sr_no: getsrno(
+                  val.dvat04.selectOffice,
+                  parseInt(lastcform.sr_no.split("/").pop() ?? "0"),
+                  index
+                ),
+                seller_address: val.seller_tin_number.state ?? "",
+                seller_name: val.seller_tin_number.name_of_dealer ?? "",
+                seller_tin_no: val.seller_tin_number.tin_number ?? "",
+                cform_type: ReturnType.ORIGINAL,
+                from_period: dates.fromDate,
+                to_period: dates.toDate,
+                status: "ACTIVE",
+                createdById: isExist.createdById,
+              },
+            })
+          )
+        );
+
+        // Step 2: Add entries to `cform_returns` table
+        const cformReturnsEntries: {
+          cformId: number;
+          returns_entryId: number;
+        }[] = [];
+
+        Object.values(groupedData).forEach((group, groupIndex) => {
+          const cformId = cformResponses[groupIndex]?.id; // Ensure the ID is resolved
+
+          if (!cformId) {
+            throw new Error(
+              `CForm entry for group ${groupIndex} was not created`
+            );
+          }
+
+          group.entries.forEach((entry) => {
+            cformReturnsEntries.push({
+              cformId,
+              returns_entryId: entry.id,
+            });
+          });
         });
 
-        if (!create_response) {
-          throw new Error("C-Forms note create try again.");
+        // Step 3: Insert `cform_returns` entries in bulk
+        if (cformReturnsEntries.length > 0) {
+          const response = await prisma.cform_returns.createMany({
+            data: cformReturnsEntries,
+          });
+          if (!response) {
+            throw new Error(`CForm return entry was not created`);
+          }
         }
       }
 

@@ -1,79 +1,65 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { dvat04, returns_01, returns_entry } from "@prisma/client";
-import { getCookie } from "cookies-next";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { cform, dvat04, returns_entry } from "@prisma/client";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import {
-  decryptURLData,
-  encryptURLData,
-  formatDateTime,
-  formateDate,
-  generatePDF,
-  onFormError,
-} from "@/utils/methods";
-import { Separator } from "@/components/ui/separator";
-import { FieldErrors, useForm } from "react-hook-form";
-import {
-  SubmitPaymentForm,
-  SubmitPaymentSchema,
-} from "@/schema/subtmitpayment";
-import { valibotResolver } from "@hookform/resolvers/valibot";
-import { toast } from "react-toastify";
-import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import { decryptURLData, formateDate, generatePDF } from "@/utils/methods";
 import { Button } from "antd";
-import GetRefunds from "@/action/refund/getrefunds";
-import AddRefundsPayment from "@/action/refund/addrefundspayment";
-import GetUser from "@/action/user/getuser";
-import getPdfReturn from "@/action/return/getpdfreturn";
+
+import GetCformById from "@/action/cform/getcfrombyid";
+import GetDvat04 from "@/action/register/getdvat04";
+import GetCformEntry from "@/action/cform/getcfromenrty";
 
 const CFROM = () => {
-  const searchParams = useSearchParams();
-
   const { id } = useParams<{ id: string | string[] }>();
   const router = useRouter();
   const idString = Array.isArray(id) ? id[0] : id;
-  const dvatid: number = parseInt(decryptURLData(idString, router));
+  const cformid: number = parseInt(decryptURLData(idString, router));
 
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const [cformdata, setCformdata] = useState<cform | null>(null);
+
+  // const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const [isLoading, setLoading] = useState<boolean>(true);
 
-  const [return01, setReturn01] = useState<returns_01 | null>();
-  const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
-  const [dvatdata, setDvatData] = useState<dvat04>();
+  // const [return01, setReturn01] = useState<returns_01 | null>();
+  const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
+    []
+  );
+  const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const dvat_response = await GetUserDvat04({
-        userid: current_user_id,
+
+      const cform_response = await GetCformById({
+        id: cformid,
       });
 
-      if (dvat_response.status && dvat_response.data) {
-        setDvatData(dvat_response.data);
-      }
-      const year: string = searchParams.get("year") ?? "";
-      const month: string = searchParams.get("month") ?? "";
+      console.log(cform_response);
+      if (cform_response.data && cform_response.status) {
+        setCformdata(cform_response.data);
+        const dvat_response = await GetDvat04({
+          id: cform_response.data.dvat04Id,
+        });
 
-      const returnformsresponse = await getPdfReturn({
-        year: year,
-        month: month,
-        userid: current_user_id,
-      });
+        if (dvat_response.data && dvat_response.status) {
+          setDvatData(dvat_response.data);
+        }
 
-      if (returnformsresponse.status && returnformsresponse.data) {
-        setReturn01(returnformsresponse.data.returns_01);
-        serReturns_entryData(returnformsresponse.data.returns_entry);
-      } else {
-        setReturn01(null);
-        serReturns_entryData([]);
+        const cform_entry_respone = await GetCformEntry({
+          id: cform_response.data.id,
+        });
+
+        if (cform_entry_respone.data && cform_entry_respone.status) {
+          serReturns_entryData(cform_entry_respone.data);
+        }
       }
       setLoading(false);
     };
     init();
-  }, [searchParams, current_user_id]);
+  }, []);
 
   const PAGE_SIZE = 35;
 
@@ -97,10 +83,13 @@ const CFROM = () => {
 
   return (
     <>
-      <div className="mainpdf" id="mainpdf">
+      <div className="mainpdf">
         {/* part one start here */}
 
-        <div className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto">
+        <div
+          className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto"
+          id="mainpdf"
+        >
           <div className="border border-black p-2 h-full w-full">
             <div className="p-4 text-center text-sm">Original</div>
             <div className="text-center text-sm font-medium">
@@ -126,7 +115,7 @@ const CFROM = () => {
                     Office of Issue
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    Dept. of VAT – Dadra and Nagar Haveli
+                    {cformdata?.office_of_issue}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -135,7 +124,7 @@ const CFROM = () => {
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
                     {/* 24/11/2014 */}
-                    {formateDate(new Date(return01?.transaction_date!))}
+                    {formateDate(new Date(cformdata?.createdAt!))}
                   </td>
                 </tr>
               </tbody>
@@ -155,7 +144,7 @@ const CFROM = () => {
                     to whom issued along with his RC NO
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {return01 ? return01.rr_number : ""}
+                    {dvatdata && dvatdata.tinNumber}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -163,8 +152,8 @@ const CFROM = () => {
                     Date from which registration is valid
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {return01
-                      ? formateDate(new Date(return01.filing_datetime))
+                    {cformdata
+                      ? formateDate(new Date(cformdata.valid_date))
                       : ""}
                   </td>
                 </tr>
@@ -173,13 +162,13 @@ const CFROM = () => {
                     Serial No
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    DNH/C/1512671
+                    {cformdata ? cformdata.sr_no : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">To</td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    HINDUSTAN PETROLIUM CORPORATION LTD. (#Seller)
+                    {cformdata ? cformdata.seller_address : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -187,7 +176,7 @@ const CFROM = () => {
                     Seller Tin No
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {dvatdata ? dvatdata.tinNumber : ""}
+                    {cformdata ? cformdata.seller_tin_no : ""}
                   </td>
                 </tr>
               </tbody>
@@ -351,6 +340,7 @@ const CFROM = () => {
         {/* part one end here */}
 
         {/* part two start here */}
+        {/* <div className="p-4 text-center text-sm">Duplicate</div> */}
         <div className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto">
           <div className="border border-black p-2 h-full w-full">
             <div className="p-4 text-center text-sm">Duplicate</div>
@@ -377,7 +367,7 @@ const CFROM = () => {
                     Office of Issue
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    Dept. of VAT – Dadra and Nagar Haveli
+                    {cformdata?.office_of_issue}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -386,7 +376,7 @@ const CFROM = () => {
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
                     {/* 24/11/2014 */}
-                    {formateDate(new Date(return01?.transaction_date!))}
+                    {formateDate(new Date(cformdata?.createdAt!))}
                   </td>
                 </tr>
               </tbody>
@@ -406,7 +396,7 @@ const CFROM = () => {
                     to whom issued along with his RC NO
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {return01 ? return01.rr_number : ""}
+                    {dvatdata && dvatdata.tinNumber}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -414,8 +404,8 @@ const CFROM = () => {
                     Date from which registration is valid
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {return01
-                      ? formateDate(new Date(return01.filing_datetime))
+                    {cformdata
+                      ? formateDate(new Date(cformdata.valid_date))
                       : ""}
                   </td>
                 </tr>
@@ -424,13 +414,13 @@ const CFROM = () => {
                     Serial No
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    DNH/C/1512671
+                    {cformdata ? cformdata.sr_no : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">To</td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    HINDUSTAN PETROLIUM CORPORATION LTD. (#Seller)
+                    {cformdata ? cformdata.seller_address : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -438,7 +428,7 @@ const CFROM = () => {
                     Seller Tin No
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {dvatdata ? dvatdata.tinNumber : ""}
+                    {cformdata ? cformdata.seller_tin_no : ""}
                   </td>
                 </tr>
               </tbody>
@@ -599,6 +589,7 @@ const CFROM = () => {
             </div>
           </div>
         ))}
+
         {/* part two end here */}
 
         {/* part three start here */}
@@ -628,7 +619,7 @@ const CFROM = () => {
                     Office of Issue
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    Dept. of VAT – Dadra and Nagar Haveli
+                    {cformdata?.office_of_issue}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -637,7 +628,7 @@ const CFROM = () => {
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
                     {/* 24/11/2014 */}
-                    {formateDate(new Date(return01?.transaction_date!))}
+                    {formateDate(new Date(cformdata?.createdAt!))}
                   </td>
                 </tr>
               </tbody>
@@ -657,7 +648,7 @@ const CFROM = () => {
                     to whom issued along with his RC NO
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {return01 ? return01.rr_number : ""}
+                    {dvatdata && dvatdata.tinNumber}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -665,8 +656,8 @@ const CFROM = () => {
                     Date from which registration is valid
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {return01
-                      ? formateDate(new Date(return01.filing_datetime))
+                    {cformdata
+                      ? formateDate(new Date(cformdata.valid_date))
                       : ""}
                   </td>
                 </tr>
@@ -675,13 +666,13 @@ const CFROM = () => {
                     Serial No
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    DNH/C/1512671
+                    {cformdata ? cformdata.sr_no : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">To</td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    HINDUSTAN PETROLIUM CORPORATION LTD. (#Seller)
+                    {cformdata ? cformdata.seller_address : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -689,7 +680,7 @@ const CFROM = () => {
                     Seller Tin No
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {dvatdata ? dvatdata.tinNumber : ""}
+                    {cformdata ? cformdata.seller_tin_no : ""}
                   </td>
                 </tr>
               </tbody>
@@ -850,6 +841,7 @@ const CFROM = () => {
             </div>
           </div>
         ))}
+
         {/* part three end here */}
 
         {/* <div className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto">
@@ -940,12 +932,12 @@ const CFROM = () => {
             </table>
           </div>
         </div> */}
-        <div>
+        <div className="grid place-items-center">
           <Button
             className="hidden-print mx-auto my-4"
             type="primary"
             onClick={async (e) => {
-              await generatePDF(`/dashboard/cform?sidebar=no`);
+              await generatePDF(`dashboard/cform/${idString}?sidebar=no`);
             }}
           >
             Download Challan

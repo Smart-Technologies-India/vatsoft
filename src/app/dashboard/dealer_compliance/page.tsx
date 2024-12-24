@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/drawer";
 import { getCookie } from "cookies-next";
 import { dvat04, user } from "@prisma/client";
-import { capitalcase } from "@/utils/methods";
+import { capitalcase, encryptURLData } from "@/utils/methods";
 import DeptPendingReturn from "@/action/dvat/deptpendingreturn";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
@@ -57,7 +57,7 @@ const TrackAppliation = () => {
     TIN,
     NAME,
   }
-  
+
   const [searchOption, setSeachOption] = useState<SearchOption>(
     SearchOption.TIN
   );
@@ -513,7 +513,9 @@ const TrackAppliation = () => {
                         type="primary"
                         onClick={() => {
                           route.push(
-                            `/dashboard/returns/department-pending-return/${val.dvat04.id}`
+                            `/dashboard/returns/department-pending-return/${encryptURLData(
+                              val.dvat04.id.toString()
+                            )}`
                           );
                         }}
                       >

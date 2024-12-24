@@ -510,7 +510,9 @@ const TrackAppliation = () => {
                             type="primary"
                             onClick={() => {
                               route.push(
-                                `/dashboard/returns/department-pending-return/${val.dvat04.id}`
+                                `/dashboard/returns/department-pending-return/${encryptURLData(
+                                  val.dvat04.id.toString()
+                                )}`
                               );
                             }}
                           >
