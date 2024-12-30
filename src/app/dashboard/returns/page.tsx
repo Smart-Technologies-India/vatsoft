@@ -52,11 +52,6 @@ const Page = () => {
                 description="Monitor submitted VAT returns in real-time."
                 link="/dashboard/returns/department-pending-return"
               />
-              <DashboardCards
-                title="CFORM"
-                description="Check your CFORM status and ensure all filings meet regulatory requirements."
-                link={`/dashboard/returns/department-cform-status`}
-              />
             </>
           )}
           {["USER"].includes(user?.role!) && (

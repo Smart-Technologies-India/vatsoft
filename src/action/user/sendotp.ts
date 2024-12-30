@@ -24,18 +24,23 @@ const SendOtp = async (
 
     const otp = Math.floor(100000 + Math.random() * 900000);
 
-    const response = await axios.post(
-      `https://mobicomm.dove-sms.com//submitsms.jsp?user=SmartT&key=8b85ee3e9fXX&mobile=${payload.mobile}&message=OTP for Login is ${otp}. Please use this OTP to access your account. Thank you - DDD Gov.&senderid=DDDGOV&accusage=1&entityid=1401551570000053588&tempid=1407170486529658764`,
-      {},
-      { httpsAgent: new Agent({ rejectUnauthorized: false }) }
+    // const response = await axios.post(
+    //   `https://mobicomm.dove-sms.com//submitsms.jsp?user=SmartT&key=8b85ee3e9fXX&mobile=${payload.mobile}&message=OTP for Login is ${otp}. Please use this OTP to access your account. Thank you - DDD Gov.&senderid=DDDGOV&accusage=1&entityid=1401551570000053588&tempid=1407170486529658764`,
+    //   {},
+    //   { httpsAgent: new Agent({ rejectUnauthorized: false }) }
+    // );
+
+    const response = await axios.get(
+      `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=The%20OTP%20for%20Planning%20and%20Development%20Authority%20Portal%20login%20is%20${otp}.%20The%20OTP%20is%20valid%20for%205%20mins.&MobileNumbers=919773356997&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`
     );
 
     // const response = await axios.get(
     //   `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=The%20OTP%20for%20Planning%20and%20Development%20Authority%20Portal%20login%20is%20${otp}.%20The%20OTP%20is%20valid%20for%205%20mins.&MobileNumbers=91${payload.mobile}&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`
     // );
     // if (response.data.Data[0].MessageErrorDescription == "Success") {
+    // if (response.data.toString().split(",")[0].trim() == "sent") {
 
-    if (response.data.toString().split(",")[0].trim() == "sent") {
+    if (response.data.Data[0].MessageErrorDescription == "Success") {
       if (usersresponse) {
         const user_resut = await prisma.user.update({
           where: { id: usersresponse.id },

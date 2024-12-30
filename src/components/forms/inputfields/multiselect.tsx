@@ -37,9 +37,9 @@ export function MultiSelect<T extends FieldValues>(props: MultiSelectProps<T>) {
             status={error ? "error" : undefined}
             className="w-full"
             onChange={(value) => field.onChange(value)}
-            options={props.options}
             value={field.value ?? undefined}
             placeholder={props.placeholder}
+            options={props.options}
             filterOption={(input, option) =>
               (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
             }

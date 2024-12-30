@@ -13,8 +13,8 @@ import GetDvat04 from "@/action/register/getdvat04";
 import GetCformEntry from "@/action/cform/getcfromenrty";
 
 const CFROM = () => {
-  const { id } = useParams<{ id: string | string[] }>();
   const router = useRouter();
+  const { id } = useParams<{ id: string | string[] }>();
   const idString = Array.isArray(id) ? id[0] : id;
   const cformid: number = parseInt(decryptURLData(idString, router));
 
