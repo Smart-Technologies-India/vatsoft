@@ -28,8 +28,6 @@ import {
   state,
   tin_number_master,
 } from "@prisma/client";
-import { Button } from "antd";
-import GetAllCommodityMaster from "@/action/commoditymaster/getallcommoditymaster";
 import { onFormError } from "@/utils/methods";
 import AddReturnInvoice from "@/action/return/addreturninvoice";
 import { getCookie } from "cookies-next";
@@ -81,10 +79,10 @@ const CreateDvat30AEntry = (props: CreateDvat30AEntryProviderProps) => {
       value: "UNREGISTERED_DEALER",
       label: "Purchase From Unregistered Dealer",
     },
-    {
-      value: "FORMC_CONCESSION",
-      label: "Against Form C at concession rate",
-    },
+    // {
+    //   value: "FORMC_CONCESSION",
+    //   label: "Against Form C at concession rate",
+    // },
     {
       value: "FORMC_WITHOUT_TAX",
       label: "Against Form C without tax - exempted goods",

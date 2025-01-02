@@ -1245,6 +1245,7 @@ model daily_sale {
   vatamount           String
   is_dvat_31          Boolean           @default(false)
   is_local            Boolean           @default(false)
+  is_accept           Boolean           @default(false)
   status              Status            @default(ACTIVE)
   createdAt           DateTime          @default(now())
   createdBy           user              @relation("daily_sale_createdBy", fields: [createdById], references: [id])
@@ -1275,6 +1276,7 @@ model daily_purchase {
   vatamount           String
   is_local            Boolean           @default(false)
   is_dvat_30a         Boolean           @default(false)
+  is_accept           Boolean           @default(false)
   status              Status            @default(ACTIVE)
   createdAt           DateTime          @default(now())
   createdBy           user              @relation("daily_purchase_createdBy", fields: [createdById], references: [id])
@@ -1353,6 +1355,7 @@ model edit_sale {
   is_dvat_31          Boolean           @default(false)
   is_local            Boolean           @default(false)
   is_delete           Boolean           @default(false)
+  is_accept           Boolean           @default(false)
   status              Status            @default(ACTIVE)
   createdAt           DateTime          @default(now())
   createdBy           user              @relation("edit_sale_createdBy", fields: [createdById], references: [id])
@@ -1385,6 +1388,7 @@ model edit_purchase {
   is_local            Boolean           @default(false)
   is_dvat_30a         Boolean           @default(false)
   is_delete           Boolean           @default(false)
+  is_accept           Boolean           @default(false)
   status              Status            @default(ACTIVE)
   createdAt           DateTime          @default(now())
   createdBy           user              @relation("edit_purchase_createdBy", fields: [createdById], references: [id])

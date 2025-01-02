@@ -694,13 +694,18 @@ const LoginComponent = () => {
 
     if (mobile == null || mobile == undefined || mobile == "") {
       toast.error("Please enter a valid mobile number");
-      setIsLogin(false);
+      setTimeout(() => {
+        setIsLogin(false);
+      }, 5000);
       return;
     }
 
     if (otp == null || otp == undefined || otp == "") {
       toast.error("Please enter a valid otp");
-      setIsLogin(false);
+
+      setTimeout(() => {
+        setIsLogin(false);
+      }, 5000);
       return;
     }
 
@@ -710,7 +715,10 @@ const LoginComponent = () => {
       firstnameValue == ""
     ) {
       toast.error("Please enter a valid first name");
-      return setIsLogin(false);
+      setTimeout(() => {
+        setIsLogin(false);
+      }, 5000);
+      return;
     }
 
     if (
@@ -719,7 +727,10 @@ const LoginComponent = () => {
       lastnameValue == ""
     ) {
       toast.error("Please enter a valid last name");
-      return setIsLogin(false);
+      setTimeout(() => {
+        setIsLogin(false);
+      }, 5000);
+      return;
     }
 
     const response = await LoginOtp({
@@ -731,12 +742,18 @@ const LoginComponent = () => {
 
     if (!response.status) {
       toast.error(response.message);
-      return setIsLogin(false);
+      setTimeout(() => {
+        setIsLogin(false);
+      }, 5000);
+      return;
     }
 
     toast.success(response.message);
     router.push("/dashboard");
-    setIsLogin(false);
+    setTimeout(() => {
+      setIsLogin(false);
+    }, 5000);
+    return;
   };
   return (
     <div className="flex-1 grid place-items-center bg-white rounded-r-md">
@@ -810,11 +827,11 @@ const LoginComponent = () => {
                 onChange={handleNumberChange}
               />
               {isLogin ? (
-                <Button type="primary" className="mt-2">
+                <Button type="primary" className="mt-2" disabled>
                   Loading...
                 </Button>
               ) : (
-                <Button onClick={verifyOtp} type="primary" className="mt-2">
+                <Button onClick={verifyOtp} type="primary" className="mt-2"  disabled={isLogin}>
                   Verify OTP
                 </Button>
               )}
@@ -848,11 +865,11 @@ const LoginComponent = () => {
                 onChange={handleNumberChange}
               />
               {isLogin ? (
-                <Button disabled type="primary" className="mt-2">
+                <Button type="primary" className="mt-2"  disabled>
                   Loading...
                 </Button>
               ) : (
-                <Button onClick={sendOtp} type="primary" className="mt-2">
+                <Button onClick={sendOtp} type="primary" className="mt-2"  disabled={isLogin}>
                   Send OTP
                 </Button>
               )}

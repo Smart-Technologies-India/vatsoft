@@ -85,10 +85,10 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
       value: "UNREGISTERED_DEALER",
       label: "Purchase From Unregistered Dealer",
     },
-    {
-      value: "FORMC_CONCESSION",
-      label: "Against Form C at concession rate",
-    },
+    // {
+    //   value: "FORMC_CONCESSION",
+    //   label: "Against Form C at concession rate",
+    // },
     {
       value: "FORMC_WITHOUT_TAX",
       label: "Against Form C without tax - exempted goods",
@@ -214,6 +214,8 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
 
   useEffect(() => {
     const init = async () => {
+      if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
+
       if (
         (recipient_vat_no ?? "").length > 2 &&
         (recipient_vat_no ?? "").startsWith("26")

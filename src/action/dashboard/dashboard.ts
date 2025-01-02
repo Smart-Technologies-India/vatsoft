@@ -58,6 +58,7 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
 
   for (let i = 5, j = 0; i >= 0; i--, j++) {
     const date = new Date(Date.UTC(startYear, startMonth - i, 1, 0, 0, 0, 0));
+
     let fill_date = new Date(
       Date.UTC(startYear, startMonth - i, 1, 0, 0, 0, 0)
     );
@@ -148,6 +149,7 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
       year: year,
       date: completed ? filed_on.toISOString() : fill_date.toISOString(),
       completed: completed,
+      
     });
   }
   // Remove trailing months not in the composition scheme if needed

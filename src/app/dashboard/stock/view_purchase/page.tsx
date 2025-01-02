@@ -300,43 +300,49 @@ const DocumentWiseDetails = () => {
                           {val.vatamount}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
-                          <Popover
-                            content={
-                              <div className="flex flex-col gap-2">
-                                <button
-                                  onClick={() => {
-                                    setDeleteBox(true);
-                                    handelClose(index);
-                                  }}
-                                  className="text-sm bg-white border hover:border-rose-500 hover:text-rose-500 text-[#172e57] py-1 px-4"
-                                >
-                                  Delete
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    route.push(
-                                      `/dashboard/stock/edit_purchase/${encryptURLData(
-                                        val.id.toString()
-                                      )}`
-                                    );
-                                  }}
-                                  className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4"
-                                >
-                                  Update
-                                </button>
-                              </div>
-                            }
-                            title="Actions"
-                            trigger="click"
-                            open={!!openPopovers[index]} // Open state for each row
-                            onOpenChange={(newOpen) =>
-                              handleOpenChange(newOpen, index)
-                            }
-                          >
-                            <button className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4">
-                              Actions
-                            </button>
-                          </Popover>
+                          {val.seller_tin_number.tin_number.startsWith("25") ||
+                          val.seller_tin_number.tin_number.startsWith("26") ? (
+                            "NA"
+                          ) : (
+                            <Popover
+                              content={
+                                <div className="flex flex-col gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setDeleteBox(true);
+                                      handelClose(index);
+                                    }}
+                                    className="text-sm bg-white border hover:border-rose-500 hover:text-rose-500 text-[#172e57] py-1 px-4"
+                                  >
+                                    Delete
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      route.push(
+                                        `/dashboard/stock/edit_purchase/${encryptURLData(
+                                          val.id.toString()
+                                        )}`
+                                      );
+                                    }}
+                                    className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4"
+                                  >
+                                    Update
+                                  </button>
+                                </div>
+                              }
+                              title="Actions"
+                              trigger="click"
+                              open={!!openPopovers[index]} // Open state for each row
+                              onOpenChange={(newOpen) =>
+                                handleOpenChange(newOpen, index)
+                              }
+                            >
+                              <button className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4">
+                                Actions
+                              </button>
+                            </Popover>
+                          )}
+
                           <Modal
                             title="Confirmation"
                             open={deletebox}

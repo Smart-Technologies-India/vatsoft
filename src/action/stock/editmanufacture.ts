@@ -69,6 +69,34 @@ const EditManufacture = async (
         if (!is_exist) {
           throw new Error("Unable to edit manufacturer purchase Entry.");
         }
+
+        const find_stock = await prisma.stock.findFirst({
+          where: {
+            commodity_masterId: payload.commodityid,
+            status: "ACTIVE",
+            dvat04Id: payload.dvatid,
+          },
+        });
+
+        if (!find_stock) {
+          throw new Error("Stock not found.");
+        }
+
+        // const difference = payload.quantity - find_stock.quantity;
+
+        const stock_response = await prisma.stock.update({
+          where: {
+            id: find_stock.id,
+          },
+          data: {
+            quantity: payload.quantity,
+          },
+        });
+
+        if (!stock_response) {
+          throw new Error("Unable to update stock.");
+        }
+
         return update_response;
       }
     );

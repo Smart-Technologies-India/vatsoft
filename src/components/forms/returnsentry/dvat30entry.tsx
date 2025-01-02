@@ -82,10 +82,10 @@ const CreateDvat30Entry = (props: CreateDvat30EntryProviderProps) => {
       value: "UNREGISTER_DEALERS",
       label: "Purchases from unregistered dealers",
     },
-    {
-      value: "REGISTER_DEALERS",
-      label: "Purchases from registered dealers",
-    },
+    // {
+    //   value: "REGISTER_DEALERS",
+    //   label: "Purchases from registered dealers",
+    // },
     { value: "OTHER", label: "Any Other Purchases" },
     { value: "UNITS", label: "Purchase from Exempted Untis" },
   ];
@@ -95,10 +95,10 @@ const CreateDvat30Entry = (props: CreateDvat30EntryProviderProps) => {
       value: InputTaxCredit.ITC_NOT_ELIGIBLE,
       label: "Purchase eligible for credit of input tax",
     },
-    {
-      value: InputTaxCredit.ITC_ELIGIBLE,
-      label: "Purchases from registered dealers",
-    },
+    // {
+    //   value: InputTaxCredit.ITC_ELIGIBLE,
+    //   label: "Purchases from registered dealers",
+    // },
     { value: InputTaxCredit.OTHER, label: "Any Other Purchase" },
     {
       value: InputTaxCredit.PURCHASE_TAXABLE,
@@ -220,6 +220,7 @@ const CreateDvat30Entry = (props: CreateDvat30EntryProviderProps) => {
 
   useEffect(() => {
     const init = async () => {
+      if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
       if (
         (recipient_vat_no ?? "").length > 2 &&
         !(recipient_vat_no ?? "").startsWith("26")

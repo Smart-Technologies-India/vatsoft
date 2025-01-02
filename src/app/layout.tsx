@@ -7,7 +7,7 @@ import NextTopLoader from "nextjs-toploader";
 
 export const metadata: Metadata = {
   title: "VAT DD DNH",
-  description: "Smart Techonlogies",
+  description: "VAT-DD-DNH",
 };
 
 export default function RootLayout({

@@ -79,6 +79,58 @@ const EditPurchase = async (
         throw new Error("Unable to edit purchase Entry.");
       }
 
+      const find_stock = await prisma.stock.findFirst({
+        where: {
+          commodity_masterId: payload.commodityid,
+          status: "ACTIVE",
+          dvat04Id: payload.dvatid,
+        },
+      });
+
+      if (!find_stock) {
+        throw new Error("Stock not found.");
+      }
+
+      if (is_exist.quantity - find_stock.quantity > payload.quantity) {
+        throw new Error("Stock not available.");
+      }
+
+      const value: number =
+        is_exist.quantity - payload.quantity == 0
+          ? 0
+          : payload.quantity > is_exist.quantity - find_stock.quantity
+          ? payload.quantity - (is_exist.quantity - find_stock.quantity)
+          : 0;
+
+      if (value == 0) {
+        const stock_response = await prisma.stock.update({
+          where: {
+            id: find_stock.id,
+          },
+          data: {
+            deletedAt: new Date(),
+            deletedById: payload.createdById,
+          },
+        });
+
+        if (!stock_response) {
+          throw new Error("Unable to update stock.");
+        }
+      } else {
+        const stock_response = await prisma.stock.update({
+          where: {
+            id: find_stock.id,
+          },
+          data: {
+            quantity: value,
+          },
+        });
+
+        if (!stock_response) {
+          throw new Error("Unable to update stock.");
+        }
+      }
+
       return update_response;
     });
 

@@ -132,6 +132,8 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
       if (!recipient_vat_no) {
         return;
       }
+      if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
+
       if (
         recipient_vat_no &&
         (recipient_vat_no ?? "").length > 2 &&
@@ -204,6 +206,8 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
       return toast.error("Seller Vat Number not found.");
+    if (parseInt(data.quantity) <= 0)
+      return toast.error("Quantity must be greater than 0.");
     const stock_response = await EditPurchase({
       id: props.id,
       amount_unit: data.amount_unit,
@@ -278,6 +282,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
             name="recipient_vat_no"
             required={true}
             title="Seller Vat Number"
+            disable={true}
           />
         </div>
         {tindata != null && (
@@ -315,6 +320,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
               name="description_of_goods"
               required={true}
               title="Items details"
+              disable={true}
               options={commodityMaster.map(
                 (val: commodity_master, index: number) => ({
                   value: val.id.toString(),

@@ -84,6 +84,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
         setCommoditymaster(commmaster.data);
         if (commmaster.data.product_type == "LIQUOR") {
           setLiquore(true);
+          setLiquoreAmount(parseInt(commmaster.data.sale_price));
           setValue("amount_unit", commmaster.data.sale_price);
         }
       }
@@ -124,6 +125,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
   const [taxableValue, setTaxableValue] = useState<string>("0");
 
   const [isLiquore, setLiquore] = useState<boolean>(false);
+  const [liquoreAmount, setLiquoreAmount] = useState<number>(0);
 
   const recipient_vat_no: string = watch("recipient_vat_no") ?? "";
   useEffect(() => {
@@ -131,6 +133,8 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
       return;
     }
     const init = async () => {
+      if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
+
       if (recipient_vat_no && (recipient_vat_no ?? "").length < 2) {
         if (recipient_vat_no.length >= 11) {
           toast.dismiss();
@@ -174,6 +178,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
         if (commmaster.data.product_type == "LIQUOR") {
           setLiquore(true);
           setValue("amount_unit", commmaster.data.sale_price);
+          setLiquoreAmount(parseInt(commmaster.data.sale_price));
         }
       }
     };
@@ -207,6 +212,12 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
     if (tindata == null || tindata == undefined)
       return toast.error("Seller Vat Number not found.");
 
+    if (isLiquore && parseInt(data.amount_unit) < liquoreAmount) {
+      return toast.error("Sale amount can not be less than MRP.");
+    }
+
+    if (parseInt(data.quantity) <= 0)
+      return toast.error("Quantity must be greater than 0.");
     const stock_response = await EditSale({
       id: props.id,
       amount_unit: data.amount_unit,
@@ -281,6 +292,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
             name="recipient_vat_no"
             required={true}
             title="Seller Vat Number"
+            disable={true}
           />
         </div>
         {tindata != null && (
@@ -315,6 +327,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
             <MultiSelect<DailySaleForm>
               placeholder="Select Items details"
               name="description_of_goods"
+              disable={true}
               required={true}
               title="Items details"
               options={commodityMaster.map(
@@ -341,7 +354,6 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
             name="amount_unit"
             required={true}
             title="Enter amount"
-            disable={isLiquore}
             onlynumber={true}
           />
         </div>

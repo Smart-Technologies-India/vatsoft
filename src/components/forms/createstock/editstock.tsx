@@ -143,7 +143,8 @@ const EditStockData = (props: EditStockProviderProps) => {
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
-
+    if (parseInt(data.quantity) <= 0)
+      return toast.error("Quantity must be greater than 0.");
     const stock_response = await EditManufacture({
       id: props.id,
       amount_unit: data.amount_unit,
@@ -179,6 +180,7 @@ const EditStockData = (props: EditStockProviderProps) => {
             placeholder="Select Items details"
             name="description_of_goods"
             required={true}
+            disable={true}
             title="Items details"
             options={commodityMaster.map(
               (val: commodity_master, index: number) => ({

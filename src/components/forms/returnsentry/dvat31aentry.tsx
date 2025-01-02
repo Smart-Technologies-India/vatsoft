@@ -99,10 +99,10 @@ const CreateDvat31AEntry = (props: CreateDvat31AEntryProviderProps) => {
       value: "EXEMPT_US6",
       label: "Sale by transfer of document Exempt U/s. 6 (2)",
     },
-    {
-      value: "TAXABLE_SALE",
-      label: "Taxable sale at",
-    },
+    // {
+    //   value: "TAXABLE_SALE",
+    //   label: "Taxable sale at",
+    // },
     {
       value: "LABOUR",
       label: "Labour Charges Received",

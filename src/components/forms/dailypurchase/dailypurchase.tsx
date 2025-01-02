@@ -127,6 +127,14 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         return;
       }
 
+      if (
+        recipient_vat_no == undefined ||
+        recipient_vat_no == null ||
+        recipient_vat_no == "" ||
+        recipient_vat_no.length < 11
+      )
+        return;
+
       const tinresponse = await SearchTin({
         tinumber: recipient_vat_no,
       });

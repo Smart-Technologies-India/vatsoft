@@ -155,6 +155,8 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
 
   useEffect(() => {
     const init = async () => {
+      if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
+
       if (
         recipient_vat_no &&
         (recipient_vat_no ?? "").length > 2 &&

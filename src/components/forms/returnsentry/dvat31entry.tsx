@@ -78,7 +78,7 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
       value: "PROCESSED_GOODS",
       label: "Sale of Goods Mfg or Processed of Assembled by Eligible Unit",
     },
-    { value: "GOODS_TAXABLE", label: "Sale of Goods Taxable at" },
+    // { value: "GOODS_TAXABLE", label: "Sale of Goods Taxable at" },
     {
       value: "NONCREDITABLE",
       label: "Sale of Non Creditable Goods",
@@ -200,6 +200,8 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
 
   useEffect(() => {
     const init = async () => {
+      if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
+
       if (
         (recipient_vat_no ?? "").length > 2 &&
         !(recipient_vat_no ?? "").startsWith("26")

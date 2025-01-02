@@ -6,11 +6,15 @@ interface GetAllDvatByDeptPayload {
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
-import { SelectOffice } from "@prisma/client";
+import { dvat04, registration, SelectOffice, user } from "@prisma/client";
 
 const GetAllDvatByDept = async (
   payload: GetAllDvatByDeptPayload
-): Promise<ApiResponseType<any[] | null>> => {
+): Promise<
+  ApiResponseType<Array<
+    dvat04 & { registration: Array<registration & { dept_user: user }> }
+  > | null>
+> => {
   const functionname: string = GetAllDvatByDept.name;
   try {
     const dvat04response = await prisma.dvat04.findMany({

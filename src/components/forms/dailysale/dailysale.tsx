@@ -110,10 +110,12 @@ const DailySale = (props: DailySaleProviderProps) => {
   const [taxableValue, setTaxableValue] = useState<string>("0");
 
   const [isLiquore, setLiquore] = useState<boolean>(false);
+  const [liquoreAmount, setLiquoreAmount] = useState<number>(0);
 
   const recipient_vat_no: string = watch("recipient_vat_no") ?? "";
   useEffect(() => {
     const init = async () => {
+      if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
       if (recipient_vat_no && (recipient_vat_no ?? "").length < 2) {
         if (recipient_vat_no.length >= 11) {
           toast.dismiss();
@@ -156,6 +158,7 @@ const DailySale = (props: DailySaleProviderProps) => {
         setCommoditymaster(commmaster.data);
         if (commmaster.data.product_type == "LIQUOR") {
           setLiquore(true);
+          setLiquoreAmount(parseInt(commmaster.data.sale_price));
           setValue("amount_unit", commmaster.data.sale_price);
         }
       }
@@ -190,6 +193,10 @@ const DailySale = (props: DailySaleProviderProps) => {
     if (tindata == null || tindata == undefined)
       return toast.error("Seller Vat Number not found.");
 
+    if (isLiquore && parseInt(data.amount_unit) < liquoreAmount) {
+      return toast.error("Sale amount can not be less than MRP.");
+    }
+
     const stock_response = await CreateDailySale({
       amount_unit: data.amount_unit,
       invoice_date: new Date(data.invoice_date),
@@ -221,6 +228,10 @@ const DailySale = (props: DailySaleProviderProps) => {
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
       return toast.error("Seller Vat Number not found.");
+
+    if (isLiquore && parseInt(data.amount_unit) < liquoreAmount) {
+      return toast.error("Sale amount can not be less than MRP.");
+    }
 
     const stock_response = await CreateDailySale({
       amount_unit: data.amount_unit,
@@ -377,7 +388,7 @@ const DailySale = (props: DailySaleProviderProps) => {
             name="amount_unit"
             required={true}
             title="Enter amount"
-            disable={isLiquore}
+            // disable={isLiquore}
             onlynumber={true}
           />
         </div>

@@ -67,6 +67,11 @@ const CreateDailySale = async (
       if (!seller_dvat) {
         throw new Error("Seller Dvat not found.");
       }
+
+      if (seller_dvat.tinNumber == purchaser_response.tin_number) {
+        throw new Error("Invalid tin number.");
+      }
+      
       if (!seller_dvat.tinNumber) {
         throw new Error("Seller Dvat TIN number is not set.");
       }
