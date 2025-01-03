@@ -21,6 +21,16 @@ export default function RootLayout({
       suppressHydrationWarning={true}
       className={`${nunito} ${roboto} `}
     >
+      <head>
+        <meta charSet="utf-8" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, shrink-to-fit=no"
+        />
+        <meta name="title" content={"VAT DD DNH"} />
+        <meta name="descriptio" content={"VAT-DD-DNH"} />
+        <link rel="icon" href="/favicon.ico" />
+      </head>
       <body>
         <NextTopLoader showSpinner={false} />
         {children}
