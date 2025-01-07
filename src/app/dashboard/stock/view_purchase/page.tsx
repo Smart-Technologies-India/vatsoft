@@ -1,5 +1,6 @@
 "use client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import AcceptSale from "@/action/stock/acceptsell";
 import ConvertDvat30A from "@/action/stock/convertdvat30a";
 import DeletePurchase from "@/action/stock/deletepurchase";
 import GetUserDailyPurchase from "@/action/stock/getuserdailypurchase";
@@ -23,6 +24,7 @@ import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { value } from "valibot";
 
 const DocumentWiseDetails = () => {
   const route = useRouter();
@@ -302,7 +304,33 @@ const DocumentWiseDetails = () => {
                         <TableCell className="p-2 border text-center">
                           {val.seller_tin_number.tin_number.startsWith("25") ||
                           val.seller_tin_number.tin_number.startsWith("26") ? (
-                            "NA"
+                            val.is_accept ? (
+                              <>NA</>
+                            ) : (
+                              <button
+                                onClick={async () => {
+                                  if (!dvatdata)
+                                    return toast.error("DVAT not found.");
+                                  const response = await AcceptSale({
+                                    commodityid: val.commodity_master.id,
+                                    createdById: userid,
+                                    dvatid: dvatdata.id,
+                                    quantity: val.quantity,
+                                    puchaseid: val.id,
+                                    urn: val.urn_number ?? "",
+                                  });
+                                  if (response.status && response.data) {
+                                    toast.success(response.message);
+                                    await init();
+                                  } else {
+                                    toast.error(response.message);
+                                  }
+                                }}
+                                className="text-sm bg-white border hover:border-rose-500 hover:text-rose-500 text-[#172e57] py-1 px-4"
+                              >
+                                Accept
+                              </button>
+                            )
                           ) : (
                             <Popover
                               content={

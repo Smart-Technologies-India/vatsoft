@@ -17,6 +17,7 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { stock } from "@prisma/client";
 import prisma from "../../../prisma/database";
+import { customAlphabet } from "nanoid";
 
 const CreateDailySale = async (
   payload: CreateDailySalePayload
@@ -24,6 +25,8 @@ const CreateDailySale = async (
   const functionname: string = CreateDailySale.name;
 
   try {
+    const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstuvwyz", 12);
+    const ref_no: string = nanoid();
     const isdata = await prisma.daily_sale.findFirst({
       where: {
         deletedAt: null,
@@ -71,7 +74,7 @@ const CreateDailySale = async (
       if (seller_dvat.tinNumber == purchaser_response.tin_number) {
         throw new Error("Invalid tin number.");
       }
-      
+
       if (!seller_dvat.tinNumber) {
         throw new Error("Seller Dvat TIN number is not set.");
       }
@@ -90,6 +93,7 @@ const CreateDailySale = async (
           vatamount: payload.vatamount,
           is_dvat_31: false,
           createdById: payload.createdById,
+          urn_number: ref_no,
           is_local:
             purchaser_response.tin_number.startsWith("25") ||
             purchaser_response.tin_number.startsWith("26"),
@@ -172,6 +176,7 @@ const CreateDailySale = async (
               is_dvat_30a: false,
               createdById: payload.createdById,
               is_local: true,
+              urn_number: ref_no,
             },
           });
 
@@ -180,45 +185,45 @@ const CreateDailySale = async (
           }
         }
 
-        const isstock = await prisma.stock.findFirst({
-          where: {
-            deletedAt: null,
-            deletedBy: null,
-            status: "ACTIVE",
-            dvat04Id: userstock.id,
-            commodity_masterId: payload.commodityid,
-          },
-        });
+        // const isstock = await prisma.stock.findFirst({
+        //   where: {
+        //     deletedAt: null,
+        //     deletedBy: null,
+        //     status: "ACTIVE",
+        //     dvat04Id: userstock.id,
+        //     commodity_masterId: payload.commodityid,
+        //   },
+        // });
 
-        if (isstock) {
-          const stock_respone = await prisma.stock.update({
-            where: {
-              id: isstock.id,
-            },
-            data: {
-              quantity: payload.quantity + isstock.quantity,
-              updatedById: payload.createdById,
-            },
-          });
+        // if (isstock) {
+        //   const stock_respone = await prisma.stock.update({
+        //     where: {
+        //       id: isstock.id,
+        //     },
+        //     data: {
+        //       quantity: payload.quantity + isstock.quantity,
+        //       updatedById: payload.createdById,
+        //     },
+        //   });
 
-          if (!stock_respone) {
-            throw new Error("Unable to update stock.");
-          }
-        } else {
-          const stock_respone = await prisma.stock.create({
-            data: {
-              quantity: payload.quantity,
-              commodity_masterId: payload.commodityid,
-              dvat04Id: userstock.id,
-              createdById: payload.createdById,
-              status: "ACTIVE",
-            },
-          });
+        //   if (!stock_respone) {
+        //     throw new Error("Unable to update stock.");
+        //   }
+        // } else {
+        //   const stock_respone = await prisma.stock.create({
+        //     data: {
+        //       quantity: payload.quantity,
+        //       commodity_masterId: payload.commodityid,
+        //       dvat04Id: userstock.id,
+        //       createdById: payload.createdById,
+        //       status: "ACTIVE",
+        //     },
+        //   });
 
-          if (!stock_respone) {
-            throw new Error("Unable to create new stock.");
-          }
-        }
+        //   if (!stock_respone) {
+        //     throw new Error("Unable to create new stock.");
+        //   }
+        // }
       }
 
       return update_response;

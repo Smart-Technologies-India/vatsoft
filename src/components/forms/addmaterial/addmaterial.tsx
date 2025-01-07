@@ -384,7 +384,7 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
       </div>
       <div className="flex gap-1 items-center">
         <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
-          <p className="text-xs font-normal">Taxable Rate (%)</p>
+          <p className="text-xs font-normal">Taxable (%)</p>
           <p className="text-sm font-semibold">
             {commoditymaster != null ? commoditymaster.taxable_at + "%" : "0%"}
           </p>

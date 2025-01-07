@@ -517,9 +517,9 @@ const OfficerDashboardPage = () => {
         <Link href={"/dashboard/dealer_compliance"}>
           <DashboardCard
             name="Fuel/Liquor/Manufacturer Dealer"
-            count={`${countData.fueldealer} FL/${countData.liquoredealer} LQ/${countData.manufacturer} MF`}
+            count={`${countData.fueldealer}/${countData.liquoredealer}/${countData.manufacturer}`}
             color="bg-green-500"
-            subtitle="Fuel/Liquor/Manufacturer Count"
+            subtitle="Fuel/Liquor/Mfg Count"
           >
             <FluentMdl2Home className="text-xl text-white" />
           </DashboardCard>
