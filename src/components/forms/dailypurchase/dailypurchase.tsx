@@ -5,24 +5,22 @@ import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { MultiSelect } from "../inputfields/multiselect";
-import { OptionValue } from "@/models/main";
-import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
 import { getCookie } from "cookies-next";
 import {
   DailyPurchaseMasterForm,
   DailyPurchaseMasterSchema,
 } from "@/schema/daily_purchase";
-import dayjs from "dayjs";
-import { DateSelect } from "../inputfields/dateselect";
 import SearchTin from "@/action/tin_number/searchtin";
 import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import CreateDailyPurchase from "@/action/stock/createdailypuchase";
-import { Input, InputRef, Modal } from "antd";
+import { Input, InputRef, Modal, Radio, RadioChangeEvent } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
+import { DateSelect } from "../inputfields/dateselect";
+import { toast } from "react-toastify";
 
 type DailyPurchaseProviderProps = {
   userid: number;
@@ -193,18 +191,25 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
       return toast.error("Seller Vat Number not found.");
+
+    const quantityamount =
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+        ? quantityCount == "crate"
+          ? parseInt(data.quantity) * commoditymaster.crate_size
+          : parseInt(data.quantity)
+        : parseInt(data.quantity);
     const stock_response = await CreateDailyPurchase({
       amount_unit: data.amount_unit,
       invoice_date: new Date(data.invoice_date),
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,
-      quantity: parseInt(data.quantity),
+      quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
-      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(0),
+      amount: (quantityamount * parseInt(data.amount_unit)).toFixed(0),
     });
 
     if (stock_response.status) {
@@ -224,13 +229,19 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
       return toast.error("Seller Vat Number not found.");
+    const quantityamount =
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+        ? quantityCount == "crate"
+          ? parseInt(data.quantity) * commoditymaster.crate_size
+          : parseInt(data.quantity)
+        : parseInt(data.quantity);
     const stock_response = await CreateDailyPurchase({
       amount_unit: data.amount_unit,
       invoice_date: new Date(data.invoice_date),
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,
-      quantity: parseInt(data.quantity),
+      quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
@@ -284,6 +295,12 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       toast.error(response.message);
     }
     setTinBox(false);
+  };
+
+  const [quantityCount, setQuantityCount] = useState("crate");
+
+  const onChange = ({ target: { value } }: RadioChangeEvent) => {
+    setQuantityCount(value);
   };
 
   if (isLoading)
@@ -349,6 +366,29 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             // maxdate={dayjs(getMonthDateas().end, dateFormat)}
           />
         </div>
+        {(davtdata?.commodity == "OIDC" ||
+          davtdata?.commodity == "MANUFACTURER") &&
+          commoditymaster != null && (
+            <div className="flex mt-2 gap-2 items-center">
+              <div className="p-1 rounded grow text-center bg-gray-100">
+                {commoditymaster.crate_size} Pcs/Crate
+              </div>
+              <Radio.Group
+                size="small"
+                onChange={onChange}
+                value={quantityCount}
+                optionType="button"
+              >
+                <Radio.Button className="w-20 text-center" value="crate">
+                  Crate
+                </Radio.Button>
+                <Radio.Button className="w-20 text-center" value="pcs">
+                  Pcs
+                </Radio.Button>
+              </Radio.Group>
+            </div>
+          )}
+
         <div className="mt-2">
           <div className="mt-2">
             <MultiSelect<DailyPurchaseMasterForm>
@@ -365,6 +405,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             />
           </div>
         </div>
+
         <div className="mt-2">
           <TaxtInput<DailyPurchaseMasterForm>
             title="Quantity"

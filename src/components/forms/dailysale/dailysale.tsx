@@ -18,7 +18,7 @@ import { DailySaleForm, DailySaleSchema } from "@/schema/daily_sale";
 import CreateDailySale from "@/action/stock/createdailysale";
 import GetUserCommodity from "@/action/stock/usercommodity";
 import SearchTin from "@/action/tin_number/searchtin";
-import { Input, InputRef, Modal } from "antd";
+import { Input, InputRef, Modal, Radio, RadioChangeEvent } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 
 type DailySaleProviderProps = {
@@ -197,18 +197,25 @@ const DailySale = (props: DailySaleProviderProps) => {
       return toast.error("Sale amount can not be less than MRP.");
     }
 
+    const quantityamount =
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+        ? quantityCount == "crate"
+          ? parseInt(data.quantity) * commoditymaster.crate_size
+          : parseInt(data.quantity)
+        : parseInt(data.quantity);
+
     const stock_response = await CreateDailySale({
       amount_unit: data.amount_unit,
       invoice_date: new Date(data.invoice_date),
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,
-      quantity: parseInt(data.quantity),
+      quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
-      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(0),
+      amount: (quantityamount * parseInt(data.amount_unit)).toFixed(0),
     });
 
     if (stock_response.status) {
@@ -233,13 +240,20 @@ const DailySale = (props: DailySaleProviderProps) => {
       return toast.error("Sale amount can not be less than MRP.");
     }
 
+    const quantityamount =
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+        ? quantityCount == "crate"
+          ? parseInt(data.quantity) * commoditymaster.crate_size
+          : parseInt(data.quantity)
+        : parseInt(data.quantity);
+
     const stock_response = await CreateDailySale({
       amount_unit: data.amount_unit,
       invoice_date: new Date(data.invoice_date),
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,
-      quantity: parseInt(data.quantity),
+      quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
@@ -293,6 +307,12 @@ const DailySale = (props: DailySaleProviderProps) => {
       toast.error(response.message);
     }
     setTinBox(false);
+  };
+
+  const [quantityCount, setQuantityCount] = useState("crate");
+
+  const onChange = ({ target: { value } }: RadioChangeEvent) => {
+    setQuantityCount(value);
   };
 
   if (isLoading)
@@ -382,6 +402,30 @@ const DailySale = (props: DailySaleProviderProps) => {
             onlynumber={true}
           />
         </div>
+
+        {(davtdata?.commodity == "OIDC" ||
+          davtdata?.commodity == "MANUFACTURER") &&
+          commoditymaster != null && (
+            <div className="flex mt-2 gap-2 items-center">
+              <div className="p-1 rounded grow text-center bg-gray-100">
+                {commoditymaster.crate_size} Pcs/Crate
+              </div>
+              <Radio.Group
+                size="small"
+                onChange={onChange}
+                value={quantityCount}
+                optionType="button"
+              >
+                <Radio.Button className="w-20 text-center" value="crate">
+                  Crate
+                </Radio.Button>
+                <Radio.Button className="w-20 text-center" value="pcs">
+                  Pcs
+                </Radio.Button>
+              </Radio.Group>
+            </div>
+          )}
+
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
             placeholder="Enter amount"

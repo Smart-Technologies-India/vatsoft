@@ -58,59 +58,6 @@ const Home = () => {
     );
   };
 
-  // const getItems: (panelStyle: CSSProperties) => CollapseProps["items"] = (
-  //   panelStyle
-  // ) => [
-  //   {
-  //     key: "1",
-  //     label: "What is Value Added Tax (VAT)?",
-  //     children: (
-  //       <p>
-  //         VAT!s a multi-point tax on value addition which is collected at
-  //         different stages of sale with a provision for set-off for tax paid at
-  //         the previous stage/tax paid on inputs.
-  //       </p>
-  //     ),
-  //     style: panelStyle,
-  //   },
-  //   {
-  //     key: "2",
-  //     label:
-  //       "Whether it is possible to avail credit for taxes paid on input if goods are sold interstate or are exported?",
-  //     children: (
-  //       <p>
-  //         Purchases intended for inter-State Sale as well as exports are
-  //         eligible for tax credit.
-  //       </p>
-  //     ),
-  //     style: panelStyle,
-  //   },
-  //   {
-  //     key: "3",
-  //     label: "When can one claim input Tax Credit?",
-  //     children: (
-  //       <p>
-  //         Input tax credit is the credit for tax paid on inputs. Dealer has to
-  //         pay tax after deducting Input tax which he had paid from total tax
-  //         collected by him.
-  //       </p>
-  //     ),
-  //     style: panelStyle,
-  //   },
-  //   {
-  //     key: "4",
-  //     label: "What proof is required to claim input tax credit?",
-  //     children: (
-  //       <p>
-  //         Input tax credit can be claimed only on purchases from VAT Registered
-  //         Dealers. The original &quot;Tax Invoice&quot; is the proof required to
-  //         claim input tax credit.
-  //       </p>
-  //     ),
-  //     style: panelStyle,
-  //   },
-  // ];
-
   const panelStyle: React.CSSProperties = {
     marginBottom: 12,
     borderRadius: "10px",
@@ -199,7 +146,7 @@ const Home = () => {
           >
             LOGIN
           </Button>
-          <Drawer closeIcon={true} onClose={onClose} open={open}>
+          <Drawer closeIcon={null} onClose={onClose} open={open}>
             <LoginComponent />
           </Drawer>
         </header>
@@ -235,40 +182,7 @@ const Home = () => {
             Help
           </a>
         </div>
-        {/* <nav className="flex gap-4 bg-[#2c4e86]">
-          <div className="mx-auto w-5/6">
-            <a
-              href="/home"
-              className="text-white inline-block py-2 px-4 hover:bg-[#17c4bb] hover:text-[#0b1e59]"
-            >
-              Home
-            </a>
-            <a
-              href="/home"
-              className="text-white inline-block py-2 px-4 hover:bg-[#17c4bb] hover:text-[#0b1e59]"
-            >
-              About
-            </a>
-            <a
-              href="/home"
-              className="text-white inline-block py-2 px-4 hover:bg-[#17c4bb] hover:text-[#0b1e59]"
-            >
-              Contact
-            </a>
-            <a
-              href="/home"
-              className="text-white inline-block py-2 px-4 hover:bg-[#17c4bb] hover:text-[#0b1e59]"
-            >
-              Support
-            </a>
-            <a
-              href="/home"
-              className="text-white inline-block py-2 px-4 hover:bg-[#17c4bb] hover:text-[#0b1e59]"
-            >
-              Help
-            </a>
-          </div>
-        </nav> */}
+
         <div className="relative w-full h-[24rem]">
           <Image
             src={"/banner.jpg"}
@@ -278,27 +192,6 @@ const Home = () => {
           />
         </div>
 
-        {/* <div className="flex items-end relative">
-          <div className="relative h-80 bg-[#030303] w-96">
-            <Image
-              src={"/banner.jpg"}
-              alt="error"
-              fill={true}
-              className="object-cover object-center"
-            />
-          </div>
-          <div className="relative h-80 bg-[#030303] flex-1">
-            <Image
-              src={"/vat.jpg"}
-              alt="error"
-              fill={true}
-              className="object-cover object-center"
-            />
-          </div>
-          <div className="bg-white w-full text-xl absolute top-20 text-center">
-            This banner shall be customized as per the choice.
-          </div>
-        </div> */}
         <Marquee className="bg-yellow-500 bg-opacity-10 text-sm">
           This is a banner shall be used for official updates and notifications.
         </Marquee>
@@ -328,37 +221,6 @@ const Home = () => {
                   link="https://ddvat.gov.in/docs/Notification/2024/Natural%20GAS%20Revised%20Rate%20of%20Tax%20-%20DNH%20DD.pdf"
                 />
               ))}
-              {/* <NewsCard
-                title="Natural GAS Revised Rate of Tax - DNH DD."
-                descriptio="Natural GAS Revised Rate of Tax - DNH DD."
-                topic="Notificaton"
-                date="Jul 16th, 2024"
-                link="https://ddvat.gov.in/docs/Notification/2024/Natural%20GAS%20Revised%20Rate%20of%20Tax%20-%20DNH%20DD.pdf"
-              />
-              <div className="w-full border border-black"></div>
-              <NewsCard
-                title="Revised the rate of tax in respect of ATF under forth schedule."
-                descriptio="Revised the rate of tax in respect of ATF under forth schedule."
-                topic="Notificaton"
-                date="Jul 16th, 2024"
-                link="https://ddvat.gov.in/docs/Notification/2022/Revised%20tax%20of%20rate%20respext%20of%20ATF.pdf"
-              />
-              <div className="w-full border border-black"></div>
-              <NewsCard
-                title="Revised the rate of tax in respect of petrol and diesel under forth schedule."
-                descriptio="Revised the rate of tax in respect of petrol and diesel under forth schedule."
-                topic="Notificaton"
-                date="Jul 16th, 2024"
-                link="https://ddvat.gov.in/docs/Notification/2021/Revised%20tax%20of%20rate%20respext%20of%20petrol%20diesel.pdf"
-              />
-              <div className="w-full border border-black"></div>
-              <NewsCard
-                title="Notification Regarding appoints Shri Gaurav singh Rajawat as a Commissioner for the UT of Dadra Nagar Haveli and Daman and Diu."
-                descriptio="Notification Regarding appoints Shri Gaurav singh Rajawat as a Commissioner for the UT of Dadra Nagar Haveli and Daman and Diu."
-                topic="Notificaton"
-                date="Jul 16th, 2024"
-                link="https://ddvat.gov.in/docs/Notification/2021/Notification%20VAT.pdf"
-              /> */}
             </div>
             {/* box 1 end */}
             {/* box 2 start */}
@@ -395,27 +257,6 @@ const Home = () => {
             </div>
             {/* box 2 end */}
           </div>
-
-          {/* <div className="flex gap-10 mt-6">
-            <div className="flex-1">
-              <div className="flex">
-                <p className="text-lg font-medium">Upcoming Due Dates</p>
-                <div className="grow"></div>
-                <p className="text-lg font-medium text-[#0b1e59]">
-                  DOWNLOAD PDF
-                </p>
-              </div>
-              <div className="rounded-md border border-[#0b1e59] h-80"></div>
-            </div>
-            <div className="w-80">
-              <div className="flex">
-                <p className="text-lg font-medium">GST Media</p>
-                <div className="grow"></div>
-                <p className="text-lg font-medium text-[#0b1e59]">VIEW ALL</p>
-              </div>
-              <div className="rounded-md border border-[#0b1e59] h-80"></div>
-            </div>
-          </div> */}
         </section>
       </main>
 
@@ -579,19 +420,6 @@ const NewsCard = (props: NewsCardProps) => {
     </div>
   );
 };
-
-// interface DateCardProps {
-//   title: string;
-//   subtitle: string;
-// }
-// const DateCard = (props: DateCardProps) => {
-//   return (
-//     <div className="px-4 py-2 rounded bg-white">
-//       <h1 className="text-xs">{props.title}</h1>
-//       <p className="text-xs font-medium">{props.subtitle}</p>
-//     </div>
-//   );
-// };
 
 const LoginComponent = () => {
   enum TimerStatus {
@@ -831,7 +659,12 @@ const LoginComponent = () => {
                   Loading...
                 </Button>
               ) : (
-                <Button onClick={verifyOtp} type="primary" className="mt-2"  disabled={isLogin}>
+                <Button
+                  onClick={verifyOtp}
+                  type="primary"
+                  className="mt-2"
+                  disabled={isLogin}
+                >
                   Verify OTP
                 </Button>
               )}
@@ -865,11 +698,16 @@ const LoginComponent = () => {
                 onChange={handleNumberChange}
               />
               {isLogin ? (
-                <Button type="primary" className="mt-2"  disabled>
+                <Button type="primary" className="mt-2" disabled>
                   Loading...
                 </Button>
               ) : (
-                <Button onClick={sendOtp} type="primary" className="mt-2"  disabled={isLogin}>
+                <Button
+                  onClick={sendOtp}
+                  type="primary"
+                  className="mt-2"
+                  disabled={isLogin}
+                >
                   Send OTP
                 </Button>
               )}
