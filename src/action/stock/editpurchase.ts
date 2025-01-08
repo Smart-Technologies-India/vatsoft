@@ -79,6 +79,24 @@ const EditPurchase = async (
         throw new Error("Unable to edit purchase Entry.");
       }
 
+      const sale_update = await prisma.daily_sale.updateMany({
+        where: {
+          urn_number: update_response.urn_number,
+        },
+        data: {
+          invoice_number: payload.invoice_number,
+          invoice_date: payload.invoice_date,
+          quantity: payload.quantity,
+          vatamount: payload.vatamount,
+          amount_unit: payload.amount_unit,
+          amount: payload.amount,
+        },
+      });
+
+      if (!sale_update) {
+        throw new Error("Unable to update sale Entry.");
+      }
+
       const find_stock = await prisma.stock.findFirst({
         where: {
           commodity_masterId: payload.commodityid,

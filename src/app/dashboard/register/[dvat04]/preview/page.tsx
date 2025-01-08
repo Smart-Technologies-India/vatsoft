@@ -108,6 +108,7 @@ const PreviewPage = () => {
           <Anx3Page dvatid={dvatid} />
 
           <div className="flex p-4 gap-4">
+            <div className="grow"></div>
             <Button
               onClick={async () => {
                 await generatePDF(
@@ -136,11 +137,19 @@ const PreviewPage = () => {
               <>
                 <Button
                   onClick={async () => {
-                    router.back();
+                    router.push("/dashboard");
                   }}
                   type="primary"
                 >
                   Close
+                </Button>
+                <Button
+                  onClick={async () => {
+                    router.push("/dashboard");
+                  }}
+                  type="primary"
+                >
+                  Submit
                 </Button>
               </>
             )}

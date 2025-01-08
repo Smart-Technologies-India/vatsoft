@@ -14,7 +14,7 @@ import UpdateRegistration from "@/action/registration/updateregistration";
 import GetDvat04 from "@/action/register/getdvat04";
 import { toast } from "react-toastify";
 import { getCookie } from "cookies-next";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   dvat04,
@@ -25,35 +25,41 @@ import {
   Role,
 } from "@prisma/client";
 import GetFromDvat from "@/action/registration/getfromdvat";
-import { formateDate, onFormError } from "@/utils/methods";
+import { decryptURLData, formateDate, onFormError } from "@/utils/methods";
 import UpdateDvatStatus from "@/action/dvat/updatestatus";
 import { Button } from "antd";
 import GetDeptUser from "@/action/user/getdeptuser";
 
-type RegistrationProviderPrpos = {
-  dvatid: number;
-};
-
-export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
+export const RegistrationProvider = () => {
   const [registrationdata, setRegistrationData] = useState<
     (registration & { dvat04: dvat04 }) | null
   >(null);
+  const router = useRouter();
   const role = getCookie("role");
   const id: number = parseInt(getCookie("id") ?? "0");
+  // console.log(props.dvatid.toString());
+  // const dvatid: number = parseInt(
+  //   decryptURLData(props.dvatid.toString(), router)
+  // );
 
-  const router = useRouter();
+  const { dvat04 } = useParams<{ dvat04: string | string[] }>();
+  const dvatid = parseInt(
+    decryptURLData(Array.isArray(dvat04) ? dvat04[0] : dvat04, router)
+  );
 
   useEffect(() => {
     const init = async () => {
       const response = await GetFromDvat({
-        id: props.dvatid,
+        id: dvatid,
       });
+
+      console.log(response);
       if (response.status && response.data) {
         setRegistrationData(response.data);
       }
     };
     init();
-  }, [props.dvatid]);
+  }, [dvatid]);
 
   const methods = useForm<RegistrationForm>({
     resolver: valibotResolver(RegistrationSchema),
@@ -75,7 +81,7 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
   ) {
     return (
       <FormProvider {...methods}>
-        <Registration dvatid={props.dvatid} />
+        <Registration />
       </FormProvider>
     );
   }
@@ -104,7 +110,7 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
   ) {
     return (
       <FormProvider {...methods}>
-        <Registration dvatid={props.dvatid} />
+        <Registration />
       </FormProvider>
     );
   }
@@ -138,17 +144,21 @@ export const RegistrationProvider = (props: RegistrationProviderPrpos) => {
   if (registrationdata) {
     return (
       <FormProvider {...methods}>
-        <Registration dvatid={props.dvatid} />
+        <Registration />
       </FormProvider>
     );
   }
 };
 
-const Registration = (props: RegistrationProviderPrpos) => {
+const Registration = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
   const router = useRouter();
   const role: Role = getCookie("role") as Role;
 
+  const { dvat04 } = useParams<{ dvat04: string | string[] }>();
+  const dvatid = parseInt(
+    decryptURLData(Array.isArray(dvat04) ? dvat04[0] : dvat04, router)
+  );
   const [dvatdata, setDvatdata] = useState<
     dvat04 & { registration: registration[] }
   >();
@@ -163,7 +173,7 @@ const Registration = (props: RegistrationProviderPrpos) => {
   useEffect(() => {
     const init = async () => {
       const response = await GetFromDvat({
-        id: props.dvatid,
+        id: dvatid,
       });
       if (response.status && response.data) {
         reset({
@@ -207,7 +217,7 @@ const Registration = (props: RegistrationProviderPrpos) => {
       }
 
       const dvat04_response = await GetDvat04({
-        id: props.dvatid,
+        id: dvatid,
       });
 
       if (dvat04_response.status && dvat04_response.data) {
@@ -215,7 +225,7 @@ const Registration = (props: RegistrationProviderPrpos) => {
       }
     };
     init();
-  }, [props.dvatid, reset]);
+  }, [dvatid, reset]);
 
   const onSubmit = async (data: RegistrationForm) => {
     if (!dvatdata) return toast.error("There is not any dvat form exist.");

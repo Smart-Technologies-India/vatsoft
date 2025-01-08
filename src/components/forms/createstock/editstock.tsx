@@ -154,7 +154,7 @@ const EditStockData = (props: EditStockProviderProps) => {
       vatamount: vatamount,
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
-      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(0),
+      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(2),
     });
 
     if (stock_response.status) {

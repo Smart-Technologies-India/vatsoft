@@ -24,9 +24,12 @@ const EditSale = async (
 ): Promise<ApiResponseType<daily_sale | null>> => {
   const functionname: string = EditSale.name;
 
+  console.log(payload);
+
   try {
     const result: daily_sale = await prisma.$transaction(async (prisma) => {
-      const purchaser_response = await prisma.tin_number_master.findFirst({
+      // Validate seller TIN number
+      const sellerTin = await prisma.tin_number_master.findFirst({
         where: {
           status: "ACTIVE",
           deletedAt: null,
@@ -34,41 +37,44 @@ const EditSale = async (
         },
       });
 
-      if (!purchaser_response) {
-        throw new Error("Seller tin number not found.");
+      if (!sellerTin) {
+        throw new Error("Seller TIN number not found.");
       }
 
-      const is_exist = await prisma.daily_sale.findFirst({
+      // Validate existing sale entry
+      const existingSale = await prisma.daily_sale.findFirst({
         where: {
+          id: payload.id,
           deletedAt: null,
           deletedBy: null,
           status: "ACTIVE",
           is_dvat_31: false,
-          id: payload.id,
         },
       });
 
-      if (!is_exist) {
-        throw new Error("Unable to find sale Entry.");
+      if (!existingSale) {
+        throw new Error("Unable to find sale entry.");
       }
 
-      const { id, createdById, ...filteredData } = is_exist;
+      // Create a backup of the existing sale entry
+      const { id, createdById, ...backupData } = existingSale;
 
-      const create_response = await prisma.edit_sale.create({
+      const backupEntry = await prisma.edit_sale.create({
         data: {
-          saleId: is_exist.id,
+          saleId: existingSale.id,
           is_delete: false,
           createdById: payload.createdById,
-          ...filteredData,
+          ...backupData,
         },
       });
 
-      if (!create_response) {
-        throw new Error("Unable to edit sale Entry.");
+      if (!backupEntry) {
+        throw new Error("Unable to create backup of sale entry.");
       }
 
-      const update_response = await prisma.daily_sale.update({
-        where: { id: is_exist.id },
+      // Update the sale entry with new data
+      const updatedSale = await prisma.daily_sale.update({
+        where: { id: existingSale.id },
         data: {
           seller_tin_numberId: payload.seller_tin_id,
           amount_unit: payload.amount_unit,
@@ -83,17 +89,35 @@ const EditSale = async (
           is_dvat_31: false,
           createdById: payload.createdById,
           is_local:
-            purchaser_response.tin_number.startsWith("25") ||
-            purchaser_response.tin_number.startsWith("26"),
+            sellerTin.tin_number.startsWith("25") ||
+            sellerTin.tin_number.startsWith("26"),
         },
       });
 
-      if (!update_response) {
-        throw new Error("Unable to edit sale Entry.");
+      if (!updatedSale) {
+        throw new Error("Unable to update sale entry.");
       }
 
+      const purchase_update = await prisma.daily_purchase.updateMany({
+        where: {
+          urn_number: updatedSale.urn_number,
+        },
+        data: {
+          invoice_number: payload.invoice_number,
+          invoice_date: payload.invoice_date,
+          quantity: payload.quantity,
+          vatamount: payload.vatamount,
+          amount_unit: payload.amount_unit,
+          amount: payload.amount,
+        },
+      });
 
-      const find_stock = await prisma.stock.findFirst({
+      if (!purchase_update) {
+        throw new Error("Unable to update purchase entry.");
+      }
+
+      // Validate stock entry
+      const stockEntry = await prisma.stock.findFirst({
         where: {
           commodity_masterId: payload.commodityid,
           status: "ACTIVE",
@@ -101,26 +125,44 @@ const EditSale = async (
         },
       });
 
-      if (!find_stock) {
+      if (!stockEntry) {
         throw new Error("Stock not found.");
       }
 
-      // const difference = payload.quantity - find_stock.quantity;
+      console.log(existingSale.quantity);
+      console.log(stockEntry.quantity);
+      console.log(payload.quantity);
 
-      const stock_response = await prisma.stock.update({
-        where: {
-          id: find_stock.id,
-        },
-        data: {
-          quantity: payload.quantity,
-        },
-      });
+      // Calculate the new stock quantity
+      const stockAdjustment = payload.quantity - existingSale.quantity;
+      const newStockQuantity = stockEntry.quantity - stockAdjustment;
 
-      if (!stock_response) {
-        throw new Error("Unable to update stock.");
+      if (newStockQuantity < 0) {
+        throw new Error("Stock not available.");
       }
 
-      return update_response;
+      // Update or delete the stock entry based on the new quantity
+      if (newStockQuantity === 0) {
+        await prisma.stock.update({
+          where: { id: stockEntry.id },
+          data: {
+            status: "INACTIVE",
+            updatedById: payload.createdById,
+            deletedAt: new Date(),
+            deletedById: payload.createdById,
+          },
+        });
+      } else {
+        await prisma.stock.update({
+          where: { id: stockEntry.id },
+          data: {
+            quantity: newStockQuantity,
+            updatedById: payload.createdById,
+          },
+        });
+      }
+
+      return updatedSale;
     });
 
     return createResponse({

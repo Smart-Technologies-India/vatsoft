@@ -489,7 +489,7 @@ const TrackAppliation = () => {
             >
               <Radio value={SearchOption.ARN}>ARN</Radio>
               <Radio value={SearchOption.RETURN}>Tax Period</Radio>
-              <Radio value={SearchOption.TIN}>Tin Number</Radio>
+              <Radio value={SearchOption.TIN}>TIN Number</Radio>
               <Radio value={SearchOption.TRADE}>Trade Name</Radio>
             </Radio.Group>
             {(() => {

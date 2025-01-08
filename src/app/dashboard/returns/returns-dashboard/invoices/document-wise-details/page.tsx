@@ -294,7 +294,7 @@ const DocumentWiseDetails = () => {
                     Total taxable value
                   </TableHead>
                   <TableHead className="border text-center">
-                    Vat Amount
+                    VAT Amount
                   </TableHead>
 
                   {!ispayment() && (

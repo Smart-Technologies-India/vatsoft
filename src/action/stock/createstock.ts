@@ -79,7 +79,7 @@ const CreateStock = async (
       }
     });
     return createResponse({
-      message: "Convert to convert to DVAT 30 A Completed.",
+      message: "Stock created successfully.",
       functionname,
       data: result,
     });

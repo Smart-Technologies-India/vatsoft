@@ -25,12 +25,12 @@ const CreateTinNumber = async (
 
     if (!tin_response)
       return createResponse({
-        message: "Tin Number Master not found. Please try again.",
+        message: "TIN Number Master not found. Please try again.",
         functionname,
       });
 
     return createResponse({
-      message: "Tin Number Master data get successfully",
+      message: "TIN Number Master data get successfully",
       functionname,
       data: tin_response,
     });

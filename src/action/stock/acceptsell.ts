@@ -10,12 +10,12 @@ interface AcceptSalePayload {
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { stock } from "@prisma/client";
+import { daily_purchase, stock } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const AcceptSale = async (
   payload: AcceptSalePayload
-): Promise<ApiResponseType<stock | null>> => {
+): Promise<ApiResponseType<daily_purchase | null>> => {
   const functionname: string = AcceptSale.name;
 
   try {
@@ -106,7 +106,7 @@ const AcceptSale = async (
         throw new Error("Unable to update sale");
       }
 
-      return isstock;
+      return is_purchase;
     });
 
     return createResponse({

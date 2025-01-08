@@ -28,6 +28,7 @@ import { Input, InputRef, Modal } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 import EditPurchase from "@/action/stock/editpurchase";
 import { useRouter } from "next/navigation";
+import dayjs from "dayjs";
 
 type EditDailyPurchaseProviderProps = {
   userid: number;
@@ -205,7 +206,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
-      return toast.error("Seller Vat Number not found.");
+      return toast.error("Seller VAT Number not found.");
     if (parseInt(data.quantity) <= 0)
       return toast.error("Quantity must be greater than 0.");
     const stock_response = await EditPurchase({
@@ -220,7 +221,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
-      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(0),
+      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(2),
     });
 
     if (stock_response.status) {
@@ -272,16 +273,16 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
         onOk={createTin}
         onCancel={() => setTinBox(false)}
       >
-        <p>This Tin Number not exist. Do you want to create it?</p>
+        <p>This TIN Number not exist. Do you want to create it?</p>
         <Input ref={tinnname} placeholder="Enter The name of the dealer." />
       </Modal>
       <form onSubmit={handleSubmit(onSubmit, onFormError)}>
         <div className="mt-2">
           <TaxtInput<DailyPurchaseMasterForm>
-            placeholder="Seller Vat Number"
+            placeholder="Seller VAT Number"
             name="recipient_vat_no"
             required={true}
-            title="Seller Vat Number"
+            title="Seller VAT Number"
             disable={true}
           />
         </div>
@@ -311,6 +312,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
             placeholder="Select Invoice Date"
             // mindate={dayjs(getMonthDateas().start, dateFormat)}
             // maxdate={dayjs(getMonthDateas().end, dateFormat)}
+            maxdate={dayjs()}
           />
         </div>
         <div className="mt-2">

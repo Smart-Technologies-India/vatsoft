@@ -23,6 +23,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { addMonths, format } from "date-fns";
 
 const Home = () => {
   const faqs = [
@@ -108,25 +109,25 @@ const Home = () => {
           <h1 className="text-white font-medium text-xl">VATSMART</h1>
           <div className="w-10"></div>
           <div className="mx-auto hidden md:block">
-            <a
-              href="#"
+            <Link
+              href="/"
               className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
             >
               Home
-            </a>
-            <a
+            </Link>
+            {/* <a
               href="#"
               className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
             >
               About
-            </a>
-            <a
-              href="#"
+            </a> */}
+            <Link
+              href="/contact"
               className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
             >
               Contact
-            </a>
-            <a
+            </Link>
+            {/* <a
               href="#"
               className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
             >
@@ -137,7 +138,13 @@ const Home = () => {
               className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
             >
               Help
-            </a>
+            </a> */}
+            <Link
+              href="https://docs.google.com/forms/d/e/1FAIpQLSf-bLcpu_zAmyzgv4dxahMfDgOAfeNcnI8fg2y1yyfG2k_Org/viewform?usp=sharing"
+              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+            >
+              Registration
+            </Link>
           </div>
           <div className="grow"></div>
           <Button
@@ -151,36 +158,42 @@ const Home = () => {
           </Drawer>
         </header>
         <div className="mx-auto md:hidden bg-[#05313c] flex justify-center">
-          <a
-            href="#"
+          <Link
+            href="/"
             className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
           >
             Home
-          </a>
-          <a
-            href="#"
-            className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
-          >
-            About
-          </a>
-          <a
-            href="#"
+          </Link>
+          {/* <a
+              href="#"
+              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+            >
+              About
+            </a> */}
+          <Link
+            href="/contact"
             className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
           >
             Contact
-          </a>
-          <a
-            href="#"
+          </Link>
+          {/* <a
+              href="#"
+              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+            >
+              Support
+            </a>
+            <a
+              href="#"
+              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+            >
+              Help
+            </a> */}
+          <Link
+            href="https://docs.google.com/forms/d/e/1FAIpQLSf-bLcpu_zAmyzgv4dxahMfDgOAfeNcnI8fg2y1yyfG2k_Org/viewform?usp=sharing"
             className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
           >
-            Support
-          </a>
-          <a
-            href="#"
-            className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
-          >
-            Help
-          </a>
+            Registration
+          </Link>
         </div>
 
         <div className="relative w-full h-[24rem]">
@@ -193,7 +206,7 @@ const Home = () => {
         </div>
 
         <Marquee className="bg-yellow-500 bg-opacity-10 text-sm">
-          This is a banner shall be used for official updates and notifications.
+          This banner shall be used for official updates and notifications.
         </Marquee>
 
         <section className="mx-auto md:w-5/6 py-4 px-6 md:px-0">
@@ -267,7 +280,9 @@ const Home = () => {
           </h1>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <Card className="border-[#1096b7]/30">
+            <CardComponent />
+            <CardQuarterComponent />
+            {/* <Card className="border-[#1096b7]/30">
               <CardHeader className="bg-[#1096b7]/10">
                 <CardTitle>
                   <Badge className="bg-[#1096b7] text-xl hover:bg-[#0d7a94]">
@@ -278,20 +293,23 @@ const Home = () => {
               <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 p-4">
                 <DateCard
                   title="DVAT04 (Jun, 2024)"
-                  subtitle="Jul 20th, 2024"
+                  paymentdate="Jul 20th, 2024"
+                  returndate="Jul 20th, 2024"
                 />
                 <DateCard
                   title="DVAT04 (Jul, 2024)"
-                  subtitle="Aug 20th, 2024"
+                  paymentdate="Jul 20th, 2024"
+                  returndate="Jul 20th, 2024"
                 />
                 <DateCard
                   title="DVAT04 (Aug, 2024)"
-                  subtitle="Sept 20th, 2024"
+                  paymentdate="Jul 20th, 2024"
+                  returndate="Jul 20th, 2024"
                 />
               </CardContent>
-            </Card>
+            </Card> */}
 
-            <Card className="border-[#1096b7]/30">
+            {/* <Card className="border-[#1096b7]/30">
               <CardHeader className="bg-[#1096b7]/10">
                 <CardTitle>
                   <Badge className="bg-[#1096b7] text-xl hover:bg-[#0d7a94]">
@@ -302,21 +320,24 @@ const Home = () => {
               <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 p-4">
                 <DateCard
                   title="DVAT04 (Jun, 2024)"
-                  subtitle="Jul 20th, 2024"
+                  paymentdate="Jul 20th, 2024"
+                  returndate="Jul 20th, 2024"
                 />
                 <DateCard
                   title="DVAT04 (Sept, 2024)"
-                  subtitle="Oct 20th, 2024"
+                  paymentdate="Jul 20th, 2024"
+                  returndate="Jul 20th, 2024"
                 />
                 <DateCard
                   title="DVAT04 (Dec, 2024)"
-                  subtitle="Jan 20th, 2025"
+                  paymentdate="Jul 20th, 2024"
+                  returndate="Jul 20th, 2024"
                 />
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
 
-          <Card className="mt-6 border-[#1096b7]/30">
+          {/* <Card className="mt-6 border-[#1096b7]/30">
             <CardHeader className="bg-[#1096b7]/10">
               <CardTitle className="text-[#1096b7]">Other Due Dates</CardTitle>
             </CardHeader>
@@ -328,7 +349,7 @@ const Home = () => {
               <DateCard title="DVAT04 (Sept, 2024)" subtitle="Oct 20th, 2024" />
               <DateCard title="DVAT04 (Dec, 2024)" subtitle="Jan 20th, 2025" />
             </CardContent>
-          </Card>
+          </Card> */}
         </section>
       </div>
       <section className="mx-auto md:w-5/6 py-4 px-6 md:px-0 ">
@@ -720,16 +741,121 @@ const LoginComponent = () => {
 };
 interface DateCardProps {
   title: string;
-  subtitle: string;
+  paymentdate: string;
+  returndate: string;
 }
 
-function DateCard({ title, subtitle }: DateCardProps) {
+function DateCard({ title, paymentdate, returndate }: DateCardProps) {
   return (
     <Card className="bg-white border-[#1096b7]/20 hover:border-[#1096b7]/50 transition-colors">
       <CardContent className="p-4">
         <h3 className="font-medium text-sm truncate text-[#1096b7]">{title}</h3>
-        <p className="text-xs text-[#1096b7]/70 mt-1">{subtitle}</p>
+        <p className="text-xs text-[#1096b7]/70 mt-1">
+          Payment Due Date: {paymentdate}
+        </p>
+        <p className="text-xs text-[#1096b7]/70 mt-1">
+          Return Filing Due Date: {returndate}
+        </p>
       </CardContent>
     </Card>
   );
 }
+
+const CardComponent = () => {
+  // Get current date and calculate current month and next two months
+  const currentDate = new Date();
+  const months = Array.from({ length: 3 }, (_, i) =>
+    addMonths(currentDate, i - 1)
+  ).map((date) => ({
+    title: format(date, "MMM, yyyy"), // Format as "Jun, 2024"
+    paymentdate: format(
+      new Date(date.getFullYear(), date.getMonth() + 1, 15),
+      "MMM d, yyyy"
+    ), // Format as "Jun 15, 2024"
+    returndate: format(
+      new Date(date.getFullYear(), date.getMonth() + 1, 28),
+      "MMM d, yyyy"
+    ), // Format as "Jun 28, 2024"
+  }));
+
+  return (
+    <Card className="border-[#1096b7]/30">
+      <CardHeader className="bg-[#1096b7]/10">
+        <CardTitle>
+          <Badge className="bg-[#1096b7] text-xl hover:bg-[#0d7a94]">
+            Monthly
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 p-4">
+        {months.map((month, index) => (
+          <DateCard
+            key={index}
+            title={`DVAT04 (${month.title})`}
+            paymentdate={month.paymentdate}
+            returndate={month.returndate}
+          />
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
+
+const CardQuarterComponent = () => {
+  const monthGroups = [
+    ["April", "May", "June"],
+    ["July", "August", "September"],
+    ["October", "November", "December"],
+    ["January", "February", "March"],
+  ];
+
+  const currentDate = new Date();
+  const currentMonth = currentDate.toLocaleString("default", { month: "long" });
+
+  // Find the current quarter group
+  const currentQuarter = monthGroups.find((group) =>
+    group.includes(currentMonth)
+  );
+
+  // Generate data for current and next two quarters
+  const quarters = Array.from({ length: 3 }, (_, i) => {
+    const quarterIndex = (monthGroups.indexOf(currentQuarter!) + i) % 4;
+    const quarter = monthGroups[quarterIndex];
+    const lastMonth = quarter[quarter.length - 1]; // Get last month of the quarter
+
+    const year =
+      quarterIndex === 3 && i > 0
+        ? currentDate.getFullYear() + 1
+        : currentDate.getFullYear();
+
+    // Generate the date for the last month's 15th and 28th
+    const monthIndex = new Date(`${lastMonth} 1, ${year}`).getMonth();
+    return {
+      title: `${quarter.join(", ")} (${year})`, // Example: "April, May, June (2024)"
+      paymentdate: format(new Date(year, monthIndex + 1, 15), "MMM d, yyyy"), // 15th of last month
+      returndate: format(new Date(year, monthIndex + 1, 28), "MMM d, yyyy"), // 28th of last month
+    };
+  });
+
+  return (
+    <Card className="border-[#1096b7]/30">
+      <CardHeader className="bg-[#1096b7]/10">
+        <CardTitle>
+          <Badge className="bg-[#1096b7] text-xl hover:bg-[#0d7a94]">
+            Quarterly
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 p-4">
+        {quarters.map((quarter, index) => (
+          <DateCard
+            key={index}
+            title={`${quarter.title}`}
+            paymentdate={quarter.paymentdate}
+            returndate={quarter.returndate}
+          />
+        ))}
+      </CardContent>
+    </Card>
+  );
+};

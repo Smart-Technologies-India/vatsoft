@@ -4,9 +4,8 @@ import { FormProvider, useForm, useFormContext } from "react-hook-form";
 
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MultiSelect } from "../inputfields/multiselect";
-import { OptionValue } from "@/models/main";
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
 import { getCookie } from "cookies-next";
@@ -27,6 +26,7 @@ import { Input, InputRef, Modal } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 import { useRouter } from "next/navigation";
 import EditSale from "@/action/stock/editsale";
+import dayjs from "dayjs";
 
 type EditDailySaleProviderProps = {
   id: number;
@@ -80,12 +80,13 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
       const commmaster = await GetCommodityMaster({
         id: props.data.commodity_master.id,
       });
+
       if (commmaster.status && commmaster.data) {
         setCommoditymaster(commmaster.data);
         if (commmaster.data.product_type == "LIQUOR") {
           setLiquore(true);
           setLiquoreAmount(parseInt(commmaster.data.sale_price));
-          setValue("amount_unit", commmaster.data.sale_price);
+          // setValue("amount_unit", commmaster.data.sale_price);
         }
       }
 
@@ -162,28 +163,29 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
     init();
   }, [recipient_vat_no]);
 
-  const description_of_goods = watch("description_of_goods");
   const quantity = watch("quantity");
   const amount_unit = watch("amount_unit");
 
-  useEffect(() => {
-    if (description_of_goods == null || description_of_goods == undefined)
-      return;
-    const init = async () => {
-      const commmaster = await GetCommodityMaster({
-        id: parseInt(description_of_goods),
-      });
-      if (commmaster.status && commmaster.data) {
-        setCommoditymaster(commmaster.data);
-        if (commmaster.data.product_type == "LIQUOR") {
-          setLiquore(true);
-          setValue("amount_unit", commmaster.data.sale_price);
-          setLiquoreAmount(parseInt(commmaster.data.sale_price));
-        }
-      }
-    };
-    init();
-  }, [description_of_goods]);
+  // useEffect(() => {
+  //   if (description_of_goods == null || description_of_goods == undefined)
+  //     return;
+  //   const init = async () => {
+  //     const commmaster = await GetCommodityMaster({
+  //       id: parseInt(description_of_goods),
+  //     });
+  //     console.log("change");
+  //     console.log(commmaster);
+  //     if (commmaster.status && commmaster.data) {
+  //       setCommoditymaster(commmaster.data);
+  //       if (commmaster.data.product_type == "LIQUOR") {
+  //         setLiquore(true);
+  //         // setValue("amount_unit", commmaster.data.sale_price);
+  //         setLiquoreAmount(parseInt(commmaster.data.sale_price));
+  //       }
+  //     }
+  //   };
+  //   init();
+  // }, [description_of_goods]);
 
   useEffect(() => {
     if (commoditymaster == null || quantity == null || amount_unit == null)
@@ -205,12 +207,13 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
   }, [quantity, amount_unit, commoditymaster]);
 
   const onSubmit = async (data: DailySaleForm) => {
+    console.log(commoditymaster);
     if (davtdata == null || davtdata == undefined)
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
-      return toast.error("Seller Vat Number not found.");
+      return toast.error("Seller VAT Number not found.");
 
     if (isLiquore && parseInt(data.amount_unit) < liquoreAmount) {
       return toast.error("Sale amount can not be less than MRP.");
@@ -230,7 +233,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
-      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(0),
+      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(2),
     });
 
     if (stock_response.status) {
@@ -282,16 +285,16 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
         onOk={createTin}
         onCancel={() => setTinBox(false)}
       >
-        <p>This Tin Number not exist. Do you want to create it?</p>
+        <p>This TIN Number not exist. Do you want to create it?</p>
         <Input ref={tinnname} placeholder="Enter The name of the dealer." />
       </Modal>
       <form onSubmit={handleSubmit(onSubmit, onFormError)}>
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
-            placeholder="Seller Vat Number"
+            placeholder="Seller VAT Number"
             name="recipient_vat_no"
             required={true}
-            title="Seller Vat Number"
+            title="Seller VAT Number"
             disable={true}
           />
         </div>
@@ -320,6 +323,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
             placeholder="Select Invoice Date"
             // mindate={dayjs(getMonthDateas().start, dateFormat)}
             // maxdate={dayjs(getMonthDateas().end, dateFormat)}
+            maxdate={dayjs()}
           />
         </div>
         <div className="mt-2">

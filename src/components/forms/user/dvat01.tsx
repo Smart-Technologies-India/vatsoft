@@ -472,9 +472,9 @@ const DvatInfoButton = () => {
 
   return (
     <>
-      <Button type="primary" onClick={showDrawer}>
+      {/* <Button type="primary" onClick={showDrawer}>
         Open
-      </Button>
+      </Button> */}
       <Drawer
         title="Info"
         placement={"bottom"}

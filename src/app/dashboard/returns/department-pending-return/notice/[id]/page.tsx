@@ -110,7 +110,7 @@ const SupplierDetails = () => {
       tinRef.current?.input?.value == null ||
       tinRef.current?.input?.value == ""
     ) {
-      return toast.error("Enter Tin number");
+      return toast.error("Enter TIN number");
     }
     const search_response = await SearchNoticeOrder({
       dvatid: dvat04id,
@@ -279,7 +279,7 @@ const SupplierDetails = () => {
           tinRef.current?.input?.value == null ||
           tinRef.current?.input?.value == ""
         ) {
-          return toast.error("Enter Tin number");
+          return toast.error("Enter TIN number");
         }
         const search_response = await SearchNoticeOrder({
           dvatid: dvat04id,
@@ -466,7 +466,7 @@ const SupplierDetails = () => {
                       <Input
                         className="w-60"
                         ref={tinRef}
-                        placeholder={"Enter Tin Number"}
+                        placeholder={"Enter TIN Number"}
                         disabled={isSearch}
                       />
 

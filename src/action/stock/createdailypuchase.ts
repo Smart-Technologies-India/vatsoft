@@ -77,7 +77,7 @@ const CreateDailyPurchase = async (
         isdata &&
         commodity_master.seller_tin_number.tin_number == isdata.dvat04.tinNumber
       ) {
-        throw new Error("Invalid tin number.");
+        throw new Error("Invalid TIN number.");
       }
 
       const isstock = await prisma.stock.findFirst({

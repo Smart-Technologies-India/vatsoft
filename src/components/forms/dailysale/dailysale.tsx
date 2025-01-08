@@ -20,6 +20,7 @@ import GetUserCommodity from "@/action/stock/usercommodity";
 import SearchTin from "@/action/tin_number/searchtin";
 import { Input, InputRef, Modal, Radio, RadioChangeEvent } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
+import dayjs from "dayjs";
 
 type DailySaleProviderProps = {
   userid: number;
@@ -159,7 +160,7 @@ const DailySale = (props: DailySaleProviderProps) => {
         if (commmaster.data.product_type == "LIQUOR") {
           setLiquore(true);
           setLiquoreAmount(parseInt(commmaster.data.sale_price));
-          setValue("amount_unit", commmaster.data.sale_price);
+          // setValue("amount_unit", commmaster.data.sale_price);
         }
       }
     };
@@ -191,7 +192,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
-      return toast.error("Seller Vat Number not found.");
+      return toast.error("Seller VAT Number not found.");
 
     if (isLiquore && parseInt(data.amount_unit) < liquoreAmount) {
       return toast.error("Sale amount can not be less than MRP.");
@@ -204,8 +205,15 @@ const DailySale = (props: DailySaleProviderProps) => {
           : parseInt(data.quantity)
         : parseInt(data.quantity);
 
+    const amount_unit: string =
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+        ? quantityCount == "crate"
+          ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
+          : data.amount_unit
+        : data.amount_unit;
+
     const stock_response = await CreateDailySale({
-      amount_unit: data.amount_unit,
+      amount_unit: amount_unit,
       invoice_date: new Date(data.invoice_date),
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
@@ -215,7 +223,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
-      amount: (quantityamount * parseInt(data.amount_unit)).toFixed(0),
+      amount: taxableValue,
     });
 
     if (stock_response.status) {
@@ -234,7 +242,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
-      return toast.error("Seller Vat Number not found.");
+      return toast.error("Seller VAT Number not found.");
 
     if (isLiquore && parseInt(data.amount_unit) < liquoreAmount) {
       return toast.error("Sale amount can not be less than MRP.");
@@ -247,8 +255,15 @@ const DailySale = (props: DailySaleProviderProps) => {
           : parseInt(data.quantity)
         : parseInt(data.quantity);
 
+    const amount_unit: string =
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+        ? quantityCount == "crate"
+          ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
+          : data.amount_unit
+        : data.amount_unit;
+
     const stock_response = await CreateDailySale({
-      amount_unit: data.amount_unit,
+      amount_unit: amount_unit,
       invoice_date: new Date(data.invoice_date),
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
@@ -258,7 +273,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
-      amount: vatamount,
+      amount: taxableValue,
     });
 
     if (stock_response.status) {
@@ -330,7 +345,7 @@ const DailySale = (props: DailySaleProviderProps) => {
         onOk={createTin}
         onCancel={() => setTinBox(false)}
       >
-        <p>This Tin Number not exist. Do you want to create it?</p>
+        <p>This TIN Number not exist. Do you want to create it?</p>
         <Input ref={tinnname} placeholder="Enter The name of the dealer." />
       </Modal>
       <form
@@ -344,10 +359,10 @@ const DailySale = (props: DailySaleProviderProps) => {
       >
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
-            placeholder="Seller Vat Number"
+            placeholder="Seller VAT Number"
             name="recipient_vat_no"
             required={true}
-            title="Seller Vat Number"
+            title="Seller VAT Number"
           />
         </div>
         {tindata != null && (
@@ -375,6 +390,7 @@ const DailySale = (props: DailySaleProviderProps) => {
             placeholder="Select Invoice Date"
             // mindate={dayjs(getMonthDateas().start, dateFormat)}
             // maxdate={dayjs(getMonthDateas().end, dateFormat)}
+            maxdate={dayjs()}
           />
         </div>
         <div className="mt-2">
@@ -425,17 +441,28 @@ const DailySale = (props: DailySaleProviderProps) => {
               </Radio.Group>
             </div>
           )}
-
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
-            placeholder="Enter amount"
+            placeholder={
+              (davtdata?.commodity == "OIDC" ||
+                davtdata?.commodity == "MANUFACTURER") &&
+              quantityCount == "crate"
+                ? "Enter Crate amount"
+                : "Enter Unit amount"
+            }
             name="amount_unit"
             required={true}
-            title="Enter amount"
-            // disable={isLiquore}
+            title={
+              (davtdata?.commodity == "OIDC" ||
+                davtdata?.commodity == "MANUFACTURER") &&
+              quantityCount == "crate"
+                ? "Enter Crate amount"
+                : "Enter Unit amount"
+            }
             onlynumber={true}
           />
         </div>
+
         <div className="flex gap-1 items-center">
           <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
             <p className="text-xs font-normal">Taxable (%)</p>

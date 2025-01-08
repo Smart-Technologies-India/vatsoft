@@ -267,7 +267,7 @@ const DocumentWiseDetails = () => {
                       Total taxable percentage
                     </TableHead>
                     <TableHead className="border text-center">
-                      Vat Amount
+                      VAT Amount
                     </TableHead>
                     <TableHead className="w-28 border text-center">
                       Actions

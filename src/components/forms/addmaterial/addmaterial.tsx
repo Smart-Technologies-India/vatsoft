@@ -56,6 +56,7 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
     watch,
     formState: { errors, isSubmitting },
     getValues,
+    setValue,
   } = useFormContext<DailyPurchaseMasterForm>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -75,6 +76,16 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
       recipient_vat_no: "",
     });
     const init = async () => {
+      const tin_response = await SearchTin({
+        tinumber: "24000000000",
+      });
+
+      setValue("recipient_vat_no", "24000000000");
+
+      if (tin_response.status && tin_response.data) {
+        setTinData(tin_response.data);
+      }
+
       const response = await GetUserDvat04({
         userid: userid,
       });
@@ -155,6 +166,7 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
 
   useEffect(() => {
     const init = async () => {
+      if (recipient_vat_no == null || recipient_vat_no == undefined) return;
       if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
 
       if (
@@ -227,7 +239,7 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
-      return toast.error("Seller Vat Number not found.");
+      return toast.error("Seller VAT Number not found.");
     const stock_response = await CreateMaterial({
       amount_unit: data.amount_unit,
       invoice_date: new Date(data.invoice_date),
@@ -239,7 +251,7 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
-      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(0),
+      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(2),
     });
 
     if (stock_response.status) {
@@ -258,7 +270,7 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
-      return toast.error("Seller Vat Number not found.");
+      return toast.error("Seller VAT Number not found.");
     const stock_response = await CreateMaterial({
       amount_unit: data.amount_unit,
       invoice_date: new Date(data.invoice_date),
@@ -314,10 +326,10 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
     >
       <div className="mt-2">
         <TaxtInput<DailyPurchaseMasterForm>
-          placeholder="Seller Vat Number"
+          placeholder="Seller VAT Number"
           name="recipient_vat_no"
           required={true}
-          title="Seller Vat Number"
+          title="Seller VAT Number"
         />
       </div>
       {tindata != null && (
@@ -338,6 +350,7 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
           placeholder="Invoice no."
         />
       </div>
+      {/* future date not possible */}
       <div className="mt-2">
         <DateSelect<DailyPurchaseMasterForm>
           name="invoice_date"
@@ -346,6 +359,7 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
           placeholder="Select Invoice Date"
           // mindate={dayjs(getMonthDateas().start, dateFormat)}
           // maxdate={dayjs(getMonthDateas().end, dateFormat)}
+          maxdate={dayjs()}
         />
       </div>
       <div className="mt-2">

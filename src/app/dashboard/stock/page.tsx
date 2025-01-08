@@ -16,7 +16,6 @@ import { commodity_master, dvat04, stock } from "@prisma/client";
 import { Button, Drawer, Pagination } from "antd";
 import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
-import { addListener } from "process";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -135,7 +134,7 @@ const CommodityMaster = () => {
         }}
         open={materialBox}
       >
-        <p className="text-lg text-left">Add Row Material</p>
+        <p className="text-lg text-left">Add Raw Material</p>
         <AddMaterialProvider
           userid={userid}
           setAddBox={setMaterialBox}

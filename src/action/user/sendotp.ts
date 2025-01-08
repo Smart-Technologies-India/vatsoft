@@ -57,19 +57,23 @@ const SendOtp = async (
           functionname,
         });
       } else {
-        const user_resut = await prisma.user.create({
-          data: {
-            mobileOne: payload.mobile,
-            otp: otp.toString(),
-            role: "USER",
-          },
-        });
+        // const user_resut = await prisma.user.create({
+        //   data: {
+        //     mobileOne: payload.mobile,
+        //     otp: otp.toString(),
+        //     role: "USER",
+        //   },
+        // });
 
+        // return createResponse({
+        //   message: user_resut
+        //     ? "OTP sent successfully"
+        //     : "Unable to send OTP. Please try again.",
+        //   data: user_resut ?? null,
+        //   functionname,
+        // });
         return createResponse({
-          message: user_resut
-            ? "OTP sent successfully"
-            : "Unable to send OTP. Please try again.",
-          data: user_resut ?? null,
+          message: "Kindly first register yourself first.",
           functionname,
         });
       }

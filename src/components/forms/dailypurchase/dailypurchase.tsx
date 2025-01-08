@@ -21,6 +21,7 @@ import { Input, InputRef, Modal, Radio, RadioChangeEvent } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 import { DateSelect } from "../inputfields/dateselect";
 import { toast } from "react-toastify";
+import dayjs from "dayjs";
 
 type DailyPurchaseProviderProps = {
   userid: number;
@@ -190,7 +191,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
-      return toast.error("Seller Vat Number not found.");
+      return toast.error("Seller VAT Number not found.");
 
     const quantityamount =
       davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
@@ -198,8 +199,16 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           ? parseInt(data.quantity) * commoditymaster.crate_size
           : parseInt(data.quantity)
         : parseInt(data.quantity);
+
+    const amount_unit: string =
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+        ? quantityCount == "crate"
+          ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
+          : data.amount_unit
+        : data.amount_unit;
+
     const stock_response = await CreateDailyPurchase({
-      amount_unit: data.amount_unit,
+      amount_unit: amount_unit,
       invoice_date: new Date(data.invoice_date),
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
@@ -209,7 +218,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
-      amount: (quantityamount * parseInt(data.amount_unit)).toFixed(0),
+      amount: taxableValue,
     });
 
     if (stock_response.status) {
@@ -228,15 +237,22 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
-      return toast.error("Seller Vat Number not found.");
+      return toast.error("Seller VAT Number not found.");
     const quantityamount =
       davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
         ? quantityCount == "crate"
           ? parseInt(data.quantity) * commoditymaster.crate_size
           : parseInt(data.quantity)
         : parseInt(data.quantity);
+
+    const amount_unit: string =
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+        ? quantityCount == "crate"
+          ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
+          : data.amount_unit
+        : data.amount_unit;
     const stock_response = await CreateDailyPurchase({
-      amount_unit: data.amount_unit,
+      amount_unit: amount_unit,
       invoice_date: new Date(data.invoice_date),
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
@@ -246,7 +262,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
-      amount: vatamount,
+      amount: taxableValue,
     });
 
     if (stock_response.status) {
@@ -318,7 +334,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         onOk={createTin}
         onCancel={() => setTinBox(false)}
       >
-        <p>This Tin Number not exist. Do you want to create it?</p>
+        <p>This TIN Number not exist. Do you want to create it?</p>
         <Input ref={tinnname} placeholder="Enter The name of the dealer." />
       </Modal>
       <form
@@ -332,10 +348,10 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       >
         <div className="mt-2">
           <TaxtInput<DailyPurchaseMasterForm>
-            placeholder="Seller Vat Number"
+            placeholder="Seller VAT Number"
             name="recipient_vat_no"
             required={true}
-            title="Seller Vat Number"
+            title="Seller VAT Number"
           />
         </div>
         {tindata != null && (
@@ -364,6 +380,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             placeholder="Select Invoice Date"
             // mindate={dayjs(getMonthDateas().start, dateFormat)}
             // maxdate={dayjs(getMonthDateas().end, dateFormat)}
+            maxdate={dayjs()}
           />
         </div>
         {(davtdata?.commodity == "OIDC" ||
@@ -417,10 +434,22 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         </div>
         <div className="mt-2">
           <TaxtInput<DailyPurchaseMasterForm>
-            placeholder="Enter amount"
+            placeholder={
+              (davtdata?.commodity == "OIDC" ||
+                davtdata?.commodity == "MANUFACTURER") &&
+              quantityCount == "crate"
+                ? "Enter Crate amount"
+                : "Enter Unit amount"
+            }
             name="amount_unit"
             required={true}
-            title="Enter amount"
+            title={
+              (davtdata?.commodity == "OIDC" ||
+                davtdata?.commodity == "MANUFACTURER") &&
+              quantityCount == "crate"
+                ? "Enter Crate amount"
+                : "Enter Unit amount"
+            }
             onlynumber={true}
           />
         </div>

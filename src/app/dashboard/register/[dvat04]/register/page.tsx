@@ -12,7 +12,7 @@ const Register = ({ params }: { params: { dvat04: string } }) => {
           </p>
         </div>
 
-        <RegistrationProvider dvatid={parseInt(params.dvat04)} />
+        <RegistrationProvider />
       </div>
     </main>
   );

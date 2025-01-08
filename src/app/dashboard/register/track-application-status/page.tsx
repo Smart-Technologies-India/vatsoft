@@ -207,9 +207,13 @@ const TrackAppliation = () => {
                       <TableRow key={index}>
                         <TableCell className="text-center border">
                           <Link
-                            href={`/dashboard/register/${encryptURLData(
-                              val.id.toString()
-                            )}/preview`}
+                            // href={`/dashboard/new-registration/${encryptURLData(
+                            //   val.id.toString()
+                            // )}/dvat1`}
+                            href={`/dashboard/new-registration/${val.id.toString()}/dvat1`}
+                            // href={`/dashboard/register/${encryptURLData(
+                            //   val.id.toString()
+                            // )}/preview`}
                             className="text-blue-500"
                           >
                             {val.tempregistrationnumber}

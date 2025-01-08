@@ -173,7 +173,7 @@ const CFROM = () => {
                 </tr>
                 <tr className="w-full">
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    Seller Tin No
+                    Seller TIN No
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
                     {cformdata ? cformdata.seller_tin_no : ""}
@@ -425,7 +425,7 @@ const CFROM = () => {
                 </tr>
                 <tr className="w-full">
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    Seller Tin No
+                    Seller TIN No
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
                     {cformdata ? cformdata.seller_tin_no : ""}
@@ -677,7 +677,7 @@ const CFROM = () => {
                 </tr>
                 <tr className="w-full">
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    Seller Tin No
+                    Seller TIN No
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
                     {cformdata ? cformdata.seller_tin_no : ""}

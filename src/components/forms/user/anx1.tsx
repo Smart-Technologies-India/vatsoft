@@ -136,7 +136,6 @@ const Anx1 = (props: Anx1ProviderProps) => {
         setDvatData(dvat_response.data);
       }
       const getanx1resposne = await GetAnx1({ dvatid: props.dvatid });
-
       if (getanx1resposne.status && getanx1resposne.data) {
         setAnnexuredata(getanx1resposne.data);
         edit(getanx1resposne.data[0].id);
@@ -488,9 +487,9 @@ const Anx1 = (props: Anx1ProviderProps) => {
 
               if (numofown < Annexuredata.length) {
                 return toast.error(
-                  `Number of Person having intrest in business in ${
+                  `Number of Person having interest in business in ${
                     dvatData?.numberOfOwners ?? 0
-                  } kindly fill annexure I each number mendtion.`
+                  } kindly fill annexure I for each members.`
                 );
               }
 

@@ -57,7 +57,7 @@ const CreateDailySale = async (
       });
 
       if (!purchaser_response) {
-        throw new Error("Seller tin number not found.");
+        throw new Error("Seller TIN number not found.");
       }
 
       const seller_dvat = await prisma.dvat04.findFirst({
@@ -72,7 +72,7 @@ const CreateDailySale = async (
       }
 
       if (seller_dvat.tinNumber == purchaser_response.tin_number) {
-        throw new Error("Invalid tin number.");
+        throw new Error("Invalid TIN number.");
       }
 
       if (!seller_dvat.tinNumber) {
@@ -159,7 +159,7 @@ const CreateDailySale = async (
           });
 
           if (!saller_response) {
-            throw new Error("Seller tin number not found.");
+            throw new Error("Seller TIN number not found.");
           }
           const create_response = await prisma.daily_purchase.create({
             data: {
