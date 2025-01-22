@@ -24,8 +24,6 @@ const EditSale = async (
 ): Promise<ApiResponseType<daily_sale | null>> => {
   const functionname: string = EditSale.name;
 
-  console.log(payload);
-
   try {
     const result: daily_sale = await prisma.$transaction(async (prisma) => {
       // Validate seller TIN number
@@ -128,10 +126,6 @@ const EditSale = async (
       if (!stockEntry) {
         throw new Error("Stock not found.");
       }
-
-      console.log(existingSale.quantity);
-      console.log(stockEntry.quantity);
-      console.log(payload.quantity);
 
       // Calculate the new stock quantity
       const stockAdjustment = payload.quantity - existingSale.quantity;

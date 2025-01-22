@@ -18,7 +18,6 @@ export default function ContactUs() {
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Here you would typically send the form data to your backend
-    console.log("Form submitted:", { name, email, phone, message });
     // Reset form fields after submission
     setName("");
     setEmail("");

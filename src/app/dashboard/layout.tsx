@@ -35,7 +35,10 @@ export default function DashboardLayout({
     // }
     const id: number = parseInt(getCookie("id") ?? "0");
 
+    console.log("id", id);
+
     const userrespone = await GetUser({ id: id });
+    console.log("userrespone", userrespone);
     if (userrespone.status) {
       setUpser(userrespone.data!);
     }

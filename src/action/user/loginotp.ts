@@ -2,9 +2,9 @@
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { user } from "@prisma/client";
-import { cookies } from "next/headers";
+import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
+import { setCookie } from "cookies-next";
 
 interface LoginOtpPayload {
   mobile: string;
@@ -13,9 +13,15 @@ interface LoginOtpPayload {
   lastname: string;
 }
 
+interface LoginOtpResponse {
+  data: dvat04[];
+  id: number;
+  role: string;
+}
+
 const LoginOtp = async (
   payload: LoginOtpPayload
-): Promise<ApiResponseType<user | null>> => {
+): Promise<ApiResponseType<LoginOtpResponse | null>> => {
   const functionname: string = LoginOtp.name;
 
   try {
@@ -52,13 +58,34 @@ const LoginOtp = async (
       });
     }
 
-    cookies().set("id", user_result.id.toString());
-    cookies().set("role", user_result.role.toString());
+    const dvat_response = await prisma.dvat04.findMany({
+      where: {
+        status: "APPROVED",
+        createdById: usersresponse.id,
+      },
+    });
+
+    // if (dvat_response.length === 0) {
+    //   return createResponse({
+    //     message: "No TIN found for this user.",
+    //     functionname,
+    //   });
+    // }
+
+    // cookies().set("id", user_result.id.toString());
+    // cookies().set("role", user_result.role.toString());
+
+    // setCookie("id", user_result.id.toString());
+    // setCookie("role", user_result.role.toString());
 
     return createResponse({
       message: "Login Successful",
       functionname,
-      data: user_result,
+      data: {
+        data: dvat_response,
+        id: user_result.id,
+        role: user_result.role,
+      },
     });
   } catch (e) {
     return createResponse({

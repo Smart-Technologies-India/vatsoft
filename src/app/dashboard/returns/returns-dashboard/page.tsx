@@ -154,13 +154,11 @@ const ReturnDashboard = () => {
         userid: userid,
       });
 
-      console.log(lastPendingResponse);
       if (lastPendingResponse.status && lastPendingResponse.data) {
         setLastPending(lastPendingResponse.data);
         setYear(lastPendingResponse.data.due_date!.getFullYear().toString());
         currentDate = lastPendingResponse.data.due_date!;
       }
-      console.log(currentDate);
 
       const response = await GetUserDvat04({
         userid: userid,
@@ -177,20 +175,11 @@ const ReturnDashboard = () => {
         //   response.data.vatLiableDate ?? new Date()
         // ).at(-1)?.value as Quarter;
 
-        console.log(
-          getQuarterList(
-            currentDate,
-            currentDate.getFullYear().toString(),
-            response.data.vatLiableDate ?? currentDate
-          )
-        );
-
         const cusQuarter: Quarter = getQuarterList(
           currentDate,
           currentDate.getFullYear().toString(),
           response.data.vatLiableDate ?? currentDate
         ).at(-1)?.value as Quarter;
-        console.log(monthNames[currentDate.getMonth()]);
         setQuarter(
           getQuarterForMonth(monthNames[currentDate.getMonth()]) ??
             Quarter.QUARTER1

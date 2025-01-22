@@ -37,7 +37,6 @@ const CFROM = () => {
         id: cformid,
       });
 
-      console.log(cform_response);
       if (cform_response.data && cform_response.status) {
         setCformdata(cform_response.data);
         const dvat_response = await GetDvat04({

@@ -14,7 +14,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
       waitUntil: "networkidle2",
     });
 
-    console.log(`http://localhost:3000/${url}`);
 
     await page.waitForSelector("#mainpdf", {
       visible: true,
@@ -40,7 +39,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
     });
     return response;
   } catch (error) {
-    console.log(error);
     return NextResponse.json(
       { error: "Failed to generate PDF" },
       { status: 500 }

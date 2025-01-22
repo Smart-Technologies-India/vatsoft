@@ -173,8 +173,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
   //     const commmaster = await GetCommodityMaster({
   //       id: parseInt(description_of_goods),
   //     });
-  //     console.log("change");
-  //     console.log(commmaster);
+
   //     if (commmaster.status && commmaster.data) {
   //       setCommoditymaster(commmaster.data);
   //       if (commmaster.data.product_type == "LIQUOR") {
@@ -207,7 +206,6 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
   }, [quantity, amount_unit, commoditymaster]);
 
   const onSubmit = async (data: DailySaleForm) => {
-    console.log(commoditymaster);
     if (davtdata == null || davtdata == undefined)
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)

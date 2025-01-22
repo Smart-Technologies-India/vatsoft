@@ -23,7 +23,6 @@ const CommodityMaster = () => {
     decryptURLData(Array.isArray(id) ? id[0] : id, router)
   );
 
-  console.log(userid);
 
   const [pagination, setPaginatin] = useState<{
     take: number;

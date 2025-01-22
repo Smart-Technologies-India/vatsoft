@@ -13,7 +13,7 @@ import { valibotResolver } from "@hookform/resolvers/valibot";
 import UpdateRegistration from "@/action/registration/updateregistration";
 import GetDvat04 from "@/action/register/getdvat04";
 import { toast } from "react-toastify";
-import { getCookie } from "cookies-next";
+import { getCookie, setCookie } from "cookies-next";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -37,7 +37,6 @@ export const RegistrationProvider = () => {
   const router = useRouter();
   const role = getCookie("role");
   const id: number = parseInt(getCookie("id") ?? "0");
-  // console.log(props.dvatid.toString());
   // const dvatid: number = parseInt(
   //   decryptURLData(props.dvatid.toString(), router)
   // );
@@ -53,7 +52,6 @@ export const RegistrationProvider = () => {
         id: dvatid,
       });
 
-      console.log(response);
       if (response.status && response.data) {
         setRegistrationData(response.data);
       }
@@ -769,6 +767,7 @@ const VatNote = (props: VatNoteProps) => {
           tinNumber: "26000004000" + dvatdata.id,
         });
         if (resposne.status) {
+          setCookie("dvat", props.registrationdata.dvat04Id.toString());
           toast.success(resposne.message);
         } else {
           toast.error(resposne.message);
