@@ -19,7 +19,7 @@ const TinSendOtp = async (
   try {
     const dvat_response = await prisma.dvat04.findFirst({
       where: {
-        status: "APPROVED",
+        // status: "APPROVED",
         deletedAt: null,
         tinNumber: payload.tin_number,
       },
