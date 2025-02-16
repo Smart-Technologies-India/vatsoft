@@ -575,7 +575,7 @@ model dvat04 {
   turnoverCurrentFinancialYear String?
   vatLiableDate                DateTime?
   pan                          String?
-  gst                          String?                 @unique
+  gst                          String?
   buildingNumber               String?
   area                         String?
   address                      String?
@@ -583,8 +583,8 @@ model dvat04 {
   pincode                      String?
   contact_one                  String?
   contact_two                  String?
-  email                        String?                 @unique
-  faxNumber                    String?                 @unique
+  email                        String?
+  faxNumber                    String?
 
   // from 2
   noticeServingBuildingName       String?
