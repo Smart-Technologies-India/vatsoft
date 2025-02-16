@@ -323,9 +323,9 @@ model user {
   lastName              String?
   mobileOne             String        @unique
   mobileTwo             String?
-  email                 String?       @unique
+  email                 String?
   pan                   String?
-  aadhar                String?       @unique
+  aadhar                String?
   password              String?
   otp                   String?
   role                  Role          @default(USER)
