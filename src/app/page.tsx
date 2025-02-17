@@ -194,7 +194,7 @@ const Home = () => {
           </Link>
         </div>
 
-        <div className="flex bg-[#478494] mx-auto md:w-3/5  p-1">
+        {/* <div className="flex bg-[#478494] mx-auto md:w-3/5  p-1">
           <div className="relative w-8">
             <Image
               src={"/favicon.png"}
@@ -213,14 +213,14 @@ const Home = () => {
               Gujarat
             </p>
           </div>
-        </div>
+        </div> */}
 
         <div className="relative w-full h-[12rem] mx-auto md:w-3/5 py-4 px-6 md:px-0">
           <Image
             src={"/banner.png"}
             alt="error"
             fill={true}
-            className="object-cover object-center"
+            className="object-contain object-center bg-[#0a5b6f]"
           />
         </div>
 
@@ -254,6 +254,9 @@ const Home = () => {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 ></iframe>
+                <h2 className="text-white text-sm">
+                  How to Register on VAT-SMART
+                </h2>
                 <p className="mt-1 cursor-pointer text-xs text-white">
                   Learn how to register on the VAT-SMART portal in this
                   step-by-step tutorial.
@@ -267,6 +270,9 @@ const Home = () => {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 ></iframe>
+                <h2 className="text-white text-sm">
+                  How to Add Local Purchases on the VAT-SMART Portal
+                </h2>
                 <p className="mt-1 cursor-pointer text-xs text-white">
                   This tutorial explains how to accurately add local purchase
                   details on the VAT-SMART portal.
@@ -280,6 +286,9 @@ const Home = () => {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 ></iframe>
+                <h2 className="text-white text-sm">
+                  How to Convert Sales to Returns on the VAT-SMART Portal
+                </h2>
                 <p className="mt-1 cursor-pointer text-xs text-white">
                   Discover how to use the VAT-SMART portal to convert sales data
                   into VAT returns by auto-filling the DVAT 31 and DVAT 31A
@@ -324,7 +333,34 @@ const Home = () => {
             What&apos;s New
           </h1>
           <div className="p-4 h-60 overflow-y-scroll">
-            {newsdata.map((val: news, index: number) => (
+            <p className="text-sm">
+              1. Simplified Stock Management – Easily track and manage your
+              inventory with our new stock management tool, helping you stay
+              tax-compliant.
+            </p>
+            <p className="text-sm mt-2">
+              2. Sales & Purchase Auto-Conversion to Returns – No need for
+              manual entry! Your sales and purchase data now auto-populate your
+              VAT returns.
+            </p>
+            <p className="text-sm mt-2">
+              3. Smart Notification System – Get timely reminders for return
+              filings, payments, and pending compliance tasks (30, 15, and 5
+              days before the deadline).
+            </p>
+            <p className="text-sm mt-2">
+              4. Upgraded Dealer Dashboard – View all your tax-related
+              information, pending payments, and compliance status in one place.
+            </p>
+            <p className="text-sm mt-2">
+              5. Purchase Stock Verification & Approval – Dealers can now verify
+              and approve received stock from Local Dealers/OIDC before it
+              reflects in their inventory, eliminating repeated follow-ups
+              and billing errors.
+            </p>
+          </div>
+          {/*<div className="p-4 h-60 overflow-y-scroll">
+           {newsdata.map((val: news, index: number) => (
               <NewsCard
                 key={index}
                 title={val.title}
@@ -333,8 +369,8 @@ const Home = () => {
                 date={formateDate(val.postdate)}
                 link="https://ddvat.gov.in/docs/Notification/2024/Natural%20GAS%20Revised%20Rate%20of%20Tax%20-%20DNH%20DD.pdf"
               />
-            ))}
-          </div>
+            ))} 
+          </div>*/}
         </div>
       </div>
 
@@ -387,9 +423,9 @@ const Home = () => {
       </section>
 
       <footer className="mx-auto md:w-3/5 py-4 px-6 md:px-0 text-center md:flex gap-2 items-center bg-[#05313c] justify-evenly">
-        <h1 className=" text-gray-300 text-sm">&copy; VAT-DNH</h1>
+        <h1 className=" text-gray-300 text-sm">&copy; VAT-DD-DNH</h1>
         <h1 className=" text-gray-300 text-sm">
-          Site Last Updated on 28-06-2024
+          Site Last Updated on 24-01-2025
         </h1>
         <h1 className="text-gray-300 text-sm">
           Designed & Developed by Smart Technologies
