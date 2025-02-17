@@ -611,7 +611,7 @@ const LoginComponent = () => {
     }
 
     if (tinNumber.length !== 11) {
-      toast.error("TIN number should be 12 digits long");
+      toast.error("TIN number should be 11 digits long");
       return;
     }
 

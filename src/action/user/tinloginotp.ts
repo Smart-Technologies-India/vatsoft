@@ -19,7 +19,14 @@ const TinLoginOtp = async (
   try {
     const usersresponse = await prisma.dvat04.findFirst({
       where: {
-        // status: "APPROVED",
+        OR: [
+          {
+            status: "APPROVED",
+          },
+          {
+            status: "VERIFICATION",
+          },
+        ],
         deletedAt: null,
         tinNumber: payload.tin_number,
       },

@@ -45,6 +45,7 @@ const TrackAppliation = () => {
         userid: id,
       });
 
+
       if (response.data && response.status) {
         setData(response.data);
       }
@@ -60,6 +61,7 @@ const TrackAppliation = () => {
       const dvat = await GetUserDvat04({
         userid: id,
       });
+
       if (dvat.status && dvat.data) {
         const composition_response = await GetUserComposition({
           dvatid: dvat.data.id,

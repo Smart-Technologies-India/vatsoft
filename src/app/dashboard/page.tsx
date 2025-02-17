@@ -19,6 +19,12 @@ import {
 } from "@/components/icons";
 import { Separator } from "@/components/ui/separator";
 
+// show all
+// vatofficer
+// commissioner
+// joint_commissioner
+// dy_commissioner
+
 import { Chart as ChartJS, registerables } from "chart.js";
 import { Bar } from "react-chartjs-2";
 
@@ -58,6 +64,19 @@ const Page = () => {
       setLoading(true);
       const userresponse = await GetUser({ id: id });
       if (userresponse.status) setUser(userresponse.data!);
+
+      if (
+        ![
+          "SYSTEM",
+          "ADMIN",
+          "VATOFFICER",
+          "COMMISSIONER",
+          "DY_COMMISSIONER",
+          "JOINT_COMMISSIONER",
+        ].includes(userresponse.data?.role!)
+      ) {
+        router.push("/dashboard/register");
+      }
 
       const dashboard = await DashboardMonth({
         userid: id,
@@ -348,8 +367,8 @@ const OfficerDashboardPage = () => {
     totaldealer: number;
     fueldealer: number;
     liquoredealer: number;
-    manufacturer:number;
-    oidcdealer:number;
+    manufacturer: number;
+    oidcdealer: number;
     reg: number;
     comp: number;
     last_month_received: number;

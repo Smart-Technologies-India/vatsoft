@@ -54,7 +54,7 @@ const Dvat1Schema = object({
     minLength(1, "PAN is required."),
     check(validatePanCard, "Enter valid pan card number")
   ),
-  gst: pipe(string("GST is required."), minLength(1, "GST is required.")),
+  gst: pipe(string("GST is required. NA if not available."), minLength(1, "GST is required. NA if not available.")),
   buildingNumber: pipe(
     string("Building Number is required."),
     minLength(1, "Building Number is required.")

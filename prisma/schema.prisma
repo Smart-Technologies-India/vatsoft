@@ -94,6 +94,7 @@ enum DvatStatus {
   APPROVED
   WITHDRAWN
   CANCELLED
+  VERIFICATION
 }
 
 enum SelectOffice {

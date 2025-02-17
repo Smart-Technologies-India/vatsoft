@@ -7,7 +7,9 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
+import { cookies } from "next/headers";
 import { getCookie } from "cookies-next";
+// import { getCookie } from "cookies-next";
 
 const GetUserDvat04 = async (
   payload: GetUserDvat04Payload
@@ -15,7 +17,8 @@ const GetUserDvat04 = async (
   const functionname: string = GetUserDvat04.name;
 
   try {
-    const dvatid = getCookie("dvat");
+    // const dvatid = getCookie("dvat");
+    const dvatid = cookies().get("dvat")?.value;
     if (!dvatid) {
       return createResponse({
         message: "Invalid id. Please try again.",
@@ -31,7 +34,6 @@ const GetUserDvat04 = async (
         status: "APPROVED",
       },
     });
-
     if (!dvat04response)
       return createResponse({
         message: "Invalid id. Please try again.",

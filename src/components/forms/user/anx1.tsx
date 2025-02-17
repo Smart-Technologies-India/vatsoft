@@ -437,6 +437,8 @@ const Anx1 = (props: Anx1ProviderProps) => {
         </div>
 
         <div className="flex gap-2">
+          <div className="grow"></div>
+
           {anx1id == 0 || anx1id == undefined || anx1id == null ? (
             <button
               type="submit"
@@ -458,8 +460,6 @@ const Anx1 = (props: Anx1ProviderProps) => {
               </Button>
             </>
           )}
-
-          <div className="grow"></div>
           <input
             type="reset"
             onClick={() => {
@@ -468,48 +468,6 @@ const Anx1 = (props: Anx1ProviderProps) => {
             value={"Reset"}
             className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
           />
-
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              router.push(`/dashboard/new-registration/${props.dvatid}/dvat3`);
-            }}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
-          >
-            Previous
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-
-              const numofown: number = dvatData?.numberOfOwners ?? 0;
-
-              if (numofown < Annexuredata.length) {
-                return toast.error(
-                  `Number of Person having interest in business in ${
-                    dvatData?.numberOfOwners ?? 0
-                  } kindly fill annexure I for each members.`
-                );
-              }
-
-              if (Annexuredata.length === 0)
-                return toast.error("Please add Annexure I");
-              if (
-                dvatData?.additionalGodown == "0" &&
-                dvatData?.additionalFactory == "0" &&
-                dvatData?.additionalShops == "0" &&
-                dvatData?.otherPlaceOfBusiness == "0"
-              ) {
-                router.push(`/dashboard/new-registration/${props.dvatid}/anx3`);
-              } else {
-                router.push(`/dashboard/new-registration/${props.dvatid}/anx2`);
-              }
-            }}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
-          >
-            Next
-          </button>
         </div>
       </form>
 
@@ -590,6 +548,52 @@ const Anx1 = (props: Anx1ProviderProps) => {
           </Table>
         </div>
       )}
+
+      <div className="flex gap-2">
+        <div className="grow"></div>
+
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            router.push(`/dashboard/new-registration/${props.dvatid}/dvat3`);
+          }}
+          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
+        >
+          Previous
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+
+            const numofown: number = dvatData?.numberOfOwners ?? 0;
+
+            if (numofown < Annexuredata.length) {
+              return toast.error(
+                `Number of Person having interest in business in ${
+                  dvatData?.numberOfOwners ?? 0
+                } kindly fill annexure I for each members.`
+              );
+            }
+
+            if (Annexuredata.length === 0)
+              return toast.error("Please add Annexure I");
+            if (
+              dvatData?.additionalGodown == "0" &&
+              dvatData?.additionalFactory == "0" &&
+              dvatData?.additionalShops == "0" &&
+              dvatData?.otherPlaceOfBusiness == "0"
+            ) {
+              router.push(`/dashboard/new-registration/${props.dvatid}/anx3`);
+            } else {
+              router.push(`/dashboard/new-registration/${props.dvatid}/anx2`);
+            }
+          }}
+          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
+        >
+          Next
+        </button>
+      </div>
     </>
   );
 };

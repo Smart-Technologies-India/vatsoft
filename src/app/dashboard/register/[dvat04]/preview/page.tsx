@@ -25,6 +25,7 @@ import {
   Dvat3Page,
   UserRegister,
 } from "@/components/preview/returnpreview";
+import UpdateToPendingProcess from "@/action/register/udpatetopendingprocess";
 
 const nanoid = customAlphabet("1234567890", 12);
 
@@ -143,14 +144,39 @@ const PreviewPage = () => {
                 >
                   Close
                 </Button>
-                <Button
-                  onClick={async () => {
-                    router.push("/dashboard");
-                  }}
-                  type="primary"
-                >
-                  Submit
-                </Button>
+
+                {dvat04Data?.status == "VERIFICATION" ? (
+                  <Button
+                    onClick={async () => {
+                      //  update status to pending process
+
+                      const response = await UpdateToPendingProcess({
+                        tempregno: tempregno,
+                        id: dvat04Data?.id ?? 0,
+                        userid: current_user_id,
+                      });
+                      if (!response.status && !response.data)
+                        return toast.error(response.message);
+                      router.push("/dashboard");
+                    }}
+                    type="primary"
+                  >
+                    Submit
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={async () => {
+                      toast.success(
+                        `Your DVAT04 has been submitted successfully with ARN number (${dvat04Data?.tempregistrationnumber}). You will get an update soon.`
+                      );
+
+                      router.push("/dashboard");
+                    }}
+                    type="primary"
+                  >
+                    Submit
+                  </Button>
+                )}
               </>
             )}
           </div>

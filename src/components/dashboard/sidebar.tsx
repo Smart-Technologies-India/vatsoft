@@ -63,13 +63,24 @@ const Sidebar = (props: SidebarProps) => {
       <p className="text-xl font-semibold text-white text-center">VATSMART</p>
       <div className="h-4"></div>
 
-      <MenuTab
-        click={() => props.setIsOpen(false)}
-        icon={<FluentMdl2ViewDashboard className="text-gray-300 w-6" />}
-        name="Dashboard"
-        path={path}
-        pathcheck={"/dashboard"}
-      />
+      {[
+        "SYSTEM",
+        "ADMIN",
+        "VATOFFICER",
+        "COMMISSIONER",
+        "DY_COMMISSIONER",
+        "JOINT_COMMISSIONER",
+        "USER",
+      ].includes(props.role) && (
+        <MenuTab
+          click={() => props.setIsOpen(false)}
+          icon={<FluentMdl2ViewDashboard className="text-gray-300 w-6" />}
+          name="Dashboard"
+          path={path}
+          pathcheck={"/dashboard"}
+        />
+      )}
+
       <MenuTab
         click={() => props.setIsOpen(false)}
         icon={

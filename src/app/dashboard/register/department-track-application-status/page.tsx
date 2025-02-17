@@ -273,8 +273,8 @@ const TrackAppliation = () => {
         });
         if (response.data && response.status) {
           setDvatData(response.data);
-          response.data.forEach((val, index) => {
-            data.push({
+          const sortedData = response.data
+            .map((val) => ({
               id: val.id,
               arn: val.tempregistrationnumber ?? "",
               type: DataType.DVAT04,
@@ -282,8 +282,27 @@ const TrackAppliation = () => {
               submissionDate: formateDate(new Date(val.createdAt)),
               status: val.status,
               assignedTo: `${val.registration[0].dept_user.firstName} - ${val.registration[0].dept_user.lastName}`,
-            });
-          });
+            }))
+            .sort((a, b) =>
+              a.status === "PENDINGPROCESSING"
+                ? -1
+                : b.status === "PENDINGPROCESSING"
+                ? 1
+                : 0
+            );
+
+          data.push(...sortedData);
+          // response.data.forEach((val, index) => {
+          //   data.push({
+          //     id: val.id,
+          //     arn: val.tempregistrationnumber ?? "",
+          //     type: DataType.DVAT04,
+          //     description: "Application For new Registration",
+          //     submissionDate: formateDate(new Date(val.createdAt)),
+          //     status: val.status,
+          //     assignedTo: `${val.registration[0].dept_user.firstName} - ${val.registration[0].dept_user.lastName}`,
+          //   });
+          // });
         }
       }
 

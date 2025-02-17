@@ -311,6 +311,8 @@ const Anx1 = (props: Anx2ProviderProps) => {
         </div>
 
         <div className="flex gap-2">
+          <div className="grow"></div>
+
           {anx1id == 0 || anx1id == undefined || anx1id == null ? (
             <button
               type="submit"
@@ -333,7 +335,6 @@ const Anx1 = (props: Anx2ProviderProps) => {
             </>
           )}
 
-          <div className="grow"></div>
           <input
             type="reset"
             onClick={() => {
@@ -342,28 +343,6 @@ const Anx1 = (props: Anx2ProviderProps) => {
             value={"Reset"}
             className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
           />
-
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              router.push(`/dashboard/new-registration/${props.dvatid}/anx1`);
-            }}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
-          >
-            Previous
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              if (Annexuredata.length === 0)
-                return toast.error("Please add Annexure I");
-              router.push(`/dashboard/new-registration/${props.dvatid}/anx3`);
-            }}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
-          >
-            Next
-          </button>
         </div>
       </form>
 
@@ -442,6 +421,31 @@ const Anx1 = (props: Anx2ProviderProps) => {
           </Table>
         </div>
       )}
+      <div className="flex gap-2">
+        <div className="grow"></div>
+
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            router.push(`/dashboard/new-registration/${props.dvatid}/anx1`);
+          }}
+          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
+        >
+          Previous
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            if (Annexuredata.length === 0)
+              return toast.error("Please add Annexure I");
+            router.push(`/dashboard/new-registration/${props.dvatid}/anx3`);
+          }}
+          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
+        >
+          Next
+        </button>
+      </div>
     </>
   );
 };
