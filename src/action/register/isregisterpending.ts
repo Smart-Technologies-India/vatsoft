@@ -30,6 +30,9 @@ const IsRegisterPedning = async (
           {
             status: "PENDINGPROCESSING",
           },
+          {
+            status: "VERIFICATION",
+          },
         ],
       },
     });
