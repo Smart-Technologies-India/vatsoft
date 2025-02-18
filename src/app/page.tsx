@@ -1,6 +1,14 @@
 "use client";
 
-import { Button, Collapse, Drawer, Modal, Radio, RadioChangeEvent } from "antd";
+import {
+  Button,
+  Collapse,
+  Drawer,
+  Input,
+  Modal,
+  Radio,
+  RadioChangeEvent,
+} from "antd";
 import Marquee from "react-fast-marquee";
 import {
   Dispatch,
@@ -16,7 +24,7 @@ import { formateDate } from "@/utils/methods";
 import { toast } from "react-toastify";
 import LoginOtp from "@/action/user/loginotp";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+// import { Input } from "@/components/ui/input";
 import { dvat04, news, user } from "@prisma/client";
 import SendOtp from "@/action/user/sendotp";
 import { useRouter } from "next/navigation";
@@ -41,6 +49,8 @@ import {
 import TinSendOtp from "@/action/user/tinsendotp";
 import TinLoginOtp from "@/action/user/tinloginotp";
 import { setCookie } from "cookies-next";
+import { FluentEye12Regular, FluentEyeOff16Regular } from "@/components/icons";
+import PasswordLogin from "@/action/user/passwordlogin";
 
 const Home = () => {
   const faqs = [
@@ -152,7 +162,8 @@ const Home = () => {
             LOGIN
           </Button>
           <Drawer closeIcon={null} onClose={onClose} open={open}>
-            <LoginComponent />
+            {/* <LoginComponent /> */}
+            <PasswordLoginComponent />
           </Drawer>
         </header>
         <div className="mx-auto md:hidden bg-[#05313c] flex justify-center md:w-3/5 py-4 px-6 md:px-0">
@@ -464,6 +475,118 @@ const NewsCard = (props: NewsCardProps) => {
   );
 };
 
+const PasswordLoginComponent = () => {
+  const router = useRouter();
+
+  const [tin, setTin] = useState<string | undefined>(undefined);
+  const [password, setPassword] = useState<string | undefined>(undefined);
+  const [isPassword, setIsPassword] = useState<boolean>(false);
+  const [isLogin, setIsLogin] = useState<boolean>(false);
+
+  const submit = async () => {
+    if (tin == null || tin == undefined || tin == "") {
+      toast.error("Enter valid TIN number");
+      return;
+    }
+
+    if (password == null || password == undefined || password == "") {
+      toast.error("Enter password");
+      return;
+    }
+
+    const response = await PasswordLogin({
+      tin_number: tin,
+      password: password,
+    });
+
+    if (!response.status) {
+      toast.error(response.message);
+      return;
+    }
+
+    if (!response.status) {
+      toast.error(response.message);
+      setTimeout(() => {
+        setIsLogin(false);
+      }, 5000);
+      return;
+    }
+
+    toast.success(response.message);
+    router.push("/dashboard");
+    setTimeout(() => {
+      setIsLogin(false);
+    }, 5000);
+    return;
+  };
+
+  const handleNumberChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setData: Dispatch<SetStateAction<string | undefined>>
+  ) => {
+    const onlyNumbersRegex = /^[0-9]*$/;
+    const { value } = event.target;
+
+    if (onlyNumbersRegex.test(value)) {
+      // Parse value and handle empty case
+      // const adddata = value === "" ? undefined : parseInt(value, 10);
+      setData(value);
+    }
+  };
+
+  return (
+    <div className="flex-1 grid place-items-center bg-white rounded-r-md">
+      <div>
+        <h1 className="text-lg font-semibold mt-6 text-center">
+          Welcome to VAT-SMART
+        </h1>
+        <h1 className="text-sm font-normal pb-2 text-center">
+          Login to access your Account
+        </h1>
+
+        <Label htmlFor="tin" className="text-xs">
+          TIN Number
+        </Label>
+        <Input
+          id="tin"
+          type="text"
+          maxLength={12}
+          value={tin === undefined ? "" : tin.toString()} // Controlled input
+          onChange={(e) => handleNumberChange(e, setTin)}
+        />
+        <Label htmlFor="password" className="text-xs">
+          Password
+        </Label>
+
+        <Input.Password
+          id="password"
+          type="password"
+          iconRender={(visible) =>
+            visible ? <FluentEye12Regular /> : <FluentEyeOff16Regular />
+          }
+          value={password === undefined ? "" : password.toString()}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        {isLogin ? (
+          <Button type="primary" className="mt-2" disabled>
+            Loading...
+          </Button>
+        ) : (
+          <Button
+            onClick={submit}
+            type="primary"
+            className="mt-2 w-full"
+            disabled={isLogin}
+          >
+            Submit
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const LoginComponent = () => {
   enum TimerStatus {
     COMPLETED,
@@ -767,12 +890,12 @@ const LoginComponent = () => {
                           <Label htmlFor="firstname" className="text-xs">
                             First Name
                           </Label>
-                          <Input id="firstname" type="text" ref={firstname} />
+                          {/* <Input id="firstname" type="text" ref={firstname} /> */}
 
                           <Label htmlFor="lastname" className="text-xs">
                             Last Name
                           </Label>
-                          <Input id="lastname" type="text" ref={lastname} />
+                          {/* <Input id="lastname" type="text" ref={lastname} /> */}
                         </>
                       ) : (
                         <>
