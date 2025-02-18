@@ -11,11 +11,11 @@ export default function LoginPage() {
   const [value, setValue] = useState<string | undefined>(undefined);
 
   const generate = async () => {
-    if (password === undefined) {
-      toast.error("Please enter a valid password");
-      return;
-    }
-    const newpass = await GeneratePassword({ password: password });
+    // if (password === undefined) {
+    //   toast.error("Please enter a valid password");
+    //   return;
+    // }
+    const newpass = await GeneratePassword({});
     if (!newpass.status) {
       toast.error(newpass.message);
       return;
@@ -27,7 +27,7 @@ export default function LoginPage() {
     <div className="bg-gray-200 grid place-items-center h-screen w-full">
       <div className="bg-white rounded p-6 shadow-md">
         <h1 className="text-xl text-center">Generate Password</h1>
-        <Input
+        {/* <Input
           id="tin"
           type="text"
           maxLength={12}
@@ -44,7 +44,11 @@ export default function LoginPage() {
             Generated Password: <br />
             {value}
           </p>
-        )}
+        )} */}
+
+        <Button onClick={generate} type="primary" className="mt-2 w-full">
+          Set Password
+        </Button>
       </div>
     </div>
   );

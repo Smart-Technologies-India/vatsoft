@@ -328,6 +328,7 @@ model user {
   pan                   String?
   aadhar                String?
   password              String?
+  temppass              String?
   otp                   String?
   role                  Role          @default(USER)
   designation           String?
