@@ -27,6 +27,9 @@ const PasswordLogin = async (
           {
             status: "VERIFICATION",
           },
+          {
+            status: "PENDINGPROCESSING",
+          },
         ],
         deletedAt: null,
         tinNumber: payload.tin_number,
@@ -39,6 +42,14 @@ const PasswordLogin = async (
     if (!usersresponse) {
       return createResponse({
         message: "Wrong Credentials. Please try again.",
+        functionname,
+      });
+    }
+
+    if (usersresponse.status === "PENDINGPROCESSING") {
+      return createResponse({
+        message:
+          "Your DVAT is submitted for processing. Kindly wait for approval.",
         functionname,
       });
     }
