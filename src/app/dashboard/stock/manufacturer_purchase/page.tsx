@@ -1,7 +1,6 @@
 "use client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import DeleteManufacture from "@/action/stock/deletemanufacture";
-import DeletePurchase from "@/action/stock/deletepurchase";
 import GetManufacturerPurchase from "@/action/stock/getmanufacturerpurchase";
 import {
   Table,
@@ -17,7 +16,7 @@ import {
   dvat04,
   manufacturer_purchase,
 } from "@prisma/client";
-import { Modal, Pagination, Popover } from "antd";
+import { Modal, Pagination, Popover, Radio, RadioChangeEvent } from "antd";
 import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -161,6 +160,23 @@ const ManufacturerStockData = () => {
     setDeleteBox(false);
   };
 
+  const [quantityCount, setQuantityCount] = useState("pcs");
+
+  const onChange = ({ target: { value } }: RadioChangeEvent) => {
+    setQuantityCount(value);
+  };
+
+  // 1 crate 2 pcs
+  const showCrates = (quantity: number, crate_size: number): string => {
+    // return "";
+
+    const crates = Math.floor(quantity / crate_size);
+    const pcs = quantity % crate_size;
+    if (crates == 0) return `${pcs} Pcs`;
+    if (pcs == 0) return `${crates} Crate`;
+    return `${crates} Crate ${pcs} Pcs`;
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -177,6 +193,24 @@ const ManufacturerStockData = () => {
               Manufacturer Purchase
             </p>
             <div className="grow"></div>
+            <div className="flex gap-2 items-center">
+              {/* <div className="p-1 rounded grow text-center bg-gray-100">
+          {commoditymaster.crate_size} Pcs/Crate
+        </div> */}
+              <Radio.Group
+                size="small"
+                onChange={onChange}
+                value={quantityCount}
+                optionType="button"
+              >
+                <Radio.Button className="w-20 text-center" value="pcs">
+                  Pcs
+                </Radio.Button>
+                <Radio.Button className="w-20 text-center" value="crate">
+                  Crate
+                </Radio.Button>
+              </Radio.Group>
+            </div>
           </div>
 
           {manufacturerPurchase.length > 0 ? (
@@ -188,7 +222,8 @@ const ManufacturerStockData = () => {
                       Product Name
                     </TableHead>
                     <TableHead className="w-20 border text-center">
-                      Quantity
+                      {/* Quantity */}
+                      {quantityCount == "pcs" ? "Qty" : "Crate"}
                     </TableHead>
                     <TableHead className="border text-center">
                       Invoice value (&#x20b9;)
@@ -217,9 +252,14 @@ const ManufacturerStockData = () => {
                           {val.commodity_master.product_name}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
-                          {val.quantity}
+                          {/* {val.quantity} */}
+                          {quantityCount == "pcs"
+                            ? val.quantity
+                            : showCrates(
+                                val.quantity,
+                                val.commodity_master.crate_size
+                              )}
                         </TableCell>
-
                         <TableCell className="p-2 border text-center">
                           {val.amount}
                         </TableCell>

@@ -193,20 +193,26 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     if (tindata == null || tindata == undefined)
       return toast.error("Seller VAT Number not found.");
 
+    // const quantityamount =
+    //   davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+    //     ? quantityCount == "crate"
+    //       ? parseInt(data.quantity) * commoditymaster.crate_size
+    //       : parseInt(data.quantity)
+    //     : parseInt(data.quantity);
     const quantityamount =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
-        ? quantityCount == "crate"
-          ? parseInt(data.quantity) * commoditymaster.crate_size
-          : parseInt(data.quantity)
+      quantityCount == "crate"
+        ? parseInt(data.quantity) * commoditymaster.crate_size
         : parseInt(data.quantity);
-
+    // const amount_unit: string =
+    //   davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+    //     ? quantityCount == "crate"
+    //       ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
+    //       : data.amount_unit
+    //     : data.amount_unit;
     const amount_unit: string =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
-        ? quantityCount == "crate"
-          ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
-          : data.amount_unit
+      quantityCount == "crate"
+        ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
         : data.amount_unit;
-
     const stock_response = await CreateDailyPurchase({
       amount_unit: amount_unit,
       invoice_date: new Date(data.invoice_date),
@@ -238,18 +244,25 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
       return toast.error("Seller VAT Number not found.");
+    // const quantityamount =
+    //   davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+    //     ? quantityCount == "crate"
+    //       ? parseInt(data.quantity) * commoditymaster.crate_size
+    //       : parseInt(data.quantity)
+    //     : parseInt(data.quantity);
     const quantityamount =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
-        ? quantityCount == "crate"
-          ? parseInt(data.quantity) * commoditymaster.crate_size
-          : parseInt(data.quantity)
+      quantityCount == "crate"
+        ? parseInt(data.quantity) * commoditymaster.crate_size
         : parseInt(data.quantity);
-
+    // const amount_unit: string =
+    //   davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+    //     ? quantityCount == "crate"
+    //       ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
+    //       : data.amount_unit
+    //     : data.amount_unit;
     const amount_unit: string =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
-        ? quantityCount == "crate"
-          ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
-          : data.amount_unit
+      quantityCount == "crate"
+        ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
         : data.amount_unit;
     const stock_response = await CreateDailyPurchase({
       amount_unit: amount_unit,
@@ -383,8 +396,9 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             maxdate={dayjs()}
           />
         </div>
-        {(davtdata?.commodity == "OIDC" ||
-          davtdata?.commodity == "MANUFACTURER") &&
+        {
+          // (davtdata?.commodity == "OIDC" ||
+          //   davtdata?.commodity == "MANUFACTURER") &&
           commoditymaster != null && (
             <div className="flex mt-2 gap-2 items-center">
               <div className="p-1 rounded grow text-center bg-gray-100">
@@ -404,7 +418,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
                 </Radio.Button>
               </Radio.Group>
             </div>
-          )}
+          )
+        }
 
         <div className="mt-2">
           <div className="mt-2">
@@ -435,8 +450,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         <div className="mt-2">
           <TaxtInput<DailyPurchaseMasterForm>
             placeholder={
-              (davtdata?.commodity == "OIDC" ||
-                davtdata?.commodity == "MANUFACTURER") &&
+              // (davtdata?.commodity == "OIDC" ||
+              //   davtdata?.commodity == "MANUFACTURER") &&
               quantityCount == "crate"
                 ? "Enter Crate amount"
                 : "Enter Unit amount"
@@ -444,8 +459,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             name="amount_unit"
             required={true}
             title={
-              (davtdata?.commodity == "OIDC" ||
-                davtdata?.commodity == "MANUFACTURER") &&
+              // (davtdata?.commodity == "OIDC" ||
+              //   davtdata?.commodity == "MANUFACTURER") &&
               quantityCount == "crate"
                 ? "Enter Crate amount"
                 : "Enter Unit amount"

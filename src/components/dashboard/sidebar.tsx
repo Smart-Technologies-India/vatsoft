@@ -163,14 +163,14 @@ const Sidebar = (props: SidebarProps) => {
           />
         </>
       )}
-
+{/* 
       <MenuTab
         click={() => props.setIsOpen(false)}
         icon={<FluentPersonSupport20Regular className="text-gray-300  w-6" />}
         name="Tax Payers Facility"
         path={path}
         pathcheck={"/dashboard/help_tax"}
-      />
+      /> */}
 
       {isProfileCompletd && ["USER"].includes(props.role) && (
         <>

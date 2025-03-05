@@ -484,6 +484,8 @@ const PasswordLoginComponent = () => {
   const [isLogin, setIsLogin] = useState<boolean>(false);
 
   const submit = async () => {
+    setIsLogin(true);
+
     if (tin == null || tin == undefined || tin == "") {
       toast.error("Enter valid TIN number");
       return;
@@ -508,7 +510,7 @@ const PasswordLoginComponent = () => {
       toast.error(response.message);
       setTimeout(() => {
         setIsLogin(false);
-      }, 5000);
+      }, 10000);
       return;
     }
 
@@ -516,7 +518,7 @@ const PasswordLoginComponent = () => {
     router.push("/dashboard");
     setTimeout(() => {
       setIsLogin(false);
-    }, 5000);
+    }, 10000);
     return;
   };
 
@@ -569,7 +571,7 @@ const PasswordLoginComponent = () => {
         />
 
         {isLogin ? (
-          <Button type="primary" className="mt-2" disabled>
+          <Button type="primary" className="mt-2 w-full" disabled>
             Loading...
           </Button>
         ) : (

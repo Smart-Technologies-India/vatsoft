@@ -19,7 +19,15 @@ import {
   dvat04,
   tin_number_master,
 } from "@prisma/client";
-import { Button, Drawer, Modal, Pagination, Popover } from "antd";
+import {
+  Button,
+  Drawer,
+  Modal,
+  Pagination,
+  Popover,
+  Radio,
+  RadioChangeEvent,
+} from "antd";
 import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -180,6 +188,23 @@ const DocumentWiseDetails = () => {
     setDeleteBox(false);
   };
 
+  const [quantityCount, setQuantityCount] = useState("pcs");
+
+  const onChange = ({ target: { value } }: RadioChangeEvent) => {
+    setQuantityCount(value);
+  };
+
+  // 1 crate 2 pcs
+  const showCrates = (quantity: number, crate_size: number): string => {
+    // return "";
+
+    const crates = Math.floor(quantity / crate_size);
+    const pcs = quantity % crate_size;
+    if (crates == 0) return `${pcs} Pcs`;
+    if (pcs == 0) return `${crates} Crate`;
+    return `${crates} Crate ${pcs} Pcs`;
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -215,6 +240,24 @@ const DocumentWiseDetails = () => {
           <div className="flex gap-2">
             <p className="text-lg font-semibold items-center">Daily Sale</p>
             <div className="grow"></div>
+            <div className="flex gap-2 items-center">
+              {/* <div className="p-1 rounded grow text-center bg-gray-100">
+          {commoditymaster.crate_size} Pcs/Crate
+        </div> */}
+              <Radio.Group
+                size="small"
+                onChange={onChange}
+                value={quantityCount}
+                optionType="button"
+              >
+                <Radio.Button className="w-20 text-center" value="pcs">
+                  Pcs
+                </Radio.Button>
+                <Radio.Button className="w-20 text-center" value="crate">
+                  Crate
+                </Radio.Button>
+              </Radio.Group>
+            </div>
             <Button
               size="small"
               type="primary"
@@ -252,7 +295,7 @@ const DocumentWiseDetails = () => {
                       Product Name
                     </TableHead>
                     <TableHead className="w-20 border text-center">
-                      Quantity
+                      {quantityCount == "pcs" ? "Qty" : "Crate"}
                     </TableHead>
                     <TableHead className="border text-center">
                       Invoice no.
@@ -294,7 +337,13 @@ const DocumentWiseDetails = () => {
                           {val.commodity_master.product_name}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
-                          {val.quantity}
+                          {/* {val.quantity} */}
+                          {quantityCount == "pcs"
+                            ? val.quantity
+                            : showCrates(
+                                val.quantity,
+                                val.commodity_master.crate_size
+                              )}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.invoice_number}
@@ -319,7 +368,7 @@ const DocumentWiseDetails = () => {
                               <Popover
                                 content={
                                   <div className="flex flex-col gap-2">
-                                    <button
+                                    {/* <button
                                       onClick={() => {
                                         setDeleteBox(true);
                                         handelClose(index);
@@ -327,7 +376,7 @@ const DocumentWiseDetails = () => {
                                       className="text-sm bg-white border hover:border-rose-500 hover:text-rose-500 text-[#172e57] py-1 px-4"
                                     >
                                       Delete
-                                    </button>
+                                    </button> */}
                                     <button
                                       onClick={() => {
                                         route.push(

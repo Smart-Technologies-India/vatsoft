@@ -26,6 +26,24 @@ const DeletePurchase = async (
         throw new Error("Unable to find purchase Entry.");
       }
 
+      const find_stock = await prisma.stock.findFirst({
+        where: {
+          commodity_masterId: is_exist.commodity_masterId,
+          status: "ACTIVE",
+          dvat04Id: is_exist.dvat04Id,
+        },
+      });
+
+      if (!find_stock) {
+        throw new Error("Unable to find stock Entry.");
+      }
+
+      if (find_stock.quantity < is_exist.quantity) {
+        throw new Error(
+          "Unable to delete purchase Entry. Stock quantity is less than purchase quantity."
+        );
+      }
+
       const { id, createdById, ...filteredData } = is_exist;
 
       const create_response = await prisma.edit_purchase.create({

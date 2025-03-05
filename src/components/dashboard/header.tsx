@@ -45,6 +45,7 @@ interface NavbarProps {
 }
 
 const Navbar = (props: NavbarProps) => {
+
   const router = useRouter();
   const path = usePathname();
 

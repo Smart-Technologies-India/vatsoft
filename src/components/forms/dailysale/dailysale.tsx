@@ -111,7 +111,8 @@ const DailySale = (props: DailySaleProviderProps) => {
   const [taxableValue, setTaxableValue] = useState<string>("0");
 
   const [isLiquore, setLiquore] = useState<boolean>(false);
-  const [liquoreAmount, setLiquoreAmount] = useState<number>(0);
+  const [liquoreOIDCAmount, setLiquoreOIDCAmount] = useState<number>(0);
+  const [liquoreDealerAmount, setLiquoreDealerAmount] = useState<number>(0);
 
   const recipient_vat_no: string = watch("recipient_vat_no") ?? "";
   useEffect(() => {
@@ -159,7 +160,8 @@ const DailySale = (props: DailySaleProviderProps) => {
         setCommoditymaster(commmaster.data);
         if (commmaster.data.product_type == "LIQUOR") {
           setLiquore(true);
-          setLiquoreAmount(parseInt(commmaster.data.sale_price));
+          setLiquoreDealerAmount(parseInt(commmaster.data.sale_price));
+          setLiquoreOIDCAmount(parseInt(commmaster.data.oidc_price));
           // setValue("amount_unit", commmaster.data.sale_price);
         }
       }
@@ -194,8 +196,42 @@ const DailySale = (props: DailySaleProviderProps) => {
     if (tindata == null || tindata == undefined)
       return toast.error("Seller VAT Number not found.");
 
-    if (isLiquore && parseInt(data.amount_unit) < liquoreAmount) {
-      return toast.error("Sale amount can not be less than MRP.");
+    if (quantityCount == "pcs") {
+      // pcs
+
+      if (
+        davtdata?.commodity == "OIDC" ||
+        davtdata?.commodity == "MANUFACTURER"
+      ) {
+        if (isLiquore && parseInt(data.amount_unit) < liquoreOIDCAmount) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      } else {
+        if (isLiquore && parseInt(data.amount_unit) < liquoreDealerAmount) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      }
+    } else {
+      if (
+        davtdata?.commodity == "OIDC" ||
+        davtdata?.commodity == "MANUFACTURER"
+      ) {
+        if (
+          isLiquore &&
+          parseInt(data.amount_unit) <
+            liquoreOIDCAmount * commoditymaster.crate_size
+        ) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      } else {
+        if (
+          isLiquore &&
+          parseInt(data.amount_unit) <
+            liquoreDealerAmount * commoditymaster.crate_size
+        ) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      }
     }
 
     const quantityamount =
@@ -244,8 +280,42 @@ const DailySale = (props: DailySaleProviderProps) => {
     if (tindata == null || tindata == undefined)
       return toast.error("Seller VAT Number not found.");
 
-    if (isLiquore && parseInt(data.amount_unit) < liquoreAmount) {
-      return toast.error("Sale amount can not be less than MRP.");
+    if (quantityCount == "pcs") {
+      // pcs
+
+      if (
+        davtdata?.commodity == "OIDC" ||
+        davtdata?.commodity == "MANUFACTURER"
+      ) {
+        if (isLiquore && parseInt(data.amount_unit) < liquoreOIDCAmount) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      } else {
+        if (isLiquore && parseInt(data.amount_unit) < liquoreDealerAmount) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      }
+    } else {
+      if (
+        davtdata?.commodity == "OIDC" ||
+        davtdata?.commodity == "MANUFACTURER"
+      ) {
+        if (
+          isLiquore &&
+          parseInt(data.amount_unit) <
+            liquoreOIDCAmount * commoditymaster.crate_size
+        ) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      } else {
+        if (
+          isLiquore &&
+          parseInt(data.amount_unit) <
+            liquoreDealerAmount * commoditymaster.crate_size
+        ) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      }
     }
 
     const quantityamount =

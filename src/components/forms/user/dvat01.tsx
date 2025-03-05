@@ -439,7 +439,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
         />
 
-        <button
+        {/* <button
           onClick={(e) => {
             e.preventDefault();
             router.push(`/dashboard/new-registration/registeruser`);
@@ -447,7 +447,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
         >
           Previous
-        </button>
+        </button> */}
         <button
           type="submit"
           disabled={isSubmitting}

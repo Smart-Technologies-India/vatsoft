@@ -65,17 +65,17 @@ const Page = () => {
                 description="Check any notices and orders issued by the VAT department."
                 link="/dashboard/user_service/notice_order"
               />
-              <DashboardCards
+              {/* <DashboardCards
                 title="My Profile"
                 description="Update and manage your personal and business profile information."
                 link="/dashboard/user_service/profile"
-              />
+              /> */}
               {/* <DashboardCards
                 title="My Registration"
                 description="Review the details of your VAT registration and make necessary updates."
                 link="/dashboard/register/track-application-status"
               /> */}
-              <DashboardCards
+              {/* <DashboardCards
                 title="Search HSN Code"
                 description="Find the Harmonized System of Nomenclature (HSN) code for goods and services."
                 link="/dashboard/user_service/hsn_code"
@@ -84,12 +84,12 @@ const Page = () => {
                 title="Holiday List"
                 description="View the list of official holidays recognized by the VAT department."
                 link="/dashboard/user_service/holiday-list"
-              />
-              <DashboardCards
+              /> */}
+              {/* <DashboardCards
                 title="Locate VAT Practitioner"
                 description="Find a registered VAT practitioner to assist with your VAT compliance."
                 link="/dashboard/user_service/paractitioner"
-              />
+              /> */}
             </>
           )}
         </div>

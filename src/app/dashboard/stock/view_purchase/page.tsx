@@ -19,7 +19,14 @@ import {
   dvat04,
   tin_number_master,
 } from "@prisma/client";
-import { Button, Modal, Pagination, Popover } from "antd";
+import {
+  Button,
+  Modal,
+  Pagination,
+  Popover,
+  Radio,
+  RadioChangeEvent,
+} from "antd";
 import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -185,6 +192,23 @@ const DocumentWiseDetails = () => {
     setDeleteBox(false);
   };
 
+  const [quantityCount, setQuantityCount] = useState("pcs");
+
+  const onChange = ({ target: { value } }: RadioChangeEvent) => {
+    setQuantityCount(value);
+  };
+
+  // 1 crate 2 pcs
+  const showCrates = (quantity: number, crate_size: number): string => {
+    // return "";
+
+    const crates = Math.floor(quantity / crate_size);
+    const pcs = quantity % crate_size;
+    if (crates == 0) return `${pcs} Pcs`;
+    if (pcs == 0) return `${crates} Crate`;
+    return `${crates} Crate ${pcs} Pcs`;
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -210,6 +234,24 @@ const DocumentWiseDetails = () => {
           <div className="flex gap-2">
             <p className="text-lg font-semibold items-center">Daily Purchase</p>
             <div className="grow"></div>
+            <div className="flex gap-2 items-center">
+              {/* <div className="p-1 rounded grow text-center bg-gray-100">
+          {commoditymaster.crate_size} Pcs/Crate
+        </div> */}
+              <Radio.Group
+                size="small"
+                onChange={onChange}
+                value={quantityCount}
+                optionType="button"
+              >
+                <Radio.Button className="w-20 text-center" value="pcs">
+                  Pcs
+                </Radio.Button>
+                <Radio.Button className="w-20 text-center" value="crate">
+                  Crate
+                </Radio.Button>
+              </Radio.Group>
+            </div>
             {/* {dvatdata &&
               (dvatdata.commodity == "OIDC" ||
                 dvatdata.commodity == "FUEL") && ( */}
@@ -242,7 +284,8 @@ const DocumentWiseDetails = () => {
                       Product Name
                     </TableHead>
                     <TableHead className="w-20 border text-center">
-                      Quantity
+                      {/* Quantity */}
+                      {quantityCount == "pcs" ? "Qty" : "Crate"}
                     </TableHead>
                     <TableHead className="border text-center">
                       Invoice no.
@@ -257,7 +300,7 @@ const DocumentWiseDetails = () => {
                       Total taxable percentage
                     </TableHead>
                     <TableHead className="border text-center">
-                    VAT Amount
+                      VAT Amount
                     </TableHead>
                     <TableHead className="w-28 border text-center">
                       Actions
@@ -284,7 +327,13 @@ const DocumentWiseDetails = () => {
                           {val.commodity_master.product_name}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
-                          {val.quantity}
+                          {/* {val.quantity} */}
+                          {quantityCount == "pcs"
+                            ? val.quantity
+                            : showCrates(
+                                val.quantity,
+                                val.commodity_master.crate_size
+                              )}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.invoice_number}
