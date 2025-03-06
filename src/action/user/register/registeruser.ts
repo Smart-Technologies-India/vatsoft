@@ -4,6 +4,7 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import prisma from "../../../../prisma/database";
 import { dvat04, user } from "@prisma/client";
+import { cookies } from "next/headers";
 
 interface RegisterUserPayload {
   id: number;
@@ -122,8 +123,6 @@ const registerUser = async (
     }
 
     if (payload.pan) {
-
-
       const isPanExist = await prisma.user.findFirst({
         where: {
           pan: payload.pan,
@@ -156,27 +155,49 @@ const registerUser = async (
         functionname: "registerUser",
       };
 
-    if (!payload.isdavt04) {
-      const dvat04response = await prisma.dvat04.create({
-        data: {
-          createdById: payload.id,
-          updatedById: payload.id,
-        },
-      });
+    let dvatdata: dvat04 | null = null;
 
-      if (!dvat04response)
-        return {
-          status: false,
-          data: null,
-          message: "Dvat04 create failed. Please try again.",
-          functionname: "registerUser",
-        };
+    if (!payload.isdavt04) {
+      const dvatid = cookies().get("dvat")?.value;
+      if (dvatid) {
+        dvatdata = await prisma.dvat04.findFirst({
+          where: {
+            deletedAt: null,
+            deletedBy: null,
+            id: parseInt(dvatid),
+          },
+        });
+
+        if (!dvatdata) {
+          return {
+            status: false,
+            data: null,
+            message: "Dvat04 create failed. Please try again.",
+            functionname: "registerUser",
+          };
+        }
+      } else {
+        dvatdata = await prisma.dvat04.create({
+          data: {
+            createdById: payload.id,
+            updatedById: payload.id,
+          },
+        });
+
+        if (!dvatdata)
+          return {
+            status: false,
+            data: null,
+            message: "Dvat04 create failed. Please try again.",
+            functionname: "registerUser",
+          };
+      }
 
       return {
         status: true,
         data: {
           user: updateresponse,
-          dvat04: dvat04response,
+          dvat04: dvatdata,
         },
         message: "User updated successfully",
         functionname: "registerUser",
