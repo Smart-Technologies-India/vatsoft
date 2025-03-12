@@ -117,9 +117,9 @@ const PreviewPage = () => {
 
         <div className="bg-white mx-auto shadow mt-4">
           <UserRegister userid={user_id} />
-          <Dvat1Page userid={user_id} />
-          <Dvat2Page userid={user_id} />
-          <Dvat3Page userid={user_id} />
+          <Dvat1Page userid={user_id} dvatid={dvatid} />
+          <Dvat2Page userid={user_id} dvatid={dvatid} />
+          <Dvat3Page userid={user_id} dvatid={dvatid} />
           <Anx1Page userid={user_id} dvatid={dvatid} extend={false} />
           <Anx2Page userid={user_id} dvatid={dvatid} extend={false} />
           <Anx3Page userid={user_id} dvatid={dvatid} />

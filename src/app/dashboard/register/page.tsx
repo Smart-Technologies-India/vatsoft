@@ -91,13 +91,13 @@ const Page = () => {
                 link="/dashboard/register/track-application-status"
               />
 
-              {/* {count === 0 && (
+              {count === 0 && (
                 <DashboardCards
                   title="Add Stock"
                   description="Add first time stock"
                   link="/dashboard/register/add-stock"
                 />
-              )} */}
+              )}
 
               {isProfileCompletd && (
                 <>

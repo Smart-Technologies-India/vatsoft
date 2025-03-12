@@ -36,7 +36,6 @@ const PreviewPage = () => {
 
   const dvatid: number = parseInt(decryptURLData(dvatidString, router));
 
-  console.log(dvatid);
   const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const tempregno: string = nanoid();
 
@@ -103,9 +102,9 @@ const PreviewPage = () => {
 
         <div className="bg-white mx-auto shadow mt-4">
           <UserRegister />
-          <Dvat1Page />
-          <Dvat2Page />
-          <Dvat3Page />
+          <Dvat1Page dvatid={dvatid} />
+          <Dvat2Page dvatid={dvatid} />
+          <Dvat3Page dvatid={dvatid} />
           <Anx1Page dvatid={dvatid} extend={false} />
           <Anx2Page dvatid={dvatid} extend={false} />
           <Anx3Page dvatid={dvatid} />

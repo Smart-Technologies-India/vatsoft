@@ -29,9 +29,12 @@ import GetAllUserDvat from "@/action/register/getalluserdvat";
 import Link from "next/link";
 import GetUserComposition from "@/action/composition/getusercompositon";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import { useRouter } from "next/navigation";
 
 const TrackAppliation = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
+
+  const router = useRouter();
 
   const [data, setData] = useState<any[]>([]);
   const [user, setUser] = useState<user>();
@@ -80,6 +83,17 @@ const TrackAppliation = () => {
           <div className="bg-blue-500 p-2 text-white flex">
             <p>Track Application Status</p>
             <div className="grow"></div>
+
+            <button
+              onClick={() => {
+                router.push(
+                  "/dashboard/register/track-application-status/openingstock"
+                );
+              }}
+              className="text-white text-sm mx-6"
+            >
+              Opening Stock
+            </button>
 
             <Drawer>
               <DrawerTrigger>Info</DrawerTrigger>

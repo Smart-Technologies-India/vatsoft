@@ -9,10 +9,10 @@ import { Button, Drawer } from "antd";
 import GetAnx2 from "@/action/anx2/getanx2";
 import GetAnx1 from "@/action/anx1/getanx1";
 import GetAnx1ById from "@/action/anx1/getanxbyid";
-import GetDvat from "@/action/user/register/getdvat";
 import { CommodityData } from "@/models/main";
 import GetAllCommodity from "@/action/commodity/getcommodity";
 import GetAnx2ById from "@/action/anx2/getanxbyid";
+import GetDvatById from "@/action/user/register/getdvatbyid";
 
 interface UserRegisterProps {
   userid?: number;
@@ -155,6 +155,7 @@ export const UserRegister = (props: UserRegisterProps): JSX.Element => {
 
 interface Dvat1PageProps {
   userid?: number;
+  dvatid: number;
 }
 export const Dvat1Page = (props: Dvat1PageProps) => {
   const current_user_id: number =
@@ -168,7 +169,9 @@ export const Dvat1Page = (props: Dvat1PageProps) => {
     const init = async () => {
       setIsLoading(true);
 
-      const dvatdata = await GetDvat({});
+      const dvatdata = await GetDvatById({
+        id: props.dvatid,
+      });
 
       if (dvatdata.status && dvatdata.data) {
         setDvatData(dvatdata.data);
@@ -326,6 +329,7 @@ export const Dvat1Page = (props: Dvat1PageProps) => {
 
 interface Dvat2PageProps {
   userid?: number;
+  dvatid: number;
 }
 export const Dvat2Page = (props: Dvat2PageProps) => {
   const current_user_id: number =
@@ -358,8 +362,8 @@ export const Dvat2Page = (props: Dvat2PageProps) => {
         toast.error(user.message);
       }
 
-      const dvatresponse: any = await GetDvat({
-        userid: current_user_id,
+      const dvatresponse: any = await GetDvatById({
+        id: props.dvatid,
       });
 
       setCommodityData([]);
@@ -634,6 +638,7 @@ export const Dvat2Page = (props: Dvat2PageProps) => {
 
 interface Dvat3PageProps {
   userid?: number;
+  dvatid: number;
 }
 
 export const Dvat3Page = (props: Dvat3PageProps) => {
@@ -654,7 +659,9 @@ export const Dvat3Page = (props: Dvat3PageProps) => {
         toast.error(user.message);
       }
 
-      const dvatdata = await GetDvat({ userid: current_user_id });
+      const dvatdata = await GetDvatById({
+        id: props.dvatid,
+      });
 
       if (dvatdata.status && dvatdata.data) {
         setDvatData(dvatdata.data);
