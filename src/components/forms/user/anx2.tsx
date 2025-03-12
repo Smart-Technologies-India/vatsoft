@@ -149,10 +149,10 @@ const Anx1 = (props: Anx2ProviderProps) => {
     reset({});
   };
 
-  const [deleteopen, setDeleteOpen] = useState(false);
+  const [deleteOpenId, setDeleteOpenId] = useState<number | null>(null);
 
   const deleteanx1 = async (id: number) => {
-    setDeleteOpen(false);
+    setDeleteOpenId(null);
     setAnxid(0);
 
     const resposne = await DeleteAnx2({
@@ -399,7 +399,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
 
                               <button
                                 className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white mt-2 cursor-pointer"
-                                onClick={() => setDeleteOpen(false)}
+                                onClick={() => setDeleteOpenId(null)}
                               >
                                 No
                               </button>
@@ -408,8 +408,10 @@ const Anx1 = (props: Anx2ProviderProps) => {
                         }
                         title="Delete"
                         trigger="click"
-                        open={deleteopen}
-                        onOpenChange={(e: boolean) => setDeleteOpen(e)}
+                        open={deleteOpenId === data.id} // Only open for the selected row
+                        onOpenChange={(isOpen) =>
+                          setDeleteOpenId(isOpen ? data.id : null)
+                        }
                       >
                         <Button>Delete</Button>
                       </Popover>

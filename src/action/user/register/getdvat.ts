@@ -1,20 +1,32 @@
 "use server";
-interface GetDvatPayload {
-  userid: number;
-}
+interface GetDvatPayload {}
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import { dvat04 } from "@prisma/client";
 import prisma from "../../../../prisma/database";
+import { cookies } from "next/headers";
 
 const GetDvat = async (
   payload: GetDvatPayload
 ): Promise<ApiResponseType<dvat04 | null>> => {
   try {
+    const dvatid = cookies().get("dvat")?.value;
+    if (!dvatid) {
+      return {
+        status: false,
+        data: null,
+        message: "Invalid id. Please try again.",
+        functionname: "GetDvat",
+      };
+    }
+
     const dvat04 = await prisma.dvat04.findFirst({
       where: {
-        createdById: parseInt(payload.userid.toString() ?? "0"),
+        // createdById: parseInt(payload.userid.toString() ?? "0"),\
+        id: parseInt(dvatid),
+        deletedAt: null,
+        deletedBy: null,
       },
       include: {
         selectComOne: true,

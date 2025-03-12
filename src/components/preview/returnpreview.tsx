@@ -168,7 +168,7 @@ export const Dvat1Page = (props: Dvat1PageProps) => {
     const init = async () => {
       setIsLoading(true);
 
-      const dvatdata = await GetDvat({ userid: current_user_id });
+      const dvatdata = await GetDvat({});
 
       if (dvatdata.status && dvatdata.data) {
         setDvatData(dvatdata.data);
@@ -332,7 +332,7 @@ export const Dvat2Page = (props: Dvat2PageProps) => {
     props.userid ?? parseInt(getCookie("id") ?? "0");
 
   let type_of_account: { [key: string]: string } = {
-    CURRENT: "Curretn Account",
+    CURRENT: "Current Account",
     SAVING: "Saving Account",
     OVERDRAFT: "Overdraft Account",
     CASH_CREDIT: "Cash Credit Account",
@@ -1037,7 +1037,8 @@ interface Anx3PageProps {
 }
 
 export const Anx3Page = (props: Anx3PageProps) => {
-  const current_user_id: number = props.userid ?? parseInt(getCookie("id") ?? "0");
+  const current_user_id: number =
+    props.userid ?? parseInt(getCookie("id") ?? "0");
 
   const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);

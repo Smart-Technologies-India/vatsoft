@@ -17,6 +17,9 @@ const GetAnx2 = async (
     const anx2response = await prisma.annexure2.findMany({
       where: {
         dvatId: payload.dvatid,
+        deletedAt: null,
+        deletedBy: null,
+        status: "ACTIVE",
       },
     });
 

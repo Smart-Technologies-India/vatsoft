@@ -10,7 +10,12 @@ const GetAllCommodity = async (
   payload: GetAllCommodityPayload
 ): Promise<ApiResponseType<commodity[] | null>> => {
   try {
-    const commodity = await prisma.commodity.findMany({});
+    const commodity = await prisma.commodity.findMany({
+      where:{
+        deletedAt: null,
+        deletedBy: null,
+      }
+    });
 
     if (!commodity)
       return {

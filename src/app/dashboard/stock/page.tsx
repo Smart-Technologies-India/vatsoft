@@ -74,6 +74,7 @@ const CommodityMaster = () => {
       });
       if (dvat.status && dvat.data) {
         setDvatData(dvat.data);
+        console.log(dvat.data);
 
         const stock_response = await GetAllStock({
           take: 10,

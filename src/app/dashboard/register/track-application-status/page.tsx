@@ -45,7 +45,6 @@ const TrackAppliation = () => {
         userid: id,
       });
 
-
       if (response.data && response.status) {
         setData(response.data);
       }
@@ -205,6 +204,7 @@ const TrackAppliation = () => {
                 </TableHeader>
                 <TableBody>
                   {data.map((val: any, index: number) => {
+                    console.log(val);
                     return (
                       <TableRow key={index}>
                         <TableCell className="text-center border">
@@ -234,8 +234,10 @@ const TrackAppliation = () => {
                           {val.status}
                         </TableCell>
                         <TableCell className="text-center border">
-                          {val.registration[0].dept_user.firstName} -{" "}
-                          {val.registration[0].dept_user.lastName}
+                          {val.registration.length == 0
+                            ? "Not Assigned"
+                            : val.registration[0].dept_user.firstName -
+                              val.registration[0].dept_user.lastName}
                         </TableCell>
                       </TableRow>
                     );

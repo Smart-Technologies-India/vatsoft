@@ -61,6 +61,8 @@ const LoginOtp = async (
     const dvat_response = await prisma.dvat04.findMany({
       where: {
         status: "APPROVED",
+        deletedAt: null,
+        deletedById: null,  
         createdById: usersresponse.id,
       },
     });

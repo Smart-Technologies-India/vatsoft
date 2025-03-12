@@ -1,5 +1,6 @@
 "use client";
 
+import StockCount from "@/action/firststock/getstockcount";
 import IsRegisterPedning from "@/action/register/isregisterpending";
 import GetUser from "@/action/user/getuser";
 import GetUserStatus from "@/action/user/userstatus";
@@ -15,6 +16,8 @@ const Page = () => {
   const [isProfileCompletd, setIsProfileCompleted] = useState<boolean>(false);
 
   const [isRegisterPending, setRegisterPending] = useState<boolean>(false);
+
+  const [count, setCount] = useState<number>(0);
   useEffect(() => {
     const init = async () => {
       const userresponse = await GetUser({
@@ -36,6 +39,11 @@ const Page = () => {
       });
       if (profile_response.status && profile_response.data) {
         setIsProfileCompleted(profile_response.data.registration);
+      }
+
+      const count_response = await StockCount({});
+      if (count_response.status && count_response.data) {
+        setCount(count_response.data);
       }
     };
     init();
@@ -82,6 +90,15 @@ const Page = () => {
                 description="Monitor the progress and status of your submitted applications and requests with real-time updates."
                 link="/dashboard/register/track-application-status"
               />
+
+              {/* {count === 0 && (
+                <DashboardCards
+                  title="Add Stock"
+                  description="Add first time stock"
+                  link="/dashboard/register/add-stock"
+                />
+              )} */}
+
               {isProfileCompletd && (
                 <>
                   <DashboardCards

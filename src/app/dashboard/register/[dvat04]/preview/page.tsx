@@ -35,6 +35,8 @@ const PreviewPage = () => {
   const dvatidString = Array.isArray(dvat04) ? dvat04[0] : dvat04;
 
   const dvatid: number = parseInt(decryptURLData(dvatidString, router));
+
+  console.log(dvatid);
   const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const tempregno: string = nanoid();
 
