@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import GetUser from "@/action/user/getuser";
 import { getCookie } from "cookies-next";
 import { useEffect, useState } from "react";
