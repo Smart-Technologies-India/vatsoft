@@ -70,15 +70,16 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
   ];
 
   const constitutionOfBusiness: OptionValue[] = [
-    { value: "GOVERNMENT_COMPANY", label: "Goverment Company" },
-    { value: "GOVERNMENT_CORPORATION", label: "Goverment Corporation" },
-    { value: "GOVERNMENT_DEPARTMENT", label: "Goverment Department" },
-    { value: "HUF", label: "Proprietorship" },
-    { value: "PUBLIC_SECTOR", label: "Public Sector" },
     { value: "PROPRIETORSHIP", label: "Proprietorship" },
+    { value: "PARTNERSHIP", label: "Partnership" },
     { value: "LLP", label: "LLP" },
     { value: "PVT_LTD", label: "Private LTD" },
     { value: "PUBLIC_LTD", label: "Public LTD" },
+    { value: "PUBLIC_SECTOR", label: "Public Sector" },
+    { value: "GOVERNMENT_COMPANY", label: "Goverment Company" },
+    { value: "GOVERNMENT_CORPORATION", label: "Goverment Corporation" },
+    { value: "GOVERNMENT_DEPARTMENT", label: "Goverment Department" },
+    { value: "HUF", label: "HUF" },
     { value: "OTHER", label: "OTHER" },
   ];
 

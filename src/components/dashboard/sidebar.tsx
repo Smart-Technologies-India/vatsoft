@@ -5,6 +5,7 @@ import {
   FluentBuildingBank48Regular,
   FluentCalendar12Regular,
   FluentCalendarDataBar32Light,
+  FluentDocumentSparkle28Regular,
   FluentMdl2ViewDashboard,
   FluentNotepadPerson16Regular,
   FluentPersonSupport20Regular,
@@ -163,7 +164,7 @@ const Sidebar = (props: SidebarProps) => {
           />
         </>
       )}
-{/* 
+      {/* 
       <MenuTab
         click={() => props.setIsOpen(false)}
         icon={<FluentPersonSupport20Regular className="text-gray-300  w-6" />}
@@ -191,6 +192,23 @@ const Sidebar = (props: SidebarProps) => {
             pathcheck={"/dashboard/stock"}
           />
         </>
+      )}
+
+      {[
+        "SYSTEM",
+        "ADMIN",
+        "VATOFFICER",
+        "ASST_VAT_OFFICER",
+        "DY_COMMISSIONER",
+        "INSPECTOR",
+      ].includes(props.role) && (
+        <MenuTab
+          click={() => props.setIsOpen(false)}
+          icon={<FluentDocumentSparkle28Regular className="text-gray-300 w-6" />}
+          name="Registration Status"
+          path={path}
+          pathcheck={"/dashboard/registration_status"}
+        />
       )}
       {/* <MenuTab
         icco={<Fa6RegularFileLines className="text-gray-300  w-6" />}
