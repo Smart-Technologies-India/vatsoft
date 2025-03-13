@@ -46,13 +46,13 @@ const PasswordLogin = async (
       });
     }
 
-    if (usersresponse.status === "PENDINGPROCESSING") {
-      return createResponse({
-        message:
-          "Your DVAT is submitted for processing. Kindly wait for approval.",
-        functionname,
-      });
-    }
+    // if (usersresponse.status === "PENDINGPROCESSING") {
+    //   return createResponse({
+    //     message:
+    //       "Your DVAT is submitted for processing. Kindly wait for approval.",
+    //     functionname,
+    //   });
+    // }
 
     const passwordMatch = await compare(
       payload.password,

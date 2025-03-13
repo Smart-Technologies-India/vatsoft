@@ -11,8 +11,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { commodity_master, dvat04, stock } from "@prisma/client";
-import { Button, Drawer, Radio, RadioChangeEvent } from "antd";
+import {
+  Alert,
+  Button,
+  Drawer,
+  Modal,
+  Popover,
+  Radio,
+  RadioChangeEvent,
+} from "antd";
 import { getCookie } from "cookies-next";
+import { set } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -64,6 +73,29 @@ const AddStock = () => {
 
   const [stock, setStock] = useState<StockData[]>([]);
 
+  const [open, setOpen] = useState(false);
+
+  const hide = () => {
+    setOpen(false);
+  };
+
+  const submit = async () => {
+    setOpen(false);
+
+    const created_data = await CreateFirstStock({
+      data: stock,
+      dvatid: dvatdata?.id ?? 0,
+      createdById: userid,
+    });
+    if (created_data.status) {
+      setStock([]);
+      toast.success(created_data.message);
+      router.back();
+    } else {
+      toast.error(created_data.message);
+    }
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -101,24 +133,37 @@ const AddStock = () => {
                 optionType="button"
               >
                 <Radio.Button className="w-20 text-center" value="pcs">
-                  Pcs
+                  {dvatdata?.commodity == "FUEL" ? "Litre" : "Pcs"}
                 </Radio.Button>
                 <Radio.Button className="w-20 text-center" value="crate">
                   Crate
                 </Radio.Button>
               </Radio.Group>
             </div>
-            <Button
-              size="small"
-              type="primary"
-              className="bg-blue-500 hover:bg-blue-500"
-              onClick={() => {
-                setStockBox(true);
-              }}
-            >
-              Add Stock
-            </Button>
+            {dvatdata?.status == "PENDINGPROCESSING" ? (
+              <Button
+                size="small"
+                type="primary"
+                className="bg-blue-500 hover:bg-blue-500"
+                onClick={() => {
+                  setStockBox(true);
+                }}
+              >
+                Add Stock
+              </Button>
+            ) : null}
           </div>
+          {dvatdata?.status == "VERIFICATION" ? (
+            <>
+              <div className="mt-4"></div>
+              <Alert
+                message="Kindly submit DVAT registration before adding stock."
+                type="error"
+                showIcon
+              />
+            </>
+          ) : null}
+
           {stock.length != 0 ? (
             <>
               <Table className="border mt-2">
@@ -181,25 +226,14 @@ const AddStock = () => {
 
               <div className="flex mt-2">
                 <div className="grow"></div>
+
                 <Button
                   size="small"
                   type="primary"
                   className="bg-blue-500 hover:bg-blue-500"
                   onClick={async () => {
+                    setOpen(true);
                     // setStockBox(true);
-
-                    const created_data = await CreateFirstStock({
-                      data: stock,
-                      dvatid: dvatdata?.id ?? 0,
-                      createdById: userid,
-                    });
-                    if (created_data.status) {
-                      setStock([]);
-                      toast.success(created_data.message);
-                      router.back();
-                    } else {
-                      toast.error(created_data.message);
-                    }
                   }}
                 >
                   Submit
@@ -213,6 +247,37 @@ const AddStock = () => {
           )}
         </div>
       </main>
+
+      <Modal title="Confirmation" open={open} footer={null} closeIcon={false}>
+        <div>
+          <p>
+            I, {dvatdata?.tradename}, holding TIN number {dvatdata?.tinNumber},
+            hereby acknowledge that the details entered in the VAT registration
+            form after logging in on the portal at www.dddnhvat.com and the
+            opening stock data submitted as on 1st January 2025 have been filled
+            by me. I confirm that the information provided is accurate and known
+            to me to the best of my knowledge. I take full responsibility for
+            the accuracy and completeness of the data provided.
+          </p>
+        </div>
+        <div className="flex  gap-2 mt-2">
+          <div className="grow"></div>
+          <button
+            className="py-1 rounded-md border px-4 text-sm text-gray-600"
+            onClick={() => {
+              setOpen(false);
+            }}
+          >
+            Close
+          </button>
+          <button
+            onClick={submit}
+            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
+          >
+            Submit
+          </button>
+        </div>
+      </Modal>
     </>
   );
 };

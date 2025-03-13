@@ -480,7 +480,7 @@ const PasswordLoginComponent = () => {
 
   const [tin, setTin] = useState<string | undefined>(undefined);
   const [password, setPassword] = useState<string | undefined>(undefined);
-  const [isPassword, setIsPassword] = useState<boolean>(false);
+  // const [isPassword, setIsPassword] = useState<boolean>(false);
   const [isLogin, setIsLogin] = useState<boolean>(false);
 
   const submit = async () => {
@@ -488,11 +488,13 @@ const PasswordLoginComponent = () => {
 
     if (tin == null || tin == undefined || tin == "") {
       toast.error("Enter valid TIN number");
+      setIsLogin(false);
       return;
     }
 
     if (password == null || password == undefined || password == "") {
       toast.error("Enter password");
+      setIsLogin(false);
       return;
     }
 
@@ -503,16 +505,17 @@ const PasswordLoginComponent = () => {
 
     if (!response.status) {
       toast.error(response.message);
+      setIsLogin(false);
       return;
     }
 
-    if (!response.status) {
-      toast.error(response.message);
-      setTimeout(() => {
-        setIsLogin(false);
-      }, 10000);
-      return;
-    }
+    // if (!response.status) {
+    //   toast.error(response.message);
+    //   setTimeout(() => {
+    //     setIsLogin(false);
+    //   }, 10000);
+    //   return;
+    // }
 
     toast.success(response.message);
     router.push("/dashboard");

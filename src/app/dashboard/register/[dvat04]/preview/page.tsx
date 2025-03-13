@@ -164,7 +164,7 @@ const PreviewPage = () => {
                   >
                     Submit
                   </Button>
-                ) : (
+                ) : dvat04Data?.status == "PENDINGPROCESSING" ? null : (
                   <Button
                     onClick={async () => {
                       toast.success(

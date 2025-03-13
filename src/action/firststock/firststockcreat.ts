@@ -23,6 +23,28 @@ const CreateFirstStock = async (
 
   try {
     const result = await prisma.$transaction(async (prisma) => {
+      const isexist = await prisma.dvat04.findFirst({
+        where: {
+          id: payload.dvatid,
+        },
+      });
+
+      if (!isexist) {
+        throw new Error("DVAT04 not found.");
+      }
+
+      const update_dvat = await prisma.dvat04.update({
+        where: {
+          id: payload.dvatid,
+        },
+        data: {
+          status: "APPROVED",
+        },
+      });
+      if (!update_dvat) {
+        throw new Error("Unable to update DVAT04.");
+      }
+
       const first_stock = await prisma.first_stock.createMany({
         data: payload.data.map((item) => {
           return {

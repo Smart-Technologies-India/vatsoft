@@ -42,6 +42,8 @@ const TrackAppliation = () => {
     Array<composition & { dept_user: user }>
   >([]);
 
+  const [dvat, setDvat] = useState<dvat04>();
+
   useEffect(() => {
     const init = async () => {
       const response = await GetAllUserDvat({
@@ -65,6 +67,7 @@ const TrackAppliation = () => {
       });
 
       if (dvat.status && dvat.data) {
+        setDvat(dvat.data);
         const composition_response = await GetUserComposition({
           dvatid: dvat.data.id,
         });
@@ -218,7 +221,6 @@ const TrackAppliation = () => {
                 </TableHeader>
                 <TableBody>
                   {data.map((val: any, index: number) => {
-                    console.log(val);
                     return (
                       <TableRow key={index}>
                         <TableCell className="text-center border">
@@ -226,7 +228,13 @@ const TrackAppliation = () => {
                             // href={`/dashboard/new-registration/${encryptURLData(
                             //   val.id.toString()
                             // )}/dvat1`}
-                            href={`/dashboard/new-registration/${val.id.toString()}/dvat1`}
+                            href={
+                              val?.status == "PENDINGPROCESSING"
+                                ? `/dashboard/register/${encryptURLData(
+                                    val.id.toString()
+                                  )}/preview`
+                                : `/dashboard/new-registration/${val.id.toString()}/dvat1`
+                            }
                             // href={`/dashboard/register/${encryptURLData(
                             //   val.id.toString()
                             // )}/preview`}
@@ -250,8 +258,8 @@ const TrackAppliation = () => {
                         <TableCell className="text-center border">
                           {val.registration.length == 0
                             ? "Not Assigned"
-                            : val.registration[0].dept_user.firstName -
-                              val.registration[0].dept_user.lastName}
+                            : `${val.registration[0].dept_user.firstName} -
+                              ${val.registration[0].dept_user.lastName}`}
                         </TableCell>
                       </TableRow>
                     );

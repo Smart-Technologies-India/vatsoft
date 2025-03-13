@@ -68,6 +68,8 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
     []
   );
 
+  const [dvatdata, setDvatdata] = useState<dvat04 | null>(null);
+
   useEffect(() => {
     reset({
       description_of_goods: undefined,
@@ -77,6 +79,7 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
       const userdvat = await GetUserDvat04FirstStock();
 
       if (userdvat.status && userdvat.data) {
+        setDvatdata(userdvat.data);
         const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
           if (userdvat.data.commodity == "FUEL") {
@@ -239,7 +242,8 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
         commoditymaster != null && (
           <div className="flex mt-2 gap-2 items-center">
             <div className="p-1 rounded grow text-center bg-gray-100">
-              {commoditymaster.crate_size} Pcs/Crate
+              {commoditymaster.crate_size}{" "}
+              {commoditymaster.product_type == "FUEL" ? "Litre" : "Pcs"}/Crate
             </div>
             <Radio.Group
               size="small"
@@ -251,7 +255,7 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
                 Crate
               </Radio.Button>
               <Radio.Button className="w-20 text-center" value="pcs">
-                Pcs
+                {commoditymaster.product_type == "FUEL" ? "Litre" : "Pcs"}
               </Radio.Button>
             </Radio.Group>
           </div>
