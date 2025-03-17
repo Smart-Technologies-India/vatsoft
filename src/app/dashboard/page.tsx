@@ -74,6 +74,7 @@ const Page = () => {
           "COMMISSIONER",
           "DY_COMMISSIONER",
           "JOINT_COMMISSIONER",
+          "USER"
         ].includes(userresponse.data?.role!)
       ) {
         router.push("/dashboard/register");
