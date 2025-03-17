@@ -69,7 +69,7 @@ const AdminLogin = () => {
             />
           </div>
           <p className="text-white text-3xl text-center leading-relaxed font-bold">
-            Department of <br /> Value Added Tax DNH
+            Department of <br /> Value Added Tax DNH & DD
           </p>
           <div></div>
         </div>
