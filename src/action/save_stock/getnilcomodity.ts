@@ -13,8 +13,8 @@ const GetNilCommodity = async (): Promise<
   try {
     const commodity_data = await prisma.commodity_master.findFirst({
       where: {
-        // id: 1154,
-        id: 748,
+        id: 1154,
+        // id: 748,
       },
     });
 

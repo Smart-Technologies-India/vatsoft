@@ -172,7 +172,7 @@ const AddStock = () => {
               </Radio.Group>
             </div>
             {dvatdata?.status == "PENDINGPROCESSING" &&
-            stock.filter((val) => val.item.id == 748).length <= 0 ? (
+            stock.filter((val) => val.item.id == 1154).length <= 0 ? (
               <Button
                 size="small"
                 type="primary"
@@ -274,7 +274,7 @@ const AddStock = () => {
                 >
                   Submit
                 </Button>
-                {stock.filter((val) => val.item.id == 748).length <= 0 ? (
+                {stock.filter((val) => val.item.id == 1154).length <= 0 ? (
                   <Button
                     size="small"
                     type="primary"

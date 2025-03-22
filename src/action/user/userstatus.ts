@@ -6,6 +6,7 @@ interface UserStatusPayload {
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
+import { cookies } from "next/headers";
 
 type Response = {
   user: boolean;
@@ -16,6 +17,14 @@ const GetUserStatus = async (
   payload: UserStatusPayload
 ): Promise<ApiResponseType<Response | null>> => {
   const functionname: string = GetUserStatus.name;
+
+  const dvatid = cookies().get("dvat")?.value;
+  if (!dvatid) {
+    return createResponse({
+      message: "Invalid id. Please try again.",
+      functionname,
+    });
+  }
 
   try {
     const user = await prisma.user.findFirst({
@@ -35,7 +44,7 @@ const GetUserStatus = async (
 
     const dvat04 = await prisma.dvat04.findFirst({
       where: {
-        createdById: payload.id,
+        id: parseInt(dvatid),
         deletedAt: null,
         deletedById: null,
         status: "APPROVED",

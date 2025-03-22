@@ -79,7 +79,26 @@ const CheckLastPayment = async (
         month: "long",
       })
     );
+
+    const lastmonthindex = monthNames.indexOf(month);
+    const lastmonthdate = new Date(Date.UTC(parseInt(year), lastmonthindex, 1));
+
+    console.log("current_payment_date", current_payment_date);
+    console.log("lastmonthdate", lastmonthdate);
+    console.log("vatLiableDate", isExist.dvat04.vatLiableDate);
+
+    // console.log("lastmonthdate", lastmonthdate);
+
     const userid = isExist.createdById;
+
+    if (isExist.dvat04.vatLiableDate! > current_payment_date) {
+      return createResponse({
+        data: false,
+        message:
+          "You are not eligible to pay return for this period. Kindly contact administration.",
+        functionname,
+      });
+    }
 
     let lastPayment = await prisma.returns_01.findFirst({
       where: {
@@ -89,67 +108,34 @@ const CheckLastPayment = async (
         createdById: userid,
         year: year,
         month: month,
-        return_type: "REVISED",
+        OR: [
+          {
+            return_type: "ORIGINAL",
+          },
+          {
+            return_type: "REVISED",
+          },
+        ],
       },
     });
 
+
     if (!lastPayment) {
-      lastPayment = await prisma.returns_01.findFirst({
-        where: {
-          deletedAt: null,
-          deletedById: null,
-          status: "ACTIVE",
-          createdById: userid,
-          year: year,
-          month: month,
-          return_type: "ORIGINAL",
-        },
-      });
-
-      if (!lastPayment) {
+      if (isExist.dvat04.vatLiableDate! > lastmonthdate) {
+      } else {
         return createResponse({
           data: false,
-          message:
-            "You have pending returns from previous month. Kindly complete all pending returns before proceeding.",
+          message: `You have a pending return for period: ${month} - ${year}. Payment not completed. Kindly file previous return before proceeding.`,
           functionname,
         });
       }
-
-      if (isExist.dvat04.vatLiableDate! > current_payment_date) {
-        return createResponse({
-          data: false,
-          message:
-            "You are not eligible to pay return for this period.Kindly contact administration.",
-          functionname,
-        });
-      }
-      // else {
-      //   const month_dif = getMonthDifference(
-      //     isExist.dvat04.vatLiableDate!,
-      //     current_payment_date
-      //   );
-
-      //   if (month_dif <= 1) {
-      //     return createResponse({
-      //       data: true,
-      //       message: "Payment completed successfully",
-      //       functionname,
-      //     });
-      //   } else {
-      //     return createResponse({
-      //       data: false,
-      //       message:
-      //         "You have pending returns from previous month. Kindly complete all pending returns before proceeding.",
-      //       functionname,
-      //     });
-      //   }
-      // }
     }
 
     if (
-      lastPayment.rr_number == null ||
-      lastPayment.rr_number == "" ||
-      lastPayment.rr_number == undefined
+      lastPayment &&
+      (lastPayment.rr_number == null ||
+        lastPayment.rr_number == "" ||
+        lastPayment.rr_number == undefined)
     ) {
       return createResponse({
         data: false,
@@ -157,6 +143,42 @@ const CheckLastPayment = async (
         functionname,
       });
     }
+
+    // if (isExist.dvat04.vatLiableDate! > lastmonthdate) {
+    //   return createResponse({
+    //     data: false,
+    //     message:
+    //       "You are not eligible to pay return for this period. Kindly contact administration.",
+    //     functionname,
+    //   });
+    // } else {
+    //   const getlastmonth = await prisma.returns_01.findFirst({
+    //     where: {
+    //       deletedAt: null,
+    //       deletedById: null,
+    //       status: "ACTIVE",
+    //       createdById: userid,
+    //       year: year,
+    //       month: month,
+    //       OR: [
+    //         {
+    //           return_type: "ORIGINAL",
+    //         },
+    //         {
+    //           return_type: "REVISED",
+    //         },
+    //       ],
+    //     },
+    //   });
+
+    //   if (!getlastmonth) {
+    //     return createResponse({
+    //       data: false,
+    //       message: `You have a pending return for period: ${month} - ${year}. Payment not completed. Kindly file previous return before proceeding.`,
+    //       functionname,
+    //     });
+    //   }
+    // }
 
     return createResponse({
       message: "Payment completed successfully.",

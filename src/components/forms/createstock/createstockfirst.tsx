@@ -257,7 +257,7 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
         </div>
       )}
 
-      {props.stock.filter((val) => val.id == 748).length <= 0 && (
+      {props.stock.filter((val) => val.id == 1154).length <= 0 && (
         <div className="flex gap-2 mt-2">
           <Checkbox
             value={isAccept}
