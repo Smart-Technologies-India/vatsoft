@@ -399,6 +399,7 @@ const AddDvat30Entry = (props: AddDvat30EntryProviderProps) => {
               name="invoice_date"
               required={true}
               title="Invoice Date"
+              format={"DD/MM/YYYY"}
               placeholder="Select Invoice Date"
               mindate={
                 davtdata?.compositionScheme

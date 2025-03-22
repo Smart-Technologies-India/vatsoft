@@ -21,9 +21,12 @@ import {
 } from "@/schema/create_first_stock";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUserDvat04FirstStock from "@/action/dvat/getuserdvatfirststock";
-import { Radio, RadioChangeEvent } from "antd";
+import { Checkbox, Radio, RadioChangeEvent } from "antd";
+import { CheckboxChangeEvent } from "antd/es/checkbox";
+import GetNilCommodity from "@/action/save_stock/getnilcomodity";
 
 interface StockData {
+  id: number | null;
   item: commodity_master;
   quantity: number;
 }
@@ -108,23 +111,6 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
     end: string;
   }
 
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-
-  const dateFormat = "YYYY-MM-DD";
-
   const [commoditymaster, setCommoditymaster] =
     useState<commodity_master | null>(null);
 
@@ -146,49 +132,60 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
   }, [description_of_goods]);
 
   const onSubmit = async (data: CreateFirstStockForm) => {
-    if (commoditymaster == null || commoditymaster == undefined)
-      return toast.error("Commodity Master not found.");
+    if (isAccept) {
+      props.setAddBox(false);
+    } else {
+      if (commoditymaster == null || commoditymaster == undefined)
+        return toast.error("Commodity Master not found.");
 
-    props.setStock([
-      ...props.stock,
-      {
-        item: commoditymaster,
-        quantity:
-          quantityCount == "pcs"
-            ? parseInt(data.quantity)
-            : parseInt(data.quantity) * commoditymaster.crate_size,
-      },
-    ]);
+      props.setStock([
+        ...props.stock,
+        {
+          id: null,
+          item: commoditymaster,
+          quantity:
+            quantityCount == "pcs"
+              ? parseInt(data.quantity)
+              : parseInt(data.quantity) * commoditymaster.crate_size,
+        },
+      ]);
 
-    props.setAddBox(false);
+      props.setAddBox(false);
+    }
   };
 
   const addNew = async (data: CreateFirstStockForm) => {
-    if (commoditymaster == null || commoditymaster == undefined)
-      return toast.error("Commodity Master not found.");
-    props.setStock([
-      ...props.stock,
-      {
-        item: commoditymaster,
-        quantity:
-          quantityCount == "pcs"
-            ? parseInt(data.quantity)
-            : parseInt(data.quantity) * commoditymaster.crate_size,
-      },
-    ]);
+    if (isAccept) {
+      props.setAddBox(false);
+    } else {
+      if (commoditymaster == null || commoditymaster == undefined)
+        return toast.error("Commodity Master not found.");
+      props.setStock([
+        ...props.stock,
+        {
+          id: null,
+          item: commoditymaster,
+          quantity:
+            quantityCount == "pcs"
+              ? parseInt(data.quantity)
+              : parseInt(data.quantity) * commoditymaster.crate_size,
+        },
+      ]);
 
-    const currentValues = getValues();
+      const currentValues = getValues();
 
-    reset({
-      ...currentValues,
-      quantity: "",
-      description_of_goods: undefined,
-    });
+      reset({
+        ...currentValues,
+        quantity: "",
+        description_of_goods: undefined,
+      });
+    }
   };
 
   const [submitType, setSubmitType] = useState<string>("");
 
   const [quantityCount, setQuantityCount] = useState("pcs");
+  const [isAccept, setIsAccept] = useState<boolean>(false);
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
     setQuantityCount(value);
@@ -218,6 +215,7 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
             name="description_of_goods"
             required={true}
             title="Items details"
+            disable={isAccept}
             options={commodityMaster.map(
               (val: commodity_master, index: number) => ({
                 value: val.id.toString(),
@@ -232,35 +230,61 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
           title="Quantity"
           required={true}
           name="quantity"
+          disable={isAccept}
           placeholder="Enter Quantity"
           onlynumber={true}
         />
       </div>
-      {
-        // (davtdata?.commodity == "OIDC" ||
-        //   davtdata?.commodity == "MANUFACTURER") &&
-        commoditymaster != null && (
-          <div className="flex mt-2 gap-2 items-center">
-            <div className="p-1 rounded grow text-center bg-gray-100">
-              {commoditymaster.crate_size}{" "}
-              {commoditymaster.product_type == "FUEL" ? "Litre" : "Pcs"}/Crate
-            </div>
-            <Radio.Group
-              size="small"
-              onChange={onChange}
-              value={quantityCount}
-              optionType="button"
-            >
-              <Radio.Button className="w-20 text-center" value="crate">
-                Crate
-              </Radio.Button>
-              <Radio.Button className="w-20 text-center" value="pcs">
-                {commoditymaster.product_type == "FUEL" ? "Litre" : "Pcs"}
-              </Radio.Button>
-            </Radio.Group>
+      {commoditymaster != null && (
+        <div className="flex mt-2 gap-2 items-center">
+          <div className="p-1 rounded grow text-center bg-gray-100">
+            {commoditymaster.crate_size}{" "}
+            {commoditymaster.product_type == "FUEL" ? "Litre" : "Pcs"}/Crate
           </div>
-        )
-      }
+          <Radio.Group
+            size="small"
+            onChange={onChange}
+            value={quantityCount}
+            optionType="button"
+          >
+            <Radio.Button className="w-20 text-center" value="crate">
+              Crate
+            </Radio.Button>
+            <Radio.Button className="w-20 text-center" value="pcs">
+              {commoditymaster.product_type == "FUEL" ? "Litre" : "Pcs"}
+            </Radio.Button>
+          </Radio.Group>
+        </div>
+      )}
+
+      {props.stock.filter((val) => val.id == 748).length <= 0 && (
+        <div className="flex gap-2 mt-2">
+          <Checkbox
+            value={isAccept}
+            onChange={async (value: CheckboxChangeEvent) => {
+              setIsAccept(value.target.checked);
+
+              if (value.target.checked) {
+                const nil_commodity = await GetNilCommodity();
+                if (nil_commodity.status && nil_commodity.data) {
+                  reset({
+                    description_of_goods: nil_commodity.data.product_name,
+                    quantity: "0",
+                  });
+                  props.setStock([
+                    {
+                      id: null,
+                      item: nil_commodity.data,
+                      quantity: 0,
+                    },
+                  ]);
+                }
+              }
+            }}
+          />
+          <p>NIL Stock</p>
+        </div>
+      )}
 
       <div className="flex gap-2">
         <button

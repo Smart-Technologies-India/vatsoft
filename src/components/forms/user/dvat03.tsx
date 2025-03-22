@@ -54,8 +54,8 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
   } = useFormContext<Dvat3Form>();
 
   const onSubmit = async (data: Dvat3Form) => {
-    if (parseInt(data.securityDepositAmount) < 25000) {
-      return toast.error("Amount of Security can not be less then  25000");
+    if (parseInt(data.securityDepositAmount) < 5000) {
+      return toast.error("Amount of Security can not be less then  5000");
     }
     const userrespone: ApiResponseType<dvat04 | null> = await Dvat3Update({
       id: props.dvatid,
@@ -167,6 +167,7 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
             <DateSelect<Dvat3Form>
               placeholder="Enter Security Expirty Date"
               name="dateOfExpiry"
+              format={"DD/MM/YYYY"}
               required={true}
               title="Date Of Expiry Of Security"
             />

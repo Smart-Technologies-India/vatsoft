@@ -435,6 +435,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
             <DateSelect<record31AForm>
               name="invoice_date"
               required={true}
+              format={"DD/MM/YYYY"}
               title="Invoice Date"
               placeholder="Select Invoice Date"
               mindate={

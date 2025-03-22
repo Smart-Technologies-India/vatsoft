@@ -5,8 +5,9 @@ import Navbar from "@/components/dashboard/header";
 import Sidebar from "@/components/dashboard/sidebar";
 import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next";
-import { Role, user } from "@prisma/client";
+import { dvat04, Role, user } from "@prisma/client";
 import { usePathname, useSearchParams } from "next/navigation";
+import GetDvatById from "@/action/user/register/getdvatbyid";
 
 export default function DashboardLayout({
   children,
@@ -16,7 +17,8 @@ export default function DashboardLayout({
   const searchParams = useSearchParams();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [userdata, setUpser] = useState<user>();
+  const [userdata, setUser] = useState<user | null>(null);
+  const [dvat, setDvat] = useState<dvat04 | null>(null);
   const [isLoading, setLoading] = useState<boolean>(true);
 
   const [isbluck, setBluck] = useState<boolean>(
@@ -34,11 +36,16 @@ export default function DashboardLayout({
     //   setBluck(true);
     // }
     const id: number = parseInt(getCookie("id") ?? "0");
-
+    const dvatid: number = parseInt(getCookie("dvat") ?? "0");
 
     const userrespone = await GetUser({ id: id });
     if (userrespone.status) {
-      setUpser(userrespone.data!);
+      setUser(userrespone.data!);
+    }
+
+    const dvatresponse = await GetDvatById({ id: dvatid });
+    if (dvatresponse.status) {
+      setDvat(dvatresponse.data!);
     }
     setLoading(false);
   };
@@ -85,7 +92,9 @@ export default function DashboardLayout({
             role={userdata?.role as Role}
             isOpen={isOpen}
             setIsOpen={setIsOpen}
-            name={userdata?.firstName ?? ""}
+            name={
+              dvat != null ? dvat.tradename ?? "" : userdata?.firstName ?? ""
+            }
             isbluck={isbluck}
           ></Navbar>
         )}

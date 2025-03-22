@@ -26,7 +26,6 @@ const GetUserDvat04 = async (
       });
     }
 
-    console.log("dvatid", dvatid);
     const dvat04response = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,

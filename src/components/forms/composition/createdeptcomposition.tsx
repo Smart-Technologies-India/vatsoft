@@ -89,6 +89,7 @@ const Composition = (props: CompositionProviderProps) => {
             placeholder="Select Date"
             name="officer_date"
             required={true}
+            format={"DD/MM/YYYY"}
             title="Officer Date"
           />
         </div>

@@ -357,6 +357,7 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
           required={true}
           title="Invoice Date"
           placeholder="Select Invoice Date"
+          format={"DD/MM/YYYY"}
           // mindate={dayjs(getMonthDateas().start, dateFormat)}
           // maxdate={dayjs(getMonthDateas().end, dateFormat)}
           maxdate={dayjs()}

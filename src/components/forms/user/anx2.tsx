@@ -263,6 +263,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
                 placeholder="Date of Establishment"
                 name="dateOfExtablishment"
                 required={true}
+                format={"DD/MM/YYYY"}
                 title="Date of Establishment"
               />
             </div>

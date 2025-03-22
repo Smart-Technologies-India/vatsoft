@@ -34,6 +34,9 @@ const GetDvatByOffice = async (
           {
             status: "VERIFICATION",
           },
+          {
+            status: "APPROVED",
+          },
         ],
       },
       include: {

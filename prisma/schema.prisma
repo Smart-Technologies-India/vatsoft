@@ -163,6 +163,7 @@ enum TitleParticulasOfperson {
   DIRECTOR
   MANAGER
   CHAIRMAN
+  KARTA
 }
 
 enum TypeOfPerson {
@@ -498,6 +499,10 @@ model user {
   first_stock_updatedBy first_stock[] @relation("first_stock_updatedBy")
   first_stock_deletedBy first_stock[] @relation("first_stock_deletedBy")
 
+  save_stock_createdBy save_stock[] @relation("save_stock_createdBy")
+  save_stock_updatedBy save_stock[] @relation("save_stock_updatedBy")
+  save_stock_deletedBy save_stock[] @relation("save_stock_deletedBy")
+
   registration          registration[]
   composition           composition[]
   refunds               refunds[]
@@ -680,6 +685,7 @@ model dvat04 {
   edit_manufacturer     edit_manufacturer[]
   cform                 cform[]
   first_stock           first_stock[]
+  save_stock            save_stock[]
 }
 
 model commodity {
@@ -1140,6 +1146,7 @@ model commodity_master {
   edit_purchase         edit_purchase[]
   edit_manufacturer     edit_manufacturer[]
   first_stock           first_stock[]
+  save_stock            save_stock[]
 }
 
 model user_commodity_master {
@@ -1339,6 +1346,27 @@ model first_stock {
   updatedById        Int?
   deletedAt          DateTime?
   deletedBy          user?            @relation("first_stock_deletedBy", fields: [deletedById], references: [id])
+  deletedById        Int?
+}
+
+model save_stock {
+  id                 Int              @id @default(autoincrement())
+  dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
+  dvat04Id           Int
+  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
+  commodity_masterId Int
+  quantity           Int
+  description        String?
+  remark             String?
+  status             Status           @default(ACTIVE)
+  createdAt          DateTime         @default(now())
+  createdBy          user             @relation("save_stock_createdBy", fields: [createdById], references: [id])
+  createdById        Int
+  updatedAt          DateTime         @updatedAt
+  updatedBy          user?            @relation("save_stock_updatedBy", fields: [updatedById], references: [id])
+  updatedById        Int?
+  deletedAt          DateTime?
+  deletedBy          user?            @relation("save_stock_deletedBy", fields: [deletedById], references: [id])
   deletedById        Int?
 }
 

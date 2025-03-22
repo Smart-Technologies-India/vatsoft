@@ -56,8 +56,8 @@ const Dvat1Schema = object({
   ),
   gst: pipe(string("GST is required. NA if not available."), minLength(1, "GST is required. NA if not available.")),
   buildingNumber: pipe(
-    string("Building Number is required."),
-    minLength(1, "Building Number is required.")
+    string("Shop Number is required."),
+    minLength(1, "Shop Number is required.")
   ),
   area: pipe(
     string("Area/Locality is required."),

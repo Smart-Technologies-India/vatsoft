@@ -4,6 +4,8 @@ export function middleware(request: NextRequest) {
   const idCookie = request.cookies.get("id");
   const id = idCookie?.value.toString();
 
+  const userrole = request.cookies.get("role");
+  const role = userrole?.value.toString();
   if (id && request.nextUrl.pathname.startsWith("/login")) {
     return NextResponse.redirect(new URL("dashboard/", request.url));
   } else if (
@@ -21,5 +23,18 @@ export function middleware(request: NextRequest) {
     NextResponse.next();
   } else if (!id && request.nextUrl.pathname.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/login", request.url));
+  } else if (
+    request.nextUrl.pathname == "/dashboard" &&
+    ![
+      "SYSTEM",
+      "ADMIN",
+      "VATOFFICER",
+      "COMMISSIONER",
+      "DY_COMMISSIONER",
+      "JOINT_COMMISSIONER",
+      "USER",
+    ].includes(role ?? "USER")
+  ) {
+    return NextResponse.redirect(new URL("/dashboard/register", request.url));
   }
 }

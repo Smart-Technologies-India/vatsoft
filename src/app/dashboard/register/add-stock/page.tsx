@@ -1,6 +1,9 @@
 "use client";
 import GetUserDvat04FirstStock from "@/action/dvat/getuserdvatfirststock";
 import CreateFirstStock from "@/action/firststock/firststockcreat";
+import CreateSaveStock from "@/action/save_stock/addsavestock";
+import DeleteSaveStock from "@/action/save_stock/deletesavestock";
+import GetSaveStock from "@/action/save_stock/getsavestock";
 import { CreateFirstStockProvider } from "@/components/forms/createstock/createstockfirst";
 import {
   Table,
@@ -21,7 +24,6 @@ import {
   RadioChangeEvent,
 } from "antd";
 import { getCookie } from "cookies-next";
-import { set } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -41,6 +43,20 @@ const AddStock = () => {
       const dvat = await GetUserDvat04FirstStock();
       if (dvat.status && dvat.data) {
         setDvatData(dvat.data);
+      }
+
+      const getdata = await GetSaveStock({});
+
+      if (getdata.status && getdata.data) {
+        setStock(
+          getdata.data.map((item) => {
+            return {
+              id: item.id,
+              item: item.commodity_master,
+              quantity: item.quantity,
+            };
+          })
+        );
       }
       setLoading(false);
     };
@@ -67,6 +83,7 @@ const AddStock = () => {
   };
 
   interface StockData {
+    id: number | null;
     item: commodity_master;
     quantity: number;
   }
@@ -96,6 +113,19 @@ const AddStock = () => {
     }
   };
 
+  const savedata = async () => {
+    const created_data = await CreateSaveStock({
+      data: stock,
+      dvatid: dvatdata?.id ?? 0,
+      createdById: userid,
+    });
+    if (created_data.status) {
+      toast.success(created_data.message);
+    } else {
+      toast.error(created_data.message);
+    }
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -110,6 +140,7 @@ const AddStock = () => {
         onClose={() => {
           setStockBox(false);
         }}
+        size="large"
         open={stockBox}
       >
         <p className="text-lg text-left">Add Stock</p>
@@ -140,7 +171,8 @@ const AddStock = () => {
                 </Radio.Button>
               </Radio.Group>
             </div>
-            {dvatdata?.status == "PENDINGPROCESSING" ? (
+            {dvatdata?.status == "PENDINGPROCESSING" &&
+            stock.filter((val) => val.item.id == 748).length <= 0 ? (
               <Button
                 size="small"
                 type="primary"
@@ -208,12 +240,17 @@ const AddStock = () => {
                           size="small"
                           type="primary"
                           danger
-                          onClick={() => {
+                          onClick={async () => {
                             setStock(
                               stock.filter(
                                 (item) => item.item.id != val.item.id
                               )
                             );
+                            if (val.id != null) {
+                              await DeleteSaveStock({
+                                id: val.id,
+                              });
+                            }
                           }}
                         >
                           Delete
@@ -224,9 +261,8 @@ const AddStock = () => {
                 </TableBody>
               </Table>
 
-              <div className="flex mt-2">
+              <div className="flex mt-2 gap-2">
                 <div className="grow"></div>
-
                 <Button
                   size="small"
                   type="primary"
@@ -238,6 +274,16 @@ const AddStock = () => {
                 >
                   Submit
                 </Button>
+                {stock.filter((val) => val.item.id == 748).length <= 0 ? (
+                  <Button
+                    size="small"
+                    type="primary"
+                    className="bg-blue-500 hover:bg-blue-500"
+                    onClick={savedata}
+                  >
+                    Save
+                  </Button>
+                ) : null}
               </div>
             </>
           ) : (

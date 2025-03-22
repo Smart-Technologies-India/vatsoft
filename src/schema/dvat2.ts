@@ -7,8 +7,8 @@ import { enum_, InferInput, minLength, object, string, pipe } from "valibot";
 
 const Dvat2Schema = object({
   noticeServingBuildingName: pipe(
-    string("Building Number is required."),
-    minLength(1, "Building Number is required.")
+    string("Shop Number is required."),
+    minLength(1, "Shop Number is required.")
   ),
   noticeServingArea: pipe(
     string("Area/Locality is required."),

@@ -66,20 +66,6 @@ const Page = () => {
       const userresponse = await GetUser({ id: id });
       if (userresponse.status) setUser(userresponse.data!);
 
-      if (
-        ![
-          "SYSTEM",
-          "ADMIN",
-          "VATOFFICER",
-          "COMMISSIONER",
-          "DY_COMMISSIONER",
-          "JOINT_COMMISSIONER",
-          "USER"
-        ].includes(userresponse.data?.role!)
-      ) {
-        router.push("/dashboard/register");
-      }
-
       const dashboard = await DashboardMonth({
         userid: id,
       });

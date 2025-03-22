@@ -45,7 +45,6 @@ interface NavbarProps {
 }
 
 const Navbar = (props: NavbarProps) => {
-
   const router = useRouter();
   const path = usePathname();
 
@@ -191,8 +190,13 @@ const Navbar = (props: NavbarProps) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            {props.role != Role.USER && (
+            {/* <DropdownMenuLabel>My Account</DropdownMenuLabel> */}
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={showDrawer} className="cursor-pointer">
+                Change Password
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            {/* {props.role != Role.USER && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
@@ -204,8 +208,8 @@ const Navbar = (props: NavbarProps) => {
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
               </>
-            )}
-            <DropdownMenuSeparator />
+            )} */}
+            {/* <DropdownMenuSeparator /> */}
             {/* <DropdownMenuGroup>
             <DropdownMenuItem>Team</DropdownMenuItem>
             <DropdownMenuSub>

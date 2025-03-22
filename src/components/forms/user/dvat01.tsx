@@ -299,6 +299,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             placeholder="Select Date"
             name="vatLiableDate"
             required={true}
+            format={"DD/MM/YYYY"}
             title="7. Date from which liable for registration under Dadra and Nagar
                 Haveli Value Added Tax regulation, 2005 (DD/MM/YYYY)"
           />
@@ -331,10 +332,10 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
         <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
           <div className="flex-1">
             <TaxtInput<Dvat1Form>
-              placeholder="Enter Building number"
+              placeholder="Enter Shop Number"
               name="buildingNumber"
               required={true}
-              title="Building Number "
+              title="Shop Number"
             />
           </div>
           <div className="flex-1">

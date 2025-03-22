@@ -17,7 +17,6 @@ const GetAllDvatByDept = async (
 > => {
   const functionname: string = GetAllDvatByDept.name;
   try {
-    // console.log(payload.dept);
     const dvat04response = await prisma.dvat04.findMany({
       where: {
         selectOffice: payload.dept,
@@ -48,7 +47,6 @@ const GetAllDvatByDept = async (
       });
     }
 
-    // console.log(dvat04response[0].registration);
     return {
       status: true,
       data: dvat04response,

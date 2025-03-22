@@ -309,6 +309,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
             name="invoice_date"
             required={true}
             title="Invoice Date"
+            format={"DD/MM/YYYY"}
             placeholder="Select Invoice Date"
             // mindate={dayjs(getMonthDateas().start, dateFormat)}
             // maxdate={dayjs(getMonthDateas().end, dateFormat)}

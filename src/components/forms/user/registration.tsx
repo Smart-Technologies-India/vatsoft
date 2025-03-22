@@ -348,6 +348,7 @@ const Registration = () => {
             placeholder="Select the date of visit"
             title="1. Date of Visit"
             required={true}
+            format={"DD/MM/YYYY"}
           />
         </div>
         <div className="flex-1">
@@ -368,6 +369,7 @@ const Registration = () => {
             title="3. Date of Commencement of Purchases"
             placeholder="Select the date of purchases"
             required={true}
+            format={"DD/MM/YYYY"}
           />
         </div>
         <div className="flex-1">
@@ -386,6 +388,7 @@ const Registration = () => {
             name={"date_of_sales"}
             placeholder="Select the date of sales"
             required={true}
+            format={"DD/MM/YYYY"}
             title="5. Date of Commencement of Sales"
           />
         </div>
@@ -479,6 +482,7 @@ const Registration = () => {
               placeholder="Enter security deposit date"
               name="security_deposit_date"
               required={true}
+              format={"DD/MM/YYYY"}
               title="b). Security desposit date"
             />
           </div>
@@ -489,6 +493,7 @@ const Registration = () => {
               placeholder="Enter date of expiry"
               name="date_of_expiry_security_deposit"
               required={true}
+              format={"DD/MM/YYYY"}
               title="c). Date of Expiry of Security Deposit"
             />
           </div>
@@ -908,6 +913,7 @@ const VatNote = (props: VatNoteProps) => {
             name={"date_of_visit"}
             placeholder="Select the date of visit"
             title="1. Date of Visit"
+            format={"DD/MM/YYYY"}
             required={true}
             disable={true}
           />
@@ -932,6 +938,7 @@ const VatNote = (props: VatNoteProps) => {
             placeholder="Select the date of purchases"
             required={true}
             disable={true}
+            format={"DD/MM/YYYY"}
           />
         </div>
         <div className="flex-1">
@@ -953,6 +960,7 @@ const VatNote = (props: VatNoteProps) => {
             required={true}
             title="5. Date of Commencement of Sales"
             disable={true}
+            format={"DD/MM/YYYY"}
           />
         </div>
         <div className="flex-1">
@@ -1056,6 +1064,7 @@ const VatNote = (props: VatNoteProps) => {
               required={true}
               title="b). Security desposit date"
               disable={true}
+              format={"DD/MM/YYYY"}
             />
           </div>
         </div>
@@ -1067,6 +1076,7 @@ const VatNote = (props: VatNoteProps) => {
               required={true}
               title="c). Date of Expiry of Security Deposit"
               disable={true}
+              format={"DD/MM/YYYY"}
             />
           </div>
           <div className="flex-1">
@@ -1165,6 +1175,7 @@ const VatNote = (props: VatNoteProps) => {
               placeholder="Enter payment Registration Date"
               name="registration_date"
               required={true}
+              format={"DD/MM/YYYY"}
               title="Registration Payment Date"
             />
           </div>

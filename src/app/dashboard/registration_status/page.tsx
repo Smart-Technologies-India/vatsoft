@@ -56,7 +56,24 @@ const RegistrationStatus = () => {
         });
 
         if (response.data && response.status) {
-          setData(response.data);
+          // setData(response.data);
+
+          // short data according to this status order
+          // 1 - VERIFICATION
+          // 2 - PENDINGPROCESSING
+          // 3 - APPROVED
+
+          const verification = response.data.filter(
+            (val) => val.status == "VERIFICATION"
+          );
+          const pendingprocessing = response.data.filter(
+            (val) => val.status == "PENDINGPROCESSING"
+          );
+          const approved = response.data.filter(
+            (val) => val.status == "APPROVED"
+          );
+
+          setData([...verification, ...pendingprocessing, ...approved]);
         }
       }
     };
@@ -107,7 +124,16 @@ const RegistrationStatus = () => {
                       index: number
                     ) => {
                       return (
-                        <TableRow key={index}>
+                        <TableRow
+                          key={index}
+                          className={`bg-opacity-20 ${
+                            val.status == "PENDINGPROCESSING"
+                              ? "bg-orange-500"
+                              : val.status == "APPROVED"
+                              ? "bg-green-500"
+                              : "bg-rose-500"
+                          }`}
+                        >
                           <TableCell className="text-center border">
                             {val.tinNumber}
                           </TableCell>
@@ -120,6 +146,8 @@ const RegistrationStatus = () => {
                           <TableCell className="text-center border">
                             {val.status == "PENDINGPROCESSING"
                               ? "SUBMITTED"
+                              : val.status == "APPROVED"
+                              ? "APPROVED"
                               : "PENDING"}
                           </TableCell>
                           <TableCell className="text-center border">

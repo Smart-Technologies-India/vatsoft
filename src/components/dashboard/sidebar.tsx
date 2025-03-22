@@ -34,23 +34,25 @@ const Sidebar = (props: SidebarProps) => {
   const router = useRouter();
 
   const id: number = parseInt(getCookie("id") ?? "0");
-  const [user, setUser] = useState<user>();
+  // const dvatid: number = parseInt(getCookie("dvat") ?? "0");
+  // const [user, setUser] = useState<user>();
   const [isProfileCompletd, setIsProfileCompleted] = useState<boolean>(false);
 
   useEffect(() => {
     const init = async () => {
-      const userresponse = await GetUser({
-        id: id,
-      });
-      if (userresponse.status && userresponse.data) {
-        setUser(userresponse.data);
-      }
+      // const userresponse = await GetUser({
+      //   id: id,
+      // });
+      // if (userresponse.status && userresponse.data) {
+      //   setUser(userresponse.data);
+      // }
       const profile_response = await GetUserStatus({
         id: id,
       });
       if (profile_response.status && profile_response.data) {
         setIsProfileCompleted(profile_response.data.registration);
       }
+
     };
     init();
   }, [id]);
@@ -204,7 +206,9 @@ const Sidebar = (props: SidebarProps) => {
       ].includes(props.role) && (
         <MenuTab
           click={() => props.setIsOpen(false)}
-          icon={<FluentDocumentSparkle28Regular className="text-gray-300 w-6" />}
+          icon={
+            <FluentDocumentSparkle28Regular className="text-gray-300 w-6" />
+          }
           name="Registration Status"
           path={path}
           pathcheck={"/dashboard/registration_status"}

@@ -63,6 +63,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
     { value: "DIRECTOR", label: "DIRECTOR" },
     { value: "CHAIRMAN", label: "CHAIRMAN" },
     { value: "MANAGER", label: "MANAGER" },
+    { value: "KARTA", label: "KARTA" },
   ];
 
   const gender: OptionValue[] = [
@@ -230,6 +231,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
               <DateSelect<Anx1Form>
                 placeholder="Date Of Birth"
                 name="dateOfBirth"
+                format={"DD/MM/YYYY"}
                 required={true}
                 title="Date Of Birth"
                 maxdate={dayjs(
@@ -290,7 +292,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
             <TaxtInput<Anx1Form>
               placeholder="Education Qualification"
               name="eductionQualification"
-              required={true}
+              // required={true}
               title="Education Qualification"
             />
           </div>
@@ -536,7 +538,9 @@ const Anx1 = (props: Anx1ProviderProps) => {
                         title="Delete"
                         trigger="click"
                         open={deleteOpenId === data.id} // Only open for the selected row
-                        onOpenChange={(isOpen) => setDeleteOpenId(isOpen ? data.id : null)}
+                        onOpenChange={(isOpen) =>
+                          setDeleteOpenId(isOpen ? data.id : null)
+                        }
                       >
                         <Button>Delete</Button>
                       </Popover>

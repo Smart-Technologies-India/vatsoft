@@ -145,6 +145,7 @@ const HolidayMaster = (props: HolidayProviderProps) => {
           title="Date"
           required={true}
           name="date"
+          format={"DD/MM/YYYY"}
           placeholder="Selete Date"
         />
       </div>

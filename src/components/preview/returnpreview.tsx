@@ -279,7 +279,7 @@ export const Dvat1Page = (props: Dvat1PageProps) => {
             </TableRow>
 
             <CreateTable
-              key1="Building Number"
+              key1="Shop Number"
               value1={dvatData?.buildingNumber ?? ""}
               key2="Area"
               value2={dvatData?.area ?? ""}
@@ -463,7 +463,7 @@ export const Dvat2Page = (props: Dvat2PageProps) => {
               </TableCell>
             </TableRow>
             <CreateTable
-              key1="Building Name"
+              key1="Shop Number"
               value1={dvatdata?.noticeServingBuildingName ?? ""}
               key2="Area"
               value2={dvatdata?.noticeServingArea ?? ""}

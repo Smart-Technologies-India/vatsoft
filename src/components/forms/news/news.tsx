@@ -141,6 +141,7 @@ const NewsMaster = (props: NewsProviderProps) => {
           title="Post Date"
           required={true}
           name="postdate"
+          format={"DD/MM/YYYY"}
           placeholder="Selete Date"
         />
       </div>

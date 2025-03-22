@@ -366,6 +366,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
                   placeholder="Select Date"
                   name="due_date"
                   required={true}
+                  format={"DD/MM/YYYY"}
                   title="Due Date"
                 />
               </div>
