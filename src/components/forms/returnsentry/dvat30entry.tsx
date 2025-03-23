@@ -291,12 +291,17 @@ const CreateDvat30Entry = (props: CreateDvat30EntryProviderProps) => {
     if (searchParams.get("id")) {
       const return_entry_id: number = parseInt(searchParams.get("id") ?? "0");
 
+      const date = new Date(
+        new Date(data.invoice_date).toISOString().split("T")[0]
+      );
+      date.setDate(date.getDate() + 1);
+
       const recordresponse = await UpdateReturnEntry({
         id: return_entry_id,
         updatedById: id,
         invoice_number: data.invoice_number,
         total_invoice_number: data.total_invoice_number,
-        invoice_date: new Date(data.invoice_date),
+        invoice_date: date,
         input_tax_credit: data.input_tax_credit,
         nature_purchase: data.nature_purchase,
         nature_purchase_option: data.nature_purchase_option,
@@ -317,6 +322,11 @@ const CreateDvat30Entry = (props: CreateDvat30EntryProviderProps) => {
         toast.error(recordresponse.message);
       }
     } else {
+      const date = new Date(
+        new Date(data.invoice_date).toISOString().split("T")[0]
+      );
+      date.setDate(date.getDate() + 1);
+
       const recordresponse = await AddReturnInvoice({
         createdById: id,
         returnType: ReturnType.ORIGINAL,
@@ -329,7 +339,7 @@ const CreateDvat30Entry = (props: CreateDvat30EntryProviderProps) => {
         urn_number: nanoid(),
         invoice_number: data.invoice_number,
         total_invoice_number: data.total_invoice_number,
-        invoice_date: new Date(data.invoice_date),
+        invoice_date: date,
         input_tax_credit: data.input_tax_credit,
         nature_purchase: data.nature_purchase,
         nature_purchase_option: data.nature_purchase_option,

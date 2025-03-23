@@ -508,8 +508,8 @@ const ReturnDashboard = () => {
       <Modal title="Confirmation" open={rrbox} footer={null} closeIcon={false}>
         <div>
           <p>
-            You have declared nil filing for a return type. You may be penalized
-            if any irregularity found in the declaration of the same.
+            Would you like to proceed with filing the revised VAT return? Please
+            note that penalties may apply if any discrepancies are found.
           </p>
 
           <div className="text-sm flex gap-1 items-center bg-white">

@@ -291,32 +291,34 @@ const CommodityMaster = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {stocks.map(
-                    (
-                      val: stock & { commodity_master: commodity_master },
-                      index: number
-                    ) => (
-                      <TableRow key={index}>
-                        <TableCell className="p-2 border text-center">
-                          {index + 1 + pagination.skip}
-                        </TableCell>
-                        <TableCell className="p-2 border text-left">
-                          {val.commodity_master.product_name}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {quantityCount == "pcs"
-                            ? val.quantity
-                            : showCrates(
-                                val.quantity,
-                                val.commodity_master.crate_size
-                              )}
-                        </TableCell>
-                        <TableCell className="p-2 border text-left">
-                          {val.commodity_master.description}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  )}
+                  {stocks
+                    .filter((val) => val.quantity != 0)
+                    .map(
+                      (
+                        val: stock & { commodity_master: commodity_master },
+                        index: number
+                      ) => (
+                        <TableRow key={index}>
+                          <TableCell className="p-2 border text-center">
+                            {index + 1 + pagination.skip}
+                          </TableCell>
+                          <TableCell className="p-2 border text-left">
+                            {val.commodity_master.product_name}
+                          </TableCell>
+                          <TableCell className="p-2 border text-center">
+                            {quantityCount == "pcs"
+                              ? val.quantity
+                              : showCrates(
+                                  val.quantity,
+                                  val.commodity_master.crate_size
+                                )}
+                          </TableCell>
+                          <TableCell className="p-2 border text-left">
+                            {val.commodity_master.description}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
                 </TableBody>
               </Table>
               <div className="mt-2"></div>

@@ -79,6 +79,7 @@ const CreateDailySale = async (
         throw new Error("Seller Dvat TIN number is not set.");
       }
 
+
       const daily_sale_response = await prisma.daily_sale.create({
         data: {
           seller_tin_numberId: payload.seller_tin_id,

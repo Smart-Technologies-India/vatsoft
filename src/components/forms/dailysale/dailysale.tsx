@@ -248,9 +248,14 @@ const DailySale = (props: DailySaleProviderProps) => {
           : data.amount_unit
         : data.amount_unit;
 
+    const date = new Date(
+      new Date(data.invoice_date).toISOString().split("T")[0]
+    );
+    date.setDate(date.getDate() + 1);
+
     const stock_response = await CreateDailySale({
       amount_unit: amount_unit,
-      invoice_date: new Date(data.invoice_date),
+      invoice_date: date,
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,
@@ -332,9 +337,14 @@ const DailySale = (props: DailySaleProviderProps) => {
           : data.amount_unit
         : data.amount_unit;
 
+    const date = new Date(
+      new Date(data.invoice_date).toISOString().split("T")[0]
+    );
+    date.setDate(date.getDate() + 1);
+
     const stock_response = await CreateDailySale({
       amount_unit: amount_unit,
-      invoice_date: new Date(data.invoice_date),
+      invoice_date: date,
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,
@@ -429,7 +439,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       >
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
-            placeholder="Seller VAT Number"
+            placeholder="Seller VAT Number. (26000000000 for B2C)"
             name="recipient_vat_no"
             required={true}
             title="Seller VAT Number"

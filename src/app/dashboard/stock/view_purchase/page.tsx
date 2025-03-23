@@ -219,14 +219,14 @@ const DocumentWiseDetails = () => {
   return (
     <>
       <Modal
-        title="Convert to"
+        title="Generate DVAT 30/30 A"
         open={isModalOpen}
         onOk={Convertto30a}
         onCancel={() => {
           setIsModalOpen(false);
         }}
       >
-        <p>Are you sure you want to convert to DVAT 31 A</p>
+        <p>Are you sure you want to Generate DVAT 30/30 A Return?</p>
       </Modal>
 
       <div className="p-2 mt-4">
@@ -255,16 +255,19 @@ const DocumentWiseDetails = () => {
             {/* {dvatdata &&
               (dvatdata.commodity == "OIDC" ||
                 dvatdata.commodity == "FUEL") && ( */}
-            <Button
-              size="small"
-              type="primary"
-              className="bg-blue-500 hover:bg-blue-500 px-2"
-              onClick={() => {
-                setIsModalOpen(true);
-              }}
-            >
-              Convert to
-            </Button>
+            {dailyPurchase.length > 0 && (
+              <Button
+                size="small"
+                type="primary"
+                className="bg-blue-500 hover:bg-blue-500 px-2"
+                onClick={() => {
+                  setIsModalOpen(true);
+                }}
+              >
+                Generate DVAT 30/30 A
+              </Button>
+            )}
+
             {/* )} */}
           </div>
 

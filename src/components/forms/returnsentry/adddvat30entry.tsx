@@ -265,10 +265,15 @@ const AddDvat30Entry = (props: AddDvat30EntryProviderProps) => {
     if (!commodityMasterData)
       return toast.error("Select Description of Goods.");
 
+    const date = new Date(
+      new Date(data.invoice_date).toISOString().split("T")[0]
+    );
+    date.setDate(date.getDate() + 1);
+
     addReturnData({
       invoice_number: data.invoice_number,
       total_invoice_number: data.total_invoice_number,
-      invoice_date: new Date(data.invoice_date),
+      invoice_date: date,
       input_tax_credit: data.input_tax_credit,
       nature_purchase: data.nature_purchase,
       nature_purchase_option: data.nature_purchase_option,

@@ -83,11 +83,6 @@ const CheckLastPayment = async (
     const lastmonthindex = monthNames.indexOf(month);
     const lastmonthdate = new Date(Date.UTC(parseInt(year), lastmonthindex, 1));
 
-    console.log("current_payment_date", current_payment_date);
-    console.log("lastmonthdate", lastmonthdate);
-    console.log("vatLiableDate", isExist.dvat04.vatLiableDate);
-
-    // console.log("lastmonthdate", lastmonthdate);
 
     const userid = isExist.createdById;
 
@@ -118,7 +113,6 @@ const CheckLastPayment = async (
         ],
       },
     });
-
 
     if (!lastPayment) {
       if (isExist.dvat04.vatLiableDate! > lastmonthdate) {

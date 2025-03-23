@@ -272,12 +272,17 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
     if (searchParams.get("id")) {
       const return_entry_id: number = parseInt(searchParams.get("id") ?? "0");
 
+      const date = new Date(
+        new Date(data.invoice_date).toISOString().split("T")[0]
+      );
+      date.setDate(date.getDate() + 1);
+
       const recordresponse = await UpdateReturnEntry({
         id: return_entry_id,
         updatedById: id,
         invoice_number: data.invoice_number,
         total_invoice_number: data.total_invoice_number,
-        invoice_date: new Date(data.invoice_date),
+        invoice_date: date,
         seller_tin_numberId: tindata.id,
         category_of_entry: data.category_of_entry,
         sale_of: data.sale_of,
@@ -296,6 +301,11 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
         toast.error(recordresponse.message);
       }
     } else {
+      const date = new Date(
+        new Date(data.invoice_date).toISOString().split("T")[0]
+      );
+      date.setDate(date.getDate() + 1);
+
       const recordresponse = await AddReturnInvoice({
         createdById: id,
         returnType: ReturnType.ORIGINAL,
@@ -308,7 +318,7 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
         urn_number: nanoid(),
         invoice_number: data.invoice_number,
         total_invoice_number: data.total_invoice_number,
-        invoice_date: new Date(data.invoice_date),
+        invoice_date: date,
         seller_tin_numberId: tindata.id,
         category_of_entry: data.category_of_entry,
         sale_of: data.sale_of,

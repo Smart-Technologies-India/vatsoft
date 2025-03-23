@@ -103,12 +103,12 @@ const CreateReturnRevised = async (
 
     if (!returnentryresponse)
       return createResponse({
-        message: "Unable to create return entry.",
+        message: "Unable to initiate revised return.",
         functionname,
       });
 
     return createResponse({
-      message: "Unable to create return entry.",
+      message: "Kindly submit revised return.",
       functionname,
       data: true,
     });

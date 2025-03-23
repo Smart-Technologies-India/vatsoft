@@ -76,7 +76,7 @@ const ConvertDvat30A = async (
       const startOfNextMonth = new Date(year, month, 1); // Year and month are 0-indexed in JS Date
 
       // Calculate the last day of the target month
-      const endOfMonth = new Date(startOfNextMonth.getTime() - 1);
+      const endOfMonth = new Date(startOfNextMonth.getTime() - 1).toISOString();
 
       const data_to_create = await prisma.daily_purchase.findMany({
         where: {

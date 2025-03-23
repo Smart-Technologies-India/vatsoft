@@ -22,6 +22,11 @@ const GetUserCommodity = async (
         deletedById: null,
         status: "ACTIVE",
         dvat04Id: payload.dvatid,
+        NOT: [
+          {
+            quantity: 0,
+          },
+        ],
       },
       include: {
         commodity_master: true,

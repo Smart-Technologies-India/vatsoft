@@ -49,7 +49,6 @@ const Sidebar = (props: SidebarProps) => {
       const profile_response = await GetUserStatus({
         id: id,
       });
-      console.log("profile_response", profile_response);
       if (profile_response.status && profile_response.data) {
         setIsProfileCompleted(profile_response.data.registration);
       }

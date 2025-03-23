@@ -185,6 +185,7 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
 
   useEffect(() => {
     const init = async () => {
+      if (recipient_vat_no == null || recipient_vat_no == undefined) return;
       if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
 
       if (
@@ -252,10 +253,15 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
     if (!commodityMasterData)
       return toast.error("Select Description of Goods.");
 
+    const date = new Date(
+      new Date(data.invoice_date).toISOString().split("T")[0]
+    );
+    date.setDate(date.getDate() + 1);
+
     addReturnData({
       invoice_number: data.invoice_number,
       total_invoice_number: data.total_invoice_number,
-      invoice_date: new Date(data.invoice_date),
+      invoice_date: date,
       seller_tin_numberId: tindata.id,
       category_of_entry: data.category_of_entry,
       sale_of: data.sale_of,

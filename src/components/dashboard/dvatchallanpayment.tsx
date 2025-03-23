@@ -55,18 +55,6 @@ type DvatChallanPaymentProps = {
   returnid: string;
 };
 
-// export const CreateChallanProvider = (props: CreateChallanProviderProps) => {
-//   const methods = useForm<CreateChallanForm>({
-//     resolver: valibotResolver(CreateChallanSchema),
-//   });
-
-//   return (
-//     <FormProvider {...methods}>
-//       <CreateChallanPage userid={props.userid} />
-//     </FormProvider>
-//   );
-// };
-
 export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   const router = useRouter();
   const toWords = new ToWords();
@@ -175,7 +163,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   };
 
   const onSubmit = async (data: SubmitPaymentForm) => {
-    if (return01 == null) return toast.error("There is not return from here");
+    if (return01 == null) return toast.error("No return exist");
 
     const lastPayment = await CheckLastPayment({
       id: return01.id ?? 0,
@@ -201,7 +189,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       rr_number: get_rr_number(),
       penalty: lateFees.toString(),
       ...(isNegative(getValue()) && {
-        pending_payment: getValue().toFixed()
+        pending_payment: getValue().toFixed(),
       }),
     });
 
@@ -625,14 +613,41 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                   VAT(0005)
                 </TableCell>
                 <TableCell className="text-center p-2 border ">
-                  {getVatAmount().toFixed(2)}
+                  {getVatAmount().toFixed(0)}
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="text-left p-2 border">
                   Interest(0008)
                 </TableCell>
-                <TableCell className="text-center p-2 border">0</TableCell>
+                <TableCell className="text-center p-2 border">
+                  {(
+                    (((parseFloat(getInvoicePercentage("0").decrease) +
+                      parseFloat(getInvoicePercentage("1").decrease) +
+                      parseFloat(getInvoicePercentage("4").decrease) +
+                      parseFloat(getInvoicePercentage("5").decrease) +
+                      parseFloat(getInvoicePercentage("6").decrease) +
+                      parseFloat(getInvoicePercentage("12.5").decrease) +
+                      parseFloat(getInvoicePercentage("12.75").decrease) +
+                      parseFloat(getInvoicePercentage("13.5").decrease) +
+                      parseFloat(getInvoicePercentage("15").decrease) +
+                      parseFloat(getInvoicePercentage("20").decrease) +
+                      parseFloat(getSaleOfPercentage("4").decrease) +
+                      parseFloat(getSaleOfPercentage("5").decrease) +
+                      parseFloat(getSaleOfPercentage("12.5").decrease) +
+                      parseFloat(get4_6().decrease) +
+                      parseFloat(get4_7().decrease) -
+                      parseFloat(get4_9().decrease) -
+                      (parseFloat(get5_1().decrease) +
+                        parseFloat(get5_2().decrease) +
+                        (parseFloat(getCreditNote().decrease) -
+                          parseFloat(getDebitNote().decrease) -
+                          parseFloat(getGoodsReturnsNote().decrease)))) *
+                      0.15) /
+                      365) *
+                    DiffDays
+                  ).toFixed(0)}
+                </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="text-left p-2 border">
@@ -655,7 +670,34 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                   Total Challan Amount:
                 </TableCell>
                 <TableCell className="text-center p-2 border">
-                  {getVatAmount() + lateFees}
+                  {(
+                    getVatAmount() +
+                    lateFees +
+                    (((parseFloat(getInvoicePercentage("0").decrease) +
+                      parseFloat(getInvoicePercentage("1").decrease) +
+                      parseFloat(getInvoicePercentage("4").decrease) +
+                      parseFloat(getInvoicePercentage("5").decrease) +
+                      parseFloat(getInvoicePercentage("6").decrease) +
+                      parseFloat(getInvoicePercentage("12.5").decrease) +
+                      parseFloat(getInvoicePercentage("12.75").decrease) +
+                      parseFloat(getInvoicePercentage("13.5").decrease) +
+                      parseFloat(getInvoicePercentage("15").decrease) +
+                      parseFloat(getInvoicePercentage("20").decrease) +
+                      parseFloat(getSaleOfPercentage("4").decrease) +
+                      parseFloat(getSaleOfPercentage("5").decrease) +
+                      parseFloat(getSaleOfPercentage("12.5").decrease) +
+                      parseFloat(get4_6().decrease) +
+                      parseFloat(get4_7().decrease) -
+                      parseFloat(get4_9().decrease) -
+                      (parseFloat(get5_1().decrease) +
+                        parseFloat(get5_2().decrease) +
+                        (parseFloat(getCreditNote().decrease) -
+                          parseFloat(getDebitNote().decrease) -
+                          parseFloat(getGoodsReturnsNote().decrease)))) *
+                      0.15) /
+                      365) *
+                      DiffDays
+                  ).toFixed(0)}
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -663,7 +705,40 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                   Total amount paid (in words): Rupees
                 </TableCell>
                 <TableCell className="text-left p-2 border">
-                  {capitalcase(toWords.convert(getVatAmount() + lateFees))}
+                  {capitalcase(
+                    toWords.convert(
+                      parseFloat(
+                        (
+                          getVatAmount() +
+                          lateFees +
+                          (((parseFloat(getInvoicePercentage("0").decrease) +
+                            parseFloat(getInvoicePercentage("1").decrease) +
+                            parseFloat(getInvoicePercentage("4").decrease) +
+                            parseFloat(getInvoicePercentage("5").decrease) +
+                            parseFloat(getInvoicePercentage("6").decrease) +
+                            parseFloat(getInvoicePercentage("12.5").decrease) +
+                            parseFloat(getInvoicePercentage("12.75").decrease) +
+                            parseFloat(getInvoicePercentage("13.5").decrease) +
+                            parseFloat(getInvoicePercentage("15").decrease) +
+                            parseFloat(getInvoicePercentage("20").decrease) +
+                            parseFloat(getSaleOfPercentage("4").decrease) +
+                            parseFloat(getSaleOfPercentage("5").decrease) +
+                            parseFloat(getSaleOfPercentage("12.5").decrease) +
+                            parseFloat(get4_6().decrease) +
+                            parseFloat(get4_7().decrease) -
+                            parseFloat(get4_9().decrease) -
+                            (parseFloat(get5_1().decrease) +
+                              parseFloat(get5_2().decrease) +
+                              (parseFloat(getCreditNote().decrease) -
+                                parseFloat(getDebitNote().decrease) -
+                                parseFloat(getGoodsReturnsNote().decrease)))) *
+                            0.15) /
+                            365) *
+                            DiffDays
+                        ).toFixed(0)
+                      )
+                    )
+                  )}
                 </TableCell>
               </TableRow>
             </TableBody>

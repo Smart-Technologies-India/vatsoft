@@ -120,7 +120,9 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       ) {
         if (recipient_vat_no.length >= 11) {
           toast.dismiss();
-          toast.error("Invalid DVAT no.");
+          toast.error(
+            "Local purchase will auto reflect after sale entry from the seller."
+          );
         }
         setTinData(null);
         return;
@@ -213,9 +215,15 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       quantityCount == "crate"
         ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
         : data.amount_unit;
+
+    const date = new Date(
+      new Date(data.invoice_date).toISOString().split("T")[0]
+    );
+    date.setDate(date.getDate() + 1);
+
     const stock_response = await CreateDailyPurchase({
       amount_unit: amount_unit,
-      invoice_date: new Date(data.invoice_date),
+      invoice_date: date,
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,
@@ -264,9 +272,14 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       quantityCount == "crate"
         ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
         : data.amount_unit;
+
+    const date = new Date(
+      new Date(data.invoice_date).toISOString().split("T")[0]
+    );
+    date.setDate(date.getDate() + 1);
     const stock_response = await CreateDailyPurchase({
       amount_unit: amount_unit,
-      invoice_date: new Date(data.invoice_date),
+      invoice_date: date,
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,

@@ -3096,6 +3096,7 @@ interface CentralSalesProps {
 const CentralSales = (props: CentralSalesProps) => {
   const searchparam = useSearchParams();
   const [lateFees, setLateFees] = useState<number>(0);
+  const [DiffDays, setDiffDays] = useState<number>(0);
 
   useEffect(() => {
     const year: string = searchparam.get("year") ?? "";
@@ -3133,6 +3134,9 @@ const CentralSales = (props: CentralSalesProps) => {
       new Date(parseInt(props.return01.year), monthIndex, 11),
       currentDate
     );
+
+    setDiffDays(diff_days);
+
     if (
       props.return01.rr_number == null ||
       props.return01.rr_number == undefined ||
@@ -4146,7 +4150,32 @@ const CentralSales = (props: CentralSalesProps) => {
             0
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {(
+              (((parseFloat(getInvoicePercentage("0").decrease) +
+                parseFloat(getInvoicePercentage("1").decrease) +
+                parseFloat(getInvoicePercentage("4").decrease) +
+                parseFloat(getInvoicePercentage("5").decrease) +
+                parseFloat(getInvoicePercentage("6").decrease) +
+                parseFloat(getInvoicePercentage("12.5").decrease) +
+                parseFloat(getInvoicePercentage("12.75").decrease) +
+                parseFloat(getInvoicePercentage("13.5").decrease) +
+                parseFloat(getInvoicePercentage("15").decrease) +
+                parseFloat(getInvoicePercentage("20").decrease) +
+                parseFloat(getSaleOfPercentage("4").decrease) +
+                parseFloat(getSaleOfPercentage("5").decrease) +
+                parseFloat(getSaleOfPercentage("12.5").decrease) +
+                parseFloat(get4_6().decrease) +
+                parseFloat(get4_7().decrease) -
+                parseFloat(get4_9().decrease) -
+                (parseFloat(get5_1().decrease) +
+                  parseFloat(get5_2().decrease) +
+                  (parseFloat(getCreditNote().decrease) -
+                    parseFloat(getDebitNote().decrease) -
+                    parseFloat(getGoodsReturnsNote().decrease)))) *
+                0.15) /
+                365) *
+              DiffDays
+            ).toFixed(0)}
           </td>
         </tr>
         <tr className="w-full">
@@ -4252,7 +4281,31 @@ const CentralSales = (props: CentralSalesProps) => {
                 (parseFloat(getCreditNote().decrease) -
                   parseFloat(getDebitNote().decrease) -
                   parseFloat(getGoodsReturnsNote().decrease))) +
-              lateFees
+              lateFees +
+              (((parseFloat(getInvoicePercentage("0").decrease) +
+                parseFloat(getInvoicePercentage("1").decrease) +
+                parseFloat(getInvoicePercentage("4").decrease) +
+                parseFloat(getInvoicePercentage("5").decrease) +
+                parseFloat(getInvoicePercentage("6").decrease) +
+                parseFloat(getInvoicePercentage("12.5").decrease) +
+                parseFloat(getInvoicePercentage("12.75").decrease) +
+                parseFloat(getInvoicePercentage("13.5").decrease) +
+                parseFloat(getInvoicePercentage("15").decrease) +
+                parseFloat(getInvoicePercentage("20").decrease) +
+                parseFloat(getSaleOfPercentage("4").decrease) +
+                parseFloat(getSaleOfPercentage("5").decrease) +
+                parseFloat(getSaleOfPercentage("12.5").decrease) +
+                parseFloat(get4_6().decrease) +
+                parseFloat(get4_7().decrease) -
+                parseFloat(get4_9().decrease) -
+                (parseFloat(get5_1().decrease) +
+                  parseFloat(get5_2().decrease) +
+                  (parseFloat(getCreditNote().decrease) -
+                    parseFloat(getDebitNote().decrease) -
+                    parseFloat(getGoodsReturnsNote().decrease)))) *
+                0.15) /
+                365) *
+                DiffDays
             ).toFixed(2)}
           </td>
         </tr>

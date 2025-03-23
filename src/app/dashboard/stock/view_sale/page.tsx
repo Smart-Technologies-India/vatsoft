@@ -215,14 +215,14 @@ const DocumentWiseDetails = () => {
   return (
     <>
       <Modal
-        title="Convert to"
+        title="Generate DVAT 31/31 A Return"
         open={isModalOpen}
         onOk={Convertto31}
         onCancel={() => {
           setIsModalOpen(false);
         }}
       >
-        <p>Are you sure you want to convert to DVAT 31 A</p>
+        <p>Are you sure you want to generate DVAT 31/31 A Return?</p>
       </Modal>
       <Drawer
         placement="right"
@@ -268,16 +268,19 @@ const DocumentWiseDetails = () => {
             >
               Add
             </Button>
-            <Button
-              size="small"
-              type="primary"
-              className="bg-blue-500 hover:bg-blue-500 px-2"
-              onClick={() => {
-                setIsModalOpen(true);
-              }}
-            >
-              Convert to
-            </Button>
+
+            {dailySale.length > 0 && (
+              <Button
+                size="small"
+                type="primary"
+                className="bg-blue-500 hover:bg-blue-500 px-2"
+                onClick={() => {
+                  setIsModalOpen(true);
+                }}
+              >
+                Generate DVAT 31/31 A
+              </Button>
+            )}
           </div>
 
           {dailySale.length > 0 ? (

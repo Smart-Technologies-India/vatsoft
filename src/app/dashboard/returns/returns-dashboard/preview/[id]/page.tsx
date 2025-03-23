@@ -47,6 +47,7 @@ const Dvat16ReturnPreview = () => {
     decryptURLData(Array.isArray(id) ? id[0] : id, router)
   );
 
+  const [isDownload, setDownload] = useState<boolean>(false);
   const current_user_id: number = parseInt(getCookie("id") ?? "0");
 
   const [return01, setReturn01] = useState<
@@ -230,6 +231,7 @@ const Dvat16ReturnPreview = () => {
   };
 
   const generatePDF = async () => {
+    setDownload(true);
     try {
       // Fetch the PDF from the server
       const path = `${window.location.pathname}${window.location.search}`;
@@ -243,6 +245,10 @@ const Dvat16ReturnPreview = () => {
       });
 
       if (!response.ok) {
+        setTimeout(() => {
+          setDownload(false);
+        }, 3600);
+
         throw new Error("Failed to generate PDF");
       }
 
@@ -255,7 +261,14 @@ const Dvat16ReturnPreview = () => {
 
       // Programmatically click the link to trigger the download
       link.click();
+      setTimeout(() => {
+        setDownload(false);
+      }, 3600);
     } catch (error) {
+      setTimeout(() => {
+        setDownload(false);
+      }, 3600);
+
       toast.error("Unable to download pdf try again.");
     }
   };
@@ -846,8 +859,8 @@ const Dvat16ReturnPreview = () => {
             )}
 
             {/* <Button onClick={() => router.back()}>Back</Button> */}
-            <Button type="primary" onClick={generatePDF}>
-              Download returns
+            <Button type="primary" onClick={generatePDF} disabled={isDownload}>
+              {isDownload ? "Downloading..." : "Download"}
             </Button>
 
             {!payment && (
@@ -3482,6 +3495,7 @@ interface CentralSalesProps {
 
 const CentralSales = (props: CentralSalesProps) => {
   const searchparam = useSearchParams();
+  const [DiffDays, setDiffDays] = useState<number>(0);
 
   useEffect(() => {
     const year: string = searchparam.get("year") ?? "";
@@ -3519,6 +3533,7 @@ const CentralSales = (props: CentralSalesProps) => {
       new Date(parseInt(props.return01.year), monthIndex, 11),
       currentDate
     );
+    setDiffDays(diff_days);
     if (
       props.return01.rr_number == null ||
       props.return01.rr_number == undefined ||
@@ -4622,7 +4637,32 @@ const CentralSales = (props: CentralSalesProps) => {
             0
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {(
+              (((parseFloat(getInvoicePercentage("0").decrease) +
+                parseFloat(getInvoicePercentage("1").decrease) +
+                parseFloat(getInvoicePercentage("4").decrease) +
+                parseFloat(getInvoicePercentage("5").decrease) +
+                parseFloat(getInvoicePercentage("6").decrease) +
+                parseFloat(getInvoicePercentage("12.5").decrease) +
+                parseFloat(getInvoicePercentage("12.75").decrease) +
+                parseFloat(getInvoicePercentage("13.5").decrease) +
+                parseFloat(getInvoicePercentage("15").decrease) +
+                parseFloat(getInvoicePercentage("20").decrease) +
+                parseFloat(getSaleOfPercentage("4").decrease) +
+                parseFloat(getSaleOfPercentage("5").decrease) +
+                parseFloat(getSaleOfPercentage("12.5").decrease) +
+                parseFloat(get4_6().decrease) +
+                parseFloat(get4_7().decrease) -
+                parseFloat(get4_9().decrease) -
+                (parseFloat(get5_1().decrease) +
+                  parseFloat(get5_2().decrease) +
+                  (parseFloat(getCreditNote().decrease) -
+                    parseFloat(getDebitNote().decrease) -
+                    parseFloat(getGoodsReturnsNote().decrease)))) *
+                0.15) /
+                365) *
+              DiffDays
+            ).toFixed(0)}
           </td>
         </tr>
         <tr className="w-full">
@@ -4728,7 +4768,31 @@ const CentralSales = (props: CentralSalesProps) => {
                 (parseFloat(getCreditNote().decrease) -
                   parseFloat(getDebitNote().decrease) -
                   parseFloat(getGoodsReturnsNote().decrease))) +
-              lateFees
+              lateFees +
+              (((parseFloat(getInvoicePercentage("0").decrease) +
+                parseFloat(getInvoicePercentage("1").decrease) +
+                parseFloat(getInvoicePercentage("4").decrease) +
+                parseFloat(getInvoicePercentage("5").decrease) +
+                parseFloat(getInvoicePercentage("6").decrease) +
+                parseFloat(getInvoicePercentage("12.5").decrease) +
+                parseFloat(getInvoicePercentage("12.75").decrease) +
+                parseFloat(getInvoicePercentage("13.5").decrease) +
+                parseFloat(getInvoicePercentage("15").decrease) +
+                parseFloat(getInvoicePercentage("20").decrease) +
+                parseFloat(getSaleOfPercentage("4").decrease) +
+                parseFloat(getSaleOfPercentage("5").decrease) +
+                parseFloat(getSaleOfPercentage("12.5").decrease) +
+                parseFloat(get4_6().decrease) +
+                parseFloat(get4_7().decrease) -
+                parseFloat(get4_9().decrease) -
+                (parseFloat(get5_1().decrease) +
+                  parseFloat(get5_2().decrease) +
+                  (parseFloat(getCreditNote().decrease) -
+                    parseFloat(getDebitNote().decrease) -
+                    parseFloat(getGoodsReturnsNote().decrease)))) *
+                0.15) /
+                365) *
+                DiffDays
             ).toFixed(2)}
           </td>
         </tr>

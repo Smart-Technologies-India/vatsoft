@@ -303,11 +303,15 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
     if (!commodityMasterData)
       return toast.error("Select Description of Goods.");
     if (!state) return toast.error("Place of supply is not selected.");
+    const date = new Date(
+      new Date(data.invoice_date).toISOString().split("T")[0]
+    );
+    date.setDate(date.getDate() + 1);
 
     addReturnData({
       invoice_number: data.invoice_number,
       total_invoice_number: data.total_invoice_number,
-      invoice_date: new Date(data.invoice_date),
+      invoice_date: date,
       seller_tin_numberId: tindata.id,
       category_of_entry: data.category_of_entry,
       sale_of_interstate: data.sale_of_interstate,

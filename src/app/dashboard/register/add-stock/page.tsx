@@ -155,6 +155,7 @@ const AddStock = () => {
         <div className="bg-white px-4 py-2 mt-2">
           <div className="flex gap-2">
             <p className="text-lg font-semibold items-center">Stock</p>
+            <p></p>
             <div className="grow"></div>
             <div className="flex gap-2 items-center">
               <Radio.Group
@@ -171,6 +172,7 @@ const AddStock = () => {
                 </Radio.Button>
               </Radio.Group>
             </div>
+
             {dvatdata?.status == "PENDINGPROCESSING" &&
             stock.filter((val) => val.item.id == 1154).length <= 0 ? (
               <Button
@@ -185,6 +187,14 @@ const AddStock = () => {
               </Button>
             ) : null}
           </div>
+          <div className="h-4"></div>
+          <Alert
+            message=' Note: Ensure all stock entries are complete before clicking
+              "Submit." Once submitted, you will not be able to add or
+              remove any products.'
+            type="warning"
+            showIcon
+          />
           {dvatdata?.status == "VERIFICATION" ? (
             <>
               <div className="mt-4"></div>

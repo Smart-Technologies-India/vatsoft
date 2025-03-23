@@ -219,10 +219,16 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
 
     if (parseInt(data.quantity) <= 0)
       return toast.error("Quantity must be greater than 0.");
+
+    const date = new Date(
+      new Date(data.invoice_date).toISOString().split("T")[0]
+    );
+    date.setDate(date.getDate() + 1);
+
     const stock_response = await EditSale({
       id: props.id,
       amount_unit: data.amount_unit,
-      invoice_date: new Date(data.invoice_date),
+      invoice_date: date,
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,

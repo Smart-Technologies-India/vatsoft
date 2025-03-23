@@ -75,7 +75,7 @@ const ConvertDvat31 = async (
       const startOfNextMonth = new Date(year, month, 1); // Year and month are 0-indexed in JS Date
 
       // Calculate the last day of the target month
-      const endOfMonth = new Date(startOfNextMonth.getTime() - 1);
+      const endOfMonth = new Date(startOfNextMonth.getTime() - 1).toISOString();
 
       const data_to_create = await prisma.daily_sale.findMany({
         where: {
@@ -188,7 +188,7 @@ const ConvertDvat31 = async (
               place_of_supply: 26,
             }),
             ...(!val.is_local && {
-              SaleOfInterstate: SaleOfInterstate.TAXABLE_SALE,
+              sale_of_interstate: SaleOfInterstate.TAXABLE_SALE,
               place_of_supply: parseInt(
                 val.seller_tin_number.tin_number.substring(0, 2)
               ),
