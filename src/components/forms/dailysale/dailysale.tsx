@@ -62,9 +62,9 @@ const DailySale = (props: DailySaleProviderProps) => {
 
   const [davtdata, setDvatdata] = useState<dvat04 | null>(null);
 
-  const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
-    []
-  );
+  const [commodityMaster, setCommodityMaster] = useState<
+    Array<commodity_master & { quantity: number }>
+  >([]);
 
   useEffect(() => {
     reset({
@@ -482,9 +482,16 @@ const DailySale = (props: DailySaleProviderProps) => {
               required={true}
               title="Items details"
               options={commodityMaster.map(
-                (val: commodity_master, index: number) => ({
+                (
+                  val: commodity_master & { quantity: number },
+                  index: number
+                ) => ({
                   value: val.id.toString(),
-                  label: val.product_name,
+                  label:
+                    val.product_name +
+                    ` [${val.quantity} ${
+                      val.product_type == "FUEL" ? "Litre" : "PCS"
+                    }]`,
                 })
               )}
             />

@@ -147,7 +147,7 @@ const RegistrationStatus = () => {
                             {val.status == "PENDINGPROCESSING"
                               ? "SUBMITTED"
                               : val.status == "APPROVED"
-                              ? "APPROVED"
+                              ? "SUBMITTED"
                               : "PENDING"}
                           </TableCell>
                           <TableCell className="text-center border">

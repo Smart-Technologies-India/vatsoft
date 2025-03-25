@@ -231,6 +231,7 @@ const DocumentWiseDetails = () => {
           setAddBox(false);
         }}
         open={addBox}
+        size="large"
       >
         <p className="text-lg text-left">Sale Invoice</p>
         <DailySaleProvider userid={userid} setAddBox={setAddBox} init={init} />
@@ -240,24 +241,23 @@ const DocumentWiseDetails = () => {
           <div className="flex gap-2">
             <p className="text-lg font-semibold items-center">Daily Sale</p>
             <div className="grow"></div>
-            <div className="flex gap-2 items-center">
-              {/* <div className="p-1 rounded grow text-center bg-gray-100">
-          {commoditymaster.crate_size} Pcs/Crate
-        </div> */}
-              <Radio.Group
-                size="small"
-                onChange={onChange}
-                value={quantityCount}
-                optionType="button"
-              >
-                <Radio.Button className="w-20 text-center" value="pcs">
-                  Pcs
-                </Radio.Button>
-                <Radio.Button className="w-20 text-center" value="crate">
-                  Crate
-                </Radio.Button>
-              </Radio.Group>
-            </div>
+            {dvatdata?.commodity != "FUEL" && (
+              <div className="flex gap-2 items-center">
+                <Radio.Group
+                  size="small"
+                  onChange={onChange}
+                  value={quantityCount}
+                  optionType="button"
+                >
+                  <Radio.Button className="w-20 text-center" value="pcs">
+                    Pcs
+                  </Radio.Button>
+                  <Radio.Button className="w-20 text-center" value="crate">
+                    Crate
+                  </Radio.Button>
+                </Radio.Group>
+              </div>
+            )}
             <Button
               size="small"
               type="primary"

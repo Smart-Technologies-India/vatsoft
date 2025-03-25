@@ -10,7 +10,9 @@ import prisma from "../../../prisma/database";
 
 const GetUserCommodity = async (
   payload: GetUserCommodityPayload
-): Promise<ApiResponseType<commodity_master[] | null>> => {
+): Promise<
+  ApiResponseType<Array<commodity_master & { quantity: number }> | null>
+> => {
   const functionname: string = GetUserCommodity.name;
 
   try {
@@ -40,10 +42,14 @@ const GetUserCommodity = async (
       });
     }
 
-    let comm_data: commodity_master[] = [];
+    let comm_data: Array<commodity_master & { quantity: number }> = [];
 
     for (let i = 0; i < stock_response.length; i++) {
-      comm_data.push(stock_response[i].commodity_master);
+      // comm_data.push(stock_response[i].commodity_master);
+      comm_data.push({
+        ...stock_response[i].commodity_master,
+        quantity: stock_response[i].quantity,
+      });
     }
 
     return createResponse({

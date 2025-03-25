@@ -150,6 +150,7 @@ const CommodityMaster = () => {
           setMaterialBox(false);
         }}
         open={materialBox}
+        size="large"
       >
         <p className="text-lg text-left">Add Raw Material</p>
         <AddMaterialProvider
@@ -165,6 +166,7 @@ const CommodityMaster = () => {
           setAddBox(false);
         }}
         open={addBox}
+        size="large"
       >
         <p className="text-lg text-left">Add Purchase</p>
         <DailyPurchaseMasterProvider
@@ -180,6 +182,7 @@ const CommodityMaster = () => {
           setStockBox(false);
         }}
         open={stockBox}
+        size="large"
       >
         <p className="text-lg text-left">Add Stock</p>
         <CreateStockProvider
@@ -194,24 +197,24 @@ const CommodityMaster = () => {
           <div className="flex gap-2">
             <p className="text-lg font-semibold items-center">Stock</p>
             <div className="grow"></div>
-            <div className="flex gap-2 items-center">
-              {/* <div className="p-1 rounded grow text-center bg-gray-100">
-          {commoditymaster.crate_size} Pcs/Crate
-        </div> */}
-              <Radio.Group
-                size="small"
-                onChange={onChange}
-                value={quantityCount}
-                optionType="button"
-              >
-                <Radio.Button className="w-20 text-center" value="pcs">
-                  Pcs
-                </Radio.Button>
-                <Radio.Button className="w-20 text-center" value="crate">
-                  Crate
-                </Radio.Button>
-              </Radio.Group>
-            </div>
+            {dvatdata?.commodity != "FUEL" && (
+              <div className="flex gap-2 items-center">
+                <Radio.Group
+                  size="small"
+                  onChange={onChange}
+                  value={quantityCount}
+                  optionType="button"
+                >
+                  <Radio.Button className="w-20 text-center" value="pcs">
+                    Pcs
+                  </Radio.Button>
+                  <Radio.Button className="w-20 text-center" value="crate">
+                    Crate
+                  </Radio.Button>
+                </Radio.Group>
+              </div>
+            )}
+
             {dvatdata && dvatdata.commodity == "MANUFACTURER" && (
               <>
                 <Button

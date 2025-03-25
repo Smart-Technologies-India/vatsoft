@@ -153,7 +153,7 @@ const Dvat16ReturnPreview = () => {
           returnformsresponse.data.returns_01.rr_number == undefined ||
           returnformsresponse.data.returns_01.rr_number == ""
         ) {
-          setLateFees(100 * diff_days);
+          setLateFees(Math.min(100 * diff_days, 10000));
         }
 
         const payment_response = await CheckPayment({
@@ -966,7 +966,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       props.return01.rr_number == undefined ||
       props.return01.rr_number == ""
     ) {
-      setLateFees(100 * diff_days);
+      setLateFees(Math.min(100 * diff_days, 10000));
     }
   }, []);
 
@@ -1363,7 +1363,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
       props.return01.rr_number == undefined ||
       props.return01.rr_number == ""
     ) {
-      setLateFees(100 * diff_days);
+      setLateFees(Math.min(100 * diff_days, 10000));
     }
   }, []);
 
@@ -3060,7 +3060,7 @@ const NetTax = (props: NetTaxProps) => {
       props.return01.rr_number == undefined ||
       props.return01.rr_number == ""
     ) {
-      setLateFees(100 * diff_days);
+      setLateFees(Math.min(100 * diff_days, 10000));
     }
   }, []);
 
@@ -3539,7 +3539,7 @@ const CentralSales = (props: CentralSalesProps) => {
       props.return01.rr_number == undefined ||
       props.return01.rr_number == ""
     ) {
-      setLateFees(100 * diff_days);
+      setLateFees(Math.min(100 * diff_days, 10000));
     }
   }, [props.return01, props.returnsentrys]);
 

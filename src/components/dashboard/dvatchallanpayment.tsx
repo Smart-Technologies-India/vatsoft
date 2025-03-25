@@ -64,7 +64,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   >();
 
   const [lateFees, setLateFees] = useState<number>(0);
-  const [DiffDays, setDiffDays] = useState<number>(0);
+  const [InterestDiffDays, setInterestDiffDays] = useState<number>(0);
+  const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
     []
   );
@@ -133,14 +134,21 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       monthIndex += 1; // Otherwise, just increment the month
     }
 
-    const diff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 11),
+    const idiff_days = getDaysBetweenDates(
+      new Date(newYear, monthIndex, 15),
       currentDate
     );
-    setDiffDays(diff_days);
+
+    setInterestDiffDays(idiff_days);
+    const pdiff_days = getDaysBetweenDates(
+      new Date(newYear, monthIndex, 28),
+      currentDate
+    );
+
+    setPenaltyDiffDays(pdiff_days);
 
     if (rr_number == null || rr_number == undefined || rr_number == "") {
-      setLateFees(100 * diff_days);
+      setLateFees(Math.min(100 * pdiff_days, 10000));
     }
   };
 
@@ -537,7 +545,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
             parseFloat(getGoodsReturnsNote().decrease)))) *
         0.15) /
         365) *
-        DiffDays +
+        PenaltyDiffDays +
       lateFees +
       0 -
       0
@@ -645,7 +653,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                           parseFloat(getGoodsReturnsNote().decrease)))) *
                       0.15) /
                       365) *
-                    DiffDays
+                    InterestDiffDays
                   ).toFixed(0)}
                 </TableCell>
               </TableRow>
@@ -696,7 +704,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                           parseFloat(getGoodsReturnsNote().decrease)))) *
                       0.15) /
                       365) *
-                      DiffDays
+                      InterestDiffDays
                   ).toFixed(0)}
                 </TableCell>
               </TableRow>
@@ -734,7 +742,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                                 parseFloat(getGoodsReturnsNote().decrease)))) *
                             0.15) /
                             365) *
-                            DiffDays
+                            PenaltyDiffDays
                         ).toFixed(0)
                       )
                     )

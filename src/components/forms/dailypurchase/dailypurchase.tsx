@@ -413,26 +413,28 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         {
           // (davtdata?.commodity == "OIDC" ||
           //   davtdata?.commodity == "MANUFACTURER") &&
-          commoditymaster != null && (
-            <div className="flex mt-2 gap-2 items-center">
-              <div className="p-1 rounded grow text-center bg-gray-100">
-                {commoditymaster.crate_size} Pcs/Crate
-              </div>
-              <Radio.Group
-                size="small"
-                onChange={onChange}
-                value={quantityCount}
-                optionType="button"
-              >
-                <Radio.Button className="w-20 text-center" value="crate">
-                  Crate
-                </Radio.Button>
-                <Radio.Button className="w-20 text-center" value="pcs">
-                  Pcs
-                </Radio.Button>
-              </Radio.Group>
-            </div>
-          )
+          davtdata?.commodity == "FUEL"
+            ? null
+            : commoditymaster != null && (
+                <div className="flex mt-2 gap-2 items-center">
+                  <div className="p-1 rounded grow text-center bg-gray-100">
+                    {commoditymaster.crate_size} Pcs/Crate
+                  </div>
+                  <Radio.Group
+                    size="small"
+                    onChange={onChange}
+                    value={quantityCount}
+                    optionType="button"
+                  >
+                    <Radio.Button className="w-20 text-center" value="crate">
+                      Crate
+                    </Radio.Button>
+                    <Radio.Button className="w-20 text-center" value="pcs">
+                      Pcs
+                    </Radio.Button>
+                  </Radio.Group>
+                </div>
+              )
         }
 
         <div className="mt-2">
@@ -464,18 +466,18 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         <div className="mt-2">
           <TaxtInput<DailyPurchaseMasterForm>
             placeholder={
-              // (davtdata?.commodity == "OIDC" ||
-              //   davtdata?.commodity == "MANUFACTURER") &&
-              quantityCount == "crate"
+              davtdata?.commodity == "FUEL"
+                ? "Enter Amount/Litre"
+                : quantityCount == "crate"
                 ? "Enter Crate amount"
                 : "Enter Unit amount"
             }
             name="amount_unit"
             required={true}
             title={
-              // (davtdata?.commodity == "OIDC" ||
-              //   davtdata?.commodity == "MANUFACTURER") &&
-              quantityCount == "crate"
+              davtdata?.commodity == "FUEL"
+                ? "Enter Amount/Litre"
+                : quantityCount == "crate"
                 ? "Enter Crate amount"
                 : "Enter Unit amount"
             }

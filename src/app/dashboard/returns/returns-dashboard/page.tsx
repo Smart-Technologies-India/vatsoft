@@ -503,6 +503,8 @@ const ReturnDashboard = () => {
     return monthToQuarterMap[month] || undefined;
   }
 
+  const [isDownload, setDownload] = useState<boolean>(false);
+
   return (
     <>
       <Modal title="Confirmation" open={rrbox} footer={null} closeIcon={false}>
@@ -849,25 +851,30 @@ const ReturnDashboard = () => {
                   {ispayment() && (
                     <>
                       <button
+                        disabled={isDownload}
                         onClick={async () => {
                           await generatePDF(
                             `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
                               userid.toString()
                             )}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
                           );
+                          setTimeout(() => {
+                            setDownload(false);
+                          }, 3600);
                         }}
                         className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
                       >
-                        Download Return
+                        {isDownload ? "Downloading..." : "Download Return"}
+                        {/* Download Return */}
                       </button>
-                      <button
+                      {/* <button
                         onClick={() => {
                           setRRBox(true);
                         }}
                         className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
                       >
                         Revise Return
-                      </button>
+                      </button> */}
                       {/* <button
                         onClick={async () => {
                           router.push(

@@ -35,6 +35,9 @@ const GetAllStock = async (
         include: {
           commodity_master: true,
         },
+        orderBy: {
+          updatedAt: "desc",
+        },
         take: payload.take,
         skip: payload.skip,
       }),
