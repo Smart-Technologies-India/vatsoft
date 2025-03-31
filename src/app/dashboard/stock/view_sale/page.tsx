@@ -282,6 +282,41 @@ const DocumentWiseDetails = () => {
               </Button>
             )}
           </div>
+          <div className="flex gap-2 mt-2 flex-wrap">
+            <div className="bg-gray-100 p-2 rounded-md flex-1">
+              <p className="text-sm">Total number of invoice</p>
+              <p className="text-lg font-semibold leading-3">
+                {new Set(dailySale.map((val) => val.invoice_number)).size}
+              </p>
+            </div>
+            <div className="bg-gray-100 p-2 rounded-md flex-1">
+              <p className="text-sm">Total taxable value</p>
+              <p className="text-lg font-semibold leading-3">
+                {dailySale.reduce(
+                  (acc, val) => acc + parseFloat(val.amount_unit),
+                  0
+                )}
+              </p>
+            </div>
+            <div className="bg-gray-100 p-2 rounded-md flex-1">
+              <p className="text-sm">Total tax</p>
+              <p className="text-lg font-semibold leading-3">
+                {dailySale.reduce(
+                  (acc, val) => acc + parseFloat(val.vatamount),
+                  0
+                )}
+              </p>
+            </div>
+            <div className="bg-gray-100 p-2 rounded-md flex-1">
+              <p className="text-sm">Total sale price</p>
+              <p className="text-lg font-semibold leading-3">
+                {dailySale.reduce(
+                  (acc, val) => acc + parseFloat(val.amount),
+                  0
+                )}
+              </p>
+            </div>
+          </div>
 
           {dailySale.length > 0 ? (
             <>

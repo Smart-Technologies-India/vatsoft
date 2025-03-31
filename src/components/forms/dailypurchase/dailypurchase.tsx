@@ -175,13 +175,13 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     // Calculate taxableValue
     const calculatedTaxableValue =
       parseFloat(quantity) * parseFloat(amount_unit || "0");
-    setTaxableValue(
-      isNaN(calculatedTaxableValue) ? "0" : calculatedTaxableValue.toFixed(2)
-    );
 
-    // Calculate VAT amount based on commodity master data
-    const taxPercentage: number = parseInt(commoditymaster.taxable_at) || 0; // Assuming `taxable_at` is a percentage
-    const calculatedVatAmount = (calculatedTaxableValue * taxPercentage) / 100;
+    const temp_amount =
+      (calculatedTaxableValue / (100 + parseInt(commoditymaster.taxable_at))) *
+      100;
+    setTaxableValue(isNaN(temp_amount) ? "0" : temp_amount.toFixed(2));
+
+    const calculatedVatAmount = calculatedTaxableValue - temp_amount;
     setVatAmount(
       isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
     );
@@ -339,7 +339,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     setTinBox(false);
   };
 
-  const [quantityCount, setQuantityCount] = useState("crate");
+  const [quantityCount, setQuantityCount] = useState("pcs");
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
     setQuantityCount(value);
@@ -467,21 +467,21 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           <TaxtInput<DailyPurchaseMasterForm>
             placeholder={
               davtdata?.commodity == "FUEL"
-                ? "Enter Amount/Litre"
+                ? "Enter Amount/Litre (Purchase price including VAT)"
                 : quantityCount == "crate"
-                ? "Enter Crate amount"
-                : "Enter Unit amount"
+                ? "Enter Crate amount (Purchase price including VAT)"
+                : "Enter Unit amount (Purchase price including VAT)"
             }
             name="amount_unit"
             required={true}
             title={
               davtdata?.commodity == "FUEL"
-                ? "Enter Amount/Litre"
+                ? "Enter Amount/Litre (Purchase price including VAT)"
                 : quantityCount == "crate"
-                ? "Enter Crate amount"
-                : "Enter Unit amount"
+                ? "Enter Crate amount (Purchase price including VAT)"
+                : "Enter Unit amount (Purchase price including VAT)"
             }
-            onlynumber={true}
+            numdes={true}
           />
         </div>
         <div className="flex gap-1 items-center">

@@ -176,16 +176,16 @@ const DailySale = (props: DailySaleProviderProps) => {
     // Calculate taxableValue
     const calculatedTaxableValue =
       parseFloat(quantity) * parseFloat(amount_unit || "0");
-    setTaxableValue(
-      isNaN(calculatedTaxableValue) ? "0" : calculatedTaxableValue.toFixed(2)
-    );
 
-    // Calculate VAT amount based on commodity master data
-    const taxPercentage: number = parseInt(commoditymaster.taxable_at) || 0; // Assuming `taxable_at` is a percentage
-    const calculatedVatAmount = (calculatedTaxableValue * taxPercentage) / 100;
+    const calculatedVatAmount =
+      (calculatedTaxableValue * parseFloat(commoditymaster.taxable_at)) / 100;
     setVatAmount(
       isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
     );
+
+    const temp_amount = calculatedTaxableValue + calculatedVatAmount;
+
+    setTaxableValue(isNaN(temp_amount) ? "0" : temp_amount.toFixed(2));
   }, [quantity, amount_unit, commoditymaster]);
 
   const onSubmit = async (data: DailySaleForm) => {
@@ -203,11 +203,23 @@ const DailySale = (props: DailySaleProviderProps) => {
         davtdata?.commodity == "OIDC" ||
         davtdata?.commodity == "MANUFACTURER"
       ) {
-        if (isLiquore && parseInt(data.amount_unit) < liquoreOIDCAmount) {
+        if (
+          isLiquore &&
+          (parseFloat(data.amount_unit) *
+            (100 + parseFloat(commoditymaster.taxable_at))) /
+            100 <
+            liquoreOIDCAmount
+        ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
       } else {
-        if (isLiquore && parseInt(data.amount_unit) < liquoreDealerAmount) {
+        if (
+          isLiquore &&
+          (parseFloat(data.amount_unit) *
+            (100 + parseFloat(commoditymaster.taxable_at))) /
+            100 <
+            liquoreDealerAmount
+        ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
       }
@@ -218,7 +230,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       ) {
         if (
           isLiquore &&
-          parseInt(data.amount_unit) <
+          parseFloat(data.amount_unit) <
             liquoreOIDCAmount * commoditymaster.crate_size
         ) {
           return toast.error("Sale amount can not be less than MRP.");
@@ -226,7 +238,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       } else {
         if (
           isLiquore &&
-          parseInt(data.amount_unit) <
+          parseFloat(data.amount_unit) <
             liquoreDealerAmount * commoditymaster.crate_size
         ) {
           return toast.error("Sale amount can not be less than MRP.");
@@ -244,7 +256,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     const amount_unit: string =
       davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
         ? quantityCount == "crate"
-          ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
+          ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
           : data.amount_unit
         : data.amount_unit;
 
@@ -292,11 +304,23 @@ const DailySale = (props: DailySaleProviderProps) => {
         davtdata?.commodity == "OIDC" ||
         davtdata?.commodity == "MANUFACTURER"
       ) {
-        if (isLiquore && parseInt(data.amount_unit) < liquoreOIDCAmount) {
+        if (
+          isLiquore &&
+          (parseFloat(data.amount_unit) *
+            (100 + parseFloat(commoditymaster.taxable_at))) /
+            100 <
+            liquoreOIDCAmount
+        ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
       } else {
-        if (isLiquore && parseInt(data.amount_unit) < liquoreDealerAmount) {
+        if (
+          isLiquore &&
+          (parseFloat(data.amount_unit) *
+            (100 + parseFloat(commoditymaster.taxable_at))) /
+            100 <
+            liquoreDealerAmount
+        ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
       }
@@ -307,7 +331,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       ) {
         if (
           isLiquore &&
-          parseInt(data.amount_unit) <
+          parseFloat(data.amount_unit) <
             liquoreOIDCAmount * commoditymaster.crate_size
         ) {
           return toast.error("Sale amount can not be less than MRP.");
@@ -315,7 +339,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       } else {
         if (
           isLiquore &&
-          parseInt(data.amount_unit) <
+          parseFloat(data.amount_unit) <
             liquoreDealerAmount * commoditymaster.crate_size
         ) {
           return toast.error("Sale amount can not be less than MRP.");
@@ -333,7 +357,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     const amount_unit: string =
       davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
         ? quantityCount == "crate"
-          ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
+          ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
           : data.amount_unit
         : data.amount_unit;
 
@@ -404,7 +428,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     setTinBox(false);
   };
 
-  const [quantityCount, setQuantityCount] = useState("crate");
+  const [quantityCount, setQuantityCount] = useState("pcs");
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
     setQuantityCount(value);
@@ -535,8 +559,8 @@ const DailySale = (props: DailySaleProviderProps) => {
               (davtdata?.commodity == "OIDC" ||
                 davtdata?.commodity == "MANUFACTURER") &&
               quantityCount == "crate"
-                ? "Enter Crate amount"
-                : "Enter Unit amount"
+                ? "Enter Crate amount (Sale price excluding VAT)"
+                : "Enter Unit amount (Sale price excluding VAT)"
             }
             name="amount_unit"
             required={true}
@@ -544,10 +568,11 @@ const DailySale = (props: DailySaleProviderProps) => {
               (davtdata?.commodity == "OIDC" ||
                 davtdata?.commodity == "MANUFACTURER") &&
               quantityCount == "crate"
-                ? "Enter Crate amount"
-                : "Enter Unit amount"
+                ? "Enter Crate amount (Sale price excluding VAT)"
+                : "Enter Unit amount (Sale price excluding VAT)"
             }
-            onlynumber={true}
+            // onlynumber={true}
+            numdes={true}
           />
         </div>
 
