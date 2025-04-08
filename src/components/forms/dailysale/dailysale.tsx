@@ -79,7 +79,7 @@ const DailySale = (props: DailySaleProviderProps) => {
         tinumber: "26000000000",
       });
 
-      setValue("recipient_vat_no", "26000000000");
+      // setValue("recipient_vat_no", "26000000000");
 
       if (tin_response.status && tin_response.data) {
         setTinData(tin_response.data);
@@ -256,7 +256,9 @@ const DailySale = (props: DailySaleProviderProps) => {
     const amount_unit: string =
       davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
         ? quantityCount == "crate"
-          ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
+          ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(
+              2
+            )
           : data.amount_unit
         : data.amount_unit;
 
@@ -287,6 +289,16 @@ const DailySale = (props: DailySaleProviderProps) => {
 
     await props.init();
     props.setAddBox(false);
+    const currentValues = getValues();
+
+    reset({
+      ...currentValues,
+      quantity: "",
+      amount_unit: "",
+      description_of_goods: undefined,
+    });
+    setVatAmount("0");
+    setTaxableValue("0");
   };
 
   const addNew = async (data: DailySaleForm) => {
@@ -357,7 +369,9 @@ const DailySale = (props: DailySaleProviderProps) => {
     const amount_unit: string =
       davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
         ? quantityCount == "crate"
-          ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
+          ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(
+              2
+            )
           : data.amount_unit
         : data.amount_unit;
 
@@ -463,10 +477,10 @@ const DailySale = (props: DailySaleProviderProps) => {
       >
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
-            placeholder="Seller VAT Number. (26000000000 for B2C)"
+            placeholder="Purchaser VAT Number. (26000000000 for B2C)"
             name="recipient_vat_no"
             required={true}
-            title="Seller VAT Number"
+            title="Purchaser VAT Number"
           />
         </div>
         {tindata != null && (
@@ -560,7 +574,7 @@ const DailySale = (props: DailySaleProviderProps) => {
                 davtdata?.commodity == "MANUFACTURER") &&
               quantityCount == "crate"
                 ? "Enter Crate amount (Sale price excluding VAT)"
-                : "Enter Unit amount (Sale price excluding VAT)"
+                : "Enter Net amount/unit (Sale price excluding VAT)"
             }
             name="amount_unit"
             required={true}
@@ -569,7 +583,7 @@ const DailySale = (props: DailySaleProviderProps) => {
                 davtdata?.commodity == "MANUFACTURER") &&
               quantityCount == "crate"
                 ? "Enter Crate amount (Sale price excluding VAT)"
-                : "Enter Unit amount (Sale price excluding VAT)"
+                : "Enter Net amount/unit (Sale price excluding VAT)"
             }
             // onlynumber={true}
             numdes={true}
@@ -586,7 +600,7 @@ const DailySale = (props: DailySaleProviderProps) => {
             </p>
           </div>
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
-            <p className="text-xs font-normal">Taxable Value</p>
+            <p className="text-xs font-normal">Total Invoice Value</p>
             <p className="text-sm font-semibold">{taxableValue}</p>
           </div>
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">

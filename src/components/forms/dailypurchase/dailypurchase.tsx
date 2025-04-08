@@ -243,6 +243,16 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
 
     await props.init();
     props.setAddBox(false);
+    const currentValues = getValues();
+
+    reset({
+      ...currentValues,
+      quantity: "",
+      amount_unit: "",
+      description_of_goods: undefined,
+    });
+    setVatAmount("0");
+    setTaxableValue("0");
   };
 
   const addNew = async (data: DailyPurchaseMasterForm) => {

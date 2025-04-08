@@ -292,28 +292,25 @@ const DocumentWiseDetails = () => {
             <div className="bg-gray-100 p-2 rounded-md flex-1">
               <p className="text-sm">Total taxable value</p>
               <p className="text-lg font-semibold leading-3">
-                {dailySale.reduce(
-                  (acc, val) => acc + parseFloat(val.amount_unit),
-                  0
-                )}
+                {dailySale
+                  .reduce((acc, val) => acc + parseFloat(val.amount_unit), 0)
+                  .toFixed(2)}
               </p>
             </div>
             <div className="bg-gray-100 p-2 rounded-md flex-1">
               <p className="text-sm">Total tax</p>
               <p className="text-lg font-semibold leading-3">
-                {dailySale.reduce(
-                  (acc, val) => acc + parseFloat(val.vatamount),
-                  0
-                )}
+                {dailySale
+                  .reduce((acc, val) => acc + parseFloat(val.vatamount), 0)
+                  .toFixed(2)}
               </p>
             </div>
             <div className="bg-gray-100 p-2 rounded-md flex-1">
               <p className="text-sm">Total sale price</p>
               <p className="text-lg font-semibold leading-3">
-                {dailySale.reduce(
-                  (acc, val) => acc + parseFloat(val.amount),
-                  0
-                )}
+                {dailySale
+                  .reduce((acc, val) => acc + parseFloat(val.amount), 0)
+                  .toFixed(2)}
               </p>
             </div>
           </div>
@@ -324,10 +321,17 @@ const DocumentWiseDetails = () => {
                 <TableHeader>
                   <TableRow className="bg-gray-100">
                     <TableHead className="border text-center">
-                      TIN Number
+                      Invoice no.
                     </TableHead>
+                    <TableHead className="border whitespace-nowrap text-center">
+                      Invoice Date
+                    </TableHead>
+
                     <TableHead className="border text-center">
                       Trade Name
+                    </TableHead>
+                    <TableHead className="border text-center">
+                      TIN Number
                     </TableHead>
                     <TableHead className="w-64 border text-center">
                       Product Name
@@ -335,21 +339,17 @@ const DocumentWiseDetails = () => {
                     <TableHead className="w-20 border text-center">
                       {quantityCount == "pcs" ? "Qty" : "Crate"}
                     </TableHead>
-                    <TableHead className="border text-center">
-                      Invoice no.
-                    </TableHead>
-                    <TableHead className="border whitespace-nowrap text-center">
-                      Invoice Date
-                    </TableHead>
+
                     <TableHead className="border text-center">
                       Invoice value (&#x20b9;)
                     </TableHead>
                     <TableHead className="border text-center">
-                      Total taxable percentage
-                    </TableHead>
-                    <TableHead className="border text-center">
                       VAT Amount
                     </TableHead>
+                    <TableHead className="border text-center">
+                      Total taxable percentage
+                    </TableHead>
+
                     <TableHead className="w-28 border text-center">
                       Actions
                     </TableHead>
@@ -366,10 +366,17 @@ const DocumentWiseDetails = () => {
                     ) => (
                       <TableRow key={index}>
                         <TableCell className="p-2 border text-center">
-                          {val.seller_tin_number.tin_number}
+                          {val.invoice_number}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
+                          {formateDate(val.invoice_date)}
+                        </TableCell>
+
+                        <TableCell className="p-2 border text-center">
                           {val.seller_tin_number.name_of_dealer}
+                        </TableCell>
+                        <TableCell className="p-2 border text-center">
+                          {val.seller_tin_number.tin_number}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.commodity_master.product_name}
@@ -383,20 +390,15 @@ const DocumentWiseDetails = () => {
                                 val.commodity_master.crate_size
                               )}
                         </TableCell>
+
                         <TableCell className="p-2 border text-center">
-                          {val.invoice_number}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {formateDate(val.invoice_date)}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.amount}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.tax_percent}%
+                          {parseFloat(val.amount_unit) * val.quantity}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.vatamount}
+                        </TableCell>
+                        <TableCell className="p-2 border text-center">
+                          {val.tax_percent}%
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.is_accept ? (

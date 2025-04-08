@@ -156,6 +156,7 @@ const ReturnDashboard = () => {
 
       if (lastPendingResponse.status && lastPendingResponse.data) {
         setLastPending(lastPendingResponse.data);
+
         setYear(lastPendingResponse.data.due_date!.getFullYear().toString());
         currentDate = lastPendingResponse.data.due_date!;
       }
@@ -193,7 +194,11 @@ const ReturnDashboard = () => {
         //     response.data.vatLiableDate ?? new Date()
         //   ).at(-1)?.value
         // );
-        setPeriod(monthNames[currentDate.getMonth()]);
+        setPeriod(
+          currentDate.getMonth() == 0
+            ? monthNames[11]
+            : monthNames[currentDate.getMonth() - 1]
+        );
 
         await search(
           currentDate.getFullYear().toString(),
@@ -210,30 +215,49 @@ const ReturnDashboard = () => {
   }
 
   const getYearList = (dateValue: Date): PeriodValue[] => {
+    // const liableDate: Date = davtdata?.vatLiableDate ?? new Date();
+
+    // // Determine the current fiscal year based on the date
+    // const currentYear = dateValue.getFullYear();
+    // const currentMonth = dateValue.getMonth();
+    // const startYear = currentMonth >= 3 ? currentYear : currentYear - 1; // Fiscal year starts in April
+
+    // // Generate up to 8 fiscal years (current + 7 previous)
+    // const numberOfYears = 8;
+    // const periodValues: PeriodValue[] = [];
+
+    // for (let i = 0; i < numberOfYears; i++) {
+    //   const fiscalYearStart = startYear - i;
+    //   const fiscalYearEnd = fiscalYearStart + 1;
+
+    //   // Include fiscal years only if they are after the liable date
+    //   const fiscalYearStartDate = new Date(fiscalYearStart, 3, 1); // April 1st of the fiscal year
+    //   if (liableDate <= fiscalYearStartDate || i === 0) {
+    //     // Always include the current fiscal year (i === 0)
+    //     periodValues.push({
+    //       value: fiscalYearStart.toString(),
+    //       label: `${fiscalYearStart}-${fiscalYearEnd.toString().slice(-2)}`,
+    //     });
+    //   }
+    // }
+
+    // return periodValues;
     const liableDate: Date = davtdata?.vatLiableDate ?? new Date();
 
-    // Determine the current fiscal year based on the date
-    const currentYear = dateValue.getFullYear();
-    const currentMonth = dateValue.getMonth();
-    const startYear = currentMonth >= 3 ? currentYear : currentYear - 1; // Fiscal year starts in April
+    // Determine start and end fiscal years
+    const getFiscalYearStart = (date: Date) =>
+      date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
 
-    // Generate up to 8 fiscal years (current + 7 previous)
-    const numberOfYears = 8;
+    const startYear = getFiscalYearStart(liableDate);
+    const endYear = getFiscalYearStart(dateValue);
+
     const periodValues: PeriodValue[] = [];
 
-    for (let i = 0; i < numberOfYears; i++) {
-      const fiscalYearStart = startYear - i;
-      const fiscalYearEnd = fiscalYearStart + 1;
-
-      // Include fiscal years only if they are after the liable date
-      const fiscalYearStartDate = new Date(fiscalYearStart, 3, 1); // April 1st of the fiscal year
-      if (liableDate <= fiscalYearStartDate || i === 0) {
-        // Always include the current fiscal year (i === 0)
-        periodValues.push({
-          value: fiscalYearStart.toString(),
-          label: `${fiscalYearStart}-${fiscalYearEnd.toString().slice(-2)}`,
-        });
-      }
+    for (let year = startYear; year <= endYear; year++) {
+      periodValues.push({
+        value: year.toString(),
+        label: `${year}-${(year + 1).toString().slice(-2)}`,
+      });
     }
 
     return periodValues;
@@ -304,6 +328,85 @@ const ReturnDashboard = () => {
     return resultQuarters;
   };
 
+  // const getPeriodList = (
+  //   dateValue: Date,
+  //   year: string,
+  //   quarter: Quarter,
+  //   vatLiableDate: Date
+  // ): PeriodValue[] => {
+  //   const currentYear: number = dateValue.getFullYear();
+  //   const currentMonth: number = dateValue.getMonth();
+  //   const liableYear: number = vatLiableDate.getFullYear();
+  //   const liableMonth: number = vatLiableDate.getMonth();
+
+  //   const monthNames = [
+  //     "January",
+  //     "February",
+  //     "March",
+  //     "April",
+  //     "May",
+  //     "June",
+  //     "July",
+  //     "August",
+  //     "September",
+  //     "October",
+  //     "November",
+  //     "December",
+  //   ];
+
+  //   const periods: PeriodValue[] = [];
+
+  //   let startMonth: number;
+
+  //   // Determine the starting month of the quarter
+  //   switch (quarter) {
+  //     case Quarter.QUARTER1:
+  //       startMonth = 3; // April
+  //       break;
+  //     case Quarter.QUARTER2:
+  //       startMonth = 6; // July
+  //       break;
+  //     case Quarter.QUARTER3:
+  //       startMonth = 9; // October
+  //       break;
+  //     case Quarter.QUARTER4:
+  //       startMonth = 0; // January
+  //       break;
+  //     default:
+  //       return [];
+  //   }
+
+  //   for (let i = 0; i < 3; i++) {
+  //     const periodMonth = (startMonth + i) % 12;
+
+  //     // Handle the case when `year` matches `vatLiableDate` year
+  //     if (parseInt(year ?? "0") === liableYear) {
+  //       if (periodMonth >= liableMonth && periodMonth <= currentMonth) {
+  //         periods.push({
+  //           value: monthNames[periodMonth],
+  //           label: monthNames[periodMonth],
+  //         });
+  //       }
+  //     } else if (parseInt(year ?? "0") !== currentYear) {
+  //       // Handle non-current years (include all months in the quarter)
+  //       periods.push({
+  //         value: monthNames[periodMonth],
+  //         label: monthNames[periodMonth],
+  //       });
+  //     } else {
+  //       // Handle the current year (up to the current month)
+  //       if (periodMonth <= currentMonth) {
+  //         periods.push({
+  //           value: monthNames[periodMonth],
+  //           label: monthNames[periodMonth],
+  //         });
+  //       }
+  //     }
+  //   }
+
+  //   return periods;
+  // };
+
   const getPeriodList = (
     dateValue: Date,
     year: string,
@@ -355,28 +458,30 @@ const ReturnDashboard = () => {
     for (let i = 0; i < 3; i++) {
       const periodMonth = (startMonth + i) % 12;
 
-      // Handle the case when `year` matches `vatLiableDate` year
-      if (parseInt(year ?? "0") === liableYear) {
-        if (periodMonth >= liableMonth && periodMonth <= currentMonth) {
+      const targetYear = parseInt(year ?? "0");
+
+      if (targetYear === liableYear) {
+        // Liable year: include only if after liableMonth AND before currentMonth
+        if (periodMonth >= liableMonth && periodMonth < currentMonth) {
           periods.push({
             value: monthNames[periodMonth],
             label: monthNames[periodMonth],
           });
         }
-      } else if (parseInt(year ?? "0") !== currentYear) {
-        // Handle non-current years (include all months in the quarter)
+      } else if (targetYear === currentYear) {
+        // Current year: include only if strictly before currentMonth
+        if (periodMonth < currentMonth) {
+          periods.push({
+            value: monthNames[periodMonth],
+            label: monthNames[periodMonth],
+          });
+        }
+      } else {
+        // Past or future years: include all quarter months
         periods.push({
           value: monthNames[periodMonth],
           label: monthNames[periodMonth],
         });
-      } else {
-        // Handle the current year (up to the current month)
-        if (periodMonth <= currentMonth) {
-          periods.push({
-            value: monthNames[periodMonth],
-            label: monthNames[periodMonth],
-          });
-        }
       }
     }
 

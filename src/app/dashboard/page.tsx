@@ -41,7 +41,7 @@ enum FileStatus {
   NOTFILED,
 }
 
-import { user } from "@prisma/client";
+import { dvat04, user } from "@prisma/client";
 import { getCookie } from "cookies-next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -50,6 +50,7 @@ import OfficerDashboard from "@/action/dashboard/officerdashboard";
 import Last15Received from "@/action/dashboard/last15received";
 import { format, subMonths } from "date-fns";
 import { Flex, Radio, RadioChangeEvent } from "antd";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 
 const Page = () => {
   const id: number = parseInt(getCookie("id") ?? "0");
@@ -59,6 +60,8 @@ const Page = () => {
   const [isLoading, setLoading] = useState<boolean>(true);
 
   const [isProfileCompletd, setIsProfileCompleted] = useState<boolean>(false);
+
+  const [dvat, setDvat] = useState<dvat04 | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -71,6 +74,7 @@ const Page = () => {
       });
 
       if (dashboard.status && dashboard.data) {
+
         setMonth(dashboard.data);
       }
 
@@ -79,6 +83,13 @@ const Page = () => {
       });
       if (profile_response.status && profile_response.data) {
         setIsProfileCompleted(profile_response.data.registration);
+      }
+
+      const dvatdata = await GetUserDvat04({
+        userid: 1,
+      });
+      if (dvatdata.status && dvatdata.data) {
+        setDvat(dvatdata.data);
       }
       setLoading(false);
     };
@@ -105,6 +116,8 @@ const Page = () => {
                     Welcome {user?.firstName ?? ""} {user?.lastName ?? ""} To
                     VATSMART Portal
                   </h1>
+
+                  <p>{dvat != null && dvat?.tinNumber}</p>
                   <h1 className="text-xs leading-3 text-gray-500 mt-1">
                     Returns Calender (Last 6 return periods)
                   </h1>

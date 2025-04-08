@@ -280,28 +280,25 @@ const DocumentWiseDetails = () => {
             <div className="bg-gray-100 p-2 rounded-md flex-1">
               <p className="text-sm">Total taxable value</p>
               <p className="text-lg font-semibold leading-3">
-                {dailyPurchase.reduce(
-                  (acc, val) => acc + parseFloat(val.amount_unit),
-                  0
-                )}
+                {dailyPurchase
+                  .reduce((acc, val) => acc + parseFloat(val.amount_unit), 0)
+                  .toFixed(2)}
               </p>
             </div>
             <div className="bg-gray-100 p-2 rounded-md flex-1">
               <p className="text-sm">Total tax</p>
               <p className="text-lg font-semibold leading-3">
-                {dailyPurchase.reduce(
-                  (acc, val) => acc + parseFloat(val.vatamount),
-                  0
-                )}
+                {dailyPurchase
+                  .reduce((acc, val) => acc + parseFloat(val.vatamount), 0)
+                  .toFixed(2)}
               </p>
             </div>
             <div className="bg-gray-100 p-2 rounded-md flex-1">
               <p className="text-sm">Total purchase price</p>
               <p className="text-lg font-semibold leading-3">
-                {dailyPurchase.reduce(
-                  (acc, val) => acc + parseFloat(val.amount),
-                  0
-                )}
+                {dailyPurchase
+                  .reduce((acc, val) => acc + parseFloat(val.amount), 0)
+                  .toFixed(2)}
               </p>
             </div>
           </div>

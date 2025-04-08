@@ -70,6 +70,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
 
   useEffect(() => {
     reset({
+      recipient_vat_no: props.data.seller_tin_number.tin_number,
       amount_unit: props.data.amount_unit,
       description_of_goods: props.data.commodity_master.product_name,
       invoice_date: props.data.invoice_date.toISOString(),
@@ -91,10 +92,10 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
       }
 
       const tin_response = await SearchTin({
-        tinumber: "26000000000",
+        tinumber: props.data.seller_tin_number.tin_number,
       });
 
-      setValue("recipient_vat_no", "26000000000");
+      // setValue("recipient_vat_no", "26000000000");
 
       if (tin_response.status && tin_response.data) {
         setTinData(tin_response.data);
@@ -165,26 +166,6 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
 
   const quantity = watch("quantity");
   const amount_unit = watch("amount_unit");
-
-  // useEffect(() => {
-  //   if (description_of_goods == null || description_of_goods == undefined)
-  //     return;
-  //   const init = async () => {
-  //     const commmaster = await GetCommodityMaster({
-  //       id: parseInt(description_of_goods),
-  //     });
-
-  //     if (commmaster.status && commmaster.data) {
-  //       setCommoditymaster(commmaster.data);
-  //       if (commmaster.data.product_type == "LIQUOR") {
-  //         setLiquore(true);
-  //         // setValue("amount_unit", commmaster.data.sale_price);
-  //         setLiquoreAmount(parseInt(commmaster.data.sale_price));
-  //       }
-  //     }
-  //   };
-  //   init();
-  // }, [description_of_goods]);
 
   useEffect(() => {
     if (commoditymaster == null || quantity == null || amount_unit == null)
