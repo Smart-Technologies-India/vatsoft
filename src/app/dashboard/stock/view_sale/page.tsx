@@ -293,7 +293,11 @@ const DocumentWiseDetails = () => {
               <p className="text-sm">Total taxable value</p>
               <p className="text-lg font-semibold leading-3">
                 {dailySale
-                  .reduce((acc, val) => acc + parseFloat(val.amount_unit), 0)
+                  .reduce(
+                    (acc, val) =>
+                      acc + parseFloat(val.amount_unit) * val.quantity,
+                    0
+                  )
                   .toFixed(2)}
               </p>
             </div>
@@ -414,7 +418,9 @@ const DocumentWiseDetails = () => {
                         </TableCell>
                         */}
                         <TableCell className="p-2 border text-center">
-                          {parseFloat(val.amount_unit) * val.quantity}
+                          {(parseFloat(val.amount_unit) * val.quantity).toFixed(
+                            2
+                          )}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.tax_percent}%
