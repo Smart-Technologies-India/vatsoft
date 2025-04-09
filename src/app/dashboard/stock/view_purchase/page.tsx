@@ -309,10 +309,17 @@ const DocumentWiseDetails = () => {
                 <TableHeader>
                   <TableRow className="bg-gray-100">
                     <TableHead className="border text-center">
-                      TIN Number
+                      Invoice no.
                     </TableHead>
+                    <TableHead className="border whitespace-nowrap text-center">
+                      Invoice Date
+                    </TableHead>
+
                     <TableHead className="border text-center">
                       Trade Name
+                    </TableHead>
+                    <TableHead className="border text-center">
+                      TIN Number
                     </TableHead>
                     <TableHead className="w-64 border text-center">
                       Product Name
@@ -321,24 +328,20 @@ const DocumentWiseDetails = () => {
                       {/* Quantity */}
                       {quantityCount == "pcs" ? "Qty" : "Crate"}
                     </TableHead>
-                    <TableHead className="border text-center">
-                      Invoice no.
-                    </TableHead>
-                    <TableHead className="border whitespace-nowrap text-center">
-                      Invoice Date
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      Invoice value (&#x20b9;)
-                    </TableHead>
+
                     <TableHead className="border text-center">
                       Taxable Value
                     </TableHead>
                     <TableHead className="border text-center">
-                      VAT Amount
-                    </TableHead>{" "}
-                    <TableHead className="border text-center">
-                      Total taxable percentage
+                      Rate of Tax
                     </TableHead>
+                    <TableHead className="border text-center">
+                      VAT Amount
+                    </TableHead>
+                    <TableHead className="border text-center">
+                      Invoice value (&#x20b9;)
+                    </TableHead>
+
                     <TableHead className="w-28 border text-center">
                       Actions
                     </TableHead>
@@ -355,10 +358,17 @@ const DocumentWiseDetails = () => {
                     ) => (
                       <TableRow key={index}>
                         <TableCell className="p-2 border text-center">
-                          {val.seller_tin_number.tin_number}
+                          {val.invoice_number}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
+                          {formateDate(val.invoice_date)}
+                        </TableCell>
+
+                        <TableCell className="p-2 border text-center">
                           {val.seller_tin_number.name_of_dealer}
+                        </TableCell>
+                        <TableCell className="p-2 border text-center">
+                          {val.seller_tin_number.tin_number}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.commodity_master.product_name}
@@ -372,23 +382,18 @@ const DocumentWiseDetails = () => {
                                 val.commodity_master.crate_size
                               )}
                         </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.invoice_number}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {formateDate(val.invoice_date)}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.amount}
-                        </TableCell>
+
                         <TableCell className="p-2 border text-center">
                           {val.amount_unit}
+                        </TableCell>
+                        <TableCell className="p-2 border text-center">
+                          {val.tax_percent}%
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.vatamount}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
-                          {val.tax_percent}%
+                          {val.amount}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.seller_tin_number.tin_number.startsWith("25") ||

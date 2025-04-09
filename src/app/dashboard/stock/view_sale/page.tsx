@@ -340,7 +340,7 @@ const DocumentWiseDetails = () => {
                       {quantityCount == "pcs" ? "Qty" : "Crate"}
                     </TableHead>
 
-                    <TableHead className="border text-center">
+                    {/* <TableHead className="border text-center">
                       Invoice value (&#x20b9;)
                     </TableHead>
                     <TableHead className="border text-center">
@@ -348,6 +348,18 @@ const DocumentWiseDetails = () => {
                     </TableHead>
                     <TableHead className="border text-center">
                       Total taxable percentage
+                    </TableHead> */}
+                    <TableHead className="border text-center">
+                      Taxable Value
+                    </TableHead>
+                    <TableHead className="border text-center">
+                      Rate of Tax
+                    </TableHead>
+                    <TableHead className="border text-center">
+                      VAT Amount
+                    </TableHead>
+                    <TableHead className="border text-center">
+                      Invoice value (&#x20b9;)
                     </TableHead>
 
                     <TableHead className="w-28 border text-center">
@@ -391,14 +403,27 @@ const DocumentWiseDetails = () => {
                               )}
                         </TableCell>
 
-                        <TableCell className="p-2 border text-center">
-                          {parseFloat(val.amount_unit) * val.quantity}
+                        {/* <TableCell className="p-2 border text-center">
+                          {parseFloat(val.amount)}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.vatamount}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.tax_percent}%
+                        </TableCell>
+                        */}
+                        <TableCell className="p-2 border text-center">
+                          {val.amount_unit}
+                        </TableCell>
+                        <TableCell className="p-2 border text-center">
+                          {val.tax_percent}%
+                        </TableCell>
+                        <TableCell className="p-2 border text-center">
+                          {val.vatamount}
+                        </TableCell>
+                        <TableCell className="p-2 border text-center">
+                          {val.amount}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.is_accept ? (
