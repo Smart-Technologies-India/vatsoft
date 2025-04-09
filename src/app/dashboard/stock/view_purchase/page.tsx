@@ -384,7 +384,7 @@ const DocumentWiseDetails = () => {
                         </TableCell>
 
                         <TableCell className="p-2 border text-center">
-                          {val.amount_unit}
+                          {parseFloat(val.amount_unit) * val.quantity}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.tax_percent}%
