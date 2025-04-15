@@ -149,7 +149,20 @@ const ReturnDashboard = () => {
 
     // setDateValue(currentDate);
     let currentDate: Date = new Date();
-    setYear(currentDate.getFullYear().toString());
+
+    const fiscalYearStartMonth = 3; // April
+    const currentMonth = currentDate.getMonth();
+    const fiscalYear =
+      currentMonth < fiscalYearStartMonth
+        ? currentDate.getFullYear() - 1
+        : currentDate.getFullYear();
+
+    if (currentMonth === fiscalYearStartMonth) {
+      setYear((fiscalYear - 1).toString());
+    } else {
+      setYear(fiscalYear.toString());
+    }
+
     const init = async () => {
       const lastPendingResponse = await GetUserLastPandingReturn({
         userid: userid,
@@ -167,39 +180,44 @@ const ReturnDashboard = () => {
       });
       if (response.status && response.data) {
         setDvatdata(response.data);
-        // response.data.compositionScheme
-        //   ? setPeriod("June")
-        //   : setPeriod("April");
 
-        // const cusQuarter: Quarter = getQuarterList(
-        //   new Date(),
-        //   new Date().getFullYear().toString(),
-        //   response.data.vatLiableDate ?? new Date()
-        // ).at(-1)?.value as Quarter;
-
-        const cusQuarter: Quarter = getQuarterList(
-          currentDate,
-          currentDate.getFullYear().toString(),
-          response.data.vatLiableDate ?? currentDate
-        ).at(-1)?.value as Quarter;
-        setQuarter(
-          getQuarterForMonth(monthNames[currentDate.getMonth()]) ??
-            Quarter.QUARTER1
+        const quarters = getQuarterList(
+          new Date(),
+          currentMonth === fiscalYearStartMonth
+            ? (fiscalYear - 1).toString()
+            : fiscalYear.toString(),
+          response.data?.vatLiableDate ?? new Date()
         );
 
-        // setPeriod(
-        //   getPeriodList(
-        //     new Date(),
-        //     new Date().getFullYear().toString(),
-        //     cusQuarter,
-        //     response.data.vatLiableDate ?? new Date()
-        //   ).at(-1)?.value
-        // );
-        setPeriod(
-          currentDate.getMonth() == 0
-            ? monthNames[11]
-            : monthNames[currentDate.getMonth() - 1]
-        );
+        const selectedQuarter = quarters.at(-1)?.value as Quarter;
+        setQuarter(selectedQuarter);
+
+        const quarterMonthsMap: Record<Quarter, [number, number]> = {
+          QUARTER1: [3, 5], // Apr (3) to Jun (5)
+          QUARTER2: [6, 8], // Jul (6) to Sep (8)
+          QUARTER3: [9, 11], // Oct (9) to Dec (11)
+          QUARTER4: [0, 2], // Jan (0) to Mar (2)
+        };
+
+        const [startMonthIndex, endMonthIndex] =
+          quarterMonthsMap[selectedQuarter];
+
+        let monthToSet: string;
+
+        monthToSet = monthNames[endMonthIndex];
+
+        // if (response.data?.compositionScheme) {
+        //   // Pick last month of the quarter
+        //   monthToSet = monthNames[endMonthIndex];
+        // } else {
+        //   // Pick first month of quarter or vatLiableDate month if it's later
+        //   // const liableMonth =
+        //   //   response.data?.vatLiableDate?.getMonth() ?? startMonthIndex;
+        //   // const adjustedStartMonth = Math.max(startMonthIndex, liableMonth);
+        //   monthToSet = monthNames[startMonthIndex];
+        // }
+
+        setPeriod(monthToSet);
 
         await search(
           currentDate.getFullYear().toString(),
@@ -266,10 +284,21 @@ const ReturnDashboard = () => {
     selectedYear: string,
     vatLiableDate: Date
   ): PeriodValue[] => {
-    const currentFY = getFinancialYear(dateValue);
-    const liableFY = getFinancialYear(vatLiableDate);
+    const getFiscalYearStart = (date: Date) => {
+      const month = date.getMonth(); // 0-indexed
+      const day = date.getDate();
+      if (month > 3 || (month === 3 && day >= 1)) {
+        return date.getFullYear();
+      } else {
+        return date.getFullYear() - 1;
+      }
+    };
+
+    const currentFY = getFiscalYearStart(dateValue).toString();
+    const liableFY = getFiscalYearStart(vatLiableDate).toString();
 
     const currentMonth = dateValue.getMonth();
+    const currentDay = dateValue.getDate();
     const liableMonth = vatLiableDate.getMonth();
 
     const quarters: PeriodValue[] = [
@@ -279,263 +308,52 @@ const ReturnDashboard = () => {
       { value: "QUARTER4", label: "Quarter 4 [Jan - Mar]" },
     ];
 
+    const getQuarterIndex = (month: number): number => {
+      if (month >= 3 && month <= 5) return 1; // Apr-Jun
+      if (month >= 6 && month <= 8) return 2; // Jul-Sep
+      if (month >= 9 && month <= 11) return 3; // Oct-Dec
+      return 4; // Jan-Mar
+    };
+
+    const selectedFY = selectedYear;
+    const selectedYearNumber = parseInt(selectedYear);
+
     let startQuarterIndex = 1;
     let endQuarterIndex = 4;
 
-    if (selectedYear === liableFY) {
-      if (liableMonth >= 3 && liableMonth <= 5) startQuarterIndex = 1;
-      else if (liableMonth >= 6 && liableMonth <= 8) startQuarterIndex = 2;
-      else if (liableMonth >= 9 && liableMonth <= 11) startQuarterIndex = 3;
-      else startQuarterIndex = 4;
+    if (selectedFY === liableFY) {
+      // Start from liable quarter
+      startQuarterIndex = getQuarterIndex(liableMonth);
 
-      if (selectedYear !== currentFY) endQuarterIndex = 4;
-      else {
-        if (currentMonth >= 3 && currentMonth <= 5) endQuarterIndex = 1;
-        else if (currentMonth >= 6 && currentMonth <= 8) endQuarterIndex = 2;
-        else if (currentMonth >= 9 && currentMonth <= 11) endQuarterIndex = 3;
-        else endQuarterIndex = 4;
+      // Stop at current quarter only if same FY
+      if (selectedFY === currentFY) {
+        const tentativeEnd = getQuarterIndex(currentMonth);
+        const cutoffReached =
+          (tentativeEnd === 1 && currentMonth >= 3) ||
+          (tentativeEnd === 2 && currentMonth >= 6) ||
+          (tentativeEnd === 3 && currentMonth >= 9) ||
+          (tentativeEnd === 4 && (currentMonth === 0 || currentMonth >= 0));
+
+        endQuarterIndex = cutoffReached ? tentativeEnd : tentativeEnd - 1;
       }
-    } else if (selectedYear !== currentFY) {
-      // non-liable, non-current year — full year
-      return quarters;
+    } else if (selectedFY === currentFY) {
+      // Only show up to current quarter
+      const currentQuarter = getQuarterIndex(currentMonth);
+      const cutoffReached =
+        (currentQuarter === 1 && currentMonth >= 3) ||
+        (currentQuarter === 2 && currentMonth >= 6) ||
+        (currentQuarter === 3 && currentMonth >= 9) ||
+        (currentQuarter === 4 && currentMonth >= 0);
+
+      endQuarterIndex = cutoffReached ? currentQuarter : currentQuarter - 1;
     } else {
-      // current FY
-      if (currentMonth >= 3 && currentMonth <= 5) startQuarterIndex = 1;
-      else if (currentMonth >= 6 && currentMonth <= 8) startQuarterIndex = 2;
-      else if (currentMonth >= 9 && currentMonth <= 11) startQuarterIndex = 3;
-      else startQuarterIndex = 4;
+      // Other years: full year
+      return quarters;
     }
 
     return quarters.slice(startQuarterIndex - 1, endQuarterIndex);
   };
 
-  // const getQuarterList = (
-  //   dateValue: Date,
-  //   year: string,
-  //   vatLiableDate: Date
-  // ): PeriodValue[] => {
-  //   const currentYear: number = dateValue.getFullYear();
-  //   const currentMonth: number = dateValue.getMonth();
-
-  //   const liableYear: number = vatLiableDate.getFullYear();
-  //   const liableMonth: number = vatLiableDate.getMonth();
-
-  //   console.log(liableMonth);
-  //   console.log(liableYear);
-
-  //   const quarters: PeriodValue[] = [
-  //     { value: "QUARTER1", label: "Quarter 1 [Apr - Jun]" },
-  //     { value: "QUARTER2", label: "Quarter 2 [Jul - Sep]" },
-  //     { value: "QUARTER3", label: "Quarter 3 [Oct - Dec]" },
-  //     { value: "QUARTER4", label: "Quarter 4 [Jan - Mar]" },
-  //   ];
-
-  //   let startQuarterIndex: number = 1;
-  //   let endQuarterIndex: number = 4;
-
-  //   if (parseInt(year ?? "0") == liableYear) {
-  //     // Determine the starting quarter based on the liable month
-  //     if (liableMonth >= 3 && liableMonth <= 5) {
-  //       startQuarterIndex = 1; // Quarter 1
-  //     } else if (liableMonth >= 6 && liableMonth <= 8) {
-  //       startQuarterIndex = 2; // Quarter 2
-  //     } else if (liableMonth >= 9 && liableMonth <= 11) {
-  //       startQuarterIndex = 3; // Quarter 3
-  //     } else {
-  //       startQuarterIndex = 4; // Quarter 4
-  //     }
-
-  //     // Determine the ending quarter based on the current month
-  //     if (currentMonth >= 3 && currentMonth <= 5) {
-  //       endQuarterIndex = 1; // Quarter 1
-  //     } else if (currentMonth >= 6 && currentMonth <= 8) {
-  //       endQuarterIndex = 2; // Quarter 2
-  //     } else if (currentMonth >= 9 && currentMonth <= 11) {
-  //       endQuarterIndex = 3; // Quarter 3
-  //     } else {
-  //       endQuarterIndex = 4; // Quarter 4
-  //     }
-  //   } else if (parseInt(year ?? "0") != currentYear) {
-  //     startQuarterIndex = 4; // Return all quarters for non-current and non-liable years
-  //   } else {
-  //     // For the current year, calculate based on the current month
-  //     if (currentMonth >= 6 && currentMonth <= 8) {
-  //       startQuarterIndex = 2; // Quarter 2
-  //     } else if (currentMonth >= 9 && currentMonth <= 11) {
-  //       startQuarterIndex = 3; // Quarter 3
-  //     } else if (currentMonth >= 0 && currentMonth <= 2) {
-  //       startQuarterIndex = 4; // Quarter 4
-  //     }
-  //   }
-
-  //   // Generate the quarters within the range [startQuarterIndex, endQuarterIndex]
-  //   const resultQuarters: PeriodValue[] = quarters.slice(
-  //     startQuarterIndex - 1,
-  //     endQuarterIndex
-  //   );
-
-  //   return resultQuarters;
-  // };
-
-  // const getPeriodList = (
-  //   dateValue: Date,
-  //   year: string,
-  //   quarter: Quarter,
-  //   vatLiableDate: Date
-  // ): PeriodValue[] => {
-  //   const currentYear: number = dateValue.getFullYear();
-  //   const currentMonth: number = dateValue.getMonth();
-  //   const liableYear: number = vatLiableDate.getFullYear();
-  //   const liableMonth: number = vatLiableDate.getMonth();
-
-  //   const monthNames = [
-  //     "January",
-  //     "February",
-  //     "March",
-  //     "April",
-  //     "May",
-  //     "June",
-  //     "July",
-  //     "August",
-  //     "September",
-  //     "October",
-  //     "November",
-  //     "December",
-  //   ];
-
-  //   const periods: PeriodValue[] = [];
-
-  //   let startMonth: number;
-
-  //   // Determine the starting month of the quarter
-  //   switch (quarter) {
-  //     case Quarter.QUARTER1:
-  //       startMonth = 3; // April
-  //       break;
-  //     case Quarter.QUARTER2:
-  //       startMonth = 6; // July
-  //       break;
-  //     case Quarter.QUARTER3:
-  //       startMonth = 9; // October
-  //       break;
-  //     case Quarter.QUARTER4:
-  //       startMonth = 0; // January
-  //       break;
-  //     default:
-  //       return [];
-  //   }
-
-  //   for (let i = 0; i < 3; i++) {
-  //     const periodMonth = (startMonth + i) % 12;
-
-  //     // Handle the case when `year` matches `vatLiableDate` year
-  //     if (parseInt(year ?? "0") === liableYear) {
-  //       if (periodMonth >= liableMonth && periodMonth <= currentMonth) {
-  //         periods.push({
-  //           value: monthNames[periodMonth],
-  //           label: monthNames[periodMonth],
-  //         });
-  //       }
-  //     } else if (parseInt(year ?? "0") !== currentYear) {
-  //       // Handle non-current years (include all months in the quarter)
-  //       periods.push({
-  //         value: monthNames[periodMonth],
-  //         label: monthNames[periodMonth],
-  //       });
-  //     } else {
-  //       // Handle the current year (up to the current month)
-  //       if (periodMonth <= currentMonth) {
-  //         periods.push({
-  //           value: monthNames[periodMonth],
-  //           label: monthNames[periodMonth],
-  //         });
-  //       }
-  //     }
-  //   }
-
-  //   return periods;
-  // };
-
-  // const getPeriodList = (
-  //   dateValue: Date,
-  //   year: string,
-  //   quarter: Quarter,
-  //   vatLiableDate: Date
-  // ): PeriodValue[] => {
-  //   const currentYear: number = dateValue.getFullYear();
-  //   const currentMonth: number = dateValue.getMonth();
-  //   const liableYear: number = vatLiableDate.getFullYear();
-  //   const liableMonth: number = vatLiableDate.getMonth();
-
-  //   const monthNames = [
-  //     "January",
-  //     "February",
-  //     "March",
-  //     "April",
-  //     "May",
-  //     "June",
-  //     "July",
-  //     "August",
-  //     "September",
-  //     "October",
-  //     "November",
-  //     "December",
-  //   ];
-
-  //   const periods: PeriodValue[] = [];
-
-  //   let startMonth: number;
-
-  //   // Determine the starting month of the quarter
-  //   switch (quarter) {
-  //     case Quarter.QUARTER1:
-  //       startMonth = 3; // April
-  //       break;
-  //     case Quarter.QUARTER2:
-  //       startMonth = 6; // July
-  //       break;
-  //     case Quarter.QUARTER3:
-  //       startMonth = 9; // October
-  //       break;
-  //     case Quarter.QUARTER4:
-  //       startMonth = 0; // January
-  //       break;
-  //     default:
-  //       return [];
-  //   }
-
-  //   for (let i = 0; i < 3; i++) {
-  //     const periodMonth = (startMonth + i) % 12;
-
-  //     const targetYear = parseInt(year ?? "0");
-
-  //     if (targetYear === liableYear) {
-  //       // Liable year: include only if after liableMonth AND before currentMonth
-  //       if (periodMonth >= liableMonth && periodMonth < currentMonth) {
-  //         periods.push({
-  //           value: monthNames[periodMonth],
-  //           label: monthNames[periodMonth],
-  //         });
-  //       }
-  //     } else if (targetYear === currentYear) {
-  //       // Current year: include only if strictly before currentMonth
-  //       if (periodMonth < currentMonth) {
-  //         periods.push({
-  //           value: monthNames[periodMonth],
-  //           label: monthNames[periodMonth],
-  //         });
-  //       }
-  //     } else {
-  //       // Past or future years: include all quarter months
-  //       periods.push({
-  //         value: monthNames[periodMonth],
-  //         label: monthNames[periodMonth],
-  //       });
-  //     }
-  //   }
-
-  //   return periods;
-  // };
   const getPeriodList = (
     dateValue: Date,
     year: string,
@@ -547,12 +365,6 @@ const ReturnDashboard = () => {
     const liableYear = vatLiableDate.getFullYear();
     const liableMonth = vatLiableDate.getMonth();
     const selectedYear = parseInt(year ?? "0");
-
-    console.log("Selected Year:", selectedYear);
-    console.log("Current Year:", currentYear);
-    console.log("Liable Year:", liableYear);
-    console.log("Current Month:", currentMonth);
-    console.log("Liable Month:", liableMonth);
 
     const monthNames = [
       "January",
@@ -579,6 +391,9 @@ const ReturnDashboard = () => {
     };
 
     const quarterMonths = quarterMonthsMap[quarter];
+    console.log(selectedYear);
+    console.log(currentYear);
+    console.log(liableYear);
 
     for (const month of quarterMonths) {
       // Current year condition
@@ -590,11 +405,11 @@ const ReturnDashboard = () => {
           });
         }
       }
+
       // Liable year condition
       else if (selectedYear === liableYear) {
-        // Only restrict by liableMonth if it's in the same quarter
         if (quarterMonths.some((m) => m >= liableMonth)) {
-          if (month >= liableMonth && month < currentMonth) {
+          if (month >= liableMonth) {
             periods.push({
               value: monthNames[month],
               label: monthNames[month],

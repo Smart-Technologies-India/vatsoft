@@ -7,6 +7,7 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { return_filing } from "@prisma/client";
 import prisma from "../../../prisma/database";
+import { cookies } from "next/headers";
 
 const GetUserLastPandingReturn = async (
   payload: GetUserLastPandingReturnPayload
@@ -14,11 +15,19 @@ const GetUserLastPandingReturn = async (
   const functionname: string = GetUserLastPandingReturn.name;
 
   try {
+    const dvatid = cookies().get("dvat")?.value;
+    if (!dvatid) {
+      return createResponse({
+        message: "Invalid id. Please try again.",
+        functionname,
+      });
+    }
     const dvat04response = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
         deletedBy: null,
-        createdById: payload.userid,
+        // createdById: payload.userid,
+        id: parseInt(dvatid),
         status: "APPROVED",
       },
     });
@@ -44,7 +53,6 @@ const GetUserLastPandingReturn = async (
         due_date: "desc",
       },
     });
-
 
     if (!respose) {
       return createResponse({

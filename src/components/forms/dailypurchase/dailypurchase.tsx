@@ -508,6 +508,12 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             <p className="text-sm font-semibold">{taxableValue}</p>
           </div>
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
+            <p className="text-xs font-normal">Total Taxable Value</p>
+            <p className="text-sm font-semibold">
+              {(parseInt(quantity) * parseFloat(amount_unit)).toFixed(2)}
+            </p>
+          </div>
+          <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
             <p className="text-xs font-normal">VAT Amount</p>
             <p className="text-sm font-semibold">{vatamount}</p>
           </div>
