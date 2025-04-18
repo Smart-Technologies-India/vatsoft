@@ -1115,38 +1115,60 @@ model return_filing {
   @@unique([dvatid, year, month])
 }
 
+enum PackType {
+  BOTTLE
+  CAN
+  PET
+  TETRAPACK
+}
+
+enum DisplayGroup {
+  BEER
+  COUNTRYLIQUEUR
+  FOREIGNLIQUEUR
+  IMFL
+  WINE
+  OTHERS
+}
+
 model commodity_master {
-  id                    Int                     @id @default(autoincrement())
-  product_name          String
-  product_type          Dvat04Commodity?        @default(OTHER)
-  mrp                   String
-  sale_price            String
-  oidc_price            String
-  oidc_discount_percent String
-  taxable_at            String
-  description           String
-  remark                String?
-  crate_size            Int                     @default(0)
-  status                Status                  @default(ACTIVE)
-  createdAt             DateTime                @default(now())
-  createdBy             user                    @relation("commodity_master_createdBy", fields: [createdById], references: [id])
-  createdById           Int
-  updatedAt             DateTime                @updatedAt
-  updatedBy             user?                   @relation("commodity_master_updatedBy", fields: [updatedById], references: [id])
-  updatedById           Int?
-  deletedAt             DateTime?
-  deletedBy             user?                   @relation("commodity_master_deletedBy", fields: [deletedById], references: [id])
-  deletedById           Int?
-  returns_entry         returns_entry[]
-  daily_sale            daily_sale[]
-  daily_purchase        daily_purchase[]
-  stock                 stock[]
-  manufacturer_purchase manufacturer_purchase[]
-  edit_sale             edit_sale[]
-  edit_purchase         edit_purchase[]
-  edit_manufacturer     edit_manufacturer[]
-  first_stock           first_stock[]
-  save_stock            save_stock[]
+  id                        Int                     @id @default(autoincrement())
+  product_name              String
+  product_type              Dvat04Commodity?        @default(OTHER)
+  mrp                       String
+  sale_price                String
+  oidc_price                String
+  oidc_discount_percent     String
+  taxable_at                String
+  description               String
+  remark                    String?
+  group                     String?
+  display_group             DisplayGroup?
+  oidc_code                 String?
+  pack_type                 PackType?               @default(BOTTLE)
+  oidc_crate_sale_price     String?
+  oidc_crate_purchase_price String?
+  crate_size                Int                     @default(0)
+  status                    Status                  @default(ACTIVE)
+  createdAt                 DateTime                @default(now())
+  createdBy                 user                    @relation("commodity_master_createdBy", fields: [createdById], references: [id])
+  createdById               Int
+  updatedAt                 DateTime                @updatedAt
+  updatedBy                 user?                   @relation("commodity_master_updatedBy", fields: [updatedById], references: [id])
+  updatedById               Int?
+  deletedAt                 DateTime?
+  deletedBy                 user?                   @relation("commodity_master_deletedBy", fields: [deletedById], references: [id])
+  deletedById               Int?
+  returns_entry             returns_entry[]
+  daily_sale                daily_sale[]
+  daily_purchase            daily_purchase[]
+  stock                     stock[]
+  manufacturer_purchase     manufacturer_purchase[]
+  edit_sale                 edit_sale[]
+  edit_purchase             edit_purchase[]
+  edit_manufacturer         edit_manufacturer[]
+  first_stock               first_stock[]
+  save_stock                save_stock[]
 }
 
 model user_commodity_master {
