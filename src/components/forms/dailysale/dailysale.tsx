@@ -91,6 +91,8 @@ const DailySale = (props: DailySaleProviderProps) => {
 
       if (response.status && response.data) {
         setDvatdata(response.data);
+        setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
+
         const commodity_resposen = await GetUserCommodity({
           dvatid: response.data.id,
         });
@@ -158,6 +160,11 @@ const DailySale = (props: DailySaleProviderProps) => {
       });
       if (commmaster.status && commmaster.data) {
         setCommoditymaster(commmaster.data);
+
+        if (davtdata?.commodity == "OIDC") {
+          setValue("amount_unit", commmaster.data.oidc_crate_sale_price ?? "0");
+        }
+
         if (commmaster.data.product_type == "LIQUOR") {
           setLiquore(true);
           setLiquoreDealerAmount(parseInt(commmaster.data.sale_price));
@@ -208,7 +215,7 @@ const DailySale = (props: DailySaleProviderProps) => {
           (parseFloat(data.amount_unit) *
             (100 + parseFloat(commoditymaster.taxable_at))) /
             100 <
-            liquoreOIDCAmount
+            liquoreOIDCAmount * 0.7
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -218,32 +225,12 @@ const DailySale = (props: DailySaleProviderProps) => {
           (parseFloat(data.amount_unit) *
             (100 + parseFloat(commoditymaster.taxable_at))) /
             100 <
-            liquoreDealerAmount
+            liquoreDealerAmount * 0.7
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
       }
     } else {
-      if (
-        davtdata?.commodity == "OIDC" ||
-        davtdata?.commodity == "MANUFACTURER"
-      ) {
-        if (
-          isLiquore &&
-          parseFloat(data.amount_unit) <
-            liquoreOIDCAmount * commoditymaster.crate_size
-        ) {
-          return toast.error("Sale amount can not be less than MRP.");
-        }
-      } else {
-        if (
-          isLiquore &&
-          parseFloat(data.amount_unit) <
-            liquoreDealerAmount * commoditymaster.crate_size
-        ) {
-          return toast.error("Sale amount can not be less than MRP.");
-        }
-      }
     }
 
     const quantityamount =

@@ -55,6 +55,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     watch,
     formState: { isSubmitting },
     getValues,
+    setValue,
   } = useFormContext<DailyPurchaseMasterForm>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -80,6 +81,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
 
       if (response.status && response.data) {
         setDvatdata(response.data);
+
+        setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
         const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
           if (response.data.commodity == "OIDC") {
@@ -161,8 +164,16 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       const commmaster = await GetCommodityMaster({
         id: parseInt(description_of_goods),
       });
+      console.log("commmaster", commmaster);
       if (commmaster.status && commmaster.data) {
         setCommoditymaster(commmaster.data);
+
+        if (davtdata?.commodity == "OIDC") {
+          setValue(
+            "amount_unit",
+            commmaster.data.oidc_crate_purchase_price ?? "0"
+          );
+        }
       }
     };
     init();
