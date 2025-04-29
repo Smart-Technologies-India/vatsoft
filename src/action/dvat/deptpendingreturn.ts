@@ -32,6 +32,8 @@ const DeptPendingReturn = async (
         deletedBy: null,
         dvat: {
           selectOffice: payload.dept,
+          deletedAt: null,
+          deletedBy: null,
         },
       },
       include: {
