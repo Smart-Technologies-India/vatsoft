@@ -1,21 +1,18 @@
 "use server";
-interface GetAllDvatByDeptPayload {
+interface DvatTrackApplicationStatusPayload {
   dept: SelectOffice;
 }
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import prisma from "../../../prisma/database";
+import prisma from "../../../../prisma/database";
 import { dvat04, registration, SelectOffice, user } from "@prisma/client";
+import { DvatTrackApplicationStatusType } from "@/models/dashboard/regiser/track_application";
 
-const GetAllDvatByDept = async (
-  payload: GetAllDvatByDeptPayload
-): Promise<
-  ApiResponseType<Array<
-    dvat04 & { registration: Array<registration & { dept_user: user }> }
-  > | null>
-> => {
-  const functionname: string = GetAllDvatByDept.name;
+const DvatTrackApplicationStatus = async (
+  payload: DvatTrackApplicationStatusPayload
+): Promise<ApiResponseType<Array<DvatTrackApplicationStatusType> | null>> => {
+  const functionname: string = DvatTrackApplicationStatus.name;
   try {
     const dvat04response = await prisma.dvat04.findMany({
       where: {
@@ -32,10 +29,20 @@ const GetAllDvatByDept = async (
         deletedById: null,
       },
 
-      include: {
+      select: {
+        id: true,
+        tempregistrationnumber: true,
+        status: true,
+        compositionScheme: true,
+        createdAt: true,
         registration: {
-          include: {
-            dept_user: true,
+          select: {
+            dept_user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
           },
         },
       },
@@ -62,4 +69,4 @@ const GetAllDvatByDept = async (
   }
 };
 
-export default GetAllDvatByDept;
+export default DvatTrackApplicationStatus;

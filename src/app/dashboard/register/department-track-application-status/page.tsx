@@ -21,7 +21,6 @@ import {
   Select,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
-const { RangePicker } = DatePicker;
 import {
   Drawer,
   DrawerClose,
@@ -31,19 +30,24 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { composition, dvat04, registration, user } from "@prisma/client";
+import { user } from "@prisma/client";
 import { getCookie } from "cookies-next";
 import { encryptURLData, formateDate } from "@/utils/methods";
 import GetUser from "@/action/user/getuser";
 import Link from "next/link";
-import GetUserComposition from "@/action/composition/getusercompositon";
-import GetAllDvatByDept from "@/action/register/getdvatbydept";
 import { toast } from "react-toastify";
+import TrackApplilcationStatus from "@/action/new/composition/trackapplicationstatus";
+import {
+  DvatTrackApplicationStatusType,
+  TrackApplilcationStatusType,
+} from "@/models/dashboard/regiser/track_application";
+import DvatTrackApplicationStatus from "@/action/new/composition/dvattrackapplicationstatus";
 
 enum DataType {
   DVAT04 = "DVAT04",
   COMPOSITION = "COMPOSITION",
 }
+
 interface TableData {
   id: number;
   arn: string;
@@ -193,11 +197,11 @@ const TrackAppliation = () => {
 
   const [user, setUser] = useState<user>();
   const [dvatData, setDvatData] = useState<
-    Array<dvat04 & { registration: Array<registration & { dept_user: user }> }>
+    Array<DvatTrackApplicationStatusType>
   >([]);
-  const [compdata, setCompData] = useState<
-    Array<composition & { dept_user: user }>
-  >([]);
+  const [compdata, setCompData] = useState<Array<TrackApplilcationStatusType>>(
+    []
+  );
 
   const [data, setData] = useState<TableData[]>([]);
   const [showdata, setShowData] = useState<TableData[]>([]);
@@ -211,7 +215,7 @@ const TrackAppliation = () => {
 
     if (userresponse.data && userresponse.status) {
       setUser(userresponse.data);
-      const response = await GetAllDvatByDept({
+      const response = await DvatTrackApplicationStatus({
         dept: userresponse.data.selectOffice!,
       });
       if (response.data && response.status) {
@@ -230,7 +234,7 @@ const TrackAppliation = () => {
       }
     }
 
-    const composition_response = await GetUserComposition({});
+    const composition_response = await TrackApplilcationStatus({});
     if (composition_response.status && composition_response.data) {
       setCompData(composition_response.data);
       composition_response.data.forEach((val, index) => {
@@ -268,7 +272,7 @@ const TrackAppliation = () => {
 
       if (userresponse.data && userresponse.status) {
         setUser(userresponse.data);
-        const response = await GetAllDvatByDept({
+        const response = await DvatTrackApplicationStatus({
           dept: userresponse.data.selectOffice!,
         });
         if (response.data && response.status) {
@@ -292,21 +296,10 @@ const TrackAppliation = () => {
             );
 
           data.push(...sortedData);
-          // response.data.forEach((val, index) => {
-          //   data.push({
-          //     id: val.id,
-          //     arn: val.tempregistrationnumber ?? "",
-          //     type: DataType.DVAT04,
-          //     description: "Application For new Registration",
-          //     submissionDate: formateDate(new Date(val.createdAt)),
-          //     status: val.status,
-          //     assignedTo: `${val.registration[0].dept_user.firstName} - ${val.registration[0].dept_user.lastName}`,
-          //   });
-          // });
         }
       }
 
-      const composition_response = await GetUserComposition({});
+      const composition_response = await TrackApplilcationStatus({});
       if (composition_response.status && composition_response.data) {
         setCompData(composition_response.data);
         composition_response.data.forEach((val, index) => {
@@ -577,73 +570,6 @@ const TrackAppliation = () => {
                       </TableRow>
                     );
                   })}
-
-                  {/* {dvatData.map((val: any, index: number) => {
-                return (
-                  <TableRow key={index}>
-                    <TableCell className="text-center border">
-                      <Link
-                        href={`/dashboard/register/${encryptURLData(
-                          val.id.toString()
-                        )}/preview/${encryptURLData(
-                          val.createdById.toString()
-                        )}`}
-                        className="text-blue-500"
-                      >
-                        {val.tempregistrationnumber}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-center border">VAT-04</TableCell>
-                    <TableCell className="text-center border">
-                      Application For new Registration
-                    </TableCell>
-                    <TableCell className="text-center border">
-                      {formateDate(new Date(val.createdAt))}
-                    </TableCell>
-                    <TableCell className="text-center border">
-                      {val.status}
-                    </TableCell>
-                    <TableCell className="text-center border">
-                      {val.registration[0].dept_user.firstName} -{" "}
-                      {val.registration[0].dept_user.lastName}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {compdata.map(
-                (val: composition & { dept_user: user }, index: number) => {
-                  return (
-                    <TableRow key={index}>
-                      <TableCell className="text-center border">
-                        <Link
-                          href={`/dashboard/register/composition-levy/${val.id}`}
-                          className="text-blue-500"
-                        >
-                          {val.arn}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-center border">
-                        {val.compositionScheme ? "COMP-IN" : "COMP-OUT"}
-                      </TableCell>
-                      <TableCell className="text-center border">
-                        {val.compositionScheme
-                          ? "Migration to composition Scheme"
-                          : "Migration to regular scheme"}
-                      </TableCell>
-                      <TableCell className="text-center border">
-                        {formateDate(new Date(val.createdAt))}
-                      </TableCell>
-                      <TableCell className="text-center border">
-                        {val.status}
-                      </TableCell>
-                      <TableCell className="text-center border">
-                        {val.dept_user.firstName ?? ""} -{" "}
-                        {val.dept_user.lastName ?? ""}
-                      </TableCell>
-                    </TableRow>
-                  );
-                }
-              )} */}
                 </TableBody>
               </Table>
 
