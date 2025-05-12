@@ -109,6 +109,9 @@ const ShopView = () => {
 
     const currentdate: Date = get28thDate();
 
+    console.log("Current Date", currentdate);
+    console.log("Unique Years", uniqueyears);
+
     const monthdetails: yearsDetails[] = uniqueyears.map((year: number) => {
       const ret_filing: ItemsType[] = [];
 

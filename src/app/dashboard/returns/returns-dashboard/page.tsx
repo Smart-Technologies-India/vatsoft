@@ -76,6 +76,8 @@ const ReturnDashboard = () => {
 
     setDueDate(new Date(parseInt(year), monthIndex, 10));
 
+    console.log("newYear", new Date(parseInt(year), monthIndex, 10));
+
     const returnformsresponse = await getPdfReturn({
       year: year,
       month: period,
@@ -107,8 +109,19 @@ const ReturnDashboard = () => {
       (val: returns_entry) => val.dvat_type == dvatType && val.isnil == false
     );
 
+    // out invoice_value shuold not repeat
+
+    const seenInvoices = new Set<string>();
+
     for (let i = 0; i < output.length; i++) {
-      entry += 1;
+      const invoiceValue = output[i].invoice_number;
+
+      if (invoiceValue && !seenInvoices.has(invoiceValue)) {
+        seenInvoices.add(invoiceValue);
+        entry += 1;
+      }
+
+      // entry += 1;
       amount = (
         parseFloat(amount) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
@@ -199,12 +212,15 @@ const ReturnDashboard = () => {
           QUARTER4: [0, 2], // Jan (0) to Mar (2)
         };
 
+        console.log("quarterMonthsMap", quarterMonthsMap);
+        console.log("selectedQuarter", selectedQuarter);
+
         const [startMonthIndex, endMonthIndex] =
           quarterMonthsMap[selectedQuarter];
 
         let monthToSet: string;
 
-        monthToSet = monthNames[endMonthIndex];
+        monthToSet = monthNames[startMonthIndex];
 
         // if (response.data?.compositionScheme) {
         //   // Pick last month of the quarter
@@ -216,13 +232,23 @@ const ReturnDashboard = () => {
         //   // const adjustedStartMonth = Math.max(startMonthIndex, liableMonth);
         //   monthToSet = monthNames[startMonthIndex];
         // }
-
+        // const periodsdata = getPeriodList(
+        //   new Date(),
+        //   currentMonth === fiscalYearStartMonth
+        //     ? (fiscalYear - 1).toString()
+        //     : fiscalYear.toString(),
+        //   selectedQuarter,
+        //   response.data?.vatLiableDate ?? new Date()
+        // );
+        // console.log("periodsdata", periodsdata);
+        // console.log("monthToSet", monthToSet);
         setPeriod(monthToSet);
 
-        await search(
-          currentDate.getFullYear().toString(),
-          monthNames[currentDate.getMonth()]
-        );
+        // await search(
+        //   currentDate.getFullYear().toString(),
+        //   monthNames[currentDate.getMonth()]
+        // );
+        await search(currentDate.getFullYear().toString(), monthToSet);
       }
     };
     init();
@@ -254,8 +280,8 @@ const ReturnDashboard = () => {
 
     // Always push current fiscal year
     periodValues.push({
-      value: currentFY.toString(),
-      label: `${currentFY}-${(currentFY + 1).toString().slice(-2)}`,
+      value: (currentFY - 1).toString(),
+      label: `${currentFY - 1}-${currentFY.toString().slice(-2)}`,
     });
 
     // Only push next FY if date is on or after May 1st
@@ -264,8 +290,8 @@ const ReturnDashboard = () => {
       (dateValue.getMonth() === 4 && dateValue.getDate() >= 1);
     if (isAfterMay) {
       periodValues.push({
-        value: (currentFY + 1).toString(),
-        label: `${currentFY + 1}-${(currentFY + 2).toString().slice(-2)}`,
+        value: currentFY.toString(),
+        label: `${currentFY}-${(currentFY + 1).toString().slice(-2)}`,
       });
     }
 
@@ -391,9 +417,6 @@ const ReturnDashboard = () => {
     };
 
     const quarterMonths = quarterMonthsMap[quarter];
-    console.log(selectedYear);
-    console.log(currentYear);
-    console.log(liableYear);
 
     for (const month of quarterMonths) {
       // Current year condition
@@ -687,18 +710,25 @@ const ReturnDashboard = () => {
 
                   let monthToSet: string;
 
-                  if (davtdata?.compositionScheme) {
-                    // Pick last month of the quarter
-                    monthToSet = monthNames[endMonthIndex];
+                  // Pick first month of quarter or vatLiableDate month if it's later
+                  const liableMonth =
+                    davtdata?.vatLiableDate?.getMonth() ?? startMonthIndex;
+
+                  if (
+                    davtdata?.vatLiableDate?.getFullYear().toString() == val
+                  ) {
+                    if (davtdata?.compositionScheme) {
+                      // Pick last month of the quarter
+                      monthToSet = monthNames[endMonthIndex];
+                    } else {
+                      const adjustedStartMonth = Math.max(
+                        startMonthIndex,
+                        liableMonth
+                      );
+                      monthToSet = monthNames[adjustedStartMonth];
+                    }
                   } else {
-                    // Pick first month of quarter or vatLiableDate month if it's later
-                    const liableMonth =
-                      davtdata?.vatLiableDate?.getMonth() ?? startMonthIndex;
-                    const adjustedStartMonth = Math.max(
-                      startMonthIndex,
-                      liableMonth
-                    );
-                    monthToSet = monthNames[adjustedStartMonth];
+                    monthToSet = monthNames[startMonthIndex];
                   }
 
                   setPeriod(monthToSet);

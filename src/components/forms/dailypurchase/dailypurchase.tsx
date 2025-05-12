@@ -414,7 +414,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           <TaxtInput<DailyPurchaseMasterForm>
             name="invoice_number"
             required={true}
-            numdes={true}
             title="Invoice no."
             placeholder="Invoice no."
           />

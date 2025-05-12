@@ -399,7 +399,6 @@ const CreateDvat30AEntry = (props: CreateDvat30AEntryProviderProps) => {
             <TaxtInput<record30AForm>
               name="invoice_number"
               required={true}
-              numdes={true}
               title="Invoice no."
               placeholder="Invoice no."
             />

@@ -427,7 +427,6 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
             <TaxtInput<record31AForm>
               name="invoice_number"
               required={true}
-              numdes={true}
               title="Invoice no."
               placeholder="Invoice no."
               // disable={isLock}

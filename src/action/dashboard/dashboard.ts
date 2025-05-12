@@ -46,7 +46,6 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
     },
   });
 
-
   if (!dvat) return [];
 
   const iscomp: boolean = dvat.compositionScheme ?? false;
@@ -58,10 +57,14 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
   const startYear = currentDate.getFullYear();
 
   for (let i = 6, j = 0; i >= 0; i--, j++) {
-    const date = new Date(Date.UTC(startYear, startMonth - i, 1, 0, 0, 0, 0));
+    const date = new Date(
+      Date.UTC(startYear, startMonth - i - 1, 1, 0, 0, 0, 0)
+    );
+    console.log("startMonth", startMonth);
+    console.log("date", date);
 
     let fill_date = new Date(
-      Date.UTC(startYear, startMonth - i, 1, 0, 0, 0, 0)
+      Date.UTC(startYear, startMonth - i - 1, 1, 0, 0, 0, 0)
     );
 
     // Stop counting if the date is before liableDate
@@ -145,14 +148,17 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
       // }
     }
 
+    console.log("formdata", date.toLocaleString("default", { month: "short" }));
+    console.log("year", year);
+
     response_data.push({
       month: date.toLocaleString("default", { month: "short" }),
       year: year,
       date: completed ? filed_on.toISOString() : fill_date.toISOString(),
       completed: completed,
-      
     });
   }
+
   // Remove trailing months not in the composition scheme if needed
   for (let i = response_data.length - 1; i >= 0; i--) {
     if (

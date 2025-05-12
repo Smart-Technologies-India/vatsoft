@@ -482,7 +482,6 @@ const DailySale = (props: DailySaleProviderProps) => {
           <TaxtInput<DailySaleForm>
             name="invoice_number"
             required={true}
-            numdes={true}
             title="Invoice no."
             placeholder="Invoice no."
           />
