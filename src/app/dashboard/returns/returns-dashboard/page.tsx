@@ -949,7 +949,10 @@ const ReturnDashboard = () => {
                 amount={salesLocalData.amount.toFixed(2)}
                 tax={salesLocalData.tax.toFixed(2)}
                 isnil={salesLocalData.isnil}
-                link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31&year=${year}&quarter=${quarter}&month=${period}`}
+                link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31&year=${getNewYear(
+                  year!,
+                  period!
+                )}&quarter=${quarter}&month=${period}`}
               />
               <Card
                 title={"Purchase Local"}
@@ -960,7 +963,10 @@ const ReturnDashboard = () => {
                 amount={purchaseLocalData.amount.toFixed(2)}
                 tax={purchaseLocalData.tax.toFixed(2)}
                 isnil={purchaseLocalData.isnil}
-                link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30&year=${year}&quarter=${quarter}&month=${period}`}
+                link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30&year=${getNewYear(
+                  year!,
+                  period!
+                )}&quarter=${quarter}&month=${period}`}
               />
               <Card
                 title={"Sales Inter-State"}
@@ -971,7 +977,10 @@ const ReturnDashboard = () => {
                 amount={salesInterStateData.amount.toFixed(2)}
                 tax={salesInterStateData.tax.toFixed(2)}
                 isnil={salesInterStateData.isnil}
-                link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31A&year=${year}&quarter=${quarter}&month=${period}`}
+                link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31A&year=${getNewYear(
+                  year!,
+                  period!
+                )}&quarter=${quarter}&month=${period}`}
               />
               <Card
                 title={"Purchase Inter-State"}
@@ -982,7 +991,10 @@ const ReturnDashboard = () => {
                 amount={purchaseInterStateData.amount.toFixed(2)}
                 tax={purchaseInterStateData.tax.toFixed(2)}
                 isnil={purchaseInterStateData.isnil}
-                link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30A&year=${year}&quarter=${quarter}&month=${period}`}
+                link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30A&year=${getNewYear(
+                  year!,
+                  period!
+                )}&quarter=${quarter}&month=${period}`}
               />
             </div>
           </>
@@ -1120,4 +1132,11 @@ const Card = (props: CardProps) => {
       </div>
     </div>
   );
+};
+
+const getNewYear = (year: string, month: string): string => {
+  if (["January", "February", "March"].includes(month)) {
+    return (parseInt(year) + 1).toString();
+  }
+  return year;
 };
