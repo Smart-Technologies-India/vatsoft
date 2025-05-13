@@ -23,7 +23,6 @@ import { encryptURLData, formateDate, generatePDF } from "@/utils/methods";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
 import CreateReturnRevised from "@/action/return/createreturnrevised";
 import GetUserLastPandingReturn from "@/action/return/userlastpandingreturn";
-import { set } from "date-fns";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -78,7 +77,7 @@ const ReturnDashboard = () => {
       setDueDate(new Date(parseInt(year) + 1, monthIndex, 10));
 
       const returnformsresponse = await getPdfReturn({
-        year: (parseInt(year) + 1).toString(),
+        year: (parseInt(year) + (monthIndex == 0 ? 0 : 1)).toString(),
         month: period,
         userid: userid,
       });
@@ -227,9 +226,6 @@ const ReturnDashboard = () => {
           QUARTER3: [9, 11], // Oct (9) to Dec (11)
           QUARTER4: [0, 2], // Jan (0) to Mar (2)
         };
-
-        console.log("quarterMonthsMap", quarterMonthsMap);
-        console.log("selectedQuarter", selectedQuarter);
 
         const [startMonthIndex, endMonthIndex] =
           quarterMonthsMap[selectedQuarter];
@@ -494,7 +490,7 @@ const ReturnDashboard = () => {
         (val: returns_entry) => val.dvat_type == DvatType.DVAT_31_A
       ).length > 0;
 
-    if (dvat_30 && dvat_30A && dvat_31 && dvat_31) return true;
+    if (dvat_30 && dvat_30A && dvat_31 && dvat_31A) return true;
 
     return false;
   };
