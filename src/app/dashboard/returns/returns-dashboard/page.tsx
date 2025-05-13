@@ -74,22 +74,38 @@ const ReturnDashboard = () => {
       monthIndex += 1; // Otherwise, just increment the month
     }
 
-    setDueDate(new Date(parseInt(year), monthIndex, 10));
+    if ([0, 1, 2].includes(monthIndex)) {
+      setDueDate(new Date(parseInt(year) + 1, monthIndex, 10));
 
-    console.log("newYear", new Date(parseInt(year), monthIndex, 10));
+      const returnformsresponse = await getPdfReturn({
+        year: (parseInt(year) + 1).toString(),
+        month: period,
+        userid: userid,
+      });
 
-    const returnformsresponse = await getPdfReturn({
-      year: year,
-      month: period,
-      userid: userid,
-    });
-
-    if (returnformsresponse.status && returnformsresponse.data) {
-      setReturn01(returnformsresponse.data.returns_01);
-      serReturns_entryData(returnformsresponse.data.returns_entry);
+      if (returnformsresponse.status && returnformsresponse.data) {
+        setReturn01(returnformsresponse.data.returns_01);
+        serReturns_entryData(returnformsresponse.data.returns_entry);
+      } else {
+        serReturns_entryData([]);
+        setReturn01(null);
+      }
     } else {
-      serReturns_entryData([]);
-      setReturn01(null);
+      setDueDate(new Date(parseInt(year), monthIndex, 10));
+
+      const returnformsresponse = await getPdfReturn({
+        year: year,
+        month: period,
+        userid: userid,
+      });
+
+      if (returnformsresponse.status && returnformsresponse.data) {
+        setReturn01(returnformsresponse.data.returns_01);
+        serReturns_entryData(returnformsresponse.data.returns_entry);
+      } else {
+        serReturns_entryData([]);
+        setReturn01(null);
+      }
     }
   };
 
