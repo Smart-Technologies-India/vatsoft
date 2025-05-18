@@ -28,7 +28,6 @@ import {
   ReturnType,
   tin_number_master,
 } from "@prisma/client";
-import GetAllCommodityMaster from "@/action/commoditymaster/getallcommoditymaster";
 import { onFormError } from "@/utils/methods";
 import AddReturnInvoice from "@/action/return/addreturninvoice";
 import { getCookie } from "cookies-next";
@@ -141,6 +140,8 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
     []
   );
 
+  const [tindata, setTinData] = useState<tin_number_master | null>(null);
+
   useEffect(() => {
     reset({
       category_of_entry: "INVOICE",
@@ -181,6 +182,16 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
             description_of_goods: return_entry.data.description_of_goods!,
             recipient_vat_no: return_entry.data.seller_tin_number.tin_number,
           });
+
+          const tinmaster = await SearchTin({
+            tinumber: return_entry.data.seller_tin_number.tin_number,
+          });
+
+          if (tinmaster.status && tinmaster.data) {
+            setTinData(tinmaster.data);
+          } else {
+            toast.error(tinmaster.message);
+          }
         }
       }
       if ((searchParams.get("tin") ?? "").length > 0) {
@@ -196,26 +207,10 @@ const CreateDvat31Entry = (props: CreateDvat31EntryProviderProps) => {
 
   const recipient_vat_no = watch("recipient_vat_no");
 
-  const [tindata, setTinData] = useState<tin_number_master | null>(null);
-
   useEffect(() => {
     const init = async () => {
-      if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
-
-      if (
-        (recipient_vat_no ?? "").length > 2 &&
-        !(recipient_vat_no ?? "").startsWith("26")
-      ) {
-        return toast.error("Invalid VAT No.");
-      }
-
-      const tinresponse = await SearchTin({
-        tinumber: recipient_vat_no,
-      });
-
-      if (tinresponse.status && tinresponse.data) {
-        setTinData(tinresponse.data);
-      }
+      if ((recipient_vat_no ?? "").length > 11)
+        return toast.error("Invalid DVAT no.");
     };
     init();
   }, [recipient_vat_no]);

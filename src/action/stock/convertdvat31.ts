@@ -8,6 +8,7 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import {
   CategoryOfEntry,
+  commodity_master,
   daily_sale,
   DvatType,
   Quarter,
@@ -91,6 +92,7 @@ const ConvertDvat31 = async (
         },
         include: {
           seller_tin_number: true,
+          commodity_master: true,
         },
       });
 
@@ -117,7 +119,7 @@ const ConvertDvat31 = async (
       });
 
       if (!update_response) {
-        throw new Error("Something want wrong unable to update.");
+        throw new Error("Something went wrong unable to update.");
       }
       // const current_date = new Date();
 
@@ -171,7 +173,12 @@ const ConvertDvat31 = async (
 
       const returnentryresponse = await prisma.returns_entry.createMany({
         data: data_to_create.map(
-          (val: daily_sale & { seller_tin_number: tin_number_master }) => ({
+          (
+            val: daily_sale & {
+              seller_tin_number: tin_number_master;
+              commodity_master: commodity_master;
+            }
+          ) => ({
             returns_01Id: returnInvoice.id,
             dvat_type: val.is_local ? DvatType.DVAT_31 : DvatType.DVAT_31_A,
             status: Status.ACTIVE,
@@ -198,6 +205,7 @@ const ConvertDvat31 = async (
             vatamount: val.vatamount,
             quantity: val.quantity,
             remarks: "",
+            description_of_goods: val.commodity_master.product_name,
           })
         ),
       });

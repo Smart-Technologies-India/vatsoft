@@ -63,7 +63,7 @@ const UpdateCommodityMaster = async (
 
     if (!commodity_master) {
       return createResponse({
-        message: "Something want wrong, Unable to update.",
+        message: "Something went wrong, Unable to update.",
         functionname,
       });
     }

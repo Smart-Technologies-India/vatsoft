@@ -69,7 +69,7 @@ const CreateDailyPurchase = async (
 
       if (!commodity_master) {
         throw new Error(
-          "Something want wrong. Unable to create daily purchase."
+          "Something went wrong. Unable to create daily purchase."
         );
       }
 

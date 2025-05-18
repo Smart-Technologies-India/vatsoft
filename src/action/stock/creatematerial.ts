@@ -63,7 +63,7 @@ const CreateMaterial = async (
 
     if (!daily_purchase_response) {
       return createResponse({
-        message: "Something want wrong. Unable to add raw material.",
+        message: "Something went wrong. Unable to add raw material.",
         functionname,
       });
     }

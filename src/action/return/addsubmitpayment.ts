@@ -74,7 +74,7 @@ const AddSubmitPayment = async (
         },
       });
       if (!updateresponse) {
-        throw new Error("Something Want wrong! Unable to submit");
+        throw new Error("Something went wrong! Unable to submit");
       }
 
       if (updateresponse.dvat04.compositionScheme) {

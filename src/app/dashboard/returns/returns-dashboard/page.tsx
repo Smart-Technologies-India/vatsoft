@@ -552,7 +552,10 @@ const ReturnDashboard = () => {
     router.push(
       `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
         userid.toString()
-      )}?form=30A&year=${year}&quarter=${quarter}&month=${period}`
+      )}?form=30A&year=${getNewYear(
+        year!,
+        period!
+      )}&quarter=${quarter}&month=${period}`
     );
   };
 
@@ -1009,7 +1012,10 @@ const ReturnDashboard = () => {
                           await generatePDF(
                             `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
                               userid.toString()
-                            )}?form=30A&year=${year}&quarter=${quarter}&month=${period}&sidebar=no`
+                            )}?form=30A&year=${getNewYear(
+                              year!,
+                              period!
+                            )}&quarter=${quarter}&month=${period}&sidebar=no`
                           );
                           setTimeout(() => {
                             setDownload(false);
@@ -1051,7 +1057,10 @@ const ReturnDashboard = () => {
                           router.push(
                             `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
                               userid.toString()
-                            )}?form=30A&year=${year}&quarter=${quarter}&month=${period}`
+                            )}?form=30A&year=${getNewYear(
+                              year!,
+                              period!
+                            )}&quarter=${quarter}&month=${period}`
                           );
                         }
                       }}
@@ -1131,7 +1140,9 @@ const Card = (props: CardProps) => {
 };
 
 const getNewYear = (year: string, month: string): string => {
+  console.log("getNewYear", year, month);
   if (["January", "February", "March"].includes(month)) {
+    console.log((parseInt(year) + 1).toString());
     return (parseInt(year) + 1).toString();
   }
   return year;

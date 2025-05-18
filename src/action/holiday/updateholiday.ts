@@ -24,7 +24,7 @@ const UpdateHoliday = async (
     });
     if (!isholiday) {
       return createResponse({
-        message: "Something want wrong unable to create holiday. Try again!",
+        message: "Something went wrong unable to create holiday. Try again!",
         functionname,
       });
     }

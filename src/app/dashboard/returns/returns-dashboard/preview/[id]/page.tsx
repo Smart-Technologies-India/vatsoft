@@ -94,6 +94,7 @@ const Dvat16ReturnPreview = () => {
         "December",
       ];
 
+      console.log(returnformsresponse);
       if (returnformsresponse.status && returnformsresponse.data) {
         setReturn01(returnformsresponse.data.returns_01);
         serReturns_entryData(returnformsresponse.data.returns_entry);
@@ -2913,7 +2914,7 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.nature_purchase == NaturePurchase.OTHER_GOODS &&
+        val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
     );
@@ -2923,7 +2924,7 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
   return (
     <>
       <h1 className="text-center font-semibold text-sm mt-4">
-        FORM DVAT 30 - For VAT Credit : Purchase of Other Goods
+        FORM DVAT 16 - Annexure II For VAT Credit : Purchase of Other Goods
       </h1>
       <table border={1} className="w-11/12 mx-auto mt-2">
         <thead className="w-full">
@@ -2968,7 +2969,7 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
             return (
               <tr className="w-full" key={index}>
                 <td className="border border-black px-1 leading-4 text-[0.6rem]">
-                  {val.id}
+                  {index + 1}
                 </td>
                 <td className="border border-black px-1 leading-4 text-[0.6rem]">
                   {val.invoice_number}
@@ -2983,9 +2984,11 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
                   {val.seller_tin_number.tin_number}
                 </td>
                 <td className="border border-black px-1 leading-4 text-[0.6rem]">
-                  COMPRESSOR OIL COMPRESIR OIL
+                  {val.description_of_goods}
                 </td>
-                <td className="border border-black px-1 leading-4 text-[0.6rem]"></td>
+                <td className="border border-black px-1 leading-4 text-[0.6rem]">
+                  {val.quantity}
+                </td>
                 <td className="border border-black px-1 leading-4 text-[0.6rem]">
                   {val.amount}
                 </td>

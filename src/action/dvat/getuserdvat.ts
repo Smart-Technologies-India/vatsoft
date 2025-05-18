@@ -18,20 +18,20 @@ const GetUserDvat04 = async (
 
   try {
     // const dvatid = getCookie("dvat");
-    const dvatid = cookies().get("dvat")?.value;
-    if (!dvatid) {
-      return createResponse({
-        message: "Invalid id. Please try again.",
-        functionname,
-      });
-    }
+    // const dvatid = cookies().get("dvat")?.value;
+    // if (!dvatid) {
+    //   return createResponse({
+    //     message: "Invalid id. Please try again.",
+    //     functionname,
+    //   });
+    // }
 
     const dvat04response = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
         deletedBy: null,
-        id: parseInt(dvatid),
-        // createdById: payload.userid,
+        // id: parseInt(dvatid),
+        createdById: payload.userid,
         status: "APPROVED",
       },
     });

@@ -29,7 +29,7 @@ const CreateCommodityMaster = async (
 
     if (!commodity_master) {
       return createResponse({
-        message: "Something want wrong. Unable to create Commodity.",
+        message: "Something went wrong. Unable to create Commodity.",
         functionname,
       });
     }

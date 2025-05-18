@@ -8,6 +8,7 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import {
   CategoryOfEntry,
+  commodity_master,
   daily_purchase,
   DvatType,
   InputTaxCredit,
@@ -91,6 +92,7 @@ const ConvertDvat30A = async (
           },
         },
         include: {
+          commodity_master: true,
           seller_tin_number: true,
         },
       });
@@ -118,7 +120,7 @@ const ConvertDvat30A = async (
       });
 
       if (!update_response) {
-        throw new Error("Something want wrong unable to update.");
+        throw new Error("Something went wrong unable to update.");
       }
       // const current_date = new Date();
 
@@ -172,7 +174,12 @@ const ConvertDvat30A = async (
 
       const returnentryresponse = await prisma.returns_entry.createMany({
         data: data_to_create.map(
-          (val: daily_purchase & { seller_tin_number: tin_number_master }) => ({
+          (
+            val: daily_purchase & {
+              seller_tin_number: tin_number_master;
+              commodity_master: commodity_master;
+            }
+          ) => ({
             returns_01Id: returnInvoice.id,
             dvat_type: val.is_local ? DvatType.DVAT_30 : DvatType.DVAT_30_A,
             status: Status.ACTIVE,
@@ -186,20 +193,31 @@ const ConvertDvat30A = async (
             commodity_masterId: val.commodity_masterId,
             ...(val.is_local && {
               purchase_type: PurchaseType.FORMC_CONCESSION,
-              place_of_supply: parseInt(
-                val.seller_tin_number.tin_number.substring(0, 2)
-              ),
+              // place_of_supply: parseInt(
+              //   val.seller_tin_number.tin_number.substring(0, 2)
+              // ),
             }),
-            ...(!val.is_local && {
-              nature_purchase: NaturePurchase.CAPITAL_GOODS,
-              nature_purchase_option: NaturePurchaseOption.REGISTER_DEALERS,
-              input_tax_credit: InputTaxCredit.ITC_ELIGIBLE,
-            }),
+            // ...(!val.is_local && {
+            //   nature_purchase: NaturePurchase.CAPITAL_GOODS,
+            //   nature_purchase_option: NaturePurchaseOption.REGISTER_DEALERS,
+            //   input_tax_credit: InputTaxCredit.ITC_ELIGIBLE,
+            //   place_of_supply: parseInt(
+            //     val.seller_tin_number.tin_number.substring(0, 2)
+            //   ),
+            // }),
+
+            nature_purchase: NaturePurchase.CAPITAL_GOODS,
+            nature_purchase_option: NaturePurchaseOption.REGISTER_DEALERS,
+            input_tax_credit: InputTaxCredit.ITC_ELIGIBLE,
+            place_of_supply: parseInt(
+              val.seller_tin_number.tin_number.substring(0, 2)
+            ),
             tax_percent: val.tax_percent,
             amount: val.amount,
             vatamount: val.vatamount,
             remarks: "",
             quantity: val.quantity,
+            description_of_goods: val.commodity_master.product_name,
           })
         ),
       });

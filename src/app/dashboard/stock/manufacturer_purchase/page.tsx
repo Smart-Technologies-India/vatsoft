@@ -223,7 +223,11 @@ const ManufacturerStockData = () => {
                     </TableHead>
                     <TableHead className="w-20 border text-center">
                       {/* Quantity */}
-                      {quantityCount == "pcs" ? "Qty" : "Crate"}
+                      {quantityCount == "pcs"
+                        ? dvatdata?.commodity == "FUEL"
+                          ? "Litres"
+                          : "Qty"
+                        : "Crate"}
                     </TableHead>
                     <TableHead className="border text-center">
                       Invoice value (&#x20b9;)

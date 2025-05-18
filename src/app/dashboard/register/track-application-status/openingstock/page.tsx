@@ -106,7 +106,11 @@ const OpeningStock = () => {
                       Product Name
                     </TableHead>
                     <TableHead className="whitespace-nowrap border text-center p-2">
-                      {quantityCount == "pcs" ? "Qty" : "Crate"}
+                      {quantityCount == "pcs"
+                        ? dvatdata?.commodity == "FUEL"
+                          ? "Litres"
+                          : "Qty"
+                        : "Crate"}
                     </TableHead>
                     <TableHead className="whitespace-nowrap border text-center p-2">
                       Description

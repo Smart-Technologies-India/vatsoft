@@ -39,7 +39,7 @@ const RemoveReturn = async (
     });
     if (!updateresponse) {
       return createResponse({
-        message: "Something Want wrong! Unable to update",
+        message: "Something went wrong! Unable to update",
         functionname,
       });
     }

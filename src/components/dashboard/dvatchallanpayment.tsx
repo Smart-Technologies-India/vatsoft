@@ -199,6 +199,9 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       ...(isNegative(getValue()) && {
         pending_payment: getValue().toFixed(),
       }),
+      interestamount: "0",
+      totaltaxamount: "0",
+      vatamount: "0",
     });
 
     if (!response.status) return toast.error(response.message);
@@ -629,58 +632,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                   Interest(0008)
                 </TableCell>
                 <TableCell className="text-center p-2 border">
-                  {(
-                    (((parseFloat(getInvoicePercentage("0").decrease) +
-                      parseFloat(getInvoicePercentage("1").decrease) +
-                      parseFloat(getInvoicePercentage("4").decrease) +
-                      parseFloat(getInvoicePercentage("5").decrease) +
-                      parseFloat(getInvoicePercentage("6").decrease) +
-                      parseFloat(getInvoicePercentage("12.5").decrease) +
-                      parseFloat(getInvoicePercentage("12.75").decrease) +
-                      parseFloat(getInvoicePercentage("13.5").decrease) +
-                      parseFloat(getInvoicePercentage("15").decrease) +
-                      parseFloat(getInvoicePercentage("20").decrease) +
-                      parseFloat(getSaleOfPercentage("4").decrease) +
-                      parseFloat(getSaleOfPercentage("5").decrease) +
-                      parseFloat(getSaleOfPercentage("12.5").decrease) +
-                      parseFloat(get4_6().decrease) +
-                      parseFloat(get4_7().decrease) -
-                      parseFloat(get4_9().decrease) -
-                      (parseFloat(get5_1().decrease) +
-                        parseFloat(get5_2().decrease) +
-                        (parseFloat(getCreditNote().decrease) -
-                          parseFloat(getDebitNote().decrease) -
-                          parseFloat(getGoodsReturnsNote().decrease)))) *
-                      0.15) /
-                      365) *
-                    InterestDiffDays
-                  ).toFixed(0)}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">
-                  CESS(0009)
-                </TableCell>
-                <TableCell className="text-center p-2 border">0</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">Penalty</TableCell>
-                <TableCell className="text-center p-2 border">
-                  {lateFees}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">Others</TableCell>
-                <TableCell className="text-center p-2 border">0</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">
-                  Total Challan Amount:
-                </TableCell>
-                <TableCell className="text-center p-2 border">
-                  {(
-                    getVatAmount() +
-                    lateFees +
+                  {isNegative(
                     (((parseFloat(getInvoicePercentage("0").decrease) +
                       parseFloat(getInvoicePercentage("1").decrease) +
                       parseFloat(getInvoicePercentage("4").decrease) +
@@ -705,6 +657,111 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                       0.15) /
                       365) *
                       InterestDiffDays
+                  )
+                    ? "0"
+                    : (
+                        (((parseFloat(getInvoicePercentage("0").decrease) +
+                          parseFloat(getInvoicePercentage("1").decrease) +
+                          parseFloat(getInvoicePercentage("4").decrease) +
+                          parseFloat(getInvoicePercentage("5").decrease) +
+                          parseFloat(getInvoicePercentage("6").decrease) +
+                          parseFloat(getInvoicePercentage("12.5").decrease) +
+                          parseFloat(getInvoicePercentage("12.75").decrease) +
+                          parseFloat(getInvoicePercentage("13.5").decrease) +
+                          parseFloat(getInvoicePercentage("15").decrease) +
+                          parseFloat(getInvoicePercentage("20").decrease) +
+                          parseFloat(getSaleOfPercentage("4").decrease) +
+                          parseFloat(getSaleOfPercentage("5").decrease) +
+                          parseFloat(getSaleOfPercentage("12.5").decrease) +
+                          parseFloat(get4_6().decrease) +
+                          parseFloat(get4_7().decrease) -
+                          parseFloat(get4_9().decrease) -
+                          (parseFloat(get5_1().decrease) +
+                            parseFloat(get5_2().decrease) +
+                            (parseFloat(getCreditNote().decrease) -
+                              parseFloat(getDebitNote().decrease) -
+                              parseFloat(getGoodsReturnsNote().decrease)))) *
+                          0.15) /
+                          365) *
+                        InterestDiffDays
+                      ).toFixed(0)}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="text-left p-2 border">
+                  CESS(0009)
+                </TableCell>
+                <TableCell className="text-center p-2 border">0</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="text-left p-2 border">Penalty</TableCell>
+                <TableCell className="text-center p-2 border">
+                  {isNegative(lateFees) ? "0" : lateFees}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="text-left p-2 border">Others</TableCell>
+                <TableCell className="text-center p-2 border">0</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="text-left p-2 border">
+                  Total Challan Amount:
+                </TableCell>
+                <TableCell className="text-center p-2 border">
+                  {(
+                    getVatAmount() +
+                    lateFees +
+                    (isNegative(
+                      (((parseFloat(getInvoicePercentage("0").decrease) +
+                        parseFloat(getInvoicePercentage("1").decrease) +
+                        parseFloat(getInvoicePercentage("4").decrease) +
+                        parseFloat(getInvoicePercentage("5").decrease) +
+                        parseFloat(getInvoicePercentage("6").decrease) +
+                        parseFloat(getInvoicePercentage("12.5").decrease) +
+                        parseFloat(getInvoicePercentage("12.75").decrease) +
+                        parseFloat(getInvoicePercentage("13.5").decrease) +
+                        parseFloat(getInvoicePercentage("15").decrease) +
+                        parseFloat(getInvoicePercentage("20").decrease) +
+                        parseFloat(getSaleOfPercentage("4").decrease) +
+                        parseFloat(getSaleOfPercentage("5").decrease) +
+                        parseFloat(getSaleOfPercentage("12.5").decrease) +
+                        parseFloat(get4_6().decrease) +
+                        parseFloat(get4_7().decrease) -
+                        parseFloat(get4_9().decrease) -
+                        (parseFloat(get5_1().decrease) +
+                          parseFloat(get5_2().decrease) +
+                          (parseFloat(getCreditNote().decrease) -
+                            parseFloat(getDebitNote().decrease) -
+                            parseFloat(getGoodsReturnsNote().decrease)))) *
+                        0.15) /
+                        365) *
+                        InterestDiffDays
+                    )
+                      ? 0
+                      : (((parseFloat(getInvoicePercentage("0").decrease) +
+                          parseFloat(getInvoicePercentage("1").decrease) +
+                          parseFloat(getInvoicePercentage("4").decrease) +
+                          parseFloat(getInvoicePercentage("5").decrease) +
+                          parseFloat(getInvoicePercentage("6").decrease) +
+                          parseFloat(getInvoicePercentage("12.5").decrease) +
+                          parseFloat(getInvoicePercentage("12.75").decrease) +
+                          parseFloat(getInvoicePercentage("13.5").decrease) +
+                          parseFloat(getInvoicePercentage("15").decrease) +
+                          parseFloat(getInvoicePercentage("20").decrease) +
+                          parseFloat(getSaleOfPercentage("4").decrease) +
+                          parseFloat(getSaleOfPercentage("5").decrease) +
+                          parseFloat(getSaleOfPercentage("12.5").decrease) +
+                          parseFloat(get4_6().decrease) +
+                          parseFloat(get4_7().decrease) -
+                          parseFloat(get4_9().decrease) -
+                          (parseFloat(get5_1().decrease) +
+                            parseFloat(get5_2().decrease) +
+                            (parseFloat(getCreditNote().decrease) -
+                              parseFloat(getDebitNote().decrease) -
+                              parseFloat(getGoodsReturnsNote().decrease)))) *
+                          0.15) /
+                          365) *
+                        InterestDiffDays)
                   ).toFixed(0)}
                 </TableCell>
               </TableRow>
@@ -868,7 +925,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                     </Button>
                     <input
                       type="submit"
-                      value={"Pay Challan"}
+                      disabled={isSubmitting}
+                      value={isSubmitting ? "Processing..." : "Pay Challan"}
                       className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
                     />
                   </div>

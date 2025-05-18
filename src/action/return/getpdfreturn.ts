@@ -12,6 +12,7 @@ import {
   tin_number_master,
   user,
 } from "@prisma/client";
+import { cookies } from "next/headers";
 
 interface getPdfReturnPayload {
   userid: number;
@@ -33,11 +34,25 @@ const getPdfReturn = async (
   } | null>
 > => {
   try {
+
+    console.log("getPdfReturn payload", payload);
+    const dvatid = cookies().get("dvat")?.value;
+    if (!dvatid) {
+      return {
+        status: false,
+        data: null,
+        message: "Invalid id. Please try again.",
+        functionname: "getPdfReturn",
+      };
+    }
+
+
     const dvat04resonse = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
         deletedById: null,
-        createdById: payload.userid,
+        id: parseInt(dvatid),
+        // createdById: payload.userid,
       },
     });
 
@@ -89,6 +104,8 @@ const getPdfReturn = async (
         },
       });
     }
+
+    console.log("return01response", return01response);
 
     if (!return01response) {
       return {

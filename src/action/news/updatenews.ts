@@ -25,7 +25,7 @@ const UpdateNews = async (
     });
     if (!isnews) {
       return createResponse({
-        message: "Something want wrong unable to create news. Try again!",
+        message: "Something went wrong unable to create news. Try again!",
         functionname,
       });
     }

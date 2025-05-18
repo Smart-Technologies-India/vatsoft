@@ -60,8 +60,6 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
     const date = new Date(
       Date.UTC(startYear, startMonth - i - 1, 1, 0, 0, 0, 0)
     );
-    console.log("startMonth", startMonth);
-    console.log("date", date);
 
     let fill_date = new Date(
       Date.UTC(startYear, startMonth - i - 1, 1, 0, 0, 0, 0)
@@ -148,9 +146,6 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
       // }
     }
 
-    console.log("formdata", date.toLocaleString("default", { month: "short" }));
-    console.log("year", year);
-
     response_data.push({
       month: date.toLocaleString("default", { month: "short" }),
       year: year,
@@ -158,19 +153,19 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
       completed: completed,
     });
   }
-
+console.log("response_data", response_data);
   // Remove trailing months not in the composition scheme if needed
-  for (let i = response_data.length - 1; i >= 0; i--) {
-    if (
-      ["jun", "sep", "dec", "mar"].includes(
-        response_data[i].month.toLowerCase()
-      )
-    ) {
-      break;
-    } else {
-      response_data.pop();
-    }
-  }
+  // for (let i = response_data.length - 1; i >= 0; i--) {
+  //   if (
+  //     ["jun", "sep", "dec", "mar"].includes(
+  //       response_data[i].month.toLowerCase()
+  //     )
+  //   ) {
+  //     break;
+  //   } else {
+  //     response_data.pop();
+  //   }
+  // }
   return response_data;
 };
 

@@ -21,6 +21,9 @@ interface AddPaymentPayload {
   rr_number: string;
   penalty: string;
   pending_payment?: string;
+  vatamount:string;
+  interestamount:string;
+  totaltaxamount:string;
 }
 
 const AddPayment = async (
@@ -89,7 +92,7 @@ const AddPayment = async (
         },
       });
       if (!updateresponse) {
-        throw new Error("Something Want wrong! Unable to update");
+        throw new Error("Something went wrong! Unable to update");
       }
 
       if (updateresponse.dvat04.compositionScheme) {
