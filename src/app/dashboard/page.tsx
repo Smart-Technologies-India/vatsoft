@@ -20,12 +20,6 @@ import {
 } from "@/components/icons";
 import { Separator } from "@/components/ui/separator";
 
-// show all
-// vatofficer
-// commissioner
-// joint_commissioner
-// dy_commissioner
-
 import { Chart as ChartJS, registerables } from "chart.js";
 import { Bar } from "react-chartjs-2";
 
@@ -53,6 +47,20 @@ import { Flex, Radio, RadioChangeEvent } from "antd";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 
 const Page = () => {
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
   const id: number = parseInt(getCookie("id") ?? "0");
   const router = useRouter();
   const [user, setUser] = useState<user | null>(null);
@@ -74,7 +82,6 @@ const Page = () => {
       });
 
       if (dashboard.status && dashboard.data) {
-
         setMonth(dashboard.data);
       }
 
@@ -239,6 +246,20 @@ interface RentCardProps {
 }
 
 const RentCard = (props: RentCardProps) => {
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
   const getnextmonth = () => {
     const date: Date = new Date(props.date);
     const res: Date = new Date(
@@ -292,7 +313,9 @@ const RentCard = (props: RentCardProps) => {
         </p>
       </div>
       <Link
-        href={"/dashboard/returns/returns-dashboard"}
+        href={`/dashboard/returns/returns-dashboard?month=${
+          monthNames[parseInt(props.month) - 1]
+        }&year=${new Date(props.date).getFullYear()}`}
         className="text-xs rounded px-4 py-1 border border-blue-500 text-blue-500 font-nunito"
       >
         View

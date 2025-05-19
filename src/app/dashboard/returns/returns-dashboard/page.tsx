@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useEffect, useMemo, useState } from "react";
 import Marquee from "react-fast-marquee";
 import { RowData } from "@tanstack/react-table";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Checkbox, Modal, Select } from "antd";
 import {
   dvat04,
@@ -31,6 +31,7 @@ declare module "@tanstack/react-table" {
 }
 
 const ReturnDashboard = () => {
+  const searchParams = useSearchParams();
   const userid: number = parseInt(getCookie("id") ?? "0");
   const [year, setYear] = useState<string>();
   const [quarter, setQuarter] = useState<Quarter>(Quarter.QUARTER1);
@@ -260,7 +261,56 @@ const ReturnDashboard = () => {
         //   currentDate.getFullYear().toString(),
         //   monthNames[currentDate.getMonth()]
         // );
-        await search(currentDate.getFullYear().toString(), monthToSet);
+
+        const pathmonth = searchParams.get("month");
+        const pathyear = searchParams.get("year");
+
+        if (pathmonth != null && pathyear != null) {
+          if (["January", "February", "March"].includes(pathmonth)) {
+            await search((parseInt(pathyear) - 1).toString(), pathmonth);
+
+            setYear((parseInt(pathyear) - 1).toString());
+            setQuarter(getQuarterForMonth(pathmonth) ?? Quarter.QUARTER1);
+            setPeriod(pathmonth);
+          } else {
+            await search(pathyear, pathmonth);
+
+            setYear(pathyear);
+            setQuarter(getQuarterForMonth(pathmonth) ?? Quarter.QUARTER1);
+            setPeriod(pathmonth);
+          }
+        } else {
+        
+
+          let lastyear = lastPendingResponse.data?.year;
+          let lastmonth = lastPendingResponse.data?.month;
+
+      
+
+          if (lastmonth == null) {
+            return toast.error("No month found");
+          }
+          if (lastyear == null) {
+            return toast.error("No year found");
+          }
+
+          const last_next_month = monthNames.indexOf(lastmonth) + 1;
+
+          if(["January", "February", "March"].includes(lastmonth)) {
+            lastyear = (parseInt(lastyear) - 1).toString();
+          }
+
+          if (monthNames[last_next_month] == "December") {
+            lastyear = (parseInt(lastyear) + 1).toString();
+          }
+
+         
+          await search(lastyear, monthNames[last_next_month]);
+
+          setYear(lastyear);
+          setQuarter(getQuarterForMonth(monthNames[last_next_month]) ?? Quarter.QUARTER1);
+          setPeriod(monthNames[last_next_month]);
+        }
       }
     };
     init();
