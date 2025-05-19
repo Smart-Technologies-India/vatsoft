@@ -159,6 +159,9 @@ const Dvat16ReturnPreview = () => {
       transaction_id: data.transaction_id,
       rr_number: get_rr_number(),
       penalty: "0",
+      interestamount: "0",
+      totaltaxamount: "0",
+      vatamount:"0"
     });
 
     if (!response.status) return toast.error(response.message);
@@ -2970,7 +2973,7 @@ const NetTax = (props: NetTaxProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {(
+            {isNegative(
               (((parseFloat(getInvoicePercentage("0").decrease) +
                 parseFloat(getInvoicePercentage("1").decrease) +
                 parseFloat(getInvoicePercentage("4").decrease) +
@@ -2994,8 +2997,35 @@ const NetTax = (props: NetTaxProps) => {
                     parseFloat(getGoodsReturnsNote().decrease)))) *
                 0.15) /
                 365) *
-              DiffDays
-            ).toFixed(0)}
+                DiffDays
+            )
+              ? "0"
+              : (
+                  (((parseFloat(getInvoicePercentage("0").decrease) +
+                    parseFloat(getInvoicePercentage("1").decrease) +
+                    parseFloat(getInvoicePercentage("4").decrease) +
+                    parseFloat(getInvoicePercentage("5").decrease) +
+                    parseFloat(getInvoicePercentage("6").decrease) +
+                    parseFloat(getInvoicePercentage("12.5").decrease) +
+                    parseFloat(getInvoicePercentage("12.75").decrease) +
+                    parseFloat(getInvoicePercentage("13.5").decrease) +
+                    parseFloat(getInvoicePercentage("15").decrease) +
+                    parseFloat(getInvoicePercentage("20").decrease) +
+                    parseFloat(getSaleOfPercentage("4").decrease) +
+                    parseFloat(getSaleOfPercentage("5").decrease) +
+                    parseFloat(getSaleOfPercentage("12.5").decrease) +
+                    parseFloat(get4_6().decrease) +
+                    parseFloat(get4_7().decrease) -
+                    parseFloat(get4_9().decrease) -
+                    (parseFloat(get5_1().decrease) +
+                      parseFloat(get5_2().decrease) +
+                      (parseFloat(getCreditNote().decrease) -
+                        parseFloat(getDebitNote().decrease) -
+                        parseFloat(getGoodsReturnsNote().decrease)))) *
+                    0.15) /
+                    365) *
+                  DiffDays
+                ).toFixed(0)}
           </td>
         </tr>
 
@@ -3005,7 +3035,7 @@ const NetTax = (props: NetTaxProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {lateFees}
+            {isNegative(lateFees) ? 0 : lateFees}
           </td>
         </tr>
 

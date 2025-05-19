@@ -47,18 +47,13 @@ import CheckLastPayment from "@/action/return/checklastpayment";
 import GetReturn01 from "@/action/return/getreturn";
 import getReturnEntry from "@/action/return/getreturnentry";
 import GetUser from "@/action/user/getuser";
-import { CheckboxGroupProps } from "antd/es/checkbox";
 
 interface PercentageOutput {
   increase: string;
   decrease: string;
 }
 
-type DvatChallanPaymentProps = {
-  returnid: string;
-};
-
-export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
+const DownloadChallan = ({ params }: { params: { id: string } }) => {
   const router = useRouter();
   const toWords = new ToWords();
 
@@ -76,9 +71,11 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   const [user, setUser] = useState<user | null>(null);
 
   useEffect(() => {
+    console.log(params.id.toString());
+    console.log(decryptURLData(params.id.toString(), router));
     const init = async () => {
       const returns_response = await GetReturn01({
-        id: parseInt(decryptURLData(props.returnid, router)),
+        id: parseInt(decryptURLData(params.id.toString(), router)),
       });
       if (returns_response.status && returns_response.data) {
         setReturn01(returns_response.data);
@@ -669,347 +666,144 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
           InterestDiffDays)
     );
   };
-
-  const isPayment = (): boolean => {
-    let res: boolean =
-      return01!.rr_number == null ||
-      return01!.rr_number == undefined ||
-      return01!.rr_number == "";
-    return res == false;
-  };
-
-  // challan section start from here
-  const options: CheckboxGroupProps<string>["options"] = [
-    { label: "Online", value: "ONLINE" },
-    { label: "Offline", value: "OFFLINE" },
-  ];
-
-  const [paymentMode, setPaymentMode] = useState<string>("ONLINE");
-
   return (
     <>
-      <main className="mainpdf" id="mainpdf">
-        <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">
-          Details Of Taxpayer
+      <div className="p-2 mainpdf" id="mainpdf">
+        <div className="bg-white p-2 shadow mt-4">
+          <div className="bg-blue-500 p-2 text-white">DVAT 16 Challan</div>
+          <main>
+            <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">
+              Details Of Taxpayer
+            </div>
+            <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
+              <div>
+                <p className="text-sm">Name</p>
+                <p className="text-sm  font-medium">
+                  {user?.firstName} - {user?.lastName}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm">Email</p>
+                <p className="text-sm  font-medium">{user?.email}</p>
+              </div>
+              <div>
+                <p className="text-sm">Mobile</p>
+                <p className="text-sm  font-medium">{user?.mobileOne}</p>
+              </div>
+              <div>
+                <p className="text-sm">User TIN Number</p>
+                <p className="text-sm  font-medium">
+                  {return01?.dvat04?.tinNumber}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm">Address</p>
+                <p className="text-sm  font-medium">{user?.address}</p>
+              </div>
+            </div>
+
+            <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">
+              Reason for challan
+            </div>
+            <div className="p-1 bg-gray-50 grid grid-cols-4  gap-2  px-4">
+              <div>
+                <p className="text-sm">Reason for challan</p>
+                <p className="text-sm font-medium">MONTHLYPAYMENT</p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Table className="border mt-2">
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="whitespace-nowrap text-center px-2 border">
+                      Payment of account of
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center px-2 w-60 border">
+                      Tax (&#x20b9;)
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">VAT</TableCell>
+                    <TableCell className="text-center p-2 border ">
+                      {getVatAmount().toFixed(0)}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
+                      Interest
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">
+                      {getInterest().toFixed(0)}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">CESS</TableCell>
+                    <TableCell className="text-center p-2 border">0</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
+                      Penalty
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">
+                      {isNegative(lateFees) ? "0" : lateFees}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
+                      Others
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">0</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
+                      Total Challan Amount:
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">
+                      {getTotalTaxAmount().toFixed(0)}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
+                      Total amount paid (in words): Rupees
+                    </TableCell>
+                    <TableCell className="text-left p-2 border">
+                      {capitalcase(toWords.convert(getTotalTaxAmount()))}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+            <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">
+              Payment Details
+            </div>
+            <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
+              <div>
+                <p className="text-sm">Bank Name</p>
+                <p className="text-sm  font-medium h-20 border-b border-black">
+                </p>
+              </div>
+              <div>
+                <p className="text-sm">Paymode</p>
+                <p className="text-sm  font-medium h-20 border-b border-black"></p>
+              </div>
+              <div>
+                <p className="text-sm">Transaction ID</p>
+                <p className="text-sm  font-medium h-20 border-b border-black"></p>
+              </div>
+              <div>
+                <p className="text-sm">Bank Stamp</p>
+                <p className="text-sm  font-medium h-20 border-b border-black">
+                </p>
+              </div>
+            </div>
+          </main>
         </div>
-        <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
-          <div>
-            <p className="text-sm">Name</p>
-            <p className="text-sm  font-medium">
-              {user?.firstName} - {user?.lastName}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm">Email</p>
-            <p className="text-sm  font-medium">{user?.email}</p>
-          </div>
-          <div>
-            <p className="text-sm">Mobile</p>
-            <p className="text-sm  font-medium">{user?.mobileOne}</p>
-          </div>
-          <div>
-            <p className="text-sm">User TIN Number</p>
-            <p className="text-sm  font-medium">
-              {return01?.dvat04?.tinNumber}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm">Address</p>
-            <p className="text-sm  font-medium">{user?.address}</p>
-          </div>
-        </div>
-
-        <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">
-          Reason for challan
-        </div>
-        <div className="p-1 bg-gray-50 grid grid-cols-4  gap-2  px-4">
-          <div>
-            <p className="text-sm">Reason for challan</p>
-            <p className="text-sm font-medium">MONTHLYPAYMENT</p>
-          </div>
-        </div>
-
-        <div className="flex gap-4">
-          <Table className="border mt-2">
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="whitespace-nowrap text-center px-2 border">
-                  Payment of account of
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center px-2 w-60 border">
-                  Tax (&#x20b9;)
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell className="text-left p-2 border">VAT</TableCell>
-                <TableCell className="text-center p-2 border ">
-                  {getVatAmount().toFixed(0)}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">Interest</TableCell>
-                <TableCell className="text-center p-2 border">
-                  {getInterest().toFixed(0)}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">CESS</TableCell>
-                <TableCell className="text-center p-2 border">0</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">Penalty</TableCell>
-                <TableCell className="text-center p-2 border">
-                  {isNegative(lateFees) ? "0" : lateFees}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">Others</TableCell>
-                <TableCell className="text-center p-2 border">0</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">
-                  Total Challan Amount:
-                </TableCell>
-                <TableCell className="text-center p-2 border">
-                  {getTotalTaxAmount().toFixed(0)}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">
-                  Total amount paid (in words): Rupees
-                </TableCell>
-                <TableCell className="text-left p-2 border">
-                  {capitalcase(
-                    toWords.convert(parseFloat(getTotalTaxAmount().toFixed(0)))
-                  )}
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-          <div className="w-96">
-            {!(
-              return01?.rr_number == null ||
-              return01?.rr_number == undefined ||
-              return01?.rr_number == ""
-            ) ? (
-              <>
-                <div className="p-2 flex flex-col gap-2 border bg-gray-100 mt-2">
-                  <div>
-                    <p className="text-sm">Bank Name</p>
-                    <p className="text-sm  font-medium">
-                      {return01?.bank_name}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm">Track Id</p>
-                    <p className="text-sm  font-medium">{return01?.track_id}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm">Transaction Id</p>
-                    <p className="text-sm  font-medium">
-                      {return01?.transaction_id}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm">Transaction Date</p>
-                    <p className="text-sm  font-medium">
-                      {formateDate(new Date(return01?.transaction_date!))}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-2"></div>
-                <Button
-                  onClick={() => {
-                    router.push("/dashboard/returns/returns-dashboard");
-                  }}
-                  type="primary"
-                >
-                  Close
-                </Button>
-              </>
-            ) : (
-              <>
-                <div className="mt-2">
-                  <Radio.Group
-                    block
-                    options={options}
-                    defaultValue="ONLINE"
-                    optionType="button"
-                    buttonStyle="solid"
-                    onChange={(e) => {
-                      setPaymentMode(e.target.value);
-                    }}
-                  />
-                </div>
-                {paymentMode == "ONLINE" ? (
-                  <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-                    <div className="mt-2">
-                      <p>Bank Name</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                          errors.bank_name
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Bank Name"
-                        {...register("bank_name")}
-                        type="text"
-                      />
-                      {errors.bank_name && (
-                        <p className="text-xs text-red-500">
-                          {errors.bank_name.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-2">
-                      <p>Transaction Id</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500 ${
-                          errors.transaction_id
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Transaction id"
-                        {...register("transaction_id")}
-                      />
-                      {errors.transaction_id && (
-                        <p className="text-xs text-red-500">
-                          {errors.transaction_id.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-2">
-                      <p>Track Id</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                          errors.track_id
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Track Id"
-                        {...register("track_id")}
-                      />
-                      {errors.track_id && (
-                        <p className="text-xs text-red-500">
-                          {errors.track_id.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex  gap-2 mt-2">
-                      <div className="grow"></div>
-
-                      <Button
-                        disabled={isSubmitting}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          reset({});
-                        }}
-                      >
-                        Reset
-                      </Button>
-                      <input
-                        type="submit"
-                        disabled={isSubmitting}
-                        value={isSubmitting ? "Processing..." : "Pay Challan"}
-                        className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
-                      />
-                    </div>
-                  </form>
-                ) : (
-                  <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-                    <div className="mt-2">
-                      <p>Bank Name</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                          errors.bank_name
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Bank Name"
-                        {...register("bank_name")}
-                        type="text"
-                      />
-                      {errors.bank_name && (
-                        <p className="text-xs text-red-500">
-                          {errors.bank_name.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-2">
-                      <p>Transaction Id</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500 ${
-                          errors.transaction_id
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Transaction id"
-                        {...register("transaction_id")}
-                      />
-                      {errors.transaction_id && (
-                        <p className="text-xs text-red-500">
-                          {errors.transaction_id.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-2">
-                      <p>Track Id</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                          errors.track_id
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Track Id"
-                        {...register("track_id")}
-                      />
-                      {errors.track_id && (
-                        <p className="text-xs text-red-500">
-                          {errors.track_id.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex  gap-2 mt-2">
-                      <div className="grow"></div>
-
-                      <Button
-                        disabled={isSubmitting}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          reset({});
-                        }}
-                      >
-                        Reset
-                      </Button>
-
-                      <Button
-                        disabled={isSubmitting}
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          await generatePDF(
-                            `/dashboard/returns/returns-dashboard/preview/${props.returnid.toString()}/download-challan?sidebar=no`
-                          );
-                        }}
-                      >
-                        Download Challan
-                      </Button>
-
-                      <input
-                        type="submit"
-                        disabled={isSubmitting}
-                        value={isSubmitting ? "Processing..." : "Pay Challan"}
-                        className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
-                      />
-                    </div>
-                  </form>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </main>
+      </div>
     </>
   );
 };
+
+export default DownloadChallan;

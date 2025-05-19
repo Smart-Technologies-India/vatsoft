@@ -34,6 +34,8 @@ const GetReturn01 = async (
       },
     });
 
+    console.log(return01response);
+
     if (!return01response) {
       return01response = await prisma.returns_01.findFirst({
         where: {

@@ -21,9 +21,9 @@ interface AddPaymentPayload {
   rr_number: string;
   penalty: string;
   pending_payment?: string;
-  vatamount:string;
-  interestamount:string;
-  totaltaxamount:string;
+  vatamount: string;
+  interestamount: string;
+  totaltaxamount: string;
 }
 
 const AddPayment = async (
@@ -86,6 +86,10 @@ const AddPayment = async (
           ...(payload.pending_payment && {
             pending_payment: payload.pending_payment,
           }),
+          interest: payload.interestamount,
+          vatamount: payload.vatamount,
+          total_tax_amount: payload.totaltaxamount,
+          status: "PAID",
         },
         include: {
           dvat04: true,
@@ -291,6 +295,31 @@ const AddPayment = async (
         // if (!create_response) {
         //   throw new Error("C-Forms note create try again.");
         // }
+      }
+
+      let today = new Date();
+      today.setDate(today.getDate() + 3);
+
+      const challan_response = await prisma.challan.create({
+        data: {
+          dvatid: isExist.dvat04Id,
+          cpin: cpin,
+          vat: payload.vatamount,
+          cess: "0",
+          interest: payload.interestamount,
+          others: "0",
+          penalty: payload.penalty,
+          createdById: isExist.createdById,
+          expire_date: today,
+          total_tax_amount: payload.totaltaxamount,
+          reason: "MONTHLYPAYMENT",
+          status: "ACTIVE",
+          challanstatus: "CREATED",
+        },
+      });
+
+      if (!challan_response) {
+        throw new Error(`Challan was not created`);
       }
 
       return updateresponse;
