@@ -38,7 +38,7 @@ const GetUserLastPandingReturn = async (
         functionname,
       });
 
-    const respose = await prisma.return_filing.findFirst({
+    const response = await prisma.return_filing.findFirst({
       where: {
         dvatid: dvat04response.id,
         filing_status: true,
@@ -54,17 +54,42 @@ const GetUserLastPandingReturn = async (
       },
     });
 
-    if (!respose) {
+    if (!response) {
+      // return createResponse({
+      //   message: "No Pending user return found.",
+      //   functionname,
+      // });
+
+      const response = await prisma.return_filing.findFirst({
+        where: {
+          dvatid: dvat04response.id,
+          status: "ACTIVE",
+          deletedAt: null,
+          deletedById: null,
+        },
+        orderBy: {
+          due_date: "desc",
+        },
+      });
+
+      if (!response) {
+        return createResponse({
+          message: "No Pending user return found.",
+          functionname,
+        });
+      }
+
       return createResponse({
         message: "No Pending user return found.",
         functionname,
+        data: response,
       });
     }
 
     return createResponse({
       message: "dvat04 data get successfully",
       functionname,
-      data: respose,
+      data: response,
     });
   } catch (e) {
     return createResponse({
