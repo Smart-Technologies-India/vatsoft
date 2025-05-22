@@ -192,11 +192,15 @@ const ConvertDvat30A = async (
             total_invoice_number: val.amount,
             commodity_masterId: val.commodity_masterId,
             ...(val.is_local && {
-              purchase_type: PurchaseType.FORMC_CONCESSION,
+              purchase_type: PurchaseType.TAXABLE_RATE,
               // place_of_supply: parseInt(
               //   val.seller_tin_number.tin_number.substring(0, 2)
               // ),
             }),
+            ...(!val.is_local &&
+              val.is_against_cform && {
+                purchase_type: PurchaseType.FORMC_CONCESSION,
+              }),
             // ...(!val.is_local && {
             //   nature_purchase: NaturePurchase.CAPITAL_GOODS,
             //   nature_purchase_option: NaturePurchaseOption.REGISTER_DEALERS,

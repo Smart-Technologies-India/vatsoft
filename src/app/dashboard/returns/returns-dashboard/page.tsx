@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import Marquee from "react-fast-marquee";
 import { RowData } from "@tanstack/react-table";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Checkbox, Modal, Select } from "antd";
+import { Alert, Checkbox, Modal, Select } from "antd";
 import {
   dvat04,
   DvatType,
@@ -23,6 +23,7 @@ import { encryptURLData, formateDate, generatePDF } from "@/utils/methods";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
 import CreateReturnRevised from "@/action/return/createreturnrevised";
 import GetUserLastPandingReturn from "@/action/return/userlastpandingreturn";
+import { is } from "valibot";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -41,7 +42,7 @@ const ReturnDashboard = () => {
   const router = useRouter();
 
   const [return01, setReturn01] = useState<returns_01 | null>(null);
-  const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
+  const [returns_entryData, setReturns_entryData] = useState<returns_entry[]>(
     []
   );
 
@@ -74,7 +75,7 @@ const ReturnDashboard = () => {
       monthIndex += 1; // Otherwise, just increment the month
     }
 
-    if ([0, 1, 2].includes(monthIndex)) {
+    if ([0, 1, 2, 3].includes(monthIndex)) {
       setDueDate(new Date(parseInt(year) + 1, monthIndex, 10));
 
       const returnformsresponse = await getPdfReturn({
@@ -85,9 +86,9 @@ const ReturnDashboard = () => {
 
       if (returnformsresponse.status && returnformsresponse.data) {
         setReturn01(returnformsresponse.data.returns_01);
-        serReturns_entryData(returnformsresponse.data.returns_entry);
+        setReturns_entryData(returnformsresponse.data.returns_entry);
       } else {
-        serReturns_entryData([]);
+        setReturns_entryData([]);
         setReturn01(null);
       }
     } else {
@@ -101,9 +102,9 @@ const ReturnDashboard = () => {
 
       if (returnformsresponse.status && returnformsresponse.data) {
         setReturn01(returnformsresponse.data.returns_01);
-        serReturns_entryData(returnformsresponse.data.returns_entry);
+        setReturns_entryData(returnformsresponse.data.returns_entry);
       } else {
-        serReturns_entryData([]);
+        setReturns_entryData([]);
         setReturn01(null);
       }
     }
@@ -253,8 +254,6 @@ const ReturnDashboard = () => {
         //   selectedQuarter,
         //   response.data?.vatLiableDate ?? new Date()
         // );
-        // console.log("periodsdata", periodsdata);
-        // console.log("monthToSet", monthToSet);
         setPeriod(monthToSet);
 
         // await search(
@@ -280,12 +279,13 @@ const ReturnDashboard = () => {
             setPeriod(pathmonth);
           }
         } else {
-        
+          const isfail =
+            lastPendingResponse.data?.filing_date == null &&
+            lastPendingResponse.data?.filing_status == false;
 
           let lastyear = lastPendingResponse.data?.year;
-          let lastmonth = lastPendingResponse.data?.month;
 
-      
+          let lastmonth = lastPendingResponse.data?.month;
 
           if (lastmonth == null) {
             return toast.error("No month found");
@@ -294,21 +294,28 @@ const ReturnDashboard = () => {
             return toast.error("No year found");
           }
 
-          const last_next_month = monthNames.indexOf(lastmonth) + 1;
+          // const last_next_month = monthNames.indexOf(lastmonth) + 1;
 
-          if(["January", "February", "March"].includes(lastmonth)) {
+          const last_next_month = isfail
+            ? monthNames.indexOf(lastmonth)
+            : monthNames.indexOf(lastmonth) + 1;
+
+          if (["January", "February"].includes(lastmonth)) {
             lastyear = (parseInt(lastyear) - 1).toString();
           }
 
           if (monthNames[last_next_month] == "December") {
-            lastyear = (parseInt(lastyear) + 1).toString();
+            lastyear = isfail
+              ? parseInt(lastyear).toString()
+              : (parseInt(lastyear) + 1).toString();
           }
 
-         
           await search(lastyear, monthNames[last_next_month]);
 
           setYear(lastyear);
-          setQuarter(getQuarterForMonth(monthNames[last_next_month]) ?? Quarter.QUARTER1);
+          setQuarter(
+            getQuarterForMonth(monthNames[last_next_month]) ?? Quarter.QUARTER1
+          );
           setPeriod(monthNames[last_next_month]);
         }
       }
@@ -1046,6 +1053,14 @@ const ReturnDashboard = () => {
                 )}&quarter=${quarter}&month=${period}`}
               />
             </div>
+            <div className="mt-2">
+              <Alert
+                message="To move forward, ensure all 4 forms are either filed or NIL filed."
+                type="warning"
+                showIcon
+                closable
+              />
+            </div>
           </>
         )}
 
@@ -1116,7 +1131,7 @@ const ReturnDashboard = () => {
                       }}
                       className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
                     >
-                      Preview
+                      Preview for DVAT-16
                     </button>
                   )}
                 </>
@@ -1156,7 +1171,7 @@ const Card = (props: CardProps) => {
       </div>
 
       <p className="text-[#162e57] mt-2 text-xs text-left">
-        No Of Entries : {props.isnil ? "Nil Filed" : props.entry}
+        No Of Invoices : {props.isnil ? "Nil Filed" : props.entry}
       </p>
       <p className="text-[#162e57] text-xs text-left">
         Taxable Amount : {props.amount}
@@ -1190,9 +1205,7 @@ const Card = (props: CardProps) => {
 };
 
 const getNewYear = (year: string, month: string): string => {
-  console.log("getNewYear", year, month);
   if (["January", "February", "March"].includes(month)) {
-    console.log((parseInt(year) + 1).toString());
     return (parseInt(year) + 1).toString();
   }
   return year;

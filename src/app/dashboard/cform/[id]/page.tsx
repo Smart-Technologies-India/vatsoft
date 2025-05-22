@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
+import Barcode from "react-barcode";
 
 import { cform, dvat04, returns_entry } from "@prisma/client";
 import { useParams, useRouter } from "next/navigation";
@@ -11,6 +12,7 @@ import { Button } from "antd";
 import GetCformById from "@/action/cform/getcfrombyid";
 import GetDvat04 from "@/action/register/getdvat04";
 import GetCformEntry from "@/action/cform/getcfromenrty";
+import Image from "next/image";
 
 const CFROM = () => {
   const router = useRouter();
@@ -86,11 +88,17 @@ const CFROM = () => {
         {/* part one start here */}
 
         <div
-          className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto"
+          className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto relative font-bold"
           id="mainpdf"
         >
-          <div className="border border-black p-2 h-full w-full">
-            <div className="p-4 text-center text-sm">Original</div>
+          <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
+            <Image src="/cform_bg.png" alt="logo" fill={true} className="p-8" />
+          </div>
+          <div className="border border-black p-2 h-full w-full relative">
+            <div className="scale-[0.3] absolute top-20 -right-10">
+              <Barcode value={cformdata ? cformdata.sr_no : ""} />
+            </div>
+            <div className="p-4 text-center text-xs">Original</div>
             <div className="text-center text-sm font-medium">
               THE CENTRAL SALES TAX
             </div>
@@ -110,83 +118,95 @@ const CFROM = () => {
             <table border={1} className="w-5/6 mx-auto mt-6">
               <tbody className="w-full">
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1  text-sm w-[50%]">
-                    Office of Issue
+                  <td className="px-2 text-xs leading-6 w-[50%]">
+                    Office of Issue:
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {cformdata?.office_of_issue}
+                  <td className="px-2 text-xs text-nowrap leading-6 w-[50%]">
+                    Office of the Dept. of VAT -{" "}
+                    {cformdata?.office_of_issue == "Dadra_Nagar_Haveli"
+                      ? "Dadra and Nagar Haveli"
+                      : cformdata?.office_of_issue}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     Date of Issue :
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {/* 24/11/2014 */}
                     {formateDate(new Date(cformdata?.createdAt!))}
                   </td>
                 </tr>
-              </tbody>
-            </table>
-            <table border={1} className="w-5/6 mx-auto mt-4">
-              <tbody className="w-full">
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1  text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
+                    Quarter & Year :{" "}
+                  </td>
+                  <td className="px-2 text-xs leading-6 w-[50%]">
+                    {cformdata?.from_period.toLocaleString("default", {
+                      month: "short",
+                    })}
+                    -
+                    {cformdata?.to_period.toLocaleString("default", {
+                      month: "short",
+                    })}
+                    ,{cformdata?.from_period.getFullYear()}
+                  </td>
+                </tr>
+                <tr className="w-full">
+                  <td className="px-2  text-xs leading-6 w-[50%]">
                     Name of the purchasing dealer
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {dvatdata ? dvatdata.tradename : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     to whom issued along with his RC NO
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {dvatdata && dvatdata.tinNumber}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     Date from which registration is valid
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {cformdata
                       ? formateDate(new Date(cformdata.valid_date))
                       : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    Serial No
-                  </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">Serial No</td>
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {cformdata ? cformdata.sr_no : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">To</td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {cformdata ? cformdata.seller_address : ""}
+                  <td className="px-2 text-xs leading-6 w-[50%]">To</td>
+                  <td className="px-2 text-xs leading-6 w-[50%]">
+                    {cformdata ? cformdata.seller_name : ""} (#Seller)
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6  w-[50%]">
                     Seller TIN No
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6  w-[50%]">
                     {cformdata ? cformdata.seller_tin_no : ""}
                   </td>
                 </tr>
               </tbody>
             </table>
 
-            <p className="w-5/6 mx-auto my-6 text-sm text-justify">
+            <p className="w-5/6 mx-auto my-6 text-xs text-justify leading-6">
               [Certified that the goods ordered for in our purchase order
               No.............dated.........................as stated below*] are
-              for **resale......use in manufacture/processing of goods for sale
-              .........in the telecommunication network.... use in mining
-              .....................................use in
+              for **resale.....................use in manufacture/processing of
+              goods for sale .........in the telecommunication network.... use
+              in mining .....................................use in
               generation/distribution of
               power..................................................... packing
               of goods for sale/resale
@@ -199,43 +219,44 @@ const CFROM = () => {
               by this Form are/will be delivered.]
             </p>
 
-            <p className="text-left w-5/6 mx-auto mt-4 text-sm">
-              Name and address of the purchasing dealer in full:
+            <p className="text-left w-5/6 mx-auto mt-4 text-xs leading-6">
+              Name and address of the purchasing dealer in full:{" "}
+              {dvatdata ? dvatdata.tradename : ""},
               {dvatdata ? dvatdata.address : ""}
             </p>
-            <p className="text-left w-5/6 mx-auto text-sm">
+            <p className="text-left w-5/6 mx-auto text-xs leading-6">
               Date .............
             </p>
-            <p className="text-left w-5/6 mx-auto text-sm">
+            <p className="text-left w-5/6 mx-auto text-xs leading-6">
               [The above statements are true to the best of my knowledge and
               belief.
             </p>
-            <p className="text-right mt-4 text-sm">
+            <p className="text-right mt-4 text-xs leading-6">
               (Signature)...................................................
             </p>
-            <p className="text-right text-sm">
+            <p className="text-right text-xs leading-6">
               (Name of the person signing the certificate)
             </p>
-            <p className="text-right text-sm">
+            <p className="text-right text-xs leading-6">
               (Status of the person signing the certificate in relation to the
               dealer)].
             </p>
-            <p className="text-left mt-4 text-sm">
+            <p className="text-left mt-4 text-xs leading-6">
               [*Particulars of Bill/Cash Memo[/Challan]
             </p>
-            <p className="text-left text-sm">
-              Date...............No..................Amount: Rs.296778491.84
+            <p className="text-left text-xs leading-6">
+              Date...............No..................Amount: Rs.
+              {cformdata?.amount}
             </p>
-            <p className="text-left text-sm">
-              Name and Address of the seller with name of the State:HINDUSTAN
-              PETROLIUM CORPORATION LTD,VA
-              <br />
-              &nbsp;&nbsp;SHI,MAHARASTRA
+            <p className="text-left text-xs leading-6">
+              Name and Address of the seller with name of the State:{" "}
+              {cformdata ? cformdata.seller_name : ""},{" "}
+              {cformdata ? cformdata.seller_address : ""}
             </p>
-            <p className="text-left text-sm">
+            <p className="text-left text-xs leading-6">
               **Strike out whichever is not applicable.
             </p>
-            <p className="text-left text-xs">
+            <p className="text-left text-xs leading-6">
               Note 1. To be furnished to the prescribed authority.)
             </p>
           </div>
@@ -244,28 +265,46 @@ const CFROM = () => {
         {pages.map((pageData, pageIndex) => (
           <div
             key={pageIndex}
-            className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto"
+            className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto relative font-bold"
             style={{
               pageBreakAfter:
                 pageIndex === pages.length - 1 ? "auto" : "always",
             }}
           >
-            <div className="border border-black p-2 h-full w-full">
+            <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
+              <Image
+                src="/cform_bg.png"
+                alt="logo"
+                fill={true}
+                className="p-8"
+              />
+            </div>
+            <div className="border border-black p-2 h-full w-full relative">
+              <div className="scale-[0.3] absolute top-10 -right-10">
+                <Barcode value={cformdata ? cformdata.sr_no : ""} />
+              </div>
+              <div className="flex">
+                <div className="grow"></div>
+                <div className="text-xs leading-6">
+                  <h1>Form &lsquo;C&lsquo;</h1>
+                  <h1>Annexure </h1>
+                </div>
+              </div>
               <table border={1} className="w-5/6 mx-auto mt-6">
                 <tbody className="w-full">
                   <tr className="w-full">
-                    <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                    <td className="px-2 py-1 text-xs leading-6 w-[50%]">
                       Office of Issue
                     </td>
-                    <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                    <td className="px-2 py-1 text-xs leading-6 w-[50%]">
                       Dept. of VAT – Dadra and Nagar Haveli
                     </td>
                   </tr>
                   <tr className="w-full">
-                    <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                    <td className="px-2 py-1 text-xs leading-6 w-[50%]">
                       Date of Issue :
                     </td>
-                    <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                    <td className="px-2 py-1 text-xs leading-6 w-[50%]">
                       {formateDate(new Date())}
                     </td>
                   </tr>
@@ -275,7 +314,7 @@ const CFROM = () => {
                 <thead>
                   <tr>
                     <td
-                      className="border border-black text-sm text-center"
+                      className="border border-black text-xs leading-6 text-center"
                       colSpan={7}
                     >
                       INVOICE DETAILS
@@ -284,50 +323,57 @@ const CFROM = () => {
                 </thead>
                 <tbody className="w-full">
                   <tr className="w-full">
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       SI.No
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       Inv. No
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       Inv.Date
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
                       Commodity Desc.
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       Inv. Value(Rs)
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       Purpose
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
                       Pur. Ord. No./Date
                     </td>
                   </tr>
                   {pageData.map((val: returns_entry, index) => (
                     <tr key={index} className="w-full">
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                         {pageIndex * PAGE_SIZE + index + 1}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                         {val.invoice_number}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                        {formateDate(new Date(val.invoice_date))}
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                        {formateDate(new Date(val.invoice_date)).replaceAll(
+                          "-",
+                          "/"
+                        )}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
                         {val.description_of_goods}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                         {val.total_invoice_number}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                        {val.remarks}
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                        {/* {val.remarks} */}
+                        For Resale
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
-                        {formateDate(new Date(val.createdAt))}
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
+                        {formateDate(new Date(val.createdAt)).replaceAll(
+                          "-",
+                          "/"
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -340,9 +386,18 @@ const CFROM = () => {
 
         {/* part two start here */}
         {/* <div className="p-4 text-center text-sm">Duplicate</div> */}
-        <div className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto">
-          <div className="border border-black p-2 h-full w-full">
-            <div className="p-4 text-center text-sm">Duplicate</div>
+        <div
+          className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto relative font-bold"
+          id="mainpdf"
+        >
+          <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
+            <Image src="/cform_bg.png" alt="logo" fill={true} className="p-8" />
+          </div>
+          <div className="border border-black p-2 h-full w-full relative">
+            <div className="scale-[0.3] absolute top-20 -right-10">
+              <Barcode value={cformdata ? cformdata.sr_no : ""} />
+            </div>
+            <div className="p-4 text-center text-xs">Duplicate</div>
             <div className="text-center text-sm font-medium">
               THE CENTRAL SALES TAX
             </div>
@@ -362,83 +417,95 @@ const CFROM = () => {
             <table border={1} className="w-5/6 mx-auto mt-6">
               <tbody className="w-full">
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1  text-sm w-[50%]">
-                    Office of Issue
+                  <td className="px-2 text-xs leading-6 w-[50%]">
+                    Office of Issue:
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {cformdata?.office_of_issue}
+                  <td className="px-2 text-xs text-nowrap leading-6 w-[50%]">
+                    Office of the Dept. of VAT -{" "}
+                    {cformdata?.office_of_issue == "Dadra_Nagar_Haveli"
+                      ? "Dadra and Nagar Haveli"
+                      : cformdata?.office_of_issue}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     Date of Issue :
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {/* 24/11/2014 */}
                     {formateDate(new Date(cformdata?.createdAt!))}
                   </td>
                 </tr>
-              </tbody>
-            </table>
-            <table border={1} className="w-5/6 mx-auto mt-4">
-              <tbody className="w-full">
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1  text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
+                    Quarter & Year :{" "}
+                  </td>
+                  <td className="px-2 text-xs leading-6 w-[50%]">
+                    {cformdata?.from_period.toLocaleString("default", {
+                      month: "short",
+                    })}
+                    -
+                    {cformdata?.to_period.toLocaleString("default", {
+                      month: "short",
+                    })}
+                    ,{cformdata?.from_period.getFullYear()}
+                  </td>
+                </tr>
+                <tr className="w-full">
+                  <td className="px-2  text-xs leading-6 w-[50%]">
                     Name of the purchasing dealer
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {dvatdata ? dvatdata.tradename : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     to whom issued along with his RC NO
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {dvatdata && dvatdata.tinNumber}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     Date from which registration is valid
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {cformdata
                       ? formateDate(new Date(cformdata.valid_date))
                       : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    Serial No
-                  </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">Serial No</td>
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {cformdata ? cformdata.sr_no : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">To</td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {cformdata ? cformdata.seller_address : ""}
+                  <td className="px-2 text-xs leading-6 w-[50%]">To</td>
+                  <td className="px-2 text-xs leading-6 w-[50%]">
+                    {cformdata ? cformdata.seller_name : ""} (#Seller)
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6  w-[50%]">
                     Seller TIN No
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6  w-[50%]">
                     {cformdata ? cformdata.seller_tin_no : ""}
                   </td>
                 </tr>
               </tbody>
             </table>
 
-            <p className="w-5/6 mx-auto my-6 text-sm text-justify">
+            <p className="w-5/6 mx-auto my-6 text-xs text-justify leading-6">
               [Certified that the goods ordered for in our purchase order
               No.............dated.........................as stated below*] are
-              for **resale......use in manufacture/processing of goods for sale
-              .........in the telecommunication network.... use in mining
-              .....................................use in
+              for **resale.....................use in manufacture/processing of
+              goods for sale .........in the telecommunication network.... use
+              in mining .....................................use in
               generation/distribution of
               power..................................................... packing
               of goods for sale/resale
@@ -451,73 +518,91 @@ const CFROM = () => {
               by this Form are/will be delivered.]
             </p>
 
-            <p className="text-left w-5/6 mx-auto mt-4 text-sm">
-              Name and address of the purchasing dealer in full:
+            <p className="text-left w-5/6 mx-auto mt-4 text-xs leading-6">
+              Name and address of the purchasing dealer in full:{" "}
+              {dvatdata ? dvatdata.tradename : ""},
               {dvatdata ? dvatdata.address : ""}
             </p>
-            <p className="text-left w-5/6 mx-auto text-sm">
+            <p className="text-left w-5/6 mx-auto text-xs leading-6">
               Date .............
             </p>
-            <p className="text-left w-5/6 mx-auto text-sm">
+            <p className="text-left w-5/6 mx-auto text-xs leading-6">
               [The above statements are true to the best of my knowledge and
               belief.
             </p>
-            <p className="text-right mt-4 text-sm">
+            <p className="text-right mt-4 text-xs leading-6">
               (Signature)...................................................
             </p>
-            <p className="text-right text-sm">
+            <p className="text-right text-xs leading-6">
               (Name of the person signing the certificate)
             </p>
-            <p className="text-right text-sm">
+            <p className="text-right text-xs leading-6">
               (Status of the person signing the certificate in relation to the
               dealer)].
             </p>
-            <p className="text-left mt-4 text-sm">
+            <p className="text-left mt-4 text-xs leading-6">
               [*Particulars of Bill/Cash Memo[/Challan]
             </p>
-            <p className="text-left text-sm">
-              Date...............No..................Amount: Rs.296778491.84
+            <p className="text-left text-xs leading-6">
+              Date...............No..................Amount: Rs.
+              {cformdata?.amount}
             </p>
-            <p className="text-left text-sm">
-              Name and Address of the seller with name of the State:HINDUSTAN
-              PETROLIUM CORPORATION LTD,VA
-              <br />
-              &nbsp;&nbsp;SHI,MAHARASTRA
+            <p className="text-left text-xs leading-6">
+              Name and Address of the seller with name of the State:{" "}
+              {cformdata ? cformdata.seller_name : ""},{" "}
+              {cformdata ? cformdata.seller_address : ""}
             </p>
-            <p className="text-left text-sm">
+            <p className="text-left text-xs leading-6">
               **Strike out whichever is not applicable.
             </p>
-            <p className="text-left text-xs">
+            <p className="text-left text-xs leading-6">
               Note 1. To be furnished to the prescribed authority.)
             </p>
           </div>
         </div>
-
         {pages.map((pageData, pageIndex) => (
           <div
             key={pageIndex}
-            className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto"
+            className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto relative font-bold"
             style={{
               pageBreakAfter:
                 pageIndex === pages.length - 1 ? "auto" : "always",
             }}
           >
-            <div className="border border-black p-2 h-full w-full">
+            <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
+              <Image
+                src="/cform_bg.png"
+                alt="logo"
+                fill={true}
+                className="p-8"
+              />
+            </div>
+            <div className="border border-black p-2 h-full w-full relative">
+              <div className="scale-[0.3] absolute top-10 -right-10">
+                <Barcode value={cformdata ? cformdata.sr_no : ""} />
+              </div>
+              <div className="flex">
+                <div className="grow"></div>
+                <div className="text-xs leading-6">
+                  <h1>Form &lsquo;C&lsquo;</h1>
+                  <h1>Annexure </h1>
+                </div>
+              </div>
               <table border={1} className="w-5/6 mx-auto mt-6">
                 <tbody className="w-full">
                   <tr className="w-full">
-                    <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                    <td className="px-2 py-1 text-xs leading-6 w-[50%]">
                       Office of Issue
                     </td>
-                    <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                    <td className="px-2 py-1 text-xs leading-6 w-[50%]">
                       Dept. of VAT – Dadra and Nagar Haveli
                     </td>
                   </tr>
                   <tr className="w-full">
-                    <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                    <td className="px-2 py-1 text-xs leading-6 w-[50%]">
                       Date of Issue :
                     </td>
-                    <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                    <td className="px-2 py-1 text-xs leading-6 w-[50%]">
                       {formateDate(new Date())}
                     </td>
                   </tr>
@@ -527,7 +612,7 @@ const CFROM = () => {
                 <thead>
                   <tr>
                     <td
-                      className="border border-black text-sm text-center"
+                      className="border border-black text-xs leading-6 text-center"
                       colSpan={7}
                     >
                       INVOICE DETAILS
@@ -536,50 +621,57 @@ const CFROM = () => {
                 </thead>
                 <tbody className="w-full">
                   <tr className="w-full">
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       SI.No
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       Inv. No
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       Inv.Date
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
                       Commodity Desc.
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       Inv. Value(Rs)
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       Purpose
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
                       Pur. Ord. No./Date
                     </td>
                   </tr>
                   {pageData.map((val: returns_entry, index) => (
                     <tr key={index} className="w-full">
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                         {pageIndex * PAGE_SIZE + index + 1}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                         {val.invoice_number}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                        {formateDate(new Date(val.invoice_date))}
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                        {formateDate(new Date(val.invoice_date)).replaceAll(
+                          "-",
+                          "/"
+                        )}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
                         {val.description_of_goods}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                         {val.total_invoice_number}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                        {val.remarks}
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                        {/* {val.remarks} */}
+                        For Resale
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
-                        {formateDate(new Date(val.createdAt))}
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
+                        {formateDate(new Date(val.createdAt)).replaceAll(
+                          "-",
+                          "/"
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -592,9 +684,18 @@ const CFROM = () => {
         {/* part two end here */}
 
         {/* part three start here */}
-        <div className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto">
-          <div className="border border-black p-2 h-full w-full">
-            <div className="p-4 text-center text-sm">Counterfoil</div>
+        <div
+          className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto relative font-bold"
+          id="mainpdf"
+        >
+          <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
+            <Image src="/cform_bg.png" alt="logo" fill={true} className="p-8" />
+          </div>
+          <div className="border border-black p-2 h-full w-full relative">
+            <div className="scale-[0.3] absolute top-20 -right-10">
+              <Barcode value={cformdata ? cformdata.sr_no : ""} />
+            </div>
+            <div className="p-4 text-center text-xs">Counterfoil</div>
             <div className="text-center text-sm font-medium">
               THE CENTRAL SALES TAX
             </div>
@@ -614,83 +715,95 @@ const CFROM = () => {
             <table border={1} className="w-5/6 mx-auto mt-6">
               <tbody className="w-full">
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1  text-sm w-[50%]">
-                    Office of Issue
+                  <td className="px-2 text-xs leading-6 w-[50%]">
+                    Office of Issue:
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {cformdata?.office_of_issue}
+                  <td className="px-2 text-xs text-nowrap leading-6 w-[50%]">
+                    Office of the Dept. of VAT -{" "}
+                    {cformdata?.office_of_issue == "Dadra_Nagar_Haveli"
+                      ? "Dadra and Nagar Haveli"
+                      : cformdata?.office_of_issue}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     Date of Issue :
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {/* 24/11/2014 */}
                     {formateDate(new Date(cformdata?.createdAt!))}
                   </td>
                 </tr>
-              </tbody>
-            </table>
-            <table border={1} className="w-5/6 mx-auto mt-4">
-              <tbody className="w-full">
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1  text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
+                    Quarter & Year :{" "}
+                  </td>
+                  <td className="px-2 text-xs leading-6 w-[50%]">
+                    {cformdata?.from_period.toLocaleString("default", {
+                      month: "short",
+                    })}
+                    -
+                    {cformdata?.to_period.toLocaleString("default", {
+                      month: "short",
+                    })}
+                    ,{cformdata?.from_period.getFullYear()}
+                  </td>
+                </tr>
+                <tr className="w-full">
+                  <td className="px-2  text-xs leading-6 w-[50%]">
                     Name of the purchasing dealer
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {dvatdata ? dvatdata.tradename : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     to whom issued along with his RC NO
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {dvatdata && dvatdata.tinNumber}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     Date from which registration is valid
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {cformdata
                       ? formateDate(new Date(cformdata.valid_date))
                       : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    Serial No
-                  </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6 w-[50%]">Serial No</td>
+                  <td className="px-2 text-xs leading-6 w-[50%]">
                     {cformdata ? cformdata.sr_no : ""}
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">To</td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {cformdata ? cformdata.seller_address : ""}
+                  <td className="px-2 text-xs leading-6 w-[50%]">To</td>
+                  <td className="px-2 text-xs leading-6 w-[50%]">
+                    {cformdata ? cformdata.seller_name : ""} (#Seller)
                   </td>
                 </tr>
                 <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6  w-[50%]">
                     Seller TIN No
                   </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                  <td className="px-2 text-xs leading-6  w-[50%]">
                     {cformdata ? cformdata.seller_tin_no : ""}
                   </td>
                 </tr>
               </tbody>
             </table>
 
-            <p className="w-5/6 mx-auto my-6 text-sm text-justify">
+            <p className="w-5/6 mx-auto my-6 text-xs text-justify leading-6">
               [Certified that the goods ordered for in our purchase order
               No.............dated.........................as stated below*] are
-              for **resale......use in manufacture/processing of goods for sale
-              .........in the telecommunication network.... use in mining
-              .....................................use in
+              for **resale.....................use in manufacture/processing of
+              goods for sale .........in the telecommunication network.... use
+              in mining .....................................use in
               generation/distribution of
               power..................................................... packing
               of goods for sale/resale
@@ -703,43 +816,44 @@ const CFROM = () => {
               by this Form are/will be delivered.]
             </p>
 
-            <p className="text-left w-5/6 mx-auto mt-4 text-sm">
-              Name and address of the purchasing dealer in full:
+            <p className="text-left w-5/6 mx-auto mt-4 text-xs leading-6">
+              Name and address of the purchasing dealer in full:{" "}
+              {dvatdata ? dvatdata.tradename : ""},
               {dvatdata ? dvatdata.address : ""}
             </p>
-            <p className="text-left w-5/6 mx-auto text-sm">
+            <p className="text-left w-5/6 mx-auto text-xs leading-6">
               Date .............
             </p>
-            <p className="text-left w-5/6 mx-auto text-sm">
+            <p className="text-left w-5/6 mx-auto text-xs leading-6">
               [The above statements are true to the best of my knowledge and
               belief.
             </p>
-            <p className="text-right mt-4 text-sm">
+            <p className="text-right mt-4 text-xs leading-6">
               (Signature)...................................................
             </p>
-            <p className="text-right text-sm">
+            <p className="text-right text-xs leading-6">
               (Name of the person signing the certificate)
             </p>
-            <p className="text-right text-sm">
+            <p className="text-right text-xs leading-6">
               (Status of the person signing the certificate in relation to the
               dealer)].
             </p>
-            <p className="text-left mt-4 text-sm">
+            <p className="text-left mt-4 text-xs leading-6">
               [*Particulars of Bill/Cash Memo[/Challan]
             </p>
-            <p className="text-left text-sm">
-              Date...............No..................Amount: Rs.296778491.84
+            <p className="text-left text-xs leading-6">
+              Date...............No..................Amount: Rs.
+              {cformdata?.amount}
             </p>
-            <p className="text-left text-sm">
-              Name and Address of the seller with name of the State:HINDUSTAN
-              PETROLIUM CORPORATION LTD,VA
-              <br />
-              &nbsp;&nbsp;SHI,MAHARASTRA
+            <p className="text-left text-xs leading-6">
+              Name and Address of the seller with name of the State:{" "}
+              {cformdata ? cformdata.seller_name : ""},{" "}
+              {cformdata ? cformdata.seller_address : ""}
             </p>
-            <p className="text-left text-sm">
+            <p className="text-left text-xs leading-6">
               **Strike out whichever is not applicable.
             </p>
-            <p className="text-left text-xs">
+            <p className="text-left text-xs leading-6">
               Note 1. To be furnished to the prescribed authority.)
             </p>
           </div>
@@ -748,28 +862,46 @@ const CFROM = () => {
         {pages.map((pageData, pageIndex) => (
           <div
             key={pageIndex}
-            className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto"
+            className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto relative font-bold"
             style={{
               pageBreakAfter:
                 pageIndex === pages.length - 1 ? "auto" : "always",
             }}
           >
-            <div className="border border-black p-2 h-full w-full">
+            <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
+              <Image
+                src="/cform_bg.png"
+                alt="logo"
+                fill={true}
+                className="p-8"
+              />
+            </div>
+            <div className="border border-black p-2 h-full w-full relative">
+              <div className="scale-[0.3] absolute top-10 -right-10">
+                <Barcode value={cformdata ? cformdata.sr_no : ""} />
+              </div>
+              <div className="flex">
+                <div className="grow"></div>
+                <div className="text-xs leading-6">
+                  <h1>Form &lsquo;C&lsquo;</h1>
+                  <h1>Annexure </h1>
+                </div>
+              </div>
               <table border={1} className="w-5/6 mx-auto mt-6">
                 <tbody className="w-full">
                   <tr className="w-full">
-                    <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                    <td className="px-2 py-1 text-xs leading-6 w-[50%]">
                       Office of Issue
                     </td>
-                    <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                    <td className="px-2 py-1 text-xs leading-6 w-[50%]">
                       Dept. of VAT – Dadra and Nagar Haveli
                     </td>
                   </tr>
                   <tr className="w-full">
-                    <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                    <td className="px-2 py-1 text-xs leading-6 w-[50%]">
                       Date of Issue :
                     </td>
-                    <td className="px-2 leading-4 py-1 text-sm w-[50%]">
+                    <td className="px-2 py-1 text-xs leading-6 w-[50%]">
                       {formateDate(new Date())}
                     </td>
                   </tr>
@@ -779,7 +911,7 @@ const CFROM = () => {
                 <thead>
                   <tr>
                     <td
-                      className="border border-black text-sm text-center"
+                      className="border border-black text-xs leading-6 text-center"
                       colSpan={7}
                     >
                       INVOICE DETAILS
@@ -788,50 +920,57 @@ const CFROM = () => {
                 </thead>
                 <tbody className="w-full">
                   <tr className="w-full">
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       SI.No
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       Inv. No
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       Inv.Date
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
                       Commodity Desc.
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       Inv. Value(Rs)
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                       Purpose
                     </td>
-                    <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
+                    <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
                       Pur. Ord. No./Date
                     </td>
                   </tr>
                   {pageData.map((val: returns_entry, index) => (
                     <tr key={index} className="w-full">
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                         {pageIndex * PAGE_SIZE + index + 1}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                         {val.invoice_number}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                        {formateDate(new Date(val.invoice_date))}
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                        {formateDate(new Date(val.invoice_date)).replaceAll(
+                          "-",
+                          "/"
+                        )}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
                         {val.description_of_goods}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                         {val.total_invoice_number}
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                        {val.remarks}
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                        {/* {val.remarks} */}
+                        For Resale
                       </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
-                        {formateDate(new Date(val.createdAt))}
+                      <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
+                        {formateDate(new Date(val.createdAt)).replaceAll(
+                          "-",
+                          "/"
+                        )}
                       </td>
                     </tr>
                   ))}

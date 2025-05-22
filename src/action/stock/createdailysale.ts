@@ -11,6 +11,7 @@ interface CreateDailySalePayload {
   vatamount: string;
   amount_unit: string;
   createdById: number;
+  against_cfrom: boolean;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -95,6 +96,7 @@ const CreateDailySale = async (
           is_dvat_31: false,
           createdById: payload.createdById,
           urn_number: ref_no,
+          is_against_cform: payload.against_cfrom,
           is_local:
             purchaser_response.tin_number.startsWith("25") ||
             purchaser_response.tin_number.startsWith("26"),

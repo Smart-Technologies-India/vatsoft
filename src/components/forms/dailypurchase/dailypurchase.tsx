@@ -17,7 +17,14 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import CreateDailyPurchase from "@/action/stock/createdailypuchase";
-import { Input, InputRef, Modal, Radio, RadioChangeEvent } from "antd";
+import {
+  Checkbox,
+  Input,
+  InputRef,
+  Modal,
+  Radio,
+  RadioChangeEvent,
+} from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 import { DateSelect } from "../inputfields/dateselect";
 import { toast } from "react-toastify";
@@ -49,6 +56,8 @@ export const DailyPurchaseMasterProvider = (
 const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
 
+  const [isAgainstCForm, setIsAgainstCForm] = useState(false);
+
   const {
     reset,
     handleSubmit,
@@ -64,6 +73,35 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
   const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
     []
   );
+
+  const init = async () => {
+    const response = await GetUserDvat04({
+      userid: userid,
+    });
+
+    if (response.status && response.data) {
+      setDvatdata(response.data);
+
+      setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
+      const commodity_resposen = await AllCommodityMaster({});
+      if (commodity_resposen.status && commodity_resposen.data) {
+        if (response.data.commodity == "OIDC") {
+          const filterdata = commodity_resposen.data.filter(
+            (val: commodity_master) => val.product_type == "LIQUOR"
+          );
+          setCommodityMaster(filterdata);
+        } else {
+          const filterdata = commodity_resposen.data.filter(
+            (val: commodity_master) =>
+              val.product_type == response.data!.commodity
+          );
+          setCommodityMaster(filterdata);
+        }
+      }
+    }
+
+    setIsLoading(false);
+  };
 
   useEffect(() => {
     reset({
@@ -151,7 +189,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       }
     };
     init();
-  }, [recipient_vat_no]);
+  }, [recipient_vat_no, isAgainstCForm]);
 
   const description_of_goods = watch("description_of_goods");
   const quantity = watch("quantity");
@@ -164,7 +202,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       const commmaster = await GetCommodityMaster({
         id: parseInt(description_of_goods),
       });
-      console.log("commmaster", commmaster);
       if (commmaster.status && commmaster.data) {
         setCommoditymaster(commmaster.data);
 
@@ -177,7 +214,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       }
     };
     init();
-  }, [description_of_goods]);
+  }, [description_of_goods, isAgainstCForm]);
 
   useEffect(() => {
     if (commoditymaster == null || quantity == null || amount_unit == null)
@@ -188,7 +225,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       parseFloat(quantity) * parseFloat(amount_unit || "0");
 
     const temp_amount =
-      (calculatedTaxableValue / (100 + parseInt(commoditymaster.taxable_at))) *
+      (calculatedTaxableValue /
+        (100 + parseInt(isAgainstCForm ? "2" : commoditymaster.taxable_at))) *
       100;
     setTaxableValue(isNaN(temp_amount) ? "0" : temp_amount.toFixed(2));
 
@@ -196,7 +234,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     setVatAmount(
       isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
     );
-  }, [quantity, amount_unit, commoditymaster]);
+  }, [quantity, amount_unit, commoditymaster, isAgainstCForm]);
 
   const onSubmit = async (data: DailyPurchaseMasterForm) => {
     if (davtdata == null || davtdata == undefined)
@@ -241,9 +279,10 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
-      tax_percent: commoditymaster.taxable_at,
+      tax_percent: isAgainstCForm ? "2" : commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
       amount: taxableValue,
+      against_cfrom: isAgainstCForm,
     });
 
     if (stock_response.status) {
@@ -252,18 +291,35 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       return toast.error(stock_response.message);
     }
 
-    await props.init();
     props.setAddBox(false);
-    const currentValues = getValues();
 
+    // reset({
+    //   ...currentValues,
+    //   quantity: "",
+    //   amount_unit: "",
+    //   description_of_goods: undefined,
+    // });
+    // setVatAmount("0");
+    // setTaxableValue("0");
+
+    // clear form fields
     reset({
-      ...currentValues,
-      quantity: "",
       amount_unit: "",
       description_of_goods: undefined,
+      invoice_date: "",
+      invoice_number: undefined,
+      quantity: "",
+      recipient_vat_no: "",
     });
+    setTinData(null);
     setVatAmount("0");
     setTaxableValue("0");
+    setIsAgainstCForm(false);
+    setTinBox(false);
+    setCommodityMaster([]);
+    setDvatdata(null);
+    await props.init();
+    await init();
   };
 
   const addNew = async (data: DailyPurchaseMasterForm) => {
@@ -307,9 +363,10 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
-      tax_percent: commoditymaster.taxable_at,
+      tax_percent: isAgainstCForm ? "2" : commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
       amount: taxableValue,
+      against_cfrom: isAgainstCForm,
     });
 
     if (stock_response.status) {
@@ -320,16 +377,35 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
 
     const currentValues = getValues();
 
+    // reset({
+    //   ...currentValues,
+    //   quantity: "",
+    //   amount_unit: "",
+    //   description_of_goods: undefined,
+    // });
+    // setVatAmount("0");
+    // setTaxableValue("0");
+
     reset({
-      ...currentValues,
-      quantity: "",
       amount_unit: "",
       description_of_goods: undefined,
+      invoice_date: "",
+      invoice_number: undefined,
+      quantity: "",
+      recipient_vat_no: "",
     });
+
+    // clear form fields
+    setTinData(null);
     setVatAmount("0");
     setTaxableValue("0");
+    setIsAgainstCForm(false);
+    setTinBox(false);
+    setCommodityMaster([]);
+    setDvatdata(null);
 
     await props.init();
+    await init();
   };
 
   const [submitType, setSubmitType] = useState<string>("");
@@ -402,11 +478,29 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           />
         </div>
         {tindata != null && (
-          <div className="mt-2">
-            <p className="text-sm font-normal">Name as in Master</p>
-            <p className="font-semibold text-lg">
-              {tindata?.name_of_dealer ?? ""}
-            </p>
+          <div className="mt-2 flex gap-2 items-center">
+            <div>
+              <p className="text-sm font-normal">Name as in Master</p>
+              <p className="font-semibold text-lg">
+                {tindata?.name_of_dealer ?? ""}
+              </p>
+            </div>
+            <div className="grow"></div>
+
+            {tindata?.tin_number.startsWith("25") ||
+              (tindata?.tin_number.startsWith("26") ? (
+                <></>
+              ) : (
+                <Checkbox
+                  checked={isAgainstCForm}
+                  onChange={(e) => {
+                    setIsAgainstCForm(e.target.checked);
+                  }}
+                  className="text-lg font-normal"
+                >
+                  Against C Form
+                </Checkbox>
+              ))}
           </div>
         )}
 
@@ -508,7 +602,9 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
             <p className="text-xs font-normal">Taxable (%)</p>
             <p className="text-sm font-semibold">
-              {commoditymaster != null
+              {isAgainstCForm
+                ? "2"
+                : commoditymaster != null
                 ? commoditymaster.taxable_at + "%"
                 : "0%"}
             </p>
@@ -518,7 +614,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             <p className="text-sm font-semibold">{taxableValue}</p>
           </div>
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
-            <p className="text-xs font-normal">Total Taxable Value</p>
+            <p className="text-xs font-normal">Invoice Value</p>
             <p className="text-sm font-semibold">
               {(parseInt(quantity) * parseFloat(amount_unit)).toFixed(2)}
             </p>

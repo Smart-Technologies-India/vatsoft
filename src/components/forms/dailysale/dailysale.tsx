@@ -18,7 +18,14 @@ import { DailySaleForm, DailySaleSchema } from "@/schema/daily_sale";
 import CreateDailySale from "@/action/stock/createdailysale";
 import GetUserCommodity from "@/action/stock/usercommodity";
 import SearchTin from "@/action/tin_number/searchtin";
-import { Input, InputRef, Modal, Radio, RadioChangeEvent } from "antd";
+import {
+  Checkbox,
+  Input,
+  InputRef,
+  Modal,
+  Radio,
+  RadioChangeEvent,
+} from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 import dayjs from "dayjs";
 
@@ -50,6 +57,9 @@ const DailySale = (props: DailySaleProviderProps) => {
     0, 1, 2, 4, 5, 6, 12.5, 12.75, 13.5, 15, 20,
   ].map((val: number) => ({ value: `${val}`, label: `${val}%` }));
 
+  // against c form
+  const [isAgainstCForm, setIsAgainstCForm] = useState(false);
+
   const {
     reset,
     handleSubmit,
@@ -66,6 +76,35 @@ const DailySale = (props: DailySaleProviderProps) => {
     Array<commodity_master & { quantity: number }>
   >([]);
 
+  const init = async () => {
+    const tin_response = await SearchTin({
+      tinumber: "26000000000",
+    });
+
+    // setValue("recipient_vat_no", "26000000000");
+
+    if (tin_response.status && tin_response.data) {
+      setTinData(tin_response.data);
+    }
+
+    const response = await GetUserDvat04({
+      userid: userid,
+    });
+
+    if (response.status && response.data) {
+      setDvatdata(response.data);
+      setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
+
+      const commodity_resposen = await GetUserCommodity({
+        dvatid: response.data.id,
+      });
+      if (commodity_resposen.status && commodity_resposen.data) {
+        setCommodityMaster(commodity_resposen.data);
+      }
+    }
+
+    setIsLoading(false);
+  };
   useEffect(() => {
     reset({
       amount_unit: "",
@@ -145,7 +184,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       }
     };
     init();
-  }, [recipient_vat_no]);
+  }, [recipient_vat_no, isAgainstCForm]);
 
   const description_of_goods = watch("description_of_goods");
   const quantity = watch("quantity");
@@ -174,7 +213,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       }
     };
     init();
-  }, [description_of_goods]);
+  }, [description_of_goods, isAgainstCForm]);
 
   useEffect(() => {
     if (commoditymaster == null || quantity == null || amount_unit == null)
@@ -185,7 +224,9 @@ const DailySale = (props: DailySaleProviderProps) => {
       parseFloat(quantity) * parseFloat(amount_unit || "0");
 
     const calculatedVatAmount =
-      (calculatedTaxableValue * parseFloat(commoditymaster.taxable_at)) / 100;
+      (calculatedTaxableValue *
+        parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at)) /
+      100;
     setVatAmount(
       isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
     );
@@ -193,7 +234,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     const temp_amount = calculatedTaxableValue + calculatedVatAmount;
 
     setTaxableValue(isNaN(temp_amount) ? "0" : temp_amount.toFixed(2));
-  }, [quantity, amount_unit, commoditymaster]);
+  }, [quantity, amount_unit, commoditymaster, isAgainstCForm]);
 
   const onSubmit = async (data: DailySaleForm) => {
     if (davtdata == null || davtdata == undefined)
@@ -213,7 +254,8 @@ const DailySale = (props: DailySaleProviderProps) => {
         if (
           isLiquore &&
           (parseFloat(data.amount_unit) *
-            (100 + parseFloat(commoditymaster.taxable_at))) /
+            (100 +
+              parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at))) /
             100 <
             liquoreOIDCAmount * 0.7
         ) {
@@ -223,7 +265,8 @@ const DailySale = (props: DailySaleProviderProps) => {
         if (
           isLiquore &&
           (parseFloat(data.amount_unit) *
-            (100 + parseFloat(commoditymaster.taxable_at))) /
+            (100 +
+              parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at))) /
             100 <
             liquoreDealerAmount * 0.7
         ) {
@@ -263,9 +306,10 @@ const DailySale = (props: DailySaleProviderProps) => {
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
-      tax_percent: commoditymaster.taxable_at,
+      tax_percent: isAgainstCForm ? "2" : commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
       amount: taxableValue,
+      against_cfrom: isAgainstCForm,
     });
 
     if (stock_response.status) {
@@ -278,14 +322,36 @@ const DailySale = (props: DailySaleProviderProps) => {
     props.setAddBox(false);
     const currentValues = getValues();
 
+    // reset({
+    //   ...currentValues,
+    //   quantity: "",
+    //   amount_unit: "",
+    //   description_of_goods: undefined,
+    // });
+    // setVatAmount("0");
+    // setTaxableValue("0");
+
+    // clear all from values
     reset({
-      ...currentValues,
-      quantity: "",
       amount_unit: "",
       description_of_goods: undefined,
+      invoice_date: "",
+      invoice_number: undefined,
+      quantity: "",
+      recipient_vat_no: "",
     });
+
+    setTinData(null);
+    setDvatdata(null);
     setVatAmount("0");
     setTaxableValue("0");
+    setIsAgainstCForm(false);
+    setLiquore(false);
+    setLiquoreOIDCAmount(0);
+    setLiquoreDealerAmount(0);
+    setTinBox(false);
+
+    await init();
   };
 
   const addNew = async (data: DailySaleForm) => {
@@ -306,7 +372,8 @@ const DailySale = (props: DailySaleProviderProps) => {
         if (
           isLiquore &&
           (parseFloat(data.amount_unit) *
-            (100 + parseFloat(commoditymaster.taxable_at))) /
+            (100 +
+              parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at))) /
             100 <
             liquoreOIDCAmount
         ) {
@@ -316,7 +383,8 @@ const DailySale = (props: DailySaleProviderProps) => {
         if (
           isLiquore &&
           (parseFloat(data.amount_unit) *
-            (100 + parseFloat(commoditymaster.taxable_at))) /
+            (100 +
+              parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at))) /
             100 <
             liquoreDealerAmount
         ) {
@@ -376,9 +444,10 @@ const DailySale = (props: DailySaleProviderProps) => {
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
-      tax_percent: commoditymaster.taxable_at,
+      tax_percent: isAgainstCForm ? "2" : commoditymaster.taxable_at,
       seller_tin_id: tindata.id,
       amount: taxableValue,
+      against_cfrom: isAgainstCForm,
     });
 
     if (stock_response.status) {
@@ -389,16 +458,37 @@ const DailySale = (props: DailySaleProviderProps) => {
 
     const currentValues = getValues();
 
+    // reset({
+    //   ...currentValues,
+    //   quantity: "",
+    //   amount_unit: "",
+    //   description_of_goods: undefined,
+    // });
+    // setVatAmount("0");
+    // setTaxableValue("0");
+
     reset({
-      ...currentValues,
-      quantity: "",
       amount_unit: "",
       description_of_goods: undefined,
+      invoice_date: "",
+      invoice_number: undefined,
+      quantity: "",
+      recipient_vat_no: "",
     });
+
+    setTinData(null);
+    setDvatdata(null);
+
     setVatAmount("0");
     setTaxableValue("0");
-
+    setIsAgainstCForm(false);
+    setLiquore(false);
+    setLiquoreOIDCAmount(0);
+    setLiquoreDealerAmount(0);
+    setTinBox(false);
+    setCommodityMaster([]);
     await props.init();
+    await init();
   };
 
   const [submitType, setSubmitType] = useState<string>("");
@@ -471,11 +561,29 @@ const DailySale = (props: DailySaleProviderProps) => {
           />
         </div>
         {tindata != null && (
-          <div className="mt-2">
-            <p className="text-sm font-normal">Name as in Master</p>
-            <p className="font-semibold text-lg">
-              {tindata?.name_of_dealer ?? ""}
-            </p>
+          <div className="mt-2 flex gap-2 items-center">
+            <div>
+              <p className="text-sm font-normal">Name as in Master</p>
+              <p className="font-semibold text-lg">
+                {tindata?.name_of_dealer ?? ""}
+              </p>
+            </div>
+            <div className="grow"></div>
+
+            {tindata?.tin_number.startsWith("25") ||
+              (tindata?.tin_number.startsWith("26") ? (
+                <></>
+              ) : (
+                <Checkbox
+                  checked={isAgainstCForm}
+                  onChange={(e) => {
+                    setIsAgainstCForm(e.target.checked);
+                  }}
+                  className="text-lg font-normal"
+                >
+                  Against C Form
+                </Checkbox>
+              ))}
           </div>
         )}
         <div className="mt-2">
@@ -580,7 +688,9 @@ const DailySale = (props: DailySaleProviderProps) => {
           <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
             <p className="text-xs font-normal">Taxable (%)</p>
             <p className="text-sm font-semibold">
-              {commoditymaster != null
+              {isAgainstCForm
+                ? "2%"
+                : commoditymaster != null
                 ? commoditymaster.taxable_at + "%"
                 : "0%"}
             </p>

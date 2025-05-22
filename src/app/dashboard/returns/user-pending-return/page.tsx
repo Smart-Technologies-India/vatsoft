@@ -96,7 +96,7 @@ const ShopView = () => {
     const monthdetails: yearsDetails[] = uniqueyears.map((year: number) => {
       const ret_filing: ItemsType[] = [];
 
-      for (let i = 3; i < 15; i++) {
+      for (let i = 0; i < 12; i++) {
         const adjustedMonth = i % 12; // Ensures we wrap from April (3) to March (2)
         const displayYear = adjustedMonth < 3 ? year + 1 : year; // Adjust year for Jan-Mar
         const monthDate = new Date(displayYear, adjustedMonth, 1);

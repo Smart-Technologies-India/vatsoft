@@ -36,33 +36,26 @@ const AddPayment = async (
 
   try {
     const result: returns_01 = await prisma.$transaction(async (prisma) => {
-      let isExist = await prisma.returns_01.findFirst({
+      const isExist = await prisma.returns_01.findFirst({
         where: {
           id: payload.id,
           deletedAt: null,
           deletedById: null,
           status: "ACTIVE",
-          return_type: "REVISED",
+          OR: [
+            {
+              return_type: "REVISED",
+            },
+            {
+              return_type: "ORIGINAL",
+            },
+          ],
         },
         include: {
           dvat04: true,
         },
       });
 
-      if (!isExist) {
-        isExist = await prisma.returns_01.findFirst({
-          where: {
-            id: payload.id,
-            deletedAt: null,
-            deletedById: null,
-            status: "ACTIVE",
-            return_type: "ORIGINAL",
-          },
-          include: {
-            dvat04: true,
-          },
-        });
-      }
       if (!isExist) {
         throw new Error("Invalid Id, try again");
       }
@@ -146,10 +139,10 @@ const AddPayment = async (
             deletedById: null,
             returns_01: {
               dvat04Id: isExist.dvat04Id,
-              year:
-                isExist.month == "March"
-                  ? (parseInt(isExist.year) + 1).toString()
-                  : isExist.year,
+              year: isExist.year,
+              // isExist.month == "March"
+              //   ? (parseInt(isExist.year) + 1).toString()
+              //   : isExist.year,
               month: { in: monthsToUpdate },
             },
           },
@@ -204,70 +197,134 @@ const AddPayment = async (
           },
         });
 
-        // if (!lastcform) {
-        //   throw new Error("there is no C-Form exist");
-        // }
-        if (lastcform) {
-          const cformResponses = await Promise.all(
-            flatData.map((val: any, index: number) =>
-              prisma.cform.create({
-                data: {
-                  amount: val.amount,
-                  dvat04Id: isExist.dvat04Id,
-                  office_of_issue: isExist.dvat04.selectOffice,
-                  date_of_issue: dates.toDate,
-                  valid_date: isExist.dvat04.certificateDate!,
-                  sr_no: getsrno(
-                    val.dvat04.selectOffice,
-                    parseInt(lastcform.sr_no.split("/").pop() ?? "0"),
-                    index
+        const cformResponses = await Promise.all(
+          Object.values(groupedData).map((group, index) => {
+            const representativeEntry = group.entries[0]; // Pick one entry to extract seller info
+
+            return prisma.cform.create({
+              data: {
+                amount: group.totalAmount.toString(),
+                dvat04Id: isExist.dvat04Id,
+                office_of_issue: isExist.dvat04.selectOffice,
+                date_of_issue: new Date(),
+                valid_date: isExist.dvat04.certificateDate!,
+                sr_no: getsrno(
+                  isExist.dvat04.selectOffice!,
+                  parseInt(
+                    lastcform ? lastcform.sr_no.split("/").pop() ?? "0" : "1"
                   ),
-                  seller_address: val.seller_tin_number.state ?? "",
-                  seller_name: val.seller_tin_number.name_of_dealer ?? "",
-                  seller_tin_no: val.seller_tin_number.tin_number ?? "",
-                  cform_type: ReturnType.ORIGINAL,
-                  from_period: dates.fromDate,
-                  to_period: dates.toDate,
-                  status: "ACTIVE",
-                  createdById: isExist.createdById,
-                },
-              })
-            )
-          );
+                  index
+                ),
+                seller_address:
+                  representativeEntry.seller_tin_number.state ?? "",
+                seller_name:
+                  representativeEntry.seller_tin_number.name_of_dealer ?? "",
+                seller_tin_no:
+                  representativeEntry.seller_tin_number.tin_number ?? "",
+                cform_type: ReturnType.ORIGINAL,
+                from_period: new Date(
+                  dates.fromDate.split("-").reverse().join("-")
+                ),
+                to_period: new Date(
+                  dates.toDate.split("-").reverse().join("-")
+                ),
+                status: "ACTIVE",
+                createdById: isExist.createdById,
+              },
+            });
+          })
+        );
 
-          // Step 2: Add entries to `cform_returns` table
-          const cformReturnsEntries: {
-            cformId: number;
-            returns_entryId: number;
-          }[] = [];
+        // const cformResponses = await Promise.all(
+        //   flatData.map((val: any, index: number) =>
+        //     prisma.cform.create({
+        //       data: {
+        //         amount: val.amount,
+        //         dvat04Id: isExist.dvat04Id,
+        //         office_of_issue: isExist.dvat04.selectOffice,
+        //         date_of_issue: new Date(),
+        //         valid_date: isExist.dvat04.certificateDate!,
+        //         sr_no: getsrno(
+        //           isExist.dvat04.selectOffice!,
+        //           parseInt(
+        //             lastcform ? lastcform.sr_no.split("/").pop() ?? "0" : "1"
+        //           ),
+        //           index
+        //         ),
+        //         seller_address: val.seller_tin_number.state ?? "",
+        //         seller_name: val.seller_tin_number.name_of_dealer ?? "",
+        //         seller_tin_no: val.seller_tin_number.tin_number ?? "",
+        //         cform_type: ReturnType.ORIGINAL,
+        //         // from_period: dates.fromDate,
+        //         // to_period: dates.toDate,
+        //         from_period: new Date(
+        //           dates.fromDate.split("-").reverse().join("-")
+        //         ),
+        //         to_period: new Date(
+        //           dates.toDate.split("-").reverse().join("-")
+        //         ),
+        //         status: "ACTIVE",
+        //         createdById: isExist.createdById,
+        //       },
+        //     })
+        //   )
+        // );
 
-          Object.values(groupedData).forEach((group, groupIndex) => {
-            const cformId = cformResponses[groupIndex]?.id; // Ensure the ID is resolved
+        const cformReturnsEntries: Array<{
+          cformId: number;
+          returns_entryId: number;
+        }> = [];
 
-            if (!cformId) {
-              throw new Error(
-                `CForm entry for group ${groupIndex} was not created`
-              );
-            }
+        Object.values(groupedData).forEach((group, groupIndex) => {
+          const cform = cformResponses[groupIndex];
 
-            group.entries.forEach((entry) => {
-              cformReturnsEntries.push({
-                cformId,
-                returns_entryId: entry.id,
-              });
+          if (!cform || !cform.id) {
+            throw new Error(
+              `CForm entry for group ${groupIndex} was not created`
+            );
+          }
+
+          group.entries.forEach((entry) => {
+            cformReturnsEntries.push({
+              cformId: cform.id,
+              returns_entryId: entry.id,
             });
           });
+        });
 
-          // Step 3: Insert `cform_returns` entries in bulk
-          if (cformReturnsEntries.length > 0) {
-            const response = await prisma.cform_returns.createMany({
-              data: cformReturnsEntries,
-            });
-            if (!response) {
-              throw new Error(`CForm return entry was not created`);
-            }
+        // Step 2: Add entries to `cform_returns` table
+        // const cformReturnsEntries: {
+        //   cformId: number;
+        //   returns_entryId: number;
+        // }[] = [];
+
+        // Object.values(groupedData).forEach((group, groupIndex) => {
+        //   const cformId = cformResponses[groupIndex]?.id; // Ensure the ID is resolved
+
+        //   if (!cformId) {
+        //     throw new Error(
+        //       `CForm entry for group ${groupIndex} was not created`
+        //     );
+        //   }
+
+        //   group.entries.forEach((entry) => {
+        //     cformReturnsEntries.push({
+        //       cformId,
+        //       returns_entryId: entry.id,
+        //     });
+        //   });
+        // });
+
+        // Step 3: Insert `cform_returns` entries in bulk
+        if (cformReturnsEntries.length > 0) {
+          const response = await prisma.cform_returns.createMany({
+            data: cformReturnsEntries,
+          });
+          if (!response) {
+            throw new Error(`CForm return entry was not created`);
           }
         }
+        // }
 
         // const create_response = await prisma.cform.createMany({
         //   data: flatData.map((val: any, index: number) => ({
@@ -314,7 +371,12 @@ const AddPayment = async (
           total_tax_amount: payload.totaltaxamount,
           reason: "MONTHLYPAYMENT",
           status: "ACTIVE",
-          challanstatus: "CREATED",
+          challanstatus: "PAID",
+          transaction_date: new Date(),
+          paymentmode: "ONLINE",
+          track_id: payload.track_id,
+          transaction_id: payload.transaction_id,
+          bank_name: payload.bank_name,
         },
       });
 
@@ -384,7 +446,8 @@ function getFromDateAndToDate(
   }
 
   // Calculate the `toDate`
-  const toYear = month === "March" ? parseInt(year) + 1 : parseInt(year);
+  // const toYear = month === "March" ? parseInt(year) + 1 : parseInt(year);
+  const toYear = parseInt(year);
   const toDate = new Date(toYear, monthIndex + 1, 0); // Last day of the month
 
   // Calculate the `fromDate` (current month - 2 months)
@@ -411,7 +474,7 @@ const getsrno = (
 ): string => {
   let pre =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
-      ? "DHN"
+      ? "DNH"
       : selectOffice == SelectOffice.DAMAN
       ? "DD"
       : "DIU";

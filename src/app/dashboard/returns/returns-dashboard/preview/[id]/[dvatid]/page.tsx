@@ -24,6 +24,7 @@ import {
   returns_entry,
   SaleOf,
   SaleOfInterstate,
+  SelectOffice,
   user,
 } from "@prisma/client";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -35,6 +36,7 @@ import AddSubmitPayment from "@/action/return/addsubmitpayment";
 import CheckLastPayment from "@/action/return/checklastpayment";
 import GetUser from "@/action/user/getuser";
 import { getCookie } from "cookies-next";
+import getDepartmentPdfReturn from "@/action/return/getdepartmentpdfreturn";
 
 interface PercentageOutput {
   increase: string;
@@ -43,9 +45,15 @@ interface PercentageOutput {
 
 const Dvat16ReturnPreview = () => {
   const router = useRouter();
-  const { id } = useParams<{ id: string | string[] }>();
+  const { id, dvatid } = useParams<{
+    id: string | string[];
+    dvatid: string | string[];
+  }>();
   const userid: number = parseInt(
     decryptURLData(Array.isArray(id) ? id[0] : id, router)
+  );
+  const dvat: number = parseInt(
+    decryptURLData(Array.isArray(dvatid) ? dvatid[0] : dvatid, router)
   );
 
   const [isDownload, setDownload] = useState<boolean>(false);
@@ -75,11 +83,14 @@ const Dvat16ReturnPreview = () => {
       const year: string = searchparam.get("year") ?? "";
       const month: string = searchparam.get("month") ?? "";
 
-      const returnformsresponse = await getPdfReturn({
+      const returnformsresponse = await getDepartmentPdfReturn({
         year: year,
         month: month,
         userid: userid,
+        dvatid: dvat,
+        selectOffice: user_response.data?.selectOffice as SelectOffice,
       });
+
       const monthNames = [
         "January",
         "February",
@@ -864,7 +875,7 @@ const Dvat16ReturnPreview = () => {
               {isDownload ? "Downloading..." : "Download"}
             </Button>
 
-            {!payment && (
+            {/* {!payment && (
               <>
                 {(isAllNil && lateFees == 0) ||
                 (!isAllNil && getNetPayable() > 0 && lateFees == 0) ? (
@@ -905,7 +916,7 @@ const Dvat16ReturnPreview = () => {
                   </Button>
                 )}
               </>
-            )}
+            )} */}
           </div>
         </section>
       )}

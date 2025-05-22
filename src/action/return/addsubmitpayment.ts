@@ -24,35 +24,36 @@ const AddSubmitPayment = async (
   const functionname: string = AddSubmitPayment.name;
   try {
     const result: returns_01 = await prisma.$transaction(async (prisma) => {
-      let isExist = await prisma.returns_01.findFirst({
+      const isExist = await prisma.returns_01.findFirst({
         where: {
           id: payload.id,
           deletedAt: null,
           deletedById: null,
-          status: "ACTIVE",
+          OR: [
+            {
+              status: "PAID",
+              return_type: "REVISED",
+            },
+            {
+              status: "LATE",
+              return_type: "REVISED",
+            },
+            {
+              status: "PAID",
+              return_type: "ORIGINAL",
+            },
+            {
+              status: "LATE",
+              return_type: "ORIGINAL",
+            },
+          ],
           penalty: payload.penalty,
-          return_type: "REVISED",
         },
         include: {
           dvat04: true,
         },
       });
 
-      if (!isExist) {
-        isExist = await prisma.returns_01.findFirst({
-          where: {
-            id: payload.id,
-            deletedAt: null,
-            deletedById: null,
-            status: "ACTIVE",
-            penalty: payload.penalty,
-            return_type: "ORIGINAL",
-          },
-          include: {
-            dvat04: true,
-          },
-        });
-      }
       if (!isExist) {
         throw new Error("Invalid Id, try again");
       }

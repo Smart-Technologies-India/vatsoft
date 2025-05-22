@@ -632,6 +632,8 @@ const TrackAppliation = () => {
                             <Link
                               href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
                                 val.createdById.toString()
+                              )}/${encryptURLData(
+                                val.dvat04Id.toString()
                               )}?form=30A&year=${val.year}&quarter=${
                                 val.quarter
                               }&month=${val.month}`}

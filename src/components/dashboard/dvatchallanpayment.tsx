@@ -151,7 +151,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     setPenaltyDiffDays(pdiff_days);
 
     if (rr_number == null || rr_number == undefined || rr_number == "") {
-      setLateFees(Math.min(100 * pdiff_days, 10000));
+      setLateFees(Math.min(100 * idiff_days, 10000));
     }
   };
 

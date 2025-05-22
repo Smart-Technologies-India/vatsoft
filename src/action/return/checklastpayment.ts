@@ -1,11 +1,6 @@
 "use server";
 
-import {
-  capitalcase,
-  errorToString,
-  getMonthDifference,
-  getPreviousMonth,
-} from "@/utils/methods";
+import { capitalcase, errorToString, getPreviousMonth } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 
@@ -18,33 +13,26 @@ const CheckLastPayment = async (
 ): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = CheckLastPayment.name;
   try {
-    let isExist = await prisma.returns_01.findFirst({
+    const isExist = await prisma.returns_01.findFirst({
       where: {
         id: payload.id,
         deletedAt: null,
         deletedById: null,
         status: "ACTIVE",
-        return_type: "REVISED",
+        OR: [
+          {
+            return_type: "REVISED",
+          },
+          {
+            return_type: "ORIGINAL",
+          },
+        ],
       },
       include: {
         dvat04: true,
       },
     });
 
-    if (!isExist) {
-      isExist = await prisma.returns_01.findFirst({
-        where: {
-          id: payload.id,
-          deletedAt: null,
-          deletedById: null,
-          status: "ACTIVE",
-          return_type: "ORIGINAL",
-        },
-        include: {
-          dvat04: true,
-        },
-      });
-    }
     if (!isExist) {
       return createResponse({ message: "Invalid Id, try again", functionname });
     }
@@ -83,7 +71,6 @@ const CheckLastPayment = async (
     const lastmonthindex = monthNames.indexOf(month);
     const lastmonthdate = new Date(Date.UTC(parseInt(year), lastmonthindex, 1));
 
-
     const userid = isExist.createdById;
 
     if (isExist.dvat04.vatLiableDate! > current_payment_date) {
@@ -99,29 +86,40 @@ const CheckLastPayment = async (
       where: {
         deletedAt: null,
         deletedById: null,
-        status: "ACTIVE",
         createdById: userid,
         year: year,
         month: month,
         OR: [
           {
             return_type: "ORIGINAL",
+            status: "PAID",
+          },
+          {
+            return_type: "ORIGINAL",
+            status: "LATE",
           },
           {
             return_type: "REVISED",
+            status: "PAID",
+          },
+          {
+            return_type: "REVISED",
+            status: "LATE",
           },
         ],
       },
     });
 
     if (!lastPayment) {
-      if (isExist.dvat04.vatLiableDate! > lastmonthdate) {
-      } else {
-        return createResponse({
-          data: false,
-          message: `You have a pending return for period: ${month} - ${year}. Payment not completed. Kindly file previous return before proceeding.`,
-          functionname,
-        });
+      if (isExist.dvat04.vatLiableDate!.getTime() != lastmonthdate.getTime()) {
+        if (isExist.dvat04.vatLiableDate! > lastmonthdate) {
+        } else {
+          return createResponse({
+            data: false,
+            message: `You have a pending return for period: ${month} - ${year}. Payment not completed. Kindly file previous return before proceeding.`,
+            functionname,
+          });
+        }
       }
     }
 

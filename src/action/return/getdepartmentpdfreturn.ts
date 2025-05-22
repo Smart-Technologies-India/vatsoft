@@ -8,20 +8,23 @@ import {
   registration,
   returns_01,
   returns_entry,
+  SelectOffice,
   state,
   tin_number_master,
   user,
 } from "@prisma/client";
 import { cookies } from "next/headers";
 
-interface getPdfReturnPayload {
+interface getDepartmentPdfReturnPayload {
   userid: number;
   month: string;
   year: string;
+  dvatid: number;
+  selectOffice: SelectOffice;
 }
 
-const getPdfReturn = async (
-  payload: getPdfReturnPayload
+const getDepartmentPdfReturn = async (
+  payload: getDepartmentPdfReturnPayload
 ): Promise<
   ApiResponseType<{
     returns_entry: Array<
@@ -34,24 +37,12 @@ const getPdfReturn = async (
   } | null>
 > => {
   try {
-
-    const dvatid = cookies().get("dvat")?.value;
-    if (!dvatid) {
-      return {
-        status: false,
-        data: null,
-        message: "Invalid id. Please try again.",
-        functionname: "getPdfReturn",
-      };
-    }
-
-
     const dvat04resonse = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
         deletedById: null,
-        id: parseInt(dvatid),
-        // createdById: payload.userid,
+        id: parseInt(payload.dvatid.toString()),
+        selectOffice: payload.selectOffice,
       },
     });
 
@@ -60,7 +51,7 @@ const getPdfReturn = async (
         status: false,
         data: null,
         message: "User is not register yet. Please try again.",
-        functionname: "getPdfReturn",
+        functionname: "getDepartmentPdfReturn",
       };
     }
 
@@ -110,7 +101,7 @@ const getPdfReturn = async (
         status: false,
         data: null,
         message: "User is not completed any return form. Please try again.",
-        functionname: "getPdfReturn",
+        functionname: "getDepartmentPdfReturn",
       };
     }
 
@@ -132,7 +123,7 @@ const getPdfReturn = async (
         status: false,
         data: null,
         message: "Unable to get return froms. Please try again.",
-        functionname: "getPdfReturn",
+        functionname: "getDepartmentPdfReturn",
       };
 
     return {
@@ -142,17 +133,17 @@ const getPdfReturn = async (
         returns_01: return01response,
       },
       message: "Returns forms data get successfully",
-      functionname: "getPdfReturn",
+      functionname: "getDepartmentPdfReturn",
     };
   } catch (e) {
     const response: ApiResponseType<null> = {
       status: false,
       data: null,
       message: errorToString(e),
-      functionname: "getPdfReturn",
+      functionname: "getDepartmentPdfReturn",
     };
     return response;
   }
 };
 
-export default getPdfReturn;
+export default getDepartmentPdfReturn;

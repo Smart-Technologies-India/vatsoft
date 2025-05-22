@@ -17,6 +17,20 @@ interface AddNilPayload {
 const AddNil = async (
   payload: AddNilPayload
 ): Promise<ApiResponseType<returns_entry | null>> => {
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
   const functionname: string = AddNil.name;
   try {
     const dvat04 = await prisma.dvat04.findFirst({
@@ -35,41 +49,41 @@ const AddNil = async (
       });
     }
 
-    let return_res = await prisma.returns_01.findFirst({
+    const return_res = await prisma.returns_01.findFirst({
       where: {
         year: payload.year,
         quarter: payload.quarter,
         month: payload.month,
-        status: Status.ACTIVE,
         createdById: payload.createdById,
-        return_type: "REVISED",
+        status: Status.ACTIVE,
+        OR: [
+          {
+            return_type: "ORIGINAL",
+          },
+          {
+            return_type: "REVISED",
+          },
+        ],
       },
     });
-
-    if (!return_res) {
-      return_res = await prisma.returns_01.findFirst({
-        where: {
-          year: payload.year,
-          quarter: payload.quarter,
-          month: payload.month,
-          status: Status.ACTIVE,
-          createdById: payload.createdById,
-          return_type: "ORIGINAL",
-        },
-      });
-    }
 
     if (return_res) {
       const returnentryresponse = await prisma.returns_entry.create({
         data: {
           returns_01Id: return_res.id,
           dvat_type: payload.dvat_type,
+          commodity_masterId: 1154,
           urn_number: "",
           total_invoice_number: "",
           invoice_number: "",
+          description_of_goods: "Nil Filing",
           seller_tin_numberId: payload.seller_tin_numberId,
           status: Status.ACTIVE,
-          invoice_date: new Date().toISOString(),
+          invoice_date: new Date(
+            parseInt(payload.year),
+            monthNames.indexOf(payload.month),
+            5
+          ).toISOString(),
           createdById: payload.createdById,
           isnil: true,
         },
@@ -118,12 +132,18 @@ const AddNil = async (
         data: {
           returns_01Id: return_invoice.id,
           dvat_type: payload.dvat_type,
+          commodity_masterId: 1154,
+          description_of_goods: "Nil Filing",
           urn_number: "",
           total_invoice_number: "",
           invoice_number: "",
           seller_tin_numberId: payload.seller_tin_numberId,
           status: Status.ACTIVE,
-          invoice_date: new Date().toISOString(),
+          invoice_date: new Date(
+            parseInt(payload.year),
+            monthNames.indexOf(payload.month),
+            5
+          ).toISOString(),
           createdById: payload.createdById,
           isnil: true,
         },

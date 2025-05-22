@@ -31,7 +31,14 @@ const SearchReturnPayment = async (
     const [return_01, totalCount] = await Promise.all([
       prisma.returns_01.findMany({
         where: {
-          status: "ACTIVE",
+          OR: [
+            {
+              status: "LATE",
+            },
+            {
+              status: "PAID",
+            },
+          ],
           deletedAt: null,
           deletedById: null,
           dvat04: {

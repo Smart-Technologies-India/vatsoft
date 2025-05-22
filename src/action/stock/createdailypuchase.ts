@@ -11,6 +11,7 @@ interface CreateDailyPurchasePayload {
   vatamount: string;
   amount_unit: string;
   createdById: number;
+  against_cfrom: boolean;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -61,6 +62,7 @@ const CreateDailyPurchase = async (
           is_dvat_30a: false,
           createdById: payload.createdById,
           is_local: false,
+          is_against_cform: payload.against_cfrom,
         },
         include: {
           seller_tin_number: true,

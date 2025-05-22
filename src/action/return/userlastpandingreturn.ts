@@ -53,13 +53,7 @@ const GetUserLastPandingReturn = async (
         due_date: "desc",
       },
     });
-
     if (!response) {
-      // return createResponse({
-      //   message: "No Pending user return found.",
-      //   functionname,
-      // });
-
       const response = await prisma.return_filing.findFirst({
         where: {
           dvatid: dvat04response.id,
@@ -68,7 +62,7 @@ const GetUserLastPandingReturn = async (
           deletedById: null,
         },
         orderBy: {
-          due_date: "desc",
+          due_date: "asc",
         },
       });
 

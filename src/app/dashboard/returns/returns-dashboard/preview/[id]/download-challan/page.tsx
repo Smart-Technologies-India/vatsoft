@@ -71,8 +71,6 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
   const [user, setUser] = useState<user | null>(null);
 
   useEffect(() => {
-    console.log(params.id.toString());
-    console.log(decryptURLData(params.id.toString(), router));
     const init = async () => {
       const returns_response = await GetReturn01({
         id: parseInt(decryptURLData(params.id.toString(), router)),

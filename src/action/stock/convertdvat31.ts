@@ -195,7 +195,9 @@ const ConvertDvat31 = async (
               place_of_supply: 26,
             }),
             ...(!val.is_local && {
-              sale_of_interstate: SaleOfInterstate.TAXABLE_SALE,
+              sale_of_interstate: val.is_against_cform
+                ? SaleOfInterstate.FORMC
+                : SaleOfInterstate.TAXABLE_SALE,
               place_of_supply: parseInt(
                 val.seller_tin_number.tin_number.substring(0, 2)
               ),
