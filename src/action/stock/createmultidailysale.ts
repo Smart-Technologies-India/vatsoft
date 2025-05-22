@@ -19,6 +19,7 @@ interface CreateMultiDailySalePayload {
     vatamount: string;
     amount_unit: string;
     createdById: number;
+    against_cfrom: boolean;
   }>;
 }
 

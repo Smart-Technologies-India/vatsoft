@@ -397,6 +397,7 @@ const DocumentWiseDetails = () => {
           (commodity) => commodity.oidc_code === row.oidc_code
         )?.sale_price!,
         createdById: userid,
+        against_cfrom: false,
       }));
 
     const response = await CreateMultiDailySale({ entries });
