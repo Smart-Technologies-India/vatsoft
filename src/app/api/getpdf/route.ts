@@ -5,7 +5,9 @@ export async function POST(req: NextRequest, res: NextResponse) {
   try {
     const { url } = await req.json();
     // Launch a new browser instance
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
     const page = await browser.newPage();
 
     // Navigate to your desired page
@@ -13,7 +15,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
     await page.goto(`http://localhost:3000/${url}`, {
       waitUntil: "networkidle2",
     });
-
 
     await page.waitForSelector("#mainpdf", {
       visible: true,

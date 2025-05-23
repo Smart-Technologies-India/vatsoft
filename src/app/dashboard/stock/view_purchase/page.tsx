@@ -278,7 +278,8 @@ const DocumentWiseDetails = () => {
               </p>
             </div>
             <div className="bg-gray-100 p-2 rounded-md flex-1">
-              <p className="text-sm">Total taxable value</p>
+              {/* <p className="text-sm">Total taxable value</p> */}
+              <p className="text-sm">Total invoice value</p>
               <p className="text-lg font-semibold leading-3">
                 {dailyPurchase
                   .reduce(
@@ -298,7 +299,7 @@ const DocumentWiseDetails = () => {
               </p>
             </div>
             <div className="bg-gray-100 p-2 rounded-md flex-1">
-              <p className="text-sm">Total purchase price</p>
+              <p className="text-sm">Total taxable value</p>
               <p className="text-lg font-semibold leading-3">
                 {dailyPurchase
                   .reduce((acc, val) => acc + parseFloat(val.amount), 0)
@@ -338,7 +339,7 @@ const DocumentWiseDetails = () => {
                     </TableHead>
 
                     <TableHead className="border text-center">
-                      Taxable Value
+                      Invoice value (&#x20b9;)
                     </TableHead>
                     <TableHead className="border text-center">
                       Rate of Tax
@@ -347,7 +348,7 @@ const DocumentWiseDetails = () => {
                       VAT Amount
                     </TableHead>
                     <TableHead className="border text-center">
-                      Invoice value (&#x20b9;)
+                      Taxable Value (&#x20b9;)
                     </TableHead>
 
                     <TableHead className="w-28 border text-center">
