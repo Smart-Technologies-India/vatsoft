@@ -56,7 +56,7 @@ export const DailyPurchaseMasterProvider = (
 const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
 
-  const [isAgainstCForm, setIsAgainstCForm] = useState(false);
+  const [isAgainstCForm, setIsAgainstCForm] = useState(true);
 
   const {
     reset,
@@ -570,9 +570,11 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
 
         <div className="mt-2">
           <TaxtInput<DailyPurchaseMasterForm>
-            title="Quantity"
+            title={
+              davtdata?.commodity == "FUEL" ? "Quantity (Litre)" : "Quantity"
+            }
             required={true}
-            name="quantity"
+            name={"quantity"}
             placeholder="Enter Quantity"
             onlynumber={true}
           />

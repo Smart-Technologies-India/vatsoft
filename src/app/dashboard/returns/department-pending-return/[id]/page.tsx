@@ -342,6 +342,7 @@ const ShopView = () => {
                   year={item.year}
                   returnid={item.returnid}
                   filing_date={item.filing_date}
+                  dvat04id={dvat04id}
                 />
               ))}
             </div>
@@ -362,6 +363,7 @@ interface PropertiesDeatilsProps {
   tinnumber: string;
   returnid?: number;
   filing_date?: Date | null;
+  dvat04id: number;
 }
 
 const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
@@ -469,6 +471,8 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
                     router.push(
                       `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
                         props.userid!.toString()
+                      )}/${encryptURLData(
+                        props.dvat04id!.toString()
                       )}?form=30A&year=${
                         props.year
                       }&quarter=${getQuarter()}&month=${props.name}`

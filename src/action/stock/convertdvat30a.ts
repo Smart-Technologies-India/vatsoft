@@ -189,7 +189,10 @@ const ConvertDvat30A = async (
             invoice_number: val.invoice_number,
             seller_tin_numberId: val.seller_tin_numberId,
             category_of_entry: CategoryOfEntry.INVOICE,
-            total_invoice_number: val.amount,
+            total_invoice_number: !val.is_local
+              ? (parseFloat(val.amount) + parseFloat(val.vatamount)).toFixed(2)
+              : val.amount ?? "0",
+
             commodity_masterId: val.commodity_masterId,
             ...(val.is_local && {
               purchase_type: PurchaseType.TAXABLE_RATE,
@@ -217,7 +220,15 @@ const ConvertDvat30A = async (
               val.seller_tin_number.tin_number.substring(0, 2)
             ),
             tax_percent: val.tax_percent,
-            amount: val.amount,
+            ...(val.is_local && {
+              amount: (
+                parseFloat(val.amount) - parseFloat(val.vatamount)
+              ).toFixed(2),
+            }),
+            ...(!val.is_local && {
+              amount: val.amount,
+            }),
+
             vatamount: val.vatamount,
             remarks: "",
             quantity: val.quantity,

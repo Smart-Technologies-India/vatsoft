@@ -94,24 +94,49 @@ const AddRecord = () => {
     }
 
     let result: (returns_entry & { count: number })[] = [];
+    const invoiceTracker: Map<string, Set<string>> = new Map();
+    for (const entry of output) {
+      const tin = entry.seller_tin_number.tin_number;
+      const invoice = entry.invoice_number;
 
-    for (let i = 0; i < output.length; i++) {
-      let tinNumber = output[i].seller_tin_number.tin_number;
-      let index: number = result.findIndex(
-        (val: any) => val.seller_tin_number.tin_number == tinNumber
-      );
+      if (!invoiceTracker.has(tin)) {
+        invoiceTracker.set(tin, new Set());
+      }
 
-      if (index !== -1) {
-        result[index].count++;
-      } else {
-        let outvalue: returns_entry & { count: number } = {
-          ...output[i],
-          count: 1,
-        };
+      const invoices = invoiceTracker.get(tin)!;
 
-        result.push(outvalue);
+      if (!invoices.has(invoice)) {
+        invoices.add(invoice);
+
+        const existingIndex = result.findIndex(
+          (val: any) => val.seller_tin_number.tin_number === tin
+        );
+
+        if (existingIndex !== -1) {
+          result[existingIndex].count++;
+        } else {
+          result.push({ ...entry, count: 1 });
+        }
       }
     }
+
+    // for (let i = 0; i < output.length; i++) {
+    //   let tinNumber = output[i].seller_tin_number.tin_number;
+    //   let index: number = result.findIndex(
+    //     (val: any) => val.seller_tin_number.tin_number == tinNumber
+    //   );
+
+    //   if (index !== -1) {
+    //     result[index].count++;
+    //   } else {
+    //     let outvalue: returns_entry & { count: number } = {
+    //       ...output[i],
+    //       count: 1,
+    //     };
+
+    //     result.push(outvalue);
+    //   }
+    // }
 
     return result;
   };

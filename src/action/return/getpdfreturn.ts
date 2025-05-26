@@ -40,10 +40,12 @@ const getPdfReturn = async (
       return {
         status: false,
         data: null,
-        message: "Invalid id. Please try again.",
+        message: "Invalid id. Please try again",
         functionname: "getPdfReturn",
       };
     }
+
+    console.log("dvatid", dvatid);
 
 
     const dvat04resonse = await prisma.dvat04.findFirst({

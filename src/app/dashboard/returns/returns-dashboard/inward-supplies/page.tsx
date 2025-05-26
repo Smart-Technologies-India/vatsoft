@@ -309,7 +309,7 @@ const InwardSupplies = () => {
                   Rate (%)
                 </TableHead>
                 <TableHead className="whitespace-nowrap border text-center">
-                  Number of Invoices
+                  Number of Entries
                 </TableHead>
                 <TableHead className="whitespace-nowrap border text-center">
                   Taxable Amount
@@ -336,7 +336,7 @@ const InwardSupplies = () => {
                 return (
                   <TableRow key={index}>
                     <TableCell className="p-2 border text-center">
-                      {val}% Tax Invoice
+                      {val}% Tax Rate
                     </TableCell>
                     <TableCell className="p-2 border text-center">
                       {

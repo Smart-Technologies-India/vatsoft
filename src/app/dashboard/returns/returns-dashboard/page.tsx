@@ -264,6 +264,7 @@ const ReturnDashboard = () => {
         const pathmonth = searchParams.get("month");
         const pathyear = searchParams.get("year");
 
+
         if (pathmonth != null && pathyear != null) {
           if (["January", "February", "March"].includes(pathmonth)) {
             await search((parseInt(pathyear) - 1).toString(), pathmonth);
@@ -298,6 +299,8 @@ const ReturnDashboard = () => {
 
           const last_next_month = isfail
             ? monthNames.indexOf(lastmonth)
+            : monthNames.indexOf(lastmonth) + 1 == 12
+            ? 0
             : monthNames.indexOf(lastmonth) + 1;
 
           if (["January", "February"].includes(lastmonth)) {
@@ -309,6 +312,7 @@ const ReturnDashboard = () => {
               ? parseInt(lastyear).toString()
               : (parseInt(lastyear) + 1).toString();
           }
+
 
           await search(lastyear, monthNames[last_next_month]);
 

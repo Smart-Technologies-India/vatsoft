@@ -18,23 +18,13 @@ const CheckPayment = async (
         id: payload.id,
         deletedAt: null,
         deletedById: null,
-        // status: "ACTIVE",
+        status: "ACTIVE",
         // return_type: "REVISED",
         OR: [
           {
-            status: "PAID",
             return_type: "REVISED",
           },
           {
-            status: "LATE",
-            return_type: "REVISED",
-          },
-          {
-            status: "PAID",
-            return_type: "ORIGINAL",
-          },
-          {
-            status: "LATE",
             return_type: "ORIGINAL",
           },
         ],

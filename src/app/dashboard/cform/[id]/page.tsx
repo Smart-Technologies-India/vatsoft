@@ -54,7 +54,51 @@ const CFROM = () => {
         });
 
         if (cform_entry_respone.data && cform_entry_respone.status) {
-          serReturns_entryData(cform_entry_respone.data);
+          const grouped: Record<string, returns_entry> = {};
+
+          for (const entry of cform_entry_respone.data) {
+            const key = entry.invoice_number;
+
+            if (!grouped[key]) {
+              grouped[key] = { ...entry }; // shallow copy
+            } else {
+              const existing = grouped[key];
+
+              // Merge comma-separated strings (avoid duplicates if needed)
+              existing.description_of_goods += `, ${entry.description_of_goods}`;
+
+              const total_invoice_numberSum =
+                parseFloat(existing.total_invoice_number || "0") +
+                parseFloat(entry.total_invoice_number || "0");
+
+              existing.total_invoice_number =
+                total_invoice_numberSum.toFixed(2); // assuming you want quantity as string
+            }
+          }
+
+          // Post-processing step: Update description_of_goods for all grouped entries
+          for (const key in grouped) {
+            const entry = grouped[key];
+            const desc = entry.description_of_goods!.toLowerCase();
+
+            if (
+              desc.includes("diesel") ||
+              desc.includes("high speed petrol") ||
+              desc.includes("petrol") ||
+              desc.includes("high speed diesel")
+            ) {
+              entry.description_of_goods = "MS HSD";
+            } else if (desc.includes("additives") || desc.includes("oil")) {
+              entry.description_of_goods = "Lubricant";
+            } else if (desc.includes("cng") || desc.includes("png")) {
+              entry.description_of_goods = "NG";
+            } else {
+              entry.description_of_goods = "IMFL";
+            }
+          }
+
+          serReturns_entryData(Object.values(grouped));
+          // serReturns_entryData(cform_entry_respone.data);
         }
       }
       setLoading(false);

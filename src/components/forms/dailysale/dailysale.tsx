@@ -58,7 +58,7 @@ const DailySale = (props: DailySaleProviderProps) => {
   ].map((val: number) => ({ value: `${val}`, label: `${val}%` }));
 
   // against c form
-  const [isAgainstCForm, setIsAgainstCForm] = useState(false);
+  const [isAgainstCForm, setIsAgainstCForm] = useState(true);
 
   const {
     reset,
@@ -631,7 +631,9 @@ const DailySale = (props: DailySaleProviderProps) => {
         </div>
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
-            title="Quantity"
+            title={
+              davtdata?.commodity == "FUEL" ? "Quantity (Litre)" : "Quantity"
+            }
             required={true}
             name="quantity"
             placeholder="Enter Quantity"

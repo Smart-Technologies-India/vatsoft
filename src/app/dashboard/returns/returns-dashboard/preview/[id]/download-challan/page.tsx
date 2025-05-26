@@ -221,7 +221,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].total_invoice_number ?? "0")
       ).toFixed(2);
       decrease = (
         parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
