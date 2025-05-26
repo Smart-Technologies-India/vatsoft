@@ -1109,7 +1109,7 @@ const Dvat16ReturnPreview = () => {
                     current_user_id.toString()
                   )}/${encryptURLData(
                     return01.dvat04Id.toString()
-                  )}/download-challan?sidebar=no`
+                  )}/?sidebar=no`
                 );
               }}
               disabled={isDownload}
