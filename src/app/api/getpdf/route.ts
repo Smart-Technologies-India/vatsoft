@@ -10,8 +10,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
     });
     const page = await browser.newPage();
 
-    // Navigate to your desired page
-    console.log(`Navigating to: http://localhost:3000/${url}`.replace(/([^:]\/)\/+/g, "$1"));
+
 
     await page.goto(`http://localhost:3000/${url}`.replace(/([^:]\/)\/+/g, "$1"), {
       waitUntil: "networkidle2",
@@ -30,6 +29,12 @@ export async function POST(req: NextRequest, res: NextResponse) {
       headerTemplate: "",
       footerTemplate: "",
       waitForFonts: true,
+      margin:{
+        top: "20px",
+        right: "20px",
+        bottom: "20px",
+        left: "20px",
+      }
     });
     await browser.close();
 

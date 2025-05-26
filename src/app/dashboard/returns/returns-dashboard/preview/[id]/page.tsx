@@ -82,7 +82,6 @@ const Dvat16ReturnPreview = () => {
         userid: userid,
       });
 
-      console.log("returnformsresponse", returnformsresponse);
       const monthNames = [
         "January",
         "February",
@@ -1120,16 +1119,6 @@ const Dvat16ReturnPreview = () => {
                   )}?year=${year}&month=${month}&sidebar=no`
                 );
 
-                // console.log(
-                //   `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                //     "1"
-                //   )}/${encryptURLData(
-                //     return01.dvat04Id.toString()
-                //   )}/?sidebar=no`
-                // );
-
-                // console.log(return01.dvat04Id);
-                // console.log(return01.dvat04Id);
               }}
               disabled={isDownload}
             >
