@@ -1111,6 +1111,16 @@ const Dvat16ReturnPreview = () => {
                     return01.dvat04Id.toString()
                   )}/?sidebar=no`
                 );
+
+                console.log(
+                  `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                    current_user_id.toString()
+                  )}/${encryptURLData(
+                    return01.dvat04Id.toString()
+                  )}/?sidebar=no`
+                );
+
+                console.log(return01.dvat04Id);
               }}
               disabled={isDownload}
             >
