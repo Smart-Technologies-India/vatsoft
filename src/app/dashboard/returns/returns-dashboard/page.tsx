@@ -264,7 +264,6 @@ const ReturnDashboard = () => {
         const pathmonth = searchParams.get("month");
         const pathyear = searchParams.get("year");
 
-
         if (pathmonth != null && pathyear != null) {
           if (["January", "February", "March"].includes(pathmonth)) {
             await search((parseInt(pathyear) - 1).toString(), pathmonth);
@@ -312,7 +311,6 @@ const ReturnDashboard = () => {
               ? parseInt(lastyear).toString()
               : (parseInt(lastyear) + 1).toString();
           }
-
 
           await search(lastyear, monthNames[last_next_month]);
 
@@ -1081,6 +1079,8 @@ const ReturnDashboard = () => {
                           await generatePDF(
                             `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
                               userid.toString()
+                            )}/${encryptURLData(
+                              return01!.dvat04Id.toString()
                             )}?form=30A&year=${getNewYear(
                               year!,
                               period!

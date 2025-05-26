@@ -415,11 +415,11 @@ const Dvat16ReturnPreview = () => {
     setPaymentSubmitBox(false);
   };
 
-  const generatePDF = async () => {
+  const generatePDF = async (path: string) => {
     setDownload(true);
     try {
       // Fetch the PDF from the server
-      const path = `${window.location.pathname}${window.location.search}?sidebar=no`;
+      // const path = `${window.location.pathname}${window.location.search}?sidebar=no`;
 
       const response = await fetch("/api/getpdf", {
         method: "POST",
@@ -1100,7 +1100,20 @@ const Dvat16ReturnPreview = () => {
             )}
 
             {/* <Button onClick={() => router.back()}>Back</Button> */}
-            <Button type="primary" onClick={generatePDF} disabled={isDownload}>
+            <Button
+              type="primary"
+              onClick={async (e) => {
+                e.preventDefault();
+                await generatePDF(
+                  `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                    current_user_id.toString()
+                  )}/${encryptURLData(
+                    return01.dvat04Id.toString()
+                  )}/download-challan?sidebar=no`
+                );
+              }}
+              disabled={isDownload}
+            >
               {isDownload ? "Downloading..." : "Download"}
             </Button>
 
