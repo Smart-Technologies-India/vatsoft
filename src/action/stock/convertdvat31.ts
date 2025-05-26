@@ -203,7 +203,9 @@ const ConvertDvat31 = async (
               ),
             }),
             tax_percent: val.tax_percent,
-            amount: val.amount,
+            amount: (
+              parseFloat(val.amount) - parseFloat(val.vatamount)
+            ).toFixed(2),
             vatamount: val.vatamount,
             quantity: val.quantity,
             remarks: "",

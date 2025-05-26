@@ -213,7 +213,7 @@ const ConvertDvat30A = async (
             //   ),
             // }),
 
-            nature_purchase: NaturePurchase.CAPITAL_GOODS,
+            nature_purchase: NaturePurchase.OTHER_GOODS,
             nature_purchase_option: NaturePurchaseOption.REGISTER_DEALERS,
             input_tax_credit: InputTaxCredit.ITC_ELIGIBLE,
             place_of_supply: parseInt(
