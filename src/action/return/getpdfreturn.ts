@@ -45,7 +45,6 @@ const getPdfReturn = async (
       };
     }
 
-    console.log("dvatid", dvatid);
 
 
     const dvat04resonse = await prisma.dvat04.findFirst({

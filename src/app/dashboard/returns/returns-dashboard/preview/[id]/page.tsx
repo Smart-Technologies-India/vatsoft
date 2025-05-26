@@ -1104,23 +1104,32 @@ const Dvat16ReturnPreview = () => {
               type="primary"
               onClick={async (e) => {
                 e.preventDefault();
+
+                const year: string = searchparam.get("year") ?? "";
+                const month: string = searchparam.get("month") ?? "";
+
+                if (!year || !month) {
+                  toast.error("Year and Month are required to generate PDF.");
+                  return;
+                }
                 await generatePDF(
                   `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                    current_user_id.toString()
+                    "1"
                   )}/${encryptURLData(
                     return01.dvat04Id.toString()
-                  )}/?sidebar=no`
+                  )}?year=${year}&month=${month}&sidebar=no`
                 );
 
-                console.log(
-                  `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                    current_user_id.toString()
-                  )}/${encryptURLData(
-                    return01.dvat04Id.toString()
-                  )}/?sidebar=no`
-                );
+                // console.log(
+                //   `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                //     "1"
+                //   )}/${encryptURLData(
+                //     return01.dvat04Id.toString()
+                //   )}/?sidebar=no`
+                // );
 
-                console.log(return01.dvat04Id);
+                // console.log(return01.dvat04Id);
+                // console.log(return01.dvat04Id);
               }}
               disabled={isDownload}
             >
