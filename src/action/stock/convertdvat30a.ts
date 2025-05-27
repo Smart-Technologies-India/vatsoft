@@ -204,6 +204,12 @@ const ConvertDvat30A = async (
               val.is_against_cform && {
                 purchase_type: PurchaseType.FORMC_CONCESSION,
               }),
+
+            ...(!val.is_local &&
+              !val.is_against_cform && {
+                purchase_type: PurchaseType.TAXABLE_RATE,
+              }),
+
             // ...(!val.is_local && {
             //   nature_purchase: NaturePurchase.CAPITAL_GOODS,
             //   nature_purchase_option: NaturePurchaseOption.REGISTER_DEALERS,

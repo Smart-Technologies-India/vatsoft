@@ -4,6 +4,7 @@ import AcceptSale from "@/action/stock/acceptsell";
 import ConvertDvat30A from "@/action/stock/convertdvat30a";
 import DeletePurchase from "@/action/stock/deletepurchase";
 import GetUserDailyPurchase from "@/action/stock/getuserdailypurchase";
+import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
 import {
   Table,
   TableBody,
@@ -21,6 +22,7 @@ import {
 } from "@prisma/client";
 import {
   Button,
+  Drawer,
   Modal,
   Pagination,
   Popover,
@@ -198,6 +200,8 @@ const DocumentWiseDetails = () => {
     setQuantityCount(value);
   };
 
+  const [addBox, setAddBox] = useState<boolean>(false);
+
   // 1 crate 2 pcs
   const showCrates = (quantity: number, crate_size: number): string => {
     // return "";
@@ -218,6 +222,22 @@ const DocumentWiseDetails = () => {
 
   return (
     <>
+      <Drawer
+        placement="right"
+        closeIcon={null}
+        onClose={() => {
+          setAddBox(false);
+        }}
+        open={addBox}
+        size="large"
+      >
+        <p className="text-lg text-left">Add Purchase</p>
+        <DailyPurchaseMasterProvider
+          userid={userid}
+          setAddBox={setAddBox}
+          init={init}
+        />
+      </Drawer>
       <Modal
         title="Generate DVAT 30/30 A"
         open={isModalOpen}
@@ -268,6 +288,18 @@ const DocumentWiseDetails = () => {
             )}
 
             {/* )} */}
+
+            <Button
+              size="small"
+              type="primary"
+              className="bg-blue-500 hover:bg-blue-500"
+              onClick={() => {
+                // setCommid(undefined);
+                setAddBox(true);
+              }}
+            >
+              Add Purchase
+            </Button>
           </div>
 
           <div className="flex gap-2 mt-2 flex-wrap">

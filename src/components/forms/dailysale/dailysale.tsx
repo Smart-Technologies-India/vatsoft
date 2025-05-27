@@ -470,13 +470,9 @@ const DailySale = (props: DailySaleProviderProps) => {
     reset({
       amount_unit: "",
       description_of_goods: undefined,
-      invoice_date: "",
-      invoice_number: undefined,
       quantity: "",
-      recipient_vat_no: "",
     });
 
-    setTinData(null);
     setDvatdata(null);
 
     setVatAmount("0");

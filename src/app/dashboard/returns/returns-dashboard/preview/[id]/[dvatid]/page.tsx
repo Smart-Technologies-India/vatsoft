@@ -3438,7 +3438,25 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
         existing.quantity = quantitySum; // assuming you want quantity as string
       }
     }
+    for (const key in grouped) {
+      const entry = grouped[key];
+      const desc = entry.description_of_goods!.toLowerCase();
 
+      if (
+        desc.includes("diesel") ||
+        desc.includes("high speed petrol") ||
+        desc.includes("petrol") ||
+        desc.includes("high speed diesel")
+      ) {
+        entry.description_of_goods = "MS HSD";
+      } else if (desc.includes("additives") || desc.includes("oil")) {
+        entry.description_of_goods = "Lubricant";
+      } else if (desc.includes("cng") || desc.includes("png")) {
+        entry.description_of_goods = "NG";
+      } else {
+        entry.description_of_goods = "IMFL";
+      }
+    }
     return Object.values(grouped);
     // return output;
   };
@@ -5605,7 +5623,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       (val: returns_entry) =>
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE &&
+        val.purchase_type == PurchaseType.TAXABLE_RATE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS
     );
     for (let i = 0; i < output.length; i++) {

@@ -45,6 +45,7 @@ import Last15Received from "@/action/dashboard/last15received";
 import { format, subMonths } from "date-fns";
 import { Flex, Radio, RadioChangeEvent } from "antd";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 
 const Page = () => {
   const monthNames = [
@@ -92,7 +93,7 @@ const Page = () => {
         setIsProfileCompleted(profile_response.data.registration);
       }
 
-      const dvatdata = await GetUserDvat04({
+      const dvatdata = await GetUserDvat04Anx({
         userid: 1,
       });
       if (dvatdata.status && dvatdata.data) {
@@ -126,7 +127,7 @@ const Page = () => {
 
                   <p>{dvat != null && dvat?.tinNumber}</p>
                   <h1 className="text-xs leading-3 text-gray-500 mt-1">
-                    Returns Calender (Last 6 return periods)
+                    Returns Calender (Last {month.length} return periods)
                   </h1>
                 </div>
                 {/* second section start from here */}

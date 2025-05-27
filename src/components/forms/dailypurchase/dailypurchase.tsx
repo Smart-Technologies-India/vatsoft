@@ -389,14 +389,10 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     reset({
       amount_unit: "",
       description_of_goods: undefined,
-      invoice_date: "",
-      invoice_number: undefined,
       quantity: "",
-      recipient_vat_no: "",
     });
 
     // clear form fields
-    setTinData(null);
     setVatAmount("0");
     setTaxableValue("0");
     setIsAgainstCForm(false);

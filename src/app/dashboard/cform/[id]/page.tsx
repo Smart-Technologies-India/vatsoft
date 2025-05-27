@@ -138,6 +138,9 @@ const CFROM = () => {
           <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
             <Image src="/cform_bg.png" alt="logo" fill={true} className="p-8" />
           </div>
+          <div className="absolute bottom-28 right-12 text-xs font-normal text-black ">
+            (Continued...)
+          </div>
           <div className="border border-black p-2 h-full w-full relative">
             <div className="scale-[0.3] absolute top-20 -right-10">
               <Barcode value={cformdata ? cformdata.sr_no : ""} />
@@ -166,7 +169,7 @@ const CFROM = () => {
                     Office of Issue:
                   </td>
                   <td className="px-2 text-xs text-nowrap leading-6 w-[50%]">
-                    Office of the Dept. of VAT -{" "}
+                    Dept. of VAT -{" "}
                     {cformdata?.office_of_issue == "Dadra_Nagar_Haveli"
                       ? "Dadra and Nagar Haveli"
                       : cformdata?.office_of_issue}
@@ -178,7 +181,10 @@ const CFROM = () => {
                   </td>
                   <td className="px-2 text-xs leading-6 w-[50%]">
                     {/* 24/11/2014 */}
-                    {formateDate(new Date(cformdata?.createdAt!))}
+                    {formateDate(new Date(cformdata?.createdAt!)).replaceAll(
+                      "-",
+                      "/"
+                    )}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -218,7 +224,10 @@ const CFROM = () => {
                   </td>
                   <td className="px-2 text-xs leading-6 w-[50%]">
                     {cformdata
-                      ? formateDate(new Date(cformdata.valid_date))
+                      ? formateDate(new Date(cformdata.valid_date)).replaceAll(
+                          "-",
+                          "/"
+                        )
                       : ""}
                   </td>
                 </tr>
@@ -323,6 +332,9 @@ const CFROM = () => {
                 className="p-8"
               />
             </div>
+            <div className="absolute bottom-28 right-12 text-xs font-normal text-black ">
+              (Continued...)
+            </div>
             <div className="border border-black p-2 h-full w-full relative">
               <div className="scale-[0.3] absolute top-10 -right-10">
                 <Barcode value={cformdata ? cformdata.sr_no : ""} />
@@ -349,7 +361,7 @@ const CFROM = () => {
                       Date of Issue :
                     </td>
                     <td className="px-2 py-1 text-xs leading-6 w-[50%]">
-                      {formateDate(new Date())}
+                      {formateDate(new Date()).replaceAll("-", "/")}
                     </td>
                   </tr>
                 </tbody>
@@ -437,6 +449,9 @@ const CFROM = () => {
           <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
             <Image src="/cform_bg.png" alt="logo" fill={true} className="p-8" />
           </div>
+          <div className="absolute bottom-28 right-12 text-xs font-normal text-black ">
+            (Continued...)
+          </div>
           <div className="border border-black p-2 h-full w-full relative">
             <div className="scale-[0.3] absolute top-20 -right-10">
               <Barcode value={cformdata ? cformdata.sr_no : ""} />
@@ -465,7 +480,7 @@ const CFROM = () => {
                     Office of Issue:
                   </td>
                   <td className="px-2 text-xs text-nowrap leading-6 w-[50%]">
-                    Office of the Dept. of VAT -{" "}
+                    Dept. of VAT -{" "}
                     {cformdata?.office_of_issue == "Dadra_Nagar_Haveli"
                       ? "Dadra and Nagar Haveli"
                       : cformdata?.office_of_issue}
@@ -477,7 +492,10 @@ const CFROM = () => {
                   </td>
                   <td className="px-2 text-xs leading-6 w-[50%]">
                     {/* 24/11/2014 */}
-                    {formateDate(new Date(cformdata?.createdAt!))}
+                    {formateDate(new Date(cformdata?.createdAt!)).replaceAll(
+                      "-",
+                      "/"
+                    )}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -517,7 +535,10 @@ const CFROM = () => {
                   </td>
                   <td className="px-2 text-xs leading-6 w-[50%]">
                     {cformdata
-                      ? formateDate(new Date(cformdata.valid_date))
+                      ? formateDate(new Date(cformdata.valid_date)).replaceAll(
+                          "-",
+                          "/"
+                        )
                       : ""}
                   </td>
                 </tr>
@@ -621,6 +642,9 @@ const CFROM = () => {
                 className="p-8"
               />
             </div>
+            <div className="absolute bottom-28 right-12 text-xs font-normal text-black ">
+              (Continued...)
+            </div>
             <div className="border border-black p-2 h-full w-full relative">
               <div className="scale-[0.3] absolute top-10 -right-10">
                 <Barcode value={cformdata ? cformdata.sr_no : ""} />
@@ -647,7 +671,7 @@ const CFROM = () => {
                       Date of Issue :
                     </td>
                     <td className="px-2 py-1 text-xs leading-6 w-[50%]">
-                      {formateDate(new Date())}
+                      {formateDate(new Date()).replaceAll("-", "/")}
                     </td>
                   </tr>
                 </tbody>
@@ -735,6 +759,9 @@ const CFROM = () => {
           <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
             <Image src="/cform_bg.png" alt="logo" fill={true} className="p-8" />
           </div>
+          <div className="absolute bottom-28 right-12 text-xs font-normal text-black ">
+            (Continued...)
+          </div>
           <div className="border border-black p-2 h-full w-full relative">
             <div className="scale-[0.3] absolute top-20 -right-10">
               <Barcode value={cformdata ? cformdata.sr_no : ""} />
@@ -763,7 +790,7 @@ const CFROM = () => {
                     Office of Issue:
                   </td>
                   <td className="px-2 text-xs text-nowrap leading-6 w-[50%]">
-                    Office of the Dept. of VAT -{" "}
+                    Dept. of VAT -{" "}
                     {cformdata?.office_of_issue == "Dadra_Nagar_Haveli"
                       ? "Dadra and Nagar Haveli"
                       : cformdata?.office_of_issue}
@@ -775,7 +802,10 @@ const CFROM = () => {
                   </td>
                   <td className="px-2 text-xs leading-6 w-[50%]">
                     {/* 24/11/2014 */}
-                    {formateDate(new Date(cformdata?.createdAt!))}
+                    {formateDate(new Date(cformdata?.createdAt!)).replaceAll(
+                      "-",
+                      "/"
+                    )}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -815,7 +845,10 @@ const CFROM = () => {
                   </td>
                   <td className="px-2 text-xs leading-6 w-[50%]">
                     {cformdata
-                      ? formateDate(new Date(cformdata.valid_date))
+                      ? formateDate(new Date(cformdata.valid_date)).replaceAll(
+                          "-",
+                          "/"
+                        )
                       : ""}
                   </td>
                 </tr>
@@ -946,7 +979,7 @@ const CFROM = () => {
                       Date of Issue :
                     </td>
                     <td className="px-2 py-1 text-xs leading-6 w-[50%]">
-                      {formateDate(new Date())}
+                      {formateDate(new Date()).replaceAll("-", "/")}
                     </td>
                   </tr>
                 </tbody>
