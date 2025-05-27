@@ -37,6 +37,7 @@ import CheckLastPayment from "@/action/return/checklastpayment";
 import GetUser from "@/action/user/getuser";
 import { getCookie } from "cookies-next";
 import getDepartmentPdfReturn from "@/action/return/getdepartmentpdfreturn";
+import getPdfReturnDownload from "@/action/return/getpdfreturndownload";
 
 interface PercentageOutput {
   increase: string;
@@ -189,10 +190,17 @@ const Dvat16ReturnPreview = () => {
         // Get the last month's name
         const lastMonth: string = monthNames[lastMonthIndex];
 
-        const lastmonthdata = await getPdfReturn({
+        // const lastmonthdata = await getPdfReturn({
+        //   year: month == "January" ? (parseInt(year) - 1).toString() : year,
+        //   month: lastMonth,
+        //   userid: userid,
+        // });
+
+        const lastmonthdata = await getPdfReturnDownload({
           year: month == "January" ? (parseInt(year) - 1).toString() : year,
           month: lastMonth,
           userid: userid,
+          dvatid: dvat,
         });
 
         if (lastmonthdata.status && lastmonthdata.data) {
@@ -2569,6 +2577,7 @@ const TurnOver = (props: TurnOverProps) => {
             {(
               parseFloat(getInvoicePercentage("0").decrease) +
               parseFloat(getInvoicePercentage("1").decrease) +
+              parseFloat(getInvoicePercentage("2").decrease) +
               parseFloat(getInvoicePercentage("4").decrease) +
               parseFloat(getInvoicePercentage("5").decrease) +
               parseFloat(getInvoicePercentage("6").decrease) +
@@ -4237,6 +4246,28 @@ const CentralSales = (props: CentralSalesProps) => {
     };
   };
 
+  const getStateSalesTaxable = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
   const getStateSales = (): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
@@ -4360,6 +4391,29 @@ const CentralSales = (props: CentralSalesProps) => {
     for (let i = 0; i < output.length; i++) {
       increase = (
         parseFloat(increase) + parseFloat(output[i].total_invoice_number ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const get10_2_6_2 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31_A &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        (val.sale_of_interstate == SaleOfInterstate.FORMC ||
+          val.purchase_type == PurchaseType.FORMC_CONCESSION)
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
         parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
@@ -4781,7 +4835,9 @@ const CentralSales = (props: CentralSalesProps) => {
 
           <th className="border border-black px-2 leading-4 text-[0.6rem] w-[15%] text-left font-normal">
             {/* {getGoodsReturnsNote().increase} */}
-            {getStateSales().increase}
+            {parseFloat(getStateSalesTaxable().increase) +
+              parseFloat(getInterStateSales().increase) +
+              parseFloat(get10_2_6_2().increase)}
           </th>
         </tr>
       </thead>
@@ -4840,10 +4896,13 @@ const CentralSales = (props: CentralSalesProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
-              parseFloat(getGoodsReturnsNote().increase) -
-              parseFloat(getLabour().increase) -
-              parseFloat(getFormF().increase) -
-              parseFloat(getExportIndia().increase)
+              parseFloat(getStateSalesTaxable().increase) +
+              parseFloat(getInterStateSales().increase) +
+              parseFloat(get10_2_6_2().increase) -
+              (parseFloat(getGoodsReturnsNote().increase) -
+                parseFloat(getLabour().increase) -
+                parseFloat(getFormF().increase) -
+                parseFloat(getExportIndia().increase))
             ).toFixed(2)}
           </td>
         </tr>
@@ -4856,9 +4915,7 @@ const CentralSales = (props: CentralSalesProps) => {
             Deduct turnover Sales within the State
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {parseFloat(getStateSales().increase) +
-              parseFloat(getInterStateSales().increase) +
-              parseFloat(get10_2().increase)}
+            {parseFloat(getStateSalesTaxable().increase)}
           </td>
         </tr>
         <tr className="w-full">
@@ -4873,12 +4930,8 @@ const CentralSales = (props: CentralSalesProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
-              parseFloat(getStateSales().increase) +
               parseFloat(getInterStateSales().increase) +
-              parseFloat(get10_2().increase) -
-              (parseFloat(getStateSales().increase) +
-                parseFloat(getInterStateSales().increase) +
-                parseFloat(get10_2().increase))
+              parseFloat(get10_2_6_2().increase)
             ).toFixed(2)}
           </td>
         </tr>
@@ -4950,7 +5003,7 @@ const CentralSales = (props: CentralSalesProps) => {
             Balance - Total turnover of Inter-State Sales
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {(
+            {/* {(
               parseFloat(getGoodsReturnsNoteTwo().increase) -
               parseFloat(getLabour().increase) -
               parseFloat(getFormF().increase) -
@@ -4966,6 +5019,10 @@ const CentralSales = (props: CentralSalesProps) => {
                 (parseFloat(getStateSales().increase) +
                   parseFloat(getInterStateSales().increase) +
                   parseFloat(get10_2().increase)))
+            ).toFixed(2)} */}
+            {(
+              parseFloat(getInterStateSales().increase) +
+              parseFloat(get10_2_6_2().increase)
             ).toFixed(2)}
           </td>
         </tr>
@@ -5033,16 +5090,8 @@ const CentralSales = (props: CentralSalesProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
-              parseFloat(getGoodsReturnsNoteTwo().increase) -
-              parseFloat(getLabour().increase) -
-              parseFloat(getFormF().increase) -
-              parseFloat(getExportIndia().increase) -
-              parseFloat(getStateSales().increase) -
-              parseFloat(getFreightCharges().increase) -
-              parseFloat(getSaleCanceled().increase) -
-              parseFloat(getUS6().increase) -
-              parseFloat(getSch1().increase) -
-              parseFloat(get10_3().increase)
+              parseFloat(getInterStateSales().increase) +
+              parseFloat(get10_2_6_2().increase)
             ).toFixed(2)}
           </td>
         </tr>
@@ -5085,7 +5134,7 @@ const CentralSales = (props: CentralSalesProps) => {
             rate of 2%
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {get10_2().increase}
+            {get10_2_6_2().increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {get10_2().decrease}
@@ -5372,24 +5421,36 @@ const CentralSales = (props: CentralSalesProps) => {
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             Total
           </td>
-          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+        <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
-              parseFloat(get10_2().increase) +
+              parseFloat(get10_2_6_2().increase) +
+              parseFloat(getPercentageValue("0").increase) +
               parseFloat(getPercentageValue("1").increase) +
+              parseFloat(getPercentageValue("2").increase) +
               parseFloat(getPercentageValue("4").increase) +
               parseFloat(getPercentageValue("5").increase) +
+              parseFloat(getPercentageValue("6").increase) +
               parseFloat(getPercentageValue("12.5").increase) +
+              parseFloat(getPercentageValue("12.75").increase) +
+              parseFloat(getPercentageValue("13.5").increase) +
+              parseFloat(getPercentageValue("15").increase) +
               parseFloat(getPercentageValue("20").increase) +
               parseFloat(getProcessedGoods().increase)
             ).toFixed(2)}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
-              parseFloat(get10_2().decrease) +
+              parseFloat(get10_2_6_2().decrease) +
+              parseFloat(getPercentageValue("0").decrease) +
               parseFloat(getPercentageValue("1").decrease) +
+              parseFloat(getPercentageValue("2").decrease) +
               parseFloat(getPercentageValue("4").decrease) +
               parseFloat(getPercentageValue("5").decrease) +
+              parseFloat(getPercentageValue("6").decrease) +
               parseFloat(getPercentageValue("12.5").decrease) +
+              parseFloat(getPercentageValue("12.75").decrease) +
+              parseFloat(getPercentageValue("13.5").decrease) +
+              parseFloat(getPercentageValue("15").decrease) +
               parseFloat(getPercentageValue("20").decrease) +
               parseFloat(getProcessedGoods().decrease)
             ).toFixed(2)}
