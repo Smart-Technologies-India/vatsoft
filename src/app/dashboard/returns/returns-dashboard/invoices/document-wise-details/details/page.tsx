@@ -182,37 +182,6 @@ const DocumentWiseDetails = () => {
     }
   };
 
-  const getFilterDavtData = () => {
-    const grouped: Record<string, returns_entry> = {};
-
-    for (const entry of getDvatData()) {
-      const key = entry.invoice_number;
-
-      if (!grouped[key]) {
-        grouped[key] = { ...entry }; // shallow copy
-      } else {
-        const existing = grouped[key];
-
-        // Merge comma-separated strings (avoid duplicates if needed)
-        existing.description_of_goods += `, ${entry.description_of_goods}`;
-        existing.tax_percent += `, ${entry.tax_percent}`;
-        // Sum numeric fields (after converting to float)
-        const amountSum =
-          parseFloat(existing.amount || "0") + parseFloat(entry.amount || "0");
-        const vatSum =
-          parseFloat(existing.vatamount || "0") +
-          parseFloat(entry.vatamount || "0");
-        const taxamount =
-          parseFloat(existing.total_invoice_number || "0") +
-          parseFloat(entry.total_invoice_number || "0");
-
-        existing.amount = amountSum.toFixed(2);
-        existing.vatamount = vatSum.toFixed(2);
-        existing.total_invoice_number = taxamount.toFixed(2);
-      }
-    }
-    return Object.values(grouped);
-  };
   const [deletebox, setDeleteBox] = useState<boolean>(false);
   const delete_return_entry = async (id: number) => {
     const response = await RemoveReturn({
@@ -225,44 +194,36 @@ const DocumentWiseDetails = () => {
     }
   };
 
-  const getUrl = (invoice_no: string): string => {
+  const getUrl = (id: number): string => {
     const formType = searchParams.get("form");
     switch (formType) {
       case "30":
-        return `/dashboard/returns/returns-dashboard/invoices/document-wise-details/details?form=${searchParams.get(
+        return `/dashboard/returns/returns-dashboard/inward-supplies/add-record-30/update?form=${searchParams.get(
           "form"
         )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
           "quarter"
-        )}&month=${searchParams.get("month")}&sellertin=${searchParams.get(
-          "sellertin"
-        )}&invoice_no=${invoice_no}`;
+        )}&month=${searchParams.get("month")}&id=${id}`;
 
       case "30A":
-        return `/dashboard/returns/returns-dashboard/invoices/document-wise-details/details?form=${searchParams.get(
+        return `/dashboard/returns/returns-dashboard/inward-supplies/add-record-30A/update?form=${searchParams.get(
           "form"
         )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
           "quarter"
-        )}&month=${searchParams.get("month")}&sellertin=${searchParams.get(
-          "sellertin"
-        )}&invoice_no=${invoice_no}`;
+        )}&month=${searchParams.get("month")}&id=${id}`;
 
       case "31":
-        return `/dashboard/returns/returns-dashboard/invoices/document-wise-details/details?form=${searchParams.get(
+        return `/dashboard/returns/returns-dashboard/outward-supplies/add-record-31/update?form=${searchParams.get(
           "form"
         )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
           "quarter"
-        )}&month=${searchParams.get("month")}&sellertin=${searchParams.get(
-          "sellertin"
-        )}&invoice_no=${invoice_no}`;
+        )}&month=${searchParams.get("month")}&id=${id}`;
 
       case "31A":
-        return `/dashboard/returns/returns-dashboard/invoices/document-wise-details/details?form=${searchParams.get(
+        return `/dashboard/returns/returns-dashboard/outward-supplies/add-record-31A/update?form=${searchParams.get(
           "form"
         )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
           "quarter"
-        )}&month=${searchParams.get("month")}&sellertin=${searchParams.get(
-          "sellertin"
-        )}&invoice_no=${invoice_no}`;
+        )}&month=${searchParams.get("month")}&id=${id}`;
 
       default:
         return "";
@@ -299,7 +260,9 @@ const DocumentWiseDetails = () => {
           </div>
         </div>
         <div className="bg-white p-2 shadow mt-2">
-          <div className="bg-blue-500 p-2 text-white">Invoices</div>
+          <div className="bg-blue-500 p-2 text-white">
+            Invoice No. - {searchParams.get("invoice_no")}
+          </div>
 
           <p className="text-[#162e57] text-sm mt-2">Processed Records</p>
           <div className="flex gap-2 mt-2">
@@ -311,16 +274,19 @@ const DocumentWiseDetails = () => {
             </div>
           </div>
 
-          {getFilterDavtData().length > 0 ? (
+          {getDvatData().filter(
+            (val) =>
+              val.invoice_number.toString() === searchParams.get("invoice_no")
+          ).length > 0 ? (
             <Table className="border mt-2">
               <TableHeader>
                 <TableRow className="bg-gray-100">
-                  {/* <TableHead className="w-64 border text-center">
+                  <TableHead className="w-64 border text-center">
                     Product Name
                   </TableHead>
                   <TableHead className="w-20 border text-center">
                     Quantity
-                  </TableHead> */}
+                  </TableHead>
                   <TableHead className="border text-center">
                     Invoice no.
                   </TableHead>
@@ -345,9 +311,20 @@ const DocumentWiseDetails = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {getFilterDavtData().map(
-                  (val: returns_entry, index: number) => (
+                {getDvatData()
+                  .filter(
+                    (val) =>
+                      val.invoice_number.toString() ===
+                      searchParams.get("invoice_no")
+                  )
+                  .map((val: returns_entry, index: number) => (
                     <TableRow key={index}>
+                      <TableCell className="p-2 border text-center">
+                        {val.description_of_goods}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center">
+                        {val.quantity}
+                      </TableCell>
                       <TableCell className="p-2 border text-center">
                         {val.invoice_number}
                       </TableCell>
@@ -363,21 +340,75 @@ const DocumentWiseDetails = () => {
                       <TableCell className="p-2 border text-center">
                         {val.vatamount}
                       </TableCell>
-                      {/* {!ispayment() && ( */}
-                      <TableCell className="p-2 border text-center">
-                        <button
-                          onClick={() => {
-                            route.push(getUrl(val.invoice_number));
-                          }}
-                          className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4"
-                        >
-                          View
-                        </button>
-                      </TableCell>
-                      {/* )} */}
+                      {!ispayment() && (
+                        <TableCell className="p-2 border text-center">
+                          <Popover
+                            content={
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  onClick={() => {
+                                    setDeleteBox(true);
+                                    handelClose(index);
+                                  }}
+                                  className="text-sm bg-white border hover:border-rose-500 hover:text-rose-500 text-[#172e57] py-1 px-4"
+                                >
+                                  Delete
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    route.push(getUrl(val.id));
+                                  }}
+                                  className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4"
+                                >
+                                  Update
+                                </button>
+                              </div>
+                            }
+                            title="Actions"
+                            trigger="click"
+                            open={!!openPopovers[index]} // Open state for each row
+                            onOpenChange={(newOpen) =>
+                              handleOpenChange(newOpen, index)
+                            }
+                          >
+                            <button className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4">
+                              Actions
+                            </button>
+                          </Popover>
+                          <Modal
+                            title="Confirmation"
+                            open={deletebox}
+                            footer={null}
+                            closeIcon={false}
+                          >
+                            <div>
+                              <p>
+                                Are you sure you want to delete this return
+                                entry
+                              </p>
+                            </div>
+                            <div className="flex  gap-2 mt-2">
+                              <div className="grow"></div>
+                              <button
+                                className="py-1 rounded-md border px-4 text-sm text-gray-600"
+                                onClick={() => {
+                                  setDeleteBox(false);
+                                }}
+                              >
+                                Close
+                              </button>
+                              <button
+                                onClick={() => delete_return_entry(val.id)}
+                                className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </Modal>
+                        </TableCell>
+                      )}
                     </TableRow>
-                  )
-                )}
+                  ))}
               </TableBody>
             </Table>
           ) : (

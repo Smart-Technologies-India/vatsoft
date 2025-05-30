@@ -294,7 +294,7 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
       category_of_entry: data.category_of_entry,
       purchase_type: data.purchase_type,
       place_of_supply: parseInt(data.place_of_supply),
-      tax_percent: commodityMasterData.taxable_at,
+      tax_percent: data.taxable_at,
       amount: taxableValue.toString(),
       vatamount: vatAmount,
       description_of_goods: commodityMasterData.product_name,
@@ -539,7 +539,28 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
                 />
               </TableCell>
               <TableCell className="p-2 border text-center">
-                {commodityMasterData?.taxable_at ?? "0"}%
+                {/* {commodityMasterData?.taxable_at ?? "0"}% */}
+                <MultiSelect<record30AForm>
+                  placeholder="Taxable Rate"
+                  name="taxable_at"
+                  required={true}
+                  options={[
+                    "0",
+                    "1",
+                    "2",
+                    "4",
+                    "5",
+                    "6",
+                    "12.5",
+                    "12.75",
+                    "13.5",
+                    "15",
+                    "20",
+                  ].map((val: string, index: number) => ({
+                    value: val,
+                    label: val + "%",
+                  }))}
+                />
               </TableCell>
               <TableCell className="p-2 border text-center">
                 {taxableValue}

@@ -85,6 +85,10 @@ const record31ASchema = object({
     string("Description of goods is required."),
     minLength(1, "Description of goods is required.")
   ),
+  taxable_at: pipe(
+    string("Taxable at is required."),
+    minLength(1, "Taxable at is required.")
+  ),
   quantity: pipe(
     string("Quantity is required."),
     minLength(1, "Quantity is required.")
