@@ -3,14 +3,19 @@ import prisma from "../../../../prisma/database";
 import { customAlphabet } from "nanoid";
 
 interface BodyData {
+  SupplierTIN: string;
   VchNum: string;
   VchDt: string;
-  TINNo: string;
+  CustomerTINNo: string;
+  CustomerName: string;
   Items: {
     StockItem: string;
-    Qty: string;
     BatchName: string;
-    Rate: string;
+    Qty: number;
+    Rate: number;
+    MasterID: number;
+    Conversion: number;
+    Amount: number;
   }[];
 }
 export async function POST(req: NextRequest, res: NextResponse) {
@@ -26,14 +31,26 @@ export async function POST(req: NextRequest, res: NextResponse) {
       for (let data of bodydata) {
         const isexist = await prisma.tin_number_master.findFirst({
           where: {
-            tin_number: data["TINNo"],
+            tin_number: data["CustomerTINNo"],
             deletedAt: null,
             status: "ACTIVE",
           },
         });
 
         if (!isexist) {
-          throw new Error("TIN number not found.");
+          throw new Error(`TIN number not found for ${data["CustomerTINNo"]}.`);
+        }
+
+        const isdvat = await prisma.dvat04.findFirst({
+          where: {
+            tinNumber: data["SupplierTIN"],
+          },
+        });
+
+        if (!isdvat) {
+          throw new Error(
+            `DVAT 04 record not found for ${data["SupplierTIN"]}.`
+          );
         }
 
         for (let items of data["Items"]) {
@@ -42,50 +59,74 @@ export async function POST(req: NextRequest, res: NextResponse) {
             12
           );
 
-          const isdvat = await prisma.dvat04.findFirst({
-            where: {
-              id: 797,
-            },
-          });
+          let commodity;
 
-          if (!isdvat) {
-            throw new Error("DVAT 04 record not found.");
-          }
-          const commodity = await prisma.commodity_master.findFirst({
-            where: {
-              oidc_code: "1584",
-            },
-          });
-          if (!commodity) {
-            throw new Error("Commodity master not found.");
+          if (items["StockItem"].startsWith("DU_")) {
+            commodity = await prisma.commodity_master.findFirst({
+              where: {
+                du_oidc_code: items["MasterID"].toString(),
+                deletedAt: null,
+              },
+            });
+            if (!commodity) {
+              throw new Error(
+                `Commodity master not found for ${items["MasterID"]}.`
+              );
+            }
+          } else if (items["StockItem"].startsWith("DN_")) {
+            commodity = await prisma.commodity_master.findFirst({
+              where: {
+                dn_oidc_code: items["MasterID"].toString(),
+                deletedAt: null,
+              },
+            });
+            if (!commodity) {
+              throw new Error(
+                `Commodity master not found for ${items["MasterID"]}.`
+              );
+            }
+          } else {
+            commodity = await prisma.commodity_master.findFirst({
+              where: {
+                oidc_code: items["MasterID"].toString(),
+                deletedAt: null,
+              },
+            });
+            if (!commodity) {
+              throw new Error(
+                `Commodity master not found for ${items["MasterID"]}.`
+              );
+            }
           }
 
-          const response = await prisma.daily_sale.create({
+          if (commodity === null) {
+            throw new Error(
+              `Commodity master not found for ${items["MasterID"]}.`
+            );
+          }
+
+          const test_amount = items["Rate"] * items["Qty"];
+
+          const response = await prisma.tally_sale.create({
             data: {
-              dvat04Id: 797,
+              dvat04Id: isdvat.id,
               invoice_number: data["VchNum"],
               invoice_date: new Date(Date.parse(data["VchDt"])),
-              commodity_masterId: 5,
+              commodity_masterId: commodity.id,
               seller_tin_numberId: isexist.id,
-              amount_unit: (
-                parseFloat(items["Rate"].toString().split(" ")[0]) /
-                commodity.crate_size
-              ).toFixed(2),
-              quantity: parseInt(items["Qty"]),
+              quantity: items["Qty"] * commodity.crate_size,
               tax_percent: commodity.taxable_at,
-              amount: parseFloat(
-                items["Rate"].toString().split(" ")[0]
-              ).toFixed(2),
-              vatamount: (
-                parseFloat(items["Rate"].toString().split(" ")[0]) /
-                commodity.crate_size
-              ).toFixed(2),
+              amount_unit: (items["Rate"] / commodity.crate_size).toFixed(2),
+              amount: (test_amount * 1.2).toFixed(2),
+              vatamount: (test_amount * 0.2).toFixed(2),
               is_local:
-                data["TINNo"].startsWith("25") || data["TINNo"].startsWith("26")
+                data["CustomerTINNo"].startsWith("25") ||
+                data["CustomerTINNo"].startsWith("26")
                   ? true
                   : false,
               is_dvat_31:
-                data["TINNo"].startsWith("25") || data["TINNo"].startsWith("26")
+                data["CustomerTINNo"].startsWith("25") ||
+                data["CustomerTINNo"].startsWith("26")
                   ? false
                   : true,
               is_accept: false,
@@ -96,7 +137,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
           });
 
           if (!response) {
-            throw new Error("Failed to create daily sale record.");
+            throw new Error("Failed to create tally sale record.");
           }
         }
       }
@@ -106,9 +147,9 @@ export async function POST(req: NextRequest, res: NextResponse) {
       { message: "Request processed successfully", data: result },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json(
-      { error: "Failed to process request" },
+      { error: "Failed to process request. error: " + error.message },
       { status: 500 }
     );
   }
