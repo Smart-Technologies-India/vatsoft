@@ -73,7 +73,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
                 `Commodity master not found for ${items["MasterID"]}.`
               );
             }
-          } else if (items["StockItem"].startsWith("DN_")) {
+          } else if (items["StockItem"].startsWith("SL_")) {
             commodity = await prisma.commodity_master.findFirst({
               where: {
                 dn_oidc_code: items["MasterID"].toString(),
