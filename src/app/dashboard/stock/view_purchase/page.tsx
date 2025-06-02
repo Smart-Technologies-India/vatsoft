@@ -21,6 +21,7 @@ import {
   tin_number_master,
 } from "@prisma/client";
 import {
+  Alert,
   Button,
   Drawer,
   Modal,
@@ -220,6 +221,28 @@ const DocumentWiseDetails = () => {
       </div>
     );
 
+  const sortedDailyPurchase = [...dailyPurchase].sort((a, b) => {
+    // Acceptable if TIN starts with 25/26 and not accepted yet
+    const aAcceptable =
+      (a.seller_tin_number.tin_number.startsWith("25") ||
+        a.seller_tin_number.tin_number.startsWith("26")) &&
+      !a.is_accept;
+    const bAcceptable =
+      (b.seller_tin_number.tin_number.startsWith("25") ||
+        b.seller_tin_number.tin_number.startsWith("26")) &&
+      !b.is_accept;
+    // Sort acceptable to top
+    if (aAcceptable === bAcceptable) return 0;
+    return aAcceptable ? -1 : 1;
+  });
+
+  const hasPendingAcceptable = dailyPurchase.some(
+    (val) =>
+      (val.seller_tin_number.tin_number.startsWith("25") ||
+        val.seller_tin_number.tin_number.startsWith("26")) &&
+      !val.is_accept
+  );
+
   return (
     <>
       <Drawer
@@ -251,6 +274,8 @@ const DocumentWiseDetails = () => {
 
       <div className="p-2 mt-4">
         <div className="bg-white p-2 shadow mt-2">
+          {/* Alert for pending accept */}
+
           <div className="flex gap-2">
             <p className="text-lg font-semibold items-center">Daily Purchase</p>
             <div className="grow"></div>
@@ -339,6 +364,14 @@ const DocumentWiseDetails = () => {
               </p>
             </div>
           </div>
+          {hasPendingAcceptable && (
+            <Alert
+              message="Kindly accept pending purchase invoice."
+              type="warning"
+              className="mt-2"
+              showIcon
+            />
+          )}
 
           {dailyPurchase.length > 0 ? (
             <>
@@ -389,7 +422,7 @@ const DocumentWiseDetails = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {dailyPurchase.map(
+                  {sortedDailyPurchase.map(
                     (
                       val: daily_purchase & {
                         commodity_master: commodity_master;
@@ -463,7 +496,7 @@ const DocumentWiseDetails = () => {
                                     toast.error(response.message);
                                   }
                                 }}
-                                className="text-sm bg-white border hover:border-rose-500 hover:text-rose-500 text-[#172e57] py-1 px-4"
+                                className="text-sm bg-white border border-rose-500 text-rose-500 py-1 px-4"
                               >
                                 Accept
                               </button>

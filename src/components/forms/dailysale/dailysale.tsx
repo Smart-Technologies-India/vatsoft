@@ -158,6 +158,14 @@ const DailySale = (props: DailySaleProviderProps) => {
   const recipient_vat_no: string = watch("recipient_vat_no") ?? "";
   useEffect(() => {
     const init = async () => {
+      if (
+        recipient_vat_no &&
+        (recipient_vat_no.startsWith("25") || recipient_vat_no.startsWith("26"))
+      ) {
+        setIsAgainstCForm(false);
+      } else {
+        setIsAgainstCForm(true);
+      }
       if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
       if (recipient_vat_no && (recipient_vat_no ?? "").length < 2) {
         if (recipient_vat_no.length >= 11) {
@@ -455,7 +463,6 @@ const DailySale = (props: DailySaleProviderProps) => {
     } else {
       return toast.error(stock_response.message);
     }
-
     const currentValues = getValues();
 
     // reset({
@@ -468,6 +475,9 @@ const DailySale = (props: DailySaleProviderProps) => {
     // setTaxableValue("0");
 
     reset({
+      invoice_number: currentValues.invoice_number,
+      invoice_date: currentValues.invoice_date,
+      recipient_vat_no: currentValues.recipient_vat_no,
       amount_unit: "",
       description_of_goods: undefined,
       quantity: "",
@@ -477,7 +487,6 @@ const DailySale = (props: DailySaleProviderProps) => {
 
     setVatAmount("0");
     setTaxableValue("0");
-    setIsAgainstCForm(false);
     setLiquore(false);
     setLiquoreOIDCAmount(0);
     setLiquoreDealerAmount(0);

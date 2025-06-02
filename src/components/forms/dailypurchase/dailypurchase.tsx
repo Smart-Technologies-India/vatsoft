@@ -155,6 +155,14 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     const init = async () => {
       if (
         recipient_vat_no &&
+        (recipient_vat_no.startsWith("25") || recipient_vat_no.startsWith("26"))
+      ) {
+        setIsAgainstCForm(false);
+      } else {
+        setIsAgainstCForm(true);
+      }
+      if (
+        recipient_vat_no &&
         (recipient_vat_no ?? "").length > 2 &&
         (recipient_vat_no.startsWith("25") == true ||
           recipient_vat_no.startsWith("26") == true)
@@ -387,6 +395,9 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     // setTaxableValue("0");
 
     reset({
+      invoice_number: currentValues.invoice_number,
+      invoice_date: currentValues.invoice_date,
+      recipient_vat_no: currentValues.recipient_vat_no,
       amount_unit: "",
       description_of_goods: undefined,
       quantity: "",
@@ -395,7 +406,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     // clear form fields
     setVatAmount("0");
     setTaxableValue("0");
-    setIsAgainstCForm(false);
     setTinBox(false);
     setCommodityMaster([]);
     setDvatdata(null);
