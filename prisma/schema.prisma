@@ -1296,6 +1296,7 @@ model daily_sale {
   is_accept           Boolean           @default(false)
   status              Status            @default(ACTIVE)
   urn_number          String?
+  batch_name          String?
   is_against_cform    Boolean           @default(false)
   createdAt           DateTime          @default(now())
   createdBy           user              @relation("daily_sale_createdBy", fields: [createdById], references: [id])
@@ -1330,6 +1331,7 @@ model tally_sale {
   status              Status            @default(ACTIVE)
   urn_number          String?
   is_against_cform    Boolean           @default(false)
+  batch_name          String?
   createdAt           DateTime          @default(now())
   createdBy           user              @relation("tally_sale_createdBy", fields: [createdById], references: [id])
   createdById         Int
@@ -1355,6 +1357,7 @@ model daily_purchase {
   is_accept           Boolean           @default(false)
   status              Status            @default(ACTIVE)
   urn_number          String?
+  batch_name          String?
   is_against_cform    Boolean           @default(false)
   createdAt           DateTime          @default(now())
   createdBy           user              @relation("daily_purchase_createdBy", fields: [createdById], references: [id])
@@ -1479,6 +1482,7 @@ model edit_sale {
   status              Status            @default(ACTIVE)
   urn_number          String?
   is_against_cform    Boolean           @default(false)
+  batch_name          String?
   createdAt           DateTime          @default(now())
   createdBy           user              @relation("edit_sale_createdBy", fields: [createdById], references: [id])
   createdById         Int
@@ -1514,6 +1518,7 @@ model edit_purchase {
   status              Status            @default(ACTIVE)
   urn_number          String?
   is_against_cform    Boolean           @default(false)
+  batch_name          String?
   createdAt           DateTime          @default(now())
   createdBy           user              @relation("edit_purchase_createdBy", fields: [createdById], references: [id])
   createdById         Int

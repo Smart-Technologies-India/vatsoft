@@ -40,7 +40,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
         if (!isexist) {
           throw new Error(
-            `TIN number not found for ${data["CustomerTINNo"]} for ${data["VchNum"]}.`
+            `TIN number not found for ${data["CustomerTINNo"]} for voucher no ${data["VchNum"]}.`
           );
         }
 
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
         if (!isdvat) {
           throw new Error(
-            `DVAT 04 record not found for ${data["SupplierTIN"]} for ${data["VchNum"]}.`
+            `DVAT 04 record not found for ${data["SupplierTIN"]} for voucher no ${data["VchNum"]}.`
           );
         }
 
@@ -71,10 +71,9 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
           if (!commodity) {
             throw new Error(
-              `Commodity master not found for ${items["MasterID"]} for ${data["VchNum"]}. `
+              `Commodity master not found for ${items["MasterID"]} for voucher no ${data["VchNum"]}. `
             );
           }
-
           // let commodity;
 
           // if (items["StockItem"].startsWith("DU_")) {
@@ -121,6 +120,25 @@ export async function POST(req: NextRequest, res: NextResponse) {
           //   );
           // }
 
+          // Check if entry already exists
+          const existingEntry = await prisma.tally_sale.findFirst({
+            where: {
+              seller_tin_number: {
+                tin_number: data["CustomerTINNo"],
+              },
+              invoice_number: data["VchNum"],
+              commodity_masterId: commodity.id,
+              batch_name: items["BatchName"],
+              quantity: items["Qty"] * commodity.crate_size,
+            },
+          });
+
+          if (existingEntry) {
+            throw new Error(
+              `Entry already exists for ${data["CustomerTINNo"]} with invoice number ${data["VchNum"]} and batch ${items["BatchName"]}.`
+            );
+          }
+
           const test_amount = items["Rate"] * items["Qty"];
 
           const response = await prisma.tally_sale.create({
@@ -135,6 +153,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
               amount_unit: (items["Rate"] / commodity.crate_size).toFixed(2),
               amount: (test_amount * 1.2).toFixed(2),
               vatamount: (test_amount * 0.2).toFixed(2),
+              batch_name: items["BatchName"],
               is_local:
                 data["CustomerTINNo"].startsWith("25") ||
                 data["CustomerTINNo"].startsWith("26")
@@ -160,13 +179,16 @@ export async function POST(req: NextRequest, res: NextResponse) {
     });
 
     return NextResponse.json(
-      { message: "Request processed successfully", data: result },
+      { status: true, message: "Request processed successfully", data: result },
       { status: 200 }
     );
   } catch (error: any) {
     return NextResponse.json(
-      { error: "Failed to process request. error: " + error.message },
-      { status: 500 }
+      {
+        status: false,
+        error: "Failed to process request. error: " + error.message,
+      },
+      { status: 200 }
     );
   }
 }
