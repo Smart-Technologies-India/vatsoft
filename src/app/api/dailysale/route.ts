@@ -18,6 +18,7 @@ interface BodyData {
     Amount: number;
   }[];
 }
+
 export async function POST(req: NextRequest, res: NextResponse) {
   try {
     // get the request body
@@ -38,7 +39,9 @@ export async function POST(req: NextRequest, res: NextResponse) {
         });
 
         if (!isexist) {
-          throw new Error(`TIN number not found for ${data["CustomerTINNo"]}.`);
+          throw new Error(
+            `TIN number not found for ${data["CustomerTINNo"]} for ${data["VchNum"]}.`
+          );
         }
 
         const isdvat = await prisma.dvat04.findFirst({
@@ -49,7 +52,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
         if (!isdvat) {
           throw new Error(
-            `DVAT 04 record not found for ${data["SupplierTIN"]}.`
+            `DVAT 04 record not found for ${data["SupplierTIN"]} for ${data["VchNum"]}.`
           );
         }
 
@@ -59,51 +62,64 @@ export async function POST(req: NextRequest, res: NextResponse) {
             12
           );
 
-          let commodity;
+          const commodity = await prisma.commodity_master.findFirst({
+            where: {
+              id: parseInt(items["MasterID"].toString()),
+              deletedAt: null,
+            },
+          });
 
-          if (items["StockItem"].startsWith("DU_")) {
-            commodity = await prisma.commodity_master.findFirst({
-              where: {
-                du_oidc_code: items["MasterID"].toString(),
-                deletedAt: null,
-              },
-            });
-            if (!commodity) {
-              throw new Error(
-                `Commodity master not found for ${items["MasterID"]}.`
-              );
-            }
-          } else if (items["StockItem"].startsWith("SL_")) {
-            commodity = await prisma.commodity_master.findFirst({
-              where: {
-                dn_oidc_code: items["MasterID"].toString(),
-                deletedAt: null,
-              },
-            });
-            if (!commodity) {
-              throw new Error(
-                `Commodity master not found for ${items["MasterID"]}.`
-              );
-            }
-          } else {
-            commodity = await prisma.commodity_master.findFirst({
-              where: {
-                oidc_code: items["MasterID"].toString(),
-                deletedAt: null,
-              },
-            });
-            if (!commodity) {
-              throw new Error(
-                `Commodity master not found for ${items["MasterID"]}.`
-              );
-            }
-          }
-
-          if (commodity === null) {
+          if (!commodity) {
             throw new Error(
-              `Commodity master not found for ${items["MasterID"]}.`
+              `Commodity master not found for ${items["MasterID"]} for ${data["VchNum"]}. `
             );
           }
+
+          // let commodity;
+
+          // if (items["StockItem"].startsWith("DU_")) {
+          //   commodity = await prisma.commodity_master.findFirst({
+          //     where: {
+          //       du_oidc_code: items["MasterID"].toString(),
+          //       deletedAt: null,
+          //     },
+          //   });
+          //   if (!commodity) {
+          //     throw new Error(
+          //       `Commodity master not found for ${items["MasterID"]}.`
+          //     );
+          //   }
+          // } else if (items["StockItem"].startsWith("SL_")) {
+          //   commodity = await prisma.commodity_master.findFirst({
+          //     where: {
+          //       dn_oidc_code: items["MasterID"].toString(),
+          //       deletedAt: null,
+          //     },
+          //   });
+          //   if (!commodity) {
+          //     throw new Error(
+          //       `Commodity master not found for ${items["MasterID"]}.`
+          //     );
+          //   }
+          // } else {
+          //   commodity = await prisma.commodity_master.findFirst({
+          //     where: {
+          //       oidc_code: items["MasterID"].toString(),
+          //       deletedAt: null,
+          //     },
+          //   });
+          //   if (!commodity) {
+          //     throw new Error(
+          //       `Commodity master not found for ${items["MasterID"]}.`
+          //     );
+          //   }
+          // }
+
+          // if (commodity === null) {
+          //   throw new Error(
+          //     `Commodity master not found for ${items["MasterID"]}.`
+          //   );
+          // }
 
           const test_amount = items["Rate"] * items["Qty"];
 
