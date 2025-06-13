@@ -503,7 +503,8 @@ model user {
   save_stock_updatedBy save_stock[] @relation("save_stock_updatedBy")
   save_stock_deletedBy save_stock[] @relation("save_stock_deletedBy")
 
-  tally_sale_createdBy tally_sale[] @relation("tally_sale_createdBy")
+  tally_sale_createdBy     tally_sale[]     @relation("tally_sale_createdBy")
+  tally_purchase_createdBy tally_purchase[] @relation("tally_purchase_createdBy")
 
   registration          registration[]
   composition           composition[]
@@ -689,6 +690,7 @@ model dvat04 {
   first_stock           first_stock[]
   save_stock            save_stock[]
   tally_sale            tally_sale[]
+  tally_purchase        tally_purchase[]
 }
 
 model commodity {
@@ -861,6 +863,7 @@ model tin_number_master {
   edit_sale      edit_sale[]
   edit_purchase  edit_purchase[]
   tally_sale     tally_sale[]
+  tally_purchase tally_purchase[]
 }
 
 model returns_01 {
@@ -1180,6 +1183,7 @@ model commodity_master {
   first_stock                  first_stock[]
   save_stock                   save_stock[]
   tally_sale                   tally_sale[]
+  tally_purchase               tally_purchase[]
 }
 
 model user_commodity_master {
@@ -1590,4 +1594,31 @@ model cform_returns {
   cformId         Int
   returns_entry   returns_entry @relation(fields: [returns_entryId], references: [id])
   returns_entryId Int
+}
+
+model tally_purchase {
+  id                  Int               @id @default(autoincrement())
+  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
+  dvat04Id            Int
+  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
+  seller_tin_numberId Int
+  invoice_number      String
+  invoice_date        DateTime
+  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
+  commodity_masterId  Int
+  quantity            Int
+  tax_percent         String
+  amount_unit         String
+  amount              String
+  vatamount           String
+  is_local            Boolean           @default(false)
+  is_dvat_30a         Boolean           @default(false)
+  is_accept           Boolean           @default(false)
+  status              Status            @default(ACTIVE)
+  urn_number          String?
+  batch_name          String?
+  is_against_cform    Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  createdBy           user              @relation("tally_purchase_createdBy", fields: [createdById], references: [id])
+  createdById         Int
 }
