@@ -158,8 +158,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         (recipient_vat_no.startsWith("25") || recipient_vat_no.startsWith("26"))
       ) {
         setIsAgainstCForm(false);
-      } else {
-        setIsAgainstCForm(true);
       }
       if (
         recipient_vat_no &&
@@ -300,15 +298,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     }
 
     props.setAddBox(false);
-
-    // reset({
-    //   ...currentValues,
-    //   quantity: "",
-    //   amount_unit: "",
-    //   description_of_goods: undefined,
-    // });
-    // setVatAmount("0");
-    // setTaxableValue("0");
 
     // clear form fields
     reset({

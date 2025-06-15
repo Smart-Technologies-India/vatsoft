@@ -186,7 +186,6 @@ const Dvat16ReturnPreview = () => {
           userid: userid,
         });
 
-        console.log("lastmonthdata", lastmonthdata);
 
         if (lastmonthdata.status && lastmonthdata.data) {
           setLastMonthDue(lastmonthdata.data.returns_01.pending_payment ?? "0");

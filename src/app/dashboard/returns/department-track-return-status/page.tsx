@@ -679,6 +679,9 @@ const TrackAppliation = () => {
                           <TableCell className="border text-center p-2">
                             {val.dvat04.tradename}
                           </TableCell>
+                          <TableCell className="border text-center p-2">
+                            {val.dvat04.name}
+                          </TableCell>
                         </TableRow>
                       );
                     }

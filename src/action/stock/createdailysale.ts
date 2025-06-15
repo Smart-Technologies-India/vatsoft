@@ -80,7 +80,6 @@ const CreateDailySale = async (
         throw new Error("Seller Dvat TIN number is not set.");
       }
 
-
       const daily_sale_response = await prisma.daily_sale.create({
         data: {
           seller_tin_numberId: payload.seller_tin_id,
@@ -176,9 +175,14 @@ const CreateDailySale = async (
               amount: payload.amount,
               amount_unit: payload.amount_unit,
               vatamount: payload.vatamount,
-              is_dvat_30a: false,
+              is_dvat_30a: !(
+                seller_dvat.tinNumber.startsWith("25") ||
+                seller_dvat.tinNumber.startsWith("26")
+              ),
               createdById: payload.createdById,
-              is_local: true,
+              is_local:
+                seller_dvat.tinNumber.startsWith("25") ||
+                seller_dvat.tinNumber.startsWith("26"),
               urn_number: ref_no,
             },
           });

@@ -153,6 +153,12 @@ const Home = () => {
             >
               Registration
             </Link>
+            <Link
+              href="/verify"
+              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+            >
+              Verify
+            </Link>
           </div>
           <div className="grow"></div>
           <Button
@@ -202,6 +208,12 @@ const Home = () => {
             className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
           >
             Registration
+          </Link>
+          <Link
+            href="/verify"
+            className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+          >
+            Verify
           </Link>
         </div>
 

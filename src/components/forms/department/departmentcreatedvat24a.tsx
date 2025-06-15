@@ -24,10 +24,10 @@ import { capitalcase, decryptURLData, onFormError } from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { dvat04, returns_01, user } from "@prisma/client";
 import SearchTinNumber from "@/action/dvat/searchtin";
-import { CreateDvat24Form, CreateDvat24Schema } from "@/schema/dvat24";
 import CreateDvat24A from "@/action/notice_order/createdvat24a";
 import GetReturn01 from "@/action/return/getreturn";
 import dayjs from "dayjs";
+import { CreateDvat24AForm, CreateDvat24ASchema } from "@/schema/dvat24a";
 
 type DepartmentCreateDvat24AProviderProps = {
   userid: number;
@@ -35,8 +35,8 @@ type DepartmentCreateDvat24AProviderProps = {
 export const DepartmentCreateDvat24AProvider = (
   props: DepartmentCreateDvat24AProviderProps
 ) => {
-  const methods = useForm<CreateDvat24Form>({
-    resolver: valibotResolver(CreateDvat24Schema),
+  const methods = useForm<CreateDvat24AForm>({
+    resolver: valibotResolver(CreateDvat24ASchema),
   });
 
   return (
@@ -92,13 +92,13 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
-  } = useFormContext<CreateDvat24Form>();
+  } = useFormContext<CreateDvat24AForm>();
 
   const [return01Data, setReturn01Data] = useState<
     (returns_01 & { dvat04: dvat04 }) | null
   >(null);
 
-  const onSubmit = async (data: CreateDvat24Form) => {
+  const onSubmit = async (data: CreateDvat24AForm) => {
     if (!return01Data) return toast.error("Return 01 not found");
 
     const dvat24_response = await CreateDvat24A({
@@ -224,13 +224,13 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
             </div>
             <div>
               <p className="text-sm">Address</p>
-              <p className="text-sm  font-medium">{user?.address}</p>
+              <p className="text-sm  font-medium">{dvatdata?.address}</p>
             </div>
           </div>
           <form onSubmit={handleSubmit(onSubmit, onFormError)}>
             <div className="p-2 bg-gray-50 mt-2 grid grid-cols-4 gap-4">
               <div>
-                <MultiSelect<CreateDvat24Form>
+                <MultiSelect<CreateDvat24AForm>
                   placeholder="Select Reason"
                   name="dvat24_reason"
                   required={true}
@@ -239,12 +239,12 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
                 />
               </div>
               <div>
-                <DateSelect<CreateDvat24Form>
+                <DateSelect<CreateDvat24AForm>
                   placeholder="Select Date"
                   name="due_date"
                   required={true}
                   title="Due Date"
-                  mindate={dayjs(new Date())}
+                  mindate={dayjs()}
                   format="DD/MM/YYYY"
                 />
               </div>
@@ -266,7 +266,7 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
                   <TableRow>
                     <TableCell className="text-left p-2 border">Tax</TableCell>
                     <TableCell className="text-center p-2 border ">
-                      <TaxtInput<CreateDvat24Form>
+                      <TaxtInput<CreateDvat24AForm>
                         name="vat"
                         required={true}
                         numdes={true}
@@ -278,7 +278,7 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
                       Penalty
                     </TableCell>
                     <TableCell className="text-center p-2 border">
-                      <TaxtInput<CreateDvat24Form>
+                      <TaxtInput<CreateDvat24AForm>
                         name="interest"
                         required={true}
                         numdes={true}
@@ -316,7 +316,7 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
                   Notice of assessment of penalty under section 33.
                 </p>
 
-                <TaxtAreaInput<CreateDvat24Form>
+                <TaxtAreaInput<CreateDvat24AForm>
                   name="remark"
                   title="Remark"
                   required={false}

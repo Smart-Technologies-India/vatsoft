@@ -90,7 +90,7 @@ const Composition = (props: CompositionProviderProps) => {
             name="officer_date"
             required={true}
             format={"DD/MM/YYYY"}
-            title="Officer Date"
+            title="Due Date"
           />
         </div>
         <div className="flex-1">

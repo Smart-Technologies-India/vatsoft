@@ -27,6 +27,7 @@ import GetDvat04 from "@/action/register/getdvat04";
 import GetPendingReturn from "@/action/dvat/getpendingreturn";
 import GetPendingChallan from "@/action/challan/getPendingChallan";
 import GetReturnMonth from "@/action/dvat/getreturnmonth";
+import getReturnByDate from "@/action/return/getreturnentrybydate";
 
 enum Status {
   INACTIVE,
@@ -45,6 +46,8 @@ interface ItemsType {
   userid?: string;
   year?: string;
   returnid?: number;
+  month?: string;
+  dvatid?: number;
 }
 
 interface yearsDetails {
@@ -139,6 +142,8 @@ const ShopView = () => {
             userid: getdata.dvat.createdById.toString(),
             year: year.toString(),
             returnid: getdata.id,
+            month: monthNames[adjustedMonth],
+            dvatid: getdata.dvat.id,
           });
         } else {
           ret_filing.push({
@@ -190,7 +195,6 @@ const ShopView = () => {
         dvatid: dvat04id,
       });
       if (returnmonth_response.status && returnmonth_response.data) {
-        // setReturnMonth(returnmonth_response.data);
         setRentMonthDetails(returnmonth_response.data);
       }
       setIsLoading(false);
@@ -483,25 +487,39 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
                 </Button>
                 <Button
                   type="primary"
-                  onClick={() =>
-                    router.push(
-                      `/dashboard/returns/department-dvat24?returnid=${encryptURLData(
-                        props.returnid ? props.returnid.toString() : ""
-                      )}&tin=${encryptURLData(props.tinnumber)}`
-                    )
-                  }
+                  onClick={async () => {
+                    const response = await getReturnByDate({
+                      month: props.name,
+                      year: props.year!,
+                      dvatid: props.dvat04id,
+                    });
+                    if (response.status && response.data) {
+                      router.push(
+                        `/dashboard/returns/department-dvat24?returnid=${encryptURLData(
+                          response.data.id.toString()
+                        )}&tin=${encryptURLData(props.tinnumber)}`
+                      );
+                    }
+                  }}
                 >
                   DVAT24
                 </Button>
                 <Button
                   type="primary"
-                  onClick={() =>
-                    router.push(
-                      `/dashboard/returns/department-dvat24a?returnid=${encryptURLData(
-                        props.returnid ? props.returnid.toString() : ""
-                      )}&tin=${encryptURLData(props.tinnumber)}`
-                    )
-                  }
+                  onClick={async () => {
+                    const response = await getReturnByDate({
+                      month: props.name,
+                      year: props.year!,
+                      dvatid: props.dvat04id,
+                    });
+                    if (response.status && response.data) {
+                      router.push(
+                        `/dashboard/returns/department-dvat24a?returnid=${encryptURLData(
+                          response.data.id.toString()
+                        )}&tin=${encryptURLData(props.tinnumber)}`
+                      );
+                    }
+                  }}
                 >
                   DVAT24A
                 </Button>

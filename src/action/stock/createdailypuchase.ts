@@ -18,6 +18,7 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { stock } from "@prisma/client";
 import prisma from "../../../prisma/database";
+import { customAlphabet } from "nanoid";
 
 const CreateDailyPurchase = async (
   payload: CreateDailyPurchasePayload
@@ -25,6 +26,8 @@ const CreateDailyPurchase = async (
   const functionname: string = CreateDailyPurchase.name;
 
   try {
+    const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstuvwyz", 12);
+    const ref_no: string = nanoid();
     const result = await prisma.$transaction(async (prisma) => {
       const isdata = await prisma.daily_purchase.findFirst({
         where: {
@@ -47,6 +50,16 @@ const CreateDailyPurchase = async (
         }
       }
 
+      const seller_tin_number = await prisma.tin_number_master.findFirst({
+        where: {
+          id: payload.seller_tin_id,
+        },
+      });
+
+      if (!seller_tin_number) {
+        throw new Error("Seller TIN number not found.");
+      }
+
       const commodity_master = await prisma.daily_purchase.create({
         data: {
           dvat04Id: payload.dvatid,
@@ -61,8 +74,11 @@ const CreateDailyPurchase = async (
           vatamount: payload.vatamount,
           is_dvat_30a: false,
           createdById: payload.createdById,
-          is_local: false,
+          is_local:
+            seller_tin_number.tin_number.startsWith("25") ||
+            seller_tin_number.tin_number.startsWith("26"),
           is_against_cform: payload.against_cfrom,
+          urn_number: ref_no,
         },
         include: {
           seller_tin_number: true,

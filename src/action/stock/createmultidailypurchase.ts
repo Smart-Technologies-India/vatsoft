@@ -4,9 +4,9 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { stock } from "@prisma/client";
 import prisma from "../../../prisma/database";
-import CreateDailySale from "./createdailysale";
+import CreateDailyPurchase from "./createdailypuchase";
 
-interface CreateMultiDailySalePayload {
+interface CreateMultiDailyPurchasePayload {
   entries: Array<{
     dvatid: number;
     commodityid: number;
@@ -23,17 +23,17 @@ interface CreateMultiDailySalePayload {
   }>;
 }
 
-const CreateMultiDailySale = async (
-  payload: CreateMultiDailySalePayload
+const CreateMultiDailyPurchase = async (
+  payload: CreateMultiDailyPurchasePayload
 ): Promise<ApiResponseType<stock[] | null>> => {
-  const functionname: string = CreateMultiDailySale.name;
+  const functionname: string = CreateMultiDailyPurchase.name;
 
   try {
     const results = await prisma.$transaction(async (prisma) => {
       const createdEntries = [];
 
       for (const entry of payload.entries) {
-        const isexist = await prisma.daily_sale.findFirst({
+        const isexist = await prisma.daily_purchase.findFirst({
           where: {
             deletedAt: null,
             deletedBy: null,
@@ -50,7 +50,7 @@ const CreateMultiDailySale = async (
             `Entry with invoice number ${entry.invoice_number} already exists.`
           );
         }
-        const response = await CreateDailySale(entry);
+        const response = await CreateDailyPurchase(entry);
 
         if (!response.status || !response.data) {
           throw new Error(
@@ -76,4 +76,4 @@ const CreateMultiDailySale = async (
   }
 };
 
-export default CreateMultiDailySale;
+export default CreateMultiDailyPurchase;

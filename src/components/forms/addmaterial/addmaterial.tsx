@@ -24,7 +24,7 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import CreateMaterial from "@/action/stock/creatematerial";
-// import CreateDailyPurchase from "@/action/stock/createdailypuchase";
+
 
 type AddMaterialProviderProps = {
   userid: number;

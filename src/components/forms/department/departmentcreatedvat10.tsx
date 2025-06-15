@@ -347,7 +347,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
             </div>
             <div>
               <p className="text-sm">Address</p>
-              <p className="text-sm  font-medium">{user?.address}</p>
+              <p className="text-sm  font-medium">{dvatdata?.address}</p>
             </div>
           </div>
           <form onSubmit={handleSubmit(onSubmit, onFormError)}>

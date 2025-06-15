@@ -220,6 +220,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
       searchParams.get("tin") ?? "",
       router
     );
+
     const init = async () => {
       setLoading(true);
       const return01_response = await GetReturn01({
@@ -309,7 +310,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
             </div>
             <div>
               <p className="text-sm">Address</p>
-              <p className="text-sm  font-medium">{user?.address}</p>
+              <p className="text-sm  font-medium">{dvatdata?.address}</p>
             </div>
           </div>
           <form onSubmit={handleSubmit(onSubmit, onFormError)}>
@@ -329,7 +330,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
                   name="due_date"
                   required={true}
                   title="Due Date"
-                  mindate={dayjs(new Date())}
+                  mindate={dayjs()}
                   format="DD/MM/YYYY"
                 />
               </div>

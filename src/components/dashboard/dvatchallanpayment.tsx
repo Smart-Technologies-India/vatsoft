@@ -39,8 +39,8 @@ import {
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { useForm } from "react-hook-form";
 import {
-  SubmitPaymentForm,
-  SubmitPaymentSchema,
+  SubmitPaymentFormCopy,
+  SubmitPaymentSchemaCopy,
 } from "@/schema/subtmitpayment";
 import AddPayment from "@/action/return/addpayment";
 import CheckLastPayment from "@/action/return/checklastpayment";
@@ -48,6 +48,8 @@ import GetReturn01 from "@/action/return/getreturn";
 import getReturnEntry from "@/action/return/getreturnentry";
 import GetUser from "@/action/user/getuser";
 import { CheckboxGroupProps } from "antd/es/checkbox";
+import SendOtp from "@/action/user/sendotp";
+import VerifyOtp from "@/action/user/verifyotp";
 
 interface PercentageOutput {
   increase: string;
@@ -88,6 +90,14 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         });
         if (user_response.status && user_response.data) {
           setUser(user_response.data);
+
+          const otp_response = await SendOtp({
+            mobile: user_response.data.mobileOne,
+          });
+
+          if (otp_response.status) {
+            toast.success(otp_response.message);
+          }
         }
 
         const entry_response = await getReturnEntry({
@@ -160,8 +170,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<SubmitPaymentForm>({
-    resolver: valibotResolver(SubmitPaymentSchema),
+  } = useForm<SubmitPaymentFormCopy>({
+    resolver: valibotResolver(SubmitPaymentSchemaCopy),
   });
   const get_rr_number = (): string => {
     const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
@@ -173,8 +183,19 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     return `${rr_no}${month}${day}${return_id}`;
   };
 
-  const onSubmit = async (data: SubmitPaymentForm) => {
+  const onSubmit = async (data: SubmitPaymentFormCopy) => {
     if (return01 == null) return toast.error("No return exist");
+
+    const verify_otp_response = await VerifyOtp({
+      mobile: user?.mobileOne ?? "",
+      otp: data.otp,
+    });
+
+    if (!verify_otp_response.status) {
+      toast.error(verify_otp_response.message);
+      reset();
+      return;
+    }
 
     const lastPayment = await CheckLastPayment({
       id: return01.id ?? 0,
@@ -897,6 +918,23 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                         </p>
                       )}
                     </div>
+                    <div className="mt-2">
+                      <p>OTP</p>
+                      <input
+                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
+                          errors.track_id
+                            ? "border-red-500"
+                            : "hover:border-blue-500"
+                        }`}
+                        placeholder="OTP"
+                        {...register("otp")}
+                      />
+                      {errors.otp && (
+                        <p className="text-xs text-red-500">
+                          {errors.otp.message?.toString()}
+                        </p>
+                      )}
+                    </div>
                     <div className="flex  gap-2 mt-2">
                       <div className="grow"></div>
 
@@ -968,6 +1006,23 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                       {errors.track_id && (
                         <p className="text-xs text-red-500">
                           {errors.track_id.message?.toString()}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-2">
+                      <p>OTP</p>
+                      <input
+                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
+                          errors.track_id
+                            ? "border-red-500"
+                            : "hover:border-blue-500"
+                        }`}
+                        placeholder="OTP"
+                        {...register("otp")}
+                      />
+                      {errors.otp && (
+                        <p className="text-xs text-red-500">
+                          {errors.otp.message?.toString()}
                         </p>
                       )}
                     </div>

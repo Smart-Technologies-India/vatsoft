@@ -163,8 +163,6 @@ const DailySale = (props: DailySaleProviderProps) => {
         (recipient_vat_no.startsWith("25") || recipient_vat_no.startsWith("26"))
       ) {
         setIsAgainstCForm(false);
-      } else {
-        setIsAgainstCForm(true);
       }
       if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
       if (recipient_vat_no && (recipient_vat_no ?? "").length < 2) {

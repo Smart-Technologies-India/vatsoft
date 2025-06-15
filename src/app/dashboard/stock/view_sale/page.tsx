@@ -21,6 +21,7 @@ import {
   tin_number_master,
 } from "@prisma/client";
 import {
+  Alert,
   Button,
   Drawer,
   Modal,
@@ -51,6 +52,7 @@ const DocumentWiseDetails = () => {
     oidc_code: string;
     quantity: string;
     error: boolean;
+    errorname: string | null;
     mrp: string | null;
     crate_size: number | null;
     product_name: string | null;
@@ -61,15 +63,16 @@ const DocumentWiseDetails = () => {
     value: React.ChangeEvent<HTMLInputElement>,
     setFun: (value: SetStateAction<File | null>) => void
   ) => {
-    if (value!.target.files?.length == 0) return;
+    if (value!.target.files?.length == 0) {
+      value.target.value = ""; // Reset input so same file can be selected again
+      return;
+    }
 
     if (
       value!.target.files![0].type.endsWith("/csv") ||
       value!.target.files![0].type.endsWith("/vnd.ms-excel")
     ) {
-      // convert image to grayscale
       const file = value!.target.files![0];
-
       const reader = new FileReader();
       reader.onload = () => {
         const text = reader.result as string;
@@ -79,12 +82,28 @@ const DocumentWiseDetails = () => {
             let groupedData: { [key: string]: number } = {};
 
             results.data.forEach((value: any) => {
-              const key = `${value["invoice_no"]}_${value["oidc_code"]}`;
+              const key = `${value["invoice_no"]}_${value["oidc_code"]}_${value["quantity"]}`;
               groupedData[key] = (groupedData[key] || 0) + 1;
             });
 
+            // Group by invoice_no for TIN consistency check
+            const invoiceTinMap: { [invoiceNo: string]: Set<string> } = {};
+            results.data.forEach((row: any) => {
+              const inv = row["invoice_no"];
+              const tin = row["tin"];
+              if (!invoiceTinMap[inv]) invoiceTinMap[inv] = new Set();
+              if (tin) invoiceTinMap[inv].add(tin);
+            });
+
+            // Find invoice_no with more than one unique TIN
+            const invoiceWithMultipleTIN = new Set(
+              Object.entries(invoiceTinMap)
+                .filter(([_, tins]) => tins.size > 1)
+                .map(([inv]) => inv)
+            );
+
             let recatoredata = results.data.map((value: any) => {
-              const key = `${value["invoice_no"]}_${value["oidc_code"]}`;
+              const key = `${value["invoice_no"]}_${value["oidc_code"]}_${value["quantity"]}`;
               const isDuplicate = groupedData[key] > 1;
 
               const matchedCommodity = commodityMaster.find(
@@ -115,11 +134,15 @@ const DocumentWiseDetails = () => {
                   oidc_code: "",
                   quantity: "",
                   error: true,
+                  errorname: "All fields are empty",
                   mrp: null,
                   crate_size: null,
                   product_name: null,
                 };
               }
+
+              // Mark error if invoice_no has multiple TINs
+              const tinError = invoiceWithMultipleTIN.has(value["invoice_no"]);
 
               const mydata: CsvData = {
                 tin: value["tin"],
@@ -127,7 +150,14 @@ const DocumentWiseDetails = () => {
                 invoice_no: value["invoice_no"],
                 oidc_code: value["oidc_code"],
                 quantity: value["quantity"],
-                error: !matchedCommodity || isDuplicate,
+                error: !matchedCommodity || isDuplicate || tinError,
+                errorname: !matchedCommodity
+                  ? "OIDC code not found in commodity master"
+                  : isDuplicate
+                  ? "Duplicate entry"
+                  : tinError
+                  ? "Multiple TINs for same invoice no."
+                  : null,
                 mrp: matchedCommodity ? matchedCommodity.mrp : null,
                 crate_size: matchedCommodity
                   ? matchedCommodity.crate_size
@@ -143,20 +173,24 @@ const DocumentWiseDetails = () => {
 
             setIsBulkModalOpen(true);
             setIsLoading(false);
+            value.target.value = ""; // Reset input after successful read
           },
           error: (error: any) => {
             toast.error("Error parsing CSV file");
             setIsLoading(false);
+            value.target.value = ""; // Reset input on error
           },
         });
       };
       reader.onerror = (error: any) => {
         toast.error("Error reading CSV file");
         setIsLoading(false);
+        value.target.value = ""; // Reset input on error
       };
       reader.readAsText(file);
     } else {
       toast.error("Please select an image file.", { theme: "light" });
+      value.target.value = ""; // Reset input on invalid file
     }
   };
 
@@ -357,6 +391,14 @@ const DocumentWiseDetails = () => {
       return toast.error("No data to upload.");
     }
 
+    // If any row has error, prevent upload and show error
+    if (tabledata.some((row) => row.error)) {
+      toast.error(
+        "Please fix all errors in the uploaded data before proceeding."
+      );
+      return;
+    }
+
     const entries = tabledata
       .filter((row) => !row.error) // Only process valid rows
       .map((row) => ({
@@ -397,7 +439,7 @@ const DocumentWiseDetails = () => {
           (commodity) => commodity.oidc_code === row.oidc_code
         )?.sale_price!,
         createdById: userid,
-        against_cfrom: false,
+        against_cfrom: true,
       }));
 
     const response = await CreateMultiDailySale({ entries });
@@ -427,6 +469,8 @@ const DocumentWiseDetails = () => {
         width={1000}
         onCancel={() => {
           setIsBulkModalOpen(false);
+          setCsv(null);
+          setTableData([]);
         }}
       >
         <Table className="border mt-2">
@@ -490,6 +534,15 @@ const DocumentWiseDetails = () => {
               ))}
           </TableBody>
         </Table>
+        {/* if errorname exist show error name */}
+        {tabledata.some((val) => val.errorname) && (
+          <Alert
+            message={tabledata.find((val) => val.errorname)?.errorname}
+            type="error"
+            showIcon
+            className="mt-2"
+          />
+        )}
       </Modal>
       <Modal
         title="Generate DVAT 31/31 A Return"
@@ -497,6 +550,7 @@ const DocumentWiseDetails = () => {
         onOk={Convertto31}
         onCancel={() => {
           setIsModalOpen(false);
+          setCsv(null);
         }}
       >
         <p>Are you sure you want to generate DVAT 31/31 A Return?</p>
@@ -544,30 +598,6 @@ const DocumentWiseDetails = () => {
               >
                 {csv ? "Change Sheet" : "Upload Sheet"}
               </Button>
-              {/*  <div className="flex gap-4 items-center">
-               {csv && (
-                  <>
-                    <button
-                      className="bg-blue-500 px-4 py-1 rounded-md text-white text-sm"
-                      onClick={startCSV}
-                    >
-                      Scan CSV
-                    </button>
-                    <button
-                      className="bg-red-500 px-4 py-1 rounded-md text-white text-sm"
-                      onClick={() => {
-                        setCsv(null);
-                        setPaymentData([]);
-                      }}
-                    >
-                      RESET
-                    </button>
-                  </>
-                )} */}
-              {/* <div className="grow"></div>
-                {csv && <h1 className="my-4">Record : {paymentdata.length}</h1>} 
-              </div>
-              */}
 
               <div className="hidden">
                 <input
@@ -578,6 +608,13 @@ const DocumentWiseDetails = () => {
                 />
               </div>
             </div>
+            <a
+              download={"vatsoft_sale.csv"}
+              href="/vatsoft_sale.csv"
+              className="bg-blue-500 hover:bg-blue-500 w-24 text-white rounded shadow px-2 text-sm  h-6 text-center grid place-items-start pt-[2px]"
+            >
+              Download Sheet
+            </a>
             <Button
               size="small"
               type="primary"

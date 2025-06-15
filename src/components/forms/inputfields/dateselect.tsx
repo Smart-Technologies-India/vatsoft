@@ -35,7 +35,12 @@ export function DateSelect<T extends FieldValues>(props: DateSelectProps<T>) {
           <DatePicker
             disabled={props.disable ?? false}
             className="w-full"
-            value={field.value ? dayjs(field.value) : null}
+            // value={field.value ? dayjs(field.value) : undefined}
+            value={
+              field.value && dayjs(field.value).isValid()
+                ? dayjs(field.value)
+                : null
+            }
             status={error ? "error" : undefined}
             onChange={(value: dayjs.Dayjs) => {
               field.onChange(value ? value.toDate().toString() : null);
