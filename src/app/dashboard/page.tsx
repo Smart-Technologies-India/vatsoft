@@ -26,6 +26,7 @@ import { Bar } from "react-chartjs-2";
 import numberWithIndianFormat, {
   due_date_of_month,
   formateDate,
+  isNegative,
 } from "@/utils/methods";
 
 ChartJS.register(...registerables);
@@ -660,7 +661,7 @@ const OfficerDashboardPage = () => {
             } p-2 bg-opacity-10`}
           >
             <h1 className="text-2xl">
-              {numberWithIndianFormat(countData.last_month_received)}
+              {numberWithIndianFormat(isNegative(countData.last_month_received) ? 0 : countData.last_month_received)}
             </h1>
             <p className="text-sm">
               Payment Received in {format(subMonths(new Date(), 1), "MMMM")}
@@ -670,7 +671,7 @@ const OfficerDashboardPage = () => {
           <div className={`bg-gray-500 p-2 bg-opacity-10 text-gray-500`}>
             <h1 className="text-2xl text-gray-500">
               {numberWithIndianFormat(
-                countData.this_month_received - countData.last_month_received
+                countData.this_month_received - (isNegative(countData.last_month_received) ? 0 : countData.last_month_received)
               )}
             </h1>
             <p className="text-sm">Total Payment in period</p>
