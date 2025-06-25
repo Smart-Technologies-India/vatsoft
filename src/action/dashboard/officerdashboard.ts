@@ -155,7 +155,14 @@ const OfficerDashboard = async (
         },
         deletedAt: null,
         deletedBy: null,
-        status: "ACTIVE",
+        OR: [
+          {
+            status: "LATE",
+          },
+          {
+            status: "PAID",
+          },
+        ],
         transaction_date: {
           gte: firstDayOfLastMonth,
           lte: lastDayOfLastMonth,
@@ -179,7 +186,14 @@ const OfficerDashboard = async (
         },
         deletedAt: null,
         deletedBy: null,
-        status: "ACTIVE",
+        OR: [
+          {
+            status: "LATE",
+          },
+          {
+            status: "PAID",
+          },
+        ],
         transaction_date: {
           gte: firstDayOfThisMonth,
           lt: firstDayOfNextMonth,
