@@ -52,7 +52,14 @@ const Last15Received = async (
           },
           deletedAt: null,
           deletedBy: null,
-          status: "ACTIVE",
+          OR: [
+            {
+              status: "LATE",
+            },
+            {
+              status: "PAID",
+            },
+          ],
           transaction_date: {
             gte: day,
             lt: nextDay,
