@@ -2,6 +2,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import {
   Fa6RegularFileLines,
+  FluentAlignBottom24Regular,
   FluentBuildingBank48Regular,
   FluentCalendar12Regular,
   FluentCalendarDataBar32Light,
@@ -52,7 +53,6 @@ const Sidebar = (props: SidebarProps) => {
       if (profile_response.status && profile_response.data) {
         setIsProfileCompleted(profile_response.data.registration);
       }
-
     };
     init();
   }, [id]);
@@ -196,6 +196,14 @@ const Sidebar = (props: SidebarProps) => {
         </>
       )}
 
+      <MenuTab
+        click={() => props.setIsOpen(false)}
+        icon={<FluentAlignBottom24Regular className="text-gray-300  w-6" />}
+        name="Reports"
+        path={path}
+        pathcheck={"/dashboard/reports"}
+      />
+
       {[
         "SYSTEM",
         "ADMIN",
@@ -204,15 +212,17 @@ const Sidebar = (props: SidebarProps) => {
         "DY_COMMISSIONER",
         "INSPECTOR",
       ].includes(props.role) && (
-        <MenuTab
-          click={() => props.setIsOpen(false)}
-          icon={
-            <FluentDocumentSparkle28Regular className="text-gray-300 w-6" />
-          }
-          name="Registration Status"
-          path={path}
-          pathcheck={"/dashboard/registration_status"}
-        />
+        <>
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={
+              <FluentDocumentSparkle28Regular className="text-gray-300 w-6" />
+            }
+            name="Registration Status"
+            path={path}
+            pathcheck={"/dashboard/registration_status"}
+          />
+        </>
       )}
       {/* <MenuTab
         icco={<Fa6RegularFileLines className="text-gray-300  w-6" />}
