@@ -21,6 +21,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 import { Chart as ChartJS, registerables } from "chart.js";
+
 import { Bar } from "react-chartjs-2";
 
 import numberWithIndianFormat, {
@@ -273,8 +274,9 @@ const RentCard = (props: RentCardProps) => {
     <div className="flex w-full my-2 px-3 py-1 rounded-md items-center gap-2 bg-white justify-between ">
       <div className="flex gap-2 items-center w-32">
         <div
-          className={`h-10 w-1 rounded-sm ${props.filestatus == FileStatus.FILED ? "bg-teal-500" : "bg-rose-500"
-            }`}
+          className={`h-10 w-1 rounded-sm ${
+            props.filestatus == FileStatus.FILED ? "bg-teal-500" : "bg-rose-500"
+          }`}
         ></div>
         <div className="hidden md:block">
           {props.filestatus == FileStatus.FILED ? (
@@ -314,8 +316,9 @@ const RentCard = (props: RentCardProps) => {
         </p>
       </div>
       <Link
-        href={`/dashboard/returns/returns-dashboard?month=${monthNames[parseInt(props.month) - 1]
-          }&year=${new Date(props.date).getFullYear()}`}
+        href={`/dashboard/returns/returns-dashboard?month=${
+          monthNames[parseInt(props.month) - 1]
+        }&year=${new Date(props.date).getFullYear()}`}
         className="text-xs rounded px-4 py-1 border border-blue-500 text-blue-500 font-nunito"
       >
         View
@@ -590,7 +593,11 @@ const OfficerDashboardPage = () => {
         </DashboardCard>
         <DashboardCard
           name="Last Month Received"
-          count={numberWithIndianFormat(isNegative(countData.last_month_received) ? 0 : countData.last_month_received)}
+          count={numberWithIndianFormat(
+            isNegative(countData.last_month_received)
+              ? 0
+              : countData.last_month_received
+          )}
           color="bg-teal-500"
           subtitle="Total Tax Received"
           isruppy={true}
@@ -636,10 +643,11 @@ const OfficerDashboardPage = () => {
           <Separator className="shrink-0" />
           <div className="grow"></div>
           <div
-            className={`${countData.last_month_received < countData.this_month_received
+            className={`${
+              countData.last_month_received < countData.this_month_received
                 ? "bg-emerald-500 text-emerald-500"
                 : "bg-rose-500 text-rose-500"
-              } p-2 bg-opacity-10 `}
+            } p-2 bg-opacity-10 `}
           >
             <h1 className="text-2xl">
               {numberWithIndianFormat(countData.this_month_received)}
@@ -651,13 +659,18 @@ const OfficerDashboardPage = () => {
           <div className="grow"></div>
 
           <div
-            className={`${countData.last_month_received > countData.this_month_received
+            className={`${
+              countData.last_month_received > countData.this_month_received
                 ? "bg-emerald-500 text-emerald-500"
                 : "bg-rose-500 text-rose-500"
-              } p-2 bg-opacity-10`}
+            } p-2 bg-opacity-10`}
           >
             <h1 className="text-2xl">
-              {numberWithIndianFormat(isNegative(countData.last_month_received) ? 0 : countData.last_month_received)}
+              {numberWithIndianFormat(
+                isNegative(countData.last_month_received)
+                  ? 0
+                  : countData.last_month_received
+              )}
             </h1>
             <p className="text-sm">
               Payment Received in {format(subMonths(new Date(), 1), "MMMM")}
@@ -667,7 +680,10 @@ const OfficerDashboardPage = () => {
           <div className={`bg-gray-500 p-2 bg-opacity-10 text-gray-500`}>
             <h1 className="text-2xl text-gray-500">
               {numberWithIndianFormat(
-                countData.this_month_received - (isNegative(countData.last_month_received) ? 0 : countData.last_month_received)
+                countData.this_month_received -
+                  (isNegative(countData.last_month_received)
+                    ? 0
+                    : countData.last_month_received)
               )}
             </h1>
             <p className="text-sm">Total Payment in period</p>

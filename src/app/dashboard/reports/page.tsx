@@ -69,8 +69,10 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             // onClick={userExportToExcel}
-            onClick={()=>{
-              router.push("/dashboard/reports/defaulter_reports/defaulter_analysis")
+            onClick={() => {
+              router.push(
+                "/dashboard/reports/defaulter_reports/defaulter_analysis"
+              );
             }}
           >
             View Report
@@ -84,6 +86,11 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             // onClick={userExportToExcel}
+            onClick={() => {
+              router.push(
+                "/dashboard/reports/defaulter_reports/inactive_dealers"
+              );
+            }}
           >
             View Report
           </button>
@@ -116,12 +123,14 @@ const ReportsPage = () => {
       <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
-            District-Wise Revenue Report (Dadra & Nager Hveli/Daman/Diu)
+            District-Wise Revenue Report (Dadra & Nager Haveli/Daman/Diu)
           </p>
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/revenue_reports/category_wise");
+            }}
           >
             View Report
           </button>
@@ -131,7 +140,9 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/revenue_reports/category_wise");
+            }}
           >
             View Report
           </button>
@@ -166,13 +177,15 @@ const ReportsPage = () => {
       <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
-            Top Selling Commodities in etroleum (e.g., Retrol, Diesel, CNG, PNG,
-            Additives)
+            Top Selling Commodities in Petroleum (e.g., Petrol, Diesel, CNG,
+            PNG, Additives)
           </p>
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/commodity_reports/petroleum");
+            }}
           >
             View Report
           </button>
@@ -191,7 +204,7 @@ const ReportsPage = () => {
         </div>
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
-            District-wise Commedity Revenue Split (e.g, how much Diesel sold in
+            District-wise Commodity Revenue Split (e.g, how much Diesel sold in
             Diu)
           </p>
 
@@ -204,7 +217,7 @@ const ReportsPage = () => {
         </div>
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
-            Commodity Sales Growth Report (Moth-on-Month or Year-on-Year)
+            Commodity Sales Growth Report (Month-on-Month or Year-on-Year)
           </p>
 
           <button
@@ -232,7 +245,7 @@ const ReportsPage = () => {
         </div>
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
-            Dealers With improved Compliance (previous defulters now regular)
+            Dealers With improved Compliance (previous defaulters now regular)
           </p>
 
           <button
