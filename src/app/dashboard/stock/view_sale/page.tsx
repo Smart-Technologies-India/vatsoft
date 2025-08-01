@@ -1,5 +1,5 @@
 "use client";
-import GetUserDvat04 from "@/action/dvat/getuserdvat";
+// import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import ConvertDvat31 from "@/action/stock/convertdvat31";
 import DeleteSale from "@/action/stock/deletesale";
 import GetUserDailySale from "@/action/stock/getuserdailysale";
@@ -37,6 +37,7 @@ import { toast } from "react-toastify";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import CreateMultiDailySale from "@/action/stock/createmultidailysale";
 import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
+import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 
 const DocumentWiseDetails = () => {
   // csv section start from here
@@ -248,7 +249,7 @@ const DocumentWiseDetails = () => {
   const init = async () => {
     // setLoading(true);
 
-    const dvat_response = await GetUserDvat04({
+    const dvat_response = await GetUserDvat04Anx({
       userid: userid,
     });
 
@@ -276,7 +277,7 @@ const DocumentWiseDetails = () => {
     const init = async () => {
       setIsLoading(true);
 
-      const dvat_response = await GetUserDvat04({
+      const dvat_response = await GetUserDvat04Anx   ({
         userid: userid,
       });
 

@@ -61,9 +61,8 @@ const ReportsPage = () => {
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
             Defaulter Analysis Report - Identifies dealers who have not filed
-            returns this month, repeatedly missed filings (configurable
-            timeframes from 2-6 months), or have defaulted 3+ times in the past
-            year
+            returns this month, repeatedly missed filings, or have defaulted 3+
+            times in the past year
           </p>
 
           <button
@@ -97,12 +96,15 @@ const ReportsPage = () => {
         </div>
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
-            Dealers With Outstanding Penalty / Interest / Late Fee Dues
+            {/* Dealers With Outstanding Penalty / Interest / Late Fee Dues */}
+            Interest / Late Penalty Collected
           </p>
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/defaulter_reports/outstanding");
+            }}
           >
             View Report
           </button>
@@ -112,14 +114,35 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push(
+                "/dashboard/reports/defaulter_reports/afterdeathline"
+              );
+            }}
+          >
+            View Report
+          </button>
+        </div>
+
+        <div className="p-2 rounded shadow bg-white relative pb-8">
+          <p className="text-sm">
+            Dealers With Outstanding Demand Penalty / Interest Dues
+          </p>
+
+          <button
+            className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
+            onClick={() => {
+              router.push(
+                "/dashboard/reports/defaulter_reports/demand_penalty"
+              );
+            }}
           >
             View Report
           </button>
         </div>
       </div>
       <hr className="my-4" />
-      <h1>Revenue Reports</h1>
+      <h1>B. Revenue Reports</h1>
       <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
@@ -154,7 +177,9 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/revenue_reports/monthly_revenue");
+            }}
           >
             View Report
           </button>
@@ -166,9 +191,11 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/nodata");
+            }}
           >
-            View Report
+            - View Report
           </button>
         </div>
       </div>
@@ -191,13 +218,12 @@ const ReportsPage = () => {
           </button>
         </div>
         <div className="p-2 rounded shadow bg-white relative pb-8">
-          <p className="text-sm">
-            Top Selling Commodities in Liquor (Brand/Category-wise breakdown)
-          </p>
-
+          <p className="text-sm">Top Selling Commodities in Liquor</p>
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/commodity_reports/liquor");
+            }}
           >
             View Report
           </button>
@@ -210,7 +236,9 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/commodity_reports/districtwise");
+            }}
           >
             View Report
           </button>
@@ -222,9 +250,11 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/nodata");
+            }}
           >
-            View Report
+            - View Report
           </button>
         </div>
       </div>
@@ -238,7 +268,9 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/dealer_behavior/new_dealers");
+            }}
           >
             View Report
           </button>
@@ -250,9 +282,11 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/nodata");
+            }}
           >
-            View Report
+            - View Report
           </button>
         </div>
         <div className="p-2 rounded shadow bg-white relative pb-8">
@@ -262,7 +296,11 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push(
+                "/dashboard/reports/dealer_behavior/dealers_consistently_compliant"
+              );
+            }}
           >
             View Report
           </button>
@@ -274,9 +312,11 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/nodata");
+            }}
           >
-            View Report
+            - View Report
           </button>
         </div>
         <div className="p-2 rounded shadow bg-white relative pb-8">
@@ -286,9 +326,11 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/nodata");
+            }}
           >
-            View Report
+            - View Report
           </button>
         </div>
       </div>
@@ -302,9 +344,11 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/nodata");
+            }}
           >
-            View Report
+            - View Report
           </button>
         </div>
         <div className="p-2 rounded shadow bg-white relative pb-8">
@@ -314,7 +358,9 @@ const ReportsPage = () => {
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            // onClick={userExportToExcel}
+            onClick={() => {
+              router.push("/dashboard/reports/admin_review/timelinesummary");
+            }}
           >
             View Report
           </button>

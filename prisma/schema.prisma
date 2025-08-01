@@ -1099,24 +1099,32 @@ model order_notice {
   deletedById       Int?
 }
 
+enum ReturnFilingStatus {
+  FILED
+  DUE
+  LATEFILED
+  PENDINGFILING
+}
+
 model return_filing {
-  id            Int       @id @default(autoincrement())
-  dvat          dvat04    @relation(fields: [dvatid], references: [id])
+  id            Int                @id @default(autoincrement())
+  dvat          dvat04             @relation(fields: [dvatid], references: [id])
   dvatid        Int
   year          String
   month         String
-  filing_status Boolean   @default(false)
+  filing_status Boolean            @default(false)
   filing_date   DateTime?
   due_date      DateTime?
-  status        Status    @default(ACTIVE)
-  createdAt     DateTime  @default(now())
-  createdBy     user      @relation("return_filing_createdBy", fields: [createdById], references: [id])
+  status        Status             @default(ACTIVE)
+  return_status ReturnFilingStatus @default(DUE)
+  createdAt     DateTime           @default(now())
+  createdBy     user               @relation("return_filing_createdBy", fields: [createdById], references: [id])
   createdById   Int
-  updatedAt     DateTime  @updatedAt
-  updatedBy     user?     @relation("return_filing_updatedBy", fields: [updatedById], references: [id])
+  updatedAt     DateTime           @updatedAt
+  updatedBy     user?              @relation("return_filing_updatedBy", fields: [updatedById], references: [id])
   updatedById   Int?
   deletedAt     DateTime?
-  deletedBy     user?     @relation("return_filing_deletedBy", fields: [deletedById], references: [id])
+  deletedBy     user?              @relation("return_filing_deletedBy", fields: [deletedById], references: [id])
   deletedById   Int?
 
   @@unique([dvatid, year, month])

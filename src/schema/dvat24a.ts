@@ -16,6 +16,10 @@ const CreateDvat24ASchema = object({
     minLength(1, "VAT amount is required.")
   ),
   interest: pipe(
+    string("Interest amount is required."),
+    minLength(1, "Interest amount is required.")
+  ),
+  penalty: pipe(
     string("Penalty amount is required."),
     minLength(1, "Penalty amount is required.")
   ),

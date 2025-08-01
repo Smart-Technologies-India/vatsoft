@@ -17,17 +17,18 @@ import { dvat04, user } from "@prisma/client";
 import { capitalcase, encryptURLData } from "@/utils/methods";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-// import SearchDeptPendingReturn from "@/action/dvat/searchdeptpendingreturn";
 import GetUser from "@/action/user/getuser";
-import GetInactiveDealers from "@/action/report/inactivedealers";
+import OutstandingDealers from "@/action/report/outstanding";
 
 interface ResponseType {
   dvat04: dvat04;
-  lastfiling: string;
-  pending: number;
+  penalty: number;
+  penalty_count: number;
+  interest: number;
+  interest_count: number;
 }
 
-const InactiveDealers = () => {
+const AfterDeathLinePage = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
   const route = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
@@ -71,16 +72,14 @@ const InactiveDealers = () => {
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
-      const payment_data = await GetInactiveDealers({
+      const payment_data = await OutstandingDealers({
         dept: userrespone.data.selectOffice!,
         take: 10,
         skip: 0,
       });
 
       if (payment_data.status && payment_data.data.result) {
-        const sortedData = payment_data.data.result.sort(
-          (a: ResponseType, b: ResponseType) => b.pending - a.pending
-        );
+        const sortedData = payment_data.data.result;
         setPaginatin({
           skip: payment_data.data.skip,
           take: payment_data.data.take,
@@ -99,16 +98,16 @@ const InactiveDealers = () => {
       const userrespone = await GetUser({ id: userid });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
-        const payment_data = await GetInactiveDealers({
+        const payment_data = await OutstandingDealers({
           dept: userrespone.data.selectOffice!,
           take: 10,
           skip: 0,
         });
 
+        console.log(payment_data);
+
         if (payment_data.status && payment_data.data.result) {
-          const sortedData = payment_data.data.result.sort(
-            (a: ResponseType, b: ResponseType) => b.pending - a.pending
-          );
+          const sortedData = payment_data.data.result;
           setDvatData(sortedData);
           setPaginatin({
             skip: payment_data.data.skip,
@@ -176,14 +175,19 @@ const InactiveDealers = () => {
     ) {
       return toast.error("Enter arn number");
     }
-    const search_response = await GetInactiveDealers({
-      arnnumber: arnRef.current?.input?.value,
+    const search_response = await OutstandingDealers({
       dept: user!.selectOffice!,
+      arnnumber: arnRef.current?.input?.value,
       take: 10,
       skip: 0,
     });
     if (search_response.status && search_response.data.result) {
       setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -213,14 +217,19 @@ const InactiveDealers = () => {
     ) {
       return toast.error("Enter TIN Number");
     }
-    const search_response = await GetInactiveDealers({
-      tradename: nameRef.current?.input?.value,
+    const search_response = await OutstandingDealers({
       dept: user!.selectOffice!,
+      tradename: nameRef.current?.input?.value,
       take: 10,
       skip: 0,
     });
     if (search_response.status && search_response.data.result) {
       setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -234,9 +243,9 @@ const InactiveDealers = () => {
         ) {
           return toast.error("Enter arn number");
         }
-        const search_response = await GetInactiveDealers({
-          arnnumber: arnRef.current?.input?.value,
+        const search_response = await OutstandingDealers({
           dept: user!.selectOffice!,
+          arnnumber: arnRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -258,9 +267,9 @@ const InactiveDealers = () => {
         ) {
           return toast.error("Enter TIN Number");
         }
-        const search_response = await GetInactiveDealers({
-          tradename: nameRef.current?.input?.value,
+        const search_response = await OutstandingDealers({
           dept: user!.selectOffice!,
+          tradename: nameRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -276,7 +285,7 @@ const InactiveDealers = () => {
         }
       }
     } else {
-      const payment_data = await GetInactiveDealers({
+      const payment_data = await OutstandingDealers({
         dept: user!.selectOffice!,
         take: pagesize,
         skip: pagesize * (page - 1),
@@ -304,7 +313,7 @@ const InactiveDealers = () => {
       <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white flex">
-            <p>Inactive Dealer</p>
+            <p>Interest / Late Penalty Collected</p>
             <div className="grow"></div>
           </div>
           <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
@@ -382,10 +391,10 @@ const InactiveDealers = () => {
                   Composition
                 </TableHead>
                 <TableHead className="whitespace-nowrap text-center border p-2">
-                  Last Filing Period
+                  Interest
                 </TableHead>
                 <TableHead className="whitespace-nowrap text-center border p-2">
-                  Pending Returns
+                  Penalty
                 </TableHead>
                 <TableHead className="whitespace-nowrap text-center border p-2">
                   View
@@ -406,10 +415,10 @@ const InactiveDealers = () => {
                       {val.dvat04.compositionScheme ? "COMP" : "REG"}
                     </TableCell>
                     <TableCell className="border text-center p-2">
-                      {val.lastfiling}
+                      {val.interest} ({val.interest_count})
                     </TableCell>
                     <TableCell className="border text-center p-2">
-                      {val.pending}
+                      {val.penalty} ({val.penalty_count})
                     </TableCell>
                     <TableCell className="border text-center p-2">
                       <Button
@@ -462,4 +471,4 @@ const InactiveDealers = () => {
   );
 };
 
-export default InactiveDealers;
+export default AfterDeathLinePage;

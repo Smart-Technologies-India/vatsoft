@@ -30,7 +30,7 @@ const GetPendingChallan = async (
         ],
         deletedAt: null,
         deletedById: null,
-        id: payload.dvatid,
+        dvatid: payload.dvatid,
       },
     });
 

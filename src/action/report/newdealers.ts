@@ -15,34 +15,39 @@ interface ResponseType {
   notice: number;
 }
 
-interface GetInactiveDealersPayload {
-  arnnumber?: string;
-  tradename?: string;
+interface GetNewDealersPayload {
   dept: SelectOffice;
   skip: number;
   take: number;
 }
 
-const GetInactiveDealers = async (
-  payload: GetInactiveDealersPayload
+const GetNewDealers = async (
+  payload: GetNewDealersPayload
 ): Promise<PaginationResponse<Array<ResponseType> | null>> => {
-  const functionname: string = GetInactiveDealers.name;
+  const functionname: string = GetNewDealers.name;
+
+  const currentDate = new Date();
+  // curretn date - 6 months
+  const sixMonthsAgo = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() - 6,
+    currentDate.getDate()
+  );
+
+  console.log(currentDate, sixMonthsAgo);
   try {
     const dvat04response = await prisma.return_filing.findMany({
       where: {
         deletedAt: null,
         deletedBy: null,
         dvat: {
-          ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
-          ...(payload.tradename && {
-            OR: [
-              { tradename: { contains: payload.tradename } },
-              { name: { contains: payload.tradename } },
-            ],
-          }),
           selectOffice: payload.dept,
           deletedAt: null,
           deletedBy: null,
+          createdAt: {
+            gte: sixMonthsAgo,
+            lte: currentDate,
+          },
         },
       },
       include: {
@@ -70,7 +75,7 @@ const GetInactiveDealers = async (
     });
 
     let resMap = new Map<number, ResponseType>(); // Track dvat04 by ID
-    const currentDate = new Date();
+    // const currentDate = new Date();
 
     for (let i = 0; i < dvat04response.length; i++) {
       const currentDvat: dvat04 = dvat04response[i].dvat;
@@ -134,7 +139,7 @@ const GetInactiveDealers = async (
 
     // Convert Map to an array
     const res: ResponseType[] = Array.from(resMap.values()).filter(
-      (val: ResponseType) => val.pending != 0 && val.pending > 5
+      (val: ResponseType) => val.pending != 0
     );
 
     res.forEach((response) => {
@@ -165,4 +170,4 @@ const GetInactiveDealers = async (
   }
 };
 
-export default GetInactiveDealers;
+export default GetNewDealers;

@@ -1,6 +1,4 @@
 "use client";
-import Last15Received from "@/action/dashboard/last15received";
-import OfficerDashboard from "@/action/dashboard/officerdashboard";
 import {
   Fa6RegularBuilding,
   Fa6RegularHourglassHalf,
@@ -12,14 +10,13 @@ import {
 } from "@/components/icons";
 import numberWithIndianFormat, { isNegative } from "@/utils/methods";
 import { Radio, RadioChangeEvent } from "antd";
-import { format, subMonths } from "date-fns";
-import Link from "next/link";
+import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";
-import { Separator } from "@/components/ui/separator";
 import { Chart as ChartJS, registerables } from "chart.js";
 import Last15ReceivedReport from "@/action/report/last15receivedreport";
 import OfficerDashboardReport from "@/action/report/officerdashboardreport";
+import LastYearReceived from "@/action/report/lastyearreceivedreport";
 
 ChartJS.register(...registerables);
 
@@ -54,12 +51,12 @@ const CategoryWiseReport = () => {
     today_received: 0,
   });
 
-  interface Last15DayData {
-    date: Date; // Date object
-    amount: number; // Total amount for the day
+  interface LastYearData {
+    monthYear: string;
+    amount: number;
   }
 
-  const [last15Day, setLast15Day] = useState<Last15DayData[]>([]);
+  const [lastYearData, setLastYearData] = useState<LastYearData[]>([]);
   const [city, setCity] = useState<"Dadra_Nagar_Haveli" | "DAMAN" | "DIU">(
     "Dadra_Nagar_Haveli"
   );
@@ -76,25 +73,26 @@ const CategoryWiseReport = () => {
         setCountData(count_data_response.data);
       }
 
-      const last15days = await Last15ReceivedReport({
+      const last15days = await LastYearReceived({
         selectOffice: city,
         selectCommodity: commoditydata,
       });
+
       if (last15days.status && last15days.data) {
-        setLast15Day(last15days.data);
+        setLastYearData(last15days.data);
       }
     };
     init();
   }, [city, commoditydata]);
 
   const dataset: any = {
-    labels: last15Day
-      .map((val: Last15DayData) => format(val.date, "dd MMM"))
-      .reverse(),
+    labels: lastYearData
+      .map((val: LastYearData) => format(new Date(val.monthYear), "MMM-yyyy"))
+      ,
     datasets: [
       {
-        label: "Receivable",
-        data: last15Day.map((val: Last15DayData) => val.amount).reverse(),
+        label: "Received",
+        data: lastYearData.map((val: LastYearData) => val.amount),
         backgroundColor: "#95acbe",
         borderWidth: 0,
         barPercentage: 0.6,
@@ -182,6 +180,21 @@ const CategoryWiseReport = () => {
     { label: "LIQUOR", value: "LIQUOR" },
   ];
 
+  const color = [
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-red-500",
+    "bg-yellow-500",
+    "bg-purple-500",
+    "bg-pink-500",
+    "bg-orange-500",
+    "bg-teal-500",
+    "bg-cyan-500",
+    "bg-gray-500",
+    "bg-indigo-500",
+    "bg-lime-500",
+  ];
+
   return (
     <main className="p-6">
       <div className="flex flex-col lg:flex-row gap-2">
@@ -211,49 +224,49 @@ const CategoryWiseReport = () => {
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <Link href={"/dashboard/dealer_compliance"}>
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-2">
+        {lastYearData.map((month, index) => (
           <DashboardCard
-            name="Total Dealer"
-            count={countData.totaldealer.toString()}
-            color="bg-rose-500"
-            subtitle="Total Dealer Count"
-          >
-            <Fa6RegularBuilding className="text-xl text-white" />
-          </DashboardCard>
-        </Link>
-        <Link href={"/dashboard/dealer_compliance"}>
-          <DashboardCard
-            name={commoditydata == "FUEL" ? "Fuel Dealer" : "LiquorDealer"}
-            count={
-              commoditydata == "FUEL"
-                ? countData.fueldealer.toString()
-                : (countData.liquoredealer + countData.manufacturer).toString()
-            }
-            // count={`${countData.fueldealer}/${countData.liquoredealer}/${countData.manufacturer}`}
-            color="bg-green-500"
-            subtitle="Fuel/Liquor/Mfg Count"
+            key={index}
+            name={month.monthYear}
+            count={month.amount.toString()}
+            color={color[index % color.length]}
           >
             <FluentMdl2Home className="text-xl text-white" />
           </DashboardCard>
-        </Link>
+        ))}
+        {/* <DashboardCard
+          name="Total Dealer"
+          count={countData.totaldealer.toString()}
+          color="bg-rose-500"
+        >
+          <Fa6RegularBuilding className="text-xl text-white" />
+        </DashboardCard>
+        <DashboardCard
+          name={commoditydata == "FUEL" ? "Fuel Dealer" : "LiquorDealer"}
+          count={
+            commoditydata == "FUEL"
+              ? countData.fueldealer.toString()
+              : (countData.liquoredealer + countData.manufacturer).toString()
+          }
+          // count={`${countData.fueldealer}/${countData.liquoredealer}/${countData.manufacturer}`}
+          color="bg-green-500"
+        >
+          <FluentMdl2Home className="text-xl text-white" />
+        </DashboardCard>
 
-        <Link href={"/dashboard/dealer_compliance"}>
-          <DashboardCard
-            name="Reg/Comp"
-            count={`${countData.reg}/${countData.comp}`}
-            color="bg-blue-500"
-            subtitle="Reg/Comp Count"
-          >
-            <MaterialSymbolsPersonRounded className="text-xl text-white" />
-          </DashboardCard>
-        </Link>
+        <DashboardCard
+          name="Reg/Comp"
+          count={`${countData.reg}/${countData.comp}`}
+          color="bg-blue-500"
+        >
+          <MaterialSymbolsPersonRounded className="text-xl text-white" />
+        </DashboardCard>
 
         <DashboardCard
           name="Today Received"
           count={numberWithIndianFormat(countData.today_received)}
           color="bg-orange-500"
-          subtitle="Today Tax Received"
           isruppy={true}
         >
           <RiAuctionLine className="text-xl text-white" />
@@ -266,7 +279,6 @@ const CategoryWiseReport = () => {
               : countData.last_month_received
           )}
           color="bg-teal-500"
-          subtitle="Total Tax Received"
           isruppy={true}
         >
           <RiMoneyRupeeCircleLine className="text-xl text-white" />
@@ -275,99 +287,28 @@ const CategoryWiseReport = () => {
           name="This Month Received"
           count={numberWithIndianFormat(countData.this_month_received)}
           color="bg-violet-500"
-          subtitle="Total Tax Received"
           isruppy={true}
         >
           <RiMoneyRupeeCircleLine className="text-xl text-white" />
         </DashboardCard>
-        <Link href={"/dashboard/returns/department-track-return-status"}>
-          <DashboardCard
-            name="Filed Return"
-            count={countData.filed_return.toString()}
-            color="bg-pink-500"
-            subtitle="Successful Return count"
-          >
-            <IcOutlineReceiptLong className="text-xl text-white" />
-          </DashboardCard>
-        </Link>
-        <Link href={"/dashboard/returns/department-pending-return"}>
-          <DashboardCard
-            name="Total Pending Return"
-            count={countData.pending_return.toString()}
-            color="bg-cyan-500"
-            subtitle="Total Pending Return count"
-          >
-            <Fa6RegularHourglassHalf className="text-xl text-white" />
-          </DashboardCard>
-        </Link>
+        <DashboardCard
+          name="Filed Return"
+          count={countData.filed_return.toString()}
+          color="bg-pink-500"
+        >
+          <IcOutlineReceiptLong className="text-xl text-white" />
+        </DashboardCard>
+        <DashboardCard
+          name="Total Pending Return"
+          count={countData.pending_return.toString()}
+          color="bg-cyan-500"
+        >
+          <Fa6RegularHourglassHalf className="text-xl text-white" />
+        </DashboardCard> */}
       </div>
       <div className="grid grid-cols-6 gap-2 mt-2">
-        <div className="bg-white h-80 shadow-sm rounded-md p-4 col-span-6 lg:col-span-4">
-          {last15Day.length > 0 && <Bar options={options} data={dataset} />}
-        </div>
-        <div className="bg-white h-80 shadow-sm rounded-md p-4 col-span-6 lg:col-span-2 flex flex-col">
-          <h1>Current Month Received Information</h1>
-          <Separator className="shrink-0" />
-          <div className="grow"></div>
-          <div
-            className={`${
-              countData.last_month_received < countData.this_month_received
-                ? "bg-emerald-500 text-emerald-500"
-                : "bg-rose-500 text-rose-500"
-            } p-2 bg-opacity-10 `}
-          >
-            <h1 className="text-2xl">
-              {numberWithIndianFormat(countData.this_month_received)}
-            </h1>
-            <p className="text-sm">
-              Payment Received in {format(new Date(), "MMMM")}
-            </p>
-          </div>
-          <div className="grow"></div>
-
-          <div
-            className={`${
-              countData.last_month_received > countData.this_month_received
-                ? "bg-emerald-500 text-emerald-500"
-                : "bg-rose-500 text-rose-500"
-            } p-2 bg-opacity-10`}
-          >
-            <h1 className="text-2xl">
-              {numberWithIndianFormat(
-                isNegative(countData.last_month_received)
-                  ? 0
-                  : countData.last_month_received
-              )}
-            </h1>
-            <p className="text-sm">
-              Payment Received in {format(subMonths(new Date(), 1), "MMMM")}
-            </p>
-          </div>
-          <div className="grow"></div>
-          {/* <div className={`bg-gray-500 p-2 bg-opacity-10 text-gray-500`}> */}
-          <div
-            className={`${
-              countData.this_month_received -
-                (isNegative(countData.last_month_received)
-                  ? 0
-                  : countData.last_month_received) >
-              0
-                ? "bg-emerald-500 text-emerald-500"
-                : "bg-rose-500 text-rose-500"
-            } p-2 bg-opacity-10`}
-          >
-            <h1 className="text-2xl">
-              {numberWithIndianFormat(
-                countData.this_month_received -
-                  (isNegative(countData.last_month_received)
-                    ? 0
-                    : countData.last_month_received)
-              )}
-            </h1>
-            <p className="text-sm">Difference over last month</p>
-          </div>
-
-          <div className="grow"></div>
+        <div className="bg-white h-80 shadow-sm rounded-md p-4 col-span-6">
+          {lastYearData.length > 0 && <Bar options={options} data={dataset} />}
         </div>
       </div>
     </main>
@@ -380,7 +321,7 @@ interface DashboardCardProps {
   name: string;
   count: string;
   color: string;
-  subtitle: string;
+  // subtitle: string;
   children?: React.ReactNode;
   isruppy?: boolean;
 }
@@ -397,7 +338,7 @@ const DashboardCard = (props: DashboardCardProps) => {
           ) : (
             <p className="text-xl text-gray-600">{props.count}</p>
           )}
-          <span className="text-xs text-gray-400">{props.subtitle}</span>
+          {/* <span className="text-xs text-gray-400">{props.subtitle}</span> */}
         </div>
         <div className="grow"></div>
         <div>

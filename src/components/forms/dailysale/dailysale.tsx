@@ -28,6 +28,7 @@ import {
 } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 import dayjs from "dayjs";
+import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 
 type DailySaleProviderProps = {
   userid: number;
@@ -124,7 +125,7 @@ const DailySale = (props: DailySaleProviderProps) => {
         setTinData(tin_response.data);
       }
 
-      const response = await GetUserDvat04({
+      const response = await GetUserDvat04Anx({
         userid: userid,
       });
 
@@ -135,6 +136,7 @@ const DailySale = (props: DailySaleProviderProps) => {
         const commodity_resposen = await GetUserCommodity({
           dvatid: response.data.id,
         });
+
         if (commodity_resposen.status && commodity_resposen.data) {
           setCommodityMaster(commodity_resposen.data);
         }
@@ -622,6 +624,8 @@ const DailySale = (props: DailySaleProviderProps) => {
                   index: number
                 ) => ({
                   value: val.id.toString(),
+                  // label: val.product_name,
+
                   label:
                     val.product_name +
                     ` [${val.quantity} ${

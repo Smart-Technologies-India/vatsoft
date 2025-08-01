@@ -13,9 +13,10 @@ interface ResponseType {
   lastfiling: string;
   pending: number;
   notice: number;
+  isLate: boolean;
 }
 
-interface GetInactiveDealersPayload {
+interface DealersConsistentlyCompliantPayload {
   arnnumber?: string;
   tradename?: string;
   dept: SelectOffice;
@@ -23,15 +24,52 @@ interface GetInactiveDealersPayload {
   take: number;
 }
 
-const GetInactiveDealers = async (
-  payload: GetInactiveDealersPayload
+const DealersConsistentlyCompliant = async (
+  payload: DealersConsistentlyCompliantPayload
 ): Promise<PaginationResponse<Array<ResponseType> | null>> => {
-  const functionname: string = GetInactiveDealers.name;
+  const functionname: string = DealersConsistentlyCompliant.name;
   try {
+    const today = new Date();
+
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const monthsArray: string[] = [];
+    const yearsSet = new Set<string>(); // to avoid duplicate years
+
+    for (let i = 0; i < 6; i++) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      monthsArray.push(months[date.getMonth()]);
+      yearsSet.add(date.getFullYear().toString());
+    }
+
+    // Optional: reverse months to go from oldest to latest
+    monthsArray.reverse();
+
+    const yearsArray: string[] = Array.from(yearsSet).sort();
+
     const dvat04response = await prisma.return_filing.findMany({
       where: {
         deletedAt: null,
         deletedBy: null,
+        month: {
+          in: monthsArray,
+        },
+        year: {
+          in: yearsArray,
+        },
         dvat: {
           ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
           ...(payload.tradename && {
@@ -76,34 +114,36 @@ const GetInactiveDealers = async (
       const currentDvat: dvat04 = dvat04response[i].dvat;
       const filingStatus: boolean = dvat04response[i].filing_status;
       const currentLastFiling: string = `${dvat04response[i].month}-${dvat04response[i].year}`;
-      const dueDate: Date | null = dvat04response[i].due_date
-        ? new Date(dvat04response[i].due_date!)
-        : null;
+
+      const return_status = dvat04response[i].return_status;
+
+      // const isLate = IsFilingLate(filingDate, due_date);
 
       if (currentDvat) {
         if (resMap.has(currentDvat.id)) {
-          // If dvat already exists
           let existingData: ResponseType = resMap.get(
             currentDvat.id
           ) as ResponseType;
 
-          if (existingData) {
-            if (!filingStatus && dueDate && dueDate < currentDate) {
-              // Increase pending count if filing_status is false
+          if (
+            return_status == "LATEFILED" ||
+            return_status == "PENDINGFILING"
+          ) {
+            existingData.isLate = true;
+          }
 
-              existingData.pending += 1;
-            } else if (filingStatus) {
-              // Update lastfiling if filing_status is true and lastfiling is newer
-              existingData.lastfiling = currentLastFiling;
-            }
+          if (return_status == "FILED") {
+            existingData.lastfiling = currentLastFiling;
+            existingData.pending += 1; // Increase pending count if filing_status is true
           }
         } else {
-          // If dvat does not exist, create a new entry
           resMap.set(currentDvat.id, {
             dvat04: currentDvat,
             lastfiling: filingStatus ? currentLastFiling : "N/A",
-            pending: !filingStatus && dueDate && dueDate < currentDate ? 1 : 0,
+            pending: return_status == "FILED" ? 1 : 0,
             notice: 0,
+            isLate:
+              return_status == "DUE" || return_status == "FILED" ? false : true,
           });
         }
       }
@@ -134,7 +174,7 @@ const GetInactiveDealers = async (
 
     // Convert Map to an array
     const res: ResponseType[] = Array.from(resMap.values()).filter(
-      (val: ResponseType) => val.pending != 0 && val.pending > 5
+      (val: ResponseType) => val.isLate == false
     );
 
     res.forEach((response) => {
@@ -165,4 +205,22 @@ const GetInactiveDealers = async (
   }
 };
 
-export default GetInactiveDealers;
+export default DealersConsistentlyCompliant;
+
+const IsFilingLate = (
+  filingDateStr: Date | null,
+  due_date: Date | null
+): boolean => {
+  if (!filingDateStr || !due_date) {
+    return false; // Invalid input
+  }
+
+  if (filingDateStr != null) {
+    const [day, month, year] = filingDateStr.toString().split("/").map(Number);
+    const filingDate = new Date(year, month - 1, day);
+
+    return filingDate > due_date;
+  } else {
+    return true;
+  }
+};

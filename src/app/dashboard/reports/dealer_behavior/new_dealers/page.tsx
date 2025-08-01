@@ -1,5 +1,6 @@
 "use client";
 
+import { Button as ShButton } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,17 +10,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
-import { Radio, Button, Input, Pagination } from "antd";
+import { Radio, Button, Input, Pagination, Alert } from "antd";
 import { useEffect, useRef, useState } from "react";
 import type { Dayjs } from "dayjs";
 import { getCookie } from "cookies-next";
 import { dvat04, user } from "@prisma/client";
 import { capitalcase, encryptURLData } from "@/utils/methods";
+// import DeptPendingReturn from "@/action/dvat/deptpendingreturn";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-// import SearchDeptPendingReturn from "@/action/dvat/searchdeptpendingreturn";
+import SearchDeptPendingReturn from "@/action/dvat/searchdeptpendingreturn";
 import GetUser from "@/action/user/getuser";
-import GetInactiveDealers from "@/action/report/inactivedealers";
+import GetNewDealers from "@/action/report/newdealers";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -27,7 +29,7 @@ interface ResponseType {
   pending: number;
 }
 
-const InactiveDealers = () => {
+const NewDealers = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
   const route = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
@@ -71,7 +73,8 @@ const InactiveDealers = () => {
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
-      const payment_data = await GetInactiveDealers({
+      
+      const payment_data = await GetNewDealers({
         dept: userrespone.data.selectOffice!,
         take: 10,
         skip: 0,
@@ -97,9 +100,10 @@ const InactiveDealers = () => {
     const init = async () => {
       setLoading(true);
       const userrespone = await GetUser({ id: userid });
+      console.log("userrespone", userrespone);
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
-        const payment_data = await GetInactiveDealers({
+        const payment_data = await GetNewDealers({
           dept: userrespone.data.selectOffice!,
           take: 10,
           skip: 0,
@@ -176,9 +180,8 @@ const InactiveDealers = () => {
     ) {
       return toast.error("Enter arn number");
     }
-    const search_response = await GetInactiveDealers({
+    const search_response = await SearchDeptPendingReturn({
       arnnumber: arnRef.current?.input?.value,
-      dept: user!.selectOffice!,
       take: 10,
       skip: 0,
     });
@@ -213,9 +216,8 @@ const InactiveDealers = () => {
     ) {
       return toast.error("Enter TIN Number");
     }
-    const search_response = await GetInactiveDealers({
+    const search_response = await SearchDeptPendingReturn({
       tradename: nameRef.current?.input?.value,
-      dept: user!.selectOffice!,
       take: 10,
       skip: 0,
     });
@@ -234,9 +236,8 @@ const InactiveDealers = () => {
         ) {
           return toast.error("Enter arn number");
         }
-        const search_response = await GetInactiveDealers({
+        const search_response = await SearchDeptPendingReturn({
           arnnumber: arnRef.current?.input?.value,
-          dept: user!.selectOffice!,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -258,9 +259,8 @@ const InactiveDealers = () => {
         ) {
           return toast.error("Enter TIN Number");
         }
-        const search_response = await GetInactiveDealers({
+        const search_response = await SearchDeptPendingReturn({
           tradename: nameRef.current?.input?.value,
-          dept: user!.selectOffice!,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -276,7 +276,7 @@ const InactiveDealers = () => {
         }
       }
     } else {
-      const payment_data = await GetInactiveDealers({
+      const payment_data = await GetNewDealers({
         dept: user!.selectOffice!,
         take: pagesize,
         skip: pagesize * (page - 1),
@@ -304,7 +304,7 @@ const InactiveDealers = () => {
       <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white flex">
-            <p>Inactive Dealer</p>
+            <p>New Dealer</p>
             <div className="grow"></div>
           </div>
           <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
@@ -369,97 +369,105 @@ const InactiveDealers = () => {
             })()}
           </div>
 
-          <Table className="border mt-2">
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  TIN Number
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Trade Name
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Composition
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Last Filing Period
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Pending Returns
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  View
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dvatData.map((val: ResponseType, index: number) => {
-                return (
-                  <TableRow key={index}>
-                    <TableCell className="border text-center p-2">
-                      {val.dvat04.tinNumber}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.dvat04.tradename}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.dvat04.compositionScheme ? "COMP" : "REG"}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.lastfiling}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.pending}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      <Button
-                        type="primary"
-                        onClick={() => {
-                          route.push(
-                            `/dashboard/returns/department-pending-return/${encryptURLData(
-                              val.dvat04.id.toString()
-                            )}`
-                          );
-                        }}
-                      >
-                        View
-                      </Button>
-                    </TableCell>
+          {dvatData.length == 0 ? (
+            <div className="mt-2">
+              <Alert message="No New Dealers Found" type="info" showIcon />
+            </div>
+          ) : (
+            <>
+              <Table className="border mt-2">
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      TIN Number
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Trade Name
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Composition
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Last Filing Period
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      Pending Returns
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      View
+                    </TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-          <div className="mt-2"></div>
-          <div className="lg:hidden">
-            <Pagination
-              align="center"
-              defaultCurrent={1}
-              onChange={onChangePageCount}
-              showSizeChanger
-              total={pagination.total}
-              showTotal={(total: number) => `Total ${total} items`}
-            />
-          </div>
-          <div className="hidden lg:block">
-            <Pagination
-              showQuickJumper
-              align="center"
-              defaultCurrent={1}
-              onChange={onChangePageCount}
-              showSizeChanger
-              pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-              total={pagination.total}
-              responsive={true}
-              showTotal={(total: number, range: number[]) =>
-                `${range[0]}-${range[1]} of ${total} items`
-              }
-            />
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {dvatData.map((val: ResponseType, index: number) => {
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="border text-center p-2">
+                          {val.dvat04.tinNumber}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          {val.dvat04.tradename}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          {val.dvat04.compositionScheme ? "COMP" : "REG"}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          {val.lastfiling}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          {val.pending}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          <Button
+                            type="primary"
+                            onClick={() => {
+                              route.push(
+                                `/dashboard/returns/department-pending-return/${encryptURLData(
+                                  val.dvat04.id.toString()
+                                )}`
+                              );
+                            }}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              <div className="mt-2"></div>
+              <div className="lg:hidden">
+                <Pagination
+                  align="center"
+                  defaultCurrent={1}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  total={pagination.total}
+                  showTotal={(total: number) => `Total ${total} items`}
+                />
+              </div>
+              <div className="hidden lg:block">
+                <Pagination
+                  showQuickJumper
+                  align="center"
+                  defaultCurrent={1}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                  total={pagination.total}
+                  responsive={true}
+                  showTotal={(total: number, range: number[]) =>
+                    `${range[0]}-${range[1]} of ${total} items`
+                  }
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </>
   );
 };
 
-export default InactiveDealers;
+export default NewDealers;

@@ -60,23 +60,40 @@ const CreateFirstStock = async (
         throw new Error("Unable to create First Stock entry.");
       }
 
-      const stocks = await prisma.stock.createMany({
-        data: payload.data.map((item) => {
-          return {
-            quantity: item.quantity,
+      // Handle stock creation/update for each item
+      for (const item of payload.data) {
+        const existingStock = await prisma.stock.findFirst({
+          where: {
             commodity_masterId: item.item.id,
             dvat04Id: payload.dvatid,
-            createdById: payload.createdById,
-            status: "ACTIVE",
-          };
-        }),
-      });
+          },
+        });
 
-      if (!stocks) {
-        throw new Error("Unable to create stock entry.");
+        if (existingStock) {
+          // Update existing stock quantity
+          await prisma.stock.update({
+            where: {
+              id: existingStock.id,
+            },
+            data: {
+              quantity: existingStock.quantity + item.quantity,
+            },
+          });
+        } else {
+          // Create new stock entry
+          await prisma.stock.create({
+            data: {
+              quantity: item.quantity,
+              commodity_masterId: item.item.id,
+              dvat04Id: payload.dvatid,
+              createdById: payload.createdById,
+              status: "ACTIVE",
+            },
+          });
+        }
       }
 
-      return stocks;
+      return true;
     });
     return createResponse({
       message: "Stock created successfully.",

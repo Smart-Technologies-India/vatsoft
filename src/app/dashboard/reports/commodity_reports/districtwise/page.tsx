@@ -8,22 +8,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Alert, Button } from "antd";
 import { useEffect, useState } from "react";
-
 import { getCookie } from "cookies-next";
-import { dvat04 } from "@prisma/client";
 import numberWithIndianFormat, { encryptURLData } from "@/utils/methods";
-import PetroleumCommodityReport from "@/action/report/petroleumcommodityreport";
+import { Alert, Radio, RadioChangeEvent } from "antd";
+import DistrictWiseCommodityReport from "@/action/report/districtwisecommodityreport";
 
-interface ResponseType {
-  dvat04: dvat04;
-  lastfiling: string;
-  pending: number;
-}
-
-const PetroleumCommodityPage = () => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+const DistrictWiseCommodityPage = () => {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [total, setTotal] = useState<number>(0);
 
@@ -38,10 +29,33 @@ const PetroleumCommodityPage = () => {
 
   const [dvatData, setDvatData] = useState<Array<DvatData>>([]);
 
+  const [city, setCity] = useState<"Dadra_Nagar_Haveli" | "DAMAN" | "DIU">(
+    "Dadra_Nagar_Haveli"
+  );
+  const citys = [
+    { label: "DNH", value: "Dadra_Nagar_Haveli" },
+    { label: "DD", value: "DAMAN" },
+    { label: "DIU", value: "DIU" },
+  ];
+  const onCityChange = async (e: RadioChangeEvent) => {
+    setCity(e.target.value);
+    setLoading(true);
+    const response = await DistrictWiseCommodityReport({
+      office: e.target.value,
+    });
+    if (response.status == true && response.data) {
+      setDvatData(response.data);
+      setTotal(response.data.reduce((acc, item) => acc + item.total_amount, 0));
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const response = await PetroleumCommodityReport();
+      const response = await DistrictWiseCommodityReport({
+        office: city,
+      });
       if (response.status == true && response.data) {
         setDvatData(response.data);
         setTotal(
@@ -51,7 +65,7 @@ const PetroleumCommodityPage = () => {
       setLoading(false);
     };
     init();
-  }, [userid]);
+  }, [city]);
 
   if (isLoading)
     return (
@@ -64,9 +78,21 @@ const PetroleumCommodityPage = () => {
     <>
       <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white flex">
-            <p>Top Selling Petroleum Commodities</p>
+          <div className=" p-2 text-black flex">
+            <p>Top Selling Commodities</p>
             <div className="grow"></div>
+            <div className="w-96">
+              <Radio.Group
+                block
+                options={citys}
+                size="small"
+                value={city}
+                onChange={onCityChange}
+                defaultValue="DNH"
+                optionType="button"
+                buttonStyle="solid"
+              />
+            </div>
           </div>
           {dvatData.length > 0 ? (
             <Table className="border mt-2">
@@ -99,9 +125,7 @@ const PetroleumCommodityPage = () => {
                     return (
                       <TableRow key={index}>
                         <TableCell className="border text-center p-2">
-                          {val.office == "Dadra_Nagar_Haveli"
-                            ? "Dadra & Nagar Haveli"
-                            : val.office}
+                          {val.office}
                         </TableCell>
                         <TableCell className="border text-center p-2">
                           {val.name}
@@ -136,4 +160,4 @@ const PetroleumCommodityPage = () => {
   );
 };
 
-export default PetroleumCommodityPage;
+export default DistrictWiseCommodityPage;

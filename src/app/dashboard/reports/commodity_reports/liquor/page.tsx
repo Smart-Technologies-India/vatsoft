@@ -8,21 +8,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Alert, Button } from "antd";
 import { useEffect, useState } from "react";
-
 import { getCookie } from "cookies-next";
-import { dvat04 } from "@prisma/client";
 import numberWithIndianFormat, { encryptURLData } from "@/utils/methods";
-import PetroleumCommodityReport from "@/action/report/petroleumcommodityreport";
+import LiquorCommodityReport from "@/action/report/liquorcommodityreport";
+import { Alert } from "antd";
 
-interface ResponseType {
-  dvat04: dvat04;
-  lastfiling: string;
-  pending: number;
-}
-
-const PetroleumCommodityPage = () => {
+const LiquorCommodityPage = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
   const [isLoading, setLoading] = useState<boolean>(true);
   const [total, setTotal] = useState<number>(0);
@@ -41,7 +33,7 @@ const PetroleumCommodityPage = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const response = await PetroleumCommodityReport();
+      const response = await LiquorCommodityReport();
       if (response.status == true && response.data) {
         setDvatData(response.data);
         setTotal(
@@ -65,7 +57,7 @@ const PetroleumCommodityPage = () => {
       <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white flex">
-            <p>Top Selling Petroleum Commodities</p>
+            <p>Top Selling Liquor Commodities</p>
             <div className="grow"></div>
           </div>
           {dvatData.length > 0 ? (
@@ -99,9 +91,7 @@ const PetroleumCommodityPage = () => {
                     return (
                       <TableRow key={index}>
                         <TableCell className="border text-center p-2">
-                          {val.office == "Dadra_Nagar_Haveli"
-                            ? "Dadra & Nagar Haveli"
-                            : val.office}
+                          {val.office}
                         </TableCell>
                         <TableCell className="border text-center p-2">
                           {val.name}
@@ -136,4 +126,4 @@ const PetroleumCommodityPage = () => {
   );
 };
 
-export default PetroleumCommodityPage;
+export default LiquorCommodityPage;

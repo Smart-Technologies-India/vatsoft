@@ -1,17 +1,19 @@
 "use server";
 import prisma from "../../../prisma/database";
 
-import { due_date_of_month, errorToString } from "@/utils/methods";
+import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import dayjs, { Dayjs } from "dayjs";
 
 const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = ReturnFiling.name;
   try {
+    const due_date_of_month = 28;
+
     const currentdate = dayjs();
-    const currentMonth = currentdate.format("MMMM"); // Get the current month name
-    const currentYear = currentdate.year().toString();
-    const nextMonthDate = currentdate.add(1, "month").date(due_date_of_month);
+    // const currentMonth = currentdate.format("MMMM"); // Get the current month name
+    // const currentYear = currentdate.year().toString();
+    // const nextMonthDate = currentdate.add(1, "month").date(due_date_of_month);
 
     const dvat_response = await prisma.dvat04.findMany({
       where: {
@@ -82,35 +84,47 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
             });
           })
         );
-
-        // Determine the correct month based on compositionScheme
-        // const duedate: Date = dvat.compositionScheme
-        //   ? GetCompDueDate(currentYear, currentMonth).toDate()
-        //   : nextMonthDate.toDate(); // Convert Day.js object to Date object
-
-        // // Perform upsert operation
-        // await prisma.return_filing.upsert({
-        //   where: {
-        //     dvatid_year_month: {
-        //       // Composite unique index (assuming it exists in your schema)
-        //       dvatid: dvat.id,
-        //       year: currentYear,
-        //       month: currentMonth,
-        //     },
-        //   },
-        //   create: {
-        //     createdById: 1,
-        //     filing_status: false,
-        //     dvatid: dvat.id,
-        //     year: currentYear,
-        //     month: currentMonth,
-        //     status: "ACTIVE",
-        //     due_date: duedate.toISOString(),
-        //   },
-        //   update: {}, // Empty update: do nothing if the record already exists
-        // });
       })
     );
+
+    const returnfiling_response = await prisma.return_filing.findMany({
+      where: {
+        deletedAt: null,
+        deletedById: null,
+        status: "ACTIVE",
+        return_status: {
+          in: ["DUE", "PENDINGFILING"],
+        },
+      },
+    });
+
+    const get28thDate = (): Date => {
+      const today = new Date(); // Get the current date
+      const year = today.getFullYear();
+      const month = today.getMonth(); // 0-based month index
+      return new Date(year, month, due_date_of_month); // Set the date to the 28th of the current month
+    };
+
+    if (returnfiling_response.length > 0) {
+      const currentdate: Date = get28thDate();
+
+      for (const filing of returnfiling_response) {
+        const update_response = await prisma.return_filing.update({
+          where: {
+            id: filing.id,
+          },
+          data: {
+            return_status: filing.filing_status
+              ? filing.due_date! > filing.filing_date!
+                ? "FILED"
+                : "LATEFILED"
+              : filing.due_date! < currentdate
+              ? "PENDINGFILING"
+              : "DUE",
+          },
+        });
+      }
+    }
 
     return createResponse({
       message: "Return filings created successfully.",

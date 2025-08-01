@@ -13,9 +13,10 @@ interface ResponseType {
   lastfiling: string;
   pending: number;
   notice: number;
+  isLate: boolean;
 }
 
-interface GetInactiveDealersPayload {
+interface AfterDeathLinePayload {
   arnnumber?: string;
   tradename?: string;
   dept: SelectOffice;
@@ -23,10 +24,10 @@ interface GetInactiveDealersPayload {
   take: number;
 }
 
-const GetInactiveDealers = async (
-  payload: GetInactiveDealersPayload
+const AfterDeathLine = async (
+  payload: AfterDeathLinePayload
 ): Promise<PaginationResponse<Array<ResponseType> | null>> => {
-  const functionname: string = GetInactiveDealers.name;
+  const functionname: string = AfterDeathLine.name;
   try {
     const dvat04response = await prisma.return_filing.findMany({
       where: {
@@ -80,6 +81,16 @@ const GetInactiveDealers = async (
         ? new Date(dvat04response[i].due_date!)
         : null;
 
+      const filingDate = dvat04response[i].filing_date;
+      const filingMonth = dvat04response[i].month;
+      const filingYear = dvat04response[i].year;
+
+      const isLate = IsFilingLate(
+        filingDate,
+        filingMonth,
+        parseInt(filingYear)
+      );
+
       if (currentDvat) {
         if (resMap.has(currentDvat.id)) {
           // If dvat already exists
@@ -90,20 +101,31 @@ const GetInactiveDealers = async (
           if (existingData) {
             if (!filingStatus && dueDate && dueDate < currentDate) {
               // Increase pending count if filing_status is false
-
-              existingData.pending += 1;
+              // existingData.pending += 1;
             } else if (filingStatus) {
               // Update lastfiling if filing_status is true and lastfiling is newer
               existingData.lastfiling = currentLastFiling;
+
+              if (
+                !(dvat04response[i].due_date! > dvat04response[i].filing_date!)
+              ) {
+                existingData.pending += 1;
+              }
             }
+            existingData.isLate = isLate;
           }
         } else {
           // If dvat does not exist, create a new entry
           resMap.set(currentDvat.id, {
             dvat04: currentDvat,
             lastfiling: filingStatus ? currentLastFiling : "N/A",
-            pending: !filingStatus && dueDate && dueDate < currentDate ? 1 : 0,
+            pending:
+              filingStatus &&
+              !(dvat04response[i].due_date! > dvat04response[i].filing_date!)
+                ? 1
+                : 0,
             notice: 0,
+            isLate: isLate,
           });
         }
       }
@@ -134,7 +156,7 @@ const GetInactiveDealers = async (
 
     // Convert Map to an array
     const res: ResponseType[] = Array.from(resMap.values()).filter(
-      (val: ResponseType) => val.pending != 0 && val.pending > 5
+      (val: ResponseType) => val.pending != 0
     );
 
     res.forEach((response) => {
@@ -165,4 +187,46 @@ const GetInactiveDealers = async (
   }
 };
 
-export default GetInactiveDealers;
+export default AfterDeathLine;
+
+const IsFilingLate = (
+  filingDateStr: Date | null,
+  filingMonthStr: string,
+  filingYear: number
+): boolean => {
+  if (!filingDateStr || !filingMonthStr || !filingYear) {
+    return false; // Invalid input
+  }
+  // 1. Convert filingMonth string to month index (0-11)
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const filingMonthIndex = monthNames.indexOf(filingMonthStr); // December = 11
+
+  // 2. Calculate due date: 28th of next month
+  let dueYear = filingYear;
+  let dueMonth = filingMonthIndex + 1; // next month
+  if (dueMonth > 11) {
+    dueMonth = 0;
+    dueYear += 1;
+  }
+  const dueDate = new Date(dueYear, dueMonth, 28); // 28th of next month
+
+  // 3. Parse filing date from "DD/MM/YYYY"
+  const [day, month, year] = filingDateStr.toString().split("/").map(Number);
+  const filingDate = new Date(year, month - 1, day);
+
+  // 4. Compare
+  return filingDate > dueDate;
+};

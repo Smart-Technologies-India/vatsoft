@@ -11,23 +11,22 @@ import {
 import type { InputRef, RadioChangeEvent } from "antd";
 import { Radio, Button, Input, Pagination } from "antd";
 import { useEffect, useRef, useState } from "react";
-import type { Dayjs } from "dayjs";
 import { getCookie } from "cookies-next";
 import { dvat04, user } from "@prisma/client";
 import { capitalcase, encryptURLData } from "@/utils/methods";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-// import SearchDeptPendingReturn from "@/action/dvat/searchdeptpendingreturn";
 import GetUser from "@/action/user/getuser";
-import GetInactiveDealers from "@/action/report/inactivedealers";
+import DealersConsistentlyCompliant from "@/action/report/dealers_consistently_compliance";
 
 interface ResponseType {
   dvat04: dvat04;
   lastfiling: string;
   pending: number;
+  isLate: boolean;
 }
 
-const InactiveDealers = () => {
+const AfterDeathLinePage = () => {
   const userid: number = parseFloat(getCookie("id") ?? "0");
   const route = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
@@ -59,10 +58,6 @@ const InactiveDealers = () => {
   const arnRef = useRef<InputRef>(null);
   const nameRef = useRef<InputRef>(null);
 
-  const [searchDate, setSearchDate] = useState<
-    [Dayjs | null, Dayjs | null] | null
-  >(null);
-
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
 
   const [user, setUpser] = useState<user | null>(null);
@@ -71,7 +66,7 @@ const InactiveDealers = () => {
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
-      const payment_data = await GetInactiveDealers({
+      const payment_data = await DealersConsistentlyCompliant({
         dept: userrespone.data.selectOffice!,
         take: 10,
         skip: 0,
@@ -99,7 +94,7 @@ const InactiveDealers = () => {
       const userrespone = await GetUser({ id: userid });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
-        const payment_data = await GetInactiveDealers({
+        const payment_data = await DealersConsistentlyCompliant({
           dept: userrespone.data.selectOffice!,
           take: 10,
           skip: 0,
@@ -121,53 +116,7 @@ const InactiveDealers = () => {
     };
     init();
   }, [userid]);
-  const get_years = (month: string, year: string): string => {
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    const monthIndex = monthNames.indexOf(capitalcase(month));
-    const yearNum = parseInt(year, 10);
 
-    // If the month is between September (index 8) and March (index 2), return year-year+1
-    if (monthIndex >= 8) {
-      // September to December
-      return `${yearNum}-${yearNum + 1}`;
-    } else {
-      // January to April
-      return `${yearNum - 1}-${yearNum}`;
-    }
-  };
-
-  // const get_month = (composition: boolean, month: string): string => {
-  //   if (composition) {
-  //     if (["January", "February", "March"].includes(capitalcase(month))) {
-  //       return "Jan-Mar";
-  //     } else if (["April", "May", "June"].includes(capitalcase(month))) {
-  //       return "Apr-Jun";
-  //     } else if (["July", "August", "September"].includes(capitalcase(month))) {
-  //       return "Jul-Sep";
-  //     } else if (
-  //       ["October", "November", "December"].includes(capitalcase(month))
-  //     ) {
-  //       return "Oct-Dec";
-  //     } else {
-  //       return "Jan-Mar";
-  //     }
-  //   } else {
-  //     return month;
-  //   }
-  // };
   const arnsearch = async () => {
     if (
       arnRef.current?.input?.value == undefined ||
@@ -176,34 +125,22 @@ const InactiveDealers = () => {
     ) {
       return toast.error("Enter arn number");
     }
-    const search_response = await GetInactiveDealers({
-      arnnumber: arnRef.current?.input?.value,
+    const search_response = await DealersConsistentlyCompliant({
       dept: user!.selectOffice!,
+      arnnumber: arnRef.current?.input?.value,
       take: 10,
       skip: 0,
     });
     if (search_response.status && search_response.data.result) {
       setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
-
-  // const datesearch = async () => {
-  //   if (searchDate == null || searchDate.length <= 1) {
-  //     return toast.error("Select state date and end date");
-  //   }
-
-  //   const search_response = await SearchDeptPendingReturn({
-  //     fromdate: searchDate[0]?.toDate(),
-  //     todate: searchDate[1]?.toDate(),
-  //     take: 10,
-  //     skip: 0,
-  //   });
-  //   if (search_response.status && search_response.data.result) {
-  //     setDvatData(search_response.data.result);
-  //     setSearch(true);
-  //   }
-  // };
 
   const namesearch = async () => {
     if (
@@ -213,14 +150,19 @@ const InactiveDealers = () => {
     ) {
       return toast.error("Enter TIN Number");
     }
-    const search_response = await GetInactiveDealers({
-      tradename: nameRef.current?.input?.value,
+    const search_response = await DealersConsistentlyCompliant({
       dept: user!.selectOffice!,
+      tradename: nameRef.current?.input?.value,
       take: 10,
       skip: 0,
     });
     if (search_response.status && search_response.data.result) {
       setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -234,9 +176,9 @@ const InactiveDealers = () => {
         ) {
           return toast.error("Enter arn number");
         }
-        const search_response = await GetInactiveDealers({
-          arnnumber: arnRef.current?.input?.value,
+        const search_response = await DealersConsistentlyCompliant({
           dept: user!.selectOffice!,
+          arnnumber: arnRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -258,9 +200,9 @@ const InactiveDealers = () => {
         ) {
           return toast.error("Enter TIN Number");
         }
-        const search_response = await GetInactiveDealers({
-          tradename: nameRef.current?.input?.value,
+        const search_response = await DealersConsistentlyCompliant({
           dept: user!.selectOffice!,
+          tradename: nameRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -276,7 +218,7 @@ const InactiveDealers = () => {
         }
       }
     } else {
-      const payment_data = await GetInactiveDealers({
+      const payment_data = await DealersConsistentlyCompliant({
         dept: user!.selectOffice!,
         take: pagesize,
         skip: pagesize * (page - 1),
@@ -304,7 +246,7 @@ const InactiveDealers = () => {
       <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white flex">
-            <p>Inactive Dealer</p>
+            <p>Dealers Consistently Compliance</p>
             <div className="grow"></div>
           </div>
           <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
@@ -385,7 +327,7 @@ const InactiveDealers = () => {
                   Last Filing Period
                 </TableHead>
                 <TableHead className="whitespace-nowrap text-center border p-2">
-                  Pending Returns
+                  Returns Filed
                 </TableHead>
                 <TableHead className="whitespace-nowrap text-center border p-2">
                   View
@@ -462,4 +404,4 @@ const InactiveDealers = () => {
   );
 };
 
-export default InactiveDealers;
+export default AfterDeathLinePage;

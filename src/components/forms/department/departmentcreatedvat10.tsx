@@ -18,6 +18,7 @@ import SearchTinNumber from "@/action/dvat/searchtin";
 import { CreateDvat10Schema, CreateDvat10Form } from "@/schema/dvat10";
 import dayjs from "dayjs";
 import CreateDvat10 from "@/action/notice_order/createdvat10";
+import { DateRangeSelect } from "../inputfields/daterangeselect";
 
 type DepartmentCreateDvat10ProviderProps = {
   userid: number;
@@ -215,27 +216,19 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
   const onSubmit = async (data: CreateDvat10Form) => {
     if (!dvatdata) return toast.error("User Dvat not found");
 
-    const currentday = new Date();
+    // const currentday = new Date();
 
-    const period_response = getPeriodNoReturnId(
-      currentday.getFullYear().toString(),
-      monthNames[currentday.getMonth()],
-      dvatdata
-    );
+    // const period_response = getPeriodNoReturnId(
+    //   currentday.getFullYear().toString(),
+    //   monthNames[currentday.getMonth()],
+    //   dvatdata
+    // );
 
-    // dvatid: number;
-    // createdby: number;
-    // remark?: string;
-    // tax_period_from: Date;
-    // tax_period_to: Date;
-    // due_date: Date;
-    // issuedId: number;
-    // officerId: number;
     const dvat24_response = await CreateDvat10({
       dvatid: dvatdata?.id,
       createdby: props.userid,
-      tax_period_from: period_response.form,
-      tax_period_to: period_response.to,
+      tax_period_from: new Date(data.tax_period[0]),
+      tax_period_to: new Date(data.tax_period[1]),
       due_date: new Date(data.due_date),
       issuedId: props.userid,
       officerId: props.userid,
@@ -375,10 +368,17 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
                 <p className="text-sm font-normal text-center">
                   Tax Period From - To
                 </p>
-                <p className="text-sm font-medium  text-center">
+                {/* <p className="text-sm font-medium  text-center">
                   {dayjs(new Date(periodData?.form!)).format("DD/MM/YYYY")} -{" "}
                   {dayjs(new Date(periodData?.to!)).format("DD/MM/YYYY")}
-                </p>
+                </p> */}
+                <DateRangeSelect<CreateDvat10Form>
+                  name="tax_period"
+                  required={true}
+                  title="Tax Period"
+                  placeholder={["Start Date", "End Date"]}
+                  format={"DD/MM/YYYY"}
+                />
               </div>
             </div>
 

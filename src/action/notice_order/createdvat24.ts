@@ -18,6 +18,7 @@ interface CreateDvat24Payload {
   officerId: number;
   tax: string;
   interest: string;
+  penalty: string;
   returns_01Id: number;
 }
 
@@ -42,11 +43,13 @@ const CreateDvat24 = async (
         cess: "0",
         interest: payload.interest,
         others: "0",
-        penalty: "0",
+        penalty: payload.penalty,
         createdById: payload.createdby,
         expire_date: today,
         total_tax_amount: (
-          parseInt(payload.tax) + parseInt(payload.interest)
+          parseInt(payload.tax) +
+          parseInt(payload.interest) +
+          parseInt(payload.penalty)
         ).toString(),
         reason: "DEMAND",
         status: "ACTIVE",

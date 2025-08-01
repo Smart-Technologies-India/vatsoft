@@ -19,6 +19,10 @@ const CreateDvat24Schema = object({
     string("Interest amount is required."),
     minLength(1, "Interest amount is required.")
   ),
+  penalty: pipe(
+    string("Penalty amount is required."),
+    minLength(1, "Penalty amount is required.")
+  ),
   due_date: pipe(string("Select Due Date."), minLength(1, "Select Due Date.")),
   remark: optional(string()),
 });

@@ -149,6 +149,7 @@ const Navbar = (props: NavbarProps) => {
           className="text-xl cursor-pointer text-gray-500"
           onClick={async () => {
             const response = await ReturnFiling();
+            console.log("Return Filing Response:", response);
             if (response.data && response.status) {
               toast.success("Data update successfully.");
             }

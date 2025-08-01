@@ -181,6 +181,8 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
       dvat24_reason: data.dvat24_reason,
       remark: data.remark,
       interest: data.interest,
+      penalty: data.penalty,
+
       tax: data.vat,
       createdby: props.userid,
       issuedId: props.userid,
@@ -376,6 +378,18 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
                     <TableCell className="text-center p-2 border">
                       <TaxtInput<CreateDvat24Form>
                         name="interest"
+                        required={true}
+                        numdes={true}
+                      />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
+                      Penalty
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">
+                      <TaxtInput<CreateDvat24Form>
+                        name="penalty"
                         required={true}
                         numdes={true}
                       />

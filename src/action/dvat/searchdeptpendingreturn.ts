@@ -11,8 +11,6 @@ import {
 interface DeptPendingReturnPayload {
   arnnumber?: string;
   tradename?: string;
-  fromdate?: Date;
-  todate?: Date;
   skip: number;
   take: number;
 }
