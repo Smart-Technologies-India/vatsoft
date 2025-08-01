@@ -9,6 +9,8 @@ import {
 } from "@/models/response";
 
 interface DeptPendingReturnPayload {
+  fromdate?: Date;
+  todate?: Date;
   arnnumber?: string;
   tradename?: string;
   skip: number;
