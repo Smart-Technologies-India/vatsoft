@@ -34,8 +34,10 @@ var MerchantCountry = "IN";
 var MerchantCurrency = "INR";
 var TotalDueAmount = "10";
 var OtherDetails = "NA";
-var SuccessURL = "https://test.sbiepay.sbi/secure/sucess3.jsp";
-var FailURL = "https://test.sbiepay.sbi/secure/fail3.jsp";
+// var SuccessURL = "https://test.sbiepay.sbi/secure/sucess3.jsp";
+// var FailURL = "https://test.sbiepay.sbi/secure/fail3.jsp";
+var SuccessURL = "http://194.238.22.198:6789/payment/success";
+var FailURL = "http://194.238.22.198:6789/payment/fail";
 var AggregatorId = "SBIEPAY";
 var MerchantCustomerID = "5";
 var Paymode = "NB";
@@ -43,55 +45,6 @@ var Accesmedium = "ONLINE";
 var TransactionSource = "ONLINE";
 // var MerchantOrderNo = "4573243384";
 var MerchantOrderNo = new Date().getTime().toString();
-
-// app.get("/sbiepay", function (req, res) {
-//   try {
-//     var Single_Request =
-//       MerchantId +
-//       "|" +
-//       OperatingMode +
-//       "|" +
-//       MerchantCountry +
-//       "|" +
-//       MerchantCurrency +
-//       "|" +
-//       TotalDueAmount +
-//       "|" +
-//       OtherDetails +
-//       "|" +
-//       SuccessURL +
-//       "|" +
-//       FailURL +
-//       "|" +
-//       AggregatorId +
-//       "|" +
-//       MerchantOrderNo +
-//       "|" +
-//       MerchantCustomerID +
-//       "|" +
-//       Paymode +
-//       "|" +
-//       Accesmedium +
-//       "|" +
-//       TransactionSource;
-//     console.log("Request String:--------------\n" + Single_Request);
-//     var value = encrypt(Single_Request, Array_key);
-//     var Single_Paramresponce = value;
-//     console.log("ENCRYPTED VALUE: \n" + Single_Paramresponce);
-
-//     res.writeHead(200, { "Content-Type": "text/html" });
-//     res.end(
-//       '<html><head><body><form name="form1" method="post" action="https://test.sbiepay.sbi/secure/AggregatorHostedListener"><table><tr><th>Encrypted Transaction</th><td><textarea name="EncryptTrans" id="EncryptTrans" rows="4" cols="80" readonly style=" resize: none">' +
-//         Single_Paramresponce +
-//         '</textarea></td></tr><tr><th>Merchant ID </th><td><input type="text" name="merchIdVal" id="merchIdVal" value=' +
-//         MerchantId +
-//         '></td></tr><tr><td></td><td><input type="submit" style="background-color:lightblue;color:#7a6931;" value="Submit" /></td></tr></table></body></html>'
-//     );
-//   } catch (error) {
-//     console.log(error, "error==========");
-//     throw new Error(`callSbiEpay Failed.`, error);
-//   }
-// });
 
 app.prepare().then(() => {
   createServer((req, res) => {
@@ -157,6 +110,12 @@ app.prepare().then(() => {
         console.error("SBI Pay error:", error);
         res.writeHead(500).end("Server error");
       }
+    } else if (parsedUrl.pathname === "/payment/success") {
+      const transactionData = req.body;
+      res.render("success_page", { data: transactionData });
+    } else if (parsedUrl.pathname === "/payment/fail") {
+      const transactionData = req.body;
+      res.render("fail_page", { data: transactionData });
     } else {
       handle(req, res, parsedUrl);
     }
