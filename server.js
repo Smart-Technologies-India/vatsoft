@@ -135,7 +135,8 @@ app.prepare().then(() => {
         res.end(
           `<html><body>
              <form name="form1" method="post" action="https://test.sbiepay.sbi/secure/AggregatorHostedListener">
-               <table>
+             <p>${MerchantOrderNo}</p>  
+             <table>
                  <tr>
                    <th>Encrypted Transaction</th>
                    <td><textarea name="EncryptTrans" rows="4" cols="80" readonly>${value}</textarea></td>
