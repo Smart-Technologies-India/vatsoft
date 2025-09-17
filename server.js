@@ -41,7 +41,8 @@ var MerchantCustomerID = "5";
 var Paymode = "NB";
 var Accesmedium = "ONLINE";
 var TransactionSource = "ONLINE";
-var MerchantOrderNo = "4573243383";
+// var MerchantOrderNo = "4573243384";
+var MerchantOrderNo = new Date().getTime().toString();
 
 // app.get("/sbiepay", function (req, res) {
 //   try {
