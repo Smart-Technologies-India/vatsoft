@@ -115,18 +115,18 @@ const sbiesuccess = () => (req, res) => {
   res.write("Transactions Fetched Successfully");
   res.write("<br>");
   res.write("<br>Encrypted data =  " + req.body.encData);
-  res.write("<br>Encrypted data  body =  " + req.body);
+
   // const encData = AESobj.decrypt(req.body.encData, key);
-  // res.write("<br>Decrypted data =  " + encData);
+  res.write("<br>Decrypted data =  " + decrypt(encData, Array_key));
   res.end();
 };
 const sbiefail = () => (req, res) => {
   res.write("Transactions Failed");
   res.write("<br>");
   res.write("<br>Encrypted data =  " + req.body.encData);
-  res.write("<br>Encrypted data body =  " + req.body);
+
   // const encData = AESobj.decrypt(req.body.encData, key);
-  // res.write("<br>Decrypted data =  " + encData);
+  res.write("<br>Decrypted data =  " + decrypt(encData, Array_key));
   res.end();
 };
 app.prepare().then(() => {
