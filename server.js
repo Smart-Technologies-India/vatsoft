@@ -117,7 +117,7 @@ const sbiesuccess = () => (req, res) => {
   res.write("<br>Encrypted data =  " + req.body.encData);
 
   // const encData = AESobj.decrypt(req.body.encData, key);
-  res.write("<br>Decrypted data =  " + decrypt(encData, Array_key));
+  res.write("<br>Decrypted data =  " + decrypt(req.body.encData, Array_key));
   res.end();
 };
 const sbiefail = () => (req, res) => {
@@ -126,7 +126,7 @@ const sbiefail = () => (req, res) => {
   res.write("<br>Encrypted data =  " + req.body.encData);
 
   // const encData = AESobj.decrypt(req.body.encData, key);
-  res.write("<br>Decrypted data =  " + decrypt(encData, Array_key));
+  res.write("<br>Decrypted data =  " + decrypt(req.body.encData, Array_key));
   res.end();
 };
 app.prepare().then(() => {
