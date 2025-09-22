@@ -41,14 +41,14 @@ var TransactionSource = "ONLINE";
 var AggregatorId = "SBIEPAY";
 var SuccessURL = "https://dddnhvat.com/payment/success";
 var FailURL = "https://dddnhvat.com/payment/fail";
-// var OtherDetails = "NA";
-// var TotalDueAmount = "10";
+var OtherDetails = "NA";
+var TotalDueAmount = "10";
 // var SuccessURL = "https://test.sbiepay.sbi/secure/sucess3.jsp";
 // var FailURL = "https://test.sbiepay.sbi/secure/fail3.jsp";
-// var MerchantCustomerID = "5";
+var MerchantCustomerID = "5";
 
 // var MerchantOrderNo = "4573243384";
-// var MerchantOrderNo = new Date().getTime().toString();
+var MerchantOrderNo = new Date().getTime().toString();
 
 const sbiepay = () => (req, res) => {
   try {
@@ -59,8 +59,9 @@ const sbiepay = () => (req, res) => {
     const orderNo = zgvfz;
     const userId = aosdy;
     const otherDetails = blkjw;
+    console.log(req.query);
 
-    const Single_Request =
+    var Single_Request =
       MerchantId +
       "|" +
       OperatingMode +
@@ -69,9 +70,9 @@ const sbiepay = () => (req, res) => {
       "|" +
       MerchantCurrency +
       "|" +
-      amount +
+      TotalDueAmount +
       "|" +
-      otherDetails +
+      OtherDetails +
       "|" +
       SuccessURL +
       "|" +
@@ -79,15 +80,44 @@ const sbiepay = () => (req, res) => {
       "|" +
       AggregatorId +
       "|" +
-      orderNo +
+      MerchantOrderNo +
       "|" +
-      userId +
+      MerchantCustomerID +
       "|" +
       Paymode +
       "|" +
       Accesmedium +
       "|" +
       TransactionSource;
+
+    // const Single_Request =
+    //   MerchantId +
+    //   "|" +
+    //   OperatingMode +
+    //   "|" +
+    //   MerchantCountry +
+    //   "|" +
+    //   MerchantCurrency +
+    //   "|" +
+    //   amount +
+    //   "|" +
+    //   otherDetails +
+    //   "|" +
+    //   SuccessURL +
+    //   "|" +
+    //   FailURL +
+    //   "|" +
+    //   AggregatorId +
+    //   "|" +
+    //   orderNo +
+    //   "|" +
+    //   userId +
+    //   "|" +
+    //   Paymode +
+    //   "|" +
+    //   Accesmedium +
+    //   "|" +
+    //   TransactionSource;
 
     console.log("Request String:\n" + Single_Request);
     const value = encrypt(Single_Request, Array_key);
