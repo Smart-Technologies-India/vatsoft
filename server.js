@@ -1,10 +1,10 @@
-import { createServer } from "http";
-import { parse } from "url";
-import next from "next";
-import cron from "node-cron";
+// import { createServer } from "http";
+// import { parse } from "url";
+// import cron from "node-cron";
+// import csrf from "csurf";
+// const csrfProtection = csrf();
 import crypto from "crypto";
-import csrf from "csurf";
-const csrfProtection = csrf();
+import next from "next";
 import express from "express";
 
 function encrypt(input, key) {
@@ -35,22 +35,31 @@ var Array_key = "pWhMnIEMc4q6hKdi2Fx50Ii8CKAoSIqv9ScSpwuMHM4=";
 var OperatingMode = "DOM";
 var MerchantCountry = "IN";
 var MerchantCurrency = "INR";
-var TotalDueAmount = "10";
-var OtherDetails = "NA";
-// var SuccessURL = "https://test.sbiepay.sbi/secure/sucess3.jsp";
-// var FailURL = "https://test.sbiepay.sbi/secure/fail3.jsp";
-var SuccessURL = "https://dddnhvat.com/payment/success";
-var FailURL = "https://dddnhvat.com/payment/fail";
-var AggregatorId = "SBIEPAY";
-var MerchantCustomerID = "5";
 var Paymode = "NB";
 var Accesmedium = "ONLINE";
 var TransactionSource = "ONLINE";
+var AggregatorId = "SBIEPAY";
+var SuccessURL = "https://dddnhvat.com/payment/success";
+var FailURL = "https://dddnhvat.com/payment/fail";
+// var OtherDetails = "NA";
+// var TotalDueAmount = "10";
+// var SuccessURL = "https://test.sbiepay.sbi/secure/sucess3.jsp";
+// var FailURL = "https://test.sbiepay.sbi/secure/fail3.jsp";
+// var MerchantCustomerID = "5";
+
 // var MerchantOrderNo = "4573243384";
-var MerchantOrderNo = new Date().getTime().toString();
+// var MerchantOrderNo = new Date().getTime().toString();
 
 const sbiepay = () => (req, res) => {
   try {
+    const { xlmnx, ynboy, zgvfz, aosdy, blkjw } = req.query;
+
+    const amount = xlmnx;
+    const id = ynboy;
+    const orderNo = zgvfz;
+    const userId = aosdy;
+    const otherDetails = blkjw;
+
     const Single_Request =
       MerchantId +
       "|" +
@@ -60,9 +69,9 @@ const sbiepay = () => (req, res) => {
       "|" +
       MerchantCurrency +
       "|" +
-      TotalDueAmount +
+      amount +
       "|" +
-      OtherDetails +
+      otherDetails +
       "|" +
       SuccessURL +
       "|" +
@@ -70,9 +79,9 @@ const sbiepay = () => (req, res) => {
       "|" +
       AggregatorId +
       "|" +
-      MerchantOrderNo +
+      orderNo +
       "|" +
-      MerchantCustomerID +
+      userId +
       "|" +
       Paymode +
       "|" +
@@ -85,25 +94,30 @@ const sbiepay = () => (req, res) => {
 
     res.writeHead(200, { "Content-Type": "text/html" });
     res.end(
-      `<html><body>
+      `<html>
+      <body>
+        <div style="width: 100%; height: 100vh; background-color: #eee; display: grid; place-items: center;">
+          <h1>LOADING...</h1>
+        </div>
              <form name="form1" method="post" action="https://test.sbiepay.sbi/secure/AggregatorHostedListener">
-             <p>${MerchantOrderNo}</p>
-             <table>
-                 <tr>
+                <table>
+                  <tr style="visibility: hidden">
                    <th>Encrypted Transaction</th>
                    <td><textarea name="EncryptTrans" rows="4" cols="80" readonly>${value}</textarea></td>
-                 </tr>
-                 <tr>
+                  </tr>
+                  <tr style="visibility: hidden">
                    <th>Merchant ID</th>
                    <td><input type="text" name="merchIdVal" value="${MerchantId}" /></td>
-                 </tr>
-                 <tr>
+                  </tr>
+                  <tr style="visibility: hidden">
                    <td></td>
-                   <td><input type="submit" value="Submit" /></td>
-                 </tr>
-               </table>
-             </form>
-           </body></html>`
+                  <td><input type="submit" value="Submit" id="submit" /></td>
+                  </tr>
+                </table>
+              </form>
+              <script>const init = async () => {setTimeout(function () {document.getElementById("submit").click();}, 500);};window.addEventListener("load", init);</script>
+            </body>
+          </html>`
     );
   } catch (error) {
     console.error("SBI Pay error:", error);
@@ -120,6 +134,7 @@ const sbiesuccess = () => (req, res) => {
   res.write("<br>Decrypted data =  " + decrypt(req.body.encData, Array_key));
   res.end();
 };
+
 const sbiefail = () => (req, res) => {
   res.write("Transactions Failed");
   res.write("<br>");
@@ -129,6 +144,7 @@ const sbiefail = () => (req, res) => {
   res.write("<br>Decrypted data =  " + decrypt(req.body.encData, Array_key));
   res.end();
 };
+
 app.prepare().then(() => {
   const server = express();
 
