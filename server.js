@@ -93,32 +93,34 @@ const sbiepay = () => (req, res) => {
     const value = encrypt(Single_Request, Array_key);
 
     res.writeHead(200, { "Content-Type": "text/html" });
+    //  <div style="width: 100%; height: 100vh; background-color: #eee; display: grid; place-items: center;">
+    //       <h1>LOADING...</h1>
+    //     </div>
     res.end(
       `<html>
       <body>
-        <div style="width: 100%; height: 100vh; background-color: #eee; display: grid; place-items: center;">
-          <h1>LOADING...</h1>
-        </div>
+       
              <form name="form1" method="post" action="https://test.sbiepay.sbi/secure/AggregatorHostedListener">
                 <table>
-                  <tr style="visibility: hidden">
+                  <tr>
                    <th>Encrypted Transaction</th>
                    <td><textarea name="EncryptTrans" rows="4" cols="80" readonly>${value}</textarea></td>
                   </tr>
-                  <tr style="visibility: hidden">
+                  <tr>
                    <th>Merchant ID</th>
                    <td><input type="text" name="merchIdVal" value="${MerchantId}" /></td>
                   </tr>
-                  <tr style="visibility: hidden">
+                  <tr>
                    <td></td>
                   <td><input type="submit" value="Submit" id="submit" /></td>
                   </tr>
                 </table>
               </form>
-              <script>const init = async () => {setTimeout(function () {document.getElementById("submit").click();}, 500);};window.addEventListener("load", init);</script>
+          
             </body>
           </html>`
     );
+    // <script>const init = async () => {setTimeout(function () {document.getElementById("submit").click();}, 500);};window.addEventListener("load", init);</script>
   } catch (error) {
     console.error("SBI Pay error:", error);
     res.writeHead(500).end("Server error");
