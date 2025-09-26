@@ -35,22 +35,30 @@ var Array_key = "pWhMnIEMc4q6hKdi2Fx50Ii8CKAoSIqv9ScSpwuMHM4=";
 var OperatingMode = "DOM";
 var MerchantCountry = "IN";
 var MerchantCurrency = "INR";
-var TotalDueAmount = "10";
-var OtherDetails = "NA";
+// var TotalDueAmount = "10";
+// var OtherDetails = "NA";
 // var SuccessURL = "https://test.sbiepay.sbi/secure/sucess3.jsp";
 // var FailURL = "https://test.sbiepay.sbi/secure/fail3.jsp";
 var SuccessURL = "https://dddnhvat.com/payment/success";
 var FailURL = "https://dddnhvat.com/payment/fail";
 var AggregatorId = "SBIEPAY";
-var MerchantCustomerID = "5";
+// var MerchantCustomerID = "5";
 var Paymode = "NB";
 var Accesmedium = "ONLINE";
 var TransactionSource = "ONLINE";
 // var MerchantOrderNo = "4573243384";
-var MerchantOrderNo = new Date().getTime().toString();
+// var MerchantOrderNo = new Date().getTime().toString();
 
 const sbiepay = () => (req, res) => {
   try {
+    const { xlmnx, ynboy, zgvfz, aosdy, blkjw } = req.query;
+
+    const amount = xlmnx;
+    const id = ynboy;
+    const orderNo = zgvfz;
+    const userId = aosdy;
+    const otherDetails = blkjw;
+
     const Single_Request =
       MerchantId +
       "|" +
@@ -60,9 +68,9 @@ const sbiepay = () => (req, res) => {
       "|" +
       MerchantCurrency +
       "|" +
-      TotalDueAmount +
+      amount +
       "|" +
-      OtherDetails +
+      otherDetails +
       "|" +
       SuccessURL +
       "|" +
@@ -70,9 +78,9 @@ const sbiepay = () => (req, res) => {
       "|" +
       AggregatorId +
       "|" +
-      MerchantOrderNo +
+      orderNo +
       "|" +
-      MerchantCustomerID +
+      userId +
       "|" +
       Paymode +
       "|" +
@@ -87,7 +95,7 @@ const sbiepay = () => (req, res) => {
     res.end(
       `<html><body>
              <form name="form1" method="post" action="https://test.sbiepay.sbi/secure/AggregatorHostedListener">
-             <p>${MerchantOrderNo}</p>
+             <p>${ req.query}</p>
              <table>
                  <tr>
                    <th>Encrypted Transaction</th>
