@@ -88,29 +88,35 @@ const sbiepay = () => (req, res) => {
       "|" +
       TransactionSource;
 
-    console.log("Request String:\n" + Single_Request);
     const value = encrypt(Single_Request, Array_key);
 
     res.writeHead(200, { "Content-Type": "text/html" });
     res.end(
-      `<html><body>
+      `<html>
+        <head><title>SBI Pay</title>
+        <style> body, html { margin: 0; padding: 0; } </style>
+        </head>
+      <body>
+            <div style="width: 100%; height: 100vh; background-color: #eee; display: grid; place-items: center;">
+          <h1>LOADING...</h1>
+        </div>
              <form name="form1" method="post" action="https://test.sbiepay.sbi/secure/AggregatorHostedListener">
-             <p>${ req.query}</p>
              <table>
-                 <tr>
+                 <tr style="visibility: hidden">
                    <th>Encrypted Transaction</th>
                    <td><textarea name="EncryptTrans" rows="4" cols="80" readonly>${value}</textarea></td>
                  </tr>
-                 <tr>
+                 <tr style="visibility: hidden">
                    <th>Merchant ID</th>
                    <td><input type="text" name="merchIdVal" value="${MerchantId}" /></td>
                  </tr>
-                 <tr>
+                 <tr style="visibility: hidden">
                    <td></td>
-                   <td><input type="submit" value="Submit" /></td>
+                   <td><input type="submit" value="Submit" id="submit" /></td>
                  </tr>
                </table>
              </form>
+              <script>const init = async () => {setTimeout(function () {document.getElementById("submit").click();}, 1000);};window.addEventListener("load", init);</script>
            </body></html>`
     );
   } catch (error) {

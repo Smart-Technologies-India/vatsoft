@@ -7,10 +7,8 @@ import axios from "axios";
 import qs from "qs";
 
 interface GetPaymentStatusPayload {
-  MerchantId: string;
-  AggregatorId: string;
   Amount: string;
-  applicant_id: number;
+  applicant_id: string;
 }
 
 const GetPaymentStatus = async (
@@ -20,9 +18,9 @@ const GetPaymentStatus = async (
 
   try {
     let data = qs.stringify({
-      queryRequest: `|${payload.MerchantId}|${payload.applicant_id}|${payload.Amount}|`,
-      aggregatorId: payload.AggregatorId,
-      merchantId: payload.MerchantId,
+      queryRequest: `|1000605|${payload.applicant_id}|${payload.Amount}|`,
+      aggregatorId: "SBIEPAY",
+      merchantId: "1000605",
     });
 
     const response = await axios.post(
