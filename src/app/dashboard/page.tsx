@@ -21,8 +21,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 import { Chart as ChartJS, registerables } from "chart.js";
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-import { Bar } from "react-chartjs-2";
+import { Bar, Pie } from "react-chartjs-2";
 
 import numberWithIndianFormat, {
   due_date_of_month,
@@ -30,7 +31,7 @@ import numberWithIndianFormat, {
   isNegative,
 } from "@/utils/methods";
 
-ChartJS.register(...registerables);
+ChartJS.register(...registerables, ChartDataLabels);
 
 enum FileStatus {
   FILED,
@@ -118,114 +119,134 @@ const Page = () => {
     <>
       {user?.role == "USER" ? (
         <>
-          <main className="relative min-h-[calc(100vh-2.5rem)]">
-            <div className="pb-10 relative">
-              <div className="mx-auto md:px-4 px-6 md:w-4/6 py-6 relative">
-                <div className="bg-white p-4 rounded-xl">
-                  <h1 className="text-sm font-semibold font-nunito leading-3">
-                    Welcome {user?.firstName ?? ""} {user?.lastName ?? ""} To
-                    VATSMART Portal
-                  </h1>
-
-                  <p>{dvat != null && dvat?.tinNumber}</p>
-                  <h1 className="text-xs leading-3 text-gray-500 mt-1">
-                    Returns Calender (Last {month.length} return periods)
-                  </h1>
-                </div>
-                {/* second section start from here */}
-                <div className="w-full mt-2">
-                  <div className="flex w-full gap-2">
-                    <div className="flex-1 rounded-xl">
-                      <div className="flex items-center px-4">
-                        <div className="text-sm font-semibold font-nunito leading-3 py-1 w-full text-gray-500  rounded-xl">
-                          VAT
+          <main className="relative min-h-[calc(100vh-2.5rem)] bg-slate-50">
+            <div className="pb-6 relative">
+              <div className="mx-auto md:px-4 px-3 max-w-4xl py-4 relative">
+                {/* Welcome Header */}
+                <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm mb-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-2xl font-semibold mb-2 text-slate-800">
+                        Welcome, {user?.firstName ?? ""} {user?.lastName ?? ""}
+                      </h1>
+                      <p className="text-slate-600 text-base">VATSMART Portal Dashboard</p>
+                      {dvat != null && dvat?.tinNumber && (
+                        <div className="mt-3 inline-flex items-center bg-slate-100 px-3 py-1.5 rounded-lg">
+                          <span className="text-sm font-medium text-slate-700">TIN: {dvat.tinNumber}</span>
                         </div>
-                        {/* <div className="glow"></div>
-                        <LucideArrowRight className="text-xl text-blue-500" /> */}
+                      )}
+                    </div>
+                    <div className="hidden md:flex items-center">
+                      <div className="bg-slate-100 p-3 rounded-xl">
+                        <Fa6RegularBuilding className="text-2xl text-slate-600" />
                       </div>
-                      {month.map((val: any, index: number) => (
-                        <RentCard
-                          key={index}
-                          year={val.year.toString().substring(2)}
-                          month={formateDate(
-                            new Date(val.date.toString())
-                          ).substring(3, 5)}
-                          title={
-                            val.month.toString().toUpperCase() +
-                            "-" +
-                            val.year.toString()
-                          }
-                          date={val.date}
-                          status={val.completed ? "Filed" : "Not Filed"}
-                          statusdate={val.completed ? "Filed On" : "Due Date"}
-                          filestatus={
-                            val.completed
-                              ? FileStatus.FILED
-                              : FileStatus.NOTFILED
-                          }
-                        />
-                      ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4  md:grid-cols-2 lg:grid-cols-4 mt-2 gap-2">
-                  <ButtonCard
-                    title="Return Dashboard"
-                    icon={
-                      <Fa6RegularFileLines className="text-blue-500 text-lg" />
-                    }
-                    link="/dashboard/returns/returns-dashboard"
-                  />
-                  <ButtonCard
-                    title="Payment And Refunds"
-                    icon={
-                      <FluentWalletCreditCard20Regular className="text-blue-500 text-lg" />
-                    }
-                    link="/dashboard/payments"
-                  />
-                  <ButtonCard
-                    title="Notice(s) and Order(s)"
-                    icon={
-                      <FluentNotePin20Regular className="text-blue-500 text-lg" />
-                    }
-                    link="/dashboard/notice-and-order"
-                  />
-                  <ButtonCard
-                    title="Annual Return"
-                    icon={
-                      <FluentChannelSubtract48Regular className="text-blue-500 text-lg" />
-                    }
-                    link="/dashboard/returns/user-pending-return"
-                  />
+                {/* Returns Calendar Section */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <div>
+                      <h2 className="text-xl font-semibold text-slate-800">Returns Calendar</h2>
+                      <p className="text-slate-600 text-sm mt-1">Track your VAT return submissions</p>
+                    </div>
+                    <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg font-medium">
+                      {month.length} periods
+                    </span>
+                  </div>
+                  {/* VAT Returns List */}
+                  <div className="space-y-3">
+                    {month.map((val: any, index: number) => (
+                      <RentCard
+                        key={index}
+                        year={val.year.toString().substring(2)}
+                        month={formateDate(
+                          new Date(val.date.toString())
+                        ).substring(3, 5)}
+                        title={
+                          val.month.toString().toUpperCase() +
+                          "-" +
+                          val.year.toString()
+                        }
+                        date={val.date}
+                        status={val.completed ? "Filed" : "Not Filed"}
+                        statusdate={val.completed ? "Filed On" : "Due Date"}
+                        filestatus={
+                          val.completed
+                            ? FileStatus.FILED
+                            : FileStatus.NOTFILED
+                        }
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {!isProfileCompletd && user?.role! == "USER" && (
-              <div className="w-full h-full absolute top-0 left-0 bg-black  bg-opacity-20 grid place-items-center bg-clip-padding backdrop-filter backdrop-blur-sm">
-                <div className=" bg-white w-60">
-                  <div className="bg-rose-500 grid place-items-center py-6">
-                    <FluentEmojiSad20Regular className="text-white text-7xl" />
+                {/* Quick Actions */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <div className="mb-5">
+                    <h2 className="text-xl font-semibold text-slate-800">Quick Actions</h2>
+                    <p className="text-slate-600 text-sm mt-1">Access key portal features</p>
                   </div>
-                  <div className="p-2">
-                    <h1 className="text-lg text-center">Profile Incomplete </h1>
-                    <p className="text-xs">
-                      Your profile is incomplete, Kindly complete your profile
-                      in order to proceed.
-                    </p>
-                    <button
-                      onClick={() => {
-                        router.push("/dashboard/register");
-                      }}
-                      className="w-full bg-blue-500 text-white text-sm py-1 rounded-md mt-2"
-                    >
-                      Register
-                    </button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <ButtonCard
+                      title="Return Dashboard"
+                      icon={
+                        <Fa6RegularFileLines className="text-slate-600 text-xl" />
+                      }
+                      link="/dashboard/returns/returns-dashboard"
+                    />
+                    <ButtonCard
+                      title="Payment And Refunds"
+                      icon={
+                        <FluentWalletCreditCard20Regular className="text-slate-600 text-xl" />
+                      }
+                      link="/dashboard/payments"
+                    />
+                    <ButtonCard
+                      title="Notice(s) and Order(s)"
+                      icon={
+                        <FluentNotePin20Regular className="text-slate-600 text-xl" />
+                      }
+                      link="/dashboard/notice-and-order"
+                    />
+                    <ButtonCard
+                      title="Annual Return"
+                      icon={
+                        <FluentChannelSubtract48Regular className="text-slate-600 text-xl" />
+                      }
+                      link="/dashboard/returns/user-pending-return"
+                    />
                   </div>
                 </div>
               </div>
-            )}
+
+              {!isProfileCompletd && user?.role! == "USER" && (
+                <div className="w-full h-full absolute top-0 left-0 bg-black bg-opacity-20 grid place-items-center backdrop-blur-sm">
+                  <div className="bg-white w-72 rounded-lg overflow-hidden shadow-xl">
+                    <div className="bg-rose-500 grid place-items-center py-6">
+                      <FluentEmojiSad20Regular className="text-white text-5xl" />
+                    </div>
+                    <div className="p-4">
+                      <h1 className="text-lg text-center font-medium text-gray-900 mb-2">
+                        Profile Incomplete
+                      </h1>
+                      <p className="text-sm text-gray-600 text-center mb-4">
+                        Complete your profile to proceed.
+                      </p>
+                      <button
+                        onClick={() => {
+                          router.push("/dashboard/register");
+                        }}
+                        className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 rounded font-medium transition-colors"
+                      >
+                        Complete Registration
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </main>
         </>
       ) : (
@@ -271,57 +292,64 @@ const RentCard = (props: RentCardProps) => {
     return formateDate(res);
   };
   return (
-    <div className="flex w-full my-2 px-3 py-1 rounded-md items-center gap-2 bg-white justify-between ">
-      <div className="flex gap-2 items-center w-32">
-        <div
-          className={`h-10 w-1 rounded-sm ${
-            props.filestatus == FileStatus.FILED ? "bg-teal-500" : "bg-rose-500"
-          }`}
-        ></div>
-        <div className="hidden md:block">
-          {props.filestatus == FileStatus.FILED ? (
-            <>
-              <div className="leading-3 w-8 h-8 rounded-full bg-teal-500 bg-opacity-30 text-teal-500 grid place-items-center text-[0.7rem] font-medium tracking-wider text-center">
-                {props.month}
-                <br />
-                {props.year}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="leading-3 w-8 h-8 rounded-full bg-rose-500 bg-opacity-30 text-rose-500 grid place-items-center text-[0.7rem] font-medium tracking-wider text-center">
-                {props.month}
-                <br />
-                {props.year}
-              </div>
-            </>
+    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-100 transition-all duration-200">
+      <div className="flex items-center gap-4">
+        {/* Status Indicator */}
+        <div className="relative">
+          <div
+            className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-semibold ${
+              props.filestatus == FileStatus.FILED
+                ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                : "bg-amber-100 text-amber-700 border border-amber-200"
+            }`}
+          >
+            <div className="text-center leading-tight">
+              <div>{props.month}</div>
+              <div>{props.year}</div>
+            </div>
+          </div>
+          {props.filestatus == FileStatus.FILED && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
+              <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
           )}
         </div>
-        <h1 className="text-xs font-semibold font-nunito leading-3">
-          {props.title}
-        </h1>
+
+        {/* Return Info */}
+        <div>
+          <h3 className="font-semibold text-slate-800 text-base mb-1">{props.title}</h3>
+          <div className="flex items-center gap-3">
+            <span
+              className={`text-sm px-3 py-1 rounded-full font-medium ${
+                props.filestatus == FileStatus.FILED
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              {props.status}
+            </span>
+            <span className="text-sm text-slate-600">
+              {props.statusdate}: {" "}
+              <span className="font-medium text-slate-800">
+                {props.filestatus == FileStatus.FILED
+                  ? formateDate(new Date(props.date))
+                  : getnextmonth()}
+              </span>
+            </span>
+          </div>
+        </div>
       </div>
 
-      <p className="text-xs font-normal text-gray-600 font-nunito leading-3 mt-1 w-16  text-center">
-        {props.status}
-      </p>
-      <div className="w-20 ">
-        <h1 className="text-xs font-semibold font-nunito leading-3">
-          {props.statusdate}
-        </h1>
-        <p className="text-xs font-normal text-gray-600 font-nunito leading-3 mt-1">
-          {props.filestatus == FileStatus.FILED
-            ? formateDate(new Date(props.date))
-            : getnextmonth()}
-        </p>
-      </div>
+      {/* Action Button */}
       <Link
         href={`/dashboard/returns/returns-dashboard?month=${
           monthNames[parseInt(props.month) - 1]
         }&year=${new Date(props.date).getFullYear()}`}
-        className="text-xs rounded px-4 py-1 border border-blue-500 text-blue-500 font-nunito"
+        className="text-sm px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 font-medium"
       >
-        View
+        Open
       </Link>
     </div>
   );
@@ -335,21 +363,29 @@ interface ButtonCardProps {
 
 const ButtonCard = (props: ButtonCardProps) => {
   return (
-    <div className="bg-white p-2  rounded-xl">
-      <div className="flex  items-center gap-2">
-        <div className="shrink-0 h-6 w-6 bg-blue-500 bg-opacity-30 rounded-full grid place-items-center text-white">
-          {props.icon}
+    <Link href={props.link} className="group">
+      <div className="bg-white hover:bg-slate-50 p-4 rounded-lg border border-slate-200 hover:border-slate-300 transition-all hover:shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <div className="p-3 bg-slate-100 rounded-xl group-hover:bg-slate-200 transition-colors">
+            {props.icon}
+          </div>
+          <svg 
+            className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
         </div>
-        <h1 className="text-xs leading-3 text-gray-500">{props.title}</h1>
+        <h3 className="text-base font-semibold text-slate-800 group-hover:text-slate-900 transition-colors mb-1">
+          {props.title}
+        </h3>
+        <p className="text-sm text-slate-600">
+          Access {props.title.toLowerCase()}
+        </p>
       </div>
-
-      <Link
-        href={props.link}
-        className="text-xs inline-block text-center text-white bg-blue-500 rounded-md w-full py-1 font-nunito mt-2"
-      >
-        View
-      </Link>
-    </div>
+    </Link>
   );
 };
 
@@ -364,29 +400,331 @@ interface DashboardCardProps {
 
 const DashboardCard = (props: DashboardCardProps) => {
   return (
-    <div className="bg-white shadow-sm rounded-md">
-      <h1 className="text-sm text-gray-500 p-1 px-2">{props.name}</h1>
-      <div className="w-full h-[1px] bg-gray-200"></div>
-      <div className="flex gap-2 items-center px-2">
-        <div className="grid place-items-start my-2">
-          {props.isruppy ? (
-            <p className="text-xl text-gray-600">&#8377;{props.count}</p>
-          ) : (
-            <p className="text-xl text-gray-600">{props.count}</p>
-          )}
-          <span className="text-xs text-gray-400">{props.subtitle}</span>
-        </div>
-        <div className="grow"></div>
-        <div>
-          <div
-            className={`rounded-full p-2 h-10 w-10 grid place-items-center ${props.color}`}
-          >
-            {props.children}
+    <div className="bg-white rounded shadow-sm border p-3 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <p className="text-xs font-medium text-gray-600 mb-0.5">{props.name}</p>
+          <div>
+            {props.isruppy ? (
+              <p className="text-base font-semibold text-gray-900">₹{props.count}</p>
+            ) : (
+              <p className="text-base font-semibold text-gray-900">{props.count}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-0.5">{props.subtitle}</p>
           </div>
+        </div>
+        <div className={`rounded p-1.5 ${props.color}`}>
+          {props.children}
         </div>
       </div>
     </div>
   );
+};
+
+// Pie Chart Data and Options
+const pieOptions: any = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: {
+    intersect: false,
+    mode: 'index',
+  },
+  animation: {
+    animateRotate: true,
+    animateScale: true,
+    duration: 1000,
+  },
+  elements: {
+    arc: {
+      borderWidth: 3,
+      borderColor: '#ffffff',
+      hoverBorderWidth: 4,
+    },
+  },
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: {
+        font: {
+          size: 11,
+          weight: '500',
+        },
+        padding: 12,
+        usePointStyle: true,
+        pointStyle: 'circle',
+        boxWidth: 8,
+        boxHeight: 8,
+        color: '#374151',
+      },
+    },
+    tooltip: {
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      titleColor: '#ffffff',
+      bodyColor: '#ffffff',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      cornerRadius: 8,
+      displayColors: true,
+      padding: 12,
+      titleFont: {
+        size: 13,
+        weight: 'bold',
+      },
+      bodyFont: {
+        size: 12,
+      },
+      callbacks: {
+        label: function (context: any) {
+          const label = context.label || '';
+          const value = context.parsed;
+          const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+          const percentage = ((value / total) * 100).toFixed(1);
+          return `${label}: ₹${numberWithIndianFormat(value)} (${percentage}%)`;
+        },
+      },
+    },
+    datalabels: {
+      display: true,
+      color: '#374151',
+      font: {
+        size: 11,
+        weight: 'bold',
+      },
+      formatter: function (value: number, context: any) {
+        const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+        const percentage = ((value / total) * 100).toFixed(1);
+        return percentage + '%';
+      },
+      anchor: 'end',
+      align: 'end',
+      offset: 8,
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      borderRadius: 6,
+      padding: {
+        top: 3,
+        bottom: 3,
+        left: 6,
+        right: 6,
+      },
+      textShadowColor: 'transparent',
+      textShadowBlur: 0,
+    },
+  },
+};
+
+// Sample data for District-wise Revenue
+const districtRevenueData = {
+  labels: ['Dadra & Nagar Haveli', 'Daman', 'Diu'],
+  datasets: [
+    {
+      data: [4500000, 3200000, 1800000],
+      backgroundColor: [
+        '#667eea', // Purple Blue
+        '#f093fb', // Pink
+        '#4facfe'  // Light Blue
+      ],
+      borderWidth: 3,
+      borderColor: '#ffffff',
+      hoverBackgroundColor: [
+        '#5a67d8',
+        '#e53e3e',
+        '#3182ce'
+      ],
+      hoverBorderWidth: 4,
+    },
+  ],
+};
+
+// Sample data for Category-wise Revenue
+const categoryRevenueData = {
+  labels: ['Liquor', 'Petroleum'],
+  datasets: [
+    {
+      data: [5800000, 3700000],
+      backgroundColor: [
+        '#a8edea', // Light Teal
+        '#ffecd2'  // Light Peach
+      ],
+      borderWidth: 3,
+      borderColor: '#ffffff',
+      hoverBackgroundColor: [
+        '#805ad5',
+        '#dd6b20'
+      ],
+      hoverBorderWidth: 4,
+    },
+  ],
+};
+
+// Sample data for Top Petroleum Commodities  
+const petroleumCommoditiesData = {
+  labels: ['Petrol', 'Diesel', 'CNG', 'PNG', 'Additives'],
+  datasets: [
+    {
+      data: [1500000, 1200000, 800000, 600000, 300000],
+      backgroundColor: [
+        '#FF6B6B', // Coral Red
+        '#4ECDC4', // Teal
+        '#45B7D1', // Sky Blue
+        '#96CEB4', // Mint Green
+        '#FFEAA7'  // Light Yellow
+      ],
+      borderWidth: 3,
+      borderColor: '#ffffff',
+      hoverBackgroundColor: [
+        '#ff5252',
+        '#26c6da',
+        '#42a5f5',
+        '#66bb6a',
+        '#ffcc02'
+      ],
+      hoverBorderWidth: 4,
+    },
+  ],
+};
+
+// Sample data for Top Liquor Commodities
+const liquorCommoditiesData = {
+  labels: ['Beer', 'Wine', 'Whiskey', 'Rum', 'Vodka'],
+  datasets: [
+    {
+      data: [2200000, 1800000, 1500000, 800000, 500000],
+      backgroundColor: [
+        '#A8E6CF', // Mint
+        '#DDA0DD', // Plum
+        '#F4A460', // Sandy Brown
+        '#87CEEB', // Sky Blue
+        '#FFB6C1'  // Light Pink
+      ],
+      borderWidth: 3,
+      borderColor: '#ffffff',
+      hoverBackgroundColor: [
+        '#7ed321',
+        '#9013fe',
+        '#f5a623',
+        '#50e3c2',
+        '#ff6b9d'
+      ],
+      hoverBorderWidth: 4,
+    },
+  ],
+};
+
+// Bar Chart Options for Dealer Charts
+const dealerBarOptions: any = {
+  responsive: true,
+  maintainAspectRatio: false,
+  indexAxis: 'y', // Horizontal bars
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      titleColor: '#ffffff',
+      bodyColor: '#ffffff',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      cornerRadius: 8,
+      padding: 12,
+      callbacks: {
+        label: function (context: any) {
+          return `Revenue: ₹${numberWithIndianFormat(context.parsed.x)}`;
+        },
+      },
+    },
+    datalabels: {
+      display: false, // Disable data labels for bar charts
+    },
+  },
+  scales: {
+    x: {
+      beginAtZero: true,
+      ticks: {
+        font: {
+          size: 10,
+        },
+        callback: function(value: any) {
+          return '₹' + numberWithIndianFormat(value);
+        },
+      },
+      grid: {
+        color: '#f3f4f6',
+      },
+    },
+    y: {
+      ticks: {
+        font: {
+          size: 10,
+        },
+        maxTicksLimit: 10,
+      },
+      grid: {
+        display: false,
+      },
+    },
+  },
+  elements: {
+    bar: {
+      borderRadius: 4,
+    },
+  },
+};
+
+// Sample data for Top 10 Liquor Dealers (10 dealers from each district)
+const liquorDealersData = {
+  labels: [
+    // Dadra & Nagar Haveli - Top liquor dealers
+    'ABC Liquors (DNH)', 'Premium Spirits (DNH)', 'Royal Wine Shop (DNH)', 
+    // Daman - Top liquor dealers  
+    'Daman Beverages (DD)', 'Ocean View Liquors (DD)', 'Coastal Spirits (DD)',
+    // Diu - Top liquor dealers
+    'Island Wines (DIU)', 'Sunset Liquors (DIU)', 'Beach Bar Supplies (DIU)',
+    'Heritage Spirits (DNH)'
+  ],
+  datasets: [
+    {
+      label: 'Revenue',
+      data: [2800000, 2650000, 2400000, 2200000, 2100000, 1950000, 1800000, 1750000, 1600000, 1500000],
+      backgroundColor: [
+        '#8B5CF6', '#A855F7', '#9333EA', // DNH - Purple shades
+        '#3B82F6', '#2563EB', '#1D4ED8', // Daman - Blue shades  
+        '#10B981', '#059669', '#047857', '#6366F1' // Diu - Green shades + extra
+      ],
+      borderColor: '#ffffff',
+      borderWidth: 2,
+      borderRadius: 6,
+    },
+  ],
+};
+
+// Sample data for Top 10 Fuel Dealers (10 dealers from each district)
+const fuelDealersData = {
+  labels: [
+    // Dadra & Nagar Haveli - Top fuel dealers
+    'Highway Petrol (DNH)', 'City Fuel Station (DNH)', 'Express Petroleum (DNH)',
+    // Daman - Top fuel dealers
+    'Coastal Fuels (DD)', 'Port City Petrol (DD)', 'Marine Gas Station (DD)',
+    // Diu - Top fuel dealers  
+    'Island Petroleum (DIU)', 'Beach Fuel Stop (DIU)', 'Tropical Gas (DIU)',
+    'Green Energy (DNH)'
+  ],
+  datasets: [
+    {
+      label: 'Revenue',
+      data: [3200000, 3050000, 2900000, 2750000, 2600000, 2450000, 2300000, 2150000, 2000000, 1850000],
+      backgroundColor: [
+        '#F59E0B', '#D97706', '#B45309', // DNH - Amber shades
+        '#EF4444', '#DC2626', '#B91C1C', // Daman - Red shades
+        '#06B6D4', '#0891B2', '#0E7490', '#F97316' // Diu - Cyan shades + extra
+      ],
+      borderColor: '#ffffff', 
+      borderWidth: 2,
+      borderRadius: 6,
+    },
+  ],
 };
 
 const OfficerDashboardPage = () => {
@@ -536,20 +874,34 @@ const OfficerDashboardPage = () => {
   ];
 
   return (
-    <main className="p-6">
-      <div className="mb-2">
-        <Radio.Group
-          block
-          options={citys}
-          size="small"
-          value={city}
-          onChange={onCityChange}
-          defaultValue="DNH"
-          optionType="button"
-          buttonStyle="solid"
-        />
+    <main className="p-3 bg-gray-50 min-h-screen">
+      {/* Header Section */}
+      <div className="mb-4">
+        <div className="bg-white rounded-lg shadow-sm border p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-medium text-gray-900">Officer Dashboard</h1>
+              <p className="text-gray-500 text-sm mt-0.5">Monitor and manage VAT operations</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-xs text-gray-500 mb-0.5">Select Region</p>
+                <Radio.Group
+                  options={citys}
+                  size="small"
+                  value={city}
+                  onChange={onCityChange}
+                  defaultValue="DNH"
+                  optionType="button"
+                  buttonStyle="solid"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <Link href={"/dashboard/dealer_compliance"}>
           <DashboardCard
             name="Total Dealer"
@@ -634,62 +986,295 @@ const OfficerDashboardPage = () => {
           </DashboardCard>
         </Link>
       </div>
-      <div className="grid grid-cols-6 gap-2 mt-2">
-        <div className="bg-white h-80 shadow-sm rounded-md p-4 col-span-6 lg:col-span-4">
-          <Bar options={options} data={dataset} />
+      {/* Charts and Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
+        {/* Chart Section */}
+        <div className="lg:col-span-2 bg-white rounded shadow-sm border p-3">
+          <div className="mb-3">
+            <h2 className="text-sm font-medium text-gray-900">Revenue Overview</h2>
+            <p className="text-xs text-gray-500">Daily payment collection trends</p>
+          </div>
+          <div className="h-64">
+            <Bar options={options} data={dataset} />
+          </div>
         </div>
-        <div className="bg-white h-80 shadow-sm rounded-md p-4 col-span-6 lg:col-span-2 flex flex-col">
-          <h1>Current Month Received Information</h1>
-          <Separator className="shrink-0" />
-          <div className="grow"></div>
-          <div
-            className={`${
-              countData.last_month_received < countData.this_month_received
-                ? "bg-emerald-500 text-emerald-500"
-                : "bg-rose-500 text-rose-500"
-            } p-2 bg-opacity-10 `}
-          >
-            <h1 className="text-2xl">
-              {numberWithIndianFormat(countData.this_month_received)}
-            </h1>
-            <p className="text-sm">
-              Payment Received in {format(new Date(), "MMMM")}
-            </p>
-          </div>
-          <div className="grow"></div>
 
-          <div
-            className={`${
-              countData.last_month_received > countData.this_month_received
-                ? "bg-emerald-500 text-emerald-500"
-                : "bg-rose-500 text-rose-500"
-            } p-2 bg-opacity-10`}
-          >
-            <h1 className="text-2xl">
-              {numberWithIndianFormat(
-                isNegative(countData.last_month_received)
-                  ? 0
-                  : countData.last_month_received
-              )}
-            </h1>
-            <p className="text-sm">
-              Payment Received in {format(subMonths(new Date(), 1), "MMMM")}
-            </p>
+        {/* Payment Summary */}
+        <div className="bg-white rounded shadow-sm border p-3">
+          <div className="mb-3">
+            <h2 className="text-sm font-medium text-gray-900">Payment Summary</h2>
+            <p className="text-xs text-gray-500">Monthly comparison</p>
           </div>
-          <div className="grow"></div>
-          <div className={`bg-gray-500 p-2 bg-opacity-10 text-gray-500`}>
-            <h1 className="text-2xl text-gray-500">
-              {numberWithIndianFormat(
-                countData.this_month_received -
-                  (isNegative(countData.last_month_received)
+          
+          <div className="space-y-3">
+            {/* This Month */}
+            <div
+              className={`p-2.5 rounded ${
+                countData.last_month_received < countData.this_month_received
+                  ? "bg-emerald-50 border border-emerald-200"
+                  : "bg-rose-50 border border-rose-200"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-xs font-medium text-gray-600">
+                  {format(new Date(), "MMMM")}
+                </span>
+                <div className={`w-2 h-2 rounded-full ${
+                  countData.last_month_received < countData.this_month_received
+                    ? "bg-emerald-500"
+                    : "bg-rose-500"
+                }`}></div>
+              </div>
+              <p className={`text-base font-semibold ${
+                countData.last_month_received < countData.this_month_received
+                  ? "text-emerald-600"
+                  : "text-rose-600"
+              }`}>
+                ₹{numberWithIndianFormat(countData.this_month_received)}
+              </p>
+            </div>
+
+            {/* Last Month */}
+            <div
+              className={`p-2.5 rounded ${
+                countData.last_month_received > countData.this_month_received
+                  ? "bg-emerald-50 border border-emerald-200"
+                  : "bg-gray-50 border border-gray-200"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-xs font-medium text-gray-600">
+                  {format(subMonths(new Date(), 1), "MMMM")}
+                </span>
+                <div className={`w-2 h-2 rounded-full ${
+                  countData.last_month_received > countData.this_month_received
+                    ? "bg-emerald-500"
+                    : "bg-gray-400"
+                }`}></div>
+              </div>
+              <p className={`text-base font-semibold ${
+                countData.last_month_received > countData.this_month_received
+                  ? "text-emerald-600"
+                  : "text-gray-600"
+              }`}>
+                ₹{numberWithIndianFormat(
+                  isNegative(countData.last_month_received)
                     ? 0
-                    : countData.last_month_received)
-              )}
-            </h1>
-            <p className="text-sm">Total Payment in period</p>
+                    : countData.last_month_received
+                )}
+              </p>
+            </div>
+
+            {/* Difference */}
+            <div className="p-2.5 rounded bg-blue-50 border border-blue-200">
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-xs font-medium text-gray-600">Net Change</span>
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              </div>
+              <p className="text-base font-semibold text-blue-600">
+                ₹{numberWithIndianFormat(
+                  countData.this_month_received -
+                    (isNegative(countData.last_month_received)
+                      ? 0
+                      : countData.last_month_received)
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Dashboard Section */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Revenue Analytics</h2>
+            <p className="text-sm text-gray-500">Comprehensive revenue breakdown and insights</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
+            <span className="text-xs text-gray-500">Live Data</span>
+          </div>
+        </div>
+
+        {/* Top Dealers Bar Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+          {/* Top 10 Liquor Dealers Chart */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 flex items-center">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                  Top 10 Liquor Dealers by Revenue
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">Highest revenue contributing liquor dealers</p>
+              </div>
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-2 rounded-lg">
+                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+            </div>
+            <div className="h-80">
+              <Bar data={liquorDealersData} options={dealerBarOptions} />
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Total Dealers</span>
+                <span className="font-medium text-gray-700">30 Active Dealers</span>
+              </div>
+            </div>
           </div>
 
-          <div className="grow"></div>
+          {/* Top 10 Fuel Dealers Chart */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 flex items-center">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                  Top 10 Fuel Dealers by Revenue
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">Highest revenue contributing fuel dealers</p>
+              </div>
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 p-2 rounded-lg">
+                <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+            </div>
+            <div className="h-80">
+              <Bar data={fuelDealersData} options={dealerBarOptions} />
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Total Dealers</span>
+                <span className="font-medium text-gray-700">30 Active Dealers</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Top Row - District and Category Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+          {/* District-wise Revenue Chart */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 flex items-center">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                  District-wise Revenue
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">Revenue distribution across regions</p>
+              </div>
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-2 rounded-lg">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+            </div>
+            <div className="h-64 flex items-center justify-center">
+              <div className="w-full h-full">
+                <Pie data={districtRevenueData} options={pieOptions} />
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Total Revenue</span>
+                <span className="font-medium text-gray-700">₹{numberWithIndianFormat(9500000)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Category-wise Revenue Chart */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 flex items-center">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                  Category-wise Revenue
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">Liquor vs Petroleum comparison</p>
+              </div>
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-2 rounded-lg">
+                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
+              </div>
+            </div>
+            <div className="h-64 flex items-center justify-center">
+              <div className="w-full h-full">
+                <Pie data={categoryRevenueData} options={pieOptions} />
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Total Categories</span>
+                <span className="font-medium text-gray-700">₹{numberWithIndianFormat(9500000)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Row - Commodity Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Top Petroleum Commodities Chart */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 flex items-center">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                  Top Petroleum Products
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">Best selling petroleum commodities</p>
+              </div>
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 p-2 rounded-lg">
+                <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+            </div>
+            <div className="h-64 flex items-center justify-center">
+              <div className="w-full h-full">
+                <Pie data={petroleumCommoditiesData} options={pieOptions} />
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Total Products</span>
+                <span className="font-medium text-gray-700">₹{numberWithIndianFormat(4400000)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Liquor Commodities Chart */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                  Top Liquor Products
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">Best selling liquor commodities</p>
+              </div>
+              <div className="bg-gradient-to-r from-green-50 to-teal-50 p-2 rounded-lg">
+                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              </div>
+            </div>
+            <div className="h-64 flex items-center justify-center">
+              <div className="w-full h-full">
+                <Pie data={liquorCommoditiesData} options={pieOptions} />
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Total Products</span>
+                <span className="font-medium text-gray-700">₹{numberWithIndianFormat(6800000)}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
