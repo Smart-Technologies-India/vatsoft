@@ -450,6 +450,9 @@ const Home = () => {
         <h1 className=" text-gray-300 text-sm">
           Site Last Updated on 24-01-2025
         </h1>
+        <Link href="/policay" className="text-gray-300 text-sm hover:text-white hover:underline">
+          Terms & Policies
+        </Link>
         <h1 className="text-gray-300 text-sm">
           Designed & Developed by Smart Technologies
         </h1>
