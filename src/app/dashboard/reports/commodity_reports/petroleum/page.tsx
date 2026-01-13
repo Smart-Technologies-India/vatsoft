@@ -8,13 +8,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Alert, Button } from "antd";
+import { Alert } from "antd";
 import { useEffect, useState } from "react";
 
-import { getCookie } from "cookies-next";
 import { dvat04 } from "@prisma/client";
-import numberWithIndianFormat, { encryptURLData } from "@/utils/methods";
+import numberWithIndianFormat from "@/utils/methods";
 import PetroleumCommodityReport from "@/action/report/petroleumcommodityreport";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -23,7 +25,8 @@ interface ResponseType {
 }
 
 const PetroleumCommodityPage = () => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [total, setTotal] = useState<number>(0);
 
@@ -41,6 +44,12 @@ const PetroleumCommodityPage = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const response = await PetroleumCommodityReport();
       if (response.status == true && response.data) {
         setDvatData(response.data);

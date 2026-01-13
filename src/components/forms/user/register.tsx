@@ -18,7 +18,7 @@ import GetUncompeltedDvat04 from "@/action/register/getuncomplteddvat04";
 import { dvat04 } from "@prisma/client";
 import registerUser from "@/action/user/register/registeruser";
 import { useRouter } from "next/navigation";
-import { onFormError } from "@/utils/methods";
+import { encryptURLData, onFormError } from "@/utils/methods";
 
 type RegisterProviderProps = {
   userid: number;
@@ -64,7 +64,7 @@ const Registration = (props: RegisterProviderProps) => {
     if (userrespone.status && userrespone.data) {
       router.push(
         `/dashboard/new-registration/${
-          dvat != null ? dvat.id : userrespone.data.dvat04!.id
+          dvat != null ? encryptURLData(dvat.id.toString()) : encryptURLData(userrespone.data.dvat04!.id.toString())
         }/dvat1`
       );
     } else {

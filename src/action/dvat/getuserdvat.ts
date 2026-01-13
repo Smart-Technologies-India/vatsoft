@@ -7,9 +7,6 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
-import { cookies } from "next/headers";
-import { getCookie } from "cookies-next";
-// import { getCookie } from "cookies-next";
 
 const GetUserDvat04 = async (
   payload: GetUserDvat04Payload

@@ -4,7 +4,8 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
-import { setCookie } from "cookies-next";
+import { cookies } from "next/headers";
+import { generateToken } from "@/lib/jwt";
 
 interface LoginOtpPayload {
   mobile: string;
@@ -62,7 +63,7 @@ const LoginOtp = async (
       where: {
         status: "APPROVED",
         deletedAt: null,
-        deletedById: null,  
+        deletedById: null,
         createdById: usersresponse.id,
       },
     });
@@ -79,6 +80,23 @@ const LoginOtp = async (
 
     // setCookie("id", user_result.id.toString());
     // setCookie("role", user_result.role.toString());
+
+    const cookieStore = await cookies();
+    // Generate secure JWT token
+    const token = generateToken({
+      userId: user_result.id,
+      mobile: user_result.mobileOne ?? "",
+      role: user_result.role,
+    });
+
+    // Set httpOnly secure cookie
+    cookieStore.set("auth_token", token, {
+      httpOnly: true, // Cannot be accessed by JavaScript
+      secure: process.env.NODE_ENV === "production", // Only over HTTPS in production
+      sameSite: "strict", // CSRF protection
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
+    });
 
     return createResponse({
       message: "Login Successful",

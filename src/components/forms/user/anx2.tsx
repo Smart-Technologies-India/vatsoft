@@ -32,7 +32,7 @@ import GetAnx2ById from "@/action/anx2/getanxbyid";
 import GetAnx2 from "@/action/anx2/getanx2";
 import Anx2Create from "@/action/anx2/addanx2";
 import DeleteAnx2 from "@/action/anx2/deleteanx2";
-import { onFormError } from "@/utils/methods";
+import { encryptURLData, onFormError } from "@/utils/methods";
 
 type Anx2ProviderProps = {
   dvatid: number;
@@ -430,7 +430,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
         <button
           onClick={(e) => {
             e.preventDefault();
-            router.push(`/dashboard/new-registration/${props.dvatid}/anx1`);
+            router.push(`/dashboard/new-registration/${encryptURLData(props.dvatid.toString())}/anx1`);
           }}
           className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
         >
@@ -442,7 +442,7 @@ const Anx1 = (props: Anx2ProviderProps) => {
             e.preventDefault();
             if (Annexuredata.length === 0)
               return toast.error("Please add Annexure I");
-            router.push(`/dashboard/new-registration/${props.dvatid}/anx3`);
+            router.push(`/dashboard/new-registration/${encryptURLData(props.dvatid.toString())}/anx3`);
           }}
           className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
         >

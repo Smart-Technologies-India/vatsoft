@@ -1,9 +1,25 @@
+"use client";
 import { FormSteps } from "@/components/formstepts";
 
 import { RegisterProvider } from "@/components/forms/user/register";
-import { cookies } from "next/headers";
-const UserRegister = (): JSX.Element => {
-  const id: number = parseInt(cookies().get("id")?.value ?? "0");
+import { useEffect, useState } from "react";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
+const UserRegister = async () => {
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
+  useEffect(() => {
+    const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+    };
+    init();
+  }, []);
 
   return (
     <>
@@ -31,7 +47,7 @@ const UserRegister = (): JSX.Element => {
               <span className="text-red-500">*</span> Include mandatory fields
             </p>
           </div>
-          <RegisterProvider userid={id} />
+          <RegisterProvider userid={userid} />
         </div>
       </main>
     </>

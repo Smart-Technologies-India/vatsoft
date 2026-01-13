@@ -1,4 +1,5 @@
 "use client";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import DeleteManufacture from "@/action/stock/deletemanufacture";
 import GetManufacturerPurchase from "@/action/stock/getmanufacturerpurchase";
@@ -16,14 +17,20 @@ import {
   dvat04,
   manufacturer_purchase,
 } from "@prisma/client";
-import { Modal, Pagination, Popover, Radio, RadioChangeEvent } from "antd";
-import { getCookie } from "cookies-next";
+import {
+  Alert,
+  Modal,
+  Pagination,
+  Popover,
+  Radio,
+  RadioChangeEvent,
+} from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const ManufacturerStockData = () => {
-  const route = useRouter();
+  const router = useRouter();
   const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
     {}
   );
@@ -64,7 +71,7 @@ const ManufacturerStockData = () => {
 
   //   const [name, setName] = useState<string>("");
 
-  const userid: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const init = async () => {
     setLoading(true);
@@ -98,8 +105,15 @@ const ManufacturerStockData = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const dvat_response = await GetUserDvat04({
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (dvat_response.status && dvat_response.data) {
@@ -288,7 +302,7 @@ const ManufacturerStockData = () => {
                                 </button>
                                 <button
                                   onClick={() => {
-                                    route.push(
+                                    router.push(
                                       `/dashboard/stock/edit_manufacturer/${encryptURLData(
                                         val.id.toString()
                                       )}`
@@ -376,9 +390,15 @@ const ManufacturerStockData = () => {
             </>
           ) : (
             <>
-              <p className="bg-rose-500 bg-opacity-10 rounded text-rose-500 mt-2 px-2 py-1 border border-rose-500">
-                There is no daily purchase
-              </p>
+              <Alert
+                style={{
+                  marginTop: "10px",
+                  padding: "8px",
+                }}
+                type="error"
+                showIcon
+                description="There is no daily purchase"
+              />
             </>
           )}
         </div>

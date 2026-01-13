@@ -20,7 +20,7 @@ import { toast } from "react-toastify";
 import Dvat3Update from "@/action/user/register/dvat3";
 import { dvat04 } from "@prisma/client";
 import { ApiResponseType } from "@/models/response";
-import { onFormError } from "@/utils/methods";
+import { encryptURLData, onFormError } from "@/utils/methods";
 
 type Dvat03ProviderProps = {
   dvatid: number;
@@ -73,7 +73,7 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
       nameOfSignatory: data.nameOfSignatory,
     });
     if (userrespone.status) {
-      router.push(`/dashboard/new-registration/${props.dvatid}/anx1`);
+      router.push(`/dashboard/new-registration/${encryptURLData(props.dvatid.toString())}/anx1`);
     } else {
       toast.error(userrespone.message);
     }
@@ -239,7 +239,7 @@ const Dvat04 = (props: Dvat03ProviderProps) => {
         <button
           onClick={(e) => {
             e.preventDefault();
-            router.push(`/dashboard/new-registration/${props.dvatid}/dvat2`);
+            router.push(`/dashboard/new-registration/${encryptURLData(props.dvatid.toString())}/dvat2`);
           }}
           className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
         >

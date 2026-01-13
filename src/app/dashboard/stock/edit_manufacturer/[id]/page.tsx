@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetByIdManufacturerPurchase from "@/action/stock/getbyidmanufacturerpurchase";
 import GetManufacturerPurchase from "@/action/stock/getmanufacturerpurchase";
 import { CreateStockProvider } from "@/components/forms/createstock/createstock";
@@ -11,13 +12,12 @@ import {
   manufacturer_purchase,
   tin_number_master,
 } from "@prisma/client";
-import { getCookie } from "cookies-next";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const EditMPage = () => {
-  const userid: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
@@ -35,6 +35,12 @@ const EditMPage = () => {
   >(null);
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const response = await GetByIdManufacturerPurchase({
         id: mid,
       });

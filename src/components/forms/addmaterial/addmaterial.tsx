@@ -11,7 +11,6 @@ import { OptionValue } from "@/models/main";
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
 
-import { getCookie } from "cookies-next";
 import {
   DailyPurchaseMasterForm,
   DailyPurchaseMasterSchema,
@@ -24,7 +23,8 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import CreateMaterial from "@/action/stock/creatematerial";
-
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 type AddMaterialProviderProps = {
   userid: number;
@@ -48,7 +48,8 @@ export const AddMaterialProvider = (props: AddMaterialProviderProps) => {
 };
 
 const AddMaterial = (props: AddMaterialProviderProps) => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
 
   const {
     reset,
@@ -76,6 +77,12 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
       recipient_vat_no: "",
     });
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const tin_response = await SearchTin({
         tinumber: "24000000000",
       });

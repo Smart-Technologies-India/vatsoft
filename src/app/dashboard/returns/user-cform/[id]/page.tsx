@@ -1,5 +1,5 @@
 "use client";
-import { Button, Input, Pagination } from "antd";
+import { Alert, Button, Input, Pagination } from "antd";
 
 import { Button as ShButton } from "@/components/ui/button";
 import {
@@ -457,9 +457,15 @@ const TrackAppliation = () => {
             </Drawer> */}
           </div>
           {cformData.length == 0 && (
-            <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-              <p className="flex-1">There is no C-Form.</p>
-            </div>
+            <Alert
+              style={{
+                marginTop: "10px",
+                padding: "8px",
+              }}
+              type="error"
+              showIcon
+              description="There is no C-Form."
+            />
           )}
 
           {cformData.length != 0 && (

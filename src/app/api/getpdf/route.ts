@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 
-export async function POST(req: NextRequest, res: NextResponse) {
+export async function POST(req: NextRequest) {
   try {
     const { url } = await req.json();
     // Launch a new browser instance
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
     });
     await browser.close();
 
-    const response = new NextResponse(pdf, {
+    const response = new NextResponse(pdf as unknown as BodyInit, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=output.pdf",

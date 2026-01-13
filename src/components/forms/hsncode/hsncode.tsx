@@ -8,11 +8,12 @@ import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
-import { getCookie } from "cookies-next";
 import { HSNCodeForm, HSNCodeSchema } from "@/schema/hsncode";
 import { Label } from "@/components/ui/label";
 import GetHSNCode from "@/action/hsncode/gethsncode";
 import CreateHSNCode from "@/action/hsncode/createhsncode";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 type HSNCodeProviderProps = {
   userid: number;
@@ -41,7 +42,8 @@ export const HSNCodeMasterProvider = (props: HSNCodeProviderProps) => {
 };
 
 const HSNCodeMaster = (props: HSNCodeProviderProps) => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
+  const router = useRouter();
 
   const {
     reset,
@@ -61,6 +63,13 @@ const HSNCodeMaster = (props: HSNCodeProviderProps) => {
       trade3: "",
     });
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
       if (props.id) {
         const hsncode_response = await GetHSNCode({
           id: props.id,

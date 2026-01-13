@@ -1,4 +1,5 @@
 "use client";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AcceptSale from "@/action/stock/acceptsell";
 import ConvertDvat30A from "@/action/stock/convertdvat30a";
@@ -30,14 +31,12 @@ import {
   Radio,
   RadioChangeEvent,
 } from "antd";
-import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { value } from "valibot";
 
 const DocumentWiseDetails = () => {
-  const route = useRouter();
+  const router = useRouter();
   const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
     {}
   );
@@ -80,7 +79,7 @@ const DocumentWiseDetails = () => {
 
   //   const [name, setName] = useState<string>("");
 
-  const userid: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const init = async () => {
     setLoading(true);
@@ -114,8 +113,15 @@ const DocumentWiseDetails = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
       const dvat_response = await GetUserDvat04({
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (dvat_response.status && dvat_response.data) {
@@ -516,7 +522,7 @@ const DocumentWiseDetails = () => {
                                   </button>
                                   <button
                                     onClick={() => {
-                                      route.push(
+                                      router.push(
                                         `/dashboard/stock/edit_purchase/${encryptURLData(
                                           val.id.toString()
                                         )}`
@@ -606,9 +612,15 @@ const DocumentWiseDetails = () => {
             </>
           ) : (
             <>
-              <p className="bg-rose-500 bg-opacity-10 rounded text-rose-500 mt-2 px-2 py-1 border border-rose-500">
-                There is no daily purchase
-              </p>
+              <Alert
+                style={{
+                  marginTop: "10px",
+                  padding: "8px",
+                }}
+                type="error"
+                showIcon
+                description="There is no daily purchase"
+              />
             </>
           )}
         </div>

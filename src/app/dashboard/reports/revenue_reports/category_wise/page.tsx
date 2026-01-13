@@ -1,6 +1,4 @@
 "use client";
-import Last15Received from "@/action/dashboard/last15received";
-import OfficerDashboard from "@/action/dashboard/officerdashboard";
 import {
   Fa6RegularBuilding,
   Fa6RegularHourglassHalf,
@@ -312,9 +310,9 @@ const CategoryWiseReport = () => {
           <div
             className={`${
               countData.last_month_received < countData.this_month_received
-                ? "bg-emerald-500 text-emerald-500"
-                : "bg-rose-500 text-rose-500"
-            } p-2 bg-opacity-10 `}
+                ? "bg-emerald-500/10 text-emerald-500"
+                : "bg-rose-500/10 text-rose-500"
+            } p-2 `}
           >
             <h1 className="text-2xl">
               {numberWithIndianFormat(countData.this_month_received)}
@@ -328,9 +326,9 @@ const CategoryWiseReport = () => {
           <div
             className={`${
               countData.last_month_received > countData.this_month_received
-                ? "bg-emerald-500 text-emerald-500"
-                : "bg-rose-500 text-rose-500"
-            } p-2 bg-opacity-10`}
+                ? "bg-emerald-500/10 text-emerald-500"
+                : "bg-rose-500/10 text-rose-500"
+            } p-2`}
           >
             <h1 className="text-2xl">
               {numberWithIndianFormat(
@@ -344,7 +342,6 @@ const CategoryWiseReport = () => {
             </p>
           </div>
           <div className="grow"></div>
-          {/* <div className={`bg-gray-500 p-2 bg-opacity-10 text-gray-500`}> */}
           <div
             className={`${
               countData.this_month_received -
@@ -354,7 +351,7 @@ const CategoryWiseReport = () => {
               0
                 ? "bg-emerald-500 text-emerald-500"
                 : "bg-rose-500 text-rose-500"
-            } p-2 bg-opacity-10`}
+            } p-2/10`}
           >
             <h1 className="text-2xl">
               {numberWithIndianFormat(

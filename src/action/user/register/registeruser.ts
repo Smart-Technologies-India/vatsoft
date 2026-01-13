@@ -4,7 +4,7 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import prisma from "../../../../prisma/database";
 import { dvat04, user } from "@prisma/client";
-import { cookies } from "next/headers";
+import { getCurrentDvatId } from "@/lib/auth";
 
 interface RegisterUserPayload {
   id: number;
@@ -158,13 +158,14 @@ const registerUser = async (
     let dvatdata: dvat04 | null = null;
 
     if (!payload.isdavt04) {
-      const dvatid = cookies().get("dvat")?.value;
-      if (dvatid) {
+      const dvatid = await getCurrentDvatId();
+
+      if (dvatid != null && dvatid != undefined) {
         dvatdata = await prisma.dvat04.findFirst({
           where: {
             deletedAt: null,
             deletedBy: null,
-            id: parseInt(dvatid),
+            id: dvatid,
           },
         });
 

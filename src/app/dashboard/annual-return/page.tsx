@@ -23,7 +23,7 @@ const ReturnDashboard = () => {
       <main className="w-full p-4">
         <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4">
           <h1>Annual Return</h1>
-          <Marquee className="bg-yellow-500 bg-opacity-10 mt-2 text-sm">
+          <Marquee className="bg-yellow-500/10 mt-2 text-sm">
             This is a banner can be used for official updates and notifications.
           </Marquee>
 

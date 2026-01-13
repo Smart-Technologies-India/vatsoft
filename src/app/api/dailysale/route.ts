@@ -19,7 +19,7 @@ interface BodyData {
   }[];
 }
 
-export async function POST(req: NextRequest, res: NextResponse) {
+export async function POST(req: NextRequest) {
   try {
     // get the request body
     const body = await req.json();

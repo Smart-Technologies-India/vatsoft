@@ -42,8 +42,8 @@ export function DateSelect<T extends FieldValues>(props: DateSelectProps<T>) {
                 : null
             }
             status={error ? "error" : undefined}
-            onChange={(value: dayjs.Dayjs) => {
-              field.onChange(value ? value.toDate().toString() : null);
+            onChange={(date: Dayjs | null, dateString: string | null) => {
+              field.onChange(date ? date.toDate().toString() : null);
             }}
             minDate={props.mindate ? props.mindate : undefined}
             maxDate={props.maxdate ? props.maxdate : undefined}

@@ -53,7 +53,7 @@ import {
 } from "@/components/ui/table";
 import GetAllCommodity from "@/action/commodity/getcommodity";
 import Dvat2Update from "@/action/user/register/dvat2";
-import { onFormError } from "@/utils/methods";
+import { encryptURLData, onFormError } from "@/utils/methods";
 
 type Dvat01ProviderProps = {
   dvatid: number;
@@ -172,7 +172,11 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
     });
 
     if (userrespone.status) {
-      router.push(`/dashboard/new-registration/${props.dvatid}/dvat3`);
+      router.push(
+        `/dashboard/new-registration/${encryptURLData(
+          props.dvatid.toString()
+        )}/dvat3`
+      );
     } else {
       toast.error(userrespone.message);
     }
@@ -732,7 +736,11 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
         <button
           onClick={(e) => {
             e.preventDefault();
-            router.push(`/dashboard/new-registration/${props.dvatid}/dvat1`);
+            router.push(
+              `/dashboard/new-registration/${encryptURLData(
+                props.dvatid.toString()
+              )}/dvat1`
+            );
           }}
           className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
         >

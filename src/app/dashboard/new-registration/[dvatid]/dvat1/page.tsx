@@ -1,10 +1,33 @@
+"use client";
 import { FormSteps } from "@/components/formstepts";
 import { Dvat01Provider } from "@/components/forms/user/dvat01";
-import { cookies } from "next/headers";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { toast } from "react-toastify";
+import { decryptURLData } from "@/utils/methods";
 
-const Dvat1Page = ({ params }: { params: { dvatid: string } }) => {
-  const id: number = parseInt(cookies().get("id")?.value ?? "0");
+const Dvat1Page = () => {
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
 
+  useEffect(() => {
+    const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      console.log("authResponse.data", authResponse.data);
+      setUserid(authResponse.data);
+    };
+    init();
+  }, []);
+
+  const { dvatid } = useParams<{ dvatid: string | string[] }>();
+  const dvat04id = parseInt(
+    decryptURLData(Array.isArray(dvatid) ? dvatid[0] : dvatid, router)
+  );
   return (
     <>
       <main className="min-h-screen bg-[#f6f7fb] w-full py-2 px-6">
@@ -32,7 +55,7 @@ const Dvat1Page = ({ params }: { params: { dvatid: string } }) => {
             </p>
           </div>
 
-          <Dvat01Provider userid={id} dvatid={parseInt(params.dvatid)} />
+          <Dvat01Provider userid={userid} dvatid={dvat04id} />
         </div>
       </main>
     </>

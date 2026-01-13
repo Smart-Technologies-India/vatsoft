@@ -12,16 +12,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useRef, useState } from "react";
-import { getCookie } from "cookies-next";
-import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { parctitioner } from "@prisma/client";
 import GetAllParctitioner from "@/action/parctitioner/getallparctitioner";
 import SearchParctitioner from "@/action/parctitioner/searchparctitioner";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 const { RangePicker } = DatePicker;
 
 const SupplierDetails = () => {
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -176,6 +177,12 @@ const SupplierDetails = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const paractitioner_respone = await GetAllParctitioner({
         take: pagination.take,
         skip: pagination.skip,
@@ -191,7 +198,7 @@ const SupplierDetails = () => {
       setLoading(false);
     };
     init();
-  }, [current_user_id]);
+  }, [userid]);
 
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (isSearch) {
@@ -315,9 +322,7 @@ const SupplierDetails = () => {
     <>
       <div className="p-4">
         <div className="bg-white p-2 shadow mt-2">
-          <div className="bg-blue-500 p-2 text-white">
-            VAT Paractitioner
-          </div>
+          <div className="bg-blue-500 p-2 text-white">VAT Paractitioner</div>
           <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
             <Radio.Group
               onChange={onChange}

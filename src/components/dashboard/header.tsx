@@ -6,27 +6,20 @@ import {
   SolarHamburgerMenuOutline,
   TablerHome,
 } from "../icons";
-import { Button } from "../ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 
 import { usePathname, useRouter } from "next/navigation";
-import { logoutbtn } from "@/methods/user";
 import ReturnFiling from "@/action/dashboard/return_filing";
 import { toast } from "react-toastify";
 import { Role } from "@prisma/client";
 import { Drawer, Tooltip } from "antd";
-import { useRef, useState } from "react";
-import { getCookie } from "cookies-next";
-import ChangePassword from "@/action/user/changepassword";
-import { safeParse } from "valibot";
+import { useState } from "react";
 import {
   ForgetPasswordForm,
   ForgetpasswordSchema,
@@ -35,6 +28,9 @@ import { FormProvider, useForm } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { TaxtInput } from "../forms/inputfields/textinput";
 import { onFormError } from "@/utils/methods";
+import { getCurrentDvatId, logout } from "@/lib/auth";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import DvatChangePassword from "@/action/user/dvatchangepassword";
 
 interface NavbarProps {
   isOpen: boolean;
@@ -112,139 +108,104 @@ const Navbar = (props: NavbarProps) => {
 
   return (
     <nav
-      className={`py-1 px-4 w-full hidden-print  ${
-        !props.isbluck ? "md:ml-52 md:w-[calc(100%-13rem)]" : ""
-      } bg-white  flex items-center gap-2 shadow fixed top-0 left-0 z-10`}
+      className={`h-16 px-6 w-full hidden-print ${
+        !props.isbluck ? "md:ml-64 md:w-[calc(100%-16rem)]" : ""
+      } bg-white border-b border-gray-200 flex items-center gap-4 fixed top-0 left-0 z-10`}
     >
-      <div className="md:hidden">
+      {/* Mobile Menu Toggle */}
+      <button
+        className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        onClick={() => props.setIsOpen((val) => !val)}
+      >
         {props.isOpen ? (
-          <MaterialSymbolsCloseSmall
-            className="text-xl cursor-pointer"
-            onClick={() => props.setIsOpen((val) => !val)}
-          />
+          <MaterialSymbolsCloseSmall className="text-2xl text-gray-700" />
         ) : (
-          <SolarHamburgerMenuOutline
-            className="text-xl cursor-pointer"
-            onClick={() => props.setIsOpen((val) => !val)}
-          />
+          <SolarHamburgerMenuOutline className="text-xl text-gray-700" />
         )}
-      </div>
+      </button>
+
+      {/* Back Button */}
       {canBack() && (
-        <>
-          <Tooltip title="Go to previous page">
-            <IcBaselineArrowBack
-              className="hidden md:block cursor-pointer text-2xl"
-              onClick={() => {
-                router.back();
-              }}
-            />
-          </Tooltip>
-        </>
+        <Tooltip title="Go to previous page">
+          <button
+            className="hidden md:flex p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            onClick={() => router.back()}
+          >
+            <IcBaselineArrowBack className="text-xl text-gray-700" />
+          </button>
+        </Tooltip>
       )}
 
-      <p className="text-lg font-medium text-gray-600">{returnTitle()}</p>
+      {/* Page Title */}
+      <h1 className="text-base font-semibold text-gray-900">{returnTitle()}</h1>
+
       <div className="grow"></div>
-      {props.role != Role.USER && (
-        <FluentArrowSyncCircle24Regular
-          className="text-xl cursor-pointer text-gray-500"
-          onClick={async () => {
-            const response = await ReturnFiling();
-            console.log("Return Filing Response:", response);
-            if (response.data && response.status) {
-              toast.success("Data update successfully.");
-            }
-          }}
-        />
-      )}
 
-      <TablerHome
-        className="text-xl cursor-pointer text-gray-500"
-        onClick={() => {
-          router.push("/dashboard");
-        }}
-      />
-      <div className="w-[1px] h-8 bg-black"></div>
-      {/* {["ADMIN", "MANAGER"].includes(props.role) && (
-        <>
-          <IcBaselineRefresh
-            className="text-xl md:block hidden cursor-pointer"
-            onClick={refreshrent}
-          />
-          <div className="w-[1px] h-6 bg-gray-500"></div>
-        </>
-      )} */}
+      {/* Action Buttons */}
+      <div className="flex items-center gap-2">
+        {props.role != Role.USER && (
+          <Tooltip title="Sync data">
+            <button
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              onClick={async () => {
+                const response = await ReturnFiling();
+                if (response.data && response.status) {
+                  toast.success("Data update successfully.");
+                }
+              }}
+            >
+              <FluentArrowSyncCircle24Regular className="text-xl text-gray-600" />
+            </button>
+          </Tooltip>
+        )}
 
-      {/* <SolarCalendarMinimalisticBold className="text-xl md:block hidden" />
-      <SolarBellBold className="text-2xl md:block hidden" />
-      <SolarLightbulbMinimalisticBold className="text-xl md:block hidden" /> */}
-      <div>
+        <Tooltip title="Go to home">
+          <button
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            onClick={() => router.push("/dashboard")}
+          >
+            <TablerHome className="text-xl text-gray-600" />
+          </button>
+        </Tooltip>
+
+        <div className="w-px h-6 bg-gray-300 mx-2"></div>
+
+        {/* User Profile Dropdown */}
         <Drawer closeIcon={null} onClose={onClose} open={open}>
           <PasswordComponent onClose={onClose} />
         </Drawer>
+
         <DropdownMenu>
-          <DropdownMenuTrigger asChild className="px-1">
-            <Button variant="ghost" className="gap-2 flex text-right">
-              <div>
-                <p className="font-medium text-sm">{props.name}</p>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <div className="text-right hidden md:block">
+                <p className="text-sm font-medium text-gray-900">
+                  {props.name}
+                </p>
                 <p className="text-xs text-gray-500">{props.role}</p>
               </div>
-            </Button>
+              <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+                {(props.name[0] ?? "").toUpperCase()}
+              </div>
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            {/* <DropdownMenuLabel>My Account</DropdownMenuLabel> */}
+          <DropdownMenuContent className="w-56" align="end">
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={showDrawer} className="cursor-pointer">
-                Change Password
+                <span className="text-sm">Change Password</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            {/* {props.role != Role.USER && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    onClick={showDrawer}
-                    className="cursor-pointer"
-                  >
-                    Change Password
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </>
-            )} */}
-            {/* <DropdownMenuSeparator /> */}
-            {/* <DropdownMenuGroup>
-            <DropdownMenuItem>Team</DropdownMenuItem>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Invite users</DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem>Email</DropdownMenuItem>
-                  <DropdownMenuItem>Message</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>More...</DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-            <DropdownMenuItem>
-              New Team
-              <DropdownMenuShortcut>⌘+T</DropdownMenuShortcut>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>GitHub</DropdownMenuItem>
-          <DropdownMenuItem>Support</DropdownMenuItem>
-          <DropdownMenuItem disabled>API</DropdownMenuItem> */}
-            {/* <DropdownMenuSeparator /> */}
             <DropdownMenuItem
-              onClick={() => logoutbtn(router)}
-              className="cursor-pointer"
+              onClick={async () => {
+                await logout();
+                router.push("/");
+              }}
+              className="cursor-pointer text-red-600"
             >
-              Log out
+              <span className="text-sm">Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-      <div className="rounded-full bg-[#172e57] shrink-0 h-8 w-8 grid place-items-center text-lg font-semibold text-white">
-        {(props.name[0] ?? "").toUpperCase()}
       </div>
     </nav>
   );
@@ -256,6 +217,7 @@ interface PasswordComponentProps {
   onClose: () => void;
 }
 const PasswordComponent = (props: PasswordComponentProps) => {
+  const router = useRouter();
   // const {
   //   reset,
   //   handleSubmit,
@@ -267,8 +229,21 @@ const PasswordComponent = (props: PasswordComponentProps) => {
   });
 
   const onSubmit = async (data: ForgetPasswordForm) => {
-    const passwordrespone = await ChangePassword({
-      id: parseInt(getCookie("id") ?? "0"),
+    const authResponse = await getAuthenticatedUserId();
+    if (!authResponse.status || !authResponse.data) {
+      toast.error(authResponse.message);
+      return router.push("/");
+    }
+
+    const dvatid = await getCurrentDvatId();
+
+    if (dvatid == null || dvatid == undefined) {
+      toast.error("Dvat not found. Please try again.");
+      return router.push("/");
+    }
+
+    const passwordrespone = await DvatChangePassword({
+      id: dvatid,
       password: data.password,
     });
 

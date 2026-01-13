@@ -1,6 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { OptionValue } from "@/models/main";
 import { capitalcase } from "@/utils/methods";
+import { JSX } from "react";
 import { Controller, FieldValues, Path, useFormContext } from "react-hook-form";
 
 type RabioInputProps<T extends FieldValues> = {

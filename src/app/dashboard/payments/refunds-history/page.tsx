@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input, Pagination } from "antd";
+import { Alert, Button, Input, Pagination } from "antd";
 import {
   Table,
   TableBody,
@@ -15,16 +15,18 @@ import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
 import { dvat04, refunds } from "@prisma/client";
-import { getCookie } from "cookies-next";
 import { encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import GetUserRefunds from "@/action/refund/getuserrefunds";
 import SearchRefunds from "@/action/refund/searchrefunds";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 const RefundsHistory = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -69,7 +71,7 @@ const RefundsHistory = () => {
     setLoading(true);
 
     const dvat = await GetUserDvat04({
-      userid: id,
+      userid: userid,
     });
     if (dvat.status && dvat.data) {
       const refunds_resposne = await GetUserRefunds({
@@ -95,9 +97,15 @@ const RefundsHistory = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
 
       const dvat = await GetUserDvat04({
-        userid: id,
+        userid: authResponse.data,
       });
 
       if (dvat.status && dvat.data) {
@@ -120,7 +128,7 @@ const RefundsHistory = () => {
       setLoading(false);
     };
     init();
-  }, [id]);
+  }, [userid]);
 
   const cpinsearch = async () => {
     if (
@@ -312,9 +320,15 @@ const RefundsHistory = () => {
           </div>
 
           {refundsData.length == 0 && (
-            <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-              <p className="flex-1">There is no refunds.</p>
-            </div>
+            <Alert
+              style={{
+                marginTop: "10px",
+                padding: "8px",
+              }}
+              type="error"
+              showIcon
+              description="There is no refunds."
+            />
           )}
 
           {refundsData.length > 0 && (

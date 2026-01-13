@@ -28,11 +28,8 @@ import {
   ReturnType,
   tin_number_master,
 } from "@prisma/client";
-import { Button } from "antd";
-import GetAllCommodityMaster from "@/action/commoditymaster/getallcommoditymaster";
 import { onFormError } from "@/utils/methods";
 import AddReturnInvoice from "@/action/return/addreturninvoice";
-import { getCookie } from "cookies-next";
 import { customAlphabet } from "nanoid";
 import dayjs from "dayjs";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
@@ -42,6 +39,7 @@ import { RabioInput } from "../inputfields/radioinput";
 import getReturnEntryById from "@/action/return/getreturnentrybyid";
 import UpdateReturnEntry from "@/action/return/updatereturnentry";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 type CreateDvat30EntryProviderProps = {};
 export const CreateDvat30EntryProvider = (
@@ -62,7 +60,7 @@ const CreateDvat30Entry = (props: CreateDvat30EntryProviderProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const categoryOfEntry: OptionValue[] = [
     { value: "INVOICE", label: "Invoice" },
@@ -164,8 +162,15 @@ const CreateDvat30Entry = (props: CreateDvat30EntryProviderProps) => {
     });
 
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
       const response = await GetUserDvat04({
-        userid: id,
+        userid: authResponse.data,
       });
 
       if (response.status && response.data) {
@@ -298,7 +303,7 @@ const CreateDvat30Entry = (props: CreateDvat30EntryProviderProps) => {
 
       const recordresponse = await UpdateReturnEntry({
         id: return_entry_id,
-        updatedById: id,
+        updatedById: userid,
         invoice_number: data.invoice_number,
         total_invoice_number: data.total_invoice_number,
         invoice_date: date,
@@ -328,7 +333,7 @@ const CreateDvat30Entry = (props: CreateDvat30EntryProviderProps) => {
       date.setDate(date.getDate() + 1);
 
       const recordresponse = await AddReturnInvoice({
-        createdById: id,
+        createdById: userid,
         returnType: ReturnType.ORIGINAL,
         year: searchParams.get("year")!.toString(),
         quarter: searchParams.get("quarter") as Quarter,

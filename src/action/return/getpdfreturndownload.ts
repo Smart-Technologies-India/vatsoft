@@ -12,7 +12,6 @@ import {
   tin_number_master,
   user,
 } from "@prisma/client";
-import { cookies } from "next/headers";
 
 interface getPdfReturnDownloadPayload {
   userid: number;

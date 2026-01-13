@@ -2,13 +2,13 @@
 
 import GeneratePassword from "@/action/user/genpass";
 import { Button, Input } from "antd";
-import { useState } from "react";
+// import { useState } from "react";
 // import { hash } from "bcrypt";
 import { toast } from "react-toastify";
 
 export default function LoginPage() {
-  const [password, setPassword] = useState<string | undefined>(undefined);
-  const [value, setValue] = useState<string | undefined>(undefined);
+  // const [password, setPassword] = useState<string | undefined>(undefined);
+  // const [value, setValue] = useState<string | undefined>(undefined);
 
   const generate = async () => {
     // if (password === undefined) {
@@ -18,9 +18,10 @@ export default function LoginPage() {
     const newpass = await GeneratePassword({});
     if (!newpass.status) {
       toast.error(newpass.message);
+      console.log(newpass.message);
       return;
     }
-    setValue(newpass.data!);
+    // setValue(newpass.data!);
   };
 
   return (

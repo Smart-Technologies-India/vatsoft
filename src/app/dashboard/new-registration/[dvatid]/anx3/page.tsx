@@ -3,9 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { FormSteps } from "@/components/formstepts";
 import { annexure1, dvat04, user } from "@prisma/client";
-import { useEffect, useRef, useState } from "react";
-import GetUser from "@/action/user/getuser";
-import { getCookie } from "cookies-next";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useParams, useRouter } from "next/navigation";
 
@@ -22,45 +20,55 @@ import { ApiResponseType } from "@/models/response";
 import Anx1Update from "@/action/anx1/updateauth";
 import GetAnx1 from "@/action/anx1/getanx1";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
-import { encryptURLData } from "@/utils/methods";
+import { decryptURLData, encryptURLData } from "@/utils/methods";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 const Dvat2Page = () => {
-  const { dvatid } = useParams<{ dvatid: string | string[] }>();
-  const dvat04id = parseInt(Array.isArray(dvatid) ? dvatid[0] : dvatid);
-
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
-
   const router = useRouter();
+  const { dvatid } = useParams<{ dvatid: string | string[] }>();
+  const dvat04id = parseInt(
+    decryptURLData(Array.isArray(dvatid) ? dvatid[0] : dvatid, router)
+  );
 
-  const [user, setUser] = useState<user>();
+  const [userid, setUserid] = useState<number>(0);
+
+  // const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isSubmit, setIsSubmit] = useState<boolean>(false);
+  // const [isSubmit, setIsSubmit] = useState<boolean>(false);
   const [dvatData, setDvatData] = useState<dvat04 | null>(null);
 
   const [Annexuredata, setAnnexuredata] = useState<annexure1[]>([]);
 
   const handelSubmit = () => {
-    router.push(`/dashboard/register/${encryptURLData(dvat04id.toString())}/preview`);
+    router.push(
+      `/dashboard/register/${encryptURLData(dvat04id.toString())}/preview`
+    );
   };
 
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
 
       const dvat_response = await GetUserDvat04({
-        userid: current_user_id,
+        userid: authResponse.data,
       });
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);
       }
 
-      const user = await GetUser({ id: current_user_id });
+      // const user = await GetUser({ id: authResponse.data });
 
-      if (user.status) {
-        setUser(user.data!);
-      } else {
-        toast.error(user.message);
-      }
+      // if (user.status) {
+      //   setUser(user.data!);
+      // } else {
+      //   toast.error(user.message);
+      // }
 
       const getanx1resposne = await GetAnx1({ dvatid: dvat04id });
 
@@ -71,7 +79,7 @@ const Dvat2Page = () => {
       setIsLoading(false);
     };
     init();
-  }, [current_user_id, dvat04id]);
+  }, [userid, dvat04id]);
 
   const updateAnx1Auth = async (id: number, auth: boolean) => {
     const userrespone: ApiResponseType<annexure1 | null> = await Anx1Update({
@@ -120,12 +128,10 @@ const Dvat2Page = () => {
           <Table>
             <TableHeader className="bg-gray-100">
               <TableRow>
-                <TableHead className="w-[100px]">Type</TableHead>
-                <TableHead className="w-[200px]">Name</TableHead>
-                <TableHead className="w-[60px]">Contact</TableHead>
-                <TableHead className="w-[160px]">
-                  Is Authorised Signatory
-                </TableHead>
+                <TableHead className="w-25">Type</TableHead>
+                <TableHead className="w-50">Name</TableHead>
+                <TableHead className="w-15">Contact</TableHead>
+                <TableHead className="w-40">Is Authorised Signatory</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -160,30 +166,38 @@ const Dvat2Page = () => {
                   dvatData?.additionalShops == "0" &&
                   dvatData?.otherPlaceOfBusiness == "0"
                 ) {
-                  router.push(`/dashboard/new-registration/${dvat04id}/anx1`);
+                  router.push(
+                    `/dashboard/new-registration/${encryptURLData(
+                      dvat04id.toString()
+                    )}/anx1`
+                  );
                 } else {
-                  router.push(`/dashboard/new-registration/${dvat04id}/anx2`);
+                  router.push(
+                    `/dashboard/new-registration/${encryptURLData(
+                      dvat04id.toString()
+                    )}/anx2`
+                  );
                 }
               }}
               className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
             >
               Previous
             </Button>
-            {isSubmit ? (
+            {/* {isSubmit ? (
               <Button
                 disabled={true}
                 className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
               >
                 Loading...
               </Button>
-            ) : (
-              <Button
-                onClick={handelSubmit}
-                className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
-              >
-                Next
-              </Button>
-            )}
+            ) : ( */}
+            <Button
+              onClick={handelSubmit}
+              className="w-20  bg-blue-500 hover:bg-blue-600 text-white py-1 text-sm mt-2 h-8 "
+            >
+              Next
+            </Button>
+            {/* )} */}
           </div>
         </div>
       </main>

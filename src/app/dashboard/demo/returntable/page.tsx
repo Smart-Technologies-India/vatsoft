@@ -20,7 +20,7 @@ const ReturnTable = () => {
             supplies liable to reverse change (other taan those covered by Table
             3.1.1)
           </div>
-          <div className="text-blue-400 bg-blue-500 bg-opacity-10 border border-blue-300 mt-2 text-sm p-2 flex gap-2 items-center">
+          <div className="text-blue-400 bg-blue-500/10 border border-blue-300 mt-2 text-sm p-2 flex gap-2 items-center">
             <GgInfo className="text-xl cursor-pointer" />
             <p className="flex-1">
               Table 3.1(a), (b), and (e) are auto-drafted based on value proved

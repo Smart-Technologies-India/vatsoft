@@ -1,11 +1,11 @@
 "use client";
 
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import ChangePassword from "@/action/user/changepassword";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ForgetpasswordSchema } from "@/schema/forgetpassword";
-import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -29,8 +29,13 @@ export default function Home() {
     });
 
     if (result.success) {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
       const passwordrespone = await ChangePassword({
-        id: parseInt(getCookie("id") ?? "0"),
+        id: authResponse.data,
         password: result.output.password,
       });
 

@@ -4,13 +4,10 @@ import { FormProvider, useForm, useFormContext } from "react-hook-form";
 
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { MultiSelect } from "../inputfields/multiselect";
-import { OptionValue } from "@/models/main";
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
-import { getCookie } from "cookies-next";
-import dayjs from "dayjs";
 import {
   commodity_master,
   dvat04,
@@ -19,10 +16,10 @@ import {
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
-import CreateStock from "@/action/stock/createstock";
 import { CreateStockForm, CreateStockSchema } from "@/schema/create_stock";
 import { useRouter } from "next/navigation";
 import EditManufacture from "@/action/stock/editmanufacture";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 type EditStockProviderProps = {
   userid: number;
@@ -46,8 +43,7 @@ export const EditStockProvider = (props: EditStockProviderProps) => {
 
 const EditStockData = (props: EditStockProviderProps) => {
   const router = useRouter();
-
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const {
     reset,
@@ -71,6 +67,13 @@ const EditStockData = (props: EditStockProviderProps) => {
       quantity: props.data.quantity.toString(),
     });
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
       const commmaster = await GetCommodityMaster({
         id: props.data.commodity_master.id,
       });
@@ -78,7 +81,7 @@ const EditStockData = (props: EditStockProviderProps) => {
         setCommoditymaster(commmaster.data);
       }
       const response = await GetUserDvat04({
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (response.status && response.data) {

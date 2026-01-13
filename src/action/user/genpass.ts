@@ -2,8 +2,6 @@
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { user } from "@prisma/client";
-import { cookies } from "next/headers";
 import prisma from "../../../prisma/database";
 import { hash } from "bcrypt";
 
@@ -17,29 +15,29 @@ const GeneratePassword = async (
   const functionname: string = GeneratePassword.name;
 
   try {
-    const all_users = await prisma.user.findMany({
+    const all_dvat = await prisma.dvat04.findMany({
       where: {
-        status: "ACTIVE",
-        role: "USER",
+        // status: "ACTIVE",
+        // role: "USER",
         deletedAt: null,
       },
     });
 
-    if (!all_users) {
+    if (!all_dvat) {
       return createResponse({
-        message: "No user found",
+        message: "No dvat found",
         functionname,
         data: null,
       });
     }
 
-    for (let i = 0; i < all_users.length; i++) {
-      const user = all_users[i];
+    for (let i = 0; i < all_dvat.length; i++) {
+      const dvat = all_dvat[i];
       const password = genrenpass();
       const hashedPassword = await hash(password, 10);
-      await prisma.user.update({
+      await prisma.dvat04.update({
         where: {
-          id: user.id,
+          id: dvat.id,
         },
         data: {
           password: hashedPassword,

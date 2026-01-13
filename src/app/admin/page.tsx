@@ -6,7 +6,6 @@ import { user } from "@prisma/client";
 import { useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { safeParse } from "valibot";
-
 import Login from "@/action/user/login";
 import { Button } from "@/components/ui/button";
 import { LoginSchema } from "@/schema/login";

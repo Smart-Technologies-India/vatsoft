@@ -1,9 +1,24 @@
-import { CreateChallanProvider } from "@/components/forms/challan/createchallan";
+"use client";
 import { DepartmentCreateChallanProvider } from "@/components/forms/challan/departmentcreatechallan";
-import { cookies } from "next/headers";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { toast } from "react-toastify";
 
-const CreateChallan = () => {
-  const current_user_id: number = parseInt(cookies().get("id")?.value ?? "0");
+const CreateChallan = async () => {
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
+  useEffect(() => {
+    const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+    };
+    init();
+  }, []);
   return (
     <>
       <div className="p-2">
@@ -11,7 +26,7 @@ const CreateChallan = () => {
           <div className="bg-blue-500 p-2 text-white">
             Create Challan Form DVAT 20
           </div>
-          <DepartmentCreateChallanProvider userid={current_user_id} />
+          <DepartmentCreateChallanProvider userid={userid} />
         </div>
       </div>
     </>

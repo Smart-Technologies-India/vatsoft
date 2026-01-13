@@ -3,7 +3,6 @@
 
 import { dvat04 } from "@prisma/client";
 import { useEffect, useState } from "react";
-import { getCookie } from "cookies-next";
 import { toast } from "react-toastify";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -26,6 +25,7 @@ import {
   UserRegister,
 } from "@/components/preview/returnpreview";
 import UpdateToPendingProcess from "@/action/register/udpatetopendingprocess";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 const nanoid = customAlphabet("1234567890", 12);
 
@@ -36,7 +36,7 @@ const PreviewPage = () => {
 
   const dvatid: number = parseInt(decryptURLData(dvatidString, router));
 
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
   const tempregno: string = nanoid();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -48,6 +48,12 @@ const PreviewPage = () => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
 
       const dvat04 = await GetDvat04({ id: dvatid });
 
@@ -116,7 +122,7 @@ const PreviewPage = () => {
                 await generatePDF(
                   `/dashboard/register/pdfview/${encryptURLData(
                     dvatid.toString()
-                  )}/${encryptURLData(current_user_id.toString())}?sidebar=no`
+                  )}/${encryptURLData(userid.toString())}?sidebar=no`
                 );
               }}
               type="primary"
@@ -154,7 +160,7 @@ const PreviewPage = () => {
                       const response = await UpdateToPendingProcess({
                         tempregno: tempregno,
                         id: dvat04Data?.id ?? 0,
-                        userid: current_user_id,
+                        userid: userid,
                       });
                       if (!response.status && !response.data)
                         return toast.error(response.message);
@@ -192,7 +198,7 @@ const PreviewPage = () => {
           const response = await AddTempRegNo({
             tempregno: tempregno,
             id: dvat04Data?.id ?? 0,
-            userid: current_user_id,
+            userid: userid,
           });
           if (!response.status && !response.data)
             return toast.error(response.message);

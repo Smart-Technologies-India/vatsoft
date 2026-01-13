@@ -5,14 +5,15 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import { dvat04 } from "@prisma/client";
 import prisma from "../../../../prisma/database";
-import { cookies } from "next/headers";
+import { getCurrentDvatId } from "@/lib/auth";
 
 const GetDvat = async (
   payload: GetDvatPayload
 ): Promise<ApiResponseType<dvat04 | null>> => {
   try {
-    const dvatid = cookies().get("dvat")?.value;
-    if (!dvatid) {
+    const dvatid = await getCurrentDvatId();
+
+    if (dvatid == null || dvatid == undefined) {
       return {
         status: false,
         data: null,
@@ -23,8 +24,7 @@ const GetDvat = async (
 
     const dvat04 = await prisma.dvat04.findFirst({
       where: {
-        // createdById: parseInt(payload.userid.toString() ?? "0"),\
-        id: parseInt(dvatid),
+        id: dvatid,
         deletedAt: null,
         deletedBy: null,
       },

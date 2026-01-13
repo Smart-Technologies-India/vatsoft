@@ -18,8 +18,9 @@ import {
 } from "@/schema/commoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import CreateCommodityMaster from "@/action/commoditymaster/createcommoditymaster";
-import { getCookie } from "cookies-next";
 import UpdateCommodityMaster from "@/action/commoditymaster/updatecommoditymaster";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { set } from "date-fns";
 
 type CompositionProviderProps = {
   userid: number;
@@ -47,8 +48,8 @@ export const CommodityMasterProvider = (props: CompositionProviderProps) => {
 };
 
 const CommodityMaster = (props: CompositionProviderProps) => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
-
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
   const product_type: OptionValue[] = [
     { value: "LIQUOR", label: "Liquor" },
     { value: "FUEL", label: "Fuel" },
@@ -79,6 +80,12 @@ const CommodityMaster = (props: CompositionProviderProps) => {
       taxable_at: "",
     });
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       if (props.id) {
         const comm = await GetCommodityMaster({
           id: props.id,

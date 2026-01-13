@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input } from "antd";
+import { Alert, Button, Input } from "antd";
 import { Button as ShButton } from "@/components/ui/button";
 import {
   Table,
@@ -22,7 +22,6 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { composition, dvat04, user } from "@prisma/client";
-import { getCookie } from "cookies-next";
 import { encryptURLData, formateDate } from "@/utils/methods";
 import GetUser from "@/action/user/getuser";
 import GetAllUserDvat from "@/action/register/getalluserdvat";
@@ -30,9 +29,11 @@ import Link from "next/link";
 import GetUserComposition from "@/action/composition/getusercompositon";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 const TrackAppliation = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const router = useRouter();
 
@@ -46,8 +47,14 @@ const TrackAppliation = () => {
 
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const response = await GetAllUserDvat({
-        userid: id,
+        userid: authResponse.data,
       });
 
       if (response.data && response.status) {
@@ -55,7 +62,7 @@ const TrackAppliation = () => {
       }
 
       const userresponse = await GetUser({
-        id: id,
+        id: authResponse.data,
       });
 
       if (userresponse.data && userresponse.status) {
@@ -63,7 +70,7 @@ const TrackAppliation = () => {
       }
 
       const dvat = await GetUserDvat04({
-        userid: id,
+        userid: authResponse.data,
       });
 
       if (dvat.status && dvat.data) {
@@ -77,7 +84,7 @@ const TrackAppliation = () => {
       }
     };
     init();
-  }, [id]);
+  }, [userid]);
 
   return (
     <>
@@ -192,9 +199,15 @@ const TrackAppliation = () => {
 
           {data.length == 0 ? (
             <>
-              <p className="bg-rose-500 bg-opacity-10 text-rose-500 mt-2 px-2 py-1 border border-rose-500">
-                There is no record
-              </p>
+              <Alert
+                style={{
+                  marginTop: "10px",
+                  padding: "8px",
+                }}
+                type="error"
+                showIcon
+                description="There is no record."
+              />
             </>
           ) : (
             <>
@@ -233,7 +246,9 @@ const TrackAppliation = () => {
                                 ? `/dashboard/register/${encryptURLData(
                                     val.id.toString()
                                   )}/preview`
-                                : `/dashboard/new-registration/${val.id.toString()}/dvat1`
+                                : `/dashboard/new-registration/${encryptURLData(
+                                    val.id.toString()
+                                  )}/dvat1`
                             }
                             // href={`/dashboard/register/${encryptURLData(
                             //   val.id.toString()

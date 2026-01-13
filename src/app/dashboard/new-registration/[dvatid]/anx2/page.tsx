@@ -1,14 +1,32 @@
+"use client";
 import { FormSteps } from "@/components/formstepts";
 
 import { Anx2Provider } from "@/components/forms/user/anx2";
-import { cookies } from "next/headers";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { decryptURLData } from "@/utils/methods";
+import { useParams, useRouter } from "next/navigation";
 
-const Dvat2Page = ({ params }: { params: { dvatid: string } }) => {
-  const current_user_id: number = parseInt(cookies().get("id")?.value ?? "0");
-  // const { dvatid } = useParams<{ dvatid: string | string[] }>();
-  // const dvat04id = parseInt(Array.isArray(dvatid) ? dvatid[0] : dvatid);
+const Dvat2Page = () => {
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
+  useEffect(() => {
+    const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+    };
+    init();
+  }, []);
 
-  // const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const { dvatid } = useParams<{ dvatid: string | string[] }>();
+  const dvat04id = parseInt(
+    decryptURLData(Array.isArray(dvatid) ? dvatid[0] : dvatid, router)
+  );
 
   return (
     <>
@@ -37,10 +55,7 @@ const Dvat2Page = ({ params }: { params: { dvatid: string } }) => {
             </p>
           </div>
 
-          <Anx2Provider
-            userid={current_user_id}
-            dvatid={parseInt(params.dvatid)}
-          />
+          <Anx2Provider userid={userid} dvatid={dvat04id} />
         </div>
       </main>
     </>

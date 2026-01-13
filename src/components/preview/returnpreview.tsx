@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import GetUser from "@/action/user/getuser";
-import { getCookie } from "cookies-next";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
@@ -14,13 +13,16 @@ import { CommodityData } from "@/models/main";
 import GetAllCommodity from "@/action/commodity/getcommodity";
 import GetAnx2ById from "@/action/anx2/getanxbyid";
 import GetDvatById from "@/action/user/register/getdvatbyid";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 interface UserRegisterProps {
   userid?: number;
 }
 
-export const UserRegister = (props: UserRegisterProps): JSX.Element => {
-  const id: number = props.userid ?? parseInt(getCookie("id") ?? "0");
+export const UserRegister = (props: UserRegisterProps) => {
+  const router = useRouter();
+  const [id, setId] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [userdata, setUserData] = useState<user | null>(null);
 
@@ -28,7 +30,16 @@ export const UserRegister = (props: UserRegisterProps): JSX.Element => {
     const init = async () => {
       setIsLoading(true);
 
-      const user = await GetUser({ id: id });
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+
+      const cookieId = props.userid ?? authResponse.data;
+      setId(cookieId);
+
+      const user = await GetUser({ id: cookieId });
 
       if (user.status && user.data) {
         setUserData(user.data);
@@ -159,8 +170,8 @@ interface Dvat1PageProps {
   dvatid: number;
 }
 export const Dvat1Page = (props: Dvat1PageProps) => {
-  const current_user_id: number =
-    props.userid ?? parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [current_user_id, setCurrentUserId] = useState<number>(0);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -169,6 +180,13 @@ export const Dvat1Page = (props: Dvat1PageProps) => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      const cookieId = props.userid ?? authResponse.data;
+      setCurrentUserId(cookieId);
 
       const dvatdata = await GetDvatById({
         id: props.dvatid,
@@ -333,8 +351,8 @@ interface Dvat2PageProps {
   dvatid: number;
 }
 export const Dvat2Page = (props: Dvat2PageProps) => {
-  const current_user_id: number =
-    props.userid ?? parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [current_user_id, setCurrentUserId] = useState<number>(0);
 
   let type_of_account: { [key: string]: string } = {
     CURRENT: "Current Account",
@@ -354,8 +372,15 @@ export const Dvat2Page = (props: Dvat2PageProps) => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      const cookieId = props.userid ?? authResponse.data;
+      setCurrentUserId(cookieId);
 
-      const user = await GetUser({ id: current_user_id });
+      const user = await GetUser({ id: cookieId });
 
       if (user.status) {
         setUser(user.data!);
@@ -599,7 +624,7 @@ export const Dvat2Page = (props: Dvat2PageProps) => {
               </TableCell>
             </TableRow>
             <TableRow className="bg-gray-100 border">
-              <TableCell className="w-[100px] text-sm font-normal p-2 border">
+              <TableCell className="w-25 text-sm font-normal p-2 border">
                 Act
               </TableCell>
               <TableCell className=" text-sm font-normal p-2 border">
@@ -643,16 +668,23 @@ interface Dvat3PageProps {
 }
 
 export const Dvat3Page = (props: Dvat3PageProps) => {
-  const current_user_id: number =
-    props.userid ?? parseInt(getCookie("id") ?? "0");
+  const [current_user_id, setCurrentUserId] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [dvatData, setDvatData] = useState<dvat04>();
+  const router = useRouter();
 
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      const cookieId = props.userid ?? authResponse.data;
+      setCurrentUserId(cookieId);
 
-      const user = await GetUser({ id: current_user_id });
+      const user = await GetUser({ id: cookieId });
 
       if (user.status) {
         // setUser(user.data!);
@@ -753,9 +785,8 @@ interface Anx1PageProps {
 }
 
 export const Anx1Page = (props: Anx1PageProps) => {
-  const current_user_id: number =
-    props.userid ?? parseInt(getCookie("id") ?? "0");
-
+  const [current_user_id, setCurrentUserId] = useState<number>(0);
+  const router = useRouter();
   const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -764,8 +795,15 @@ export const Anx1Page = (props: Anx1PageProps) => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      const cookieId = props.userid ?? authResponse.data;
+      setCurrentUserId(cookieId);
 
-      const user = await GetUser({ id: current_user_id });
+      const user = await GetUser({ id: cookieId });
 
       if (user.status) {
         setUser(user.data!);
@@ -836,13 +874,13 @@ export const Anx1Page = (props: Anx1PageProps) => {
               </TableCell>
             </TableRow>
             <TableRow className="bg-gray-100">
-              <TableCell className="w-[100px] p-2 border">Type</TableCell>
-              <TableCell className="w-[200px] p-2 border">Name</TableCell>
-              <TableCell className="w-[60px] p-2 border">Contact</TableCell>
-              <TableCell className="w-[160px] p-2 border  hidden-print">
+              <TableCell className="w-25 p-2 border">Type</TableCell>
+              <TableCell className="w-50 p-2 border">Name</TableCell>
+              <TableCell className="w-15 p-2 border">Contact</TableCell>
+              <TableCell className="w-40 p-2 border  hidden-print">
                 Is Authorised Signatory
               </TableCell>
-              <TableCell className="w-[80px] p-2">Action</TableCell>
+              <TableCell className="w-20 p-2">Action</TableCell>
             </TableRow>
             <TableBody>
               {Annexuredata.map((data) => {
@@ -898,8 +936,8 @@ interface Anx2PageProps {
 }
 
 export const Anx2Page = (props: Anx2PageProps) => {
-  const current_user_id: number =
-    props.userid ?? parseInt(getCookie("id") ?? "0");
+  const [current_user_id, setCurrentUserId] = useState<number>(0);
+  const router = useRouter();
 
   const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -909,8 +947,15 @@ export const Anx2Page = (props: Anx2PageProps) => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      const cookieId = props.userid ?? authResponse.data;
+      setCurrentUserId(cookieId);
 
-      const user = await GetUser({ id: current_user_id });
+      const user = await GetUser({ id: cookieId });
 
       if (user.status) {
         setUser(user.data!);
@@ -986,15 +1031,13 @@ export const Anx2Page = (props: Anx2PageProps) => {
             </TableRow>
 
             <TableRow className="bg-gray-100">
-              <TableCell className="w-[100px] p-2 border">Type</TableCell>
-              <TableCell className="w-[200px] p-2 border">Name</TableCell>
-              <TableCell className="w-[60px] p-2 border">Contact</TableCell>
-              <TableCell className="w-[160px] p-2 border">
+              <TableCell className="w-25 p-2 border">Type</TableCell>
+              <TableCell className="w-50 p-2 border">Name</TableCell>
+              <TableCell className="w-15 p-2 border">Contact</TableCell>
+              <TableCell className="w-40 p-2 border">
                 Is Authorised Signatory
               </TableCell>
-              <TableCell className="w-[80px] p-2  hidden-print">
-                Action
-              </TableCell>
+              <TableCell className="w-20 p-2  hidden-print">Action</TableCell>
             </TableRow>
 
             <TableBody>
@@ -1045,8 +1088,8 @@ interface Anx3PageProps {
 }
 
 export const Anx3Page = (props: Anx3PageProps) => {
-  const current_user_id: number =
-    props.userid ?? parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [current_user_id, setCurrentUserId] = useState<number>(0);
 
   const [user, setUser] = useState<user>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -1056,8 +1099,15 @@ export const Anx3Page = (props: Anx3PageProps) => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      const cookieId = props.userid ?? authResponse.data;
+      setCurrentUserId(cookieId);
 
-      const user = await GetUser({ id: current_user_id });
+      const user = await GetUser({ id: cookieId });
 
       if (user.status) {
         setUser(user.data!);
@@ -1126,13 +1176,13 @@ export const Anx3Page = (props: Anx3PageProps) => {
             </TableCell>
           </TableRow>
           <TableRow className="bg-gray-100">
-            <TableCell className="w-[100px] p-2 border">Type</TableCell>
-            <TableCell className="w-[200px] p-2 border">Name</TableCell>
-            <TableCell className="w-[60px] p-2 border">Contact</TableCell>
-            <TableCell className="w-[160px] p-2 border">
+            <TableCell className="w-25 p-2 border">Type</TableCell>
+            <TableCell className="w-50 p-2 border">Name</TableCell>
+            <TableCell className="w-15 p-2 border">Contact</TableCell>
+            <TableCell className="w-40 p-2 border">
               Is Authorised Signatory
             </TableCell>
-            <TableCell className="w-[80px] p-2 hidden-print">Action</TableCell>
+            <TableCell className="w-20 p-2 hidden-print">Action</TableCell>
           </TableRow>
           <TableBody>
             {Annexuredata.map((data) => {

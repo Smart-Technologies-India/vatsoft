@@ -24,8 +24,7 @@ import {
   SaleOf,
   SaleOfInterstate,
 } from "@prisma/client";
-import { getCookie } from "cookies-next";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 
@@ -40,6 +39,7 @@ import AddPayment from "@/action/return/addpayment";
 import { toast } from "react-toastify";
 import CheckPayment from "@/action/return/checkpayment";
 import dayjs from "dayjs";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 interface PercentageOutput {
   increase: string;
@@ -48,8 +48,9 @@ interface PercentageOutput {
 
 const Dvat16ReturnPreview = () => {
   const path = usePathname();
+  const router = useRouter();
 
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid, setUserId] = useState<number>(0);
 
   const [return01, setReturn01] = useState<
     (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
@@ -64,13 +65,20 @@ const Dvat16ReturnPreview = () => {
   const searchparam = useSearchParams();
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+
+      setUserId(authResponse.data);
       const year: string = searchparam.get("year") ?? "";
       const month: string = searchparam.get("month") ?? "";
 
       const returnformsresponse = await getPdfReturn({
         year: year,
         month: month,
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (returnformsresponse.status && returnformsresponse.data) {

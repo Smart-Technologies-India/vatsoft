@@ -1,3 +1,5 @@
+"use client";
+
 import {
   GgInfo,
   MaterialSymbolsClose,
@@ -38,7 +40,7 @@ const supplierDetails = () => {
           <div className="bg-blue-500 p-2 text-white">
             B2B Invoices - supplier Details
           </div>
-          <div className="text-blue-400 bg-blue-500 bg-opacity-10 border border-blue-300 mt-2 text-sm p-2 flex gap-2 items-center">
+          <div className="text-blue-400 bg-blue-500/10 border border-blue-300 mt-2 text-sm p-2 flex gap-2 items-center">
             <GgInfo className="text-xl cursor-pointer" />
             <p className="flex-1">
               Instantly download records up-to 500 using Download Documents

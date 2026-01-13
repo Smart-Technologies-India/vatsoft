@@ -1,4 +1,5 @@
 "use client";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetAllCommodityMaster from "@/action/commoditymaster/getallcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import UpdateCommodityMaster from "@/action/commoditymaster/updatecommoditymaster";
@@ -13,12 +14,13 @@ import {
 } from "@/components/ui/table";
 import { commodity_master, Status } from "@prisma/client";
 import { Button, Drawer, Pagination, Popover } from "antd";
-import { getCookie } from "cookies-next";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const CommodityMaster = () => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -53,6 +55,12 @@ const CommodityMaster = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const commodtiy_resonse = await GetAllCommodityMaster({
         take: 10,
         skip: 0,

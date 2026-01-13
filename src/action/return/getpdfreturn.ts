@@ -8,11 +8,10 @@ import {
   registration,
   returns_01,
   returns_entry,
-  state,
   tin_number_master,
   user,
 } from "@prisma/client";
-import { cookies } from "next/headers";
+import { getCurrentDvatId } from "@/lib/auth";
 
 interface getPdfReturnPayload {
   userid: number;
@@ -34,24 +33,22 @@ const getPdfReturn = async (
   } | null>
 > => {
   try {
+    const dvatid = await getCurrentDvatId();
 
-    const dvatid = cookies().get("dvat")?.value;
-    if (!dvatid) {
+    if (dvatid == null || dvatid == undefined) {
       return {
         status: false,
         data: null,
-        message: "Invalid id. Please try again",
+        message: "Invalid id. Please try again.",
         functionname: "getPdfReturn",
       };
     }
-
-
 
     const dvat04resonse = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
         deletedById: null,
-        id: parseInt(dvatid),
+        id: dvatid,
         // createdById: payload.userid,
       },
     });
@@ -104,7 +101,6 @@ const getPdfReturn = async (
         },
       });
     }
-
 
     if (!return01response) {
       return {

@@ -3,8 +3,8 @@
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { cookies } from "next/headers";
 import { commodity_master, first_stock } from "@prisma/client";
+import { getCurrentDvatId } from "@/lib/auth";
 
 interface GetFirstStockPayload {}
 
@@ -18,8 +18,9 @@ const GetFirstStock = async (
   const functionname: string = GetFirstStock.name;
 
   try {
-    const dvatid = cookies().get("dvat")?.value;
-    if (!dvatid) {
+    const dvatid = await getCurrentDvatId();
+
+    if (dvatid == null || dvatid == undefined) {
       return {
         status: false,
         data: null,
@@ -33,7 +34,7 @@ const GetFirstStock = async (
         deletedAt: null,
         deletedById: null,
         status: "ACTIVE",
-        dvat04Id: parseInt(dvatid),
+        dvat04Id: dvatid,
       },
       include: {
         commodity_master: true,

@@ -5,6 +5,7 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import { user } from "@prisma/client";
 import { cookies } from "next/headers";
 import prisma from "../../../prisma/database";
+import { generateToken } from "@/lib/jwt";
 
 interface TinLoginOtpPayload {
   tin_number: string;
@@ -49,9 +50,23 @@ const TinLoginOtp = async (
       });
     }
 
-    cookies().set("id", usersresponse.createdBy.id.toString());
-    cookies().set("role", usersresponse.createdBy.role.toString());
-    cookies().set("dvat", usersresponse.id.toString());
+    const cookieStore = await cookies();
+    // Generate secure JWT token
+    const token = generateToken({
+      userId: usersresponse.createdBy.id,
+      mobile: usersresponse.createdBy.mobileOne ?? "",
+      role: usersresponse.createdBy.role,
+      dvatid: usersresponse.id,
+    });
+
+    // Set httpOnly secure cookie
+    cookieStore.set("auth_token", token, {
+      httpOnly: true, // Cannot be accessed by JavaScript
+      secure: process.env.NODE_ENV === "production", // Only over HTTPS in production
+      sameSite: "strict", // CSRF protection
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
+    });
 
     return createResponse({
       message: "Tin Login Successful",

@@ -13,7 +13,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useRef, useState } from "react";
-import { getCookie } from "cookies-next";
 import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { FormType, order_notice } from "@prisma/client";
@@ -26,10 +25,13 @@ import {
 } from "@/utils/methods";
 import Link from "next/link";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 const { RangePicker } = DatePicker;
 
 const SupplierDetails = () => {
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -85,7 +87,7 @@ const SupplierDetails = () => {
       return toast.error("Enter Notice/Order id number");
     }
     const search_response = await SearchNoticeOrder({
-      userid: current_user_id,
+      userid: userid,
       order: orderRef.current?.input?.value,
       take: 10,
       skip: 0,
@@ -107,7 +109,7 @@ const SupplierDetails = () => {
     }
 
     const search_response = await SearchNoticeOrder({
-      userid: current_user_id,
+      userid: userid,
       form_type: formtype,
       take: 10,
       skip: 0,
@@ -130,7 +132,7 @@ const SupplierDetails = () => {
     }
 
     const search_response = await SearchNoticeOrder({
-      userid: current_user_id,
+      userid: userid,
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
       take: 10,
@@ -153,7 +155,7 @@ const SupplierDetails = () => {
     setLoading(true);
 
     const notice_respone = await GetUserNotice({
-      userid: current_user_id,
+      userid: userid,
       take: 10,
       skip: 0,
     });
@@ -172,8 +174,15 @@ const SupplierDetails = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
       const notice_respone = await GetUserNotice({
-        userid: current_user_id,
+        userid: authResponse.data,
         take: pagination.take,
         skip: pagination.skip,
       });
@@ -188,7 +197,7 @@ const SupplierDetails = () => {
       setLoading(false);
     };
     init();
-  }, [current_user_id]);
+  }, [userid]);
   const getLink = (type: FormType, id: number): string => {
     switch (type) {
       case FormType.DVAT10:
@@ -209,7 +218,7 @@ const SupplierDetails = () => {
           return toast.error("Select Type.");
         }
         const search_response = await SearchNoticeOrder({
-          userid: current_user_id,
+          userid: userid,
           form_type: formtype,
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -230,7 +239,7 @@ const SupplierDetails = () => {
         }
 
         const search_response = await SearchNoticeOrder({
-          userid: current_user_id,
+          userid: userid,
           fromdate: searchDate[0]?.toDate(),
           todate: searchDate[1]?.toDate(),
           take: pagesize,
@@ -255,7 +264,7 @@ const SupplierDetails = () => {
           return toast.error("Enter Notice/Order id number");
         }
         const search_response = await SearchNoticeOrder({
-          userid: current_user_id,
+          userid: userid,
           order: orderRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -273,7 +282,7 @@ const SupplierDetails = () => {
       }
     } else {
       const notice_respone = await GetUserNotice({
-        userid: current_user_id,
+        userid: userid,
         take: pagesize,
         skip: pagesize * (page - 1),
       });

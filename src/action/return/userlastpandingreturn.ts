@@ -7,7 +7,7 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { return_filing } from "@prisma/client";
 import prisma from "../../../prisma/database";
-import { cookies } from "next/headers";
+import { getCurrentDvatId } from "@/lib/auth";
 
 const GetUserLastPandingReturn = async (
   payload: GetUserLastPandingReturnPayload
@@ -15,19 +15,20 @@ const GetUserLastPandingReturn = async (
   const functionname: string = GetUserLastPandingReturn.name;
 
   try {
-    const dvatid = cookies().get("dvat")?.value;
-    if (!dvatid) {
+    const dvatid = await getCurrentDvatId();
+
+    if (dvatid == null || dvatid == undefined) {
       return createResponse({
         message: "Invalid id. Please try again.",
         functionname,
       });
     }
+
     const dvat04response = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
         deletedBy: null,
-        // createdById: payload.userid,
-        id: parseInt(dvatid),
+        id: dvatid,
         status: "APPROVED",
       },
     });

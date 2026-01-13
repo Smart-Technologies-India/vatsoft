@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input, Pagination } from "antd";
+import { Alert, Button, Input, Pagination } from "antd";
 import { Button as ShButton } from "@/components/ui/button";
 import {
   Table,
@@ -24,16 +24,18 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { getCookie } from "cookies-next";
 import { dvat04, returns_01, user } from "@prisma/client";
 import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import SearchReturnPayment from "@/action/return/searchreturnpayment";
 import { toast } from "react-toastify";
 import GetUser from "@/action/user/getuser";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 const TrackAppliation = () => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
   const [pagination, setPaginatin] = useState<{
     take: number;
     skip: number;
@@ -77,7 +79,13 @@ const TrackAppliation = () => {
 
   useEffect(() => {
     const init = async () => {
-      const userrespone = await GetUser({ id: userid });
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+      const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
         const payment_data = await SearchReturnPayment({
@@ -585,9 +593,15 @@ const TrackAppliation = () => {
 
           {paymentData.length == 0 ? (
             <>
-              <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-                <p className="flex-1">There is no Filed Return.</p>
-              </div>
+              <Alert
+                style={{
+                  marginTop: "10px",
+                  padding: "8px",
+                }}
+                type="error"
+                showIcon
+                description="There is no Filed Return."
+              />
             </>
           ) : (
             <>

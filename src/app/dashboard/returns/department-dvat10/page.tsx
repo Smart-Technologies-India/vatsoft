@@ -1,8 +1,24 @@
+"use client";
 import { DepartmentCreateDvat10Provider } from "@/components/forms/department/departmentcreatedvat10";
-import { cookies } from "next/headers";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { toast } from "react-toastify";
 
-const CreateDvat24 = () => {
-  const current_user_id: number = parseInt(cookies().get("id")?.value ?? "0");
+const CreateDvat24 = async () => {
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
+  useEffect(() => {
+    const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+    };
+    init();
+  }, []);
   return (
     <>
       <div className="p-2">
@@ -10,7 +26,7 @@ const CreateDvat24 = () => {
           <div className="bg-blue-500 p-2 text-white">
             Create DVAT 10 Notice
           </div>
-          <DepartmentCreateDvat10Provider userid={current_user_id} />
+          <DepartmentCreateDvat10Provider userid={userid} />
         </div>
       </div>
     </>

@@ -1,7 +1,6 @@
 "use client";
 
 import { dvat04, refunds, Role, user } from "@prisma/client";
-import { getCookie } from "cookies-next";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -35,6 +34,7 @@ import { Button } from "antd";
 import GetRefunds from "@/action/refund/getrefunds";
 import AddRefundsPayment from "@/action/refund/addrefundspayment";
 import GetUser from "@/action/user/getuser";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 const RefundsData = () => {
   const router = useRouter();
@@ -42,7 +42,7 @@ const RefundsData = () => {
   const refundsid = parseInt(
     decryptURLData(Array.isArray(id) ? id[0] : id, router)
   );
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
 
   const [user, setUser] = useState<user | null>(null);
@@ -55,6 +55,12 @@ const RefundsData = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
 
       const refunds_resposne = await GetRefunds({
         id: refundsid,
@@ -72,7 +78,7 @@ const RefundsData = () => {
       }
 
       const current_user_response = await GetUser({
-        id: current_user_id,
+        id: authResponse.data,
       });
 
       if (current_user_response.status && current_user_response.data) {
@@ -82,7 +88,7 @@ const RefundsData = () => {
       setLoading(false);
     };
     init();
-  }, [refundsid, current_user_id]);
+  }, [refundsid, userid]);
 
   const [refundsData, setRefundsData] = useState<refunds | null>(null);
 
@@ -101,7 +107,7 @@ const RefundsData = () => {
     }
     const response = await AddRefundsPayment({
       id: refundsData.id,
-      userid: current_user_id,
+      userid: userid,
       bank_name: data.bank_name,
       track_id: data.track_id,
       transaction_id: data.transaction_id,

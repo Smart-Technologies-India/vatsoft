@@ -1,18 +1,18 @@
 "use client";
 
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetComposition from "@/action/composition/getcompositon";
 import GetUser from "@/action/user/getuser";
 import { CompositionDeptProvider } from "@/components/forms/composition/createdeptcomposition";
 import { formateDate } from "@/utils/methods";
 import { composition, CompositionStatus, Role, user } from "@prisma/client";
-import { Button } from "antd";
-import { getCookie } from "cookies-next";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 const RefundsData = () => {
   const router = useRouter();
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const { id } = useParams<{ id: string | string[] }>();
   const compositionid = parseInt(Array.isArray(id) ? id[0] : id);
@@ -23,6 +23,13 @@ const RefundsData = () => {
 
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
       const composition_response = await GetComposition({
         id: compositionid,
       });
@@ -32,14 +39,14 @@ const RefundsData = () => {
       }
 
       const current_user_respnse = await GetUser({
-        id: current_user_id,
+        id: userid,
       });
       if (current_user_respnse.status && current_user_respnse.data) {
         setCurrentUser(current_user_respnse.data);
       }
     };
     init();
-  }, [compositionid, current_user_id]);
+  }, [compositionid, userid]);
   return (
     <>
       <main className="min-h-screen bg-[#f6f7fb] w-full py-2 px-4">
@@ -129,7 +136,7 @@ const RefundsData = () => {
               </div>
             ) : (
               <CompositionDeptProvider
-                userid={current_user_id}
+                userid={userid}
                 composition={true}
                 compositonid={compostion?.id ?? 0}
               />

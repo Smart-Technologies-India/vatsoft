@@ -9,7 +9,6 @@ import { MultiSelect } from "../inputfields/multiselect";
 import { OptionValue } from "@/models/main";
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
-import { getCookie } from "cookies-next";
 import dayjs from "dayjs";
 import { commodity_master, dvat04 } from "@prisma/client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
@@ -17,6 +16,8 @@ import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import CreateStock from "@/action/stock/createstock";
 import { CreateStockForm, CreateStockSchema } from "@/schema/create_stock";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 type CreateStockProviderProps = {
   userid: number;
@@ -41,7 +42,10 @@ export const CreateStockProvider = (props: CreateStockProviderProps) => {
 };
 
 const CreateStockData = (props: CreateStockProviderProps) => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const router = useRouter();
+  
+  // const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid,setUserid] = useState<number>(0);
 
   const taxable_at: OptionValue[] = [
     0, 1, 2, 4, 5, 6, 12.5, 12.75, 13.5, 15, 20,
@@ -69,6 +73,13 @@ const CreateStockData = (props: CreateStockProviderProps) => {
       quantity: "",
     });
     const init = async () => {
+       const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
       const response = await GetUserDvat04({
         userid: userid,
       });

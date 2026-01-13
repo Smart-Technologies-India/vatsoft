@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input, Pagination } from "antd";
+import { Alert, Button, Input, Pagination } from "antd";
 import {
   Table,
   TableBody,
@@ -20,12 +20,14 @@ import { toast } from "react-toastify";
 import SearchChallan from "@/action/challan/searchchallan";
 import GetDeptChallan from "@/action/challan/getdeptchallan";
 import GetUser from "@/action/user/getuser";
-import { getCookie } from "cookies-next";
 import Link from "next/link";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 // import GetAllChallan from "@/action/challan/getallchallan";
 
 const ChallanHistory = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [id, setId] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -97,7 +99,13 @@ const ChallanHistory = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const userrespone = await GetUser({ id: id });
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setId(authResponse.data);
+      const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
         const challan_resposne = await GetDeptChallan({
@@ -306,14 +314,16 @@ const ChallanHistory = () => {
             })()}
           </div>
 
-          {/* <div className="text-blue-400 bg-blue-500 bg-opacity-10 border border-blue-300 mt-2 text-sm p-2 flex gap-2 items-center">
-            <p className="flex-1">Search Result Based on Date range</p>
-            <MaterialSymbolsClose className="text-xl cursor-pointer" />
-          </div> */}
           {challanData.length == 0 && (
-            <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-              <p className="flex-1">There is no challan.</p>
-            </div>
+            <Alert
+              style={{
+                marginTop: "10px",
+                padding: "8px",
+              }}
+              type="error"
+              showIcon
+              description="There is no challan."
+            />
           )}
 
           {challanData.length > 0 && (

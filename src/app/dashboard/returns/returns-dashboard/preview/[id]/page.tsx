@@ -31,11 +31,10 @@ import { useEffect, useState } from "react";
 import { Button, Modal } from "antd";
 import { toast } from "react-toastify";
 import CheckPayment from "@/action/return/checkpayment";
-import AddSubmitPayment from "@/action/return/addsubmitpayment";
 import CheckLastPayment from "@/action/return/checklastpayment";
 import GetUser from "@/action/user/getuser";
-import { getCookie } from "cookies-next";
 import AddPaymentSubmit from "@/action/return/addpaymentsubmit";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 interface PercentageOutput {
   increase: string;
@@ -50,7 +49,7 @@ const Dvat16ReturnPreview = () => {
   );
 
   const [isDownload, setDownload] = useState<boolean>(false);
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const [current_user_id, setCurrentUserId] = useState<number>(0);
 
   const [return01, setReturn01] = useState<
     (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
@@ -67,8 +66,14 @@ const Dvat16ReturnPreview = () => {
 
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setCurrentUserId(authResponse.data);
       const user_response = await GetUser({
-        id: current_user_id,
+        id: authResponse.data,
       });
       if (user_response.status && user_response.data) {
         setUser(user_response.data);
@@ -185,7 +190,6 @@ const Dvat16ReturnPreview = () => {
           month: lastMonth,
           userid: userid,
         });
-
 
         if (lastmonthdata.status && lastmonthdata.data) {
           setLastMonthDue(lastmonthdata.data.returns_01.pending_payment ?? "0");

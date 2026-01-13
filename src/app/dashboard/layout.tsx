@@ -4,10 +4,12 @@ import GetUser from "@/action/user/getuser";
 import Navbar from "@/components/dashboard/header";
 import Sidebar from "@/components/dashboard/sidebar";
 import { useEffect, useState } from "react";
-import { getCookie } from "cookies-next";
 import { dvat04, Role, user } from "@prisma/client";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import GetDvatById from "@/action/user/register/getdvatbyid";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { toast } from "react-toastify";
+import { getCurrentDvatId } from "@/lib/auth";
 
 export default function DashboardLayout({
   children,
@@ -15,6 +17,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [userdata, setUser] = useState<user | null>(null);
@@ -35,15 +38,24 @@ export default function DashboardLayout({
     // ) {
     //   setBluck(true);
     // }
-    const id: number = parseInt(getCookie("id") ?? "0");
-    const dvatid: number = parseInt(getCookie("dvat") ?? "0");
+    const authResponse = await getAuthenticatedUserId();
+    if (!authResponse.status || !authResponse.data) {
+      toast.error(authResponse.message);
+      return router.push("/");
+    }
+    const dvatResponse = await getCurrentDvatId();
+    if (dvatResponse == null && dvatResponse == undefined) {
+      return router.push("/");
 
-    const userrespone = await GetUser({ id: id });
+    }
+
+
+    const userrespone = await GetUser({ id: authResponse.data });
     if (userrespone.status) {
       setUser(userrespone.data!);
     }
 
-    const dvatresponse = await GetDvatById({ id: dvatid });
+    const dvatresponse = await GetDvatById({ id: dvatResponse });
     if (dvatresponse.status) {
       setDvat(dvatresponse.data!);
     }
@@ -84,7 +96,7 @@ export default function DashboardLayout({
 
       <div
         className={`relative p-0 ${
-          !isbluck ? "md:pl-52" : ""
+          !isbluck ? "md:pl-64" : ""
         }  min-h-screen flex flex-col`}
       >
         {!isbluck && (
@@ -99,7 +111,7 @@ export default function DashboardLayout({
           ></Navbar>
         )}
 
-        {!isbluck && <div className="h-10"></div>}
+        {!isbluck && <div className="h-16"></div>}
         {children}
 
         {isOpen && (

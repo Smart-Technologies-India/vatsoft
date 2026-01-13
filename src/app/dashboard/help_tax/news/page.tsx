@@ -1,16 +1,20 @@
 "use client";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetAllNews from "@/action/news/getallnews";
 import { NewsMasterProvider } from "@/components/forms/news/news";
+import { getCurrentUserRole } from "@/lib/auth";
 import { formateDate } from "@/utils/methods";
 import { news, Role } from "@prisma/client";
 import { Button, Drawer, Pagination } from "antd";
-import { getCookie } from "cookies-next";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 const NewsPage = () => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
+  const [role, setRole] = useState<Role>(Role.USER);
 
-  const role = getCookie("role");
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -45,6 +49,18 @@ const NewsPage = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+      const roleResponse = await getCurrentUserRole();
+      if(roleResponse != null && roleResponse != undefined){
+        setRole(roleResponse as Role);
+      }
+
+
       const news_resonse = await GetAllNews({
         take: 10,
         skip: 0,

@@ -6,7 +6,7 @@ interface UserStatusPayload {
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
-import { cookies } from "next/headers";
+import { getCurrentDvatId } from "@/lib/auth";
 
 type Response = {
   user: boolean;
@@ -18,8 +18,9 @@ const GetUserStatus = async (
 ): Promise<ApiResponseType<Response | null>> => {
   const functionname: string = GetUserStatus.name;
 
-  const dvatid = cookies().get("dvat")?.value;
-  if (!dvatid) {
+  const dvatid = await getCurrentDvatId();
+
+  if (dvatid == null || dvatid == undefined) {
     return createResponse({
       message: "Invalid id. Please try again.",
       functionname,
@@ -44,7 +45,7 @@ const GetUserStatus = async (
 
     const dvat04 = await prisma.dvat04.findFirst({
       where: {
-        id: parseInt(dvatid),
+        id: dvatid,
         deletedAt: null,
         deletedById: null,
         status: "APPROVED",

@@ -1,20 +1,19 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
-
-import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
-import { getCookie } from "cookies-next";
 import { DateSelect } from "../inputfields/dateselect";
 import { HolidayForm, HolidaySchema } from "@/schema/holiday";
 import GetHoliday from "@/action/holiday/getholiday";
 import UpdateHoliday from "@/action/holiday/updateholiday";
 import CreateHoliday from "@/action/holiday/createholiday";
 import { MultiSelect } from "../inputfields/multiselect";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 type HolidayProviderProps = {
   userid: number;
@@ -43,7 +42,8 @@ export const HolidayMasterProvider = (props: HolidayProviderProps) => {
 };
 
 const HolidayMaster = (props: HolidayProviderProps) => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
+  const router = useRouter();
 
   const {
     reset,
@@ -59,6 +59,13 @@ const HolidayMaster = (props: HolidayProviderProps) => {
       date: "",
     });
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
       if (props.id) {
         const state_response = await GetHoliday({
           id: props.id,

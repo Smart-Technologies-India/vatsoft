@@ -7,7 +7,6 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import { dvat04 } from "@prisma/client";
 import prisma from "../../../../prisma/database";
-import { cookies } from "next/headers";
 
 const GetDvatById = async (
   payload: GetDvatByIdPayload

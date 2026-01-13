@@ -18,10 +18,9 @@ import {
   RiAuctionLine,
   RiMoneyRupeeCircleLine,
 } from "@/components/icons";
-import { Separator } from "@/components/ui/separator";
 
 import { Chart as ChartJS, registerables } from "chart.js";
-import ChartDataLabels from 'chartjs-plugin-datalabels';
+import ChartDataLabels from "chartjs-plugin-datalabels";
 
 import { Bar, Pie } from "react-chartjs-2";
 
@@ -29,6 +28,7 @@ import numberWithIndianFormat, {
   due_date_of_month,
   formateDate,
   isNegative,
+  encryptURLData,
 } from "@/utils/methods";
 
 ChartJS.register(...registerables, ChartDataLabels);
@@ -39,16 +39,18 @@ enum FileStatus {
 }
 
 import { dvat04, user } from "@prisma/client";
-import { getCookie } from "cookies-next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import OfficerDashboard from "@/action/dashboard/officerdashboard";
 import Last15Received from "@/action/dashboard/last15received";
 import { format, subMonths } from "date-fns";
-import { Flex, Radio, RadioChangeEvent } from "antd";
-import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import { Radio, RadioChangeEvent } from "antd";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { toast } from "react-toastify";
+import GetFromDvat from "@/action/registration/getfromdvat";
+import CheckFirstStock from "@/action/firststock/checkfirststock";
 
 const Page = () => {
   const monthNames = [
@@ -65,7 +67,7 @@ const Page = () => {
     "November",
     "December",
   ];
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
   const router = useRouter();
   const [user, setUser] = useState<user | null>(null);
   const [month, setMonth] = useState<any[]>([]);
@@ -74,24 +76,33 @@ const Page = () => {
   const [isProfileCompletd, setIsProfileCompleted] = useState<boolean>(false);
 
   const [dvat, setDvat] = useState<dvat04 | null>(null);
+  const [hasFirstStock, setHasFirstStock] = useState<boolean>(false);
 
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const userresponse = await GetUser({ id: id });
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+      const userresponse = await GetUser({ id: authResponse.data });
       if (userresponse.status) setUser(userresponse.data!);
 
       const dashboard = await DashboardMonth({
-        userid: id,
+        userid: authResponse.data,
       });
 
       if (dashboard.status && dashboard.data) {
         setMonth(dashboard.data);
       }
 
+      console.log("userid", authResponse.data);
       const profile_response = await GetUserStatus({
-        id: id,
+        id: authResponse.data,
       });
+
       if (profile_response.status && profile_response.data) {
         setIsProfileCompleted(profile_response.data.registration);
       }
@@ -101,12 +112,20 @@ const Page = () => {
       });
       if (dvatdata.status && dvatdata.data) {
         setDvat(dvatdata.data);
+
+        // Check if first_stock entries exist for this dvat
+        const firstStockResponse = await CheckFirstStock({
+          dvatid: dvatdata.data.id,
+        });
+        if (firstStockResponse.status && firstStockResponse.data !== null) {
+          setHasFirstStock(firstStockResponse.data);
+        }
       }
       setLoading(false);
     };
 
     init();
-  }, [id]);
+  }, [userid]);
 
   if (isLoading)
     return (
@@ -119,8 +138,8 @@ const Page = () => {
     <>
       {user?.role == "USER" ? (
         <>
-          <main className="relative min-h-[calc(100vh-2.5rem)] bg-slate-50">
-            <div className="pb-6 relative">
+          <main className="relative h-[calc(100vh-2.5rem)] bg-slate-50 overflow-hidden">
+            <div className="pb-6 relative h-full">
               <div className="mx-auto md:px-4 px-3 max-w-4xl py-4 relative">
                 {/* Welcome Header */}
                 <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm mb-6">
@@ -129,10 +148,14 @@ const Page = () => {
                       <h1 className="text-2xl font-semibold mb-2 text-slate-800">
                         Welcome, {user?.firstName ?? ""} {user?.lastName ?? ""}
                       </h1>
-                      <p className="text-slate-600 text-base">VATSMART Portal Dashboard</p>
+                      <p className="text-slate-600 text-base">
+                        VATSMART Portal Dashboard
+                      </p>
                       {dvat != null && dvat?.tinNumber && (
                         <div className="mt-3 inline-flex items-center bg-slate-100 px-3 py-1.5 rounded-lg">
-                          <span className="text-sm font-medium text-slate-700">TIN: {dvat.tinNumber}</span>
+                          <span className="text-sm font-medium text-slate-700">
+                            TIN: {dvat.tinNumber}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -148,8 +171,12 @@ const Page = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
                   <div className="flex items-center justify-between mb-5">
                     <div>
-                      <h2 className="text-xl font-semibold text-slate-800">Returns Calendar</h2>
-                      <p className="text-slate-600 text-sm mt-1">Track your VAT return submissions</p>
+                      <h2 className="text-xl font-semibold text-slate-800">
+                        Returns Calendar
+                      </h2>
+                      <p className="text-slate-600 text-sm mt-1">
+                        Track your VAT return submissions
+                      </p>
                     </div>
                     <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg font-medium">
                       {month.length} periods
@@ -173,9 +200,7 @@ const Page = () => {
                         status={val.completed ? "Filed" : "Not Filed"}
                         statusdate={val.completed ? "Filed On" : "Due Date"}
                         filestatus={
-                          val.completed
-                            ? FileStatus.FILED
-                            : FileStatus.NOTFILED
+                          val.completed ? FileStatus.FILED : FileStatus.NOTFILED
                         }
                       />
                     ))}
@@ -185,8 +210,12 @@ const Page = () => {
                 {/* Quick Actions */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                   <div className="mb-5">
-                    <h2 className="text-xl font-semibold text-slate-800">Quick Actions</h2>
-                    <p className="text-slate-600 text-sm mt-1">Access key portal features</p>
+                    <h2 className="text-xl font-semibold text-slate-800">
+                      Quick Actions
+                    </h2>
+                    <p className="text-slate-600 text-sm mt-1">
+                      Access key portal features
+                    </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <ButtonCard
@@ -222,26 +251,171 @@ const Page = () => {
               </div>
 
               {!isProfileCompletd && user?.role! == "USER" && (
-                <div className="w-full h-full absolute top-0 left-0 bg-black bg-opacity-20 grid place-items-center backdrop-blur-sm">
-                  <div className="bg-white w-72 rounded-lg overflow-hidden shadow-xl">
-                    <div className="bg-rose-500 grid place-items-center py-6">
-                      <FluentEmojiSad20Regular className="text-white text-5xl" />
+                <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                  <div className="bg-white max-w-md w-full rounded-2xl overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-300">
+                    {/* Header Section */}
+                    <div
+                      className={`${
+                        dvat!.status == "PENDINGPROCESSING"
+                          ? "bg-linear-to-r from-amber-500 to-orange-500"
+                          : "bg-linear-to-r from-rose-500 to-pink-500"
+                      } px-6 py-8 text-center relative overflow-hidden`}
+                    >
+                      <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+                      <div className="relative z-10">
+                        <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-md rounded-full mb-4 shadow-lg">
+                          {dvat!.status == "PENDINGPROCESSING" ? (
+                            <Fa6RegularHourglassHalf className="text-white text-4xl animate-pulse" />
+                          ) : (
+                            <FluentEmojiSad20Regular className="text-white text-4xl" />
+                          )}
+                        </div>
+                        <h1 className="text-2xl font-bold text-white mb-2">
+                          {dvat!.status == "PENDINGPROCESSING"
+                            ? "Under Verification"
+                            : "Action Required"}
+                        </h1>
+                        <p className="text-white/90 text-sm font-medium">
+                          {dvat!.status == "PENDINGPROCESSING"
+                            ? "Registration Processing"
+                            : "Complete Your Profile"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="p-4">
-                      <h1 className="text-lg text-center font-medium text-gray-900 mb-2">
-                        Profile Incomplete
-                      </h1>
-                      <p className="text-sm text-gray-600 text-center mb-4">
-                        Complete your profile to proceed.
-                      </p>
-                      <button
-                        onClick={() => {
-                          router.push("/dashboard/register");
-                        }}
-                        className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 rounded font-medium transition-colors"
+
+                    {/* Content Section */}
+                    <div className="p-6">
+                      <div
+                        className={`${
+                          dvat!.status == "PENDINGPROCESSING"
+                            ? "bg-amber-50 border-amber-200"
+                            : "bg-rose-50 border-rose-200"
+                        } border rounded-xl p-4 mb-6`}
                       >
-                        Complete Registration
-                      </button>
+                        <p className="text-slate-700 text-sm leading-relaxed text-center">
+                          {dvat!.status == "PENDINGPROCESSING"
+                            ? "Your registration is currently under review by our team. We'll notify you once it's approved."
+                            : "Your profile is incomplete. Please complete your registration to access all portal features and services."}
+                        </p>
+                      </div>
+
+                      {dvat!.status == "PENDINGPROCESSING" ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3 text-sm text-slate-600">
+                            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center shrink-0">
+                              <span className="text-green-600 font-semibold">
+                                ✓
+                              </span>
+                            </div>
+                            <span>Application Submitted</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-slate-600">
+                            <div
+                              className={`w-8 h-8 ${
+                                hasFirstStock ? "bg-green-100" : "bg-amber-100"
+                              } rounded-lg flex items-center justify-center shrink-0`}
+                            >
+                              <span
+                                className={`${
+                                  hasFirstStock
+                                    ? "text-green-600"
+                                    : "text-amber-600"
+                                } font-semibold`}
+                              >
+                                {hasFirstStock ? "✓" : "2"}
+                              </span>
+                            </div>
+                            <span>Opening Stock</span>
+                            <div className="grow"></div>
+                            {!hasFirstStock && (
+                              <button
+                                className="text-sm bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-md shadow-amber-500/30 hover:shadow-lg hover:shadow-amber-500/40"
+                                onClick={() => {
+                                  router.push("/dashboard/register/add-stock");
+                                }}
+                              >
+                                Add Stock
+                              </button>
+                            )}
+                          </div>
+                          <div
+                            className={`flex items-center gap-3 text-sm ${
+                              hasFirstStock
+                                ? "text-slate-600"
+                                : "text-slate-400"
+                            }`}
+                          >
+                            <div
+                              className={`w-8 h-8 ${
+                                hasFirstStock ? "bg-blue-100" : "bg-slate-100"
+                              } rounded-lg flex items-center justify-center shrink-0`}
+                            >
+                              <span
+                                className={`${
+                                  hasFirstStock
+                                    ? "text-blue-600"
+                                    : "text-slate-400"
+                                } font-semibold`}
+                              >
+                                3
+                              </span>
+                            </div>
+                            <span>Approval pending</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={async () => {
+                            // Get the current dvat first
+                            console.log("dvat", dvat);
+                            if (dvat) {
+                              // Check if dvat status is VERIFICATION
+                              if (dvat.status === "VERIFICATION") {
+                                // Get the dvat registration
+                                const registrationResponse = await GetFromDvat({
+                                  id: dvat.id,
+                                });
+                                if (
+                                  registrationResponse.status &&
+                                  registrationResponse.data
+                                ) {
+                                  router.push(
+                                    `/dashboard/new-registration/${encryptURLData(
+                                      registrationResponse.data.id.toString()
+                                    )}/dvat1`
+                                  );
+                                } else {
+                                  toast.error(
+                                    "Unable to get registration data"
+                                  );
+                                }
+                              } else {
+                                // Status is anything except VERIFICATION
+                                router.push("/dashboard/register");
+                              }
+                            } else {
+                              // No dvat found, redirect to register
+                              router.push("/dashboard/register");
+                            }
+                          }}
+                          className="w-full bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm py-3.5 rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 flex items-center justify-center gap-2"
+                        >
+                          <span>Complete Registration Now</span>
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 7l5 5m0 0l-5 5m5-5H6"
+                            />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -310,8 +484,16 @@ const RentCard = (props: RentCardProps) => {
           </div>
           {props.filestatus == FileStatus.FILED && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
-              <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg
+                className="w-2.5 h-2.5 text-white"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
           )}
@@ -319,7 +501,9 @@ const RentCard = (props: RentCardProps) => {
 
         {/* Return Info */}
         <div>
-          <h3 className="font-semibold text-slate-800 text-base mb-1">{props.title}</h3>
+          <h3 className="font-semibold text-slate-800 text-base mb-1">
+            {props.title}
+          </h3>
           <div className="flex items-center gap-3">
             <span
               className={`text-sm px-3 py-1 rounded-full font-medium ${
@@ -331,7 +515,7 @@ const RentCard = (props: RentCardProps) => {
               {props.status}
             </span>
             <span className="text-sm text-slate-600">
-              {props.statusdate}: {" "}
+              {props.statusdate}:{" "}
               <span className="font-medium text-slate-800">
                 {props.filestatus == FileStatus.FILED
                   ? formateDate(new Date(props.date))
@@ -369,13 +553,18 @@ const ButtonCard = (props: ButtonCardProps) => {
           <div className="p-3 bg-slate-100 rounded-xl group-hover:bg-slate-200 transition-colors">
             {props.icon}
           </div>
-          <svg 
-            className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         </div>
         <h3 className="text-base font-semibold text-slate-800 group-hover:text-slate-900 transition-colors mb-1">
@@ -403,19 +592,23 @@ const DashboardCard = (props: DashboardCardProps) => {
     <div className="bg-white rounded shadow-sm border p-3 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-xs font-medium text-gray-600 mb-0.5">{props.name}</p>
+          <p className="text-xs font-medium text-gray-600 mb-0.5">
+            {props.name}
+          </p>
           <div>
             {props.isruppy ? (
-              <p className="text-base font-semibold text-gray-900">₹{props.count}</p>
+              <p className="text-base font-semibold text-gray-900">
+                ₹{props.count}
+              </p>
             ) : (
-              <p className="text-base font-semibold text-gray-900">{props.count}</p>
+              <p className="text-base font-semibold text-gray-900">
+                {props.count}
+              </p>
             )}
             <p className="text-xs text-gray-500 mt-0.5">{props.subtitle}</p>
           </div>
         </div>
-        <div className={`rounded p-1.5 ${props.color}`}>
-          {props.children}
-        </div>
+        <div className={`rounded p-1.5 ${props.color}`}>{props.children}</div>
       </div>
     </div>
   );
@@ -427,7 +620,7 @@ const pieOptions: any = {
   maintainAspectRatio: false,
   interaction: {
     intersect: false,
-    mode: 'index',
+    mode: "index",
   },
   animation: {
     animateRotate: true,
@@ -437,47 +630,50 @@ const pieOptions: any = {
   elements: {
     arc: {
       borderWidth: 3,
-      borderColor: '#ffffff',
+      borderColor: "#ffffff",
       hoverBorderWidth: 4,
     },
   },
   plugins: {
     legend: {
-      position: 'bottom',
+      position: "bottom",
       labels: {
         font: {
           size: 11,
-          weight: '500',
+          weight: "500",
         },
         padding: 12,
         usePointStyle: true,
-        pointStyle: 'circle',
+        pointStyle: "circle",
         boxWidth: 8,
         boxHeight: 8,
-        color: '#374151',
+        color: "#374151",
       },
     },
     tooltip: {
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      titleColor: '#ffffff',
-      bodyColor: '#ffffff',
-      borderColor: '#e5e7eb',
+      backgroundColor: "rgba(0, 0, 0, 0.8)",
+      titleColor: "#ffffff",
+      bodyColor: "#ffffff",
+      borderColor: "#e5e7eb",
       borderWidth: 1,
       cornerRadius: 8,
       displayColors: true,
       padding: 12,
       titleFont: {
         size: 13,
-        weight: 'bold',
+        weight: "bold",
       },
       bodyFont: {
         size: 12,
       },
       callbacks: {
         label: function (context: any) {
-          const label = context.label || '';
+          const label = context.label || "";
           const value = context.parsed;
-          const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+          const total = context.dataset.data.reduce(
+            (a: number, b: number) => a + b,
+            0
+          );
           const percentage = ((value / total) * 100).toFixed(1);
           return `${label}: ₹${numberWithIndianFormat(value)} (${percentage}%)`;
         },
@@ -485,21 +681,24 @@ const pieOptions: any = {
     },
     datalabels: {
       display: true,
-      color: '#374151',
+      color: "#374151",
       font: {
         size: 11,
-        weight: 'bold',
+        weight: "bold",
       },
       formatter: function (value: number, context: any) {
-        const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+        const total = context.dataset.data.reduce(
+          (a: number, b: number) => a + b,
+          0
+        );
         const percentage = ((value / total) * 100).toFixed(1);
-        return percentage + '%';
+        return percentage + "%";
       },
-      anchor: 'end',
-      align: 'end',
+      anchor: "end",
+      align: "end",
       offset: 8,
-      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-      borderColor: '#e5e7eb',
+      backgroundColor: "rgba(255, 255, 255, 0.9)",
+      borderColor: "#e5e7eb",
       borderWidth: 1,
       borderRadius: 6,
       padding: {
@@ -508,7 +707,7 @@ const pieOptions: any = {
         left: 6,
         right: 6,
       },
-      textShadowColor: 'transparent',
+      textShadowColor: "transparent",
       textShadowBlur: 0,
     },
   },
@@ -516,22 +715,18 @@ const pieOptions: any = {
 
 // Sample data for District-wise Revenue
 const districtRevenueData = {
-  labels: ['Dadra & Nagar Haveli', 'Daman', 'Diu'],
+  labels: ["Dadra & Nagar Haveli", "Daman", "Diu"],
   datasets: [
     {
       data: [4500000, 3200000, 1800000],
       backgroundColor: [
-        '#667eea', // Purple Blue
-        '#f093fb', // Pink
-        '#4facfe'  // Light Blue
+        "#667eea", // Purple Blue
+        "#f093fb", // Pink
+        "#4facfe", // Light Blue
       ],
       borderWidth: 3,
-      borderColor: '#ffffff',
-      hoverBackgroundColor: [
-        '#5a67d8',
-        '#e53e3e',
-        '#3182ce'
-      ],
+      borderColor: "#ffffff",
+      hoverBackgroundColor: ["#5a67d8", "#e53e3e", "#3182ce"],
       hoverBorderWidth: 4,
     },
   ],
@@ -539,46 +734,43 @@ const districtRevenueData = {
 
 // Sample data for Category-wise Revenue
 const categoryRevenueData = {
-  labels: ['Liquor', 'Petroleum'],
+  labels: ["Liquor", "Petroleum"],
   datasets: [
     {
       data: [5800000, 3700000],
       backgroundColor: [
-        '#a8edea', // Light Teal
-        '#ffecd2'  // Light Peach
+        "#a8edea", // Light Teal
+        "#ffecd2", // Light Peach
       ],
       borderWidth: 3,
-      borderColor: '#ffffff',
-      hoverBackgroundColor: [
-        '#805ad5',
-        '#dd6b20'
-      ],
+      borderColor: "#ffffff",
+      hoverBackgroundColor: ["#805ad5", "#dd6b20"],
       hoverBorderWidth: 4,
     },
   ],
 };
 
-// Sample data for Top Petroleum Commodities  
+// Sample data for Top Petroleum Commodities
 const petroleumCommoditiesData = {
-  labels: ['Petrol', 'Diesel', 'CNG', 'PNG', 'Additives'],
+  labels: ["Petrol", "Diesel", "CNG", "PNG", "Additives"],
   datasets: [
     {
       data: [1500000, 1200000, 800000, 600000, 300000],
       backgroundColor: [
-        '#FF6B6B', // Coral Red
-        '#4ECDC4', // Teal
-        '#45B7D1', // Sky Blue
-        '#96CEB4', // Mint Green
-        '#FFEAA7'  // Light Yellow
+        "#FF6B6B", // Coral Red
+        "#4ECDC4", // Teal
+        "#45B7D1", // Sky Blue
+        "#96CEB4", // Mint Green
+        "#FFEAA7", // Light Yellow
       ],
       borderWidth: 3,
-      borderColor: '#ffffff',
+      borderColor: "#ffffff",
       hoverBackgroundColor: [
-        '#ff5252',
-        '#26c6da',
-        '#42a5f5',
-        '#66bb6a',
-        '#ffcc02'
+        "#ff5252",
+        "#26c6da",
+        "#42a5f5",
+        "#66bb6a",
+        "#ffcc02",
       ],
       hoverBorderWidth: 4,
     },
@@ -587,25 +779,25 @@ const petroleumCommoditiesData = {
 
 // Sample data for Top Liquor Commodities
 const liquorCommoditiesData = {
-  labels: ['Beer', 'Wine', 'Whiskey', 'Rum', 'Vodka'],
+  labels: ["Beer", "Wine", "Whiskey", "Rum", "Vodka"],
   datasets: [
     {
       data: [2200000, 1800000, 1500000, 800000, 500000],
       backgroundColor: [
-        '#A8E6CF', // Mint
-        '#DDA0DD', // Plum
-        '#F4A460', // Sandy Brown
-        '#87CEEB', // Sky Blue
-        '#FFB6C1'  // Light Pink
+        "#A8E6CF", // Mint
+        "#DDA0DD", // Plum
+        "#F4A460", // Sandy Brown
+        "#87CEEB", // Sky Blue
+        "#FFB6C1", // Light Pink
       ],
       borderWidth: 3,
-      borderColor: '#ffffff',
+      borderColor: "#ffffff",
       hoverBackgroundColor: [
-        '#7ed321',
-        '#9013fe',
-        '#f5a623',
-        '#50e3c2',
-        '#ff6b9d'
+        "#7ed321",
+        "#9013fe",
+        "#f5a623",
+        "#50e3c2",
+        "#ff6b9d",
       ],
       hoverBorderWidth: 4,
     },
@@ -616,16 +808,16 @@ const liquorCommoditiesData = {
 const dealerBarOptions: any = {
   responsive: true,
   maintainAspectRatio: false,
-  indexAxis: 'y', // Horizontal bars
+  indexAxis: "y", // Horizontal bars
   plugins: {
     legend: {
       display: false,
     },
     tooltip: {
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      titleColor: '#ffffff',
-      bodyColor: '#ffffff',
-      borderColor: '#e5e7eb',
+      backgroundColor: "rgba(0, 0, 0, 0.8)",
+      titleColor: "#ffffff",
+      bodyColor: "#ffffff",
+      borderColor: "#e5e7eb",
       borderWidth: 1,
       cornerRadius: 8,
       padding: 12,
@@ -646,12 +838,12 @@ const dealerBarOptions: any = {
         font: {
           size: 10,
         },
-        callback: function(value: any) {
-          return '₹' + numberWithIndianFormat(value);
+        callback: function (value: any) {
+          return "₹" + numberWithIndianFormat(value);
         },
       },
       grid: {
-        color: '#f3f4f6',
+        color: "#f3f4f6",
       },
     },
     y: {
@@ -677,23 +869,39 @@ const dealerBarOptions: any = {
 const liquorDealersData = {
   labels: [
     // Dadra & Nagar Haveli - Top liquor dealers
-    'ABC Liquors (DNH)', 'Premium Spirits (DNH)', 'Royal Wine Shop (DNH)', 
-    // Daman - Top liquor dealers  
-    'Daman Beverages (DD)', 'Ocean View Liquors (DD)', 'Coastal Spirits (DD)',
+    "ABC Liquors (DNH)",
+    "Premium Spirits (DNH)",
+    "Royal Wine Shop (DNH)",
+    // Daman - Top liquor dealers
+    "Daman Beverages (DD)",
+    "Ocean View Liquors (DD)",
+    "Coastal Spirits (DD)",
     // Diu - Top liquor dealers
-    'Island Wines (DIU)', 'Sunset Liquors (DIU)', 'Beach Bar Supplies (DIU)',
-    'Heritage Spirits (DNH)'
+    "Island Wines (DIU)",
+    "Sunset Liquors (DIU)",
+    "Beach Bar Supplies (DIU)",
+    "Heritage Spirits (DNH)",
   ],
   datasets: [
     {
-      label: 'Revenue',
-      data: [2800000, 2650000, 2400000, 2200000, 2100000, 1950000, 1800000, 1750000, 1600000, 1500000],
-      backgroundColor: [
-        '#8B5CF6', '#A855F7', '#9333EA', // DNH - Purple shades
-        '#3B82F6', '#2563EB', '#1D4ED8', // Daman - Blue shades  
-        '#10B981', '#059669', '#047857', '#6366F1' // Diu - Green shades + extra
+      label: "Revenue",
+      data: [
+        2800000, 2650000, 2400000, 2200000, 2100000, 1950000, 1800000, 1750000,
+        1600000, 1500000,
       ],
-      borderColor: '#ffffff',
+      backgroundColor: [
+        "#8B5CF6",
+        "#A855F7",
+        "#9333EA", // DNH - Purple shades
+        "#3B82F6",
+        "#2563EB",
+        "#1D4ED8", // Daman - Blue shades
+        "#10B981",
+        "#059669",
+        "#047857",
+        "#6366F1", // Diu - Green shades + extra
+      ],
+      borderColor: "#ffffff",
       borderWidth: 2,
       borderRadius: 6,
     },
@@ -704,23 +912,39 @@ const liquorDealersData = {
 const fuelDealersData = {
   labels: [
     // Dadra & Nagar Haveli - Top fuel dealers
-    'Highway Petrol (DNH)', 'City Fuel Station (DNH)', 'Express Petroleum (DNH)',
+    "Highway Petrol (DNH)",
+    "City Fuel Station (DNH)",
+    "Express Petroleum (DNH)",
     // Daman - Top fuel dealers
-    'Coastal Fuels (DD)', 'Port City Petrol (DD)', 'Marine Gas Station (DD)',
-    // Diu - Top fuel dealers  
-    'Island Petroleum (DIU)', 'Beach Fuel Stop (DIU)', 'Tropical Gas (DIU)',
-    'Green Energy (DNH)'
+    "Coastal Fuels (DD)",
+    "Port City Petrol (DD)",
+    "Marine Gas Station (DD)",
+    // Diu - Top fuel dealers
+    "Island Petroleum (DIU)",
+    "Beach Fuel Stop (DIU)",
+    "Tropical Gas (DIU)",
+    "Green Energy (DNH)",
   ],
   datasets: [
     {
-      label: 'Revenue',
-      data: [3200000, 3050000, 2900000, 2750000, 2600000, 2450000, 2300000, 2150000, 2000000, 1850000],
-      backgroundColor: [
-        '#F59E0B', '#D97706', '#B45309', // DNH - Amber shades
-        '#EF4444', '#DC2626', '#B91C1C', // Daman - Red shades
-        '#06B6D4', '#0891B2', '#0E7490', '#F97316' // Diu - Cyan shades + extra
+      label: "Revenue",
+      data: [
+        3200000, 3050000, 2900000, 2750000, 2600000, 2450000, 2300000, 2150000,
+        2000000, 1850000,
       ],
-      borderColor: '#ffffff', 
+      backgroundColor: [
+        "#F59E0B",
+        "#D97706",
+        "#B45309", // DNH - Amber shades
+        "#EF4444",
+        "#DC2626",
+        "#B91C1C", // Daman - Red shades
+        "#06B6D4",
+        "#0891B2",
+        "#0E7490",
+        "#F97316", // Diu - Cyan shades + extra
+      ],
+      borderColor: "#ffffff",
       borderWidth: 2,
       borderRadius: 6,
     },
@@ -880,8 +1104,12 @@ const OfficerDashboardPage = () => {
         <div className="bg-white rounded-lg shadow-sm border p-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-medium text-gray-900">Officer Dashboard</h1>
-              <p className="text-gray-500 text-sm mt-0.5">Monitor and manage VAT operations</p>
+              <h1 className="text-lg font-medium text-gray-900">
+                Officer Dashboard
+              </h1>
+              <p className="text-gray-500 text-sm mt-0.5">
+                Monitor and manage VAT operations
+              </p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
@@ -991,8 +1219,12 @@ const OfficerDashboardPage = () => {
         {/* Chart Section */}
         <div className="lg:col-span-2 bg-white rounded shadow-sm border p-3">
           <div className="mb-3">
-            <h2 className="text-sm font-medium text-gray-900">Revenue Overview</h2>
-            <p className="text-xs text-gray-500">Daily payment collection trends</p>
+            <h2 className="text-sm font-medium text-gray-900">
+              Revenue Overview
+            </h2>
+            <p className="text-xs text-gray-500">
+              Daily payment collection trends
+            </p>
           </div>
           <div className="h-64">
             <Bar options={options} data={dataset} />
@@ -1002,10 +1234,12 @@ const OfficerDashboardPage = () => {
         {/* Payment Summary */}
         <div className="bg-white rounded shadow-sm border p-3">
           <div className="mb-3">
-            <h2 className="text-sm font-medium text-gray-900">Payment Summary</h2>
+            <h2 className="text-sm font-medium text-gray-900">
+              Payment Summary
+            </h2>
             <p className="text-xs text-gray-500">Monthly comparison</p>
           </div>
-          
+
           <div className="space-y-3">
             {/* This Month */}
             <div
@@ -1019,17 +1253,22 @@ const OfficerDashboardPage = () => {
                 <span className="text-xs font-medium text-gray-600">
                   {format(new Date(), "MMMM")}
                 </span>
-                <div className={`w-2 h-2 rounded-full ${
-                  countData.last_month_received < countData.this_month_received
-                    ? "bg-emerald-500"
-                    : "bg-rose-500"
-                }`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    countData.last_month_received <
+                    countData.this_month_received
+                      ? "bg-emerald-500"
+                      : "bg-rose-500"
+                  }`}
+                ></div>
               </div>
-              <p className={`text-base font-semibold ${
-                countData.last_month_received < countData.this_month_received
-                  ? "text-emerald-600"
-                  : "text-rose-600"
-              }`}>
+              <p
+                className={`text-base font-semibold ${
+                  countData.last_month_received < countData.this_month_received
+                    ? "text-emerald-600"
+                    : "text-rose-600"
+                }`}
+              >
                 ₹{numberWithIndianFormat(countData.this_month_received)}
               </p>
             </div>
@@ -1046,18 +1285,24 @@ const OfficerDashboardPage = () => {
                 <span className="text-xs font-medium text-gray-600">
                   {format(subMonths(new Date(), 1), "MMMM")}
                 </span>
-                <div className={`w-2 h-2 rounded-full ${
-                  countData.last_month_received > countData.this_month_received
-                    ? "bg-emerald-500"
-                    : "bg-gray-400"
-                }`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    countData.last_month_received >
+                    countData.this_month_received
+                      ? "bg-emerald-500"
+                      : "bg-gray-400"
+                  }`}
+                ></div>
               </div>
-              <p className={`text-base font-semibold ${
-                countData.last_month_received > countData.this_month_received
-                  ? "text-emerald-600"
-                  : "text-gray-600"
-              }`}>
-                ₹{numberWithIndianFormat(
+              <p
+                className={`text-base font-semibold ${
+                  countData.last_month_received > countData.this_month_received
+                    ? "text-emerald-600"
+                    : "text-gray-600"
+                }`}
+              >
+                ₹
+                {numberWithIndianFormat(
                   isNegative(countData.last_month_received)
                     ? 0
                     : countData.last_month_received
@@ -1068,11 +1313,14 @@ const OfficerDashboardPage = () => {
             {/* Difference */}
             <div className="p-2.5 rounded bg-blue-50 border border-blue-200">
               <div className="flex items-center justify-between mb-0.5">
-                <span className="text-xs font-medium text-gray-600">Net Change</span>
+                <span className="text-xs font-medium text-gray-600">
+                  Net Change
+                </span>
                 <div className="w-2 h-2 rounded-full bg-blue-500"></div>
               </div>
               <p className="text-base font-semibold text-blue-600">
-                ₹{numberWithIndianFormat(
+                ₹
+                {numberWithIndianFormat(
                   countData.this_month_received -
                     (isNegative(countData.last_month_received)
                       ? 0
@@ -1088,11 +1336,15 @@ const OfficerDashboardPage = () => {
       <div className="mb-4">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Revenue Analytics</h2>
-            <p className="text-sm text-gray-500">Comprehensive revenue breakdown and insights</p>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Revenue Analytics
+            </h2>
+            <p className="text-sm text-gray-500">
+              Comprehensive revenue breakdown and insights
+            </p>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
+            <div className="w-3 h-3 bg-linear-to-r from-blue-500 to-purple-600 rounded-full"></div>
             <span className="text-xs text-gray-500">Live Data</span>
           </div>
         </div>
@@ -1107,11 +1359,23 @@ const OfficerDashboardPage = () => {
                   <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
                   Top 10 Liquor Dealers by Revenue
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">Highest revenue contributing liquor dealers</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Highest revenue contributing liquor dealers
+                </p>
               </div>
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-2 rounded-lg">
-                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              <div className="bg-linear-to-r from-purple-50 to-pink-50 p-2 rounded-lg">
+                <svg
+                  className="w-4 h-4 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
                 </svg>
               </div>
             </div>
@@ -1121,7 +1385,9 @@ const OfficerDashboardPage = () => {
             <div className="mt-3 pt-3 border-t border-gray-100">
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Dealers</span>
-                <span className="font-medium text-gray-700">30 Active Dealers</span>
+                <span className="font-medium text-gray-700">
+                  30 Active Dealers
+                </span>
               </div>
             </div>
           </div>
@@ -1134,11 +1400,23 @@ const OfficerDashboardPage = () => {
                   <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
                   Top 10 Fuel Dealers by Revenue
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">Highest revenue contributing fuel dealers</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Highest revenue contributing fuel dealers
+                </p>
               </div>
-              <div className="bg-gradient-to-r from-orange-50 to-red-50 p-2 rounded-lg">
-                <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <div className="bg-linear-to-r from-orange-50 to-red-50 p-2 rounded-lg">
+                <svg
+                  className="w-4 h-4 text-orange-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
                 </svg>
               </div>
             </div>
@@ -1148,12 +1426,14 @@ const OfficerDashboardPage = () => {
             <div className="mt-3 pt-3 border-t border-gray-100">
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Dealers</span>
-                <span className="font-medium text-gray-700">30 Active Dealers</span>
+                <span className="font-medium text-gray-700">
+                  30 Active Dealers
+                </span>
               </div>
             </div>
           </div>
         </div>
-        
+
         {/* Top Row - District and Category Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           {/* District-wise Revenue Chart */}
@@ -1164,11 +1444,23 @@ const OfficerDashboardPage = () => {
                   <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
                   District-wise Revenue
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">Revenue distribution across regions</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Revenue distribution across regions
+                </p>
               </div>
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-2 rounded-lg">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              <div className="bg-linear-to-r from-blue-50 to-purple-50 p-2 rounded-lg">
+                <svg
+                  className="w-4 h-4 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
                 </svg>
               </div>
             </div>
@@ -1180,7 +1472,9 @@ const OfficerDashboardPage = () => {
             <div className="mt-3 pt-3 border-t border-gray-100">
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Revenue</span>
-                <span className="font-medium text-gray-700">₹{numberWithIndianFormat(9500000)}</span>
+                <span className="font-medium text-gray-700">
+                  ₹{numberWithIndianFormat(9500000)}
+                </span>
               </div>
             </div>
           </div>
@@ -1193,12 +1487,29 @@ const OfficerDashboardPage = () => {
                   <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
                   Category-wise Revenue
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">Liquor vs Petroleum comparison</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Liquor vs Petroleum comparison
+                </p>
               </div>
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-2 rounded-lg">
-                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              <div className="bg-linear-to-r from-purple-50 to-pink-50 p-2 rounded-lg">
+                <svg
+                  className="w-4 h-4 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
+                  />
                 </svg>
               </div>
             </div>
@@ -1210,7 +1521,9 @@ const OfficerDashboardPage = () => {
             <div className="mt-3 pt-3 border-t border-gray-100">
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Categories</span>
-                <span className="font-medium text-gray-700">₹{numberWithIndianFormat(9500000)}</span>
+                <span className="font-medium text-gray-700">
+                  ₹{numberWithIndianFormat(9500000)}
+                </span>
               </div>
             </div>
           </div>
@@ -1226,11 +1539,23 @@ const OfficerDashboardPage = () => {
                   <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
                   Top Petroleum Products
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">Best selling petroleum commodities</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Best selling petroleum commodities
+                </p>
               </div>
-              <div className="bg-gradient-to-r from-orange-50 to-red-50 p-2 rounded-lg">
-                <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <div className="bg-linear-to-r from-orange-50 to-red-50 p-2 rounded-lg">
+                <svg
+                  className="w-4 h-4 text-orange-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
                 </svg>
               </div>
             </div>
@@ -1242,7 +1567,9 @@ const OfficerDashboardPage = () => {
             <div className="mt-3 pt-3 border-t border-gray-100">
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Products</span>
-                <span className="font-medium text-gray-700">₹{numberWithIndianFormat(4400000)}</span>
+                <span className="font-medium text-gray-700">
+                  ₹{numberWithIndianFormat(4400000)}
+                </span>
               </div>
             </div>
           </div>
@@ -1255,11 +1582,23 @@ const OfficerDashboardPage = () => {
                   <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                   Top Liquor Products
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">Best selling liquor commodities</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Best selling liquor commodities
+                </p>
               </div>
-              <div className="bg-gradient-to-r from-green-50 to-teal-50 p-2 rounded-lg">
-                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              <div className="bg-linear-to-r from-green-50 to-teal-50 p-2 rounded-lg">
+                <svg
+                  className="w-4 h-4 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                  />
                 </svg>
               </div>
             </div>
@@ -1271,7 +1610,9 @@ const OfficerDashboardPage = () => {
             <div className="mt-3 pt-3 border-t border-gray-100">
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Products</span>
-                <span className="font-medium text-gray-700">₹{numberWithIndianFormat(6800000)}</span>
+                <span className="font-medium text-gray-700">
+                  ₹{numberWithIndianFormat(6800000)}
+                </span>
               </div>
             </div>
           </div>

@@ -1,9 +1,24 @@
-import { cookies } from "next/headers";
+"use client";
 import { CompositionProvider } from "@/components/forms/composition/createcomposition";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { toast } from "react-toastify";
 
-const Dvat2Page = ({ params }: { params: { dvatid: string } }) => {
-  const current_user_id: number = parseInt(cookies().get("id")?.value ?? "0");
-
+const Dvat2Page = async ({ params }: { params: { dvatid: string } }) => {
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
+  useEffect(() => {
+    const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+    };
+    init();
+  }, []);
   return (
     <>
       <main className="min-h-screen bg-[#f6f7fb] w-full py-2 px-6">
@@ -17,7 +32,7 @@ const Dvat2Page = ({ params }: { params: { dvatid: string } }) => {
               <span className="text-red-500">*</span> Include mandatory fields
             </p>
           </div>
-          <CompositionProvider userid={current_user_id} composition={false} />
+          <CompositionProvider userid={userid} composition={false} />
           <div className="flex gap-2"></div>
         </div>
       </main>

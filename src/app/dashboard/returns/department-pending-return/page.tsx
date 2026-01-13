@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
-import { Radio, Button, Input, Pagination } from "antd";
+import { Radio, Button, Input, Pagination, Alert } from "antd";
 import { useEffect, useRef, useState } from "react";
 
 import type { Dayjs } from "dayjs";
@@ -23,7 +23,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { getCookie } from "cookies-next";
+
 import { dvat04, user } from "@prisma/client";
 import DeptPendingReturn from "@/action/dvat/deptpendingreturn";
 import { useRouter } from "next/navigation";
@@ -32,6 +32,7 @@ import SearchDeptPendingReturn from "@/action/dvat/searchdeptpendingreturn";
 import GetUser from "@/action/user/getuser";
 import Link from "next/link";
 import { encryptURLData } from "@/utils/methods";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -41,8 +42,8 @@ interface ResponseType {
 }
 
 const TrackAppliation = () => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
-  const route = useRouter();
+  const [userid, setUserId] = useState<number>(0);
+  const router = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -87,7 +88,14 @@ const TrackAppliation = () => {
   const [user, setUpser] = useState<user | null>(null);
 
   const init = async () => {
-    const userrespone = await GetUser({ id: userid });
+    const authResponse = await getAuthenticatedUserId();
+    if (!authResponse.status || !authResponse.data) {
+      toast.error(authResponse.message);
+      return router.push("/");
+    }
+
+    setUserId(authResponse.data);
+    const userrespone = await GetUser({ id: authResponse.data });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
       const payment_data = await DeptPendingReturn({
@@ -445,9 +453,15 @@ const TrackAppliation = () => {
 
           {dvatData.length == 0 ? (
             <>
-              <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-                <p className="flex-1">There is no Pending Return.</p>
-              </div>
+              <Alert
+                style={{
+                  marginTop: "10px",
+                  padding: "8px",
+                }}
+                type="error"
+                showIcon
+                description="There is no Pending Return."
+              />
             </>
           ) : (
             <>
@@ -509,7 +523,7 @@ const TrackAppliation = () => {
                           <Button
                             type="primary"
                             onClick={() => {
-                              route.push(
+                              router.push(
                                 `/dashboard/returns/department-pending-return/${encryptURLData(
                                   val.dvat04.id.toString()
                                 )}`

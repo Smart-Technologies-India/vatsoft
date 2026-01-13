@@ -6,7 +6,6 @@ import { valibotResolver } from "@hookform/resolvers/valibot";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { MultiSelect } from "../inputfields/multiselect";
 import { onFormError } from "@/utils/methods";
-import { getCookie } from "cookies-next";
 import {
   DailyPurchaseMasterForm,
   DailyPurchaseMasterSchema,
@@ -29,6 +28,8 @@ import CreateTinNumber from "@/action/tin_number/createtin";
 import { DateSelect } from "../inputfields/dateselect";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 type DailyPurchaseProviderProps = {
   userid: number;
@@ -54,7 +55,8 @@ export const DailyPurchaseMasterProvider = (
 };
 
 const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
+  const router = useRouter();
 
   const [isAgainstCForm, setIsAgainstCForm] = useState(true);
 
@@ -113,8 +115,15 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       recipient_vat_no: "",
     });
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
       const response = await GetUserDvat04({
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (response.status && response.data) {

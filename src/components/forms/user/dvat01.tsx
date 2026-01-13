@@ -33,8 +33,8 @@ import { ApiResponseType } from "@/models/response";
 import { dvat04, NatureOfBusiness, SelectOffice } from "@prisma/client";
 import DvatUpdate from "@/action/user/register/dvat1";
 import { toast } from "react-toastify";
-import { Button, Drawer, RadioChangeEvent } from "antd";
-import { onFormError } from "@/utils/methods";
+import { Alert, Button, Drawer, RadioChangeEvent } from "antd";
+import { encryptURLData, onFormError } from "@/utils/methods";
 
 type Dvat01ProviderProps = {
   dvatid: number;
@@ -138,7 +138,11 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
       faxNumber: data.faxNumber ?? undefined,
     });
     if (userrespone.status) {
-      router.push(`/dashboard/new-registration/${props.dvatid}/dvat2`);
+      router.push(
+        `/dashboard/new-registration/${encryptURLData(
+          props.dvatid.toString()
+        )}/dvat2`
+      );
     } else {
       toast.error(userrespone.message);
     }
@@ -375,11 +379,17 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             title="Address"
           />
         </div>
-        <p className="text-xs bg-rose-500 bg-opacity-10 shadow px-2 py-1 rounded-sm mt-2 text-rose-500">
-          Note: If you have more than one place of
+        <Alert
+          style={{
+            marginTop: "10px",
+            padding: "8px",
+          }}
+          type="error"
+          showIcon
+          description="Note: If you have more than one place of
           business/factory/godown/warehouse, fill up form Additional Business
-          Places
-        </p>
+          Places"
+        />
       </div>
       <div className="rounded-sm p-4 border border-black mt-6 relative">
         <span className="-translate-y-7 bg-white px-1 -translate-x-2 inline-block absolute text-sm">
@@ -424,9 +434,15 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
           </div>
         </div>
 
-        <p className="text-xs bg-rose-500 bg-opacity-10 shadow px-2 py-1 rounded-sm mt-2 text-rose-500">
-          Note: Please enter details of contact person in Form Partner Details
-        </p>
+        <Alert
+          style={{
+            marginTop: "10px",
+            padding: "8px",
+          }}
+          type="error"
+          showIcon
+          description=" Note: Please enter details of contact person in Form Partner Details"
+        />
       </div>
 
       <div className="flex gap-2 mt-2">

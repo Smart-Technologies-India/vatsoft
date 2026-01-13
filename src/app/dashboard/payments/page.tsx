@@ -1,29 +1,38 @@
 "use client";
 
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUser from "@/action/user/getuser";
 import DashboardCards from "@/components/dashboard/cards/dashboardcard";
 import { user } from "@prisma/client";
-import { getCookie } from "cookies-next";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 const Page = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
   const [user, setUser] = useState<user>();
+  const router = useRouter();
 
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const userresponse = await GetUser({
-        id: id,
+        id: userid,
       });
       if (userresponse.status && userresponse.data) {
         setUser(userresponse.data);
       }
     };
     init();
-  }, [id]);
+  }, [userid]);
   return (
     <>
-      <main className="bg-gradient-to-l py-4 px-4 rounded-md mt-4 w-full xl:w-5/6 xl:mx-auto">
+      <main className="bg-linear-to-l py-4 px-4 rounded-md mt-4 w-full xl:w-5/6 xl:mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 justify-between items-center py-1  mx-auto gap-4">
           {[
             "SYSTEM",

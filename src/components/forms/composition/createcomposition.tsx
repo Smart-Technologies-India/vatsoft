@@ -26,6 +26,7 @@ import CreateComposition from "@/action/composition/createcomposition";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import IsUserComposition from "@/action/composition/isusercomposition";
 import { onFormError } from "@/utils/methods";
+import { Alert } from "antd";
 
 type CompositionProviderProps = {
   userid: number;
@@ -116,11 +117,19 @@ const Composition = (props: CompositionProviderProps) => {
   if (props.composition == davtData?.compositionScheme) {
     return (
       <div>
-        <p className="text-rose-500 text-sm p-2 bg-rose-500 bg-opacity-10 border-2 border-rose-500 mt-2">
-          {props.composition
-            ? "The provided VAT Number already registered under compostion scheme"
-            : "The provided VAT Number already registered under regular scheme"}
-        </p>
+        <Alert
+          style={{
+            marginTop: "10px",
+            padding: "8px",
+          }}
+          type="error"
+          showIcon
+          description={
+            props.composition
+              ? "The provided VAT Number already registered under compostion scheme"
+              : "The provided VAT Number already registered under regular scheme"
+          }
+        />
       </div>
     );
   }
@@ -128,9 +137,15 @@ const Composition = (props: CompositionProviderProps) => {
   if (isPending) {
     return (
       <div>
-        <p className="text-rose-500 text-sm p-2 bg-rose-500 bg-opacity-10 border-2 border-rose-500 mt-2">
-          Your Application to Opt for Composition scheme is under process.
-        </p>
+        <Alert
+          style={{
+            marginTop: "10px",
+            padding: "8px",
+          }}
+          type="error"
+          showIcon
+          description="Your Application to Opt for Composition scheme is under process."
+        />
       </div>
     );
   }

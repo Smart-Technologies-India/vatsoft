@@ -8,7 +8,6 @@ import { useEffect, useRef, useState } from "react";
 import { MultiSelect } from "../inputfields/multiselect";
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
-import { getCookie } from "cookies-next";
 import { DateSelect } from "../inputfields/dateselect";
 import {
   commodity_master,
@@ -19,7 +18,6 @@ import {
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import { DailySaleForm, DailySaleSchema } from "@/schema/daily_sale";
-import CreateDailySale from "@/action/stock/createdailysale";
 import GetUserCommodity from "@/action/stock/usercommodity";
 import SearchTin from "@/action/tin_number/searchtin";
 import { Input, InputRef, Modal } from "antd";
@@ -27,6 +25,7 @@ import CreateTinNumber from "@/action/tin_number/createtin";
 import { useRouter } from "next/navigation";
 import EditSale from "@/action/stock/editsale";
 import dayjs from "dayjs";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 type EditDailySaleProviderProps = {
   id: number;
@@ -49,7 +48,7 @@ export const EditDailySaleProvider = (props: EditDailySaleProviderProps) => {
 };
 
 const EditDailySale = (props: EditDailySaleProviderProps) => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
   const router = useRouter();
 
   const {
@@ -78,6 +77,12 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
       quantity: props.data.quantity.toString(),
     });
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const commmaster = await GetCommodityMaster({
         id: props.data.commodity_master.id,
       });
@@ -102,7 +107,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
       }
 
       const response = await GetUserDvat04({
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (response.status && response.data) {

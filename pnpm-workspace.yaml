@@ -5,4 +5,5 @@ onlyBuiltDependencies:
   - esbuild
   - prisma
   - puppeteer
+  - sharp
   - unrs-resolver

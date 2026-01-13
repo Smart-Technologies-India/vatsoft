@@ -1,7 +1,4 @@
-import { createServer } from "http";
-import { parse } from "url";
 import next from "next";
-import cron from "node-cron";
 import crypto from "crypto";
 import csrf from "csurf";
 const csrfProtection = csrf();
@@ -161,7 +158,7 @@ app.prepare().then(() => {
     return sbiefail()(req, res);
   });
 
-  server.all("*", (req, res) => {
+  server.all("/{*splat}", (req, res) => {
     return handle(req, res);
   });
 

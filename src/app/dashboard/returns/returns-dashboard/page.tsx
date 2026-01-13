@@ -15,7 +15,6 @@ import {
   returns_01,
   returns_entry,
 } from "@prisma/client";
-import { getCookie } from "cookies-next";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { toast } from "react-toastify";
@@ -24,6 +23,7 @@ import { CheckboxChangeEvent } from "antd/es/checkbox";
 import CreateReturnRevised from "@/action/return/createreturnrevised";
 import GetUserLastPandingReturn from "@/action/return/userlastpandingreturn";
 import { is } from "valibot";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -33,7 +33,7 @@ declare module "@tanstack/react-table" {
 
 const ReturnDashboard = () => {
   const searchParams = useSearchParams();
-  const userid: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserId] = useState<number>(0);
   const [year, setYear] = useState<string>();
   const [quarter, setQuarter] = useState<Quarter>(Quarter.QUARTER1);
   const [period, setPeriod] = useState<string>();
@@ -47,6 +47,18 @@ const ReturnDashboard = () => {
   );
 
   const [duedate, setDueDate] = useState<Date>(new Date());
+
+  useEffect(() => {
+    const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserId(authResponse.data);
+    };
+    init();
+  }, []);
 
   const search = async (year: string, period: string) => {
     setSearch(true);
@@ -731,7 +743,7 @@ const ReturnDashboard = () => {
       <main className="w-full p-4 relative h-full grow xl:w-5/6 xl:mx-auto">
         <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4">
           <h1>File Returns</h1>
-          <Marquee className="bg-yellow-500 bg-opacity-10 mt-2 text-sm">
+          <Marquee className="bg-yellow-500/10 mt-2 text-sm">
             This is a banner can be used for official updates and notifications.
           </Marquee>
 

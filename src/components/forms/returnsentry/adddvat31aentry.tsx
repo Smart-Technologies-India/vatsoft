@@ -35,20 +35,16 @@ import {
   state,
   tin_number_master,
 } from "@prisma/client";
-import { Button } from "antd";
-import GetAllCommodityMaster from "@/action/commoditymaster/getallcommoditymaster";
+import { Alert, Button } from "antd";
 import { onFormError } from "@/utils/methods";
-import AddReturnInvoice from "@/action/return/addreturninvoice";
-import { getCookie } from "cookies-next";
 import { customAlphabet } from "nanoid";
 import dayjs from "dayjs";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { record31AForm, record31ASchema } from "@/schema/record31A";
 import GetAllState from "@/action/state/getallstate";
-import getReturnEntryById from "@/action/return/getreturnentrybyid";
-import UpdateReturnEntry from "@/action/return/updatereturnentry";
 import AddMultiReturnInvoice from "@/action/return/addmultireturninvoice";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 type AddDvat31AEntryProviderProps = {};
 export const AddDvat31AEntryProvider = (
@@ -69,7 +65,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const categoryOfEntry: OptionValue[] = [
     { value: "INVOICE", label: "Invoice" },
@@ -196,8 +192,14 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
     });
 
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const response = await GetUserDvat04({
-        userid: id,
+        userid: authResponse.data,
       });
 
       if (response.status && response.data) {
@@ -372,7 +374,7 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
   const submitAll = async () => {
     const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstunvxyz", 12);
     const response = await AddMultiReturnInvoice({
-      createdById: id,
+      createdById: userid,
       returnType: ReturnType.ORIGINAL,
       year: searchParams.get("year")!.toString(),
       quarter: searchParams.get("quarter") as Quarter,
@@ -620,9 +622,15 @@ const AddDvat31AEntry = (props: AddDvat31AEntryProviderProps) => {
         <p className="text-[#162e57] text-lg font-medium mt-2">Item</p>
         {returnData.length == 0 ? (
           <>
-            <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-              <p className="flex-1">There is no item added yet.</p>
-            </div>
+            <Alert
+              style={{
+                marginTop: "10px",
+                padding: "8px",
+              }}
+              type="error"
+              showIcon
+              description="There is no item added yet."
+            />
           </>
         ) : (
           <>

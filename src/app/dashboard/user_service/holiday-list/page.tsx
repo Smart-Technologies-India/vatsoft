@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/table";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCookie } from "cookies-next";
 import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { DatePicker, Drawer, Pagination } from "antd";
@@ -19,14 +18,14 @@ import { HolidayMasterProvider } from "@/components/forms/holiday/holiday";
 import GetAllHoliday from "@/action/holiday/getallholiday";
 import { holiday, Role } from "@prisma/client";
 import { format } from "date-fns";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { getCurrentUserRole } from "@/lib/auth";
 const { RangePicker } = DatePicker;
 
 const Refund = () => {
   const router = useRouter();
-
-  const userid: number = parseFloat(getCookie("id") ?? "0");
-
-  const role = getCookie("role");
+  const [userid, setUserid] = useState<number>(0);
+  const [role, setRole] = useState<Role>(Role.USER);
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -103,6 +102,17 @@ const Refund = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+      const roleResponse = await getCurrentUserRole();
+      if (roleResponse != null && roleResponse != undefined) {
+        setRole(roleResponse as Role);
+      }
       const holiday_resonse = await GetAllHoliday({
         take: 10,
         skip: 0,

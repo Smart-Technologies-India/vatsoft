@@ -1,4 +1,5 @@
 "use client";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import RemoveReturn from "@/action/return/removereturn";
@@ -18,14 +19,13 @@ import {
   returns_entry,
   tin_number_master,
 } from "@prisma/client";
-import { Modal, Popover } from "antd";
-import { getCookie } from "cookies-next";
+import { Alert, Modal, Popover } from "antd";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const DocumentWiseDetails = () => {
-  const route = useRouter();
+  const router = useRouter();
 
   const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
     {}
@@ -54,12 +54,19 @@ const DocumentWiseDetails = () => {
 
   const [name, setName] = useState<string>("");
 
-  const userid: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
       const dvat_response = await GetUserDvat04({
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (dvat_response.status && dvat_response.data) {
@@ -71,7 +78,7 @@ const DocumentWiseDetails = () => {
       const returnformsresponse = await getPdfReturn({
         year: year,
         month: month,
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (returnformsresponse.status && returnformsresponse.data) {
@@ -367,7 +374,7 @@ const DocumentWiseDetails = () => {
                       <TableCell className="p-2 border text-center">
                         <button
                           onClick={() => {
-                            route.push(getUrl(val.invoice_number));
+                            router.push(getUrl(val.invoice_number));
                           }}
                           className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4"
                         >
@@ -382,9 +389,15 @@ const DocumentWiseDetails = () => {
             </Table>
           ) : (
             <>
-              <p className="bg-rose-500 bg-opacity-10 rounded text-rose-500 mt-2 px-2 py-1 border border-rose-500">
-                There is no record
-              </p>
+              <Alert
+                style={{
+                  marginTop: "10px",
+                  padding: "8px",
+                }}
+                type="error"
+                showIcon
+                description="There is no record."
+              />
             </>
           )}
 

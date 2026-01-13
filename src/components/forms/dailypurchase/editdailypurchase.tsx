@@ -7,7 +7,6 @@ import { useEffect, useRef, useState } from "react";
 import { MultiSelect } from "../inputfields/multiselect";
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
-import { getCookie } from "cookies-next";
 import {
   DailyPurchaseMasterForm,
   DailyPurchaseMasterSchema,
@@ -23,12 +22,12 @@ import {
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
-import CreateDailyPurchase from "@/action/stock/createdailypuchase";
 import { Input, InputRef, Modal } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 import EditPurchase from "@/action/stock/editpurchase";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 type EditDailyPurchaseProviderProps = {
   userid: number;
@@ -57,7 +56,8 @@ export const EditDailyPurchaseMasterProvider = (
 };
 
 const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  // const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
   const router = useRouter();
 
   const {
@@ -85,6 +85,12 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
       recipient_vat_no: props.data.seller_tin_number.tin_number,
     });
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const commmaster = await GetCommodityMaster({
         id: props.data.commodity_master.id,
       });

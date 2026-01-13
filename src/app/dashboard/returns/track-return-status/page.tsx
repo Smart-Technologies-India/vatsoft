@@ -25,16 +25,18 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import GetUserTrackPayment from "@/action/return/getusertrackpayment";
-import { getCookie } from "cookies-next";
 import { dvat04, returns_01 } from "@prisma/client";
 import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import SearchReturnPayment from "@/action/return/searchreturnpayment";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 const TrackAppliation = () => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserId] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -76,8 +78,15 @@ const TrackAppliation = () => {
 
   const init = async () => {
     setLoading(true);
+    const authResponse = await getAuthenticatedUserId();
+    if (!authResponse.status || !authResponse.data) {
+      toast.error(authResponse.message);
+      return router.push("/");
+    }
+
+    setUserId(authResponse.data);
     const dvat_response = await GetUserDvat04({
-      userid: userid,
+      userid: authResponse.data,
     });
 
     if (dvat_response.data && dvat_response.status) {
@@ -85,7 +94,7 @@ const TrackAppliation = () => {
     }
 
     const payment_data = await GetUserTrackPayment({
-      user_id: userid,
+      user_id: authResponse.data,
       take: 10,
       skip: 0,
     });

@@ -34,7 +34,7 @@ import GetAnx1ById from "@/action/anx1/getanxbyid";
 import GetAnx1 from "@/action/anx1/getanx1";
 import Anx1Create from "@/action/anx1/addanx1";
 import DeleteAnx1 from "@/action/anx1/deleteanx1";
-import { onFormError } from "@/utils/methods";
+import { encryptURLData, onFormError } from "@/utils/methods";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 
@@ -559,7 +559,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
         <button
           onClick={(e) => {
             e.preventDefault();
-            router.push(`/dashboard/new-registration/${props.dvatid}/dvat3`);
+            router.push(`/dashboard/new-registration/${encryptURLData(props.dvatid.toString())}/dvat3`);
           }}
           className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
         >
@@ -588,9 +588,9 @@ const Anx1 = (props: Anx1ProviderProps) => {
               dvatData?.additionalShops == "0" &&
               dvatData?.otherPlaceOfBusiness == "0"
             ) {
-              router.push(`/dashboard/new-registration/${props.dvatid}/anx3`);
+              router.push(`/dashboard/new-registration/${encryptURLData(props.dvatid.toString())}/anx3`);
             } else {
-              router.push(`/dashboard/new-registration/${props.dvatid}/anx2`);
+              router.push(`/dashboard/new-registration/${encryptURLData(props.dvatid.toString())}/anx2`);
             }
           }}
           className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"

@@ -13,15 +13,14 @@ import type { InputRef, RadioChangeEvent } from "antd";
 import { Radio, Button, Input, Pagination, Alert } from "antd";
 import { useEffect, useRef, useState } from "react";
 import type { Dayjs } from "dayjs";
-import { getCookie } from "cookies-next";
 import { dvat04, user } from "@prisma/client";
 import { capitalcase, encryptURLData } from "@/utils/methods";
-// import DeptPendingReturn from "@/action/dvat/deptpendingreturn";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import SearchDeptPendingReturn from "@/action/dvat/searchdeptpendingreturn";
 import GetUser from "@/action/user/getuser";
 import GetNewDealers from "@/action/report/newdealers";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -30,8 +29,8 @@ interface ResponseType {
 }
 
 const NewDealers = () => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
-  const route = useRouter();
+  const [userid, setUserid] = useState<number>(0);
+  const router = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -73,7 +72,7 @@ const NewDealers = () => {
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
-      
+
       const payment_data = await GetNewDealers({
         dept: userrespone.data.selectOffice!,
         take: 10,
@@ -99,8 +98,13 @@ const NewDealers = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const userrespone = await GetUser({ id: userid });
-      console.log("userrespone", userrespone);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+      const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
         const payment_data = await GetNewDealers({
@@ -421,7 +425,7 @@ const NewDealers = () => {
                           <Button
                             type="primary"
                             onClick={() => {
-                              route.push(
+                              router.push(
                                 `/dashboard/returns/department-pending-return/${encryptURLData(
                                   val.dvat04.id.toString()
                                 )}`

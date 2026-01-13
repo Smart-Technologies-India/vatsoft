@@ -7,14 +7,16 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
-import { cookies } from "next/headers";
+import { getCurrentDvatId } from "@/lib/auth";
 
 const GetUserDvat04Anx = async (
   payload: GetUserDvat04AnxPayload
 ): Promise<ApiResponseType<dvat04 | null>> => {
   const functionname: string = GetUserDvat04Anx.name;
-  const dvatid = cookies().get("dvat")?.value;
-  if (!dvatid) {
+
+  const dvatid = await getCurrentDvatId();
+
+  if (dvatid == null || dvatid == undefined) {
     return createResponse({
       message: "Invalid id. Please try again.",
       functionname,
@@ -26,7 +28,7 @@ const GetUserDvat04Anx = async (
       where: {
         deletedAt: null,
         deletedBy: null,
-        id: parseInt(dvatid),
+        id: dvatid,
       },
     });
 

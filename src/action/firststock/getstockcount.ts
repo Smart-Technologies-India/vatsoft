@@ -3,7 +3,7 @@
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { cookies } from "next/headers";
+import { getCurrentDvatId } from "@/lib/auth";
 
 interface StockCountPayload {}
 
@@ -13,8 +13,9 @@ const StockCount = async (
   const functionname: string = StockCount.name;
 
   try {
-    const dvatid = cookies().get("dvat")?.value;
-    if (!dvatid) {
+    const dvatid = await getCurrentDvatId();
+
+    if (dvatid == null || dvatid == undefined) {
       return {
         status: false,
         data: null,
@@ -28,7 +29,7 @@ const StockCount = async (
         deletedAt: null,
         deletedById: null,
         status: "ACTIVE",
-        dvat04Id: parseInt(dvatid),
+        dvat04Id: dvatid,
       },
     });
 

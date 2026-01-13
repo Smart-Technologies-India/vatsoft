@@ -3,7 +3,7 @@
 
 import { dvat04, registration, Role } from "@prisma/client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useParams, useRouter } from "next/navigation";
 
@@ -17,7 +17,6 @@ import { Button, Modal } from "antd";
 import { customAlphabet } from "nanoid";
 import GetDvat04 from "@/action/register/getdvat04";
 import AddTempRegNo from "@/action/register/addtempregno";
-import { getCookie } from "cookies-next";
 import {
   Anx1Page,
   Anx2Page,
@@ -27,6 +26,9 @@ import {
   Dvat3Page,
   UserRegister,
 } from "@/components/preview/returnpreview";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { set } from "date-fns";
+import { getCurrentUserRole } from "@/lib/auth";
 
 const nanoid = customAlphabet("1234567890", 12);
 
@@ -37,15 +39,14 @@ const PreviewPage = () => {
   }>();
   const router = useRouter();
 
-  const role = getCookie("role");
-
+  const [currentUserId, setCurrentUserId] = useState<number>(0);
+  const [role, setRole] = useState<Role>(Role.USER);
   const dvatidString = Array.isArray(dvat04) ? dvat04[0] : dvat04;
   const dvatid: number = parseInt(decryptURLData(dvatidString, router));
 
   const useridString = Array.isArray(userid) ? userid[0] : userid;
   const user_id: number = parseInt(decryptURLData(useridString, router));
 
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const tempregno: string = nanoid();
 
   // const [pageIndex, setPageIndex] = useState<number>(1);
@@ -61,7 +62,16 @@ const PreviewPage = () => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
-
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setCurrentUserId(authResponse.data);
+      const roleResponse = await getCurrentUserRole();
+      if (roleResponse != null && roleResponse != undefined) {
+        setRole(roleResponse as Role);
+      }
       const dvat04 = await GetDvat04({ id: dvatid });
 
       if (dvat04.status && dvat04.data) {
@@ -170,7 +180,7 @@ const PreviewPage = () => {
           const response = await AddTempRegNo({
             tempregno: tempregno,
             id: dvat04Data?.id ?? 0,
-            userid: current_user_id,
+            userid: currentUserId,
           });
           if (!response.status && !response.data)
             return toast.error(response.message);

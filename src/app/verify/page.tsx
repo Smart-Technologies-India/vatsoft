@@ -1,54 +1,16 @@
 "use client";
 
-import {
-  Button,
-  Collapse,
-  Drawer,
-  Input,
-  Modal,
-  Radio,
-  RadioChangeEvent,
-} from "antd";
+import { Button, Drawer, Input } from "antd";
 import Marquee from "react-fast-marquee";
-import {
-  Dispatch,
-  SetStateAction,
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { Dispatch, SetStateAction, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formateDate } from "@/utils/methods";
 import { toast } from "react-toastify";
-import LoginOtp from "@/action/user/loginotp";
 import { Label } from "@/components/ui/label";
-// import { Input } from "@/components/ui/input";
 import { cform, dvat04, news, user } from "@prisma/client";
-import SendOtp from "@/action/user/sendotp";
 import { useRouter } from "next/navigation";
-import GetAllNews from "@/action/news/getallnews";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { addMonths, format } from "date-fns";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import TinSendOtp from "@/action/user/tinsendotp";
-import TinLoginOtp from "@/action/user/tinloginotp";
-import { setCookie } from "cookies-next";
+
 import { FluentEye12Regular, FluentEyeOff16Regular } from "@/components/icons";
 import PasswordLogin from "@/action/user/passwordlogin";
 import VerifyCForm from "@/action/verify/verify";
@@ -206,7 +168,7 @@ const Home = () => {
           </div>
 
           <div className="relative w-full mx-auto md:w-3/5 md:px-0">
-            <Marquee className="bg-yellow-500 bg-opacity-10 text-sm">
+            <Marquee className="bg-yellow-500/10 text-sm">
               This banner shall be used for official updates and notifications.
             </Marquee>
           </div>

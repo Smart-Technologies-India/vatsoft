@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { MdiDownload } from "@/components/icons";
-import { Radio, DatePicker, Select, Pagination } from "antd";
+import { Radio, DatePicker, Select, Pagination, Alert } from "antd";
 
 import { Button, Input, InputRef, RadioChangeEvent } from "antd";
 import {
@@ -13,18 +13,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useRef, useState } from "react";
-import { getCookie } from "cookies-next";
 import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { FormType, order_notice, user } from "@prisma/client";
-import { capitalcase, encryptURLData, formateDate, generatePDF } from "@/utils/methods";
+import {
+  capitalcase,
+  encryptURLData,
+  formateDate,
+  generatePDF,
+} from "@/utils/methods";
 import Link from "next/link";
 import GetUser from "@/action/user/getuser";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 const { RangePicker } = DatePicker;
 
 const SupplierDetails = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -166,7 +173,7 @@ const SupplierDetails = () => {
   const init = async () => {
     setLoading(true);
 
-    const userrespone = await GetUser({ id: id });
+    const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
 
@@ -201,7 +208,14 @@ const SupplierDetails = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const userrespone = await GetUser({ id: id });
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
+      const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
 
@@ -223,7 +237,7 @@ const SupplierDetails = () => {
       }
     };
     init();
-  }, [id]);
+  }, [userid]);
 
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (isSearch) {
@@ -351,13 +365,25 @@ const SupplierDetails = () => {
   const downloadNoticeOrder = async (type: FormType, id: number) => {
     switch (type) {
       case FormType.DVAT10:
-        await generatePDF(`/dashboard/returns/dvat10?id=${encryptURLData(id.toString())}&sidebar=no`);
+        await generatePDF(
+          `/dashboard/returns/dvat10?id=${encryptURLData(
+            id.toString()
+          )}&sidebar=no`
+        );
         break;
       case FormType.DVAT24:
-        await generatePDF(`/dashboard/returns/dvat24?id=${encryptURLData(id.toString())}&sidebar=no`);
+        await generatePDF(
+          `/dashboard/returns/dvat24?id=${encryptURLData(
+            id.toString()
+          )}&sidebar=no`
+        );
         break;
       case FormType.DVAT24A:
-        await generatePDF(`/dashboard/returns/dvat24a?id=${encryptURLData(id.toString())}&sidebar=no`);
+        await generatePDF(
+          `/dashboard/returns/dvat24a?id=${encryptURLData(
+            id.toString()
+          )}&sidebar=no`
+        );
         break;
     }
   };
@@ -495,9 +521,15 @@ const SupplierDetails = () => {
           </div>
           {noticeData.length == 0 ? (
             <>
-              <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-                <p className="flex-1">There is no Notice and Order.</p>
-              </div>
+              <Alert
+                style={{
+                  marginTop: "10px",
+                  padding: "8px",
+                }}
+                type="error"
+                showIcon
+                description="There is no Notice and Order."
+              />
             </>
           ) : (
             <>

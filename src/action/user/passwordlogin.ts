@@ -2,10 +2,11 @@
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { user } from "@prisma/client";
 import { cookies } from "next/headers";
 import prisma from "../../../prisma/database";
 import { compare } from "bcrypt";
+import { user } from "../../../generated/prisma/client";
+import { generateToken } from "@/lib/jwt";
 
 interface PasswordLoginPayload {
   tin_number: string;
@@ -16,7 +17,7 @@ const PasswordLogin = async (
   payload: PasswordLoginPayload
 ): Promise<ApiResponseType<user | null>> => {
   const functionname: string = PasswordLogin.name;
-
+  const cookie = await cookies();
   try {
     const usersresponse = await prisma.dvat04.findFirst({
       where: {
@@ -39,6 +40,7 @@ const PasswordLogin = async (
       },
     });
 
+
     if (!usersresponse) {
       return createResponse({
         message: "Wrong Credentials. Please try again.",
@@ -59,6 +61,8 @@ const PasswordLogin = async (
       usersresponse.createdBy.password ?? ""
     );
 
+
+
     if (!passwordMatch) {
       return createResponse({
         message: "Wrong Credentials. Please try again.",
@@ -66,9 +70,25 @@ const PasswordLogin = async (
       });
     }
 
-    cookies().set("id", usersresponse.createdBy.id.toString());
-    cookies().set("role", usersresponse.createdBy.role.toString());
-    cookies().set("dvat", usersresponse.id.toString());
+    const token = generateToken({
+      userId: usersresponse.createdBy.id,
+      mobile: usersresponse.createdBy.mobileOne ?? "",
+      role: usersresponse.createdBy.role,
+      dvatid: usersresponse.id,
+    });
+
+    // Set httpOnly secure cookie
+    cookie.set("auth_token", token, {
+      httpOnly: true, // Cannot be accessed by JavaScript
+      secure: process.env.NODE_ENV === "production", // Only over HTTPS in production
+      sameSite: "strict", // CSRF protection
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
+    });
+
+    // cookie.set("id", usersresponse.createdBy.id.toString());
+    // cookie.set("role", usersresponse.createdBy.role.toString());
+    // cookie.set("dvat", usersresponse.id.toString());
 
     return createResponse({
       message: "Tin Login Successful",

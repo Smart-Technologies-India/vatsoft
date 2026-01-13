@@ -1,4 +1,5 @@
 "use client";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUserDvat04FirstStock from "@/action/dvat/getuserdvatfirststock";
 import CreateFirstStock from "@/action/firststock/firststockcreat";
 import CreateSaveStock from "@/action/save_stock/addsavestock";
@@ -23,14 +24,13 @@ import {
   Radio,
   RadioChangeEvent,
 } from "antd";
-import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const AddStock = () => {
   const router = useRouter();
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 
@@ -39,6 +39,13 @@ const AddStock = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
 
       const dvat = await GetUserDvat04FirstStock();
       if (dvat.status && dvat.data) {
@@ -91,6 +98,7 @@ const AddStock = () => {
   const [stock, setStock] = useState<StockData[]>([]);
 
   const [open, setOpen] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const hide = () => {
     setOpen(false);
@@ -98,6 +106,7 @@ const AddStock = () => {
 
   const submit = async () => {
     setOpen(false);
+    setAgreed(false);
 
     const created_data = await CreateFirstStock({
       data: stock,
@@ -301,9 +310,15 @@ const AddStock = () => {
               </div>
             </>
           ) : (
-            <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-              <p className="flex-1">There is no stock.</p>
-            </div>
+            <Alert
+              style={{
+                marginTop: "10px",
+                padding: "8px",
+              }}
+              type="error"
+              showIcon
+              description="There is no stock."
+            />
           )}
         </div>
       </main>
@@ -314,28 +329,48 @@ const AddStock = () => {
             I, {dvatdata?.tradename}, holding TIN number {dvatdata?.tinNumber},
             hereby acknowledge that the details entered in the VAT registration
             form after logging in on the portal at www.dddnhvat.com and the
-            opening stock data submitted as on 1st January 2025 have been filled
+            opening stock data submitted as on 1st January 2026 have been filled
             by me. I confirm that the information provided is accurate and known
             to me to the best of my knowledge. I take full responsibility for
             the accuracy and completeness of the data provided.
           </p>
         </div>
-        <div className="flex  gap-2 mt-2">
+        
+        <div className="mt-4 flex items-start gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <input
+            type="checkbox"
+            id="agreeCheckbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+          />
+          <label 
+            htmlFor="agreeCheckbox" 
+            className="text-sm text-gray-700 font-medium cursor-pointer select-none"
+          >
+            I agree to the above statement and confirm that all information provided is true and accurate.
+          </label>
+        </div>
+
+        <div className="flex gap-2 mt-4">
           <div className="grow"></div>
           <button
-            className="py-1 rounded-md border px-4 text-sm text-gray-600"
+            className="py-2 rounded-md border border-gray-300 px-4 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
             onClick={() => {
               setOpen(false);
+              setAgreed(false);
             }}
           >
             Close
           </button>
-          <button
-            onClick={submit}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
-          >
-            Submit
-          </button>
+          {agreed && (
+            <button
+              onClick={submit}
+              className="py-2 rounded-md bg-blue-500 hover:bg-blue-600 px-4 text-sm text-white transition-colors shadow-sm"
+            >
+              Submit
+            </button>
+          )}
         </div>
       </Modal>
     </>

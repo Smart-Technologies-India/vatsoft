@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetByIdDailySale from "@/action/stock/getbyiddailysale";
 import { EditDailySaleProvider } from "@/components/forms/dailysale/editdailysale";
 import { decryptURLData } from "@/utils/methods";
@@ -9,13 +10,12 @@ import {
   daily_sale,
   tin_number_master,
 } from "@prisma/client";
-import { getCookie } from "cookies-next";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const EditPPage = () => {
-  const userid: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
@@ -34,6 +34,12 @@ const EditPPage = () => {
   >(null);
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const response = await GetByIdDailySale({
         id: sid,
       });

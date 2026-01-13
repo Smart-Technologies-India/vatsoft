@@ -36,13 +36,13 @@ import {
   tin_number_master,
 } from "@prisma/client";
 import { onFormError } from "@/utils/methods";
-import { getCookie } from "cookies-next";
 import { customAlphabet } from "nanoid";
 import dayjs from "dayjs";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AddMultiReturnInvoice from "@/action/return/addmultireturninvoice";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
-import { Button } from "antd";
+import { Alert, Button } from "antd";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 type AddDvat31EntryProviderProps = {};
 export const AddDvat31EntryProvider = (props: AddDvat31EntryProviderProps) => {
@@ -61,7 +61,7 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const categoryOfEntry: OptionValue[] = [
     { value: "INVOICE", label: "Invoice" },
@@ -152,8 +152,14 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
     });
 
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const response = await GetUserDvat04({
-        userid: id,
+        userid: authResponse.data,
       });
 
       if (response.status && response.data) {
@@ -342,7 +348,7 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
   const submitAll = async () => {
     const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstunvxyz", 12);
     const response = await AddMultiReturnInvoice({
-      createdById: id,
+      createdById: userid,
       returnType: ReturnType.ORIGINAL,
       year: searchParams.get("year")!.toString(),
       quarter: searchParams.get("quarter") as Quarter,
@@ -585,9 +591,15 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
         <p className="text-[#162e57] text-lg font-medium mt-2">Item</p>
         {returnData.length == 0 ? (
           <>
-            <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-              <p className="flex-1">There is no item added yet.</p>
-            </div>
+            <Alert
+              style={{
+                marginTop: "10px",
+                padding: "8px",
+              }}
+              type="error"
+              showIcon
+              description="There is no item added yet."
+            />
           </>
         ) : (
           <>

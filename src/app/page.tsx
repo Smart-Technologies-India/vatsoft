@@ -1,32 +1,13 @@
 "use client";
 
-import {
-  Button,
-  Collapse,
-  Drawer,
-  Input,
-  Modal,
-  Radio,
-  RadioChangeEvent,
-} from "antd";
+import { Button, Drawer, Input, Modal, Radio, RadioChangeEvent } from "antd";
 import Marquee from "react-fast-marquee";
-import {
-  Dispatch,
-  SetStateAction,
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { formateDate } from "@/utils/methods";
 import { toast } from "react-toastify";
-import LoginOtp from "@/action/user/loginotp";
 import { Label } from "@/components/ui/label";
-// import { Input } from "@/components/ui/input";
-import { dvat04, news, user } from "@prisma/client";
-import SendOtp from "@/action/user/sendotp";
+import { news } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import GetAllNews from "@/action/news/getallnews";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,18 +20,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { addMonths, format } from "date-fns";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import TinSendOtp from "@/action/user/tinsendotp";
-import TinLoginOtp from "@/action/user/tinloginotp";
-import { setCookie } from "cookies-next";
+
 import { FluentEye12Regular, FluentEyeOff16Regular } from "@/components/icons";
 import PasswordLogin from "@/action/user/passwordlogin";
+import DvatPasswordLogin from "@/action/user/dvatpasswordlogin";
 
 const Home = () => {
   const faqs = [
@@ -83,13 +56,6 @@ const Home = () => {
         ? prev.filter((item) => item !== value)
         : [...prev, value]
     );
-  };
-
-  const panelStyle: React.CSSProperties = {
-    marginBottom: 12,
-    borderRadius: "10px",
-    background: "#f4f4f4",
-    border: "none",
   };
 
   const [open, setOpen] = useState(false);
@@ -130,32 +96,32 @@ const Home = () => {
 
   return (
     <>
-      <main className="bg-[#f8fafe] pb-8">
-        <header className="bg-[#05313c] w-full flex gap-2 items-center mx-auto md:w-3/5  px-6 md:px-0">
+      <main className="bg-linear-to-b from-blue-50 to-white pb-8">
+        <header className="bg-linear-to-r from-[#05313c] to-[#0a5b6f] w-full flex gap-2 items-center mx-auto md:w-3/5 px-6 md:px-0 shadow-lg">
           {/* <h1 className="text-white font-medium text-xl">VATSMART</h1> */}
           {/* <div className="w-10"></div> */}
           <div className="mx-auto hidden md:block">
             <Link
               href="/"
-              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+              className="text-white inline-block py-2 px-4 rounded-md transition-all duration-200 hover:bg-white/20 hover:shadow-md"
             >
               Home
             </Link>
             <Link
               href="/contact"
-              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+              className="text-white inline-block py-2 px-4 rounded-md transition-all duration-200 hover:bg-white/20 hover:shadow-md"
             >
               Contact
             </Link>
             <Link
               href="https://docs.google.com/forms/d/e/1FAIpQLSf-bLcpu_zAmyzgv4dxahMfDgOAfeNcnI8fg2y1yyfG2k_Org/viewform?usp=sharing"
-              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+              className="text-white inline-block py-2 px-4 rounded-md transition-all duration-200 hover:bg-white/20 hover:shadow-md"
             >
               Registration
             </Link>
             <Link
               href="/verify"
-              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+              className="text-white inline-block py-2 px-4 rounded-md transition-all duration-200 hover:bg-white/20 hover:shadow-md"
             >
               Verify
             </Link>
@@ -163,7 +129,7 @@ const Home = () => {
           <div className="grow"></div>
           <Button
             onClick={showDrawer}
-            className="text-[#0b1e59] bg-white rounded px-4 py-1 text-xs inline-block h-6 mr-2"
+            className="bg-white hover:bg-blue-50 text-[#05313c] font-semibold rounded-lg px-6 py-1 text-sm inline-block h-8 mr-2 shadow-md transition-all duration-200"
           >
             LOGIN
           </Button>
@@ -172,46 +138,28 @@ const Home = () => {
             <PasswordLoginComponent />
           </Drawer>
         </header>
-        <div className="mx-auto md:hidden bg-[#05313c] flex justify-center md:w-3/5 py-4 px-6 md:px-0">
+        <div className="mx-auto md:hidden bg-linear-to-r from-[#05313c] to-[#0a5b6f] flex justify-center md:w-3/5 py-4 px-6 md:px-0 shadow-lg">
           <Link
             href="/"
-            className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+            className="text-white inline-block py-2 px-3 rounded-md transition-all duration-200 hover:bg-white/20"
           >
             Home
           </Link>
-          {/* <a
-              href="#"
-              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
-            >
-              About
-            </a> */}
           <Link
             href="/contact"
-            className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+            className="text-white inline-block py-2 px-3 rounded-md transition-all duration-200 hover:bg-white/20"
           >
             Contact
           </Link>
-          {/* <a
-              href="#"
-              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
-            >
-              Support
-            </a>
-            <a
-              href="#"
-              className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
-            >
-              Help
-            </a> */}
           <Link
             href="https://docs.google.com/forms/d/e/1FAIpQLSf-bLcpu_zAmyzgv4dxahMfDgOAfeNcnI8fg2y1yyfG2k_Org/viewform?usp=sharing"
-            className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+            className="text-white inline-block py-2 px-3 rounded-md transition-all duration-200 hover:bg-white/20"
           >
             Registration
           </Link>
           <Link
             href="/verify"
-            className="text-white inline-block py-1 px-3 hover:bg-white hover:text-[#0b1e59]"
+            className="text-white inline-block py-2 px-3 rounded-md transition-all duration-200 hover:bg-white/20"
           >
             Verify
           </Link>
@@ -238,24 +186,24 @@ const Home = () => {
           </div>
         </div> */}
 
-        <div className="relative w-full h-[12rem] mx-auto md:w-3/5 py-4 px-6 md:px-0">
+        <div className="relative w-full h-48 mx-auto md:w-3/5 py-4 px-6 md:px-0">
           <Image
-            src={"/banner.png"}
-            alt="error"
+            src="/banner.png"
+            alt="VAT-SMART Banner"
             fill={true}
-            className="object-contain object-center bg-[#0a5b6f]"
+            className="object-contain object-center bg-linear-to-r from-[#05313c] to-[#0a5b6f] rounded-lg shadow-xl"
           />
         </div>
 
-        <div className="relative w-full mx-auto md:w-3/5 md:px-0">
-          <Marquee className="bg-yellow-500 bg-opacity-10 text-sm">
-            This banner shall be used for official updates and notifications.
+        <div className="relative w-full mx-auto md:w-3/5 md:px-0 px-6">
+          <Marquee className="bg-linear-to-r from-yellow-100 to-yellow-50 border border-yellow-300 rounded-lg shadow-sm text-sm py-2 font-medium text-gray-700">
+            📢 This banner shall be used for official updates and notifications.
           </Marquee>
         </div>
 
-        <div className="mx-auto md:w-3/5 py-4 px-6 md:px-0">
+        <div className="mx-auto md:w-3/5 py-8 px-6 md:px-0">
           <section className="mx-auto">
-            <h1 className="text-center text-3xl font-semibold text-[#1096b7] mb-8">
+            <h1 className="text-center text-4xl font-bold bg-linear-to-r from-[#05313c] to-[#1096b7] bg-clip-text text-transparent mb-8">
               Upcoming Due Dates
             </h1>
 
@@ -265,122 +213,180 @@ const Home = () => {
           </section>
         </div>
 
-        <section className="mx-auto md:w-3/5 py-4 px-6 md:px-0">
+        <section className="mx-auto md:w-3/5 py-8 px-6 md:px-0">
           <div>
-            <p className="text-lg font-medium">VAT Knowledge Base </p>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-[#751947] p-2 w-full">
+            <h2 className="text-3xl font-bold bg-linear-to-r from-[#05313c] to-[#1096b7] bg-clip-text text-transparent mb-6">
+              VAT Knowledge Base
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-200 flex flex-col">
                 <iframe
-                  className="w-full rounded-md"
+                  className="w-full aspect-video"
                   src="https://www.youtube.com/embed/SKFZGmgS52o"
-                  title=""
+                  title="How to Register on VAT-SMART"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 ></iframe>
-                <h2 className="text-white text-sm">
-                  How to Register on VAT-SMART
-                </h2>
-                <p className="mt-1 cursor-pointer text-xs text-white">
-                  Learn how to register on the VAT-SMART portal in this
-                  step-by-step tutorial.
-                </p>
+                <div className="p-4 bg-linear-to-br from-[#05313c] to-[#0a5b6f] grow">
+                  <h3 className="text-white text-base font-semibold mb-2">
+                    How to Register on VAT-SMART
+                  </h3>
+                  <p className="text-gray-200 text-sm leading-relaxed">
+                    Learn how to register on the VAT-SMART portal in this
+                    step-by-step tutorial.
+                  </p>
+                </div>
               </div>
-              <div className="bg-[#751947] p-2">
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-200 flex flex-col">
                 <iframe
-                  className="w-full rounded-md"
+                  className="w-full aspect-video"
                   src="https://www.youtube.com/embed/H941IkF71pM"
-                  title=""
+                  title="How to Add Local Purchases on the VAT-SMART Portal"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 ></iframe>
-                <h2 className="text-white text-sm">
-                  How to Add Local Purchases on the VAT-SMART Portal
-                </h2>
-                <p className="mt-1 cursor-pointer text-xs text-white">
-                  This tutorial explains how to accurately add local purchase
-                  details on the VAT-SMART portal.
-                </p>
+                <div className="p-4 bg-linear-to-br from-[#05313c] to-[#0a5b6f] grow">
+                  <h3 className="text-white text-base font-semibold mb-2">
+                    How to Add Local Purchases on the VAT-SMART Portal
+                  </h3>
+                  <p className="text-gray-200 text-sm leading-relaxed">
+                    This tutorial explains how to accurately add local purchase
+                    details on the VAT-SMART portal.
+                  </p>
+                </div>
               </div>
-              <div className="bg-[#751947] p-2">
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-200">
                 <iframe
-                  className="w-full rounded-md"
+                  className="w-full aspect-video"
                   src="https://www.youtube.com/embed/K398HeqOv7k"
-                  title=""
+                  title="How to Convert Sales to Returns on the VAT-SMART Portal"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 ></iframe>
-                <h2 className="text-white text-sm">
-                  How to Convert Sales to Returns on the VAT-SMART Portal
-                </h2>
-                <p className="mt-1 cursor-pointer text-xs text-white">
-                  Discover how to use the VAT-SMART portal to convert sales data
-                  into VAT returns by auto-filling the DVAT 31 and DVAT 31A
-                  forms.
-                </p>
+                <div className="p-4 bg-linear-to-br from-[#05313c] to-[#0a5b6f]">
+                  <h3 className="text-white text-base font-semibold mb-2">
+                    How to Convert Sales to Returns on the VAT-SMART Portal
+                  </h3>
+                  <p className="text-gray-200 text-sm leading-relaxed">
+                    Discover how to use the VAT-SMART portal to convert sales
+                    data into VAT returns by auto-filling the DVAT 31 and DVAT
+                    31A forms.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </section>
       </main>
-      <div className="grid grid-cols-9 gap-2 mx-auto md:w-3/5 py-4 px-6 md:px-0">
-        <div className="border border-gray-500 col-span-4">
-          <h1 className="text-lg bg-[#339966] p-2 text-white">Features</h1>
-          <div className="p-4 h-60 overflow-y-scroll">
-            <p className="text-sm">
-              1. Grant of Certificate of registration to the dealers (u/s-19 of
-              VAT Regulation-2005)
-            </p>
-            <p className="text-sm">
-              2. Amendment of registration (u/s-21 of VAT Regulation-2005)
-            </p>
-            <p className="text-sm">
-              3. Cancellation of Certificate of registration (u/s-22 of VAT
-              Regulation-2005)
-            </p>
-            <p className="text-sm">4. Amendment to Registrations (CST).</p>
-            <p className="text-sm">
-              5. Issue of Statutory forms i.e. Declaration forms − C, E1, E11,
-              F, H. etc.
-            </p>
-            <p className="text-sm">6. Assessments.</p>
-            <p className="text-sm">7. Refunds.</p>
-            <p className="text-sm">8. Recovery of Tax, interest & Penalty.</p>
-            <p className="text-sm">9. Tax Audit and Inspection of records.</p>
-            <p className="text-sm">10. Enforcement.</p>
-            <p className="text-sm">11. Appeals.</p>
+      <div className="grid grid-cols-1 md:grid-cols-9 gap-6 mx-auto md:w-3/5 py-8 px-6 md:px-0">
+        <div className="md:col-span-4 bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+          <div className="bg-linear-to-r from-[#05313c] to-[#1096b7] p-4">
+            <h2 className="text-xl font-bold text-white">Features</h2>
+          </div>
+          <div className="p-6 h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-[#1096b7] scrollbar-track-gray-100">
+            <ul className="space-y-3">
+              <li className="text-sm text-gray-700 flex items-start">
+                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
+                <span>
+                  Grant of Certificate of registration to the dealers (u/s-19 of
+                  VAT Regulation-2005)
+                </span>
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
+                <span>
+                  Amendment of registration (u/s-21 of VAT Regulation-2005)
+                </span>
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
+                <span>
+                  Cancellation of Certificate of registration (u/s-22 of VAT
+                  Regulation-2005)
+                </span>
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
+                <span>Amendment to Registrations (CST)</span>
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
+                <span>
+                  Issue of Statutory forms i.e. Declaration forms − C, E1, E11,
+                  F, H. etc.
+                </span>
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
+                <span>Assessments</span>
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
+                <span>Refunds</span>
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
+                <span>Recovery of Tax, interest & Penalty</span>
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
+                <span>Tax Audit and Inspection of records</span>
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
+                <span>Enforcement</span>
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
+                <span>Appeals</span>
+              </li>
+            </ul>
           </div>
         </div>
 
-        <div className="border border-gray-500 col-span-5">
-          <h1 className="text-lg bg-[#00478f] p-2 text-white">
-            What&apos;s New
-          </h1>
-          <div className="p-4 h-60 overflow-y-scroll">
-            <p className="text-sm">
-              1. Simplified Stock Management – Easily track and manage your
-              inventory with our new stock management tool, helping you stay
-              tax-compliant.
-            </p>
-            <p className="text-sm mt-2">
-              2. Sales & Purchase Auto-Conversion to Returns – No need for
-              manual entry! Your sales and purchase data now auto-populate your
-              VAT returns.
-            </p>
-            <p className="text-sm mt-2">
-              3. Smart Notification System – Get timely reminders for return
-              filings, payments, and pending compliance tasks (30, 15, and 5
-              days before the deadline).
-            </p>
-            <p className="text-sm mt-2">
-              4. Upgraded Dealer Dashboard – View all your tax-related
-              information, pending payments, and compliance status in one place.
-            </p>
-            <p className="text-sm mt-2">
-              5. Purchase Stock Verification & Approval – Dealers can now verify
-              and approve received stock from Local Dealers/OIDC before it
-              reflects in their inventory, eliminating repeated follow-ups
-              and billing errors.
-            </p>
+        <div className="md:col-span-5 bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+          <div className="bg-linear-to-r from-[#05313c] to-[#1096b7] p-4">
+            <h2 className="text-xl font-bold text-white">What&apos;s New</h2>
+          </div>
+          <div className="p-6 h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-[#1096b7] scrollbar-track-gray-100">
+            <ul className="space-y-4">
+              <li className="text-sm text-gray-700">
+                <span className="font-semibold text-[#1096b7]">
+                  1. Simplified Stock Management
+                </span>{" "}
+                – Easily track and manage your inventory with our new stock
+                management tool, helping you stay tax-compliant.
+              </li>
+              <li className="text-sm text-gray-700">
+                <span className="font-semibold text-[#1096b7]">
+                  2. Sales & Purchase Auto-Conversion to Returns
+                </span>{" "}
+                – No need for manual entry! Your sales and purchase data now
+                auto-populate your VAT returns.
+              </li>
+              <li className="text-sm text-gray-700">
+                <span className="font-semibold text-[#1096b7]">
+                  3. Smart Notification System
+                </span>{" "}
+                – Get timely reminders for return filings, payments, and pending
+                compliance tasks (30, 15, and 5 days before the deadline).
+              </li>
+              <li className="text-sm text-gray-700">
+                <span className="font-semibold text-[#1096b7]">
+                  4. Upgraded Dealer Dashboard
+                </span>{" "}
+                – View all your tax-related information, pending payments, and
+                compliance status in one place.
+              </li>
+              <li className="text-sm text-gray-700">
+                <span className="font-semibold text-[#1096b7]">
+                  5. Purchase Stock Verification & Approval
+                </span>{" "}
+                – Dealers can now verify and approve received stock from Local
+                Dealers/OIDC before it reflects in their inventory, eliminating
+                repeated follow-ups and billing errors.
+              </li>
+            </ul>
           </div>
           {/*<div className="p-4 h-60 overflow-y-scroll">
            {newsdata.map((val: news, index: number) => (
@@ -397,10 +403,10 @@ const Home = () => {
         </div>
       </div>
 
-      <section className="mx-auto md:w-3/5 py-4 px-6 md:px-0 ">
-        <h1 className="text-center text-3xl font-semibold text-[#1096b7] mb-8">
+      <section className="mx-auto md:w-3/5 py-8 px-6 md:px-0 ">
+        <h2 className="text-center text-4xl font-bold bg-linear-to-r from-[#05313c] to-[#1096b7] bg-clip-text text-transparent mb-8">
           Frequently Asked Questions
-        </h1>
+        </h2>
         <Accordion
           type="multiple"
           value={openItems}
@@ -445,17 +451,18 @@ const Home = () => {
         </Accordion>
       </section>
 
-      <footer className="mx-auto md:w-3/5 py-4 px-6 md:px-0 text-center md:flex gap-2 items-center bg-[#05313c] justify-evenly">
-        <h1 className=" text-gray-300 text-sm">&copy; VAT-DD-DNH</h1>
-        <h1 className=" text-gray-300 text-sm">
-          Site Last Updated on 24-01-2025
-        </h1>
-        <Link href="/policy" className="text-gray-300 text-sm hover:text-white hover:underline">
+      <footer className="mx-auto md:w-3/5 py-6 px-6 md:px-0 text-center md:flex gap-4 items-center bg-linear-to-r from-[#05313c] to-[#0a5b6f] justify-evenly rounded-t-xl shadow-2xl mt-8">
+        <p className="text-gray-200 text-sm font-medium">&copy; VAT-DD-DNH</p>
+        <p className="text-gray-200 text-sm">Site Last Updated on 24-01-2025</p>
+        <Link
+          href="/policy"
+          className="text-gray-200 text-sm hover:text-white hover:underline transition-colors duration-200"
+        >
           Terms & Policies
         </Link>
-        <h1 className="text-gray-300 text-sm">
+        <p className="text-gray-200 text-sm">
           Designed & Developed by Smart Technologies
-        </h1>
+        </p>
       </footer>
     </>
   );
@@ -513,7 +520,7 @@ const PasswordLoginComponent = () => {
       return;
     }
 
-    const response = await PasswordLogin({
+    const response = await DvatPasswordLogin({
       tin_number: tin,
       password: password,
     });
@@ -536,7 +543,7 @@ const PasswordLoginComponent = () => {
     router.push("/dashboard");
     setTimeout(() => {
       setIsLogin(false);
-    }, 10000);
+    }, 1000);
     return;
   };
 
@@ -607,572 +614,572 @@ const PasswordLoginComponent = () => {
   );
 };
 
-const LoginComponent = () => {
-  enum TimerStatus {
-    COMPLETED,
-    RUNNING,
-  }
+// const LoginComponent = () => {
+//   enum TimerStatus {
+//     COMPLETED,
+//     RUNNING,
+//   }
 
-  enum SearchOption {
-    MOBILE,
-    TIN,
-  }
+//   enum SearchOption {
+//     MOBILE,
+//     TIN,
+//   }
 
-  const [counter, setCounter] = useState<number>(60);
-  const [status, setStatus] = useState<TimerStatus>(TimerStatus.COMPLETED);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+//   const [counter, setCounter] = useState<number>(60);
+//   const [status, setStatus] = useState<TimerStatus>(TimerStatus.COMPLETED);
+//   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const startTimer = () => {
-    if (status === TimerStatus.RUNNING) return;
+//   const startTimer = () => {
+//     if (status === TimerStatus.RUNNING) return;
 
-    setStatus(TimerStatus.RUNNING);
-    intervalRef.current = setInterval(() => {
-      setCounter((prevCounter) => {
-        if (prevCounter <= 0) {
-          stopTimer();
-          return 0;
-        }
-        return prevCounter - 1;
-      });
-    }, 1000);
-  };
+//     setStatus(TimerStatus.RUNNING);
+//     intervalRef.current = setInterval(() => {
+//       setCounter((prevCounter) => {
+//         if (prevCounter <= 0) {
+//           stopTimer();
+//           return 0;
+//         }
+//         return prevCounter - 1;
+//       });
+//     }, 1000);
+//   };
 
-  const stopTimer = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    setStatus(TimerStatus.COMPLETED);
-  };
+//   const stopTimer = () => {
+//     if (intervalRef.current) {
+//       clearInterval(intervalRef.current);
+//       intervalRef.current = null;
+//     }
+//     setStatus(TimerStatus.COMPLETED);
+//   };
 
-  const resetTimer = () => {
-    stopTimer();
-    setCounter(60); // Reset to initial value
-  };
+//   const resetTimer = () => {
+//     stopTimer();
+//     setCounter(60); // Reset to initial value
+//   };
 
-  const router = useRouter();
+//   const router = useRouter();
 
-  const [isLogin, setIsLogin] = useState<boolean>(false);
+//   const [isLogin, setIsLogin] = useState<boolean>(false);
 
-  // top section
-  const firstname = useRef<HTMLInputElement>(null);
-  const lastname = useRef<HTMLInputElement>(null);
+//   // top section
+//   const firstname = useRef<HTMLInputElement>(null);
+//   const lastname = useRef<HTMLInputElement>(null);
 
-  const [isOtpSent, setIsOtpSent] = useState(false);
+//   const [isOtpSent, setIsOtpSent] = useState(false);
 
-  const [otpresponse, setOtpResponse] = useState<user>();
+//   const [otpresponse, setOtpResponse] = useState<user>();
 
-  const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.MOBILE
-  );
+//   const [searchOption, setSeachOption] = useState<SearchOption>(
+//     SearchOption.MOBILE
+//   );
 
-  const onChange = (e: RadioChangeEvent) => {
-    setSeachOption(e.target.value);
-  };
+//   const onChange = (e: RadioChangeEvent) => {
+//     setSeachOption(e.target.value);
+//   };
 
-  const [selectTinBox, setSelectTinBox] = useState(false);
+//   const [selectTinBox, setSelectTinBox] = useState(false);
 
-  const [mobile, setMobile] = useState<string | undefined>(undefined);
+//   const [mobile, setMobile] = useState<string | undefined>(undefined);
 
-  const [dvatData, setDvatData] = useState<dvat04[]>([]);
+//   const [dvatData, setDvatData] = useState<dvat04[]>([]);
 
-  // mobile start here
-  const [mobileOTP, setMobileOTP] = useState<string | undefined>(undefined);
+//   // mobile start here
+//   const [mobileOTP, setMobileOTP] = useState<string | undefined>(undefined);
 
-  const sendOtp = async () => {
-    setIsLogin(true);
-    if (mobile == null || mobile == undefined || mobile == "") {
-      toast.error("Please enter a valid mobile number");
-      setIsLogin(false);
-      return;
-    }
+//   const sendOtp = async () => {
+//     setIsLogin(true);
+//     if (mobile == null || mobile == undefined || mobile == "") {
+//       toast.error("Please enter a valid mobile number");
+//       setIsLogin(false);
+//       return;
+//     }
 
-    if (mobile.length !== 10) {
-      toast.error("Mobile number should be 10 digits long");
-      setIsLogin(false);
-      return;
-    }
-    const response = await SendOtp({ mobile: mobile });
-    if (!response.status) {
-      toast.error(response.message);
-      setIsLogin(false);
-      return;
-    }
-    if (response.data && response.status) {
-      setOtpResponse(response.data);
-    }
-    setCounter(60);
-    startTimer();
-    toast.success(response.message);
-    setIsOtpSent(true);
-    setIsLogin(false);
-  };
+//     if (mobile.length !== 10) {
+//       toast.error("Mobile number should be 10 digits long");
+//       setIsLogin(false);
+//       return;
+//     }
+//     const response = await SendOtp({ mobile: mobile });
+//     if (!response.status) {
+//       toast.error(response.message);
+//       setIsLogin(false);
+//       return;
+//     }
+//     if (response.data && response.status) {
+//       setOtpResponse(response.data);
+//     }
+//     setCounter(60);
+//     startTimer();
+//     toast.success(response.message);
+//     setIsOtpSent(true);
+//     setIsLogin(false);
+//   };
 
-  const verifyOtp = async () => {
-    const firstnameValue: string =
-      otpresponse &&
-      otpresponse.firstName &&
-      otpresponse.firstName !== "undefined"
-        ? otpresponse.firstName
-        : firstname.current?.value!;
-    const lastnameValue =
-      otpresponse &&
-      otpresponse.lastName &&
-      otpresponse.lastName !== "undefined"
-        ? otpresponse.lastName
-        : lastname.current?.value!;
+//   const verifyOtp = async () => {
+//     const firstnameValue: string =
+//       otpresponse &&
+//       otpresponse.firstName &&
+//       otpresponse.firstName !== "undefined"
+//         ? otpresponse.firstName
+//         : firstname.current?.value!;
+//     const lastnameValue =
+//       otpresponse &&
+//       otpresponse.lastName &&
+//       otpresponse.lastName !== "undefined"
+//         ? otpresponse.lastName
+//         : lastname.current?.value!;
 
-    if (mobile == null || mobile == undefined || mobile == "") {
-      toast.error("Please enter a valid mobile number");
-      return;
-    }
+//     if (mobile == null || mobile == undefined || mobile == "") {
+//       toast.error("Please enter a valid mobile number");
+//       return;
+//     }
 
-    if (mobileOTP == null || mobileOTP == undefined) {
-      toast.error("Please enter a valid otp");
-      return;
-    }
+//     if (mobileOTP == null || mobileOTP == undefined) {
+//       toast.error("Please enter a valid otp");
+//       return;
+//     }
 
-    if (
-      firstnameValue == null ||
-      firstnameValue == undefined ||
-      firstnameValue == ""
-    ) {
-      toast.error("Please enter a valid first name");
-      return;
-    }
+//     if (
+//       firstnameValue == null ||
+//       firstnameValue == undefined ||
+//       firstnameValue == ""
+//     ) {
+//       toast.error("Please enter a valid first name");
+//       return;
+//     }
 
-    if (
-      lastnameValue == null ||
-      lastnameValue == undefined ||
-      lastnameValue == ""
-    ) {
-      toast.error("Please enter a valid last name");
-      return;
-    }
+//     if (
+//       lastnameValue == null ||
+//       lastnameValue == undefined ||
+//       lastnameValue == ""
+//     ) {
+//       toast.error("Please enter a valid last name");
+//       return;
+//     }
 
-    const response = await LoginOtp({
-      mobile: mobile,
-      otp: mobileOTP,
-      firstname: firstnameValue,
-      lastname: lastnameValue,
-    });
+//     const response = await LoginOtp({
+//       mobile: mobile,
+//       otp: mobileOTP,
+//       firstname: firstnameValue,
+//       lastname: lastnameValue,
+//     });
 
-    setSelectTinBox(true);
-    if (response.status && response.data) {
-      setCookie("id", response.data.id.toString());
-      setCookie("role", response.data.role.toString());
+//     setSelectTinBox(true);
+//     if (response.status && response.data) {
+//       setCookie("id", response.data.id.toString());
+//       setCookie("role", response.data.role.toString());
 
-      if (response.data.data.length == 0) {
-        setIsLogin(true);
-        router.push("/dashboard");
-        setTimeout(() => {
-          setIsLogin(false);
-        }, 5000);
-      }
-      setDvatData(response.data.data);
-      return;
-    }
-    toast.error(response.message);
-  };
+//       if (response.data.data.length == 0) {
+//         setIsLogin(true);
+//         router.push("/dashboard");
+//         setTimeout(() => {
+//           setIsLogin(false);
+//         }, 5000);
+//       }
+//       setDvatData(response.data.data);
+//       return;
+//     }
+//     toast.error(response.message);
+//   };
 
-  // mobile end here
+//   // mobile end here
 
-  // tin login option start here
-  const [tinNumber, setTinNumber] = useState<string | undefined>(undefined);
-  const [tinOTP, setTinOTP] = useState<string | undefined>(undefined);
+//   // tin login option start here
+//   const [tinNumber, setTinNumber] = useState<string | undefined>(undefined);
+//   const [tinOTP, setTinOTP] = useState<string | undefined>(undefined);
 
-  const tinSendOtp = async () => {
-    setIsLogin(true);
+//   const tinSendOtp = async () => {
+//     setIsLogin(true);
 
-    if (tinNumber === undefined) {
-      toast.error("Please enter a valid TIN number");
-      return;
-    }
+//     if (tinNumber === undefined) {
+//       toast.error("Please enter a valid TIN number");
+//       return;
+//     }
 
-    if (tinNumber.length !== 11) {
-      toast.error("TIN number should be 11 digits long");
-      return;
-    }
+//     if (tinNumber.length !== 11) {
+//       toast.error("TIN number should be 11 digits long");
+//       return;
+//     }
 
-    const response = await TinSendOtp({ tin_number: tinNumber });
-    if (!response.status) {
-      toast.error(response.message);
-      setIsLogin(false);
-      return;
-    }
-    if (response.data && response.status) {
-      setMobile(response.data.mobileOne);
-      setOtpResponse(response.data);
-    }
-    setCounter(60);
-    startTimer();
-    toast.success(response.message);
-    setIsOtpSent(true);
-    setIsLogin(false);
-  };
+//     const response = await TinSendOtp({ tin_number: tinNumber });
+//     if (!response.status) {
+//       toast.error(response.message);
+//       setIsLogin(false);
+//       return;
+//     }
+//     if (response.data && response.status) {
+//       setMobile(response.data.mobileOne);
+//       setOtpResponse(response.data);
+//     }
+//     setCounter(60);
+//     startTimer();
+//     toast.success(response.message);
+//     setIsOtpSent(true);
+//     setIsLogin(false);
+//   };
 
-  const tinVerifyOtp = async () => {
-    setIsLogin(true);
+//   const tinVerifyOtp = async () => {
+//     setIsLogin(true);
 
-    if (tinNumber == null || tinNumber == undefined || tinNumber == "") {
-      toast.error("Please enter a valid mobile number");
-      setIsLogin(false);
-      return;
-    }
+//     if (tinNumber == null || tinNumber == undefined || tinNumber == "") {
+//       toast.error("Please enter a valid mobile number");
+//       setIsLogin(false);
+//       return;
+//     }
 
-    if (tinOTP == null || tinOTP == undefined || tinOTP == "") {
-      toast.error("Please enter a valid otp");
-      setIsLogin(false);
+//     if (tinOTP == null || tinOTP == undefined || tinOTP == "") {
+//       toast.error("Please enter a valid otp");
+//       setIsLogin(false);
 
-      return;
-    }
+//       return;
+//     }
 
-    const response = await TinLoginOtp({
-      tin_number: tinNumber,
-      otp: tinOTP,
-    });
+//     const response = await TinLoginOtp({
+//       tin_number: tinNumber,
+//       otp: tinOTP,
+//     });
 
-    if (!response.status) {
-      toast.error(response.message);
-      setTimeout(() => {
-        setIsLogin(false);
-      }, 5000);
-      return;
-    }
+//     if (!response.status) {
+//       toast.error(response.message);
+//       setTimeout(() => {
+//         setIsLogin(false);
+//       }, 5000);
+//       return;
+//     }
 
-    toast.success(response.message);
-    router.push("/dashboard");
-    setTimeout(() => {
-      setIsLogin(false);
-    }, 5000);
-    return;
-  };
+//     toast.success(response.message);
+//     router.push("/dashboard");
+//     setTimeout(() => {
+//       setIsLogin(false);
+//     }, 5000);
+//     return;
+//   };
 
-  // tin login option end here
+//   // tin login option end here
 
-  const handleNumberChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    setData: Dispatch<SetStateAction<string | undefined>>
-  ) => {
-    const onlyNumbersRegex = /^[0-9]*$/;
-    const { value } = event.target;
+//   const handleNumberChange = (
+//     event: React.ChangeEvent<HTMLInputElement>,
+//     setData: Dispatch<SetStateAction<string | undefined>>
+//   ) => {
+//     const onlyNumbersRegex = /^[0-9]*$/;
+//     const { value } = event.target;
 
-    if (onlyNumbersRegex.test(value)) {
-      // Parse value and handle empty case
-      // const adddata = value === "" ? undefined : parseInt(value, 10);
-      setData(value);
-    }
-  };
+//     if (onlyNumbersRegex.test(value)) {
+//       // Parse value and handle empty case
+//       // const adddata = value === "" ? undefined : parseInt(value, 10);
+//       setData(value);
+//     }
+//   };
 
-  return (
-    <div className="flex-1 grid place-items-center bg-white rounded-r-md">
-      <div>
-        <h1 className="text-lg font-semibold mt-6 text-center">
-          Welcome to VAT-SMART
-        </h1>
-        <h1 className="text-sm font-normal pb-2 text-center">
-          Login to access your Account
-        </h1>
-        <Radio.Group
-          block
-          onChange={onChange}
-          value={searchOption}
-          className="mt-2"
-        >
-          <Radio.Button value={SearchOption.MOBILE}>MOBILE NUMBER</Radio.Button>
-          <Radio.Button value={SearchOption.TIN}>TIN NUMBER</Radio.Button>
-        </Radio.Group>
+//   return (
+//     <div className="flex-1 grid place-items-center bg-white rounded-r-md">
+//       <div>
+//         <h1 className="text-lg font-semibold mt-6 text-center">
+//           Welcome to VAT-SMART
+//         </h1>
+//         <h1 className="text-sm font-normal pb-2 text-center">
+//           Login to access your Account
+//         </h1>
+//         <Radio.Group
+//           block
+//           onChange={onChange}
+//           value={searchOption}
+//           className="mt-2"
+//         >
+//           <Radio.Button value={SearchOption.MOBILE}>MOBILE NUMBER</Radio.Button>
+//           <Radio.Button value={SearchOption.TIN}>TIN NUMBER</Radio.Button>
+//         </Radio.Group>
 
-        {(() => {
-          switch (searchOption) {
-            case SearchOption.MOBILE:
-              return (
-                <div className="grid max-w-sm items-center gap-1.5 w-80 mt-4">
-                  {isOtpSent ? (
-                    <>
-                      {otpresponse?.firstName == null ||
-                      otpresponse?.firstName == "" ||
-                      otpresponse?.lastName == null ||
-                      otpresponse?.lastName == "" ? (
-                        <>
-                          <Label htmlFor="mobile" className="text-xs">
-                            Mobile Number
-                          </Label>
-                          <Input
-                            id="mobile"
-                            type="text"
-                            value={
-                              mobile === undefined ? "" : mobile.toString()
-                            }
-                            disabled
-                            maxLength={10}
-                          />
-                          <Label htmlFor="firstname" className="text-xs">
-                            First Name
-                          </Label>
-                          {/* <Input id="firstname" type="text" ref={firstname} /> */}
+//         {(() => {
+//           switch (searchOption) {
+//             case SearchOption.MOBILE:
+//               return (
+//                 <div className="grid max-w-sm items-center gap-1.5 w-80 mt-4">
+//                   {isOtpSent ? (
+//                     <>
+//                       {otpresponse?.firstName == null ||
+//                       otpresponse?.firstName == "" ||
+//                       otpresponse?.lastName == null ||
+//                       otpresponse?.lastName == "" ? (
+//                         <>
+//                           <Label htmlFor="mobile" className="text-xs">
+//                             Mobile Number
+//                           </Label>
+//                           <Input
+//                             id="mobile"
+//                             type="text"
+//                             value={
+//                               mobile === undefined ? "" : mobile.toString()
+//                             }
+//                             disabled
+//                             maxLength={10}
+//                           />
+//                           <Label htmlFor="firstname" className="text-xs">
+//                             First Name
+//                           </Label>
+//                           {/* <Input id="firstname" type="text" ref={firstname} /> */}
 
-                          <Label htmlFor="lastname" className="text-xs">
-                            Last Name
-                          </Label>
-                          {/* <Input id="lastname" type="text" ref={lastname} /> */}
-                        </>
-                      ) : (
-                        <>
-                          <h1 className="text-left text-xl mb-6">
-                            Hello {otpresponse?.firstName}{" "}
-                            {otpresponse?.lastName}
-                          </h1>
-                          <Label htmlFor="mobile" className="text-xs">
-                            Mobile Number
-                          </Label>
-                          <div className="flex">
-                            <Input
-                              id="mobile"
-                              type="text"
-                              value={
-                                mobile === undefined ? "" : mobile.toString()
-                              }
-                              maxLength={10}
-                              disabled
-                            />
-                          </div>
-                        </>
-                      )}
+//                           <Label htmlFor="lastname" className="text-xs">
+//                             Last Name
+//                           </Label>
+//                           {/* <Input id="lastname" type="text" ref={lastname} /> */}
+//                         </>
+//                       ) : (
+//                         <>
+//                           <h1 className="text-left text-xl mb-6">
+//                             Hello {otpresponse?.firstName}{" "}
+//                             {otpresponse?.lastName}
+//                           </h1>
+//                           <Label htmlFor="mobile" className="text-xs">
+//                             Mobile Number
+//                           </Label>
+//                           <div className="flex">
+//                             <Input
+//                               id="mobile"
+//                               type="text"
+//                               value={
+//                                 mobile === undefined ? "" : mobile.toString()
+//                               }
+//                               maxLength={10}
+//                               disabled
+//                             />
+//                           </div>
+//                         </>
+//                       )}
 
-                      <Label htmlFor="otp" className="text-xs">
-                        OTP
-                      </Label>
-                      <Input
-                        id="otp"
-                        type="text"
-                        maxLength={6}
-                        value={
-                          mobileOTP === undefined ? "" : mobileOTP.toString()
-                        }
-                        onChange={(e) => handleNumberChange(e, setMobileOTP)}
-                      />
-                      {isLogin ? (
-                        <Button type="primary" className="mt-2" disabled>
-                          Loading...
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={verifyOtp}
-                          type="primary"
-                          className="mt-2"
-                          disabled={isLogin}
-                        >
-                          Verify OTP
-                        </Button>
-                      )}
-                      {status == TimerStatus.COMPLETED ? (
-                        <p className="text-center mt-2">
-                          Didn&apos;t receive a OTP?
-                          <button
-                            onClick={sendOtp}
-                            className="underline font-semibold px-2 text-blue-500"
-                          >
-                            Resend OTP
-                          </button>
-                        </p>
-                      ) : (
-                        <p className="text-center mt-2">
-                          Resend OTP in 00:
-                          {counter.toString().length == 1
-                            ? `0${counter}`
-                            : counter}
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <Label htmlFor="mobile" className="text-xs">
-                        Mobile Number
-                      </Label>
-                      <Input
-                        id="mobile"
-                        type="text"
-                        maxLength={10}
-                        value={mobile === undefined ? "" : mobile.toString()}
-                        onChange={(e) => handleNumberChange(e, setMobile)}
-                      />
-                      {isLogin ? (
-                        <Button type="primary" className="mt-2" disabled>
-                          Loading...
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={sendOtp}
-                          type="primary"
-                          className="mt-2"
-                          disabled={isLogin}
-                        >
-                          Send OTP
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
-              );
-            case SearchOption.TIN:
-              return (
-                <div className="grid max-w-sm items-center gap-1.5 w-80 mt-4">
-                  {isOtpSent ? (
-                    <>
-                      <>
-                        <h1 className="text-center text-xl">
-                          Hello {otpresponse?.firstName} {otpresponse?.lastName}
-                        </h1>
-                        <p className="text-center mb-4">
-                          Mobile Number : {mobile}
-                        </p>
-                        <Label htmlFor="mobile" className="text-xs">
-                          Tin Number
-                        </Label>
-                        <div className="flex">
-                          <Input
-                            id="mobile"
-                            type="text"
-                            value={tinNumber === undefined ? "" : tinNumber}
-                            maxLength={10}
-                            disabled
-                          />
-                        </div>
-                      </>
+//                       <Label htmlFor="otp" className="text-xs">
+//                         OTP
+//                       </Label>
+//                       <Input
+//                         id="otp"
+//                         type="text"
+//                         maxLength={6}
+//                         value={
+//                           mobileOTP === undefined ? "" : mobileOTP.toString()
+//                         }
+//                         onChange={(e) => handleNumberChange(e, setMobileOTP)}
+//                       />
+//                       {isLogin ? (
+//                         <Button type="primary" className="mt-2" disabled>
+//                           Loading...
+//                         </Button>
+//                       ) : (
+//                         <Button
+//                           onClick={verifyOtp}
+//                           type="primary"
+//                           className="mt-2"
+//                           disabled={isLogin}
+//                         >
+//                           Verify OTP
+//                         </Button>
+//                       )}
+//                       {status == TimerStatus.COMPLETED ? (
+//                         <p className="text-center mt-2">
+//                           Didn&apos;t receive a OTP?
+//                           <button
+//                             onClick={sendOtp}
+//                             className="underline font-semibold px-2 text-blue-500"
+//                           >
+//                             Resend OTP
+//                           </button>
+//                         </p>
+//                       ) : (
+//                         <p className="text-center mt-2">
+//                           Resend OTP in 00:
+//                           {counter.toString().length == 1
+//                             ? `0${counter}`
+//                             : counter}
+//                         </p>
+//                       )}
+//                     </>
+//                   ) : (
+//                     <>
+//                       <Label htmlFor="mobile" className="text-xs">
+//                         Mobile Number
+//                       </Label>
+//                       <Input
+//                         id="mobile"
+//                         type="text"
+//                         maxLength={10}
+//                         value={mobile === undefined ? "" : mobile.toString()}
+//                         onChange={(e) => handleNumberChange(e, setMobile)}
+//                       />
+//                       {isLogin ? (
+//                         <Button type="primary" className="mt-2" disabled>
+//                           Loading...
+//                         </Button>
+//                       ) : (
+//                         <Button
+//                           onClick={sendOtp}
+//                           type="primary"
+//                           className="mt-2"
+//                           disabled={isLogin}
+//                         >
+//                           Send OTP
+//                         </Button>
+//                       )}
+//                     </>
+//                   )}
+//                 </div>
+//               );
+//             case SearchOption.TIN:
+//               return (
+//                 <div className="grid max-w-sm items-center gap-1.5 w-80 mt-4">
+//                   {isOtpSent ? (
+//                     <>
+//                       <>
+//                         <h1 className="text-center text-xl">
+//                           Hello {otpresponse?.firstName} {otpresponse?.lastName}
+//                         </h1>
+//                         <p className="text-center mb-4">
+//                           Mobile Number : {mobile}
+//                         </p>
+//                         <Label htmlFor="mobile" className="text-xs">
+//                           Tin Number
+//                         </Label>
+//                         <div className="flex">
+//                           <Input
+//                             id="mobile"
+//                             type="text"
+//                             value={tinNumber === undefined ? "" : tinNumber}
+//                             maxLength={10}
+//                             disabled
+//                           />
+//                         </div>
+//                       </>
 
-                      <Label htmlFor="otp" className="text-xs">
-                        OTP
-                      </Label>
-                      <Input
-                        id="otp"
-                        type="text"
-                        maxLength={6}
-                        value={tinOTP === undefined ? "" : tinOTP.toString()}
-                        onChange={(e) => handleNumberChange(e, setTinOTP)}
-                      />
-                      {isLogin ? (
-                        <Button type="primary" className="mt-2" disabled>
-                          Loading...
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={tinVerifyOtp}
-                          type="primary"
-                          className="mt-2"
-                          disabled={isLogin}
-                        >
-                          Verify OTP
-                        </Button>
-                      )}
-                      {status == TimerStatus.COMPLETED ? (
-                        <p className="text-center mt-2">
-                          Didn&apos;t receive a OTP?
-                          <button
-                            onClick={tinSendOtp}
-                            className="underline font-semibold px-2 text-blue-500"
-                          >
-                            Resend OTP
-                          </button>
-                        </p>
-                      ) : (
-                        <p className="text-center mt-2">
-                          Resend OTP in 00:
-                          {counter.toString().length == 1
-                            ? `0${counter}`
-                            : counter}
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <Label htmlFor="mobile" className="text-xs">
-                        TIN Number
-                      </Label>
-                      <Input
-                        id="mobile"
-                        type="text"
-                        maxLength={12}
-                        value={
-                          tinNumber === undefined ? "" : tinNumber.toString()
-                        } // Controlled input
-                        onChange={(e) => handleNumberChange(e, setTinNumber)}
-                      />
-                      {isLogin ? (
-                        <Button type="primary" className="mt-2" disabled>
-                          Loading...
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={tinSendOtp}
-                          type="primary"
-                          className="mt-2"
-                          disabled={isLogin}
-                        >
-                          Send OTP
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
-              );
+//                       <Label htmlFor="otp" className="text-xs">
+//                         OTP
+//                       </Label>
+//                       <Input
+//                         id="otp"
+//                         type="text"
+//                         maxLength={6}
+//                         value={tinOTP === undefined ? "" : tinOTP.toString()}
+//                         onChange={(e) => handleNumberChange(e, setTinOTP)}
+//                       />
+//                       {isLogin ? (
+//                         <Button type="primary" className="mt-2" disabled>
+//                           Loading...
+//                         </Button>
+//                       ) : (
+//                         <Button
+//                           onClick={tinVerifyOtp}
+//                           type="primary"
+//                           className="mt-2"
+//                           disabled={isLogin}
+//                         >
+//                           Verify OTP
+//                         </Button>
+//                       )}
+//                       {status == TimerStatus.COMPLETED ? (
+//                         <p className="text-center mt-2">
+//                           Didn&apos;t receive a OTP?
+//                           <button
+//                             onClick={tinSendOtp}
+//                             className="underline font-semibold px-2 text-blue-500"
+//                           >
+//                             Resend OTP
+//                           </button>
+//                         </p>
+//                       ) : (
+//                         <p className="text-center mt-2">
+//                           Resend OTP in 00:
+//                           {counter.toString().length == 1
+//                             ? `0${counter}`
+//                             : counter}
+//                         </p>
+//                       )}
+//                     </>
+//                   ) : (
+//                     <>
+//                       <Label htmlFor="mobile" className="text-xs">
+//                         TIN Number
+//                       </Label>
+//                       <Input
+//                         id="mobile"
+//                         type="text"
+//                         maxLength={12}
+//                         value={
+//                           tinNumber === undefined ? "" : tinNumber.toString()
+//                         } // Controlled input
+//                         onChange={(e) => handleNumberChange(e, setTinNumber)}
+//                       />
+//                       {isLogin ? (
+//                         <Button type="primary" className="mt-2" disabled>
+//                           Loading...
+//                         </Button>
+//                       ) : (
+//                         <Button
+//                           onClick={tinSendOtp}
+//                           type="primary"
+//                           className="mt-2"
+//                           disabled={isLogin}
+//                         >
+//                           Send OTP
+//                         </Button>
+//                       )}
+//                     </>
+//                   )}
+//                 </div>
+//               );
 
-            default:
-              return null;
-          }
-        })()}
-      </div>
-      <Modal
-        title="Your all TIN Numbers"
-        style={{ top: 20 }}
-        open={selectTinBox}
-        closeIcon={true}
-        onCancel={() => setSelectTinBox(false)}
-        footer={false}
-      >
-        {isLogin && (
-          <>
-            <p className="text-xl text-center font-semibold mt-6">Loading...</p>
-          </>
-        )}
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableCell>No.</TableCell>
-              <TableCell>Tin Number</TableCell>
-              <TableCell>Trade Name</TableCell>
-              <TableCell>Action</TableCell>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {dvatData.map((val: dvat04, index: number) => (
-              <TableRow key={index}>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>{val.tinNumber}</TableCell>
-                <TableCell>{val.tradename}</TableCell>
-                <TableCell>
-                  <Button
-                    disabled={isLogin}
-                    onClick={() => {
-                      setIsLogin(true);
-                      setCookie("dvat", val.id.toString());
-                      router.push("/dashboard");
-                      setTimeout(() => {
-                        setIsLogin(false);
-                      }, 5000);
-                    }}
-                  >
-                    Login
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Modal>
-    </div>
-  );
-};
+//             default:
+//               return null;
+//           }
+//         })()}
+//       </div>
+//       <Modal
+//         title="Your all TIN Numbers"
+//         style={{ top: 20 }}
+//         open={selectTinBox}
+//         closeIcon={true}
+//         onCancel={() => setSelectTinBox(false)}
+//         footer={false}
+//       >
+//         {isLogin && (
+//           <>
+//             <p className="text-xl text-center font-semibold mt-6">Loading...</p>
+//           </>
+//         )}
+//         <Table>
+//           <TableHeader>
+//             <TableRow>
+//               <TableCell>No.</TableCell>
+//               <TableCell>Tin Number</TableCell>
+//               <TableCell>Trade Name</TableCell>
+//               <TableCell>Action</TableCell>
+//             </TableRow>
+//           </TableHeader>
+//           <TableBody>
+//             {dvatData.map((val: dvat04, index: number) => (
+//               <TableRow key={index}>
+//                 <TableCell>{index + 1}</TableCell>
+//                 <TableCell>{val.tinNumber}</TableCell>
+//                 <TableCell>{val.tradename}</TableCell>
+//                 <TableCell>
+//                   <Button
+//                     disabled={isLogin}
+//                     onClick={() => {
+//                       setIsLogin(true);
+//                       setCookie("dvat", val.id.toString());
+//                       router.push("/dashboard");
+//                       setTimeout(() => {
+//                         setIsLogin(false);
+//                       }, 5000);
+//                     }}
+//                   >
+//                     Login
+//                   </Button>
+//                 </TableCell>
+//               </TableRow>
+//             ))}
+//           </TableBody>
+//         </Table>
+//       </Modal>
+//     </div>
+//   );
+// };
 interface DateCardProps {
   title: string;
   paymentdate: string;

@@ -1,9 +1,23 @@
-import { Prisma, PrismaClient } from "@prisma/client";
-import { formatISO, parseISO } from "date-fns";
+import "dotenv/config";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaClient } from "@prisma/client";
 
 const prismaClientSingleton = () => {
-  const prisma = new PrismaClient();
-  return prisma;
+  const adapter = new PrismaMariaDb({
+    host: process.env.DATABASE_HOST,
+    user: process.env.DATABASE_USER,
+    password: process.env.DATABASE_PASSWORD,
+    database: process.env.DATABASE_NAME,
+    connectionLimit: 5,
+  });
+
+  return new PrismaClient({
+    adapter: adapter,
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "warn", "error"]
+        : ["warn", "error"],
+  });
 };
 
 declare global {
@@ -14,11 +28,6 @@ const prisma = globalThis.prisma ?? prismaClientSingleton();
 
 export default prisma;
 
-if (process.env.NODE_ENV !== "production") globalThis.prisma = prisma;
-
-function convertDateFields(record: any) {
-  if (record.createdAt) record.createdAt = parseISO(record.createdAt);
-  if (record.updatedAt) record.updatedAt = parseISO(record.updatedAt);
-  if (record.deletedAt)
-    record.deletedAt = record.deletedAt ? parseISO(record.deletedAt) : null;
+if (process.env.NODE_ENV !== "production") {
+  globalThis.prisma = prisma;
 }

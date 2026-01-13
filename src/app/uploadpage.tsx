@@ -58,7 +58,7 @@ interface DocUploaderProps {
   title: string;
   file: File | null;
   setFile: React.Dispatch<React.SetStateAction<File | null>>;
-  cFile: React.RefObject<HTMLInputElement>;
+  cFile: React.RefObject<HTMLInputElement | null>;
 }
 
 const DocUploader = (props: DocUploaderProps) => {

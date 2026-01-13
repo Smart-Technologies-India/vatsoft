@@ -19,6 +19,7 @@ import {
   Input,
   Pagination,
   Select,
+  Alert,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -31,7 +32,6 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { user } from "@prisma/client";
-import { getCookie } from "cookies-next";
 import { encryptURLData, formateDate } from "@/utils/methods";
 import GetUser from "@/action/user/getuser";
 import Link from "next/link";
@@ -42,6 +42,8 @@ import {
   TrackApplilcationStatusType,
 } from "@/models/dashboard/regiser/track_application";
 import DvatTrackApplicationStatus from "@/action/new/composition/dvattrackapplicationstatus";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 enum DataType {
   DVAT04 = "DVAT04",
@@ -59,8 +61,8 @@ interface TableData {
 }
 
 const TrackAppliation = () => {
-  // search section start here
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -210,7 +212,7 @@ const TrackAppliation = () => {
     const data: TableData[] = [];
 
     const userresponse = await GetUser({
-      id: id,
+      id: userid,
     });
 
     if (userresponse.data && userresponse.status) {
@@ -265,9 +267,15 @@ const TrackAppliation = () => {
   useEffect(() => {
     const init = async () => {
       const data: TableData[] = [];
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
 
       const userresponse = await GetUser({
-        id: id,
+        id: authResponse.data,
       });
 
       if (userresponse.data && userresponse.status) {
@@ -503,9 +511,15 @@ const TrackAppliation = () => {
             })()}
           </div>
           {dvatData.length === 0 && compdata.length === 0 ? (
-            <p className="bg-rose-500 bg-opacity-10 text-rose-500 mt-2 px-2 py-1 border border-rose-500">
-              There is no record
-            </p>
+            <Alert
+              style={{
+                marginTop: "10px",
+                padding: "8px",
+              }}
+              type="error"
+              showIcon
+              description="There is no record."
+            />
           ) : (
             <>
               <Table className="border mt-2">

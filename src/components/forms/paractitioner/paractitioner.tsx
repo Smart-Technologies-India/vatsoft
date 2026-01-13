@@ -8,10 +8,11 @@ import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
-import { getCookie } from "cookies-next";
 import { ParactitionerForm, ParactitionerSchema } from "@/schema/paractitioner";
 import GetParctitioner from "@/action/parctitioner/getparctitioner";
 import CreateParctitioner from "@/action/parctitioner/createparctitioner";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 type ParactitionerProviderProps = {
   userid: number;
@@ -42,7 +43,8 @@ export const ParactitionerMasterProvider = (
 };
 
 const ParactitionerMaster = (props: ParactitionerProviderProps) => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
+  const router = useRouter();
 
   const {
     reset,
@@ -60,6 +62,13 @@ const ParactitionerMaster = (props: ParactitionerProviderProps) => {
       mobile: "",
     });
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
       if (props.id) {
         const paractitioner_response = await GetParctitioner({
           id: props.id,

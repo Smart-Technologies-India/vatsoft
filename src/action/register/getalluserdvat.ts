@@ -5,25 +5,27 @@ interface GetTempRegNumberPayload {
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { dvat04, user } from "@prisma/client";
 import prisma from "../../../prisma/database";
-import { cookies } from "next/headers";
+import { getCurrentDvatId } from "@/lib/auth";
 
 const GetAllUserDvat = async (
   payload: GetTempRegNumberPayload
 ): Promise<ApiResponseType<any[] | null>> => {
   const functionname: string = GetAllUserDvat.name;
-  const dvatid = cookies().get("dvat")?.value;
-  if (!dvatid) {
+
+  const dvatid = await getCurrentDvatId();
+
+  if (dvatid == null || dvatid == undefined) {
     return createResponse({
       message: "Invalid id. Please try again.",
       functionname,
     });
   }
+
   try {
     const dvatresponse = await prisma.dvat04.findMany({
       where: {
-        id: parseInt(dvatid),
+        id: dvatid,
 
         createdById: parseInt(payload.userid.toString() ?? "0"),
         NOT: [

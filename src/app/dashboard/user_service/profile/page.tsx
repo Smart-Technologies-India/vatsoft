@@ -1,14 +1,16 @@
 "use client";
 
-import { getCookie } from "cookies-next";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { useEffect, useState } from "react";
 import { user } from "@prisma/client";
 import GetUser from "@/action/user/getuser";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
-const UserRegister = (): JSX.Element => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+const UserRegister = () => {
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [userdata, setUserData] = useState<user | null>(null);
@@ -16,8 +18,14 @@ const UserRegister = (): JSX.Element => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
 
-      const user = await GetUser({ id: id });
+      const user = await GetUser({ id: authResponse.data });
 
       if (user.status && user.data) {
         setUserData(user.data);
@@ -28,7 +36,7 @@ const UserRegister = (): JSX.Element => {
       setIsLoading(false);
     };
     init();
-  }, [id]);
+  }, [userid]);
 
   if (isLoading) {
     return (

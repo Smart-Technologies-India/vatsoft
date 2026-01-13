@@ -18,7 +18,6 @@ import {
   returns_01,
   returns_entry,
 } from "@prisma/client";
-import { getCookie } from "cookies-next";
 import { useEffect, useState } from "react";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import AddNil from "@/action/return/addnil";
@@ -26,6 +25,7 @@ import { toast } from "react-toastify";
 import { Button, Modal } from "antd";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { formateDate } from "@/utils/methods";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 declare module "@tanstack/react-table" {
   //allows us to define custom properties for our columns
@@ -35,12 +35,12 @@ declare module "@tanstack/react-table" {
 }
 
 const InwardSupplies = () => {
-  const route = useRouter();
+  const router = useRouter();
   const [dvatdata, setDvatData] = useState<dvat04>();
 
   const [open, setOpen] = useState(false);
 
-  const userid: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserId] = useState<number>(0);
 
   const [return01, setReturn01] = useState<returns_01 | null>();
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
@@ -67,8 +67,15 @@ const InwardSupplies = () => {
   const searchParams = useSearchParams();
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+
+      setUserId(authResponse.data);
       const dvat_response = await GetUserDvat04({
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (dvat_response.status && dvat_response.data) {
@@ -81,7 +88,7 @@ const InwardSupplies = () => {
       const returnformsresponse = await getPdfReturn({
         year: year,
         month: month,
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (returnformsresponse.status && returnformsresponse.data) {
@@ -296,7 +303,7 @@ const InwardSupplies = () => {
         </div>
 
         {isnil() && (
-          <div className="my-2 bg-green-500 bg-opacity-10 border border-green-500 text-center  px-2 text-green-500 py-1">
+          <div className="my-2 bg-green-500/10 border border-green-500 text-center  px-2 text-green-500 py-1">
             <p>Nil filing successfull for this form.</p>
           </div>
         )}
@@ -441,7 +448,7 @@ const InwardSupplies = () => {
                   type="primary"
                   size="small"
                   onClick={() => {
-                    route.push(
+                    router.push(
                       `/dashboard/returns/returns-dashboard/invoices?form=${searchParams.get(
                         "form"
                       )}&year=${searchParams.get(

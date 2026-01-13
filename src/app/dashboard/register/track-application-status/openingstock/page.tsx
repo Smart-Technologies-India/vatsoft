@@ -1,4 +1,5 @@
 "use client";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUserDvat04FirstStock from "@/action/dvat/getuserdvatfirststock";
 import CreateFirstStock from "@/action/firststock/firststockcreat";
 import GetFirstStock from "@/action/firststock/getfirststock";
@@ -12,15 +13,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { commodity_master, dvat04, first_stock, stock } from "@prisma/client";
-import { Button, Drawer, Radio, RadioChangeEvent } from "antd";
-import { getCookie } from "cookies-next";
+import { Alert, Radio, RadioChangeEvent } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const OpeningStock = () => {
   const router = useRouter();
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 
@@ -32,6 +32,13 @@ const OpeningStock = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
 
       const dvat = await GetUserDvat04FirstStock();
       if (dvat.status && dvat.data) {
@@ -148,9 +155,15 @@ const OpeningStock = () => {
               </Table>
             </>
           ) : (
-            <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-              <p className="flex-1">There is no stock.</p>
-            </div>
+            <Alert
+              style={{
+                marginTop: "10px",
+                padding: "8px",
+              }}
+              type="error"
+              showIcon
+              description="There is no stock."
+            />
           )}
         </div>
       </main>

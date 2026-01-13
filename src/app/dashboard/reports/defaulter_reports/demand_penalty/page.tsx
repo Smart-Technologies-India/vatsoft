@@ -12,13 +12,13 @@ import type { InputRef, RadioChangeEvent } from "antd";
 import { Radio, Button, Input, Pagination } from "antd";
 import { useEffect, useRef, useState } from "react";
 import type { Dayjs } from "dayjs";
-import { getCookie } from "cookies-next";
 import { dvat04, user } from "@prisma/client";
 import { capitalcase, encryptURLData } from "@/utils/methods";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import GetUser from "@/action/user/getuser";
 import DemandPenalty from "@/action/report/demand_penalty";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 // import DemandPenalty from "@/action/report/outstanding";
 
 interface ResponseType {
@@ -30,8 +30,8 @@ interface ResponseType {
 }
 
 const AfterDeathLinePage = () => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
-  const route = useRouter();
+  const [userid, setUserid] = useState<number>(0);
+  const router = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -96,7 +96,13 @@ const AfterDeathLinePage = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const userrespone = await GetUser({ id: userid });
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+      const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
         const payment_data = await DemandPenalty({
@@ -105,7 +111,6 @@ const AfterDeathLinePage = () => {
           skip: 0,
         });
 
-        console.log(payment_data);
 
         if (payment_data.status && payment_data.data.result) {
           const sortedData = payment_data.data.result;
@@ -389,7 +394,7 @@ const AfterDeathLinePage = () => {
                       <Button
                         type="primary"
                         onClick={() => {
-                          route.push(
+                          router.push(
                             `/dashboard/returns/department-pending-return/${encryptURLData(
                               val.dvat04.id.toString()
                             )}`

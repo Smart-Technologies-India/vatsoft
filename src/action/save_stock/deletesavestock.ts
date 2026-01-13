@@ -3,8 +3,6 @@
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { cookies } from "next/headers";
-import { commodity_master, first_stock } from "@prisma/client";
 
 interface DeleteSaveStockPayload {
   id: number;

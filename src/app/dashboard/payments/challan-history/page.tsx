@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input, Pagination } from "antd";
+import { Alert, Button, Input, Pagination } from "antd";
 import {
   Table,
   TableBody,
@@ -16,15 +16,17 @@ const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
 import { challan, dvat04 } from "@prisma/client";
 import GetUserChallan from "@/action/challan/getuserchallan";
-import { getCookie } from "cookies-next";
 import { encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import SearchChallan from "@/action/challan/searchchallan";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 const ChallanHistory = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -71,7 +73,7 @@ const ChallanHistory = () => {
     setLoading(true);
 
     const dvat = await GetUserDvat04({
-      userid: id,
+      userid: userid,
     });
     if (dvat.status && dvat.data) {
       const challan_resposne = await GetUserChallan({
@@ -96,9 +98,15 @@ const ChallanHistory = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
 
       const dvat = await GetUserDvat04({
-        userid: id,
+        userid: authResponse.data,
       });
       if (dvat.status && dvat.data) {
         setDvatData(dvat.data);
@@ -120,7 +128,7 @@ const ChallanHistory = () => {
       setLoading(false);
     };
     init();
-  }, [id]);
+  }, [userid]);
 
   const cpinsearch = async () => {
     if (
@@ -312,14 +320,17 @@ const ChallanHistory = () => {
             })()}
           </div>
 
-          {/* <div className="text-blue-400 bg-blue-500 bg-opacity-10 border border-blue-300 mt-2 text-sm p-2 flex gap-2 items-center">
-            <p className="flex-1">Search Result Based on Date range</p>
-            <MaterialSymbolsClose className="text-xl cursor-pointer" />
-          </div> */}
+         
           {challanData.length == 0 && (
-            <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-              <p className="flex-1">There is no challan.</p>
-            </div>
+            <Alert
+              style={{
+                marginTop: "10px",
+                padding: "8px",
+              }}
+              type="error"
+              showIcon
+              description="There is no challan."
+            />
           )}
 
           {challanData.length > 0 && (
@@ -359,7 +370,9 @@ const ChallanHistory = () => {
                       <TableCell className="text-center p-2">
                         <Link
                           className="text-blue-500"
-                          href={`/dashboard/payments/saved-challan/${encryptURLData(val.id.toString())}`}
+                          href={`/dashboard/payments/saved-challan/${encryptURLData(
+                            val.id.toString()
+                          )}`}
                         >
                           {val.cpin}
                         </Link>

@@ -8,12 +8,13 @@ import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
-import { getCookie } from "cookies-next";
 import { NewsForm, NewsSchema } from "@/schema/news";
 import { DateSelect } from "../inputfields/dateselect";
 import CreateNews from "@/action/news/createnews";
 import GetNews from "@/action/news/getnews";
 import UpdateNews from "@/action/news/updatenews";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 type NewsProviderProps = {
   userid: number;
@@ -42,7 +43,8 @@ export const NewsMasterProvider = (props: NewsProviderProps) => {
 };
 
 const NewsMaster = (props: NewsProviderProps) => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
+  const router = useRouter();
 
   const {
     reset,
@@ -59,6 +61,13 @@ const NewsMaster = (props: NewsProviderProps) => {
       topic: "",
     });
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
       if (props.id) {
         const news_response = await GetNews({
           id: props.id,

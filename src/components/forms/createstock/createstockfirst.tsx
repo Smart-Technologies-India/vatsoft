@@ -6,20 +6,15 @@ import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { MultiSelect } from "../inputfields/multiselect";
-import { OptionValue } from "@/models/main";
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
-import { getCookie } from "cookies-next";
-import dayjs from "dayjs";
 import { commodity_master, dvat04 } from "@prisma/client";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
-import CreateStock from "@/action/stock/createstock";
 import {
   CreateFirstStockForm,
   CreateFirstStockSchema,
 } from "@/schema/create_first_stock";
-import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUserDvat04FirstStock from "@/action/dvat/getuserdvatfirststock";
 import { Checkbox, Radio, RadioChangeEvent } from "antd";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
@@ -56,7 +51,6 @@ export const CreateFirstStockProvider = (
 };
 
 const CreateStockData = (props: CreateFirstStockProviderProps) => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
 
   const {
     reset,

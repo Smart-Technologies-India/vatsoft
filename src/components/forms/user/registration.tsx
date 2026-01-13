@@ -13,7 +13,6 @@ import { valibotResolver } from "@hookform/resolvers/valibot";
 import UpdateRegistration from "@/action/registration/updateregistration";
 import GetDvat04 from "@/action/register/getdvat04";
 import { toast } from "react-toastify";
-import { getCookie, setCookie } from "cookies-next";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -27,16 +26,20 @@ import {
 import GetFromDvat from "@/action/registration/getfromdvat";
 import { decryptURLData, formateDate, onFormError } from "@/utils/methods";
 import UpdateDvatStatus from "@/action/dvat/updatestatus";
-import { Button } from "antd";
+import { Alert, Button } from "antd";
 import GetDeptUser from "@/action/user/getdeptuser";
+import { getCurrentUser, getCurrentUserRole } from "@/lib/auth";
+import { updateDvatIdInToken } from "@/action/auth/updatedvatid";
 
 export const RegistrationProvider = () => {
   const [registrationdata, setRegistrationData] = useState<
     (registration & { dvat04: dvat04 }) | null
   >(null);
   const router = useRouter();
-  const role = getCookie("role");
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const [role, setRole] = useState<Role>(Role.USER);
+  const [userid, setUserid] = useState<number>(0);
+  // const role = getCookie("role");
+  // const id: number = parseInt(getCookie("id") ?? "0");
   // const dvatid: number = parseInt(
   //   decryptURLData(props.dvatid.toString(), router)
   // );
@@ -48,6 +51,15 @@ export const RegistrationProvider = () => {
 
   useEffect(() => {
     const init = async () => {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        toast.error("Authentication required. Please login.");
+        return router.push("/");
+      }
+      setUserid(currentUser.id);
+      const role = await getCurrentUserRole();
+      setRole(role as Role);
+
       const response = await GetFromDvat({
         id: dvatid,
       });
@@ -86,7 +98,7 @@ export const RegistrationProvider = () => {
 
   if (
     registrationdata &&
-    registrationdata.dept_user_id == id &&
+    registrationdata.dept_user_id == userid &&
     role == Role.VATOFFICER &&
     (registrationdata.dvat04.status == DvatStatus.PENDINGPROCESSING ||
       registrationdata.dvat04.status == DvatStatus.PROVISIONAL)
@@ -103,7 +115,7 @@ export const RegistrationProvider = () => {
 
   if (
     registrationdata &&
-    registrationdata.dept_user_id == id &&
+    registrationdata.dept_user_id == userid &&
     role == Role.INSPECTOR
   ) {
     return (
@@ -115,15 +127,21 @@ export const RegistrationProvider = () => {
 
   if (
     registrationdata &&
-    registrationdata.dept_user_id == id &&
+    registrationdata.dept_user_id == userid &&
     role == Role.VATOFFICER
   ) {
     return (
       <div>
-        <p className="font-mono bg-rose-500 bg-opacity-10 px-2 py-1 text-rose-500 border-l-2 border-rose-500">
-          Note: The Dealer Registration File is with Inspector for physical site
-          report.
-        </p>
+        <Alert
+          style={{
+            marginTop: "10px",
+            padding: "8px",
+          }}
+          type="error"
+          showIcon
+          description=" Note: The Dealer Registration File is with Inspector for physical site
+          report."
+        />
         {/* <div className="flex gap-2 mt-2">
           <button
             type="button"
@@ -149,9 +167,9 @@ export const RegistrationProvider = () => {
 };
 
 const Registration = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
   const router = useRouter();
-  const role: Role = getCookie("role") as Role;
+  const [role, setRole] = useState<Role>(Role.USER);
+  const [userid, setUserid] = useState<number>(0);
 
   const { dvat04 } = useParams<{ dvat04: string | string[] }>();
   const dvatid = parseInt(
@@ -170,6 +188,15 @@ const Registration = () => {
 
   useEffect(() => {
     const init = async () => {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        toast.error("Authentication required. Please login.");
+        return router.push("/");
+      }
+      setUserid(currentUser.id);
+      const role = await getCurrentUserRole();
+      setRole(role as Role);
+
       const response = await GetFromDvat({
         id: dvatid,
       });
@@ -245,7 +272,7 @@ const Registration = () => {
     if (dept_response.status && dept_response.data) {
       const response = await UpdateRegistration({
         id: dvatdata.registration[0].id,
-        updatedby: id,
+        updatedby: userid,
         inspector_note: data.inspector_note,
         date_of_visit: new Date(data.date_of_visit),
         natureOfBusiness: data.natureOfBusiness,
@@ -308,7 +335,7 @@ const Registration = () => {
     if (dept_response.status && dept_response.data) {
       const response = await UpdateRegistration({
         id: dvatdata.registration[0].id,
-        updatedby: id,
+        updatedby: userid,
         inspector_note: inspector_note,
         dept_user_id: dept_response.data.id,
         status: RegistrationStatus.ACTIVE,
@@ -575,7 +602,7 @@ const Registration = () => {
       </div>
 
       <div className="flex gap-2 mt-2">
-        {dvatdata && dvatdata.registration[0].dept_user_id == id && (
+        {dvatdata && dvatdata.registration[0].dept_user_id == userid && (
           <>
             <input
               type="submit"
@@ -622,7 +649,7 @@ type VatNoteProps = {
   registrationdata: registration;
 };
 const VatNote = (props: VatNoteProps) => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
   const router = useRouter();
 
   const [dvatdata, setDvatdata] = useState<
@@ -686,6 +713,12 @@ const VatNote = (props: VatNoteProps) => {
     });
 
     const init = async () => {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        toast.error("Authentication required. Please login.");
+        return router.push("/");
+      }
+      setUserid(currentUser.id);
       const dvat04_response = await GetDvat04({
         id: props.registrationdata.dvat04Id,
       });
@@ -728,7 +761,7 @@ const VatNote = (props: VatNoteProps) => {
     if (dept_response.data && dept_response.status) {
       const response = await UpdateRegistration({
         id: dvatdata.registration[0].id,
-        updatedby: id,
+        updatedby: userid,
         inspector_note: data.inspector_note,
         date_of_visit: new Date(data.date_of_visit),
         natureOfBusiness: data.natureOfBusiness,
@@ -767,13 +800,25 @@ const VatNote = (props: VatNoteProps) => {
       if (response.status) {
         const resposne = await UpdateDvatStatus({
           id: props.registrationdata.dvat04Id!,
-          updatedby: id,
+          updatedby: userid,
           status: "APPROVED",
           tinNumber: "26000004000" + dvatdata.id,
         });
         if (resposne.status) {
-          setCookie("dvat", props.registrationdata.dvat04Id.toString());
-          toast.success(resposne.message);
+          // Update JWT token with the approved dvatid
+          const tokenUpdateResponse = await updateDvatIdInToken(
+            props.registrationdata.dvat04Id
+          );
+          if (tokenUpdateResponse.status) {
+            toast.success(resposne.message);
+          } else {
+            toast.warning(
+              resposne.message +
+                " (Note: Token update failed - " +
+                tokenUpdateResponse.message +
+                ")"
+            );
+          }
         } else {
           toast.error(resposne.message);
         }
@@ -789,7 +834,7 @@ const VatNote = (props: VatNoteProps) => {
   const reject = async () => {
     const resposne = await UpdateDvatStatus({
       id: props.registrationdata.dvat04Id!,
-      updatedby: id,
+      updatedby: userid,
       status: "REJECTED",
     });
     if (resposne.status) {
@@ -827,7 +872,7 @@ const VatNote = (props: VatNoteProps) => {
     if (dept_response.data && dept_response.status) {
       const response = await UpdateRegistration({
         id: dvatdata.registration[0].id,
-        updatedby: id,
+        updatedby: userid,
         dept_user_id: dept_response.data.id,
         status: RegistrationStatus.ACTIVE,
       });
@@ -873,7 +918,7 @@ const VatNote = (props: VatNoteProps) => {
 
     const response = await UpdateRegistration({
       id: dvatdata.registration[0].id,
-      updatedby: id,
+      updatedby: userid,
 
       necessary_payments: necessary_payments,
       all_appointment: all_appointment,
@@ -888,7 +933,7 @@ const VatNote = (props: VatNoteProps) => {
     if (response.status) {
       const resposne = await UpdateDvatStatus({
         id: props.registrationdata.dvat04Id!,
-        updatedby: id,
+        updatedby: userid,
         status: "PROVISIONAL",
         tinNumber: "26000004000" + dvatdata.id,
       });

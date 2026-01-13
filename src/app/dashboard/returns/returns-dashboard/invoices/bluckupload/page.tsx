@@ -1,4 +1,5 @@
 "use client";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import AddReturnInvoice from "@/action/return/addreturninvoice";
 import SearchTin from "@/action/tin_number/searchtin";
 import {
@@ -19,10 +20,9 @@ import {
   SaleOf,
 } from "@prisma/client";
 import { Button, DatePicker, Input, InputRef, Select } from "antd";
-import { getCookie } from "cookies-next";
 import dayjs, { Dayjs } from "dayjs";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { safeParse } from "valibot";
 import * as XLSX from "xlsx";
@@ -31,12 +31,12 @@ type TinData = {
   id: number;
 };
 const BulkUpload = () => {
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const searchParams = useSearchParams();
 
-  const route = useRouter();
+  const router = useRouter();
   const [raw, setraw] = useState(0);
   const [errorline, setErrorLine] = useState<number[]>([]);
 
@@ -201,7 +201,7 @@ const BulkUpload = () => {
 
     for (let i = 0; i < data.length; i++) {
       const recordresponse = await AddReturnInvoice({
-        createdById: id,
+        createdById: userid,
         rr_number: "",
         returnType: ReturnType.ORIGINAL,
         year: searchParams.get("year")?.toString()!,
@@ -231,8 +231,20 @@ const BulkUpload = () => {
       }
     }
     toast.success(`${completed} Record 31-A added successfully`);
-    route.back();
+    router.back();
   };
+
+  useEffect(() => {
+    const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+    };
+    init();
+  }, []);
 
   return (
     <>
@@ -365,7 +377,7 @@ const BulkUpload = () => {
                       key={index}
                       className={`${
                         errorline?.includes(index) &&
-                        "bg-rose-500  bg-opacity-10"
+                        "bg-rose-500 /10"
                       }`}
                     >
                       <TableCell className="p-1 border text-center">
@@ -601,16 +613,16 @@ const BulkUpload = () => {
                           }
                           className="w-28"
                           onChange={(
-                            dates: Dayjs | null,
-                            dateStrings: string | string[]
+                            date: Dayjs | null,
+                            dateString: string | null
                           ) => {
-                            if (!dates) return;
-                            const date: Date = dates.toDate();
+                            if (!date) return;
+                            const dateValue: Date = date.toDate();
 
                             const updatedData = [...data];
                             updatedData[index] = {
                               ...updatedData[index],
-                              invoice_date: date,
+                              invoice_date: dateValue,
                             };
 
                             setData(updatedData);

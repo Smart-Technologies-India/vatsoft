@@ -1,16 +1,1422 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+}
+
+model user {
+  id                              Int                     @id @default(autoincrement())
+  firstName                       String?
+  lastName                        String?
+  mobileOne                       String                  @unique
+  mobileTwo                       String?
+  email                           String?
+  pan                             String?
+  aadhar                          String?
+  password                        String?
+  temppass                        String?
+  otp                             String?
+  role                            Role                    @default(USER)
+  designation                     String?
+  isAuthorisedSignatory           Boolean                 @default(false)
+  signatoreUploadPath             String?
+  isAllowedLogin                  Boolean                 @default(true)
+  gender                          Gender                  @default(OTHER)
+  dob                             DateTime?
+  passportNumber                  String?
+  buildingName                    String?
+  area                            String?
+  address                         String?
+  city                            String?
+  pincode                         String?
+  selectOffice                    SelectOffice?           @default(Dadra_Nagar_Haveli)
+  status                          UserStatus              @default(ACTIVE)
+  createdAt                       DateTime                @default(now())
+  updatedAt                       DateTime                @updatedAt
+  deletedAt                       DateTime?
+  annexure1_createdBy             annexure1[]             @relation("annexure1_createdBy")
+  annexure1_deletedBy             annexure1[]             @relation("annexure1_deletedBy")
+  annexure1_updatedBy             annexure1[]             @relation("annexure1_updatedBy")
+  annexure2_createdBy             annexure2[]             @relation("annexure2_createdBy")
+  annexure2_deletedBy             annexure2[]             @relation("annexure2_deletedBy")
+  annexure2_updatedBy             annexure2[]             @relation("annexure2_updatedBy")
+  category_CreatedAt              category[]              @relation("category_CreatedAt")
+  category_deletedAt              category[]              @relation("category_deletedAt")
+  category_updatedAt              category[]              @relation("category_updatedAt")
+  cform_createdBy                 cform[]                 @relation("cform_createdBy")
+  cform_deletedBy                 cform[]                 @relation("cform_deletedBy")
+  cform_updatedBy                 cform[]                 @relation("cform_updatedBy")
+  challan_createdBy               challan[]               @relation("challan_createdBy")
+  challan_deletedBy               challan[]               @relation("challan_deletedBy")
+  challan_updatedBy               challan[]               @relation("challan_updatedBy")
+  change_createBy                 change[]                @relation("change_createBy")
+  change_deletedBy                change[]                @relation("change_deletedBy")
+  change_updatedBy                change[]                @relation("change_updatedBy")
+  commodity_createdBy             commodity[]             @relation("commodity_createdBy")
+  commodity_deletedBy             commodity[]             @relation("commodity_deletedBy")
+  commodity_updatedBy             commodity[]             @relation("commodity_updatedBy")
+  commodity_master_createdBy      commodity_master[]      @relation("commodity_master_createdBy")
+  commodity_master_deletedBy      commodity_master[]      @relation("commodity_master_deletedBy")
+  commodity_master_updatedBy      commodity_master[]      @relation("commodity_master_updatedBy")
+  composition_createdBy           composition[]           @relation("composition_createdBy")
+  composition_deletedBy           composition[]           @relation("composition_deletedBy")
+  composition                     composition[]
+  composition_updatedBy           composition[]           @relation("composition_updatedBy")
+  daily_purchase_createdBy        daily_purchase[]        @relation("daily_purchase_createdBy")
+  daily_purchase_deletedBy        daily_purchase[]        @relation("daily_purchase_deletedBy")
+  daily_purchase_updatedBy        daily_purchase[]        @relation("daily_purchase_updatedBy")
+  daily_sale_createdBy            daily_sale[]            @relation("daily_sale_createdBy")
+  daily_sale_deletedBy            daily_sale[]            @relation("daily_sale_deletedBy")
+  daily_sale_updatedBy            daily_sale[]            @relation("daily_sale_updatedBy")
+  department_doc_upload_createdBy department_doc_upload[] @relation("department_doc_upload_createdBy")
+  department_doc_upload_deletedBy department_doc_upload[] @relation("department_doc_upload_deletedBy")
+  department_doc_upload_updatedBy department_doc_upload[] @relation("department_doc_upload_updatedBy")
+  document_createdBy              document[]              @relation("document_createdBy")
+  document_deletedBy              document[]              @relation("document_deletedBy")
+  document_updatedBy              document[]              @relation("document_updatedBy")
+  document                        document[]
+  dvat04_createdBy                dvat04[]                @relation("dvat04_createdBy")
+  dvat04_deletedBy                dvat04[]                @relation("dvat04_deletedBy")
+  dvat04_updatedBy                dvat04[]                @relation("dvat04_updatedBy")
+  edit_manufacturer_createdBy     edit_manufacturer[]     @relation("edit_manufacturer_createdBy")
+  edit_manufacturer_deletedBy     edit_manufacturer[]     @relation("edit_manufacturer_deletedBy")
+  edit_manufacturer_updatedBy     edit_manufacturer[]     @relation("edit_manufacturer_updatedBy")
+  edit_purchase_createdBy         edit_purchase[]         @relation("edit_purchase_createdBy")
+  edit_purchase_deletedBy         edit_purchase[]         @relation("edit_purchase_deletedBy")
+  edit_purchase_updatedBy         edit_purchase[]         @relation("edit_purchase_updatedBy")
+  edit_sale_createdBy             edit_sale[]             @relation("edit_sale_createdBy")
+  edit_sale_deletedBy             edit_sale[]             @relation("edit_sale_deletedBy")
+  edit_sale_updatedBy             edit_sale[]             @relation("edit_sale_updatedBy")
+  first_stock_createdBy           first_stock[]           @relation("first_stock_createdBy")
+  first_stock_deletedBy           first_stock[]           @relation("first_stock_deletedBy")
+  first_stock_updatedBy           first_stock[]           @relation("first_stock_updatedBy")
+  holiday_createdBy               holiday[]               @relation("holiday_createdBy")
+  holiday_deletedBy               holiday[]               @relation("holiday_deletedBy")
+  holiday_updatedBy               holiday[]               @relation("holiday_updatedBy")
+  hsncode_createdBy               hsncode[]               @relation("hsncode_createdBy")
+  hsncode_deletedBy               hsncode[]               @relation("hsncode_deletedBy")
+  hsncode_updatedBy               hsncode[]               @relation("hsncode_updatedBy")
+  manufacturer_purchase_createdBy manufacturer_purchase[] @relation("manufacturer_purchase_createdBy")
+  manufacturer_purchase_deletedBy manufacturer_purchase[] @relation("manufacturer_purchase_deletedBy")
+  manufacturer_purchase_updatedBy manufacturer_purchase[] @relation("manufacturer_purchase_updatedBy")
+  news_createdBy                  news[]                  @relation("news_createdBy")
+  news_deletedBy                  news[]                  @relation("news_deletedBy")
+  news_updatedBy                  news[]                  @relation("news_updatedBy")
+  order_notice_createdBy          order_notice[]          @relation("order_notice_createdBy")
+  order_notice_deletedBy          order_notice[]          @relation("order_notice_deletedBy")
+  issued                          order_notice[]          @relation("issued")
+  officer                         order_notice[]          @relation("officer")
+  order_notice_updatedBy          order_notice[]          @relation("order_notice_updatedBy")
+  parctitioner_createdBy          parctitioner[]          @relation("parctitioner_createdBy")
+  parctitioner_deletedBy          parctitioner[]          @relation("parctitioner_deletedBy")
+  parctitioner_updatedBy          parctitioner[]          @relation("parctitioner_updatedBy")
+  refunds_createdBy               refunds[]               @relation("refunds_createdBy")
+  refunds_deletedBy               refunds[]               @relation("refunds_deletedBy")
+  refunds                         refunds[]
+  refunds_updatedBy               refunds[]               @relation("refunds_updatedBy")
+  register_createdBy              registration[]          @relation("register_createdBy")
+  register_deletedBy              registration[]          @relation("register_deletedBy")
+  registration                    registration[]
+  register_updatedBy              registration[]          @relation("register_updatedBy")
+  return_filing_createdBy         return_filing[]         @relation("return_filing_createdBy")
+  return_filing_deletedBy         return_filing[]         @relation("return_filing_deletedBy")
+  return_filing_updatedBy         return_filing[]         @relation("return_filing_updatedBy")
+  returns_01_createdBy            returns_01[]            @relation("returns_01_createdBy")
+  returns_01_deletedBy            returns_01[]            @relation("returns_01_deletedBy")
+  returns_01_updatedBy            returns_01[]            @relation("returns_01_updatedBy")
+  returns_entry_createdBy         returns_entry[]         @relation("returns_entry_createdBy")
+  returns_entry_deletedBy         returns_entry[]         @relation("returns_entry_deletedBy")
+  returns_entry_updatedBy         returns_entry[]         @relation("returns_entry_updatedBy")
+  save_stock_createdBy            save_stock[]            @relation("save_stock_createdBy")
+  save_stock_deletedBy            save_stock[]            @relation("save_stock_deletedBy")
+  save_stock_updatedBy            save_stock[]            @relation("save_stock_updatedBy")
+  stock_createdBy                 stock[]                 @relation("stock_createdBy")
+  stock_deletedBy                 stock[]                 @relation("stock_deletedBy")
+  stock_updatedBy                 stock[]                 @relation("stock_updatedBy")
+  tally_purchase_createdBy        tally_purchase[]        @relation("tally_purchase_createdBy")
+  tally_sale_createdBy            tally_sale[]            @relation("tally_sale_createdBy")
+  user_commodity_master_createdBy user_commodity_master[] @relation("user_commodity_master_createdBy")
+  user_commodity_master_deletedBy user_commodity_master[] @relation("user_commodity_master_deletedBy")
+  user_commodity_master_updatedBy user_commodity_master[] @relation("user_commodity_master_updatedBy")
+  user_commodity_master           user_commodity_master[]
+}
+
+model change {
+  id          Int       @id @default(autoincrement())
+  oldData     String
+  newData     String
+  tableName   String
+  columnName  String
+  createdAt   DateTime  @default(now())
+  createdById Int
+  updatedAt   DateTime  @updatedAt
+  updatedById Int?
+  deletedAt   DateTime?
+  deletedById Int?
+  createdBy   user      @relation("change_createBy", fields: [createdById], references: [id])
+  deletedBy   user?     @relation("change_deletedBy", fields: [deletedById], references: [id])
+  updatedBy   user?     @relation("change_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "change_createdById_fkey")
+  @@index([deletedById], map: "change_deletedById_fkey")
+  @@index([updatedById], map: "change_updatedById_fkey")
+}
+
+model category {
+  id          Int          @id @default(autoincrement())
+  category    CategoryType @default(USER)
+  name        String
+  createdAt   DateTime     @default(now())
+  createdById Int
+  updatedAt   DateTime     @updatedAt
+  updatedById Int?
+  deletedAt   DateTime?
+  deletedById Int?
+  createdBy   user         @relation("category_CreatedAt", fields: [createdById], references: [id])
+  deletedBy   user?        @relation("category_deletedAt", fields: [deletedById], references: [id])
+  updatedBy   user?        @relation("category_updatedAt", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "category_createdById_fkey")
+  @@index([deletedById], map: "category_deletedById_fkey")
+  @@index([updatedById], map: "category_updatedById_fkey")
+}
+
+model document {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  name         String?
+  desscription String?
+  path         String
+  status       Status    @default(ACTIVE)
+  createdAt    DateTime  @default(now())
+  createdById  Int
+  updatedAt    DateTime  @updatedAt
+  updatedById  Int?
+  deletedAt    DateTime?
+  deletedById  Int?
+  createdBy    user      @relation("document_createdBy", fields: [createdById], references: [id])
+  deletedBy    user?     @relation("document_deletedBy", fields: [deletedById], references: [id])
+  updatedBy    user?     @relation("document_updatedBy", fields: [updatedById], references: [id])
+  user         user      @relation(fields: [userId], references: [id])
+
+  @@index([createdById], map: "document_createdById_fkey")
+  @@index([deletedById], map: "document_deletedById_fkey")
+  @@index([updatedById], map: "document_updatedById_fkey")
+  @@index([userId], map: "document_userId_fkey")
+}
+
+model dvat04 {
+  id                              Int                     @id @default(autoincrement())
+  password                        String?
+  temppass                        String?
+  tempregistrationnumber          String?
+  tinNumber                       String?
+  certificateNumber               String?
+  certificateDate                 DateTime?
+  commodity                       Dvat04Commodity?        @default(OTHER)
+  tin_master_id                   Int                     @default(1)
+  name                            String?
+  tradename                       String?
+  natureOfBusiness                NatureOfBusiness?       @default(OTHERS)
+  constitutionOfBusiness          ConstitutionOfBusiness? @default(OTHER)
+  selectOffice                    SelectOffice?           @default(Dadra_Nagar_Haveli)
+  typeOfRegistration              TypeOfRegistration?     @default(MANDATORY)
+  compositionScheme               Boolean?                @default(false)
+  annualTurnoverCategory          Boolean?                @default(false)
+  turnoverLastFinancialYear       String?
+  turnoverCurrentFinancialYear    String?
+  vatLiableDate                   DateTime?
+  pan                             String?
+  gst                             String?
+  buildingNumber                  String?
+  area                            String?
+  address                         String?
+  city                            String?
+  pincode                         String?
+  contact_one                     String?
+  contact_two                     String?
+  email                           String?
+  faxNumber                       String?
+  noticeServingBuildingName       String?
+  noticeServingArea               String?
+  noticeServingAddress            String?
+  noticeServingCity               String?
+  noticeServingPincode            String?
+  additionalGodown                String?
+  additionalFactory               String?
+  additionalShops                 String?
+  otherPlaceOfBusiness            String?
+  accountnumber                   String?
+  typeOfAccount                   TypeOfAccount           @default(CURRENT)
+  bankName                        String?
+  ifscCode                        String?
+  addressOfBank                   String?
+  accountNumberVerificationStatus Boolean                 @default(false)
+  ownCapital                      String?
+  loanFromBank                    String?
+  loanFromOther                   String?
+  plantAndMachinery               String?
+  landAndBuilding                 String?
+  otherAssetsInvestments          String?
+  selectComOneId                  Int?
+  purposeOne                      CommidityPursose        @default(COMMODITY_TRADED)
+  descriptionOne                  String?
+  selectComTwoId                  Int?
+  purposeTwo                      CommidityPursose        @default(COMMODITY_TRADED)
+  descriptionTwo                  String?
+  selectComThreeId                Int?
+  purposeThree                    CommidityPursose        @default(COMMODITY_TRADED)
+  descriptionThree                String?
+  selectComFourId                 Int?
+  purposeFour                     CommidityPursose        @default(COMMODITY_TRADED)
+  descriptionFour                 String?
+  selectComFiveId                 Int?
+  purposeFive                     CommidityPursose        @default(COMMODITY_TRADED)
+  descriptionFive                 String?
+  accountingBasis                 AccountingBasis         @default(CASH)
+  frequencyFilings                FrequencyFilings        @default(MONTHLY)
+  securityDepositAmount           String?
+  depositType                     DepositType             @default(FIXED)
+  dateOfExpiry                    DateTime?
+  nameOfBank                      String?
+  branchName                      String?
+  transactionId                   String?
+  numberOfOwners                  Int?
+  numberOfManagers                Int?
+  numberOfSignatory               Int?
+  nameOfManager                   String?
+  nameOfSignatory                 String?
+  status                          DvatStatus              @default(NONE)
+  createdAt                       DateTime                @default(now())
+  createdById                     Int
+  updatedAt                       DateTime                @updatedAt
+  updatedById                     Int?
+  deletedAt                       DateTime?
+  deletedById                     Int?
+  annexure1                       annexure1[]
+  annexure2                       annexure2[]
+  cform                           cform[]
+  challan                         challan[]
+  composition                     composition[]
+  daily_purchase                  daily_purchase[]
+  daily_sale                      daily_sale[]
+  createdBy                       user                    @relation("dvat04_createdBy", fields: [createdById], references: [id])
+  deletedBy                       user?                   @relation("dvat04_deletedBy", fields: [deletedById], references: [id])
+  selectComFive                   commodity?              @relation("commodity_five", fields: [selectComFiveId], references: [id])
+  selectComFour                   commodity?              @relation("commodity_four", fields: [selectComFourId], references: [id])
+  selectComOne                    commodity?              @relation("commodity_one", fields: [selectComOneId], references: [id])
+  selectComThree                  commodity?              @relation("commodity_three", fields: [selectComThreeId], references: [id])
+  selectComTwo                    commodity?              @relation("commodity_two", fields: [selectComTwoId], references: [id])
+  tin_master                      tin_number_master       @relation(fields: [tin_master_id], references: [id])
+  updatedBy                       user?                   @relation("dvat04_updatedBy", fields: [updatedById], references: [id])
+  edit_manufacturer               edit_manufacturer[]
+  edit_purchase                   edit_purchase[]
+  edit_sale                       edit_sale[]
+  first_stock                     first_stock[]
+  manufacturer_purchase           manufacturer_purchase[]
+  order_notice                    order_notice[]
+  refunds                         refunds[]
+  registration                    registration[]
+  return_filing                   return_filing[]
+  returns_01                      returns_01[]
+  save_stock                      save_stock[]
+  stock                           stock[]
+  tally_purchase                  tally_purchase[]
+  tally_sale                      tally_sale[]
+  user_commodity_master           user_commodity_master[]
+
+  @@index([createdById], map: "dvat04_createdById_fkey")
+  @@index([deletedById], map: "dvat04_deletedById_fkey")
+  @@index([selectComFiveId], map: "dvat04_selectComFiveId_fkey")
+  @@index([selectComFourId], map: "dvat04_selectComFourId_fkey")
+  @@index([selectComOneId], map: "dvat04_selectComOneId_fkey")
+  @@index([selectComThreeId], map: "dvat04_selectComThreeId_fkey")
+  @@index([selectComTwoId], map: "dvat04_selectComTwoId_fkey")
+  @@index([tin_master_id], map: "dvat04_tin_master_id_fkey")
+  @@index([updatedById], map: "dvat04_updatedById_fkey")
+}
+
+model commodity {
+  id           Int       @id @default(autoincrement())
+  name         String
+  act          String?
+  code         String?
+  status       Status    @default(ACTIVE)
+  createdAt    DateTime  @default(now())
+  createdById  Int
+  updatedAt    DateTime  @updatedAt
+  updatedById  Int?
+  deletedAt    DateTime?
+  deletedById  Int?
+  createdBy    user      @relation("commodity_createdBy", fields: [createdById], references: [id])
+  deletedBy    user?     @relation("commodity_deletedBy", fields: [deletedById], references: [id])
+  updatedBy    user?     @relation("commodity_updatedBy", fields: [updatedById], references: [id])
+  dvat04_five  dvat04[]  @relation("commodity_five")
+  dvat04_four  dvat04[]  @relation("commodity_four")
+  dvat04_one   dvat04[]  @relation("commodity_one")
+  dvat04_three dvat04[]  @relation("commodity_three")
+  dvat04_two   dvat04[]  @relation("commodity_two")
+
+  @@index([createdById], map: "commodity_createdById_fkey")
+  @@index([deletedById], map: "commodity_deletedById_fkey")
+  @@index([updatedById], map: "commodity_updatedById_fkey")
+}
+
+model annexure1 {
+  id                      Int                     @id @default(autoincrement())
+  dvatId                  Int
+  titleParticulasOfperson TitleParticulasOfperson @default(PROPRIETOR)
+  nameOfPerson            String?
+  dateOfBirth             DateTime?
+  gender                  Gender                  @default(MALE)
+  fatherName              String?
+  panNumber               String?
+  aadharNumber            String?
+  designation             String?
+  eductionQualification   String?
+  rbuildingName           String?
+  rareaName               String?
+  rvillageName            String?
+  rpincode                String?
+  pbuildingName           String?
+  pareaName               String?
+  pvillageName            String?
+  ppincode                String?
+  contact                 String?
+  email                   String?
+  isAuthorisedSignatory   Boolean                 @default(false)
+  status                  Status                  @default(ACTIVE)
+  createdAt               DateTime                @default(now())
+  createdById             Int
+  updatedAt               DateTime                @updatedAt
+  updatedById             Int?
+  deletedAt               DateTime?
+  deletedById             Int?
+  createdBy               user                    @relation("annexure1_createdBy", fields: [createdById], references: [id])
+  deletedBy               user?                   @relation("annexure1_deletedBy", fields: [deletedById], references: [id])
+  dvat                    dvat04                  @relation(fields: [dvatId], references: [id])
+  updatedBy               user?                   @relation("annexure1_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "annexure1_createdById_fkey")
+  @@index([deletedById], map: "annexure1_deletedById_fkey")
+  @@index([dvatId], map: "annexure1_dvatId_fkey")
+  @@index([updatedById], map: "annexure1_updatedById_fkey")
+}
+
+model annexure2 {
+  id                      Int                     @id @default(autoincrement())
+  dvatId                  Int
+  typeOfPerson            TypeOfPerson            @default(BRANCH_OFFICE)
+  name                    String?
+  branchName              String?
+  contact                 String?
+  buildingName            String?
+  areaName                String?
+  village                 String?
+  pinCode                 String?
+  dateOfExtablishment     DateTime?
+  locationOfBusinessPlace LocationOfBusinessPlace @default(WITHIN_STATE)
+  underStateAct           String?
+  underCstAct             String?
+  status                  Status                  @default(ACTIVE)
+  createdAt               DateTime                @default(now())
+  createdById             Int
+  updatedAt               DateTime                @updatedAt
+  updatedById             Int?
+  deletedAt               DateTime?
+  deletedById             Int?
+  createdBy               user                    @relation("annexure2_createdBy", fields: [createdById], references: [id])
+  deletedBy               user?                   @relation("annexure2_deletedBy", fields: [deletedById], references: [id])
+  dvat                    dvat04                  @relation(fields: [dvatId], references: [id])
+  updatedBy               user?                   @relation("annexure2_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "annexure2_createdById_fkey")
+  @@index([deletedById], map: "annexure2_deletedById_fkey")
+  @@index([dvatId], map: "annexure2_dvatId_fkey")
+  @@index([updatedById], map: "annexure2_updatedById_fkey")
+}
+
+model registration {
+  id                              Int                @id @default(autoincrement())
+  dvat04Id                        Int
+  physicalVerification            Boolean            @default(false)
+  date_of_visit                   DateTime?
+  natureOfBusiness                NatureOfBusiness   @default(OTHERS)
+  date_of_purchases               DateTime?
+  amount_of_purchases             String?
+  date_of_sales                   DateTime?
+  amount_of_sales                 String?
+  capital_proposed                String?
+  amount_of_stock                 String?
+  books_of_account                String?
+  verification_of_originals       String?
+  verification_of_title           String?
+  other_information               String?
+  security_deposit                Boolean?
+  security_deposit_amount         String?
+  security_deposit_date           DateTime?
+  date_of_expiry_security_deposit DateTime?
+  bank                            String?
+  name_of_person                  String?
+  address                         String?            @db.MediumText
+  plant_and_machinery             String?            @db.MediumText
+  raw_materials                   String?            @db.MediumText
+  packing_materials               String?            @db.MediumText
+  commissioner_note               String?            @db.MediumText
+  joint_commissioner_note         String?            @db.MediumText
+  dy_commissioner                 String?            @db.MediumText
+  vat_officer_note                String?            @db.MediumText
+  asst_vat_officer_note           String?            @db.MediumText
+  inspector_note                  String?            @db.MediumText
+  udc_note                        String?            @db.MediumText
+  ldc_note                        String?            @db.MediumText
+  registration_date               DateTime?
+  all_doc_upload                  Boolean?
+  all_appointment                 Boolean?
+  necessary_payments              Boolean?
+  dept_user_id                    Int
+  status                          RegistrationStatus @default(ACTIVE)
+  createdAt                       DateTime           @default(now())
+  createdById                     Int
+  updatedAt                       DateTime           @updatedAt
+  updatedById                     Int?
+  deletedAt                       DateTime?
+  deletedById                     Int?
+  createdBy                       user               @relation("register_createdBy", fields: [createdById], references: [id])
+  deletedBy                       user?              @relation("register_deletedBy", fields: [deletedById], references: [id])
+  dept_user                       user               @relation(fields: [dept_user_id], references: [id])
+  dvat04                          dvat04             @relation(fields: [dvat04Id], references: [id])
+  updatedBy                       user?              @relation("register_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "registration_createdById_fkey")
+  @@index([deletedById], map: "registration_deletedById_fkey")
+  @@index([dept_user_id], map: "registration_dept_user_id_fkey")
+  @@index([dvat04Id], map: "registration_dvat04Id_fkey")
+  @@index([updatedById], map: "registration_updatedById_fkey")
+}
+
+model state {
+  id            Int             @id @default(autoincrement())
+  name          String
+  code          String
+  status        Status          @default(ACTIVE)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?
+  returns_entry returns_entry[]
+}
+
+model tin_number_master {
+  id             Int              @id @default(autoincrement())
+  tin_number     String
+  name_of_dealer String
+  state          String?
+  status         Status           @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  deletedAt      DateTime?
+  daily_purchase daily_purchase[]
+  daily_sale     daily_sale[]
+  dvat04         dvat04[]
+  edit_purchase  edit_purchase[]
+  edit_sale      edit_sale[]
+  returns_entry  returns_entry[]
+  tally_purchase tally_purchase[]
+  tally_sale     tally_sale[]
+}
+
+model returns_01 {
+  id                Int             @id @default(autoincrement())
+  rr_number         String
+  return_type       ReturnType      @default(ORIGINAL)
+  year              String
+  quarter           Quarter         @default(QUARTER1)
+  month             String?
+  dvat04Id          Int
+  filing_datetime   DateTime
+  file_status       Status          @default(ACTIVE)
+  vatamount         String?
+  interest          String?
+  penalty           String?
+  other_charge      String?
+  total_tax_amount  String?
+  transaction_date  DateTime?
+  paymentmode       String?
+  transaction_id    String?
+  bank_name         String?
+  track_id          String?
+  compositionScheme Boolean?        @default(false)
+  remarks           String?
+  status            ReturnStatus    @default(DUE)
+  challan_number    String?
+  pending_payment   String?
+  createdAt         DateTime        @default(now())
+  createdById       Int
+  updatedAt         DateTime        @updatedAt
+  updatedById       Int?
+  deletedAt         DateTime?
+  deletedById       Int?
+  order_notice      order_notice[]
+  createdBy         user            @relation("returns_01_createdBy", fields: [createdById], references: [id])
+  deletedBy         user?           @relation("returns_01_deletedBy", fields: [deletedById], references: [id])
+  dvat04            dvat04          @relation(fields: [dvat04Id], references: [id])
+  updatedBy         user?           @relation("returns_01_updatedBy", fields: [updatedById], references: [id])
+  returns_entry     returns_entry[]
+
+  @@index([createdById], map: "returns_01_createdById_fkey")
+  @@index([deletedById], map: "returns_01_deletedById_fkey")
+  @@index([dvat04Id], map: "returns_01_dvat04Id_fkey")
+  @@index([updatedById], map: "returns_01_updatedById_fkey")
+}
+
+model returns_entry {
+  id                     Int                   @id @default(autoincrement())
+  returns_01Id           Int
+  dvat_type              DvatType              @default(DVAT_30)
+  urn_number             String
+  invoice_number         String
+  invoice_date           DateTime
+  total_invoice_number   String
+  seller_tin_numberId    Int
+  category_of_entry      CategoryOfEntry?
+  sale_of                SaleOf?
+  sale_of_interstate     SaleOfInterstate?
+  input_tax_credit       InputTaxCredit?
+  nature_purchase        NaturePurchase?
+  nature_purchase_option NaturePurchaseOption?
+  purchase_type          PurchaseType?
+  place_of_supply        Int?
+  tax_percent            String?
+  amount                 String?
+  vatamount              String?
+  remarks                String?
+  description_of_goods   String?
+  quantity               Int?
+  isnil                  Boolean               @default(false)
+  commodity_masterId     Int?
+  status                 Status                @default(ACTIVE)
+  createdAt              DateTime              @default(now())
+  createdById            Int
+  updatedAt              DateTime              @updatedAt
+  updatedById            Int?
+  deletedAt              DateTime?
+  deletedById            Int?
+  cfrom_returns          cform_returns[]
+  commodity_master       commodity_master?     @relation(fields: [commodity_masterId], references: [id])
+  createdBy              user                  @relation("returns_entry_createdBy", fields: [createdById], references: [id])
+  deletedBy              user?                 @relation("returns_entry_deletedBy", fields: [deletedById], references: [id])
+  state                  state?                @relation(fields: [place_of_supply], references: [id])
+  returns_01             returns_01            @relation(fields: [returns_01Id], references: [id])
+  seller_tin_number      tin_number_master     @relation(fields: [seller_tin_numberId], references: [id])
+  updatedBy              user?                 @relation("returns_entry_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([commodity_masterId], map: "returns_entry_commodity_masterId_fkey")
+  @@index([createdById], map: "returns_entry_createdById_fkey")
+  @@index([deletedById], map: "returns_entry_deletedById_fkey")
+  @@index([place_of_supply], map: "returns_entry_place_of_supply_fkey")
+  @@index([returns_01Id], map: "returns_entry_returns_01Id_fkey")
+  @@index([seller_tin_numberId], map: "returns_entry_seller_tin_numberId_fkey")
+  @@index([updatedById], map: "returns_entry_updatedById_fkey")
+}
+
+model department_doc_upload {
+  id          Int       @id @default(autoincrement())
+  path        String
+  status      Status    @default(ACTIVE)
+  createdAt   DateTime  @default(now())
+  createdById Int
+  updatedAt   DateTime  @updatedAt
+  updatedById Int?
+  deletedAt   DateTime?
+  deletedById Int?
+  createdBy   user      @relation("department_doc_upload_createdBy", fields: [createdById], references: [id])
+  deletedBy   user?     @relation("department_doc_upload_deletedBy", fields: [deletedById], references: [id])
+  updatedBy   user?     @relation("department_doc_upload_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "department_doc_upload_createdById_fkey")
+  @@index([deletedById], map: "department_doc_upload_deletedById_fkey")
+  @@index([updatedById], map: "department_doc_upload_updatedById_fkey")
+}
+
+model challan {
+  id               Int            @id @default(autoincrement())
+  reason           ChallanReason  @default(MONTHLYPAYMENT)
+  dvatid           Int
+  cpin             String
+  vat              String
+  interest         String
+  penalty          String
+  cess             String
+  others           String
+  total_tax_amount String
+  transaction_date DateTime?
+  paymentmode      String?
+  transaction_id   String?
+  bank_name        String?
+  track_id         String?
+  remark           String?        @db.MediumText
+  challanstatus    ChallanStatus  @default(CREATED)
+  status           Status         @default(ACTIVE)
+  expire_date      DateTime
+  createdAt        DateTime       @default(now())
+  createdById      Int
+  updatedAt        DateTime       @updatedAt
+  updatedById      Int?
+  deletedAt        DateTime?
+  deletedById      Int?
+  createdBy        user           @relation("challan_createdBy", fields: [createdById], references: [id])
+  deletedBy        user?          @relation("challan_deletedBy", fields: [deletedById], references: [id])
+  dvat             dvat04         @relation(fields: [dvatid], references: [id])
+  updatedBy        user?          @relation("challan_updatedBy", fields: [updatedById], references: [id])
+  order_notice     order_notice[]
+
+  @@index([createdById], map: "challan_createdById_fkey")
+  @@index([deletedById], map: "challan_deletedById_fkey")
+  @@index([dvatid], map: "challan_dvatid_fkey")
+  @@index([updatedById], map: "challan_updatedById_fkey")
+}
+
+model refunds {
+  id                   Int          @id @default(autoincrement())
+  dvatid               Int
+  reason               String
+  old_grievance_number String?
+  oldcpin              String?
+  cpin                 String
+  vat                  String
+  interest             String
+  penalty              String
+  cess                 String
+  others               String?
+  total_tax_amount     String?
+  transaction_date     DateTime?
+  paymentmode          String?
+  transaction_id       String?
+  bank_name            String?
+  track_id             String?
+  doc_upload           String?
+  dept_user_id         Int
+  officer_remark       String?      @db.MediumText
+  remark               String?      @db.MediumText
+  refundsstatus        RefundStatus @default(CREATED)
+  status               Status       @default(ACTIVE)
+  expire_date          DateTime
+  createdAt            DateTime     @default(now())
+  createdById          Int
+  updatedAt            DateTime     @updatedAt
+  updatedById          Int?
+  deletedAt            DateTime?
+  deletedById          Int?
+  createdBy            user         @relation("refunds_createdBy", fields: [createdById], references: [id])
+  deletedBy            user?        @relation("refunds_deletedBy", fields: [deletedById], references: [id])
+  dept_user            user         @relation(fields: [dept_user_id], references: [id])
+  dvat                 dvat04       @relation(fields: [dvatid], references: [id])
+  updatedBy            user?        @relation("refunds_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "refunds_createdById_fkey")
+  @@index([deletedById], map: "refunds_deletedById_fkey")
+  @@index([dept_user_id], map: "refunds_dept_user_id_fkey")
+  @@index([dvatid], map: "refunds_dvatid_fkey")
+  @@index([updatedById], map: "refunds_updatedById_fkey")
+}
+
+model composition {
+  id                           Int               @id @default(autoincrement())
+  dvatid                       Int
+  officer_date                 DateTime?
+  compositionScheme            Boolean           @default(false)
+  turnoverLastFinancialYear    String?
+  turnoverCurrentFinancialYear String?
+  officerremark                String?           @db.MediumText
+  remark                       String?           @db.MediumText
+  dept_user_id                 Int
+  arn                          String
+  status                       CompositionStatus @default(PENDING)
+  createdAt                    DateTime          @default(now())
+  createdById                  Int
+  updatedAt                    DateTime          @updatedAt
+  updatedById                  Int?
+  deletedAt                    DateTime?
+  deletedById                  Int?
+  createdBy                    user              @relation("composition_createdBy", fields: [createdById], references: [id])
+  deletedBy                    user?             @relation("composition_deletedBy", fields: [deletedById], references: [id])
+  dept_user                    user              @relation(fields: [dept_user_id], references: [id])
+  dvat                         dvat04            @relation(fields: [dvatid], references: [id])
+  updatedBy                    user?             @relation("composition_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "composition_createdById_fkey")
+  @@index([deletedById], map: "composition_deletedById_fkey")
+  @@index([dept_user_id], map: "composition_dept_user_id_fkey")
+  @@index([dvatid], map: "composition_dvatid_fkey")
+  @@index([updatedById], map: "composition_updatedById_fkey")
+}
+
+model order_notice {
+  id                Int               @id @default(autoincrement())
+  dvatid            Int
+  returns_01Id      Int?
+  ref_no            String
+  issue_date        DateTime          @default(now())
+  notice_order_type NoticeOrderType   @default(NOTICE)
+  form_type         FormType          @default(DVAT10)
+  tax_period_from   DateTime?
+  tax_period_to     DateTime?
+  due_date          DateTime
+  tax               String?
+  interest          String?
+  amount            String?
+  notice            String?
+  description       String?
+  reason_for_notice String?
+  dealer_presence   DateTime?
+  challanId         Int?
+  dvat24_reason     Dvat24Reason      @default(NOTFURNISHED)
+  issuedId          Int
+  officerId         Int
+  remark            String?           @db.MediumText
+  status            OrderNoticeStatus @default(ACTIVE)
+  createdAt         DateTime          @default(now())
+  createdById       Int
+  updatedAt         DateTime          @updatedAt
+  updatedById       Int?
+  deletedAt         DateTime?
+  deletedById       Int?
+  challan           challan?          @relation(fields: [challanId], references: [id])
+  createdBy         user              @relation("order_notice_createdBy", fields: [createdById], references: [id])
+  deletedBy         user?             @relation("order_notice_deletedBy", fields: [deletedById], references: [id])
+  dvat              dvat04            @relation(fields: [dvatid], references: [id])
+  issued            user              @relation("issued", fields: [issuedId], references: [id])
+  officer           user              @relation("officer", fields: [officerId], references: [id])
+  returns_01        returns_01?       @relation(fields: [returns_01Id], references: [id])
+  updatedBy         user?             @relation("order_notice_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([challanId], map: "order_notice_challanId_fkey")
+  @@index([createdById], map: "order_notice_createdById_fkey")
+  @@index([deletedById], map: "order_notice_deletedById_fkey")
+  @@index([dvatid], map: "order_notice_dvatid_fkey")
+  @@index([issuedId], map: "order_notice_issuedId_fkey")
+  @@index([officerId], map: "order_notice_officerId_fkey")
+  @@index([returns_01Id], map: "order_notice_returns_01Id_fkey")
+  @@index([updatedById], map: "order_notice_updatedById_fkey")
+}
+
+model return_filing {
+  id            Int                @id @default(autoincrement())
+  dvatid        Int
+  year          String
+  month         String
+  filing_status Boolean            @default(false)
+  filing_date   DateTime?
+  due_date      DateTime?
+  status        Status             @default(ACTIVE)
+  return_status ReturnFilingStatus @default(DUE)
+  createdAt     DateTime           @default(now())
+  createdById   Int
+  updatedAt     DateTime           @updatedAt
+  updatedById   Int?
+  deletedAt     DateTime?
+  deletedById   Int?
+  createdBy     user               @relation("return_filing_createdBy", fields: [createdById], references: [id])
+  deletedBy     user?              @relation("return_filing_deletedBy", fields: [deletedById], references: [id])
+  dvat          dvat04             @relation(fields: [dvatid], references: [id])
+  updatedBy     user?              @relation("return_filing_updatedBy", fields: [updatedById], references: [id])
+
+  @@unique([dvatid, year, month])
+  @@index([createdById], map: "return_filing_createdById_fkey")
+  @@index([deletedById], map: "return_filing_deletedById_fkey")
+  @@index([updatedById], map: "return_filing_updatedById_fkey")
+}
+
+model commodity_master {
+  id                           Int                     @id @default(autoincrement())
+  product_name                 String
+  product_type                 Dvat04Commodity?        @default(OTHER)
+  mrp                          String
+  sale_price                   String
+  oidc_price                   String
+  oidc_discount_percent        String
+  taxable_at                   String
+  description                  String
+  remark                       String?
+  group                        String?
+  display_group                DisplayGroup?
+  oidc_code                    String?
+  pack_type                    PackType?               @default(BOTTLE)
+  oidc_crate_sale_price        String?
+  oidc_crate_purchase_price    String?
+  crate_size                   Int                     @default(0)
+  dn_oidc_code                 String?
+  dn_oidc_crate_sale_price     String?
+  dn_oidc_crate_purchase_price String?
+  du_oidc_code                 String?
+  du_oidc_crate_sale_price     String?
+  du_oidc_crate_purchase_price String?
+  status                       Status                  @default(ACTIVE)
+  createdAt                    DateTime                @default(now())
+  createdById                  Int
+  updatedAt                    DateTime                @updatedAt
+  updatedById                  Int?
+  deletedAt                    DateTime?
+  deletedById                  Int?
+  createdBy                    user                    @relation("commodity_master_createdBy", fields: [createdById], references: [id])
+  deletedBy                    user?                   @relation("commodity_master_deletedBy", fields: [deletedById], references: [id])
+  updatedBy                    user?                   @relation("commodity_master_updatedBy", fields: [updatedById], references: [id])
+  daily_purchase               daily_purchase[]
+  daily_sale                   daily_sale[]
+  edit_manufacturer            edit_manufacturer[]
+  edit_purchase                edit_purchase[]
+  edit_sale                    edit_sale[]
+  first_stock                  first_stock[]
+  manufacturer_purchase        manufacturer_purchase[]
+  returns_entry                returns_entry[]
+  save_stock                   save_stock[]
+  stock                        stock[]
+  tally_purchase               tally_purchase[]
+  tally_sale                   tally_sale[]
+
+  @@index([createdById], map: "commodity_master_createdById_fkey")
+  @@index([deletedById], map: "commodity_master_deletedById_fkey")
+  @@index([updatedById], map: "commodity_master_updatedById_fkey")
+}
+
+model user_commodity_master {
+  id          Int       @id @default(autoincrement())
+  dvatid      Int
+  user_id     Int
+  status      Status    @default(ACTIVE)
+  createdAt   DateTime  @default(now())
+  createdById Int
+  updatedAt   DateTime  @updatedAt
+  updatedById Int?
+  deletedAt   DateTime?
+  deletedById Int?
+  createdBy   user      @relation("user_commodity_master_createdBy", fields: [createdById], references: [id])
+  deletedBy   user?     @relation("user_commodity_master_deletedBy", fields: [deletedById], references: [id])
+  dvat        dvat04    @relation(fields: [dvatid], references: [id])
+  updatedBy   user?     @relation("user_commodity_master_updatedBy", fields: [updatedById], references: [id])
+  user        user      @relation(fields: [user_id], references: [id])
+
+  @@index([createdById], map: "user_commodity_master_createdById_fkey")
+  @@index([deletedById], map: "user_commodity_master_deletedById_fkey")
+  @@index([dvatid], map: "user_commodity_master_dvatid_fkey")
+  @@index([updatedById], map: "user_commodity_master_updatedById_fkey")
+  @@index([user_id], map: "user_commodity_master_user_id_fkey")
+}
+
+model news {
+  id           Int       @id @default(autoincrement())
+  title        String
+  descrilption String    @db.MediumText
+  topic        String
+  postdate     DateTime
+  status       Status    @default(ACTIVE)
+  createdAt    DateTime  @default(now())
+  createdById  Int
+  updatedAt    DateTime  @updatedAt
+  updatedById  Int?
+  deletedAt    DateTime?
+  deletedById  Int?
+  createdBy    user      @relation("news_createdBy", fields: [createdById], references: [id])
+  deletedBy    user?     @relation("news_deletedBy", fields: [deletedById], references: [id])
+  updatedBy    user?     @relation("news_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "news_createdById_fkey")
+  @@index([deletedById], map: "news_deletedById_fkey")
+  @@index([updatedById], map: "news_updatedById_fkey")
+}
+
+model holiday {
+  id           Int       @id @default(autoincrement())
+  state        String
+  descrilption String    @db.MediumText
+  date         DateTime
+  status       Status    @default(ACTIVE)
+  createdAt    DateTime  @default(now())
+  createdById  Int
+  updatedAt    DateTime  @updatedAt
+  updatedById  Int?
+  deletedAt    DateTime?
+  deletedById  Int?
+  createdBy    user      @relation("holiday_createdBy", fields: [createdById], references: [id])
+  deletedBy    user?     @relation("holiday_deletedBy", fields: [deletedById], references: [id])
+  updatedBy    user?     @relation("holiday_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "holiday_createdById_fkey")
+  @@index([deletedById], map: "holiday_deletedById_fkey")
+  @@index([updatedById], map: "holiday_updatedById_fkey")
+}
+
+model parctitioner {
+  id                 Int       @id @default(autoincrement())
+  gsp_name           String
+  business_spoc_name String
+  email              String
+  mobile             String
+  address            String    @db.MediumText
+  priority           Int       @default(0)
+  status             Status    @default(ACTIVE)
+  createdAt          DateTime  @default(now())
+  createdById        Int
+  updatedAt          DateTime  @updatedAt
+  updatedById        Int?
+  deletedAt          DateTime?
+  deletedById        Int?
+  createdBy          user      @relation("parctitioner_createdBy", fields: [createdById], references: [id])
+  deletedBy          user?     @relation("parctitioner_deletedBy", fields: [deletedById], references: [id])
+  updatedBy          user?     @relation("parctitioner_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "parctitioner_createdById_fkey")
+  @@index([deletedById], map: "parctitioner_deletedById_fkey")
+  @@index([updatedById], map: "parctitioner_updatedById_fkey")
+}
+
+model hsncode {
+  id               Int       @id @default(autoincrement())
+  head             String
+  description      String
+  hsncode          String
+  tech_description String
+  trade1           String
+  trade2           String
+  trade3           String
+  status           Status    @default(ACTIVE)
+  createdAt        DateTime  @default(now())
+  createdById      Int
+  updatedAt        DateTime  @updatedAt
+  updatedById      Int?
+  deletedAt        DateTime?
+  deletedById      Int?
+  createdBy        user      @relation("hsncode_createdBy", fields: [createdById], references: [id])
+  deletedBy        user?     @relation("hsncode_deletedBy", fields: [deletedById], references: [id])
+  updatedBy        user?     @relation("hsncode_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "hsncode_createdById_fkey")
+  @@index([deletedById], map: "hsncode_deletedById_fkey")
+  @@index([updatedById], map: "hsncode_updatedById_fkey")
+}
+
+model daily_sale {
+  id                  Int               @id @default(autoincrement())
+  dvat04Id            Int
+  invoice_number      String
+  invoice_date        DateTime
+  commodity_masterId  Int
+  seller_tin_numberId Int
+  amount_unit         String
+  quantity            Int
+  tax_percent         String
+  amount              String
+  vatamount           String
+  is_dvat_31          Boolean           @default(false)
+  is_local            Boolean           @default(false)
+  is_accept           Boolean           @default(false)
+  status              Status            @default(ACTIVE)
+  urn_number          String?
+  batch_name          String?
+  is_against_cform    Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  createdById         Int
+  updatedAt           DateTime          @updatedAt
+  updatedById         Int?
+  deletedAt           DateTime?
+  deletedById         Int?
+  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
+  createdBy           user              @relation("daily_sale_createdBy", fields: [createdById], references: [id])
+  deletedBy           user?             @relation("daily_sale_deletedBy", fields: [deletedById], references: [id])
+  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
+  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
+  updatedBy           user?             @relation("daily_sale_updatedBy", fields: [updatedById], references: [id])
+  edit_sale           edit_sale[]
+
+  @@index([commodity_masterId], map: "daily_sale_commodity_masterId_fkey")
+  @@index([createdById], map: "daily_sale_createdById_fkey")
+  @@index([deletedById], map: "daily_sale_deletedById_fkey")
+  @@index([dvat04Id], map: "daily_sale_dvat04Id_fkey")
+  @@index([seller_tin_numberId], map: "daily_sale_seller_tin_numberId_fkey")
+  @@index([updatedById], map: "daily_sale_updatedById_fkey")
+}
+
+model tally_sale {
+  id                  Int               @id @default(autoincrement())
+  dvat04Id            Int
+  invoice_number      String
+  invoice_date        DateTime
+  commodity_masterId  Int
+  seller_tin_numberId Int
+  amount_unit         String
+  quantity            Int
+  tax_percent         String
+  amount              String
+  vatamount           String
+  is_dvat_31          Boolean           @default(false)
+  is_local            Boolean           @default(false)
+  is_accept           Boolean           @default(false)
+  status              Status            @default(ACTIVE)
+  urn_number          String?
+  is_against_cform    Boolean           @default(false)
+  batch_name          String?
+  createdAt           DateTime          @default(now())
+  createdById         Int
+  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
+  createdBy           user              @relation("tally_sale_createdBy", fields: [createdById], references: [id])
+  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
+  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
+
+  @@index([commodity_masterId], map: "tally_sale_commodity_masterId_fkey")
+  @@index([createdById], map: "tally_sale_createdById_fkey")
+  @@index([dvat04Id], map: "tally_sale_dvat04Id_fkey")
+  @@index([seller_tin_numberId], map: "tally_sale_seller_tin_numberId_fkey")
+}
+
+model daily_purchase {
+  id                  Int               @id @default(autoincrement())
+  dvat04Id            Int
+  seller_tin_numberId Int
+  invoice_number      String
+  invoice_date        DateTime
+  commodity_masterId  Int
+  quantity            Int
+  tax_percent         String
+  amount_unit         String
+  amount              String
+  vatamount           String
+  is_local            Boolean           @default(false)
+  is_dvat_30a         Boolean           @default(false)
+  is_accept           Boolean           @default(false)
+  status              Status            @default(ACTIVE)
+  urn_number          String?
+  batch_name          String?
+  is_against_cform    Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  createdById         Int
+  updatedAt           DateTime          @updatedAt
+  updatedById         Int?
+  deletedAt           DateTime?
+  deletedById         Int?
+  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
+  createdBy           user              @relation("daily_purchase_createdBy", fields: [createdById], references: [id])
+  deletedBy           user?             @relation("daily_purchase_deletedBy", fields: [deletedById], references: [id])
+  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
+  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
+  updatedBy           user?             @relation("daily_purchase_updatedBy", fields: [updatedById], references: [id])
+  edit_purchase       edit_purchase[]
+
+  @@index([commodity_masterId], map: "daily_purchase_commodity_masterId_fkey")
+  @@index([createdById], map: "daily_purchase_createdById_fkey")
+  @@index([deletedById], map: "daily_purchase_deletedById_fkey")
+  @@index([dvat04Id], map: "daily_purchase_dvat04Id_fkey")
+  @@index([seller_tin_numberId], map: "daily_purchase_seller_tin_numberId_fkey")
+  @@index([updatedById], map: "daily_purchase_updatedById_fkey")
+}
+
+model stock {
+  id                 Int              @id @default(autoincrement())
+  dvat04Id           Int
+  commodity_masterId Int
+  quantity           Int
+  description        String?
+  remark             String?
+  status             Status           @default(ACTIVE)
+  createdAt          DateTime         @default(now())
+  createdById        Int
+  updatedAt          DateTime         @updatedAt
+  updatedById        Int?
+  deletedAt          DateTime?
+  deletedById        Int?
+  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
+  createdBy          user             @relation("stock_createdBy", fields: [createdById], references: [id])
+  deletedBy          user?            @relation("stock_deletedBy", fields: [deletedById], references: [id])
+  dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
+  updatedBy          user?            @relation("stock_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([commodity_masterId], map: "stock_commodity_masterId_fkey")
+  @@index([createdById], map: "stock_createdById_fkey")
+  @@index([deletedById], map: "stock_deletedById_fkey")
+  @@index([dvat04Id], map: "stock_dvat04Id_fkey")
+  @@index([updatedById], map: "stock_updatedById_fkey")
+}
+
+model first_stock {
+  id                 Int              @id @default(autoincrement())
+  dvat04Id           Int
+  commodity_masterId Int
+  quantity           Int
+  description        String?
+  remark             String?
+  status             Status           @default(ACTIVE)
+  createdAt          DateTime         @default(now())
+  createdById        Int
+  updatedAt          DateTime         @updatedAt
+  updatedById        Int?
+  deletedAt          DateTime?
+  deletedById        Int?
+  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
+  createdBy          user             @relation("first_stock_createdBy", fields: [createdById], references: [id])
+  deletedBy          user?            @relation("first_stock_deletedBy", fields: [deletedById], references: [id])
+  dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
+  updatedBy          user?            @relation("first_stock_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([commodity_masterId], map: "first_stock_commodity_masterId_fkey")
+  @@index([createdById], map: "first_stock_createdById_fkey")
+  @@index([deletedById], map: "first_stock_deletedById_fkey")
+  @@index([dvat04Id], map: "first_stock_dvat04Id_fkey")
+  @@index([updatedById], map: "first_stock_updatedById_fkey")
+}
+
+model save_stock {
+  id                 Int              @id @default(autoincrement())
+  dvat04Id           Int
+  commodity_masterId Int
+  quantity           Int
+  description        String?
+  remark             String?
+  status             Status           @default(ACTIVE)
+  createdAt          DateTime         @default(now())
+  createdById        Int
+  updatedAt          DateTime         @updatedAt
+  updatedById        Int?
+  deletedAt          DateTime?
+  deletedById        Int?
+  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
+  createdBy          user             @relation("save_stock_createdBy", fields: [createdById], references: [id])
+  deletedBy          user?            @relation("save_stock_deletedBy", fields: [deletedById], references: [id])
+  dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
+  updatedBy          user?            @relation("save_stock_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([commodity_masterId], map: "save_stock_commodity_masterId_fkey")
+  @@index([createdById], map: "save_stock_createdById_fkey")
+  @@index([deletedById], map: "save_stock_deletedById_fkey")
+  @@index([dvat04Id], map: "save_stock_dvat04Id_fkey")
+  @@index([updatedById], map: "save_stock_updatedById_fkey")
+}
+
+model manufacturer_purchase {
+  id                 Int                 @id @default(autoincrement())
+  dvat04Id           Int
+  commodity_masterId Int
+  quantity           Int
+  tax_percent        String
+  amount_unit        String
+  amount             String
+  vatamount          String
+  status             Status              @default(ACTIVE)
+  createdAt          DateTime            @default(now())
+  createdById        Int
+  updatedAt          DateTime            @updatedAt
+  updatedById        Int?
+  deletedAt          DateTime?
+  deletedById        Int?
+  edit_manufacturer  edit_manufacturer[]
+  commodity_master   commodity_master    @relation(fields: [commodity_masterId], references: [id])
+  createdBy          user                @relation("manufacturer_purchase_createdBy", fields: [createdById], references: [id])
+  deletedBy          user?               @relation("manufacturer_purchase_deletedBy", fields: [deletedById], references: [id])
+  dvat04             dvat04              @relation(fields: [dvat04Id], references: [id])
+  updatedBy          user?               @relation("manufacturer_purchase_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([commodity_masterId], map: "manufacturer_purchase_commodity_masterId_fkey")
+  @@index([createdById], map: "manufacturer_purchase_createdById_fkey")
+  @@index([deletedById], map: "manufacturer_purchase_deletedById_fkey")
+  @@index([dvat04Id], map: "manufacturer_purchase_dvat04Id_fkey")
+  @@index([updatedById], map: "manufacturer_purchase_updatedById_fkey")
+}
+
+model edit_sale {
+  id                  Int               @id @default(autoincrement())
+  saleId              Int
+  dvat04Id            Int
+  invoice_number      String
+  invoice_date        DateTime
+  commodity_masterId  Int
+  seller_tin_numberId Int
+  amount_unit         String
+  quantity            Int
+  tax_percent         String
+  amount              String
+  vatamount           String
+  is_dvat_31          Boolean           @default(false)
+  is_local            Boolean           @default(false)
+  is_delete           Boolean           @default(false)
+  is_accept           Boolean           @default(false)
+  status              Status            @default(ACTIVE)
+  urn_number          String?
+  is_against_cform    Boolean           @default(false)
+  batch_name          String?
+  createdAt           DateTime          @default(now())
+  createdById         Int
+  updatedAt           DateTime          @updatedAt
+  updatedById         Int?
+  deletedAt           DateTime?
+  deletedById         Int?
+  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
+  createdBy           user              @relation("edit_sale_createdBy", fields: [createdById], references: [id])
+  deletedBy           user?             @relation("edit_sale_deletedBy", fields: [deletedById], references: [id])
+  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
+  sale                daily_sale        @relation(fields: [saleId], references: [id])
+  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
+  updatedBy           user?             @relation("edit_sale_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([commodity_masterId], map: "edit_sale_commodity_masterId_fkey")
+  @@index([createdById], map: "edit_sale_createdById_fkey")
+  @@index([deletedById], map: "edit_sale_deletedById_fkey")
+  @@index([dvat04Id], map: "edit_sale_dvat04Id_fkey")
+  @@index([saleId], map: "edit_sale_saleId_fkey")
+  @@index([seller_tin_numberId], map: "edit_sale_seller_tin_numberId_fkey")
+  @@index([updatedById], map: "edit_sale_updatedById_fkey")
+}
+
+model edit_purchase {
+  id                  Int               @id @default(autoincrement())
+  purchaseId          Int
+  dvat04Id            Int
+  seller_tin_numberId Int
+  invoice_number      String
+  invoice_date        DateTime
+  commodity_masterId  Int
+  quantity            Int
+  tax_percent         String
+  amount_unit         String
+  amount              String
+  vatamount           String
+  is_local            Boolean           @default(false)
+  is_dvat_30a         Boolean           @default(false)
+  is_delete           Boolean           @default(false)
+  is_accept           Boolean           @default(false)
+  status              Status            @default(ACTIVE)
+  urn_number          String?
+  is_against_cform    Boolean           @default(false)
+  batch_name          String?
+  createdAt           DateTime          @default(now())
+  createdById         Int
+  updatedAt           DateTime          @updatedAt
+  updatedById         Int?
+  deletedAt           DateTime?
+  deletedById         Int?
+  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
+  createdBy           user              @relation("edit_purchase_createdBy", fields: [createdById], references: [id])
+  deletedBy           user?             @relation("edit_purchase_deletedBy", fields: [deletedById], references: [id])
+  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
+  purchase            daily_purchase    @relation(fields: [purchaseId], references: [id])
+  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
+  updatedBy           user?             @relation("edit_purchase_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([commodity_masterId], map: "edit_purchase_commodity_masterId_fkey")
+  @@index([createdById], map: "edit_purchase_createdById_fkey")
+  @@index([deletedById], map: "edit_purchase_deletedById_fkey")
+  @@index([dvat04Id], map: "edit_purchase_dvat04Id_fkey")
+  @@index([purchaseId], map: "edit_purchase_purchaseId_fkey")
+  @@index([seller_tin_numberId], map: "edit_purchase_seller_tin_numberId_fkey")
+  @@index([updatedById], map: "edit_purchase_updatedById_fkey")
+}
+
+model edit_manufacturer {
+  id                 Int                   @id @default(autoincrement())
+  manufacturerId     Int
+  dvat04Id           Int
+  commodity_masterId Int
+  quantity           Int
+  tax_percent        String
+  amount_unit        String
+  amount             String
+  vatamount          String
+  is_delete          Boolean               @default(false)
+  status             Status                @default(ACTIVE)
+  createdAt          DateTime              @default(now())
+  createdById        Int
+  updatedAt          DateTime              @updatedAt
+  updatedById        Int?
+  deletedAt          DateTime?
+  deletedById        Int?
+  commodity_master   commodity_master      @relation(fields: [commodity_masterId], references: [id])
+  createdBy          user                  @relation("edit_manufacturer_createdBy", fields: [createdById], references: [id])
+  deletedBy          user?                 @relation("edit_manufacturer_deletedBy", fields: [deletedById], references: [id])
+  dvat04             dvat04                @relation(fields: [dvat04Id], references: [id])
+  manufacturer       manufacturer_purchase @relation(fields: [manufacturerId], references: [id])
+  updatedBy          user?                 @relation("edit_manufacturer_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([commodity_masterId], map: "edit_manufacturer_commodity_masterId_fkey")
+  @@index([createdById], map: "edit_manufacturer_createdById_fkey")
+  @@index([deletedById], map: "edit_manufacturer_deletedById_fkey")
+  @@index([dvat04Id], map: "edit_manufacturer_dvat04Id_fkey")
+  @@index([manufacturerId], map: "edit_manufacturer_manufacturerId_fkey")
+  @@index([updatedById], map: "edit_manufacturer_updatedById_fkey")
+}
+
+model cform {
+  id              Int             @id @default(autoincrement())
+  dvat04Id        Int
+  office_of_issue SelectOffice?   @default(Dadra_Nagar_Haveli)
+  date_of_issue   DateTime
+  valid_date      DateTime
+  sr_no           String
+  seller_tin_no   String
+  seller_name     String
+  seller_address  String
+  amount          String
+  cform_type      ReturnType      @default(ORIGINAL)
+  from_period     DateTime
+  to_period       DateTime
+  status          Status          @default(ACTIVE)
+  createdAt       DateTime        @default(now())
+  createdById     Int
+  updatedAt       DateTime        @updatedAt
+  updatedById     Int?
+  deletedAt       DateTime?
+  deletedById     Int?
+  createdBy       user            @relation("cform_createdBy", fields: [createdById], references: [id])
+  deletedBy       user?           @relation("cform_deletedBy", fields: [deletedById], references: [id])
+  dvat04          dvat04          @relation(fields: [dvat04Id], references: [id])
+  updatedBy       user?           @relation("cform_updatedBy", fields: [updatedById], references: [id])
+  cfrom_returns   cform_returns[]
+
+  @@index([createdById], map: "cform_createdById_fkey")
+  @@index([deletedById], map: "cform_deletedById_fkey")
+  @@index([dvat04Id], map: "cform_dvat04Id_fkey")
+  @@index([updatedById], map: "cform_updatedById_fkey")
+}
+
+model cform_returns {
+  id              Int           @id @default(autoincrement())
+  cformId         Int
+  returns_entryId Int
+  cform           cform         @relation(fields: [cformId], references: [id])
+  returns_entry   returns_entry @relation(fields: [returns_entryId], references: [id])
+
+  @@index([cformId], map: "cform_returns_cformId_fkey")
+  @@index([returns_entryId], map: "cform_returns_returns_entryId_fkey")
+}
+
+model tally_purchase {
+  id                  Int               @id @default(autoincrement())
+  dvat04Id            Int
+  seller_tin_numberId Int
+  invoice_number      String
+  invoice_date        DateTime
+  commodity_masterId  Int
+  quantity            Int
+  tax_percent         String
+  amount_unit         String
+  amount              String
+  vatamount           String
+  is_local            Boolean           @default(false)
+  is_dvat_30a         Boolean           @default(false)
+  is_accept           Boolean           @default(false)
+  status              Status            @default(ACTIVE)
+  urn_number          String?
+  batch_name          String?
+  is_against_cform    Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  createdById         Int
+  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
+  createdBy           user              @relation("tally_purchase_createdBy", fields: [createdById], references: [id])
+  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
+  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
+
+  @@index([commodity_masterId], map: "tally_purchase_commodity_masterId_fkey")
+  @@index([createdById], map: "tally_purchase_createdById_fkey")
+  @@index([dvat04Id], map: "tally_purchase_dvat04Id_fkey")
+  @@index([seller_tin_numberId], map: "tally_purchase_seller_tin_numberId_fkey")
 }
 
 enum UserStatus {
@@ -319,815 +1725,11 @@ enum Dvat04Commodity {
   MANUFACTURER
 }
 
-model user {
-  id                    Int           @id @default(autoincrement())
-  firstName             String?
-  lastName              String?
-  mobileOne             String        @unique
-  mobileTwo             String?
-  email                 String?
-  pan                   String?
-  aadhar                String?
-  password              String?
-  temppass              String?
-  otp                   String?
-  role                  Role          @default(USER)
-  designation           String?
-  isAuthorisedSignatory Boolean       @default(false)
-  signatoreUploadPath   String?
-  isAllowedLogin        Boolean       @default(true)
-  gender                Gender        @default(OTHER)
-  dob                   DateTime?
-  passportNumber        String?
-  buildingName          String?
-  area                  String?
-  address               String?
-  city                  String?
-  pincode               String?
-  selectOffice          SelectOffice? @default(Dadra_Nagar_Haveli)
-  status                UserStatus    @default(ACTIVE)
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  deletedAt             DateTime?
-
-  document document[]
-
-  // change
-  change_createBy  change[] @relation("change_createBy")
-  change_updatedBy change[] @relation("change_updatedBy")
-  change_deletedBy change[] @relation("change_deletedBy")
-
-  // Category
-  category_CreatedAt category[] @relation("category_CreatedAt")
-  category_updatedAt category[] @relation("category_updatedAt")
-  category_deletedAt category[] @relation("category_deletedAt")
-
-  // document
-  document_createdBy document[] @relation("document_createdBy")
-  document_updatedBy document[] @relation("document_updatedBy")
-  document_deletedBy document[] @relation("document_deletedBy")
-
-  // dvat04_01
-  dvat04_createdBy dvat04[] @relation("dvat04_createdBy")
-  dvat04_updatedBy dvat04[] @relation("dvat04_updatedBy")
-  dvat04_deletedBy dvat04[] @relation("dvat04_deletedBy")
-
-  // commodity
-  commodity_createdBy commodity[] @relation("commodity_createdBy")
-  commodity_updatedBy commodity[] @relation("commodity_updatedBy")
-  commodity_deletedBy commodity[] @relation("commodity_deletedBy")
-
-  // annexure1
-  annexure1_createdBy annexure1[] @relation("annexure1_createdBy")
-  annexure1_updatedBy annexure1[] @relation("annexure1_updatedBy")
-  annexure1_deletedBy annexure1[] @relation("annexure1_deletedBy")
-
-  // annexure2
-  annexure2_createdBy annexure2[] @relation("annexure2_createdBy")
-  annexure2_updatedBy annexure2[] @relation("annexure2_updatedBy")
-  annexure2_deletedBy annexure2[] @relation("annexure2_deletedBy")
-
-  // annexure3
-  // annexure3_createdBy annexure3[] @relation("annexure3_createdBy")
-  // annexure3_updatedBy annexure3[] @relation("annexure3_updatedBy")
-  // annexure3_deletedBy annexure3[] @relation("annexure3_deletedBy")
-
-  // registration
-  register_createdBy registration[] @relation("register_createdBy")
-  register_updatedBy registration[] @relation("register_updatedBy")
-  register_deletedBy registration[] @relation("register_deletedBy")
-
-  // returns_01
-  returns_01_createdBy returns_01[] @relation("returns_01_createdBy")
-  returns_01_updatedBy returns_01[] @relation("returns_01_updatedBy")
-  returns_01_deletedBy returns_01[] @relation("returns_01_deletedBy")
-
-  //returns entry
-  returns_entry_createdBy returns_entry[] @relation("returns_entry_createdBy")
-  returns_entry_updatedBy returns_entry[] @relation("returns_entry_updatedBy")
-  returns_entry_deletedBy returns_entry[] @relation("returns_entry_deletedBy")
-
-  // department doc upload
-  department_doc_upload_createdBy department_doc_upload[] @relation("department_doc_upload_createdBy")
-  department_doc_upload_updatedBy department_doc_upload[] @relation("department_doc_upload_updatedBy")
-  department_doc_upload_deletedBy department_doc_upload[] @relation("department_doc_upload_deletedBy")
-
-  //challan
-  challan_createdBy challan[] @relation("challan_createdBy")
-  challan_updatedBy challan[] @relation("challan_updatedBy")
-  challan_deletedBy challan[] @relation("challan_deletedBy")
-
-  //refunds
-  refunds_createdBy refunds[] @relation("refunds_createdBy")
-  refunds_updatedBy refunds[] @relation("refunds_updatedBy")
-  refunds_deletedBy refunds[] @relation("refunds_deletedBy")
-
-  //composition
-  composition_createdBy composition[] @relation("composition_createdBy")
-  composition_updatedBy composition[] @relation("composition_updatedBy")
-  composition_deletedBy composition[] @relation("composition_deletedBy")
-
-  //order_notice
-  order_notice_createdBy order_notice[] @relation("order_notice_createdBy")
-  order_notice_updatedBy order_notice[] @relation("order_notice_updatedBy")
-  order_notice_deletedBy order_notice[] @relation("order_notice_deletedBy")
-  officer                order_notice[] @relation("officer")
-  issued                 order_notice[] @relation("issued")
-
-  //composition
-  return_filing_createdBy return_filing[] @relation("return_filing_createdBy")
-  return_filing_updatedBy return_filing[] @relation("return_filing_updatedBy")
-  return_filing_deletedBy return_filing[] @relation("return_filing_deletedBy")
-
-  commodity_master_createdBy commodity_master[] @relation("commodity_master_createdBy")
-  commodity_master_updatedBy commodity_master[] @relation("commodity_master_updatedBy")
-  commodity_master_deletedBy commodity_master[] @relation("commodity_master_deletedBy")
-
-  user_commodity_master_createdBy user_commodity_master[] @relation("user_commodity_master_createdBy")
-  user_commodity_master_updatedBy user_commodity_master[] @relation("user_commodity_master_updatedBy")
-  user_commodity_master_deletedBy user_commodity_master[] @relation("user_commodity_master_deletedBy")
-
-  news_createdBy news[] @relation("news_createdBy")
-  news_updatedBy news[] @relation("news_updatedBy")
-  news_deletedBy news[] @relation("news_deletedBy")
-
-  holiday_createdBy holiday[] @relation("holiday_createdBy")
-  holiday_updatedBy holiday[] @relation("holiday_updatedBy")
-  holiday_deletedBy holiday[] @relation("holiday_deletedBy")
-
-  parctitioner_createdBy parctitioner[] @relation("parctitioner_createdBy")
-  parctitioner_updatedBy parctitioner[] @relation("parctitioner_updatedBy")
-  parctitioner_deletedBy parctitioner[] @relation("parctitioner_deletedBy")
-
-  hsncode_createdBy hsncode[] @relation("hsncode_createdBy")
-  hsncode_updatedBy hsncode[] @relation("hsncode_updatedBy")
-  hsncode_deletedBy hsncode[] @relation("hsncode_deletedBy")
-
-  daily_sale_createdBy daily_sale[] @relation("daily_sale_createdBy")
-  daily_sale_updatedBy daily_sale[] @relation("daily_sale_updatedBy")
-  daily_sale_deletedBy daily_sale[] @relation("daily_sale_deletedBy")
-
-  daily_purchase_createdBy daily_purchase[] @relation("daily_purchase_createdBy")
-  daily_purchase_updatedBy daily_purchase[] @relation("daily_purchase_updatedBy")
-  daily_purchase_deletedBy daily_purchase[] @relation("daily_purchase_deletedBy")
-
-  stock_createdBy stock[] @relation("stock_createdBy")
-  stock_updatedBy stock[] @relation("stock_updatedBy")
-  stock_deletedBy stock[] @relation("stock_deletedBy")
-
-  manufacturer_purchase_createdBy manufacturer_purchase[] @relation("manufacturer_purchase_createdBy")
-  manufacturer_purchase_updatedBy manufacturer_purchase[] @relation("manufacturer_purchase_updatedBy")
-  manufacturer_purchase_deletedBy manufacturer_purchase[] @relation("manufacturer_purchase_deletedBy")
-
-  edit_sale_createdBy edit_sale[] @relation("edit_sale_createdBy")
-  edit_sale_updatedBy edit_sale[] @relation("edit_sale_updatedBy")
-  edit_sale_deletedBy edit_sale[] @relation("edit_sale_deletedBy")
-
-  edit_purchase_createdBy edit_purchase[] @relation("edit_purchase_createdBy")
-  edit_purchase_updatedBy edit_purchase[] @relation("edit_purchase_updatedBy")
-  edit_purchase_deletedBy edit_purchase[] @relation("edit_purchase_deletedBy")
-
-  edit_manufacturer_createdBy edit_manufacturer[] @relation("edit_manufacturer_createdBy")
-  edit_manufacturer_updatedBy edit_manufacturer[] @relation("edit_manufacturer_updatedBy")
-  edit_manufacturer_deletedBy edit_manufacturer[] @relation("edit_manufacturer_deletedBy")
-
-  cform_createdBy cform[] @relation("cform_createdBy")
-  cform_updatedBy cform[] @relation("cform_updatedBy")
-  cform_deletedBy cform[] @relation("cform_deletedBy")
-
-  first_stock_createdBy first_stock[] @relation("first_stock_createdBy")
-  first_stock_updatedBy first_stock[] @relation("first_stock_updatedBy")
-  first_stock_deletedBy first_stock[] @relation("first_stock_deletedBy")
-
-  save_stock_createdBy save_stock[] @relation("save_stock_createdBy")
-  save_stock_updatedBy save_stock[] @relation("save_stock_updatedBy")
-  save_stock_deletedBy save_stock[] @relation("save_stock_deletedBy")
-
-  tally_sale_createdBy     tally_sale[]     @relation("tally_sale_createdBy")
-  tally_purchase_createdBy tally_purchase[] @relation("tally_purchase_createdBy")
-
-  registration          registration[]
-  composition           composition[]
-  refunds               refunds[]
-  user_commodity_master user_commodity_master[]
-}
-
-model change {
-  id          Int       @id @default(autoincrement())
-  oldData     String
-  newData     String
-  tableName   String
-  columnName  String
-  createdAt   DateTime  @default(now())
-  createdBy   user      @relation("change_createBy", fields: [createdById], references: [id])
-  createdById Int
-  updatedAt   DateTime  @updatedAt
-  updatedBy   user?     @relation("change_updatedBy", fields: [updatedById], references: [id])
-  updatedById Int?
-  deletedAt   DateTime?
-  deletedBy   user?     @relation("change_deletedBy", fields: [deletedById], references: [id])
-  deletedById Int?
-}
-
-model category {
-  id          Int          @id @default(autoincrement())
-  category    CategoryType @default(USER)
-  name        String
-  createdAt   DateTime     @default(now())
-  createdBy   user         @relation("category_CreatedAt", fields: [createdById], references: [id])
-  createdById Int
-  updatedAt   DateTime     @updatedAt
-  updatedBy   user?        @relation("category_updatedAt", fields: [updatedById], references: [id])
-  updatedById Int?
-  deletedAt   DateTime?
-  deletedBy   user?        @relation("category_deletedAt", fields: [deletedById], references: [id])
-  deletedById Int?
-}
-
-model document {
-  id           Int       @id @default(autoincrement())
-  user         user      @relation(fields: [userId], references: [id])
-  userId       Int
-  name         String?
-  desscription String?
-  path         String
-  status       Status    @default(ACTIVE)
-  createdAt    DateTime  @default(now())
-  createdBy    user      @relation("document_createdBy", fields: [createdById], references: [id])
-  createdById  Int
-  updatedAt    DateTime  @updatedAt
-  updatedBy    user?     @relation("document_updatedBy", fields: [updatedById], references: [id])
-  updatedById  Int?
-  deletedAt    DateTime?
-  deletedBy    user?     @relation("document_deletedBy", fields: [deletedById], references: [id])
-  deletedById  Int?
-}
-
-// form tables
-
-model dvat04 {
-  id Int @id @default(autoincrement())
-
-  tempregistrationnumber String?
-  tinNumber              String?
-  certificateNumber      String?
-  certificateDate        DateTime?
-  commodity              Dvat04Commodity? @default(OTHER)
-
-  tin_master                   tin_number_master       @relation(fields: [tin_master_id], references: [id])
-  tin_master_id                Int                     @default(1)
-  // form 1
-  name                         String?
-  tradename                    String?
-  natureOfBusiness             NatureOfBusiness?       @default(OTHERS)
-  constitutionOfBusiness       ConstitutionOfBusiness? @default(OTHER)
-  selectOffice                 SelectOffice?           @default(Dadra_Nagar_Haveli)
-  typeOfRegistration           TypeOfRegistration?     @default(MANDATORY)
-  compositionScheme            Boolean?                @default(false)
-  annualTurnoverCategory       Boolean?                @default(false)
-  turnoverLastFinancialYear    String?
-  turnoverCurrentFinancialYear String?
-  vatLiableDate                DateTime?
-  pan                          String?
-  gst                          String?
-  buildingNumber               String?
-  area                         String?
-  address                      String?
-  city                         String?
-  pincode                      String?
-  contact_one                  String?
-  contact_two                  String?
-  email                        String?
-  faxNumber                    String?
-
-  // from 2
-  noticeServingBuildingName       String?
-  noticeServingArea               String?
-  noticeServingAddress            String?
-  noticeServingCity               String?
-  noticeServingPincode            String?
-  additionalGodown                String?
-  additionalFactory               String?
-  additionalShops                 String?
-  otherPlaceOfBusiness            String?
-  accountnumber                   String?
-  typeOfAccount                   TypeOfAccount    @default(CURRENT)
-  bankName                        String?
-  ifscCode                        String?
-  addressOfBank                   String?
-  accountNumberVerificationStatus Boolean          @default(false)
-  ownCapital                      String?
-  loanFromBank                    String?
-  loanFromOther                   String?
-  plantAndMachinery               String?
-  landAndBuilding                 String?
-  otherAssetsInvestments          String?
-  selectComOne                    commodity?       @relation("commodity_one", fields: [selectComOneId], references: [id])
-  selectComOneId                  Int?
-  purposeOne                      CommidityPursose @default(COMMODITY_TRADED)
-  descriptionOne                  String?
-  selectComTwo                    commodity?       @relation("commodity_two", fields: [selectComTwoId], references: [id])
-  selectComTwoId                  Int?
-  purposeTwo                      CommidityPursose @default(COMMODITY_TRADED)
-  descriptionTwo                  String?
-  selectComThree                  commodity?       @relation("commodity_three", fields: [selectComThreeId], references: [id])
-  selectComThreeId                Int?
-  purposeThree                    CommidityPursose @default(COMMODITY_TRADED)
-  descriptionThree                String?
-  selectComFour                   commodity?       @relation("commodity_four", fields: [selectComFourId], references: [id])
-  selectComFourId                 Int?
-  purposeFour                     CommidityPursose @default(COMMODITY_TRADED)
-  descriptionFour                 String?
-  selectComFive                   commodity?       @relation("commodity_five", fields: [selectComFiveId], references: [id])
-  selectComFiveId                 Int?
-  purposeFive                     CommidityPursose @default(COMMODITY_TRADED)
-  descriptionFive                 String?
-  accountingBasis                 AccountingBasis  @default(CASH)
-  frequencyFilings                FrequencyFilings @default(MONTHLY)
-
-  // from 3
-  securityDepositAmount String?
-  depositType           DepositType @default(FIXED)
-  dateOfExpiry          DateTime?
-  nameOfBank            String?
-  branchName            String?
-  transactionId         String?
-  numberOfOwners        Int?
-  numberOfManagers      Int?
-  numberOfSignatory     Int?
-  nameOfManager         String?
-  nameOfSignatory       String?
-
-  status      DvatStatus @default(NONE)
-  createdAt   DateTime   @default(now())
-  createdBy   user       @relation("dvat04_createdBy", fields: [createdById], references: [id])
-  createdById Int
-  updatedAt   DateTime   @updatedAt
-  updatedBy   user?      @relation("dvat04_updatedBy", fields: [updatedById], references: [id])
-  updatedById Int?
-  deletedAt   DateTime?
-  deletedBy   user?      @relation("dvat04_deletedBy", fields: [deletedById], references: [id])
-  deletedById Int?
-
-  returns_01            returns_01[]
-  registration          registration[]
-  annexure1             annexure1[]
-  annexure2             annexure2[]
-  challan               challan[]
-  refunds               refunds[]
-  composition           composition[]
-  order_notice          order_notice[]
-  return_filing         return_filing[]
-  user_commodity_master user_commodity_master[]
-  daily_sale            daily_sale[]
-  daily_purchase        daily_purchase[]
-  stock                 stock[]
-  manufacturer_purchase manufacturer_purchase[]
-  edit_sale             edit_sale[]
-  edit_purchase         edit_purchase[]
-  edit_manufacturer     edit_manufacturer[]
-  cform                 cform[]
-  first_stock           first_stock[]
-  save_stock            save_stock[]
-  tally_sale            tally_sale[]
-  tally_purchase        tally_purchase[]
-}
-
-model commodity {
-  id           Int       @id @default(autoincrement())
-  name         String
-  act          String?
-  code         String?
-  status       Status    @default(ACTIVE)
-  createdAt    DateTime  @default(now())
-  createdBy    user      @relation("commodity_createdBy", fields: [createdById], references: [id])
-  createdById  Int
-  updatedAt    DateTime  @updatedAt
-  updatedBy    user?     @relation("commodity_updatedBy", fields: [updatedById], references: [id])
-  updatedById  Int?
-  deletedAt    DateTime?
-  deletedBy    user?     @relation("commodity_deletedBy", fields: [deletedById], references: [id])
-  deletedById  Int?
-  dvat04_one   dvat04[]  @relation("commodity_one")
-  dvat04_two   dvat04[]  @relation("commodity_two")
-  dvat04_three dvat04[]  @relation("commodity_three")
-  dvat04_four  dvat04[]  @relation("commodity_four")
-  dvat04_five  dvat04[]  @relation("commodity_five")
-}
-
-model annexure1 {
-  id                      Int                     @id @default(autoincrement())
-  dvat                    dvat04                  @relation(fields: [dvatId], references: [id])
-  dvatId                  Int
-  titleParticulasOfperson TitleParticulasOfperson @default(PROPRIETOR)
-  nameOfPerson            String?
-  dateOfBirth             DateTime?
-  gender                  Gender                  @default(MALE)
-  fatherName              String?
-  panNumber               String?
-  aadharNumber            String?
-  designation             String?
-  eductionQualification   String?
-  rbuildingName           String?
-  rareaName               String?
-  rvillageName            String?
-  rpincode                String?
-  pbuildingName           String?
-  pareaName               String?
-  pvillageName            String?
-  ppincode                String?
-  contact                 String?
-  email                   String?
-  isAuthorisedSignatory   Boolean                 @default(false)
-  status                  Status                  @default(ACTIVE)
-  createdAt               DateTime                @default(now())
-  createdBy               user                    @relation("annexure1_createdBy", fields: [createdById], references: [id])
-  createdById             Int
-  updatedAt               DateTime                @updatedAt
-  updatedBy               user?                   @relation("annexure1_updatedBy", fields: [updatedById], references: [id])
-  updatedById             Int?
-  deletedAt               DateTime?
-  deletedBy               user?                   @relation("annexure1_deletedBy", fields: [deletedById], references: [id])
-  deletedById             Int?
-}
-
-model annexure2 {
-  id                      Int                     @id @default(autoincrement())
-  dvat                    dvat04                  @relation(fields: [dvatId], references: [id])
-  dvatId                  Int
-  typeOfPerson            TypeOfPerson            @default(BRANCH_OFFICE)
-  name                    String?
-  branchName              String?
-  contact                 String?
-  buildingName            String?
-  areaName                String?
-  village                 String?
-  pinCode                 String?
-  dateOfExtablishment     DateTime?
-  locationOfBusinessPlace LocationOfBusinessPlace @default(WITHIN_STATE)
-  underStateAct           String?
-  underCstAct             String?
-  status                  Status                  @default(ACTIVE)
-  createdAt               DateTime                @default(now())
-  createdBy               user                    @relation("annexure2_createdBy", fields: [createdById], references: [id])
-  createdById             Int
-  updatedAt               DateTime                @updatedAt
-  updatedBy               user?                   @relation("annexure2_updatedBy", fields: [updatedById], references: [id])
-  updatedById             Int?
-  deletedAt               DateTime?
-  deletedBy               user?                   @relation("annexure2_deletedBy", fields: [deletedById], references: [id])
-  deletedById             Int?
-}
-
-model registration {
-  id       Int    @id @default(autoincrement())
-  dvat04   dvat04 @relation(fields: [dvat04Id], references: [id])
-  dvat04Id Int
-
-  physicalVerification            Boolean          @default(false)
-  date_of_visit                   DateTime?
-  natureOfBusiness                NatureOfBusiness @default(OTHERS)
-  date_of_purchases               DateTime?
-  amount_of_purchases             String?
-  date_of_sales                   DateTime?
-  amount_of_sales                 String?
-  capital_proposed                String?
-  amount_of_stock                 String?
-  books_of_account                String?
-  verification_of_originals       String?
-  verification_of_title           String?
-  other_information               String?
-  security_deposit                Boolean?
-  security_deposit_amount         String?
-  security_deposit_date           DateTime?
-  date_of_expiry_security_deposit DateTime?
-  bank                            String?
-  name_of_person                  String?
-  address                         String?          @db.MediumText
-  plant_and_machinery             String?          @db.MediumText
-  raw_materials                   String?          @db.MediumText
-  packing_materials               String?          @db.MediumText
-
-  commissioner_note       String?   @db.MediumText
-  joint_commissioner_note String?   @db.MediumText
-  dy_commissioner         String?   @db.MediumText
-  vat_officer_note        String?   @db.MediumText
-  asst_vat_officer_note   String?   @db.MediumText
-  inspector_note          String?   @db.MediumText
-  udc_note                String?   @db.MediumText
-  ldc_note                String?   @db.MediumText
-  registration_date       DateTime?
-  all_doc_upload          Boolean?
-  all_appointment         Boolean?
-  necessary_payments      Boolean?
-
-  dept_user    user @relation(fields: [dept_user_id], references: [id])
-  dept_user_id Int
-
-  status      RegistrationStatus @default(ACTIVE)
-  createdAt   DateTime           @default(now())
-  createdBy   user               @relation("register_createdBy", fields: [createdById], references: [id])
-  createdById Int
-  updatedAt   DateTime           @updatedAt
-  updatedBy   user?              @relation("register_updatedBy", fields: [updatedById], references: [id])
-  updatedById Int?
-  deletedAt   DateTime?
-  deletedBy   user?              @relation("register_deletedBy", fields: [deletedById], references: [id])
-  deletedById Int?
-}
-
-model state {
-  id            Int             @id @default(autoincrement())
-  name          String
-  code          String
-  status        Status          @default(ACTIVE)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  deletedAt     DateTime?
-  returns_entry returns_entry[]
-}
-
-model tin_number_master {
-  id             Int              @id @default(autoincrement())
-  tin_number     String
-  name_of_dealer String
-  state          String?
-  status         Status           @default(ACTIVE)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  deletedAt      DateTime?
-  returns_entry  returns_entry[]
-  dvat04         dvat04[]
-  daily_purchase daily_purchase[]
-  daily_sale     daily_sale[]
-  edit_sale      edit_sale[]
-  edit_purchase  edit_purchase[]
-  tally_sale     tally_sale[]
-  tally_purchase tally_purchase[]
-}
-
-model returns_01 {
-  id                Int          @id @default(autoincrement())
-  rr_number         String
-  return_type       ReturnType   @default(ORIGINAL)
-  year              String
-  quarter           Quarter      @default(QUARTER1)
-  month             String?
-  dvat04            dvat04       @relation(fields: [dvat04Id], references: [id])
-  dvat04Id          Int
-  filing_datetime   DateTime
-  file_status       Status       @default(ACTIVE)
-  vatamount         String?
-  interest          String?
-  penalty           String?
-  other_charge      String?
-  total_tax_amount  String?
-  transaction_date  DateTime?
-  paymentmode       String?
-  transaction_id    String?
-  bank_name         String?
-  track_id          String?
-  compositionScheme Boolean?     @default(false)
-  remarks           String?
-  status            ReturnStatus @default(DUE)
-  challan_number    String?
-  pending_payment   String?
-  createdAt         DateTime     @default(now())
-  createdBy         user         @relation("returns_01_createdBy", fields: [createdById], references: [id])
-  createdById       Int
-  updatedAt         DateTime     @updatedAt
-  updatedBy         user?        @relation("returns_01_updatedBy", fields: [updatedById], references: [id])
-  updatedById       Int?
-  deletedAt         DateTime?
-  deletedBy         user?        @relation("returns_01_deletedBy", fields: [deletedById], references: [id])
-  deletedById       Int?
-
-  returns_entry returns_entry[]
-  order_notice  order_notice[]
-}
-
-model returns_entry {
-  id                     Int                   @id @default(autoincrement())
-  returns_01             returns_01            @relation(fields: [returns_01Id], references: [id])
-  returns_01Id           Int
-  dvat_type              DvatType              @default(DVAT_30)
-  urn_number             String
-  invoice_number         String
-  invoice_date           DateTime
-  total_invoice_number   String
-  seller_tin_number      tin_number_master     @relation(fields: [seller_tin_numberId], references: [id])
-  seller_tin_numberId    Int
-  category_of_entry      CategoryOfEntry?
-  sale_of                SaleOf?
-  sale_of_interstate     SaleOfInterstate?
-  input_tax_credit       InputTaxCredit?
-  nature_purchase        NaturePurchase?
-  nature_purchase_option NaturePurchaseOption?
-  purchase_type          PurchaseType?
-  state                  state?                @relation(fields: [place_of_supply], references: [id])
-  place_of_supply        Int?
-  tax_percent            String?
-  amount                 String?
-  vatamount              String?
-  remarks                String?
-  description_of_goods   String?
-  quantity               Int?
-  isnil                  Boolean               @default(false)
-  commodity_master       commodity_master?     @relation(fields: [commodity_masterId], references: [id])
-  commodity_masterId     Int?
-  status                 Status                @default(ACTIVE)
-  createdAt              DateTime              @default(now())
-  createdBy              user                  @relation("returns_entry_createdBy", fields: [createdById], references: [id])
-  createdById            Int
-  updatedAt              DateTime              @updatedAt
-  updatedBy              user?                 @relation("returns_entry_updatedBy", fields: [updatedById], references: [id])
-  updatedById            Int?
-  deletedAt              DateTime?
-  deletedBy              user?                 @relation("returns_entry_deletedBy", fields: [deletedById], references: [id])
-  deletedById            Int?
-  cfrom_returns          cform_returns[]
-}
-
-model department_doc_upload {
-  id          Int       @id @default(autoincrement())
-  path        String
-  status      Status    @default(ACTIVE)
-  createdAt   DateTime  @default(now())
-  createdBy   user      @relation("department_doc_upload_createdBy", fields: [createdById], references: [id])
-  createdById Int
-  updatedAt   DateTime  @updatedAt
-  updatedBy   user?     @relation("department_doc_upload_updatedBy", fields: [updatedById], references: [id])
-  updatedById Int?
-  deletedAt   DateTime?
-  deletedBy   user?     @relation("department_doc_upload_deletedBy", fields: [deletedById], references: [id])
-  deletedById Int?
-}
-
-model challan {
-  id               Int            @id @default(autoincrement())
-  reason           ChallanReason  @default(MONTHLYPAYMENT)
-  dvat             dvat04         @relation(fields: [dvatid], references: [id])
-  dvatid           Int
-  cpin             String
-  vat              String
-  interest         String
-  penalty          String
-  cess             String
-  others           String
-  total_tax_amount String
-  transaction_date DateTime?
-  paymentmode      String?
-  transaction_id   String?
-  bank_name        String?
-  track_id         String?
-  remark           String?        @db.MediumText
-  challanstatus    ChallanStatus  @default(CREATED)
-  status           Status         @default(ACTIVE)
-  expire_date      DateTime
-  createdAt        DateTime       @default(now())
-  createdBy        user           @relation("challan_createdBy", fields: [createdById], references: [id])
-  createdById      Int
-  updatedAt        DateTime       @updatedAt
-  updatedBy        user?          @relation("challan_updatedBy", fields: [updatedById], references: [id])
-  updatedById      Int?
-  deletedAt        DateTime?
-  deletedBy        user?          @relation("challan_deletedBy", fields: [deletedById], references: [id])
-  deletedById      Int?
-  order_notice     order_notice[]
-}
-
-model refunds {
-  id                   Int          @id @default(autoincrement())
-  dvat                 dvat04       @relation(fields: [dvatid], references: [id])
-  dvatid               Int
-  reason               String
-  old_grievance_number String?
-  oldcpin              String?
-  cpin                 String
-  vat                  String
-  interest             String
-  penalty              String
-  cess                 String
-  others               String?
-  total_tax_amount     String?
-  transaction_date     DateTime?
-  paymentmode          String?
-  transaction_id       String?
-  bank_name            String?
-  track_id             String?
-  doc_upload           String?
-  dept_user            user         @relation(fields: [dept_user_id], references: [id])
-  dept_user_id         Int
-  officer_remark       String?      @db.MediumText
-  remark               String?      @db.MediumText
-  refundsstatus        RefundStatus @default(CREATED)
-  status               Status       @default(ACTIVE)
-  expire_date          DateTime
-  createdAt            DateTime     @default(now())
-  createdBy            user         @relation("refunds_createdBy", fields: [createdById], references: [id])
-  createdById          Int
-  updatedAt            DateTime     @updatedAt
-  updatedBy            user?        @relation("refunds_updatedBy", fields: [updatedById], references: [id])
-  updatedById          Int?
-  deletedAt            DateTime?
-  deletedBy            user?        @relation("refunds_deletedBy", fields: [deletedById], references: [id])
-  deletedById          Int?
-}
-
-model composition {
-  id                           Int               @id @default(autoincrement())
-  dvat                         dvat04            @relation(fields: [dvatid], references: [id])
-  dvatid                       Int
-  officer_date                 DateTime?
-  compositionScheme            Boolean           @default(false)
-  turnoverLastFinancialYear    String?
-  turnoverCurrentFinancialYear String?
-  officerremark                String?           @db.MediumText
-  remark                       String?           @db.MediumText
-  dept_user                    user              @relation(fields: [dept_user_id], references: [id])
-  dept_user_id                 Int
-  arn                          String
-  status                       CompositionStatus @default(PENDING)
-  createdAt                    DateTime          @default(now())
-  createdBy                    user              @relation("composition_createdBy", fields: [createdById], references: [id])
-  createdById                  Int
-  updatedAt                    DateTime          @updatedAt
-  updatedBy                    user?             @relation("composition_updatedBy", fields: [updatedById], references: [id])
-  updatedById                  Int?
-  deletedAt                    DateTime?
-  deletedBy                    user?             @relation("composition_deletedBy", fields: [deletedById], references: [id])
-  deletedById                  Int?
-}
-
-model order_notice {
-  id                Int               @id @default(autoincrement())
-  dvat              dvat04            @relation(fields: [dvatid], references: [id])
-  dvatid            Int
-  returns_01        returns_01?       @relation(fields: [returns_01Id], references: [id])
-  returns_01Id      Int?
-  ref_no            String
-  issue_date        DateTime          @default(now())
-  notice_order_type NoticeOrderType   @default(NOTICE)
-  form_type         FormType          @default(DVAT10)
-  tax_period_from   DateTime?
-  tax_period_to     DateTime?
-  due_date          DateTime
-  tax               String?
-  interest          String?
-  amount            String?
-  notice            String?
-  description       String?
-  reason_for_notice String?
-  dealer_presence   DateTime?
-  challan           challan?          @relation(fields: [challanId], references: [id])
-  challanId         Int?
-  dvat24_reason     Dvat24Reason      @default(NOTFURNISHED)
-  issued            user              @relation("issued", fields: [issuedId], references: [id])
-  issuedId          Int
-  officer           user              @relation("officer", fields: [officerId], references: [id])
-  officerId         Int
-  remark            String?           @db.MediumText
-  status            OrderNoticeStatus @default(ACTIVE)
-  createdAt         DateTime          @default(now())
-  createdBy         user              @relation("order_notice_createdBy", fields: [createdById], references: [id])
-  createdById       Int
-  updatedAt         DateTime          @updatedAt
-  updatedBy         user?             @relation("order_notice_updatedBy", fields: [updatedById], references: [id])
-  updatedById       Int?
-  deletedAt         DateTime?
-  deletedBy         user?             @relation("order_notice_deletedBy", fields: [deletedById], references: [id])
-  deletedById       Int?
-}
-
 enum ReturnFilingStatus {
   FILED
   DUE
   LATEFILED
   PENDINGFILING
-}
-
-model return_filing {
-  id            Int                @id @default(autoincrement())
-  dvat          dvat04             @relation(fields: [dvatid], references: [id])
-  dvatid        Int
-  year          String
-  month         String
-  filing_status Boolean            @default(false)
-  filing_date   DateTime?
-  due_date      DateTime?
-  status        Status             @default(ACTIVE)
-  return_status ReturnFilingStatus @default(DUE)
-  createdAt     DateTime           @default(now())
-  createdBy     user               @relation("return_filing_createdBy", fields: [createdById], references: [id])
-  createdById   Int
-  updatedAt     DateTime           @updatedAt
-  updatedBy     user?              @relation("return_filing_updatedBy", fields: [updatedById], references: [id])
-  updatedById   Int?
-  deletedAt     DateTime?
-  deletedBy     user?              @relation("return_filing_deletedBy", fields: [deletedById], references: [id])
-  deletedById   Int?
-
-  @@unique([dvatid, year, month])
 }
 
 enum PackType {
@@ -1144,489 +1746,4 @@ enum DisplayGroup {
   IMFL
   WINE
   OTHERS
-}
-
-model commodity_master {
-  id                           Int                     @id @default(autoincrement())
-  product_name                 String
-  product_type                 Dvat04Commodity?        @default(OTHER)
-  mrp                          String
-  sale_price                   String
-  oidc_price                   String
-  oidc_discount_percent        String
-  taxable_at                   String
-  description                  String
-  remark                       String?
-  group                        String?
-  display_group                DisplayGroup?
-  oidc_code                    String?
-  pack_type                    PackType?               @default(BOTTLE)
-  oidc_crate_sale_price        String?
-  oidc_crate_purchase_price    String?
-  crate_size                   Int                     @default(0)
-  dn_oidc_code                 String?
-  dn_oidc_crate_sale_price     String?
-  dn_oidc_crate_purchase_price String?
-  du_oidc_code                 String?
-  du_oidc_crate_sale_price     String?
-  du_oidc_crate_purchase_price String?
-  status                       Status                  @default(ACTIVE)
-  createdAt                    DateTime                @default(now())
-  createdBy                    user                    @relation("commodity_master_createdBy", fields: [createdById], references: [id])
-  createdById                  Int
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    user?                   @relation("commodity_master_updatedBy", fields: [updatedById], references: [id])
-  updatedById                  Int?
-  deletedAt                    DateTime?
-  deletedBy                    user?                   @relation("commodity_master_deletedBy", fields: [deletedById], references: [id])
-  deletedById                  Int?
-  returns_entry                returns_entry[]
-  daily_sale                   daily_sale[]
-  daily_purchase               daily_purchase[]
-  stock                        stock[]
-  manufacturer_purchase        manufacturer_purchase[]
-  edit_sale                    edit_sale[]
-  edit_purchase                edit_purchase[]
-  edit_manufacturer            edit_manufacturer[]
-  first_stock                  first_stock[]
-  save_stock                   save_stock[]
-  tally_sale                   tally_sale[]
-  tally_purchase               tally_purchase[]
-}
-
-model user_commodity_master {
-  id          Int       @id @default(autoincrement())
-  dvat        dvat04    @relation(fields: [dvatid], references: [id])
-  dvatid      Int
-  user        user      @relation(fields: [user_id], references: [id])
-  user_id     Int
-  status      Status    @default(ACTIVE)
-  createdAt   DateTime  @default(now())
-  createdBy   user      @relation("user_commodity_master_createdBy", fields: [createdById], references: [id])
-  createdById Int
-  updatedAt   DateTime  @updatedAt
-  updatedBy   user?     @relation("user_commodity_master_updatedBy", fields: [updatedById], references: [id])
-  updatedById Int?
-  deletedAt   DateTime?
-  deletedBy   user?     @relation("user_commodity_master_deletedBy", fields: [deletedById], references: [id])
-  deletedById Int?
-}
-
-model news {
-  id           Int       @id @default(autoincrement())
-  title        String
-  descrilption String    @db.MediumText
-  topic        String
-  postdate     DateTime
-  status       Status    @default(ACTIVE)
-  createdAt    DateTime  @default(now())
-  createdBy    user      @relation("news_createdBy", fields: [createdById], references: [id])
-  createdById  Int
-  updatedAt    DateTime  @updatedAt
-  updatedBy    user?     @relation("news_updatedBy", fields: [updatedById], references: [id])
-  updatedById  Int?
-  deletedAt    DateTime?
-  deletedBy    user?     @relation("news_deletedBy", fields: [deletedById], references: [id])
-  deletedById  Int?
-}
-
-model holiday {
-  id           Int       @id @default(autoincrement())
-  state        String
-  descrilption String    @db.MediumText
-  date         DateTime
-  status       Status    @default(ACTIVE)
-  createdAt    DateTime  @default(now())
-  createdBy    user      @relation("holiday_createdBy", fields: [createdById], references: [id])
-  createdById  Int
-  updatedAt    DateTime  @updatedAt
-  updatedBy    user?     @relation("holiday_updatedBy", fields: [updatedById], references: [id])
-  updatedById  Int?
-  deletedAt    DateTime?
-  deletedBy    user?     @relation("holiday_deletedBy", fields: [deletedById], references: [id])
-  deletedById  Int?
-}
-
-model parctitioner {
-  id                 Int       @id @default(autoincrement())
-  gsp_name           String
-  business_spoc_name String
-  email              String
-  mobile             String
-  address            String    @db.MediumText
-  priority           Int       @default(0)
-  status             Status    @default(ACTIVE)
-  createdAt          DateTime  @default(now())
-  createdBy          user      @relation("parctitioner_createdBy", fields: [createdById], references: [id])
-  createdById        Int
-  updatedAt          DateTime  @updatedAt
-  updatedBy          user?     @relation("parctitioner_updatedBy", fields: [updatedById], references: [id])
-  updatedById        Int?
-  deletedAt          DateTime?
-  deletedBy          user?     @relation("parctitioner_deletedBy", fields: [deletedById], references: [id])
-  deletedById        Int?
-}
-
-model hsncode {
-  id               Int       @id @default(autoincrement())
-  head             String
-  description      String
-  hsncode          String
-  tech_description String
-  trade1           String
-  trade2           String
-  trade3           String
-  status           Status    @default(ACTIVE)
-  createdAt        DateTime  @default(now())
-  createdBy        user      @relation("hsncode_createdBy", fields: [createdById], references: [id])
-  createdById      Int
-  updatedAt        DateTime  @updatedAt
-  updatedBy        user?     @relation("hsncode_updatedBy", fields: [updatedById], references: [id])
-  updatedById      Int?
-  deletedAt        DateTime?
-  deletedBy        user?     @relation("hsncode_deletedBy", fields: [deletedById], references: [id])
-  deletedById      Int?
-}
-
-model daily_sale {
-  id                  Int               @id @default(autoincrement())
-  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
-  dvat04Id            Int
-  invoice_number      String
-  invoice_date        DateTime
-  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
-  commodity_masterId  Int
-  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
-  seller_tin_numberId Int
-  amount_unit         String
-  quantity            Int
-  tax_percent         String
-  amount              String
-  vatamount           String
-  is_dvat_31          Boolean           @default(false)
-  is_local            Boolean           @default(false)
-  is_accept           Boolean           @default(false)
-  status              Status            @default(ACTIVE)
-  urn_number          String?
-  batch_name          String?
-  is_against_cform    Boolean           @default(false)
-  createdAt           DateTime          @default(now())
-  createdBy           user              @relation("daily_sale_createdBy", fields: [createdById], references: [id])
-  createdById         Int
-  updatedAt           DateTime          @updatedAt
-  updatedBy           user?             @relation("daily_sale_updatedBy", fields: [updatedById], references: [id])
-  updatedById         Int?
-  deletedAt           DateTime?
-  deletedBy           user?             @relation("daily_sale_deletedBy", fields: [deletedById], references: [id])
-  deletedById         Int?
-  edit_sale           edit_sale[]
-}
-
-model tally_sale {
-  id                  Int               @id @default(autoincrement())
-  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
-  dvat04Id            Int
-  invoice_number      String
-  invoice_date        DateTime
-  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
-  commodity_masterId  Int
-  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
-  seller_tin_numberId Int
-  amount_unit         String
-  quantity            Int
-  tax_percent         String
-  amount              String
-  vatamount           String
-  is_dvat_31          Boolean           @default(false)
-  is_local            Boolean           @default(false)
-  is_accept           Boolean           @default(false)
-  status              Status            @default(ACTIVE)
-  urn_number          String?
-  is_against_cform    Boolean           @default(false)
-  batch_name          String?
-  createdAt           DateTime          @default(now())
-  createdBy           user              @relation("tally_sale_createdBy", fields: [createdById], references: [id])
-  createdById         Int
-}
-
-model daily_purchase {
-  id                  Int               @id @default(autoincrement())
-  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
-  dvat04Id            Int
-  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
-  seller_tin_numberId Int
-  invoice_number      String
-  invoice_date        DateTime
-  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
-  commodity_masterId  Int
-  quantity            Int
-  tax_percent         String
-  amount_unit         String
-  amount              String
-  vatamount           String
-  is_local            Boolean           @default(false)
-  is_dvat_30a         Boolean           @default(false)
-  is_accept           Boolean           @default(false)
-  status              Status            @default(ACTIVE)
-  urn_number          String?
-  batch_name          String?
-  is_against_cform    Boolean           @default(false)
-  createdAt           DateTime          @default(now())
-  createdBy           user              @relation("daily_purchase_createdBy", fields: [createdById], references: [id])
-  createdById         Int
-  updatedAt           DateTime          @updatedAt
-  updatedBy           user?             @relation("daily_purchase_updatedBy", fields: [updatedById], references: [id])
-  updatedById         Int?
-  deletedAt           DateTime?
-  deletedBy           user?             @relation("daily_purchase_deletedBy", fields: [deletedById], references: [id])
-  deletedById         Int?
-  edit_purchase       edit_purchase[]
-}
-
-model stock {
-  id                 Int              @id @default(autoincrement())
-  dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
-  dvat04Id           Int
-  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
-  commodity_masterId Int
-  quantity           Int
-  description        String?
-  remark             String?
-  status             Status           @default(ACTIVE)
-  createdAt          DateTime         @default(now())
-  createdBy          user             @relation("stock_createdBy", fields: [createdById], references: [id])
-  createdById        Int
-  updatedAt          DateTime         @updatedAt
-  updatedBy          user?            @relation("stock_updatedBy", fields: [updatedById], references: [id])
-  updatedById        Int?
-  deletedAt          DateTime?
-  deletedBy          user?            @relation("stock_deletedBy", fields: [deletedById], references: [id])
-  deletedById        Int?
-}
-
-model first_stock {
-  id                 Int              @id @default(autoincrement())
-  dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
-  dvat04Id           Int
-  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
-  commodity_masterId Int
-  quantity           Int
-  description        String?
-  remark             String?
-  status             Status           @default(ACTIVE)
-  createdAt          DateTime         @default(now())
-  createdBy          user             @relation("first_stock_createdBy", fields: [createdById], references: [id])
-  createdById        Int
-  updatedAt          DateTime         @updatedAt
-  updatedBy          user?            @relation("first_stock_updatedBy", fields: [updatedById], references: [id])
-  updatedById        Int?
-  deletedAt          DateTime?
-  deletedBy          user?            @relation("first_stock_deletedBy", fields: [deletedById], references: [id])
-  deletedById        Int?
-}
-
-model save_stock {
-  id                 Int              @id @default(autoincrement())
-  dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
-  dvat04Id           Int
-  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
-  commodity_masterId Int
-  quantity           Int
-  description        String?
-  remark             String?
-  status             Status           @default(ACTIVE)
-  createdAt          DateTime         @default(now())
-  createdBy          user             @relation("save_stock_createdBy", fields: [createdById], references: [id])
-  createdById        Int
-  updatedAt          DateTime         @updatedAt
-  updatedBy          user?            @relation("save_stock_updatedBy", fields: [updatedById], references: [id])
-  updatedById        Int?
-  deletedAt          DateTime?
-  deletedBy          user?            @relation("save_stock_deletedBy", fields: [deletedById], references: [id])
-  deletedById        Int?
-}
-
-model manufacturer_purchase {
-  id                 Int                 @id @default(autoincrement())
-  dvat04             dvat04              @relation(fields: [dvat04Id], references: [id])
-  dvat04Id           Int
-  commodity_master   commodity_master    @relation(fields: [commodity_masterId], references: [id])
-  commodity_masterId Int
-  quantity           Int
-  tax_percent        String
-  amount_unit        String
-  amount             String
-  vatamount          String
-  status             Status              @default(ACTIVE)
-  createdAt          DateTime            @default(now())
-  createdBy          user                @relation("manufacturer_purchase_createdBy", fields: [createdById], references: [id])
-  createdById        Int
-  updatedAt          DateTime            @updatedAt
-  updatedBy          user?               @relation("manufacturer_purchase_updatedBy", fields: [updatedById], references: [id])
-  updatedById        Int?
-  deletedAt          DateTime?
-  deletedBy          user?               @relation("manufacturer_purchase_deletedBy", fields: [deletedById], references: [id])
-  deletedById        Int?
-  edit_manufacturer  edit_manufacturer[]
-}
-
-model edit_sale {
-  id                  Int               @id @default(autoincrement())
-  sale                daily_sale        @relation(fields: [saleId], references: [id])
-  saleId              Int
-  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
-  dvat04Id            Int
-  invoice_number      String
-  invoice_date        DateTime
-  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
-  commodity_masterId  Int
-  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
-  seller_tin_numberId Int
-  amount_unit         String
-  quantity            Int
-  tax_percent         String
-  amount              String
-  vatamount           String
-  is_dvat_31          Boolean           @default(false)
-  is_local            Boolean           @default(false)
-  is_delete           Boolean           @default(false)
-  is_accept           Boolean           @default(false)
-  status              Status            @default(ACTIVE)
-  urn_number          String?
-  is_against_cform    Boolean           @default(false)
-  batch_name          String?
-  createdAt           DateTime          @default(now())
-  createdBy           user              @relation("edit_sale_createdBy", fields: [createdById], references: [id])
-  createdById         Int
-  updatedAt           DateTime          @updatedAt
-  updatedBy           user?             @relation("edit_sale_updatedBy", fields: [updatedById], references: [id])
-  updatedById         Int?
-  deletedAt           DateTime?
-  deletedBy           user?             @relation("edit_sale_deletedBy", fields: [deletedById], references: [id])
-  deletedById         Int?
-}
-
-model edit_purchase {
-  id                  Int               @id @default(autoincrement())
-  purchase            daily_purchase    @relation(fields: [purchaseId], references: [id])
-  purchaseId          Int
-  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
-  dvat04Id            Int
-  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
-  seller_tin_numberId Int
-  invoice_number      String
-  invoice_date        DateTime
-  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
-  commodity_masterId  Int
-  quantity            Int
-  tax_percent         String
-  amount_unit         String
-  amount              String
-  vatamount           String
-  is_local            Boolean           @default(false)
-  is_dvat_30a         Boolean           @default(false)
-  is_delete           Boolean           @default(false)
-  is_accept           Boolean           @default(false)
-  status              Status            @default(ACTIVE)
-  urn_number          String?
-  is_against_cform    Boolean           @default(false)
-  batch_name          String?
-  createdAt           DateTime          @default(now())
-  createdBy           user              @relation("edit_purchase_createdBy", fields: [createdById], references: [id])
-  createdById         Int
-  updatedAt           DateTime          @updatedAt
-  updatedBy           user?             @relation("edit_purchase_updatedBy", fields: [updatedById], references: [id])
-  updatedById         Int?
-  deletedAt           DateTime?
-  deletedBy           user?             @relation("edit_purchase_deletedBy", fields: [deletedById], references: [id])
-  deletedById         Int?
-}
-
-model edit_manufacturer {
-  id                 Int                   @id @default(autoincrement())
-  manufacturer       manufacturer_purchase @relation(fields: [manufacturerId], references: [id])
-  manufacturerId     Int
-  dvat04             dvat04                @relation(fields: [dvat04Id], references: [id])
-  dvat04Id           Int
-  commodity_master   commodity_master      @relation(fields: [commodity_masterId], references: [id])
-  commodity_masterId Int
-  quantity           Int
-  tax_percent        String
-  amount_unit        String
-  amount             String
-  vatamount          String
-  is_delete          Boolean               @default(false)
-  status             Status                @default(ACTIVE)
-  createdAt          DateTime              @default(now())
-  createdBy          user                  @relation("edit_manufacturer_createdBy", fields: [createdById], references: [id])
-  createdById        Int
-  updatedAt          DateTime              @updatedAt
-  updatedBy          user?                 @relation("edit_manufacturer_updatedBy", fields: [updatedById], references: [id])
-  updatedById        Int?
-  deletedAt          DateTime?
-  deletedBy          user?                 @relation("edit_manufacturer_deletedBy", fields: [deletedById], references: [id])
-  deletedById        Int?
-}
-
-model cform {
-  id              Int             @id @default(autoincrement())
-  dvat04          dvat04          @relation(fields: [dvat04Id], references: [id])
-  dvat04Id        Int
-  office_of_issue SelectOffice?   @default(Dadra_Nagar_Haveli)
-  date_of_issue   DateTime
-  valid_date      DateTime
-  sr_no           String
-  seller_tin_no   String
-  seller_name     String
-  seller_address  String
-  amount          String
-  cform_type      ReturnType      @default(ORIGINAL)
-  from_period     DateTime
-  to_period       DateTime
-  status          Status          @default(ACTIVE)
-  createdAt       DateTime        @default(now())
-  createdBy       user            @relation("cform_createdBy", fields: [createdById], references: [id])
-  createdById     Int
-  updatedAt       DateTime        @updatedAt
-  updatedBy       user?           @relation("cform_updatedBy", fields: [updatedById], references: [id])
-  updatedById     Int?
-  deletedAt       DateTime?
-  deletedBy       user?           @relation("cform_deletedBy", fields: [deletedById], references: [id])
-  deletedById     Int?
-  cfrom_returns   cform_returns[]
-}
-
-model cform_returns {
-  id              Int           @id @default(autoincrement())
-  cform           cform         @relation(fields: [cformId], references: [id])
-  cformId         Int
-  returns_entry   returns_entry @relation(fields: [returns_entryId], references: [id])
-  returns_entryId Int
-}
-
-model tally_purchase {
-  id                  Int               @id @default(autoincrement())
-  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
-  dvat04Id            Int
-  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
-  seller_tin_numberId Int
-  invoice_number      String
-  invoice_date        DateTime
-  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
-  commodity_masterId  Int
-  quantity            Int
-  tax_percent         String
-  amount_unit         String
-  amount              String
-  vatamount           String
-  is_local            Boolean           @default(false)
-  is_dvat_30a         Boolean           @default(false)
-  is_accept           Boolean           @default(false)
-  status              Status            @default(ACTIVE)
-  urn_number          String?
-  batch_name          String?
-  is_against_cform    Boolean           @default(false)
-  createdAt           DateTime          @default(now())
-  createdBy           user              @relation("tally_purchase_createdBy", fields: [createdById], references: [id])
-  createdById         Int
 }

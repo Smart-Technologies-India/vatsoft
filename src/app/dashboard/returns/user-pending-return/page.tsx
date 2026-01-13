@@ -13,14 +13,13 @@ import {
   MaterialSymbolsDoNotDisturbOnOutline,
 } from "@/components/icons";
 import { dvat04, return_filing, user } from "@prisma/client";
-import { Button } from "antd";
-import GetDvat04 from "@/action/register/getdvat04";
 import GetPendingReturn from "@/action/dvat/getpendingreturn";
 import GetPendingChallan from "@/action/challan/getPendingChallan";
 import GetReturnMonth from "@/action/dvat/getreturnmonth";
-import { getCookie } from "cookies-next";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUser from "@/action/user/getuser";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { toast } from "react-toastify";
 
 enum Status {
   INACTIVE,
@@ -46,7 +45,7 @@ interface yearsDetails {
 
 const ShopView = () => {
   const router = useRouter();
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const [current_user_id, setCurrentUserId] = useState<number>(0);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -69,6 +68,19 @@ const ShopView = () => {
   });
 
   const [returndetails, setRetuirnsDetails] = useState<yearsDetails[]>([]);
+
+  useEffect(() => {
+    const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+
+      setCurrentUserId(authResponse.data);
+    };
+    init();
+  }, []);
 
   const monthNames = [
     "January",

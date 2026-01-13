@@ -2,7 +2,6 @@
 
 import GetChallan from "@/action/challan/getchallan";
 import { challan, dvat04, user } from "@prisma/client";
-import { getCookie } from "cookies-next";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -21,7 +20,6 @@ import {
   formatDateTime,
   formateDate,
   generatePDF,
-  isNegative,
   onFormError,
 } from "@/utils/methods";
 import { Separator } from "@/components/ui/separator";
@@ -36,6 +34,7 @@ import AddChallanPayment from "@/action/challan/addchallanpayment";
 import GetUser from "@/action/user/getuser";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { Button } from "antd";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 const ChallanData = () => {
   const searchParams = useSearchParams();
@@ -44,11 +43,12 @@ const ChallanData = () => {
   const challanid: number = parseInt(
     decryptURLData(Array.isArray(id) ? id[0] : id, router)
   );
+  const [userid, setUserid] = useState<number>(0);
 
-  const current_user_id: number = parseInt(
-    searchParams.get("userid") || getCookie("id") || "0",
-    10
-  );
+  // const current_user_id: number = parseInt(
+  //   searchParams.get("userid") || getCookie("id") || "0",
+  //   10
+  // );
   const [isLoading, setLoading] = useState<boolean>(true);
 
   const [user, setUser] = useState<user | null>(null);
@@ -59,6 +59,17 @@ const ChallanData = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
+      const current_user_id = searchParams.get("userid")
+        ? parseInt(searchParams.get("userid")!)
+        : authResponse.data;
+
       const user_response = await GetUser({
         id: current_user_id,
       });
@@ -82,7 +93,7 @@ const ChallanData = () => {
       setLoading(false);
     };
     init();
-  }, [challanid, current_user_id]);
+  }, [challanid, userid]);
 
   const [challanData, setChallanData] = useState<challan | null>(null);
 
@@ -101,7 +112,7 @@ const ChallanData = () => {
     }
     const response = await AddChallanPayment({
       id: challanData.id,
-      userid: current_user_id,
+      userid: userid,
       bank_name: data.bank_name,
       track_id: data.track_id,
       transaction_id: data.transaction_id,
@@ -302,7 +313,7 @@ const ChallanData = () => {
                       await generatePDF(
                         `/dashboard/payments/saved-challan/${encryptURLData(
                           challanid.toString()
-                        )}?sidebar=no&userid=${current_user_id}`
+                        )}?sidebar=no&userid=${userid}`
                       );
                     }}
                   >

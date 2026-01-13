@@ -199,7 +199,7 @@ const TrackAppliation = () => {
                 return null;
             }
           })()}{" "}
-          <div className="text-blue-400 bg-blue-500 bg-opacity-10 border border-blue-300 mt-2 text-sm p-2 flex gap-2 items-center">
+          <div className="text-blue-400 bg-blue-500/10 border border-blue-300 mt-2 text-sm p-2 flex gap-2 items-center">
             <p className="flex-1">Search Result Based on Date range</p>
             <MaterialSymbolsClose className="text-xl cursor-pointer" />
           </div>

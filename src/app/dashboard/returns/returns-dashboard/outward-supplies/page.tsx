@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/table";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getCookie } from "cookies-next";
 import {
   dvat04,
   DvatType,
@@ -27,6 +26,7 @@ import { toast } from "react-toastify";
 import { Button, Modal } from "antd";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { formateDate } from "@/utils/methods";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 declare module "@tanstack/react-table" {
   //allows us to define custom properties for our columns
@@ -36,10 +36,10 @@ declare module "@tanstack/react-table" {
 }
 
 const GSTR = () => {
-  const route = useRouter();
+  const router = useRouter();
 
   const [open, setOpen] = useState(false);
-  const userid: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserId] = useState<number>(0);
   const [dvatdata, setDvatData] = useState<dvat04>();
 
   const getdvatname = (): string => {
@@ -91,6 +91,19 @@ const GSTR = () => {
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
 
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const init = async () => {
+       const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+
+      setUserId(authResponse.data);
+    };
+    init();
+  }, []);
 
   const init = async () => {
     const year: string = searchParams.get("year") ?? "";
@@ -298,7 +311,7 @@ const GSTR = () => {
           </div>
         </div>
         {isnil() && (
-          <div className="my-2 bg-green-500 bg-opacity-10 text-center border border-green-500  px-2 text-green-500 py-1">
+          <div className="my-2 bg-green-500/10 text-center border border-green-500  px-2 text-green-500 py-1">
             <p>Nil filing successful for this form.</p>
           </div>
         )}
@@ -418,7 +431,7 @@ const GSTR = () => {
                 size="small"
                 type="primary"
                 onClick={() => {
-                  route.push(
+                  router.push(
                     `/dashboard/returns/returns-dashboard/invoices?form=${searchParams.get(
                       "form"
                     )}&year=${searchParams.get(

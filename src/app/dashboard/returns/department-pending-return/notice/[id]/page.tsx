@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { MdiDownload } from "@/components/icons";
-import { Radio, DatePicker, Select, Pagination } from "antd";
+import { Radio, DatePicker, Select, Pagination, Alert } from "antd";
 
 import { Button, Input, InputRef, RadioChangeEvent } from "antd";
 import {
@@ -509,9 +509,15 @@ const SupplierDetails = () => {
           </div>
           {noticeData.length == 0 ? (
             <>
-              <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-                <p className="flex-1">There is no Notice and Order.</p>
-              </div>
+              <Alert
+                style={{
+                  marginTop: "10px",
+                  padding: "8px",
+                }}
+                type="error"
+                showIcon
+                description="There is no Notice and Order."
+              />
             </>
           ) : (
             <>

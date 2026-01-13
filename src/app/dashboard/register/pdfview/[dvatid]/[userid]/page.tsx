@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { capitalcase, decryptURLData } from "@/utils/methods";
 import GetDvat04 from "@/action/register/getdvat04";
-import { getCookie } from "cookies-next";
 import {
   Anx1Page,
   Anx2Page,
@@ -25,7 +24,6 @@ const PreviewPage = () => {
 
   const router = useRouter();
 
-  const role = getCookie("role");
 
   const dvatidString = Array.isArray(dvatid) ? dvatid[0] : dvatid;
   const dvat_id: number = parseInt(decryptURLData(dvatidString, router));

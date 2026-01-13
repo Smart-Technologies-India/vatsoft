@@ -9,13 +9,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
-import { getCookie } from "cookies-next";
 import numberWithIndianFormat, { encryptURLData } from "@/utils/methods";
 import LiquorCommodityReport from "@/action/report/liquorcommodityreport";
 import { Alert } from "antd";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 const LiquorCommodityPage = () => {
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [total, setTotal] = useState<number>(0);
 
@@ -33,6 +36,12 @@ const LiquorCommodityPage = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const response = await LiquorCommodityReport();
       if (response.status == true && response.data) {
         setDvatData(response.data);

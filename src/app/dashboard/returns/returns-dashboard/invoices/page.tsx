@@ -1,5 +1,6 @@
 "use client";
 
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import { MdiPlusCircle } from "@/components/icons";
@@ -13,16 +14,16 @@ import {
 } from "@/components/ui/table";
 import { formateDate } from "@/utils/methods";
 import { dvat04, DvatType, returns_01, returns_entry } from "@prisma/client";
-import { Button } from "antd";
-import { getCookie } from "cookies-next";
+import { Alert, Button } from "antd";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 const AddRecord = () => {
-  const route = useRouter();
+  const router = useRouter();
 
-  const userid: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const [dvatdata, setDvatData] = useState<dvat04>();
 
@@ -32,8 +33,14 @@ const AddRecord = () => {
   const searchParams = useSearchParams();
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const dvat_response = await GetUserDvat04({
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (dvat_response.status && dvat_response.data) {
@@ -45,7 +52,7 @@ const AddRecord = () => {
       const returnformsresponse = await getPdfReturn({
         year: year,
         month: month,
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (returnformsresponse.status && returnformsresponse.data) {
@@ -287,9 +294,15 @@ const AddRecord = () => {
         <div className="bg-blue-500 p-2 text-white">Record Details</div>
 
         {getDvatData().length == 0 ? (
-          <p className="bg-rose-500 bg-opacity-10 rounded-md text-rose-500 mt-2 px-2 py-1 border border-rose-500">
-            There is no record
-          </p>
+          <Alert
+            style={{
+              marginTop: "10px",
+              padding: "8px",
+            }}
+            type="error"
+            showIcon
+            description="There is no record"
+          />
         ) : (
           <>
             <Table className="border mt-2">
@@ -395,7 +408,7 @@ const AddRecord = () => {
               <Button
                 type="primary"
                 onClick={() => {
-                  route.push(getUrl());
+                  router.push(getUrl());
                 }}
               >
                 Add Record

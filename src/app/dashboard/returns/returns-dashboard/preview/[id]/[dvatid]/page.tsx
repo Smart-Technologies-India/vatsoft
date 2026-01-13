@@ -35,9 +35,9 @@ import CheckPayment from "@/action/return/checkpayment";
 import AddSubmitPayment from "@/action/return/addsubmitpayment";
 import CheckLastPayment from "@/action/return/checklastpayment";
 import GetUser from "@/action/user/getuser";
-import { getCookie } from "cookies-next";
 import getDepartmentPdfReturn from "@/action/return/getdepartmentpdfreturn";
 import getPdfReturnDownload from "@/action/return/getpdfreturndownload";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 interface PercentageOutput {
   increase: string;
@@ -58,7 +58,7 @@ const Dvat16ReturnPreview = () => {
   );
 
   const [isDownload, setDownload] = useState<boolean>(false);
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const [current_user_id, setCurrentUserId] = useState<number>(0);
 
   const [return01, setReturn01] = useState<
     (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
@@ -75,8 +75,14 @@ const Dvat16ReturnPreview = () => {
 
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setCurrentUserId(authResponse.data);
       const user_response = await GetUser({
-        id: current_user_id,
+        id: authResponse.data,
       });
       if (user_response.status && user_response.data) {
         setUser(user_response.data);
@@ -5421,7 +5427,7 @@ const CentralSales = (props: CentralSalesProps) => {
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             Total
           </td>
-        <td className="border border-black px-2 leading-4 text-[0.6rem]">
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
               parseFloat(get10_2_6_2().increase) +
               parseFloat(getPercentageValue("0").increase) +

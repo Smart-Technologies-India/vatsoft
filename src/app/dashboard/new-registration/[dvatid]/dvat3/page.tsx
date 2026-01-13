@@ -1,10 +1,33 @@
+"use client";
 import { FormSteps } from "@/components/formstepts";
-
 import { Dvat03Provider } from "@/components/forms/user/dvat03";
-import { cookies } from "next/headers";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { toast } from "react-toastify";
+import { decryptURLData } from "@/utils/methods";
 
-const Dvat3Page = ({ params }: { params: { dvatid: string } }) => {
-  const id: number = parseInt(cookies().get("id")?.value ?? "0");
+const Dvat3Page = () => {
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
+
+  useEffect(() => {
+    const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+    };
+    init();
+  }, []);
+
+  const { dvatid } = useParams<{ dvatid: string | string[] }>();
+  const dvat04id = parseInt(
+    decryptURLData(Array.isArray(dvatid) ? dvatid[0] : dvatid, router)
+  );
+
 
   return (
     <>
@@ -33,7 +56,7 @@ const Dvat3Page = ({ params }: { params: { dvatid: string } }) => {
               <span className="text-red-500">*</span> Include mandatory fields
             </p>
           </div>
-          <Dvat03Provider userid={id} dvatid={parseInt(params.dvatid)} />
+          <Dvat03Provider userid={userid} dvatid={dvat04id} />
         </div>
       </main>
     </>

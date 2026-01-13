@@ -118,7 +118,7 @@ export default function ContactUs() {
         />
       </div>
 
-      <Marquee className="bg-yellow-500 bg-opacity-10 text-sm">
+      <Marquee className="bg-yellow-500/10 text-sm">
         This banner shall be used for official updates and notifications.
       </Marquee>
 

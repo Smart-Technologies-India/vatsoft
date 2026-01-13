@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { decryptURLData } from "@/utils/methods";
 import { commodity_master, dvat04, stock } from "@prisma/client";
-import { Pagination } from "antd";
+import { Alert, Pagination } from "antd";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -22,8 +22,6 @@ const CommodityMaster = () => {
   const userid: number = parseInt(
     decryptURLData(Array.isArray(id) ? id[0] : id, router)
   );
-
-
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -175,9 +173,15 @@ const CommodityMaster = () => {
               </div>
             </>
           ) : (
-            <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-              <p className="flex-1">There is no stock.</p>
-            </div>
+            <Alert
+              style={{
+                marginTop: "10px",
+                padding: "8px",
+              }}
+              type="error"
+              showIcon
+              description="There is no stock."
+            />
           )}
         </div>
       </main>

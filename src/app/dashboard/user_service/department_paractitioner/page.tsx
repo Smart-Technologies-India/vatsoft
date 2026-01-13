@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-import { Radio, DatePicker, Pagination, Select, Drawer } from "antd";
+import { Radio, Pagination, Drawer } from "antd";
 
 import { Button, Input, InputRef, RadioChangeEvent } from "antd";
 import {
@@ -12,17 +12,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useRef, useState } from "react";
-import { getCookie } from "cookies-next";
-import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { parctitioner } from "@prisma/client";
 import GetAllParctitioner from "@/action/parctitioner/getallparctitioner";
 import SearchParctitioner from "@/action/parctitioner/searchparctitioner";
 import { ParactitionerMasterProvider } from "@/components/forms/paractitioner/paractitioner";
-const { RangePicker } = DatePicker;
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 const SupplierDetails = () => {
-  const current_user_id: number = parseInt(getCookie("id") ?? "0");
+  const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
@@ -177,6 +177,12 @@ const SupplierDetails = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
       const paractitioner_respone = await GetAllParctitioner({
         take: pagination.take,
         skip: pagination.skip,
@@ -192,7 +198,7 @@ const SupplierDetails = () => {
       setLoading(false);
     };
     init();
-  }, [current_user_id]);
+  }, [userid]);
 
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (isSearch) {
@@ -329,7 +335,7 @@ const SupplierDetails = () => {
           {paractitionerid ? "Update" : "Add"} Paractitioner
         </p>
         <ParactitionerMasterProvider
-          userid={current_user_id}
+          userid={userid}
           id={paractitionerid}
           setAddBox={setAddBox}
           setParactitionerid={setParactitionerid}

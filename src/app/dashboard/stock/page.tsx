@@ -27,7 +27,6 @@ import {
   Radio,
   RadioChangeEvent,
 } from "antd";
-import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { SetStateAction, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -36,10 +35,11 @@ import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import { formateDate } from "@/utils/methods";
 import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import CreateMultiDailyPurchase from "@/action/stock/createmultidailypurchase";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 const CommodityMaster = () => {
   const router = useRouter();
-  const userid: number = parseFloat(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -104,9 +104,15 @@ const CommodityMaster = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
 
       const dvat = await GetUserDvat04({
-        userid: userid,
+        userid: authResponse.data,
       });
       if (dvat.status && dvat.data) {
         setDvatData(dvat.data);
@@ -735,9 +741,15 @@ const CommodityMaster = () => {
               </div>
             </>
           ) : (
-            <div className="text-rose-400 bg-rose-500 bg-opacity-10 border border-rose-300 mt-2 text-sm p-2 flex gap-2 items-center">
-              <p className="flex-1">There is no stock.</p>
-            </div>
+            <Alert
+              style={{
+                marginTop: "10px",
+                padding: "8px",
+              }}
+              type="error"
+              showIcon
+              description="There is no stock."
+            />
           )}
         </div>
       </main>

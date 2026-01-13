@@ -4,17 +4,18 @@ import { Button } from "@/components/ui/button";
 import { FormSteps } from "@/components/formstepts";
 import { useEffect, useRef, useState } from "react";
 import GetUser from "@/action/user/getuser";
-import { getCookie } from "cookies-next";
 import { toast } from "react-toastify";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { handleNumberChange } from "@/utils/methods";
+import { encryptURLData, handleNumberChange } from "@/utils/methods";
 import { safeParse } from "valibot";
 import { UserDataSchema } from "@/schema/userdata";
 import { useParams, useRouter } from "next/navigation";
 import registerUser from "@/action/user/register/registeruser";
-const UserRegister = (): JSX.Element => {
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+
+const UserRegister = () => {
   const { registerid } = useParams<{ registerid: string | string[] }>();
   const registeridString = Array.isArray(registerid)
     ? registerid[0]
@@ -22,7 +23,7 @@ const UserRegister = (): JSX.Element => {
 
   const registrationid: number = parseInt(registeridString);
   const router = useRouter();
-  const id: number = parseInt(getCookie("id") ?? "0");
+  const [userid, setUserid] = useState<number>(0);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmit, setIsSubmit] = useState<boolean>(false);
@@ -50,7 +51,7 @@ const UserRegister = (): JSX.Element => {
 
     if (result.success) {
       const userrespone = await registerUser({
-        id: id,
+        id: userid,
         firstName: result.output.firstName,
         lastName: result.output.lastName,
         address: result.output.address,
@@ -65,7 +66,11 @@ const UserRegister = (): JSX.Element => {
         isdavt04: true,
       });
       if (userrespone.status && userrespone.data) {
-        router.push(`/dashboard/new-registration/${registrationid}/dvat1`);
+        router.push(
+          `/dashboard/new-registration/${encryptURLData(
+            registrationid.toString()
+          )}/dvat1`
+        ); 
       } else {
         toast.error(userrespone.message);
       }
@@ -85,7 +90,14 @@ const UserRegister = (): JSX.Element => {
     const init = async () => {
       setIsLoading(true);
 
-      const user = await GetUser({ id: id });
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
+
+      const user = await GetUser({ id: authResponse.data });
 
       if (user.status) {
         setTimeout(() => {
@@ -105,7 +117,7 @@ const UserRegister = (): JSX.Element => {
       setIsLoading(false);
     };
     init();
-  }, [id]);
+  }, [userid]);
 
   if (isLoading)
     return (
