@@ -46,9 +46,7 @@ export default function DashboardLayout({
     const dvatResponse = await getCurrentDvatId();
     if (dvatResponse == null && dvatResponse == undefined) {
       return router.push("/");
-
     }
-
 
     const userrespone = await GetUser({ id: authResponse.data });
     if (userrespone.status) {
@@ -105,7 +103,11 @@ export default function DashboardLayout({
             isOpen={isOpen}
             setIsOpen={setIsOpen}
             name={
-              dvat != null ? dvat.tradename ?? "" : userdata?.firstName ?? ""
+              userdata?.role != Role.USER
+                ? userdata?.firstName ?? ""
+                : dvat != null
+                ? dvat.tradename ?? ""
+                : userdata?.firstName ?? ""
             }
             isbluck={isbluck}
           ></Navbar>
@@ -118,7 +120,7 @@ export default function DashboardLayout({
           <div
             role="button"
             onClick={() => setIsOpen(false)}
-            className="block md:hidden fixed top-0 left-0 bg-black bg-opacity-25 h-screen w-full z-10"
+            className="block md:hidden fixed top-0 left-0 bg-black/40 h-screen w-full z-10"
           ></div>
         )}
       </div>

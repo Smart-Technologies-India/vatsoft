@@ -4,6 +4,7 @@ interface UpdateCommodityMasterPayload {
   updatedById: number;
   product_name?: string;
   product_type?: Dvat04Commodity;
+  crate_size?: string;
   mrp?: string;
   sale_price?: string;
   oidc_price?: string;

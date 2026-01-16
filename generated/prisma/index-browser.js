@@ -1015,6 +1015,22 @@ exports.Prisma.Tally_purchaseScalarFieldEnum = {
   createdById: 'createdById'
 };
 
+exports.Prisma.Product_requestScalarFieldEnum = {
+  id: 'id',
+  product_name: 'product_name',
+  company_name: 'company_name',
+  pack_type: 'pack_type',
+  crate_size: 'crate_size',
+  requestedById: 'requestedById',
+  status: 'status',
+  createdAt: 'createdAt',
+  createdById: 'createdById',
+  updatedAt: 'updatedAt',
+  updatedById: 'updatedById',
+  deletedAt: 'deletedAt',
+  deletedById: 'deletedById'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1428,6 +1444,12 @@ exports.Prisma.tally_purchaseOrderByRelevanceFieldEnum = {
   urn_number: 'urn_number',
   batch_name: 'batch_name'
 };
+
+exports.Prisma.product_requestOrderByRelevanceFieldEnum = {
+  product_name: 'product_name',
+  company_name: 'company_name',
+  crate_size: 'crate_size'
+};
 exports.Role = exports.$Enums.Role = {
   SYSTEM: 'SYSTEM',
   ADMIN: 'ADMIN',
@@ -1795,7 +1817,8 @@ exports.Prisma.ModelName = {
   edit_manufacturer: 'edit_manufacturer',
   cform: 'cform',
   cform_returns: 'cform_returns',
-  tally_purchase: 'tally_purchase'
+  tally_purchase: 'tally_purchase',
+  product_request: 'product_request'
 };
 
 /**

@@ -14,16 +14,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { commodity_master, dvat04, stock } from "@prisma/client";
-import {
-  Alert,
-  Button,
-  Drawer,
-  Modal,
-  Popover,
-  Radio,
-  RadioChangeEvent,
-} from "antd";
+import { commodity_master, dvat04 } from "@prisma/client";
+import { Alert, Button, Drawer, Modal, Radio, RadioChangeEvent } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -100,9 +92,6 @@ const AddStock = () => {
   const [open, setOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
-  const hide = () => {
-    setOpen(false);
-  };
 
   const submit = async () => {
     setOpen(false);
@@ -335,7 +324,7 @@ const AddStock = () => {
             the accuracy and completeness of the data provided.
           </p>
         </div>
-        
+
         <div className="mt-4 flex items-start gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
           <input
             type="checkbox"
@@ -344,11 +333,12 @@ const AddStock = () => {
             onChange={(e) => setAgreed(e.target.checked)}
             className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
           />
-          <label 
-            htmlFor="agreeCheckbox" 
+          <label
+            htmlFor="agreeCheckbox"
             className="text-sm text-gray-700 font-medium cursor-pointer select-none"
           >
-            I agree to the above statement and confirm that all information provided is true and accurate.
+            I agree to the above statement and confirm that all information
+            provided is true and accurate.
           </label>
         </div>
 

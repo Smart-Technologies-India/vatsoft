@@ -24,7 +24,7 @@ const ChangePassword = async (
     if (!user) {
       return createResponse({
         functionname,
-        message: "user not exists. Please try again.",
+        message: "User does not exist. Enter valid user details.",
       });
     }
 

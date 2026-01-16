@@ -109,7 +109,7 @@ export default function ContactUs() {
         </Link>
       </div>
 
-      <div className="relative w-full h-[24rem]">
+      <div className="relative w-full h-96">
         <Image
           src={"/banner.jpg"}
           alt="error"
@@ -124,7 +124,7 @@ export default function ContactUs() {
 
       <div className="py-10 bg-gray-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-4xl bg-white shadow-md rounded-lg p-8">
-          <p className="text-2xl font-bold text-center">Contact Us</p>
+          <p className="text-2xl font-semibold text-center">Contact Us</p>
           <p className="text-center">
             We&apos;re always happy to hear from you. Whether you have a
             question, comment, or suggestion, please don&apos;t hesitate to
@@ -138,7 +138,7 @@ export default function ContactUs() {
                 <div className="space-y-2">
                   <h4 className="font-medium text-gray-700">Visit us</h4>
                   <div className="flex items-start space-x-3 text-sm">
-                    <MapPin className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <MapPin className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
                     <span>
                       VAT & GST Department <br />
                       District Secretariat “A” - Wing, 2nd Floor, <br />
@@ -149,14 +149,14 @@ export default function ContactUs() {
                 <div className="space-y-2">
                   <h4 className="font-medium text-gray-700">Call us</h4>
                   <div className="flex items-center space-x-3 text-sm">
-                    <Phone className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    <Phone className="h-5 w-5 text-gray-400 shrink-0" />
                     <span>0260-2632000</span>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <h4 className="font-medium text-gray-700">Email us</h4>
                   <div className="flex items-center space-x-3 text-sm">
-                    <Mail className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    <Mail className="h-5 w-5 text-gray-400 shrink-0" />
                     <span>vato1-ctd-dnh@nic.in</span>
                     <span>Helpline-ctd-dnh@nic.in</span>
                   </div>
@@ -232,7 +232,7 @@ export default function ContactUs() {
                   rows={4}
                 />
               </div>
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full bg-[#05313c] hover:bg-[#0a5b6f] text-white rounded-md py-2">
                 Submit
               </Button>
             </form>

@@ -57,7 +57,7 @@ const AdminLogin = () => {
   return (
     <>
       <div className="p-10 rounded-md min-h-screen w-full bg-[#f5f6f8] flex">
-        <div className="flex-1 relative bg-gradient-to-tr from-[#2350f0] to-blue-400  grid place-items-center  rounded-l-md">
+        <div className="flex-1 relative bg-linear-to-tr from-[#2350f0] to-blue-400  grid place-items-center  rounded-l-md">
           <div></div>
           <div className="w-64 h-64 relative bg-white rounded-md mt-10">
             <Image

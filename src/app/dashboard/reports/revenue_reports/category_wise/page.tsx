@@ -349,9 +349,9 @@ const CategoryWiseReport = () => {
                   ? 0
                   : countData.last_month_received) >
               0
-                ? "bg-emerald-500 text-emerald-500"
-                : "bg-rose-500 text-rose-500"
-            } p-2/10`}
+                ? "bg-emerald-500/10 text-emerald-500"
+                : "bg-rose-500/10 text-rose-500"
+            } p-2`}
           >
             <h1 className="text-2xl">
               {numberWithIndianFormat(

@@ -142,6 +142,11 @@ model user {
   user_commodity_master_deletedBy user_commodity_master[] @relation("user_commodity_master_deletedBy")
   user_commodity_master_updatedBy user_commodity_master[] @relation("user_commodity_master_updatedBy")
   user_commodity_master           user_commodity_master[]
+
+  product_request_createdBy product_request[] @relation("product_request_createdBy")
+  product_request_deletedBy product_request[] @relation("product_request_deletedBy")
+  product_request_updatedBy product_request[] @relation("product_request_updatedBy")
+  product_request           product_request[] @relation("product_request_requestedBy")
 }
 
 model change {
@@ -1418,6 +1423,30 @@ model tally_purchase {
   @@index([createdById], map: "tally_purchase_createdById_fkey")
   @@index([dvat04Id], map: "tally_purchase_dvat04Id_fkey")
   @@index([seller_tin_numberId], map: "tally_purchase_seller_tin_numberId_fkey")
+}
+
+model product_request {
+  id            Int       @id @default(autoincrement())
+  product_name  String
+  company_name  String
+  pack_type     PackType
+  crate_size    String
+  requestedBy   user      @relation("product_request_requestedBy", fields: [requestedById], references: [id])
+  requestedById Int
+  status        Status    @default(ACTIVE)
+  createdAt     DateTime  @default(now())
+  createdById   Int
+  updatedAt     DateTime  @updatedAt
+  updatedById   Int?
+  deletedAt     DateTime?
+  deletedById   Int?
+  createdBy     user      @relation("product_request_createdBy", fields: [createdById], references: [id])
+  deletedBy     user?     @relation("product_request_deletedBy", fields: [deletedById], references: [id])
+  updatedBy     user?     @relation("product_request_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([createdById], map: "product_request_createdById_fkey")
+  @@index([deletedById], map: "product_request_deletedById_fkey")
+  @@index([updatedById], map: "product_request_updatedById_fkey")
 }
 
 enum UserStatus {

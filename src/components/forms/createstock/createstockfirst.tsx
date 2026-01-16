@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-import { FormProvider, useForm, useFormContext } from "react-hook-form";
 
+import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
@@ -16,9 +16,12 @@ import {
   CreateFirstStockSchema,
 } from "@/schema/create_first_stock";
 import GetUserDvat04FirstStock from "@/action/dvat/getuserdvatfirststock";
-import { Checkbox, Radio, RadioChangeEvent } from "antd";
+import { Checkbox, Radio, RadioChangeEvent, Modal, Form, Input, Select } from "antd";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
 import GetNilCommodity from "@/action/save_stock/getnilcomodity";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
+import CreateProductRequest from "@/action/product_request/createproductrequest";
+import { ProductRequestForm } from "@/schema/productrequest";
 
 interface StockData {
   id: number | null;
@@ -51,7 +54,6 @@ export const CreateFirstStockProvider = (
 };
 
 const CreateStockData = (props: CreateFirstStockProviderProps) => {
-
   const {
     reset,
     handleSubmit,
@@ -128,24 +130,81 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
   const onSubmit = async (data: CreateFirstStockForm) => {
     if (isAccept) {
       props.setAddBox(false);
-    } else {
-      if (commoditymaster == null || commoditymaster == undefined)
-        return toast.error("Commodity Master not found.");
-
-      props.setStock([
-        ...props.stock,
-        {
-          id: null,
-          item: commoditymaster,
-          quantity:
-            quantityCount == "pcs"
-              ? parseInt(data.quantity)
-              : parseInt(data.quantity) * commoditymaster.crate_size,
-        },
-      ]);
-
-      props.setAddBox(false);
+      return;
     }
+
+    if (commoditymaster == null || commoditymaster == undefined) {
+      return toast.error("Commodity Master not found.");
+    }
+
+    // Check if product already exists in stock
+    const existingProductIndex = props.stock.findIndex(
+      (item) => item.item.id === commoditymaster.id
+    );
+
+    if (existingProductIndex !== -1) {
+      // Product exists, show Ant Design confirmation modal
+      const newQuantity =
+        quantityCount == "pcs"
+          ? parseInt(data.quantity)
+          : parseInt(data.quantity) * commoditymaster.crate_size;
+
+      Modal.confirm({
+        title: "Product Already Exists",
+        icon: <ExclamationCircleOutlined />,
+        content: (
+          <div>
+            <p>
+              <strong>{commoditymaster.product_name}</strong> already exists in
+              the stock list.
+            </p>
+            <p>Do you want to update the quantity?</p>
+            <div className="mt-3 p-3 bg-slate-50 rounded">
+              <p className="text-sm">
+                <strong>Current Quantity:</strong>{" "}
+                {props.stock[existingProductIndex].quantity}
+              </p>
+              <p className="text-sm">
+                <strong>New Quantity:</strong> {newQuantity}
+              </p>
+            </div>
+          </div>
+        ),
+        okText: "Yes, Update",
+        cancelText: "No, Cancel",
+        onOk() {
+          // Update existing product quantity
+          const updatedStock = [...props.stock];
+          updatedStock[existingProductIndex] = {
+            id: updatedStock[existingProductIndex].id,
+            item: commoditymaster,
+            quantity: newQuantity,
+          };
+          props.setStock(updatedStock);
+          toast.success("Stock quantity updated successfully!");
+          props.setAddBox(false);
+        },
+        onCancel() {
+          // Don't close the drawer so user can modify
+        },
+      });
+      return; // Important: prevent further execution
+    }
+
+    // Product doesn't exist, add new entry
+    props.setStock([
+      ...props.stock,
+      {
+        id: null,
+        item: commoditymaster,
+        quantity:
+          quantityCount == "pcs"
+            ? parseInt(data.quantity)
+            : parseInt(data.quantity) * commoditymaster.crate_size,
+      },
+    ]);
+
+    props.setAddBox(false);
   };
 
   const addNew = async (data: CreateFirstStockForm) => {
@@ -180,9 +239,26 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
 
   const [quantityCount, setQuantityCount] = useState("pcs");
   const [isAccept, setIsAccept] = useState<boolean>(false);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [productForm] = Form.useForm();
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
     setQuantityCount(value);
+  };
+
+  const handleProductRequest = async (values: ProductRequestForm) => {
+    try {
+      const response = await CreateProductRequest(values);
+      if (response.status) {
+        toast.success(response.message);
+        setIsProductModalOpen(false);
+        productForm.resetFields();
+      } else {
+        toast.error(response.message);
+      }
+    } catch (error) {
+      toast.error("Failed to submit product request");
+    }
   };
 
   if (isLoading)
@@ -221,7 +297,11 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
       </div>
       <div className="mt-2">
         <TaxtInput<CreateFirstStockForm>
-          title="Quantity"
+          title={`Quantity ${
+            commoditymaster != null && commoditymaster.product_type == "FUEL"
+              ? "in Litre"
+              : ""
+          }`}
           required={true}
           name="quantity"
           disable={isAccept}
@@ -229,11 +309,12 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
           onlynumber={true}
         />
       </div>
-      {commoditymaster != null && (
+      {commoditymaster != null && commoditymaster.product_type != "FUEL" && (
         <div className="flex mt-2 gap-2 items-center">
           <div className="p-1 rounded grow text-center bg-gray-100">
             {commoditymaster.crate_size}{" "}
-            {commoditymaster.product_type == "FUEL" ? "Litre" : "Pcs"}/Crate
+            {/* {commoditymaster.product_type == "FUEL" ? "Litre" : "Pcs"}/Crate */}
+            Pcs/Crate
           </div>
           <Radio.Group
             size="small"
@@ -245,7 +326,8 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
               Crate
             </Radio.Button>
             <Radio.Button className="w-20 text-center" value="pcs">
-              {commoditymaster.product_type == "FUEL" ? "Litre" : "Pcs"}
+              {/* {commoditymaster.product_type == "FUEL" ? "Litre" : "Pcs"} */}
+              Pcs
             </Radio.Button>
           </Radio.Group>
         </div>
@@ -279,6 +361,16 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
           <p>NIL Stock</p>
         </div>
       )}
+
+      <div className="mt-2 mb-2">
+        <button
+          type="button"
+          onClick={() => setIsProductModalOpen(true)}
+          className="text-blue-600 hover:text-blue-800 text-sm underline cursor-pointer bg-transparent border-none"
+        >
+          Could not find your product? Click here to request
+        </button>
+      </div>
 
       <div className="flex gap-2">
         <button
@@ -320,6 +412,81 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
           {isSubmitting ? "Loading...." : "Add More"}
         </button>
       </div>
+
+      {/* Product Request Modal */}
+      <Modal
+        title="Request unlisted Product"
+        open={isProductModalOpen}
+        onCancel={() => {
+          setIsProductModalOpen(false);
+          productForm.resetFields();
+        }}
+        footer={null}
+      >
+        <Form
+          form={productForm}
+          layout="vertical"
+          onFinish={handleProductRequest}
+        >
+          <Form.Item
+            label="Product Name"
+            name="product_name"
+            rules={[{ required: true, message: "Please enter product name" }]}
+          >
+            <Input placeholder="Enter product name" />
+          </Form.Item>
+
+          <Form.Item
+            label="Company Name"
+            name="company_name"
+            rules={[{ required: true, message: "Please enter company name" }]}
+          >
+            <Input placeholder="Enter company name" />
+          </Form.Item>
+
+          <Form.Item
+            label="Pack Type"
+            name="pack_type"
+            rules={[{ required: true, message: "Please select pack type" }]}
+          >
+            <Select placeholder="Select pack type">
+              <Select.Option value="BOTTLE">Bottle</Select.Option>
+              <Select.Option value="CAN">Can</Select.Option>
+              <Select.Option value="PET">PET</Select.Option>
+              <Select.Option value="TETRAPACK">Tetrapack</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Crate Size"
+            name="crate_size"
+            rules={[{ required: true, message: "Please enter crate size" }]}
+          >
+            <Input placeholder="Enter crate size (e.g., 12, 24)" />
+          </Form.Item>
+
+          <Form.Item>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsProductModalOpen(false);
+                  productForm.resetFields();
+                }}
+                className="py-1 rounded-md bg-gray-500 px-4 text-sm text-white cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
+              >
+                Submit Request
+              </button>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
     </form>
   );
 };

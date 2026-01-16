@@ -56,7 +56,7 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
   const startMonth = currentDate.getMonth(); // Current month
   const startYear = currentDate.getFullYear();
 
-  for (let i = 6, j = 0; i >= 0; i--, j++) {
+  for (let i = 7, j = 0; i >= 0; i--, j++) {
     const date = new Date(
       Date.UTC(startYear, startMonth - i - 1, 1, 0, 0, 0, 0)
     );

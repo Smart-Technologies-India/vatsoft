@@ -179,7 +179,7 @@ const Home = () => {
                 CST FORM Verification System
               </p>
               <div className="flex gap-2 items-center mt-4">
-                <p>Enter the CST Form No :- </p>
+                <p className="shrink-0">Enter the CST Form No :- </p>
                 <Input
                   className="w-60"
                   placeholder="Enter CST Form No"

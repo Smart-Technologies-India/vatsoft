@@ -6,19 +6,12 @@ import {
   SolarHamburgerMenuOutline,
   TablerHome,
 } from "../icons";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
 
 import { usePathname, useRouter } from "next/navigation";
 import ReturnFiling from "@/action/dashboard/return_filing";
 import { toast } from "react-toastify";
 import { Role } from "@prisma/client";
-import { Drawer, Tooltip } from "antd";
+import { Drawer, Tooltip, Dropdown, type MenuProps } from "antd";
 import { useState } from "react";
 import {
   ForgetPasswordForm,
@@ -175,37 +168,41 @@ const Navbar = (props: NavbarProps) => {
           <PasswordComponent onClose={onClose} />
         </Drawer>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors">
-              <div className="text-right hidden md:block">
-                <p className="text-sm font-medium text-gray-900">
-                  {props.name}
-                </p>
-                <p className="text-xs text-gray-500">{props.role}</p>
-              </div>
-              <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                {(props.name[0] ?? "").toUpperCase()}
-              </div>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end">
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={showDrawer} className="cursor-pointer">
-                <span className="text-sm">Change Password</span>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuItem
-              onClick={async () => {
-                await logout();
-                router.push("/");
-              }}
-              className="cursor-pointer text-red-600"
-            >
-              <span className="text-sm">Log out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Dropdown
+          menu={{
+            items: [
+              {
+                key: "change-password",
+                label: "Change Password",
+                onClick: showDrawer,
+              },
+              {
+                type: "divider",
+              },
+              {
+                key: "logout",
+                label: "Log out",
+                danger: true,
+                onClick: async () => {
+                  await logout();
+                  router.push("/");
+                },
+              },
+            ],
+          }}
+          placement="bottomRight"
+          trigger={["click"]}
+        >
+          <button className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <div className="text-right hidden md:block">
+              <p className="text-sm font-medium text-gray-900">{props.name}</p>
+              <p className="text-xs text-gray-500">{props.role}</p>
+            </div>
+            <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+              {(props.name[0] ?? "").toUpperCase()}
+            </div>
+          </button>
+        </Dropdown>
       </div>
     </nav>
   );

@@ -191,7 +191,7 @@ const Home = () => {
             src="/banner.png"
             alt="VAT-SMART Banner"
             fill={true}
-            className="object-contain object-center bg-linear-to-r from-[#05313c] to-[#0a5b6f] rounded-lg shadow-xl"
+            className="object-contain object-center bg-linear-to-r from-[#0a5b6f] to-[#0a5b6f] shadow-xl"
           />
         </div>
 
@@ -1223,7 +1223,7 @@ const CardComponent = () => {
     <Card className="border-[#1096b7]/30">
       <CardHeader className="bg-[#1096b7]/10">
         <CardTitle>
-          <Badge className="bg-[#1096b7] text-xl hover:bg-[#0d7a94]">
+          <Badge className="bg-[#1096b7] text-xl hover:bg-[#0d7a94] text-white">
             Monthly
           </Badge>
         </CardTitle>
@@ -1282,7 +1282,7 @@ const CardQuarterComponent = () => {
     <Card className="border-[#1096b7]/30">
       <CardHeader className="bg-[#1096b7]/10">
         <CardTitle>
-          <Badge className="bg-[#1096b7] text-xl hover:bg-[#0d7a94]">
+          <Badge className="bg-[#1096b7] text-xl hover:bg-[#0d7a94] text-white">
             Quarterly
           </Badge>
         </CardTitle>

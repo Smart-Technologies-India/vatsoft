@@ -83,6 +83,12 @@ const Page = () => {
                 description="Monitor the progress and status of your submitted applications and requests with real-time updates."
                 link="/dashboard/register/department-track-application-status"
               />
+
+              <DashboardCards
+                title="Product Requests Management"
+                description="View and manage all product requests submitted by users. Update status, approve or reject requests."
+                link="/dashboard/register/product-requests"
+              />
             </>
           )}
           {["USER"].includes(user?.role!) && (

@@ -53,20 +53,6 @@ import GetFromDvat from "@/action/registration/getfromdvat";
 import CheckFirstStock from "@/action/firststock/checkfirststock";
 
 const Page = () => {
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
   const [userid, setUserid] = useState<number>(0);
   const router = useRouter();
   const [user, setUser] = useState<user | null>(null);
@@ -98,7 +84,6 @@ const Page = () => {
         setMonth(dashboard.data);
       }
 
-      console.log("userid", authResponse.data);
       const profile_response = await GetUserStatus({
         id: authResponse.data,
       });
@@ -138,11 +123,15 @@ const Page = () => {
     <>
       {user?.role == "USER" ? (
         <>
-          <main className="relative h-[calc(100vh-2.5rem)] bg-slate-50 overflow-hidden">
+          <main
+            className={`relative bg-slate-50 overflow-hidden ${
+              !isProfileCompletd ? "h-[calc(100vh-2.5rem)]" : ""
+            }`}
+          >
             <div className="pb-6 relative h-full">
-              <div className="mx-auto md:px-4 px-3 max-w-4xl py-4 relative">
+              <div className="mx-auto md:px-4 px-3 max-w-4xl lg:max-w-full py-4 relative lg:grid lg:grid-cols-12 lg:gap-4">
                 {/* Welcome Header */}
-                <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm mb-6">
+                <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm mb-6 lg:mb-0 lg:col-span-12">
                   <div className="flex items-center justify-between">
                     <div>
                       <h1 className="text-2xl font-semibold mb-2 text-slate-800">
@@ -168,7 +157,7 @@ const Page = () => {
                 </div>
 
                 {/* Returns Calendar Section */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 lg:mb-0 lg:col-span-9">
                   <div className="flex items-center justify-between mb-5">
                     <div>
                       <h2 className="text-xl font-semibold text-slate-800">
@@ -183,7 +172,7 @@ const Page = () => {
                     </span>
                   </div>
                   {/* VAT Returns List */}
-                  <div className="space-y-3">
+                  <div className="space-y-3 lg:grid lg:grid-cols-2 gap-4">
                     {month.map((val: any, index: number) => (
                       <RentCard
                         key={index}
@@ -208,7 +197,7 @@ const Page = () => {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 lg:col-span-3">
                   <div className="mb-5">
                     <h2 className="text-xl font-semibold text-slate-800">
                       Quick Actions
@@ -217,7 +206,7 @@ const Page = () => {
                       Access key portal features
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
                     <ButtonCard
                       title="Return Dashboard"
                       icon={
@@ -466,12 +455,12 @@ const RentCard = (props: RentCardProps) => {
     return formateDate(res);
   };
   return (
-    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-100 transition-all duration-200">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-100 transition-all duration-200 gap-3">
+      <div className="flex items-start sm:items-center gap-3 flex-1">
         {/* Status Indicator */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <div
-            className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-semibold ${
+            className={`w-14 h-14 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-sm font-semibold ${
               props.filestatus == FileStatus.FILED
                 ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
                 : "bg-amber-100 text-amber-700 border border-amber-200"
@@ -483,9 +472,9 @@ const RentCard = (props: RentCardProps) => {
             </div>
           </div>
           {props.filestatus == FileStatus.FILED && (
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
+            <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-4 sm:h-4 bg-emerald-500 rounded-full flex items-center justify-center">
               <svg
-                className="w-2.5 h-2.5 text-white"
+                className="w-3 h-3 sm:w-2.5 sm:h-2.5 text-white"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -500,13 +489,13 @@ const RentCard = (props: RentCardProps) => {
         </div>
 
         {/* Return Info */}
-        <div>
-          <h3 className="font-semibold text-slate-800 text-base mb-1">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-slate-800 text-base mb-2">
             {props.title}
           </h3>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             <span
-              className={`text-sm px-3 py-1 rounded-full font-medium ${
+              className={`text-xs sm:text-sm px-2.5 sm:px-3 py-1 rounded-full font-medium inline-block w-fit ${
                 props.filestatus == FileStatus.FILED
                   ? "bg-emerald-100 text-emerald-700"
                   : "bg-amber-100 text-amber-700"
@@ -514,7 +503,7 @@ const RentCard = (props: RentCardProps) => {
             >
               {props.status}
             </span>
-            <span className="text-sm text-slate-600">
+            <span className="text-xs sm:text-sm text-slate-600">
               {props.statusdate}:{" "}
               <span className="font-medium text-slate-800">
                 {props.filestatus == FileStatus.FILED
@@ -531,7 +520,7 @@ const RentCard = (props: RentCardProps) => {
         href={`/dashboard/returns/returns-dashboard?month=${
           monthNames[parseInt(props.month) - 1]
         }&year=${new Date(props.date).getFullYear()}`}
-        className="text-sm px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 font-medium"
+        className="text-sm px-4 py-2.5 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 font-medium text-center sm:text-left flex-shrink-0 w-full sm:w-auto"
       >
         Open
       </Link>
@@ -1098,7 +1087,7 @@ const OfficerDashboardPage = () => {
   ];
 
   return (
-    <main className="p-3 bg-gray-50 min-h-screen">
+    <main className="p-3 bg-gray-50">
       {/* Header Section */}
       <div className="mb-4">
         <div className="bg-white rounded-lg shadow-sm border p-3">

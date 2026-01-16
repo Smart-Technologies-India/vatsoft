@@ -125,12 +125,12 @@ const RegistrationStatus = () => {
                       return (
                         <TableRow
                           key={index}
-                          className={`bg-opacity-20 ${
+                          className={`${
                             val.status == "PENDINGPROCESSING"
-                              ? "bg-orange-500"
+                              ? "bg-orange-500/20"
                               : val.status == "APPROVED"
-                              ? "bg-green-500"
-                              : "bg-rose-500"
+                              ? "bg-green-500/20"
+                              : "bg-rose-500/20"
                           }`}
                         >
                           <TableCell className="text-center border">
