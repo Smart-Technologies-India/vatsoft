@@ -1031,6 +1031,16 @@ exports.Prisma.Product_requestScalarFieldEnum = {
   deletedById: 'deletedById'
 };
 
+exports.Prisma.NotificationScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  dvat04Id: 'dvat04Id',
+  notificationDvatType: 'notificationDvatType',
+  notificationType: 'notificationType',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1450,6 +1460,11 @@ exports.Prisma.product_requestOrderByRelevanceFieldEnum = {
   company_name: 'company_name',
   crate_size: 'crate_size'
 };
+
+exports.Prisma.notificationOrderByRelevanceFieldEnum = {
+  title: 'title',
+  description: 'description'
+};
 exports.Role = exports.$Enums.Role = {
   SYSTEM: 'SYSTEM',
   ADMIN: 'ADMIN',
@@ -1779,6 +1794,27 @@ exports.PackType = exports.$Enums.PackType = {
   TETRAPACK: 'TETRAPACK'
 };
 
+exports.ProductRequest = exports.$Enums.ProductRequest = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+};
+
+exports.NotificationDvatType = exports.$Enums.NotificationDvatType = {
+  ALL: 'ALL',
+  ONE: 'ONE',
+  PETROLEUM: 'PETROLEUM',
+  LIQUOR: 'LIQUOR'
+};
+
+exports.NotificationType = exports.$Enums.NotificationType = {
+  GENERAL: 'GENERAL',
+  ALERT: 'ALERT',
+  WARNING: 'WARNING',
+  INFO: 'INFO',
+  NOTICE: 'NOTICE'
+};
+
 exports.Prisma.ModelName = {
   user: 'user',
   change: 'change',
@@ -1818,7 +1854,8 @@ exports.Prisma.ModelName = {
   cform: 'cform',
   cform_returns: 'cform_returns',
   tally_purchase: 'tally_purchase',
-  product_request: 'product_request'
+  product_request: 'product_request',
+  notification: 'notification'
 };
 
 /**

@@ -332,6 +332,7 @@ model dvat04 {
   tally_purchase                  tally_purchase[]
   tally_sale                      tally_sale[]
   user_commodity_master           user_commodity_master[]
+  notification                    notification[]
 
   @@index([createdById], map: "dvat04_createdById_fkey")
   @@index([deletedById], map: "dvat04_deletedById_fkey")
@@ -1426,27 +1427,61 @@ model tally_purchase {
 }
 
 model product_request {
-  id            Int       @id @default(autoincrement())
+  id            Int            @id @default(autoincrement())
   product_name  String
   company_name  String
   pack_type     PackType
   crate_size    String
-  requestedBy   user      @relation("product_request_requestedBy", fields: [requestedById], references: [id])
+  requestedBy   user           @relation("product_request_requestedBy", fields: [requestedById], references: [id])
   requestedById Int
-  status        Status    @default(ACTIVE)
-  createdAt     DateTime  @default(now())
+  status        ProductRequest @default(PENDING)
+  createdAt     DateTime       @default(now())
   createdById   Int
-  updatedAt     DateTime  @updatedAt
+  updatedAt     DateTime       @updatedAt
   updatedById   Int?
   deletedAt     DateTime?
   deletedById   Int?
-  createdBy     user      @relation("product_request_createdBy", fields: [createdById], references: [id])
-  deletedBy     user?     @relation("product_request_deletedBy", fields: [deletedById], references: [id])
-  updatedBy     user?     @relation("product_request_updatedBy", fields: [updatedById], references: [id])
+  createdBy     user           @relation("product_request_createdBy", fields: [createdById], references: [id])
+  deletedBy     user?          @relation("product_request_deletedBy", fields: [deletedById], references: [id])
+  updatedBy     user?          @relation("product_request_updatedBy", fields: [updatedById], references: [id])
 
   @@index([createdById], map: "product_request_createdById_fkey")
   @@index([deletedById], map: "product_request_deletedById_fkey")
   @@index([updatedById], map: "product_request_updatedById_fkey")
+}
+
+model notification {
+  id                   Int                  @id @default(autoincrement())
+  title                String
+  description          String               @db.MediumText
+  dvat04               dvat04?              @relation(fields: [dvat04Id], references: [id])
+  dvat04Id             Int?
+  notificationDvatType NotificationDvatType
+  notificationType     NotificationType
+  createdAt            DateTime             @default(now())
+
+  @@index([dvat04Id], map: "notification_dvat04Id_fkey")
+}
+
+enum NotificationType {
+  GENERAL
+  ALERT
+  WARNING
+  INFO
+  NOTICE
+}
+
+enum NotificationDvatType {
+  ALL
+  ONE
+  PETROLEUM
+  LIQUOR
+}
+
+enum ProductRequest {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum UserStatus {

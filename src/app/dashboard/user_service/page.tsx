@@ -31,6 +31,7 @@ const Page = () => {
     };
     init();
   }, [userid]);
+
   return (
     <>
       <main className="bg-linear-to-l py-4 px-4 rounded-md mt-4 w-full xl:w-5/6 xl:mx-auto">
@@ -56,8 +57,14 @@ const Page = () => {
                 description="Check any notices and orders issued by the VAT department."
                 link="/dashboard/user_service/department-notice_order"
               />
+              <DashboardCards
+                title="Send Notification"
+                description="Send notifications to all users, specific groups, or individual users."
+                link="/dashboard/send-notification"
+              />
             </>
           )}
+
           {["USER"].includes(user?.role!) && (
             <>
               <DashboardCards

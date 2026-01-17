@@ -12,6 +12,7 @@ import {
   FluentWalletCreditCard20Regular,
   LucideUser,
   MaterialSymbolsCloseSmall,
+  SolarBellBold,
   SolarLogout2Bold,
 } from "../icons";
 import React, { useEffect, useState } from "react";
@@ -175,6 +176,13 @@ const Sidebar = (props: SidebarProps) => {
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
+              icon={<SolarBellBold className="w-5 h-5" />}
+              name="Notifications"
+              path={path}
+              pathcheck={"/dashboard/notifications"}
+            />
+            <MenuTab
+              click={() => props.setIsOpen(false)}
               icon={<FluentCalendar12Regular className="w-5 h-5" />}
               name="Daily Sale"
               path={path}
@@ -190,14 +198,6 @@ const Sidebar = (props: SidebarProps) => {
           </>
         )}
 
-        <MenuTab
-          click={() => props.setIsOpen(false)}
-          icon={<FluentAlignBottom24Regular className="w-5 h-5" />}
-          name="Reports"
-          path={path}
-          pathcheck={"/dashboard/reports"}
-        />
-
         {[
           "SYSTEM",
           "ADMIN",
@@ -206,13 +206,22 @@ const Sidebar = (props: SidebarProps) => {
           "DY_COMMISSIONER",
           "INSPECTOR",
         ].includes(props.role) && (
-          <MenuTab
-            click={() => props.setIsOpen(false)}
-            icon={<FluentDocumentSparkle28Regular className="w-5 h-5" />}
-            name="Registration Status"
-            path={path}
-            pathcheck={"/dashboard/registration_status"}
-          />
+          <>
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentDocumentSparkle28Regular className="w-5 h-5" />}
+              name="Registration Status"
+              path={path}
+              pathcheck={"/dashboard/registration_status"}
+            />
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentAlignBottom24Regular className="w-5 h-5" />}
+              name="Reports"
+              path={path}
+              pathcheck={"/dashboard/reports"}
+            />
+          </>
         )}
       </div>
 
@@ -253,7 +262,7 @@ interface MenuTabProps {
 
 const MenuTab = (props: MenuTabProps) => {
   const isActive = props.path === props.pathcheck;
-  
+
   return (
     <Link
       onClick={props.click}

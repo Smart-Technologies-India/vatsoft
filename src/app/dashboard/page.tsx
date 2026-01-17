@@ -44,6 +44,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import OfficerDashboard from "@/action/dashboard/officerdashboard";
 import Last15Received from "@/action/dashboard/last15received";
+import GetTopLiquorDealers from "@/action/dashboard/gettopliquordealers";
+import GetTopFuelDealers from "@/action/dashboard/gettopfueldealers";
 import { format, subMonths } from "date-fns";
 import { Radio, RadioChangeEvent } from "antd";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
@@ -520,7 +522,7 @@ const RentCard = (props: RentCardProps) => {
         href={`/dashboard/returns/returns-dashboard?month=${
           monthNames[parseInt(props.month) - 1]
         }&year=${new Date(props.date).getFullYear()}`}
-        className="text-sm px-4 py-2.5 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 font-medium text-center sm:text-left flex-shrink-0 w-full sm:w-auto"
+        className="text-sm px-4 py-2.5 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 font-medium text-center sm:text-left shrink-0 w-full sm:w-auto"
       >
         Open
       </Link>
@@ -854,92 +856,6 @@ const dealerBarOptions: any = {
   },
 };
 
-// Sample data for Top 10 Liquor Dealers (10 dealers from each district)
-const liquorDealersData = {
-  labels: [
-    // Dadra & Nagar Haveli - Top liquor dealers
-    "ABC Liquors (DNH)",
-    "Premium Spirits (DNH)",
-    "Royal Wine Shop (DNH)",
-    // Daman - Top liquor dealers
-    "Daman Beverages (DD)",
-    "Ocean View Liquors (DD)",
-    "Coastal Spirits (DD)",
-    // Diu - Top liquor dealers
-    "Island Wines (DIU)",
-    "Sunset Liquors (DIU)",
-    "Beach Bar Supplies (DIU)",
-    "Heritage Spirits (DNH)",
-  ],
-  datasets: [
-    {
-      label: "Revenue",
-      data: [
-        2800000, 2650000, 2400000, 2200000, 2100000, 1950000, 1800000, 1750000,
-        1600000, 1500000,
-      ],
-      backgroundColor: [
-        "#8B5CF6",
-        "#A855F7",
-        "#9333EA", // DNH - Purple shades
-        "#3B82F6",
-        "#2563EB",
-        "#1D4ED8", // Daman - Blue shades
-        "#10B981",
-        "#059669",
-        "#047857",
-        "#6366F1", // Diu - Green shades + extra
-      ],
-      borderColor: "#ffffff",
-      borderWidth: 2,
-      borderRadius: 6,
-    },
-  ],
-};
-
-// Sample data for Top 10 Fuel Dealers (10 dealers from each district)
-const fuelDealersData = {
-  labels: [
-    // Dadra & Nagar Haveli - Top fuel dealers
-    "Highway Petrol (DNH)",
-    "City Fuel Station (DNH)",
-    "Express Petroleum (DNH)",
-    // Daman - Top fuel dealers
-    "Coastal Fuels (DD)",
-    "Port City Petrol (DD)",
-    "Marine Gas Station (DD)",
-    // Diu - Top fuel dealers
-    "Island Petroleum (DIU)",
-    "Beach Fuel Stop (DIU)",
-    "Tropical Gas (DIU)",
-    "Green Energy (DNH)",
-  ],
-  datasets: [
-    {
-      label: "Revenue",
-      data: [
-        3200000, 3050000, 2900000, 2750000, 2600000, 2450000, 2300000, 2150000,
-        2000000, 1850000,
-      ],
-      backgroundColor: [
-        "#F59E0B",
-        "#D97706",
-        "#B45309", // DNH - Amber shades
-        "#EF4444",
-        "#DC2626",
-        "#B91C1C", // Daman - Red shades
-        "#06B6D4",
-        "#0891B2",
-        "#0E7490",
-        "#F97316", // Diu - Cyan shades + extra
-      ],
-      borderColor: "#ffffff",
-      borderWidth: 2,
-      borderRadius: 6,
-    },
-  ],
-};
-
 const OfficerDashboardPage = () => {
   interface ResponseData {
     totaldealer: number;
@@ -981,6 +897,16 @@ const OfficerDashboardPage = () => {
     "Dadra_Nagar_Haveli"
   );
 
+  interface TopDealerData {
+    id: number;
+    name: string;
+    tinNumber: string;
+    totalRevenue: number;
+  }
+
+  const [topLiquorDealers, setTopLiquorDealers] = useState<TopDealerData[]>([]);
+  const [topFuelDealers, setTopFuelDealers] = useState<TopDealerData[]>([]);
+
   useEffect(() => {
     const init = async () => {
       const count_data_response = await OfficerDashboard({
@@ -995,6 +921,20 @@ const OfficerDashboardPage = () => {
       });
       if (last15days.status && last15days.data) {
         setLast15Day(last15days.data);
+      }
+
+      const liquorDealersResponse = await GetTopLiquorDealers({
+        selectOffice: city,
+      });
+      if (liquorDealersResponse.status && liquorDealersResponse.data) {
+        setTopLiquorDealers(liquorDealersResponse.data);
+      }
+
+      const fuelDealersResponse = await GetTopFuelDealers({
+        selectOffice: city,
+      });
+      if (fuelDealersResponse.status && fuelDealersResponse.data) {
+        setTopFuelDealers(fuelDealersResponse.data);
       }
     };
     init();
@@ -1011,6 +951,62 @@ const OfficerDashboardPage = () => {
         backgroundColor: "#95acbe",
         borderWidth: 0,
         barPercentage: 0.6,
+      },
+    ],
+  };
+
+  // Dynamic liquor dealers data from database
+  const liquorDealersData = {
+    labels: topLiquorDealers.map(
+      (dealer) => `${dealer.name} (${dealer.tinNumber})`
+    ),
+    datasets: [
+      {
+        label: "Revenue",
+        data: topLiquorDealers.map((dealer) => dealer.totalRevenue),
+        backgroundColor: [
+          "#8B5CF6",
+          "#A855F7",
+          "#9333EA",
+          "#3B82F6",
+          "#2563EB",
+          "#1D4ED8",
+          "#10B981",
+          "#059669",
+          "#047857",
+          "#6366F1",
+        ],
+        borderColor: "#ffffff",
+        borderWidth: 2,
+        borderRadius: 6,
+      },
+    ],
+  };
+
+  // Dynamic fuel dealers data from database
+  const fuelDealersData = {
+    labels: topFuelDealers.map(
+      (dealer) => `${dealer.name} (${dealer.tinNumber})`
+    ),
+    datasets: [
+      {
+        label: "Revenue",
+        data: topFuelDealers.map((dealer) => dealer.totalRevenue),
+        backgroundColor: [
+          "#F59E0B",
+          "#D97706",
+          "#B45309",
+          "#EF4444",
+          "#DC2626",
+          "#B91C1C",
+          "#06B6D4",
+          "#0891B2",
+          "#0E7490",
+          "#F97316",
+        ],
+        borderColor: "#ffffff",
+        borderWidth: 2,
+        borderRadius: 6,
       },
     ],
   };
@@ -1375,7 +1371,7 @@ const OfficerDashboardPage = () => {
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Dealers</span>
                 <span className="font-medium text-gray-700">
-                  30 Active Dealers
+                  {topLiquorDealers.length} Active Dealers
                 </span>
               </div>
             </div>
@@ -1416,7 +1412,7 @@ const OfficerDashboardPage = () => {
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Dealers</span>
                 <span className="font-medium text-gray-700">
-                  30 Active Dealers
+                  {topFuelDealers.length} Active Dealers
                 </span>
               </div>
             </div>

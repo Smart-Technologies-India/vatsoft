@@ -1,6 +1,4 @@
 "use client";
-import * as XLSX from "xlsx"; // Importing XLSX from the correct path
-import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
 interface CowReportResponse {
@@ -192,10 +190,10 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/nodata");
+              router.push("/dashboard/reports/revenue_reports/yearly_comparison");
             }}
           >
-            - View Report
+            View Report
           </button>
         </div>
       </div>
@@ -251,10 +249,10 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/nodata");
+              router.push("/dashboard/reports/commodity_reports/sales_growth");
             }}
           >
-            - View Report
+            View Report
           </button>
         </div>
       </div>
@@ -283,10 +281,10 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/nodata");
+              router.push("/dashboard/reports/dealer_behavior/improved_compliance");
             }}
           >
-            - View Report
+            View Report
           </button>
         </div>
         <div className="p-2 rounded shadow bg-white relative pb-8">
@@ -313,10 +311,10 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/nodata");
+              router.push("/dashboard/reports/dealer_behavior/top_revenue_dealers");
             }}
           >
-            - View Report
+            View Report
           </button>
         </div>
         <div className="p-2 rounded shadow bg-white relative pb-8">
@@ -327,10 +325,10 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/nodata");
+              router.push("/dashboard/reports/dealer_behavior/dealer_type_revenue");
             }}
           >
-            - View Report
+            View Report
           </button>
         </div>
       </div>
