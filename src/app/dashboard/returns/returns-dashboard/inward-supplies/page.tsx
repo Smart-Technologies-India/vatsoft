@@ -273,59 +273,76 @@ const InwardSupplies = () => {
 
   return (
     <>
-      <main className="w-full p-4">
-        <div>
-          <div className="bg-emerald-500 w-full mt-2 px-2 text-white flex gap-2 py-1">
-            <p>Details of Purchase of goods or services</p>
-            <div className="grow"></div>
-            <button>
-              <TablerRefresh />
-            </button>
+      <main className="p-3 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+            <div className="flex gap-2 items-center">
+              <h1 className="text-lg font-medium text-gray-900">
+                Details of Purchase of goods or services
+              </h1>
+              <div className="grow"></div>
+              <button className="text-blue-600 hover:text-blue-700">
+                <TablerRefresh />
+              </button>
+            </div>
           </div>
-          <div className="bg-white p-4 flex text-xs justify-between">
+          
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
             <div>
-              <p>VAT No. - {dvatdata?.tinNumber}</p>
-              <p>FY - {searchParams.get("year")}</p>
+              <p className="text-gray-600">VAT No.</p>
+              <p className="font-medium text-gray-900">{dvatdata?.tinNumber}</p>
+              <p className="text-gray-600 mt-2">FY</p>
+              <p className="font-medium text-gray-900">{searchParams.get("year")}</p>
             </div>
             <div>
-              <p>Legal Name - {dvatdata?.name}</p>
-              <p>Tax Period - {getTaxPerios()}</p>
+              <p className="text-gray-600">Legal Name</p>
+              <p className="font-medium text-gray-900">{dvatdata?.name}</p>
+              <p className="text-gray-600 mt-2">Tax Period</p>
+              <p className="font-medium text-gray-900">{getTaxPerios()}</p>
             </div>
             <div>
-              <p>Trade Name - {dvatdata?.tradename}</p>
-              <p>Status - {payment_complted() ? "Filed" : "Not Filed"} </p>
+              <p className="text-gray-600">Trade Name</p>
+              <p className="font-medium text-gray-900">{dvatdata?.tradename}</p>
+              <p className="text-gray-600 mt-2">Status</p>
+              <p className="font-medium text-gray-900">{payment_complted() ? "Filed" : "Not Filed"}</p>
             </div>
             <div>
-              <p>Indicates Mandatory Fields</p>
-              <p>Due Date - {getDueDate()}</p>
+              <p className="text-gray-600">Mandatory Fields</p>
+              <p className="font-medium text-gray-900">*</p>
+              <p className="text-gray-600 mt-2">Due Date</p>
+              <p className="font-medium text-gray-900">{getDueDate()}</p>
             </div>
           </div>
         </div>
 
         {isnil() && (
-          <div className="my-2 bg-green-500/10 border border-green-500 text-center  px-2 text-green-500 py-1">
-            <p>Nil filing successfull for this form.</p>
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-green-50 border border-green-200 text-center px-3 py-2 text-green-700 text-xs rounded">
+              <p>Nil filing successful for this form.</p>
+            </div>
           </div>
         )}
 
-        <div className="bg-white p-2 shadow mt-2">
-          <Table className="border mt-2">
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="whitespace-nowrap w-64 border text-center">
-                  Rate (%)
-                </TableHead>
-                <TableHead className="whitespace-nowrap border text-center">
-                  Number of Entries
-                </TableHead>
-                <TableHead className="whitespace-nowrap border text-center">
-                  Taxable Amount
-                </TableHead>
-                <TableHead className="whitespace-nowrap border text-center">
-                  Tax Amount
-                </TableHead>
-              </TableRow>
-            </TableHeader>
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded shadow-sm border p-3">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50 border-b">
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Rate (%)
+                    </TableHead>
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Number of Entries
+                    </TableHead>
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Taxable Amount
+                    </TableHead>
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Tax Amount
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
             <TableBody>
               {[
                 "0",
@@ -341,11 +358,11 @@ const InwardSupplies = () => {
                 "20",
               ].map((val: string, index: number) => {
                 return (
-                  <TableRow key={index}>
-                    <TableCell className="p-2 border text-center">
+                  <TableRow key={index} className="border-b hover:bg-gray-50">
+                    <TableCell className="p-2 text-center text-xs">
                       {val}% Tax Rate
                     </TableCell>
-                    <TableCell className="p-2 border text-center">
+                    <TableCell className="p-2 text-center text-xs">
                       {
                         getDvatData(
                           searchParams.get("form") == "30"
@@ -355,7 +372,7 @@ const InwardSupplies = () => {
                         ).entry
                       }
                     </TableCell>
-                    <TableCell className="p-2 border text-center">
+                    <TableCell className="p-2 text-center text-xs">
                       {
                         getDvatData(
                           searchParams.get("form") == "30"
@@ -365,7 +382,7 @@ const InwardSupplies = () => {
                         ).amount
                       }
                     </TableCell>
-                    <TableCell className="p-2 border text-center">
+                    <TableCell className="p-2 text-center text-xs">
                       {
                         getDvatData(
                           searchParams.get("form") == "30"
@@ -379,9 +396,9 @@ const InwardSupplies = () => {
                 );
               })}
 
-              <TableRow>
-                <TableCell className="p-2 border text-center">Total</TableCell>
-                <TableCell className="p-2 border text-center">
+              <TableRow className="bg-gray-50 border-b font-medium">
+                <TableCell className="p-2 text-center text-xs">Total</TableCell>
+                <TableCell className="p-2 text-center text-xs">
                   {
                     getAllDvatData(
                       searchParams.get("form") == "30"
@@ -390,7 +407,7 @@ const InwardSupplies = () => {
                     ).entry
                   }
                 </TableCell>
-                <TableCell className="p-2 border text-center">
+                <TableCell className="p-2 text-center text-xs">
                   {
                     getAllDvatData(
                       searchParams.get("form") == "30"
@@ -399,7 +416,7 @@ const InwardSupplies = () => {
                     ).amount
                   }
                 </TableCell>
-                <TableCell className="p-2 border text-center">
+                <TableCell className="p-2 text-center text-xs">
                   {
                     getAllDvatData(
                       searchParams.get("form") == "30"
@@ -411,13 +428,26 @@ const InwardSupplies = () => {
               </TableRow>
             </TableBody>
           </Table>
-          <div className="flex mt-2 gap-2">
-            {/* {getdvattype() == DvatType.DVAT_30 && (
+          </div>
+          <div className="flex mt-3 gap-2">
+            <div className="grow"></div>
+            {is_empty() && payment_complted() == false ? (
               <Button
                 type="primary"
+                onClick={() => setOpen(true)}
+                size="small"
+              >
+                Declare Nil Invoice
+              </Button>
+            ) : null}
+
+            {!isnil() && (
+              <Button
+                type="primary"
+                size="small"
                 onClick={() => {
-                  route.push(
-                    `/dashboard/returns/returns-dashboard/inward-supplies/oidc-sale?form=${searchParams.get(
+                  router.push(
+                    `/dashboard/returns/returns-dashboard/invoices?form=${searchParams.get(
                       "form"
                     )}&year=${searchParams.get(
                       "year"
@@ -426,51 +456,12 @@ const InwardSupplies = () => {
                     )}&month=${searchParams.get("month")}`
                   );
                 }}
-                size="small"
               >
-                View OIDC Sale
+                View All
               </Button>
-            )} */}
-            <div className="flex mt-2 gap-2 w-full">
-              <div className="grow"></div>
-              {is_empty() && payment_complted() == false ? (
-                <Button
-                  type="primary"
-                  onClick={() => setOpen(true)}
-                  size="small"
-                >
-                  Declare Nil Invoice
-                </Button>
-              ) : null}
-
-              {!isnil() && (
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() => {
-                    router.push(
-                      `/dashboard/returns/returns-dashboard/invoices?form=${searchParams.get(
-                        "form"
-                      )}&year=${searchParams.get(
-                        "year"
-                      )}&quarter=${searchParams.get(
-                        "quarter"
-                      )}&month=${searchParams.get("month")}`
-                    );
-                  }}
-                >
-                  View All
-                </Button>
-              )}
-
-              {/* <button
-              className="text-sm border hover:border-blue-500 hover:text-blue-500 bg-white text-[#172e57] py-1 px-4"
-              onClick={() => route.back()}
-            >
-              Back
-            </button> */}
-            </div>
+            )}
           </div>
+        </div>
         </div>
       </main>
 

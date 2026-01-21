@@ -320,24 +320,32 @@ const SupplierDetails = () => {
 
   return (
     <>
-      <div className="p-4">
-        <div className="bg-white p-2 shadow mt-2">
-          <div className="bg-blue-500 p-2 text-white">
-            List of Notices & Orders issued by Authorities
+      <main className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+        {/* Header Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+          <div className="bg-linear-to-r from-blue-500 to-indigo-600 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-8 bg-white rounded-full"></div>
+              <h1 className="text-2xl font-bold text-white">List of Notices & Orders issued by Authorities</h1>
+            </div>
           </div>
-          <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
-            <Radio.Group
-              onChange={onChange}
-              disabled={isSearch}
-              className="mt-2"
-              value={searchOption}
-            >
-              <Radio value={SearchOption.TYPE}>Type</Radio>
-              <Radio value={SearchOption.DATE}>Period</Radio>
-              <Radio value={SearchOption.ORDER}>Notice/Demand Order Id</Radio>
-            </Radio.Group>
-            <div className="mt-2"></div>
-            {(() => {
+        </div>
+
+        {/* Main Content Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          {/* Search Section */}
+          <div className="p-6 bg-gray-50 border-b border-gray-200">
+            <div className="flex flex-col md:flex-row gap-4 md:items-center">
+              <Radio.Group
+                onChange={onChange}
+                disabled={isSearch}
+                value={searchOption}
+              >
+                <Radio value={SearchOption.TYPE}>Type</Radio>
+                <Radio value={SearchOption.DATE}>Period</Radio>
+                <Radio value={SearchOption.ORDER}>Notice/Demand Order Id</Radio>
+              </Radio.Group>
+              {(() => {
               switch (searchOption) {
                 case SearchOption.TYPE:
                   return (
@@ -416,127 +424,129 @@ const SupplierDetails = () => {
                       )}
                     </div>
                   );
-                default:
-                  return null;
-              }
-            })()}
+                  default:
+                    return null;
+                }
+              })()}
+            </div>
           </div>
 
-          <Table className="border mt-2">
-            <TableHeader>
-              <TableRow className="bg-gray-100 p-2">
-                <TableHead className="border text-center">
-                  Notice/Demand
-                  <br /> Order Id
-                </TableHead>
-                <TableHead className="border whitespace-nowrap text-center  p-2">
-                  Issued By
-                </TableHead>
-                <TableHead className="border text-center p-2">Type</TableHead>
-                <TableHead className="border text-center p-2">
-                  Notice/ Order Description
-                </TableHead>
-                <TableHead className="border text-center p-2">
-                  Date of Issuance
-                </TableHead>
-                <TableHead className="border text-center p-2">
-                  Due Date
-                </TableHead>
-                <TableHead className="border text-center p-2">
-                  Amount of Demand
-                </TableHead>
-                <TableHead className="border text-center p-2">Status</TableHead>
-                <TableHead className="border text-center p-2">
-                  Download
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {noticeData.map((val: order_notice, index: number) => (
-                <TableRow key={index}>
-                  <TableCell className="p-2 border text-center">
-                    <Link
-                      href={getLink(val.form_type, val.id)}
-                      className="text-blue-500"
-                    >
-                      {val.ref_no.toUpperCase()}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="p-2 border whitespace-nowrap text-center">
-                    System Generated
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {capitalcase(val.notice_order_type)}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.form_type}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {formateDate(val.issue_date)}
-                  </TableCell>
-                  <TableCell className="p-2 border whitespace-nowrap text-center">
-                    {formateDate(val.due_date)}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.amount}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {capitalcase(val.status)}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center text-blue-500">
-                    {val.status == "PAID" && (
-                      <MdiDownload
-                        className="cursor-pointer"
-                        onClick={async () => {
-                          await downloadNoticeOrder(val.form_type, val.id);
-                        }}
-                      />
-                    )}
-                  </TableCell>
+          {/* Table Section */}
+          <div className="p-6">
+            <Table className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+              <TableHeader>
+                <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                  <TableHead className="border text-center p-3 font-semibold text-gray-900">
+                    Notice/Demand
+                    <br /> Order Id
+                  </TableHead>
+                  <TableHead className="border whitespace-nowrap text-center p-3 font-semibold text-gray-900">
+                    Issued By
+                  </TableHead>
+                  <TableHead className="border text-center p-3 font-semibold text-gray-900">Type</TableHead>
+                  <TableHead className="border text-center p-3 font-semibold text-gray-900">
+                    Notice/ Order Description
+                  </TableHead>
+                  <TableHead className="border text-center p-3 font-semibold text-gray-900">
+                    Date of Issuance
+                  </TableHead>
+                  <TableHead className="border text-center p-3 font-semibold text-gray-900">
+                    Due Date
+                  </TableHead>
+                  <TableHead className="border text-center p-3 font-semibold text-gray-900">
+                    Amount of Demand
+                  </TableHead>
+                  <TableHead className="border text-center p-3 font-semibold text-gray-900">Status</TableHead>
+                  <TableHead className="border text-center p-3 font-semibold text-gray-900">
+                    Download
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <div className="mt-2"></div>
-          <div className="lg:hidden">
-            <Pagination
-              align="center"
-              defaultCurrent={1}
-              onChange={onChangePageCount}
-              showSizeChanger
-              total={pagination.total}
-              showTotal={(total: number) => `Total ${total} items`}
-            />
+              </TableHeader>
+                <TableBody>
+                {noticeData.map((val: order_notice, index: number) => (
+                  <TableRow key={index} className="hover:bg-blue-50 transition-colors">
+                    <TableCell className="p-3 border text-center">
+                      <Link
+                        href={getLink(val.form_type, val.id)}
+                        className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                      >
+                        {val.ref_no.toUpperCase()}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="p-3 border whitespace-nowrap text-center text-gray-900">
+                      System Generated
+                    </TableCell>
+                    <TableCell className="p-3 border text-center">
+                      <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+                        {capitalcase(val.notice_order_type)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="p-3 border text-center text-gray-900">
+                      {val.form_type}
+                    </TableCell>
+                    <TableCell className="p-3 border text-center text-gray-900">
+                      {formateDate(val.issue_date)}
+                    </TableCell>
+                    <TableCell className="p-3 border whitespace-nowrap text-center text-gray-900">
+                      {formateDate(val.due_date)}
+                    </TableCell>
+                    <TableCell className="p-3 border text-center font-medium text-gray-900">
+                      {val.amount}
+                    </TableCell>
+                    <TableCell className="p-3 border text-center">
+                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
+                        val.status === "PAID" 
+                          ? "bg-green-100 text-green-800" 
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {capitalcase(val.status)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="p-3 border text-center text-blue-500">
+                      {val.status == "PAID" && (
+                        <MdiDownload
+                          className="cursor-pointer hover:text-blue-700 transition-colors"
+                          onClick={async () => {
+                            await downloadNoticeOrder(val.form_type, val.id);
+                          }}
+                        />
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-          <div className="hidden lg:block">
-            <Pagination
-              showQuickJumper
-              align="center"
-              defaultCurrent={1}
-              onChange={onChangePageCount}
-              showSizeChanger
-              pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-              total={pagination.total}
-              responsive={true}
-              showTotal={(total: number, range: number[]) =>
-                `${range[0]}-${range[1]} of ${total} items`
-              }
-            />
+          {/* Pagination Section */}
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+            <div className="lg:hidden">
+              <Pagination
+                align="center"
+                defaultCurrent={1}
+                onChange={onChangePageCount}
+                showSizeChanger
+                total={pagination.total}
+                showTotal={(total: number) => `Total ${total} items`}
+              />
+            </div>
+            <div className="hidden lg:block">
+              <Pagination
+                showQuickJumper
+                align="center"
+                defaultCurrent={1}
+                onChange={onChangePageCount}
+                showSizeChanger
+                pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                total={pagination.total}
+                responsive={true}
+                showTotal={(total: number, range: number[]) =>
+                  `${range[0]}-${range[1]} of ${total} items`
+                }
+              />
+            </div>
           </div>
-          {/* <div className="flex mt-2 gap-2">
-            <div className="grow"></div>
-            <Button
-              onClick={(e) => {
-                e.preventDefault();
-                router.back();
-              }}
-              type="default"
-            >
-              Back
-            </Button>
-          </div> */}
         </div>
-      </div>
+      </main>
     </>
   );
 };

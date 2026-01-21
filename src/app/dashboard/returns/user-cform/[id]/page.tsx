@@ -1,7 +1,6 @@
 "use client";
-import { Alert, Button, Input, Pagination } from "antd";
+import { Alert, Button, Input, Pagination, Drawer } from "antd";
 
-import { Button as ShButton } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -15,21 +14,11 @@ import { Radio, DatePicker } from "antd";
 import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
 import { cform, dvat04 } from "@prisma/client";
 import {
   capitalcase,
   decryptURLData,
   encryptURLData,
-  formateDate,
 } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -359,118 +348,38 @@ const TrackAppliation = () => {
 
   return (
     <>
-      <div className="p-3 py-2">
-        <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white flex">
-            <p>Track C-Form</p>
-            <div className="grow"></div>
-
-            {/* <Drawer>
-              <DrawerTrigger>Info</DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader className="px-0 py-2">
-                  <DrawerTitle>
-                    <p className="w-5/6 mx-auto">Meaning of status</p>
-                  </DrawerTitle>
-                </DrawerHeader>
-                <Table className="border mt-2 w-5/6 mx-auto">
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Pending for Processing
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application filed successfully. Pending with Tax Officer
-                        for Processing.*
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Pending for Clarification
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Notice for seeking clarification issued by officer. File
-                        Clarification within 7 working days of date of notice on
-                        portal.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Clarification filed-Pending for Order
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Clarification filed successfully by Applicant. Pending
-                        with Tax Officer for Order.*
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Clarification not filed Pending for Order
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Clarification not filed by the Applicant. Pending with
-                        Tax Officer for Rejection.*
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Approved
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application is Approved. Registration ID and possward
-                        emailed to Applicant.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Rejected
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application is Rejected by tax officer.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Withdrawn
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application is withdrawn by the Applicant/Tax payer.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Cancelled on Request of Taxpayer
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Registration is cancelled on request to taxpayer.
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-
-                <DrawerFooter>
-                  <DrawerClose>
-                    <ShButton variant="outline">Close</ShButton>
-                  </DrawerClose>
-                </DrawerFooter>
-              </DrawerContent>
-            </Drawer> */}
+      <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+        {/* Header Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+          <div className="bg-linear-to-r from-blue-500 to-indigo-600 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-8 bg-white rounded-full"></div>
+              <h1 className="text-2xl font-bold text-white">Track C-Form</h1>
+            </div>
           </div>
+        </div>
+
+        {/* Main Content Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           {cformData.length == 0 && (
-            <Alert
-              style={{
-                marginTop: "10px",
-                padding: "8px",
-              }}
-              type="error"
-              showIcon
-              description="There is no C-Form."
-            />
+            <div className="p-6">
+              <Alert
+                style={{
+                  padding: "16px",
+                  borderRadius: "12px",
+                }}
+                type="error"
+                showIcon
+                description="There is no C-Form."
+              />
+            </div>
           )}
 
           {cformData.length != 0 && (
             <>
-              <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
+              {/* Search Section */}
+              <div className="p-6 bg-linear-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+                <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
                 <Radio.Group
                   onChange={onChange}
                   value={searchOption}
@@ -483,20 +392,27 @@ const TrackAppliation = () => {
                   switch (searchOption) {
                     case SearchOption.TIN:
                       return (
-                        <div className="flex gap-2">
+                        <div className="flex gap-3">
                           <Input
-                            className="w-60"
+                            className="w-60 border-gray-300 focus:border-blue-500"
                             ref={tinRef}
                             placeholder={"Enter Purchaser TIN Number"}
                             disabled={isSearch}
                           />
-
                           {isSearch ? (
-                            <Button onClick={init} type="primary">
+                            <Button 
+                              onClick={init} 
+                              type="primary"
+                              className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
+                            >
                               Reset
                             </Button>
                           ) : (
-                            <Button onClick={tinsearch} type="primary">
+                            <Button 
+                              onClick={tinsearch} 
+                              type="primary"
+                              className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
+                            >
                               Search
                             </Button>
                           )}
@@ -505,20 +421,27 @@ const TrackAppliation = () => {
 
                     case SearchOption.NAME:
                       return (
-                        <div className="flex gap-2">
+                        <div className="flex gap-3">
                           <Input
-                            className="w-60"
+                            className="w-60 border-gray-300 focus:border-blue-500"
                             ref={nameRef}
-                            placeholder={"Enter Purchaser Name Number"}
+                            placeholder={"Enter Purchaser Name"}
                             disabled={isSearch}
                           />
-
                           {isSearch ? (
-                            <Button onClick={init} type="primary">
+                            <Button 
+                              onClick={init} 
+                              type="primary"
+                              className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
+                            >
                               Reset
                             </Button>
                           ) : (
-                            <Button onClick={namesearch} type="primary">
+                            <Button 
+                              onClick={namesearch} 
+                              type="primary"
+                              className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
+                            >
                               Search
                             </Button>
                           )}
@@ -528,85 +451,90 @@ const TrackAppliation = () => {
                       return null;
                   }
                 })()}
+                </div>
               </div>
 
-              <Table className="border mt-2">
-                <TableHeader>
-                  <TableRow className="bg-gray-100">
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      ARN
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      C-Form Type
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      Form Period
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      TIN Number
-                    </TableHead>
-
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      Purchaser Name
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {cformData.map((val: cform, index: number) => {
-                    return (
-                      <TableRow key={index}>
-                        <TableCell className="border text-center p-2">
-                          <Link
-                            href={`/dashboard/cform/${encryptURLData(
-                              val.id.toString()
-                            )}`}
-                            className="text-blue-500"
-                          >
-                            {val.sr_no}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="border text-center p-2">
-                          {val.cform_type}
-                        </TableCell>
-                        <TableCell className="border text-center p-2">
-                          {getMonthRange(val.to_period)}
-                        </TableCell>
-                        <TableCell className="border text-center p-2">
-                          {val.seller_tin_no}
-                        </TableCell>
-                        <TableCell className="border text-center p-2">
-                          {val.seller_name}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-              <div className="mt-2"></div>
-              <div className="lg:hidden">
-                <Pagination
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  total={pagination.total}
-                  showTotal={(total: number) => `Total ${total} items`}
-                />
+              {/* Table Section */}
+              <div className="p-6">
+                <Table className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                  <TableHeader>
+                    <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        ARN
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        C-Form Type
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        Form Period
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        TIN Number
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        Purchaser Name
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {cformData.map((val: cform, index: number) => {
+                      return (
+                        <TableRow key={index} className="hover:bg-blue-50 transition-colors">
+                          <TableCell className="border text-center p-3">
+                            <Link
+                              href={`/dashboard/cform/${encryptURLData(
+                                val.id.toString()
+                              )}`}
+                              className="text-blue-600 hover:text-blue-800 font-medium hover:underline transition-colors"
+                            >
+                              {val.sr_no}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="border text-center p-3 text-gray-900">
+                            {val.cform_type}
+                          </TableCell>
+                          <TableCell className="border text-center p-3 text-gray-900">
+                            {getMonthRange(val.to_period)}
+                          </TableCell>
+                          <TableCell className="border text-center p-3 text-gray-900">
+                            {val.seller_tin_no}
+                          </TableCell>
+                          <TableCell className="border text-center p-3 text-gray-900">
+                            {val.seller_name}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
-              <div className="hidden lg:block">
-                <Pagination
-                  showQuickJumper
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                  total={pagination.total}
-                  responsive={true}
-                  showTotal={(total: number, range: number[]) =>
-                    `${range[0]}-${range[1]} of ${total} items`
-                  }
-                />
+              {/* Pagination Section */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div className="lg:hidden">
+                  <Pagination
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    total={pagination.total}
+                    showTotal={(total: number) => `Total ${total} items`}
+                  />
+                </div>
+                <div className="hidden lg:block">
+                  <Pagination
+                    showQuickJumper
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                    total={pagination.total}
+                    responsive={true}
+                    showTotal={(total: number, range: number[]) =>
+                      `${range[0]}-${range[1]} of ${total} items`
+                    }
+                  />
+                </div>
               </div>
             </>
           )}

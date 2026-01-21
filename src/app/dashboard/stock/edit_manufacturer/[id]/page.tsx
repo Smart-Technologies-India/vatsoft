@@ -3,8 +3,6 @@
 
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetByIdManufacturerPurchase from "@/action/stock/getbyidmanufacturerpurchase";
-import GetManufacturerPurchase from "@/action/stock/getmanufacturerpurchase";
-import { CreateStockProvider } from "@/components/forms/createstock/createstock";
 import { EditStockProvider } from "@/components/forms/createstock/editstock";
 import { decryptURLData } from "@/utils/methods";
 import {
@@ -65,17 +63,18 @@ const EditMPage = () => {
 
   return (
     <>
-      <div className="p-2 mt-4">
-        <div className="bg-white p-2 shadow mt-2">
-          <div className="flex gap-2">
-            <p className="text-lg font-semibold items-center">
-              Edit Manufacturer Purchase
-            </p>
-            <div className="grow"></div>
+      <main className="p-3 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm">
+            <div className="mb-3 pb-2 border-b">
+              <h1 className="text-lg font-medium text-gray-900">
+                Edit Manufacturer Purchase
+              </h1>
+            </div>
+            <EditStockProvider id={mid} userid={userid} data={mdata!} />
           </div>
-          <EditStockProvider id={mid} userid={userid} data={mdata!} />
         </div>
-      </div>
+      </main>
     </>
   );
 };

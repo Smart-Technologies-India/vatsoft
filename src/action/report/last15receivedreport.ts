@@ -4,8 +4,8 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
 
 interface Last15ReceivedPayload {
-  selectOffice: SelectOffice;
-  selectCommodity: "FUEL" | "LIQUOR";
+  selectOffice?: SelectOffice;
+  selectCommodity?: "FUEL" | "LIQUOR";
 }
 
 import prisma from "../../../prisma/database";
@@ -46,20 +46,21 @@ const Last15ReceivedReport = async (
         0
       );
 
+      const dvat04Where: any = {};
+      
+      if (payload.selectOffice) {
+        dvat04Where.selectOffice = payload.selectOffice;
+      }
+      
+      if (payload.selectCommodity === "FUEL") {
+        dvat04Where.commodity = "FUEL";
+      } else if (payload.selectCommodity === "LIQUOR") {
+        dvat04Where.commodity = { not: "FUEL" };
+      }
+
       const dayReceivedData = await prisma.returns_01.findMany({
         where: {
-          dvat04: {
-            selectOffice: payload.selectOffice,
-            ...(payload.selectCommodity == "FUEL"
-              ? {
-                  commodity: "FUEL",
-                }
-              : {
-                  commodity: {
-                    not: "FUEL",
-                  },
-                }),
-          },
+          dvat04: dvat04Where,
           deletedAt: null,
           deletedBy: null,
           OR: [

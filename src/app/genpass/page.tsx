@@ -18,7 +18,6 @@ export default function LoginPage() {
     const newpass = await GeneratePassword({});
     if (!newpass.status) {
       toast.error(newpass.message);
-      console.log(newpass.message);
       return;
     }
     // setValue(newpass.data!);

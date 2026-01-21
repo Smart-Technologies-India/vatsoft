@@ -18,7 +18,6 @@ const Dvat1Page = () => {
         toast.error(authResponse.message);
         return router.push("/");
       }
-      console.log("authResponse.data", authResponse.data);
       setUserid(authResponse.data);
     };
     init();

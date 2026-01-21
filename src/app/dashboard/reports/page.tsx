@@ -101,7 +101,7 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/defaulter_reports/outstanding");
+              router.push("/dashboard/reports/defaulter_reports/penalty_collected");
             }}
           >
             View Report
@@ -150,7 +150,7 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/revenue_reports/category_wise");
+              router.push("/dashboard/reports/revenue_reports/district_wise");
             }}
           >
             View Report

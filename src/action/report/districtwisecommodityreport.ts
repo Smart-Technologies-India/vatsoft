@@ -133,7 +133,6 @@ const DistrictWiseCommodityReport = async (
       aggregationMap[key].count += 1;
     }
 
-    console.log("Aggregation Map:", aggregationMap);
     const filteredData = Object.values(aggregationMap).filter(
       (item) => item.office === props.office
     );

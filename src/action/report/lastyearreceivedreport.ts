@@ -4,8 +4,8 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString, isNegative } from "@/utils/methods";
 
 interface LastYearReceivedPayload {
-  selectOffice: SelectOffice;
-  selectCommodity: "FUEL" | "LIQUOR";
+  selectOffice?: SelectOffice;
+  selectCommodity?: "FUEL" | "LIQUOR";
 }
 
 import prisma from "../../../prisma/database";
@@ -52,20 +52,22 @@ const LastYearReceived = async (
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 1);
 
+      const dvat04Where: any = {};
+      
+      if (payload.selectOffice) {
+        dvat04Where.selectOffice = payload.selectOffice;
+      }
+      
+      if (payload.selectCommodity === "FUEL") {
+        dvat04Where.commodity = "FUEL";
+      } else if (payload.selectCommodity === "LIQUOR") {
+        dvat04Where.commodity = { not: "FUEL" };
+      }
+      // If selectCommodity is undefined, don't filter by commodity (all)
+
       const monthReceivedData = await prisma.returns_01.findMany({
         where: {
-          dvat04: {
-            selectOffice: payload.selectOffice,
-            ...(payload.selectCommodity == "FUEL"
-              ? {
-                  commodity: "FUEL",
-                }
-              : {
-                  commodity: {
-                    not: "FUEL",
-                  },
-                }),
-          },
+          dvat04: dvat04Where,
           deletedAt: null,
           deletedBy: null,
           OR: [
@@ -82,6 +84,7 @@ const LastYearReceived = async (
           },
         },
       });
+
 
       let totalAmountForMonth = 0;
       for (let j = 0; j < monthReceivedData.length; j++) {

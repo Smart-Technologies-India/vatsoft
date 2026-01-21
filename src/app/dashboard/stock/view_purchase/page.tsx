@@ -260,7 +260,11 @@ const DocumentWiseDetails = () => {
         open={addBox}
         size="large"
       >
-        <p className="text-lg text-left">Add Purchase</p>
+        <div className="mb-3 pb-2 border-b">
+          <h2 className="text-sm font-medium text-gray-900">
+            Add Purchase
+          </h2>
+        </div>
         <DailyPurchaseMasterProvider
           userid={userid}
           setAddBox={setAddBox}
@@ -274,357 +278,360 @@ const DocumentWiseDetails = () => {
         onCancel={() => {
           setIsModalOpen(false);
         }}
+        okText="Generate"
+        cancelText="Cancel"
       >
-        <p>Are you sure you want to Generate DVAT 30/30 A Return?</p>
+        <p className="text-sm text-gray-600 py-2">
+          Are you sure you want to Generate DVAT 30/30 A Return?
+        </p>
       </Modal>
 
-      <div className="p-2 mt-4">
-        <div className="bg-white p-2 shadow mt-2">
-          {/* Alert for pending accept */}
+      <main className="p-3 bg-gray-50">
+        <div className=" mx-auto">
+          {/* Header Card */}
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+            <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+              {/* Title Section */}
+              <div>
+                <h1 className="text-lg font-medium text-gray-900">
+                  Daily Purchase Records
+                </h1>
+              </div>
 
-          <div className="flex gap-2">
-            <p className="text-lg font-semibold items-center">Daily Purchase</p>
-            <div className="grow"></div>
-            <div className="flex gap-2 items-center">
-              {dvatdata!.commodity != "FUEL" && (
-                <Radio.Group
+              <div className="grow"></div>
+
+              {/* Controls Section */}
+              <div className="flex flex-wrap gap-2 items-center">
+                {dvatdata!.commodity != "FUEL" && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-600">
+                      View:
+                    </span>
+                    <Radio.Group
+                      size="small"
+                      onChange={onChange}
+                      value={quantityCount}
+                      optionType="button"
+                    >
+                      <Radio.Button value="pcs">
+                        Pcs
+                      </Radio.Button>
+                      <Radio.Button value="crate">
+                        Crate
+                      </Radio.Button>
+                    </Radio.Group>
+                  </div>
+                )}
+
+                {dailyPurchase.length > 0 && (
+                  <Button
+                    size="small"
+                    type="default"
+                    onClick={() => {
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    Generate DVAT 30/30 A
+                  </Button>
+                )}
+
+                <Button
                   size="small"
-                  onChange={onChange}
-                  value={quantityCount}
-                  optionType="button"
+                  type="primary"
+                  onClick={() => {
+                    setAddBox(true);
+                  }}
                 >
-                  <Radio.Button className="w-20 text-center" value="pcs">
-                    Pcs
-                  </Radio.Button>
-                  <Radio.Button className="w-20 text-center" value="crate">
-                    Crate
-                  </Radio.Button>
-                </Radio.Group>
-              )}
+                  Add Purchase
+                </Button>
+              </div>
             </div>
-            {/* {dvatdata &&
-              (dvatdata.commodity == "OIDC" ||
-                dvatdata.commodity == "FUEL") && ( */}
-            {dailyPurchase.length > 0 && (
-              <Button
-                size="small"
-                type="primary"
-                className="bg-blue-500 hover:bg-blue-500 px-2"
-                onClick={() => {
-                  setIsModalOpen(true);
-                }}
-              >
-                Generate DVAT 30/30 A
-              </Button>
-            )}
-
-            {/* )} */}
-
-            <Button
-              size="small"
-              type="primary"
-              className="bg-blue-500 hover:bg-blue-500"
-              onClick={() => {
-                // setCommid(undefined);
-                setAddBox(true);
-              }}
-            >
-              Add Purchase
-            </Button>
           </div>
 
-          <div className="flex gap-2 mt-2 flex-wrap">
-            <div className="bg-gray-100 p-2 rounded-md flex-1">
-              <p className="text-sm">Total number of invoice</p>
-              <p className="text-lg font-semibold leading-3">
-                {new Set(dailyPurchase.map((val) => val.invoice_number)).size}
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
+              <p className="text-lg font-medium text-gray-900">
+                    {new Set(dailyPurchase.map((val) => val.invoice_number)).size}
               </p>
             </div>
-            <div className="bg-gray-100 p-2 rounded-md flex-1">
-              {/* <p className="text-sm">Total taxable value</p> */}
-              <p className="text-sm">Total invoice value</p>
-              <p className="text-lg font-semibold leading-3">
-                {dailyPurchase
-                  .reduce(
-                    (acc, val) =>
-                      acc + parseFloat(val.amount_unit) * val.quantity,
-                    0
-                  )
-                  .toFixed(2)}
+
+            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Invoice Value</p>
+              <p className="text-lg font-medium text-gray-900">
+                    ₹{dailyPurchase
+                      .reduce(
+                        (acc, val) =>
+                          acc + parseFloat(val.amount_unit) * val.quantity,
+                        0
+                      )
+                      .toFixed(2)}
               </p>
             </div>
-            <div className="bg-gray-100 p-2 rounded-md flex-1">
-              <p className="text-sm">Total tax</p>
-              <p className="text-lg font-semibold leading-3">
-                {dailyPurchase
-                  .reduce((acc, val) => acc + parseFloat(val.vatamount), 0)
-                  .toFixed(2)}
+
+            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Total Tax</p>
+              <p className="text-lg font-medium text-gray-900">
+                    ₹{dailyPurchase
+                      .reduce((acc, val) => acc + parseFloat(val.vatamount), 0)
+                      .toFixed(2)}
               </p>
             </div>
-            <div className="bg-gray-100 p-2 rounded-md flex-1">
-              <p className="text-sm">Total taxable value</p>
-              <p className="text-lg font-semibold leading-3">
-                {dailyPurchase
-                  .reduce((acc, val) => acc + parseFloat(val.amount), 0)
-                  .toFixed(2)}
+
+            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Taxable Value</p>
+              <p className="text-lg font-medium text-gray-900">
+                    ₹{dailyPurchase
+                      .reduce((acc, val) => acc + parseFloat(val.amount), 0)
+                      .toFixed(2)}
               </p>
             </div>
           </div>
+
           {hasPendingAcceptable && (
             <Alert
-              message="Kindly accept pending purchase invoice."
+              message="Kindly accept pending purchase invoices."
               type="warning"
-              className="mt-2"
+              className="mb-3"
               showIcon
             />
           )}
 
           {dailyPurchase.length > 0 ? (
-            <>
-              <Table className="border mt-2">
-                <TableHeader>
-                  <TableRow className="bg-gray-100">
-                    <TableHead className="border text-center">
-                      Invoice no.
-                    </TableHead>
-                    <TableHead className="border whitespace-nowrap text-center">
-                      Invoice Date
-                    </TableHead>
-
-                    <TableHead className="border text-center">
-                      Trade Name
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      TIN Number
-                    </TableHead>
-                    <TableHead className="w-64 border text-center">
-                      Product Name
-                    </TableHead>
-                    <TableHead className="w-20 border text-center">
-                      {/* Quantity */}
-                      {quantityCount == "pcs"
-                        ? dvatdata?.commodity == "FUEL"
-                          ? "Litres"
-                          : "Qty"
-                        : "Crate"}
-                    </TableHead>
-
-                    <TableHead className="border text-center">
-                      Invoice value (&#x20b9;)
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      Rate of Tax
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      VAT Amount
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      Taxable Value (&#x20b9;)
-                    </TableHead>
-
-                    <TableHead className="w-28 border text-center">
-                      Actions
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedDailyPurchase.map(
-                    (
-                      val: daily_purchase & {
-                        commodity_master: commodity_master;
-                        seller_tin_number: tin_number_master;
-                      },
-                      index: number
-                    ) => (
-                      <TableRow key={index}>
-                        <TableCell className="p-2 border text-center">
-                          {val.invoice_number}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {formateDate(val.invoice_date)}
-                        </TableCell>
-
-                        <TableCell className="p-2 border text-center">
-                          {val.seller_tin_number.name_of_dealer}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.seller_tin_number.tin_number}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.commodity_master.product_name}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {/* {val.quantity} */}
-                          {quantityCount == "pcs"
-                            ? val.quantity
-                            : showCrates(
-                                val.quantity,
-                                val.commodity_master.crate_size
-                              )}
-                        </TableCell>
-
-                        <TableCell className="p-2 border text-center">
-                          {(parseFloat(val.amount_unit) * val.quantity).toFixed(
-                            2
-                          )}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.tax_percent}%
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.vatamount}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.amount}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.seller_tin_number.tin_number.startsWith("25") ||
-                          val.seller_tin_number.tin_number.startsWith("26") ? (
-                            val.is_accept ? (
-                              <>NA</>
+            <div className="bg-white rounded shadow-sm border p-3">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50 border-b">
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Invoice No.
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Invoice Date
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Trade Name
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        TIN Number
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Product Name
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        {quantityCount == "pcs"
+                          ? dvatdata?.commodity == "FUEL"
+                            ? "Litres"
+                            : "Quantity"
+                          : "Crate"}
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Invoice Value (₹)
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Tax Rate
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        VAT Amount
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Taxable Value (₹)
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Actions
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedDailyPurchase.map(
+                      (
+                        val: daily_purchase & {
+                          commodity_master: commodity_master;
+                          seller_tin_number: tin_number_master;
+                        },
+                        index: number
+                      ) => (
+                        <TableRow
+                          key={index}
+                          className="border-b hover:bg-gray-50"
+                        >
+                          <TableCell className="p-2 text-center text-xs">
+                            {val.invoice_number}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {formateDate(val.invoice_date)}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {val.seller_tin_number.name_of_dealer}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {val.seller_tin_number.tin_number}
+                          </TableCell>
+                          <TableCell className="p-2 text-left text-xs">
+                            {val.commodity_master.product_name}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {quantityCount == "pcs"
+                              ? val.quantity
+                              : showCrates(
+                                  val.quantity,
+                                  val.commodity_master.crate_size
+                                )}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            ₹{(parseFloat(val.amount_unit) * val.quantity).toFixed(
+                              2
+                            )}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {val.tax_percent}%
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            ₹{val.vatamount}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            ₹{val.amount}
+                          </TableCell>
+                          <TableCell className="p-2 text-center">
+                            {val.seller_tin_number.tin_number.startsWith("25") ||
+                            val.seller_tin_number.tin_number.startsWith("26") ? (
+                              val.is_accept ? (
+                                <span className="text-sm text-gray-400">N/A</span>
+                              ) : (
+                                <button
+                                  onClick={async () => {
+                                    if (!dvatdata)
+                                      return toast.error("DVAT not found.");
+                                    const response = await AcceptSale({
+                                      commodityid: val.commodity_master.id,
+                                      createdById: userid,
+                                      dvatid: dvatdata.id,
+                                      quantity: val.quantity,
+                                      puchaseid: val.id,
+                                      urn: val.urn_number ?? "",
+                                    });
+                                    if (response.status && response.data) {
+                                      toast.success(response.message);
+                                      await init();
+                                    } else {
+                                      toast.error(response.message);
+                                    }
+                                  }}
+                                  className="text-sm bg-rose-500 hover:bg-rose-600 text-white py-1 px-3 rounded"
+                                >
+                                  Accept
+                                </button>
+                              )
                             ) : (
-                              <button
-                                onClick={async () => {
-                                  if (!dvatdata)
-                                    return toast.error("DVAT not found.");
-                                  const response = await AcceptSale({
-                                    commodityid: val.commodity_master.id,
-                                    createdById: userid,
-                                    dvatid: dvatdata.id,
-                                    quantity: val.quantity,
-                                    puchaseid: val.id,
-                                    urn: val.urn_number ?? "",
-                                  });
-                                  if (response.status && response.data) {
-                                    toast.success(response.message);
-                                    await init();
-                                  } else {
-                                    toast.error(response.message);
-                                  }
-                                }}
-                                className="text-sm bg-white border border-rose-500 text-rose-500 py-1 px-4"
+                              <Popover
+                                content={
+                                  <div className="flex flex-col gap-2">
+                                    <button
+                                      onClick={() => {
+                                        setDeleteBox(true);
+                                        handelClose(index);
+                                      }}
+                                      className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded"
+                                    >
+                                      Delete
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        router.push(
+                                          `/dashboard/stock/edit_purchase/${encryptURLData(
+                                            val.id.toString()
+                                          )}`
+                                        );
+                                      }}
+                                      className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded"
+                                    >
+                                      Update
+                                    </button>
+                                  </div>
+                                }
+                                title="Actions"
+                                trigger="click"
+                                open={!!openPopovers[index]}
+                                onOpenChange={(newOpen) =>
+                                  handleOpenChange(newOpen, index)
+                                }
                               >
-                                Accept
-                              </button>
-                            )
-                          ) : (
-                            <Popover
-                              content={
-                                <div className="flex flex-col gap-2">
-                                  <button
-                                    onClick={() => {
-                                      setDeleteBox(true);
-                                      handelClose(index);
-                                    }}
-                                    className="text-sm bg-white border hover:border-rose-500 hover:text-rose-500 text-[#172e57] py-1 px-4"
-                                  >
-                                    Delete
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      router.push(
-                                        `/dashboard/stock/edit_purchase/${encryptURLData(
-                                          val.id.toString()
-                                        )}`
-                                      );
-                                    }}
-                                    className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4"
-                                  >
-                                    Update
-                                  </button>
-                                </div>
-                              }
-                              title="Actions"
-                              trigger="click"
-                              open={!!openPopovers[index]} // Open state for each row
-                              onOpenChange={(newOpen) =>
-                                handleOpenChange(newOpen, index)
-                              }
-                            >
-                              <button className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4">
-                                Actions
-                              </button>
-                            </Popover>
-                          )}
+                                <button className="text-sm bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded">
+                                  Actions
+                                </button>
+                              </Popover>
+                            )}
 
-                          <Modal
-                            title="Confirmation"
-                            open={deletebox}
-                            footer={null}
-                            closeIcon={false}
-                          >
-                            <div>
-                              <p>
-                                Are you sure you want to delete this purchase
-                                entry
+                            <Modal
+                              title="Confirm Deletion"
+                              open={deletebox}
+                              footer={null}
+                            >
+                              <p className="mb-4">
+                                Are you sure you want to delete this purchase entry?
                               </p>
-                            </div>
-                            <div className="flex  gap-2 mt-2">
-                              <div className="grow"></div>
-                              <button
-                                className="py-1 rounded-md border px-4 text-sm text-gray-600"
-                                onClick={() => {
-                                  setDeleteBox(false);
-                                }}
-                              >
-                                Close
-                              </button>
-                              <button
-                                onClick={() => delete_purchase_entry(val.id)}
-                                className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </Modal>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  )}
-                </TableBody>
-              </Table>
-              <div className="mt-2"></div>
-              <div className="lg:hidden">
-                <Pagination
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  total={pagination.total}
-                  showTotal={(total: number) => `Total ${total} items`}
-                />
+                              <div className="flex gap-2 justify-end">
+                                <button
+                                  className="py-1 px-4 border rounded text-sm"
+                                  onClick={() => {
+                                    setDeleteBox(false);
+                                  }}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => delete_purchase_entry(val.id)}
+                                  className="py-1 px-4 bg-rose-500 hover:bg-rose-600 text-white rounded text-sm"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </Modal>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-              <div className="hidden lg:block">
-                <Pagination
-                  showQuickJumper
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                  total={pagination.total}
-                  responsive={true}
-                  showTotal={(total: number, range: number[]) =>
-                    `${range[0]}-${range[1]} of ${total} items`
-                  }
-                />
+
+              {/* Pagination */}
+              <div className="px-3 py-2 border-t bg-gray-50">
+                <div className="lg:hidden">
+                  <Pagination
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    total={pagination.total}
+                    showTotal={(total: number) => `Total ${total} items`}
+                  />
+                </div>
+                <div className="hidden lg:block">
+                  <Pagination
+                    showQuickJumper
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                    total={pagination.total}
+                    responsive={true}
+                    showTotal={(total: number, range: number[]) =>
+                      `${range[0]}-${range[1]} of ${total} items`
+                    }
+                  />
+                </div>
               </div>
-            </>
+            </div>
           ) : (
-            <>
-              <Alert
-                style={{
-                  marginTop: "10px",
-                  padding: "8px",
-                }}
-                type="error"
-                showIcon
-                description="There is no daily purchase"
-              />
-            </>
+            <div className="bg-white rounded shadow-sm border p-3 text-center">
+              <p className="text-gray-500 text-sm">No purchase records found.</p>
+            </div>
           )}
         </div>
-      </div>
+      </main>
     </>
   );
 };

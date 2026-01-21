@@ -130,7 +130,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-        <div className="p-2 bg-gray-50 mt-2 flex gap-4">
+        <div className="p-3 bg-gray-50 rounded border border-gray-200 mb-3">
           <div>
             <MultiSelect<CreateChallanForm>
               placeholder="Select Reason"
@@ -142,24 +142,25 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-4">
-          <Table className="border mt-2">
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="whitespace-nowrap text-center px-2 border">
-                  Payment of account of
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center px-2 w-60 border">
-                  Tax (&#x20b9;)
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell className="text-left p-2 border">
-                  VAT(0005)
-                </TableCell>
-                <TableCell className="text-center p-2 border ">
+        <div className="flex flex-col lg:flex-row gap-3">
+          <div className="flex-1">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50 border-b">
+                  <TableHead className="text-left p-2 font-medium text-gray-700 text-xs">
+                    Payment of account of
+                  </TableHead>
+                  <TableHead className="text-center p-2 font-medium text-gray-700 text-xs w-60">
+                    Tax (&#x20b9;)
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow className="border-b hover:bg-gray-50">
+                  <TableCell className="text-left p-2 text-xs">
+                    VAT(0005)
+                  </TableCell>
+                  <TableCell className="text-center p-2">
                   <TaxtInput<CreateChallanForm>
                     name="vat"
                     required={true}
@@ -167,11 +168,11 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
                   />
                 </TableCell>
               </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">
+              <TableRow className="border-b hover:bg-gray-50">
+                <TableCell className="text-left p-2 text-xs">
                   Interest(0008)
                 </TableCell>
-                <TableCell className="text-center p-2 border">
+                <TableCell className="text-center p-2">
                   <TaxtInput<CreateChallanForm>
                     name="interest"
                     required={true}
@@ -179,11 +180,11 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
                   />
                 </TableCell>
               </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">
+              <TableRow className="border-b hover:bg-gray-50">
+                <TableCell className="text-left p-2 text-xs">
                   CESS(0009)
                 </TableCell>
-                <TableCell className="text-center p-2 border">
+                <TableCell className="text-center p-2">
                   <TaxtInput<CreateChallanForm>
                     name="cess"
                     required={true}
@@ -191,9 +192,9 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
                   />
                 </TableCell>
               </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">Penalty</TableCell>
-                <TableCell className="text-center p-2 border">
+              <TableRow className="border-b hover:bg-gray-50">
+                <TableCell className="text-left p-2 text-xs">Penalty</TableCell>
+                <TableCell className="text-center p-2">
                   <TaxtInput<CreateChallanForm>
                     name="penalty"
                     numdes={true}
@@ -201,9 +202,9 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
                   />
                 </TableCell>
               </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">Others</TableCell>
-                <TableCell className="text-center p-2 border">
+              <TableRow className="border-b hover:bg-gray-50">
+                <TableCell className="text-left p-2 text-xs">Others</TableCell>
+                <TableCell className="text-center p-2">
                   <TaxtInput<CreateChallanForm>
                     name="others"
                     required={true}
@@ -211,36 +212,37 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
                   />
                 </TableCell>
               </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">
+              <TableRow className="bg-gray-50 border-b font-medium">
+                <TableCell className="text-left p-2 text-xs">
                   Total Challan Amount:
                 </TableCell>
-                <TableCell className="text-left p-2 border">
+                <TableCell className="text-left p-2 text-xs">
                   {getTotalAmount()}
                 </TableCell>
               </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">
+              <TableRow className="border-b">
+                <TableCell className="text-left p-2 text-xs">
                   Total amount paid (in words): Rupees
                 </TableCell>
-                <TableCell className="text-left p-2 border">
+                <TableCell className="text-left p-2 text-xs">
                   {capitalcase(toWords.convert(getTotalAmount()))}
                 </TableCell>
               </TableRow>
             </TableBody>
           </Table>
-          <div className="lg:w-96 shrink-0 p-2">
-            <p className="text-center text-xl font-semibold">Form DVAT 20</p>
-            <p className="mt-2 text-sm">
+          </div>
+          <div className="lg:w-96 shrink-0 p-3 bg-gray-50 rounded border border-gray-200">
+            <p className="text-center text-lg font-semibold text-gray-900">Form DVAT 20</p>
+            <p className="mt-2 text-xs text-gray-700">
               (See Rule 28 of the Dadra and Nagar Haveli and Daman and Diu Value
               Added Tax Rules, 2021)
             </p>
-            <p className="mt-3 text-sm">
+            <p className="mt-2 text-xs text-gray-700">
               Challan for the Dadra and Nagar Haveli and Daman and Diu Value
               Added Regulation, 2005
             </p>
-            <p className="mt-3 text-sm">Credited: Consolidated Fund of India</p>
-            <p className="mt-3 text-sm">
+            <p className="mt-2 text-xs text-gray-700">Credited: Consolidated Fund of India</p>
+            <p className="mt-2 text-xs text-gray-700">
               Head: 0040, Value Added Tax Receipt - Value Added Tax Receipt
             </p>
             {/* <p className="text-sm">
@@ -261,8 +263,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
               for the quarter net off credit utilization and existing cash
               balance can be generated and used to offset liabilities.
             </p> */}
-            <Separator />
-            <div className="mt-2"></div>
+            <Separator className="my-3" />
 
             <TaxtAreaInput<CreateChallanForm>
               name="remark"
@@ -270,7 +271,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
               required={false}
               placeholder="Enter remark"
             />
-            <div className="w-full flex gap-2 mt-2">
+            <div className="w-full flex gap-2 mt-3">
               <div className="grow"></div>
               <input
                 type="reset"
@@ -279,12 +280,12 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
                   reset({});
                 }}
                 value={"Reset"}
-                className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
+                className="py-1 rounded bg-gray-600 hover:bg-gray-700 px-4 text-xs text-white cursor-pointer"
               />
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
+                className="py-1 rounded bg-blue-600 hover:bg-blue-700 px-4 text-xs text-white cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? "Loading...." : "Generate Challan"}
               </button>

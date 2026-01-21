@@ -740,21 +740,23 @@ const ReturnDashboard = () => {
           </button>
         </div>
       </Modal>
-      <main className="w-full p-4 relative h-full grow xl:w-5/6 xl:mx-auto">
-        <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4">
-          <h1>File Returns</h1>
-          <Marquee className="bg-yellow-500/10 mt-2 text-sm">
-            This is a banner can be used for official updates and notifications.
-          </Marquee>
+      <main className="p-3 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+            <h1 className="text-lg font-medium text-gray-900">File Returns</h1>
+            <Marquee className="bg-yellow-50 border border-yellow-200 mt-2 text-xs rounded px-2 py-1">
+              This is a banner can be used for official updates and notifications.
+            </Marquee>
 
-          <div className="flex flex-col sm:flex-row w-full gap-4 items-end mt-4">
-            <div className="grid items-center gap-1.5 w-full">
-              <Label htmlFor="duedate">
-                Financial Year <span className="text-rose-500">*</span>
-              </Label>
+            <div className="flex flex-col sm:flex-row w-full gap-2 items-end mt-3">
+              <div className="grid items-center gap-1.5 w-full">
+                <Label htmlFor="duedate" className="text-xs font-medium text-gray-700">
+                  Financial Year <span className="text-rose-500">*</span>
+                </Label>
               <Select
                 value={year}
                 placeholder="Select a year"
+                size="small"
                 options={getYearList(new Date())}
                 onChange={(val: string) => {
                   if (!val) return;
@@ -821,14 +823,15 @@ const ReturnDashboard = () => {
                 }}
               />
             </div>
-            <div className="grid items-center gap-1.5 w-full">
-              <Label htmlFor="duedate">
-                Quarter <span className="text-rose-500">*</span>
-              </Label>
+              <div className="grid items-center gap-1.5 w-full">
+                <Label htmlFor="duedate" className="text-xs font-medium text-gray-700">
+                  Quarter <span className="text-rose-500">*</span>
+                </Label>
 
               <Select
                 value={quarter}
                 placeholder="Select quarter"
+                size="small"
                 options={getQuarterList(
                   new Date(),
                   year!,
@@ -891,36 +894,37 @@ const ReturnDashboard = () => {
                 }}
               />
             </div>
-            {davtdata?.compositionScheme == false && (
-              <div className="grid items-center gap-1.5 w-full">
-                <Label htmlFor="duedate">
-                  Period <span className="text-rose-500">*</span>
-                </Label>
-                <Select
-                  value={period}
-                  placeholder="Select Period"
-                  options={getPeriodList(
-                    new Date(),
-                    year!,
-                    quarter,
-                    davtdata.vatLiableDate ?? new Date()
-                  )}
-                  onChange={(val: string) => {
-                    if (!val) return;
-                    setPeriod(val.toString());
-                  }}
-                />
-              </div>
-            )}
+              {davtdata?.compositionScheme == false && (
+                <div className="grid items-center gap-1.5 w-full">
+                  <Label htmlFor="duedate" className="text-xs font-medium text-gray-700">
+                    Period <span className="text-rose-500">*</span>
+                  </Label>
+                  <Select
+                    value={period}
+                    placeholder="Select Period"
+                    size="small"
+                    options={getPeriodList(
+                      new Date(),
+                      year!,
+                      quarter,
+                      davtdata.vatLiableDate ?? new Date()
+                    )}
+                    onChange={(val: string) => {
+                      if (!val) return;
+                      setPeriod(val.toString());
+                    }}
+                  />
+                </div>
+              )}
 
-            <button
-              className="bg-[#172e57] px-4  text-white py-1 rounded-md"
-              onClick={() => search(year ?? "", period ?? "")}
-            >
-              Search
-            </button>
+              <button
+                className="bg-blue-600 hover:bg-blue-700 px-4 text-white py-1 text-sm rounded"
+                onClick={() => search(year ?? "", period ?? "")}
+              >
+                Search
+              </button>
+            </div>
           </div>
-        </div>
         {isSearch && (
           <>
             {/* {lastPending != null ? (
@@ -957,10 +961,10 @@ const ReturnDashboard = () => {
               </>
             ) : ( */}
             <>
-              <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-between mt-4 border">
+              <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 <div>
-                  <p className="text-sm">RR Number</p>
-                  <p className="text-sm  font-medium">
+                  <p className="text-xs text-gray-600">RR Number</p>
+                  <p className="text-sm font-medium text-gray-900">
                     {return01?.rr_number == null ||
                     return01?.rr_number == undefined ||
                     return01?.rr_number == ""
@@ -969,19 +973,19 @@ const ReturnDashboard = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm">User TIN Number</p>
-                  <p className="text-sm  font-medium">{davtdata?.tinNumber}</p>
+                  <p className="text-xs text-gray-600">User TIN Number</p>
+                  <p className="text-sm font-medium text-gray-900">{davtdata?.tinNumber}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm">
+                  <p className="text-xs text-gray-600">
                     {return01?.rr_number != "" &&
                     return01?.rr_number != undefined &&
                     return01?.rr_number != null
                       ? "Filed Date"
                       : "Filing Date"}
                   </p>
-                  <p className="text-sm  font-medium">
+                  <p className="text-sm font-medium text-gray-900">
                     {return01?.rr_number != "" &&
                     return01?.rr_number != undefined &&
                     return01?.rr_number != null
@@ -990,8 +994,8 @@ const ReturnDashboard = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm">Status</p>
-                  <p className="text-sm  font-medium">
+                  <p className="text-xs text-gray-600">Status</p>
+                  <p className="text-sm font-medium text-gray-900">
                     {return01?.rr_number != "" &&
                     return01?.rr_number != undefined &&
                     return01?.rr_number != null
@@ -1000,8 +1004,8 @@ const ReturnDashboard = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm">Return Type</p>
-                  <p className="text-sm  font-medium">
+                  <p className="text-xs text-gray-600">Return Type</p>
+                  <p className="text-sm font-medium text-gray-900">
                     {return01?.return_type ?? "ORIGINAL"}
                   </p>
                 </div>
@@ -1009,7 +1013,7 @@ const ReturnDashboard = () => {
             </>
             {/* )} */}
 
-            <div className="grid w-full grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            <div className="grid w-full grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
               <Card
                 title={"Sales Local"}
                 subtitle={"Form 31"}
@@ -1067,7 +1071,7 @@ const ReturnDashboard = () => {
                 )}&quarter=${quarter}&month=${period}`}
               />
             </div>
-            <div className="mt-2">
+            <div className="mt-3">
               <Alert
                 message="To move forward, ensure all 4 forms are either filed or NIL filed."
                 type="warning"
@@ -1078,7 +1082,7 @@ const ReturnDashboard = () => {
           </>
         )}
 
-        <div className="absolute bottom-2 right-2 rounded shadow bg-white p-1 flex gap-2">
+          <div className="fixed bottom-4 right-4 rounded shadow bg-white p-2 flex gap-2 z-10">
           {isSearch && (
             <>
               {ispreview() && (
@@ -1154,6 +1158,7 @@ const ReturnDashboard = () => {
               )}
             </>
           )}
+          </div>
         </div>
       </main>
     </>
@@ -1176,8 +1181,8 @@ interface CardProps {
 const Card = (props: CardProps) => {
   const route = useRouter();
   return (
-    <div className=" p-2 bg-white rounded-md hover:shadow-md hover:-translate-y-2 transition-all duration-700">
-      <div className="text-white text-sm font-semibold text-center bg-[#162e57] p-2 rounded-md grid place-items-center">
+    <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+      <div className="text-white text-sm font-medium text-center bg-blue-600 p-2 rounded grid place-items-center">
         <div>
           <p className="text-white text-xs font-normal text-center">
             {props.subtitle}
@@ -1186,21 +1191,24 @@ const Card = (props: CardProps) => {
         </div>
       </div>
 
-      <p className="text-[#162e57] mt-2 text-xs text-left">
-        No Of Invoices : {props.isnil ? "Nil Filed" : props.entry}
-      </p>
-      <p className="text-[#162e57] text-xs text-left">
-        Taxable Amount : {props.amount}
-      </p>
-      <p className="text-[#162e57] text-xs text-left">Tax : {props.tax}</p>
+      <div className="mt-2 space-y-1">
+        <p className="text-gray-700 text-xs">
+          No Of Invoices: <span className="font-medium">{props.isnil ? "Nil Filed" : props.entry}</span>
+        </p>
+        <p className="text-gray-700 text-xs">
+          Taxable Amount: <span className="font-medium">{props.amount}</span>
+        </p>
+        <p className="text-gray-700 text-xs">
+          Tax: <span className="font-medium">{props.tax}</span>
+        </p>
+      </div>
 
-      <div className="flex gap-2 justify-around mt-2">
+      <div className="flex gap-2 mt-2">
         <button
           onClick={() => {
             route.push(props.link);
-            // route.push("/dashboard/returns/returns-dashboard/outward-supplies");
           }}
-          className="border flex-1 bg-[#162e57] text-white rounded-md text-sm py-1 text-center"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center"
         >
           {props.buttonone}
         </button>
@@ -1210,7 +1218,7 @@ const Card = (props: CardProps) => {
             onClick={() => {
               route.push(props.link);
             }}
-            className="border flex-1 bg-[#162e57]  text-white rounded-md text-sm py-1 text-center"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center"
           >
             {props.buttontwo}
           </button>

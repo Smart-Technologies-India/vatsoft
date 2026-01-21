@@ -262,170 +262,193 @@ const CommodityMaster = () => {
           </Button>
         </div>
       </Drawer>
-      <main className="w-full p-4 ">
-        <div className="bg-white px-4 py-2 mt-2">
-          <div className="flex gap-2">
-            <p className="text-lg font-semibold">Commodity</p>
-            <div className="grow"></div>
-            <Button
-              size="small"
-              type="primary"
-              className="bg-blue-500 hover:bg-blue-500 w-14"
-              onClick={() => {
-                setCommid(undefined);
-                setAddBox(true);
-              }}
-            >
-              Add
-            </Button>
+      <main className="bg-gray-50 min-h-screen p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Card */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-semibold text-gray-900">
+                  Commodity Master
+                </h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  Manage your commodity and product listings
+                </p>
+              </div>
+              <Button
+                type="primary"
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => {
+                  setCommid(undefined);
+                  setAddBox(true);
+                }}
+              >
+                + Add Commodity
+              </Button>
+            </div>
           </div>
-          <Table className="border mt-2">
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="whitespace-nowrap border text-center p-2">
-                  Product Name
-                </TableHead>
-                <TableHead className="whitespace-nowrap border text-center p-2">
-                  Product Type
-                </TableHead>
-                <TableHead className="whitespace-nowrap border text-center p-2">
-                  MRP
-                </TableHead>
-                <TableHead className="whitespace-nowrap border text-center p-2">
-                  Sale Price
-                </TableHead>
-                <TableHead className="whitespace-nowrap border text-center p-2">
-                  Taxable At
-                </TableHead>
-                <TableHead className="whitespace-nowrap border text-center p-2 w-52">
-                  Action
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {commodty.map((val: commodity_master, index: number) => (
-                <TableRow key={index}>
-                  <TableCell className="p-2 border text-center">
-                    {val.product_name}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.product_type}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.mrp}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.sale_price}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.taxable_at}%
-                  </TableCell>
-                  <TableCell className="p-2 text-center grid grid-cols-3 gap-2">
-                    <Button
-                      size="small"
-                      type="primary"
-                      className="bg-blue-500 hover:bg-blue-500 w-14"
-                      onClick={() => {
-                        showDrawer(val.id);
-                      }}
-                    >
-                      View
-                    </Button>
-                    <button
-                      onClick={() => {
-                        setCommid(val.id);
-                        setAddBox(true);
-                      }}
-                      className="bg-indigo-500 hover:bg-indigo-400 w-14 text-white rounded-sm"
-                    >
-                      Edit
-                    </button>
 
-                    <Popover
-                      content={
-                        <div className="flex flex-col gap-2">
-                          <p>
-                            Are you sure you want to{" "}
-                            {val.status == Status.ACTIVE
-                              ? "Inactive"
-                              : "Active"}{" "}
-                            this Commodity
-                          </p>
-                          <div className="flex gap-2">
-                            <Button
-                              type="primary"
-                              size="small"
-                              onClick={() => {
-                                commoditystatus(
-                                  val.id,
-                                  val.status == Status.ACTIVE
-                                    ? Status.INACTIVE
-                                    : Status.ACTIVE
-                                );
-                              }}
+          {/* Table Card */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table className="border-0">
+                <TableHeader>
+                  <TableRow className="bg-gray-50 border-b">
+                    <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700">
+                      Product Name
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700">
+                      Product Type
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700">
+                      MRP
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700">
+                      Sale Price
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700">
+                      Taxable At
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700 w-52">
+                      Action
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {commodty.map((val: commodity_master, index: number) => (
+                    <TableRow key={index} className="hover:bg-gray-50 border-b">
+                      <TableCell className="p-3 text-center text-sm">
+                        {val.product_name}
+                      </TableCell>
+                      <TableCell className="p-3 text-center text-sm">
+                        {val.product_type}
+                      </TableCell>
+                      <TableCell className="p-3 text-center text-sm">
+                        {val.mrp}
+                      </TableCell>
+                      <TableCell className="p-3 text-center text-sm">
+                        {val.sale_price}
+                      </TableCell>
+                      <TableCell className="p-3 text-center text-sm">
+                        {val.taxable_at}%
+                      </TableCell>
+                      <TableCell className="p-3 text-center">
+                        <div className="flex gap-2 justify-center">
+                          <Button
+                            size="small"
+                            type="default"
+                            className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+                            onClick={() => {
+                              showDrawer(val.id);
+                            }}
+                          >
+                            View
+                          </Button>
+                          <button
+                            onClick={() => {
+                              setCommid(val.id);
+                              setAddBox(true);
+                            }}
+                            className="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-sm font-medium transition-colors"
+                          >
+                            Edit
+                          </button>
+
+                          <Popover
+                            content={
+                              <div className="flex flex-col gap-2">
+                                <p className="text-sm">
+                                  Are you sure you want to{" "}
+                                  {val.status == Status.ACTIVE
+                                    ? "deactivate"
+                                    : "activate"}{" "}
+                                  this commodity?
+                                </p>
+                                <div className="flex gap-2">
+                                  <Button
+                                    type="primary"
+                                    size="small"
+                                    onClick={() => {
+                                      commoditystatus(
+                                        val.id,
+                                        val.status == Status.ACTIVE
+                                          ? Status.INACTIVE
+                                          : Status.ACTIVE
+                                      );
+                                    }}
+                                  >
+                                    YES
+                                  </Button>
+                                  <Button
+                                    size="small"
+                                    onClick={() => {
+                                      handelClose(index);
+                                    }}
+                                  >
+                                    No
+                                  </Button>
+                                </div>
+                              </div>
+                            }
+                            title={
+                              val.status == Status.ACTIVE
+                                ? "Deactivate Commodity"
+                                : "Activate Commodity"
+                            }
+                            trigger="click"
+                            open={!!openPopovers[index]}
+                            onOpenChange={(newOpen) =>
+                              handleOpenChange(newOpen, index)
+                            }
+                          >
+                            <button
+                              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                                val.status == Status.ACTIVE
+                                  ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
+                                  : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                              }`}
                             >
-                              YES
-                            </Button>
-                            <Button
-                              size="small"
-                              onClick={() => {
-                                handelClose(index);
-                              }}
-                            >
-                              No
-                            </Button>
-                          </div>
+                              {val.status == Status.ACTIVE
+                                ? "Deactivate"
+                                : "Activate"}
+                            </button>
+                          </Popover>
                         </div>
-                      }
-                      title={
-                        val.status == Status.ACTIVE ? "Inactive" : "Active"
-                      }
-                      trigger="click"
-                      open={!!openPopovers[index]} // Open state for each row
-                      onOpenChange={(newOpen) =>
-                        handleOpenChange(newOpen, index)
-                      }
-                    >
-                      <button
-                        className={`${
-                          val.status == Status.ACTIVE
-                            ? "bg-rose-500 hover:bg-rose-500"
-                            : "bg-emerald-500 hover:bg-emerald-500"
-                        }  w-14 text-white rounded-sm text-sm`}
-                      >
-                        {val.status == Status.ACTIVE ? "Inactive" : "Active"}
-                      </button>
-                    </Popover>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <div className="mt-2"></div>
-          <div className="lg:hidden">
-            <Pagination
-              align="center"
-              defaultCurrent={1}
-              onChange={onChangePageCount}
-              showSizeChanger
-              total={pagination.total}
-              showTotal={(total: number) => `Total ${total} items`}
-            />
-          </div>
-          <div className="hidden lg:block">
-            <Pagination
-              showQuickJumper
-              align="center"
-              defaultCurrent={1}
-              onChange={onChangePageCount}
-              showSizeChanger
-              pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-              total={pagination.total}
-              responsive={true}
-              showTotal={(total: number, range: number[]) =>
-                `${range[0]}-${range[1]} of ${total} items`
-              }
-            />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination */}
+            <div className="border-t bg-gray-50 p-4">
+              <div className="lg:hidden">
+                <Pagination
+                  align="center"
+                  defaultCurrent={1}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  total={pagination.total}
+                  showTotal={(total: number) => `Total ${total} items`}
+                />
+              </div>
+              <div className="hidden lg:block">
+                <Pagination
+                  showQuickJumper
+                  align="center"
+                  defaultCurrent={1}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  pageSizeOptions={[10, 20, 25, 50, 100]}
+                  total={pagination.total}
+                  responsive={true}
+                  showTotal={(total: number, range: number[]) =>
+                    `${range[0]}-${range[1]} of ${total} items`
+                  }
+                />
+              </div>
+            </div>
           </div>
         </div>
       </main>

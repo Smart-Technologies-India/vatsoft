@@ -22,14 +22,18 @@ const CreateChallan = async () => {
 
   return (
     <>
-      <div className="p-2">
-        <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white">
-            Create Challan Form DVAT 20
+      <main className="p-3 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+            <h1 className="text-lg font-medium text-gray-900">
+              Create Challan Form DVAT 20
+            </h1>
           </div>
-          <CreateChallanProvider userid={userid} />
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm">
+            <CreateChallanProvider userid={userid} />
+          </div>
         </div>
-      </div>
+      </main>
     </>
   );
 };

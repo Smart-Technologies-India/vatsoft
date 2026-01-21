@@ -348,54 +348,75 @@ const TrackAppliation = () => {
 
   return (
     <>
-      <div className="p-3 py-2">
-        <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white flex">
-            <p>Track C-Form</p>
-            <div className="grow"></div>
+      <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+        {/* Header Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <div className="w-1.5 h-8 bg-linear-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                Track C-Form
+              </h1>
+              <p className="text-sm text-gray-500 mt-2 ml-4">
+                View and track all your C-Form declarations
+              </p>
+            </div>
           </div>
+      </div>
 
-          {cformData.length == 0 && (
+        {cformData.length == 0 && (
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
             <Alert
               style={{
-                marginTop: "10px",
-                padding: "8px",
+                borderRadius: "0.5rem",
               }}
               type="error"
               showIcon
               description="There is no C-Form."
             />
-          )}
+          </div>
+      )}
 
-          {cformData.length != 0 && (
-            <>
-              <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
-                <Radio.Group
-                  onChange={onChange}
-                  value={searchOption}
-                  disabled={isSearch}
-                >
-                  <Radio value={SearchOption.TIN}>TIN Number</Radio>
-                  <Radio value={SearchOption.NAME}>Purchaser Name</Radio>
-                </Radio.Group>
+        {cformData.length != 0 && (
+          <>
+            {/* Search Section Card */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
+              <div className="flex flex-col md:flex-row gap-4 md:items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Search by:</span>
+                  <Radio.Group
+                    onChange={onChange}
+                    value={searchOption}
+                    disabled={isSearch}
+                    className="flex gap-2"
+                  >
+                    <Radio value={SearchOption.TIN}>
+                      <span className="text-sm">TIN Number</span>
+                    </Radio>
+                    <Radio value={SearchOption.NAME}>
+                      <span className="text-sm">Purchaser Name</span>
+                    </Radio>
+                  </Radio.Group>
+                </div>
+                
                 {(() => {
                   switch (searchOption) {
                     case SearchOption.TIN:
                       return (
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-1">
                           <Input
-                            className="w-60"
+                            className="max-w-xs"
                             ref={tinRef}
-                            placeholder={"Enter Purchaser TIN Number"}
+                            placeholder="Enter Purchaser TIN Number"
                             disabled={isSearch}
                           />
 
                           {isSearch ? (
-                            <Button onClick={init} type="primary">
+                            <Button onClick={init} type="primary" className="bg-blue-500 hover:bg-blue-600">
                               Reset
                             </Button>
                           ) : (
-                            <Button onClick={tinsearch} type="primary">
+                            <Button onClick={tinsearch} type="primary" className="bg-blue-500 hover:bg-blue-600">
                               Search
                             </Button>
                           )}
@@ -404,20 +425,20 @@ const TrackAppliation = () => {
 
                     case SearchOption.NAME:
                       return (
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-1">
                           <Input
-                            className="w-60"
+                            className="max-w-xs"
                             ref={nameRef}
-                            placeholder={"Enter Purchaser Name Number"}
+                            placeholder="Enter Purchaser Name"
                             disabled={isSearch}
                           />
 
                           {isSearch ? (
-                            <Button onClick={init} type="primary">
+                            <Button onClick={init} type="primary" className="bg-blue-500 hover:bg-blue-600">
                               Reset
                             </Button>
                           ) : (
-                            <Button onClick={namesearch} type="primary">
+                            <Button onClick={namesearch} type="primary" className="bg-blue-500 hover:bg-blue-600">
                               Search
                             </Button>
                           )}
@@ -428,88 +449,96 @@ const TrackAppliation = () => {
                   }
                 })()}
               </div>
+          </div>
 
-              <Table className="border mt-2">
-                <TableHeader>
-                  <TableRow className="bg-gray-100">
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      ARN
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      C-Form Type
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      Form Period
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      TIN Number
-                    </TableHead>
+            {/* Results Table Card */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table className="border-0">
+                  <TableHeader>
+                    <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100">
+                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
+                        ARN
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
+                        C-Form Type
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
+                        Form Period
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
+                        TIN Number
+                      </TableHead>
 
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      Purchaser Name
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {cformData.map((val: cform, index: number) => {
-                    return (
-                      <TableRow key={index}>
-                        <TableCell className="border text-center p-2">
-                          <Link
-                            href={`/dashboard/cform/${encryptURLData(
-                              val.id.toString()
-                            )}`}
-                            className="text-blue-500"
-                          >
-                            {val.sr_no}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="border text-center p-2">
-                          {val.cform_type}
-                        </TableCell>
-                        <TableCell className="border text-center p-2">
-                          {getMonthRange(val.to_period)}
-                        </TableCell>
-                        <TableCell className="border text-center p-2">
-                          {val.seller_tin_no}
-                        </TableCell>
-                        <TableCell className="border text-center p-2">
-                          {val.seller_name}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-              <div className="mt-2"></div>
-              <div className="lg:hidden">
-                <Pagination
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  total={pagination.total}
-                  showTotal={(total: number) => `Total ${total} items`}
-                />
+                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
+                        Purchaser Name
+                        </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {cformData.map((val: cform, index: number) => {
+                      return (
+                        <TableRow key={index} className="hover:bg-blue-50 transition-colors">
+                          <TableCell className="border border-gray-200 text-center p-3">
+                            <Link
+                              href={`/dashboard/cform/${encryptURLData(
+                                val.id.toString()
+                              )}`}
+                              className="text-blue-500 hover:text-blue-700 font-medium hover:underline"
+                            >
+                              {val.sr_no}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="border border-gray-200 text-center p-3 text-gray-700">
+                            {val.cform_type}
+                          </TableCell>
+                          <TableCell className="border border-gray-200 text-center p-3 text-gray-700">
+                            {getMonthRange(val.to_period)}
+                          </TableCell>
+                          <TableCell className="border border-gray-200 text-center p-3 font-medium text-gray-900">
+                            {val.seller_tin_no}
+                          </TableCell>
+                          <TableCell className="border border-gray-200 text-center p-3 text-gray-700">
+                            {val.seller_name}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    </TableBody>
+                </Table>
               </div>
-              <div className="hidden lg:block">
-                <Pagination
-                  showQuickJumper
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                  total={pagination.total}
-                  responsive={true}
-                  showTotal={(total: number, range: number[]) =>
-                    `${range[0]}-${range[1]} of ${total} items`
-                  }
-                />
+
+              {/* Pagination Section */}
+              <div className="bg-gray-50 border-t border-gray-200 p-4">
+                <div className="lg:hidden">
+                  <Pagination
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    total={pagination.total}
+                    showTotal={(total: number) => `Total ${total} items`}
+                  />
+                </div>
+                <div className="hidden lg:block">
+                  <Pagination
+                    showQuickJumper
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                    total={pagination.total}
+                    responsive={true}
+                    showTotal={(total: number, range: number[]) =>
+                      `${range[0]}-${range[1]} of ${total} items`
+                    }
+                  />
+                </div>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </>
   );

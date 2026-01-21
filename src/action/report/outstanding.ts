@@ -19,13 +19,13 @@ interface ResponseType {
 interface OutstandingDealersPayload {
   arnnumber?: string;
   tradename?: string;
-  dept: SelectOffice;
+  dept?: SelectOffice;
   skip: number;
   take: number;
 }
 
 const OutstandingDealers = async (
-  payload: OutstandingDealersPayload
+  payload: OutstandingDealersPayload,
 ): Promise<PaginationResponse<Array<ResponseType> | null>> => {
   const functionname: string = OutstandingDealers.name;
   try {
@@ -41,7 +41,7 @@ const OutstandingDealers = async (
               { name: { contains: payload.tradename } },
             ],
           }),
-          selectOffice: payload.dept,
+          ...(payload.dept && { selectOffice: payload.dept }),
           deletedAt: null,
           deletedBy: null,
         },
@@ -60,21 +60,11 @@ const OutstandingDealers = async (
         functionname,
       });
 
-    const notice = await prisma.order_notice.findMany({
-      where: {
-        deletedAt: null,
-        deletedBy: null,
-        status: "PENDING",
-        notice_order_type: "NOTICE",
-        form_type: "DVAT10",
-      },
-    });
-
     let resMap = new Map<number, ResponseType>(); // Track dvat04 by ID
     // const currentDate = new Date();
 
     const filteredDvat04 = dvat04response.filter(
-      (val) => val.rr_number != null && val.rr_number.length > 0
+      (val) => val.rr_number != null && val.rr_number.length > 0,
     );
 
     for (let i = 0; i < filteredDvat04.length; i++) {
@@ -86,7 +76,7 @@ const OutstandingDealers = async (
       if (interest > 0 || penalty > 0) {
         if (resMap.has(currentDvat.id)) {
           let existingData: ResponseType = resMap.get(
-            currentDvat.id
+            currentDvat.id,
           ) as ResponseType;
 
           if (interest > 0) {
@@ -134,6 +124,7 @@ const OutstandingDealers = async (
 
     // Convert Map to an array
     const res: ResponseType[] = Array.from(resMap.values());
+
 
     const paginatedData = res.slice(payload.skip, payload.skip + payload.take);
 

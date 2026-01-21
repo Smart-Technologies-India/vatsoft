@@ -257,175 +257,228 @@ const RefundsHistory = () => {
 
   return (
     <>
-      <div className="p-2">
-        <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white">Refunds History</div>
-          <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
-            <Radio.Group
-              onChange={onChange}
-              value={searchOption}
-              className="mt-2"
-              disabled={isSearch}
-            >
-              <Radio value={SearchOption.CPIN}>CPIN</Radio>
-              <Radio value={SearchOption.DATE}>DATE</Radio>
-            </Radio.Group>
-            {(() => {
-              switch (searchOption) {
-                case SearchOption.CPIN:
-                  return (
-                    <div className="flex gap-2">
-                      <Input
-                        className="w-60"
-                        ref={cpinRef}
-                        placeholder={"Enter CPIN"}
-                        disabled={isSearch}
-                      />
-
-                      {isSearch ? (
-                        <Button onClick={init} type="primary">
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button onClick={cpinsearch} type="primary">
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
-
-                case SearchOption.DATE:
-                  return (
-                    <div className="flex gap-2">
-                      <RangePicker
-                        onChange={onChangeDate}
-                        disabled={isSearch}
-                      />
-
-                      {isSearch ? (
-                        <Button onClick={init} type="primary">
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button type="primary" onClick={datesearch}>
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
-                default:
-                  return null;
-              }
-            })()}
-          </div>
-
-          {refundsData.length == 0 && (
-            <Alert
-              style={{
-                marginTop: "10px",
-                padding: "8px",
-              }}
-              type="error"
-              showIcon
-              description="There is no refunds."
-            />
-          )}
-
-          {refundsData.length > 0 && (
-            <>
-              <Table className="border mt-2">
-                <TableHeader>
-                  <TableRow className="bg-gray-100">
-                    <TableHead className="whitespace-nowrap text-center px-2">
-                      CPIN
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center w-36  px-2">
-                      Created On
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center  px-2">
-                      Amount
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center  px-2">
-                      Mode
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center  px-2">
-                      Expire Date
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center  px-2">
-                      Deposit Date
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center  px-2">
-                      Deposit Status
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {refundsData.map((val: refunds, index: number) => (
-                    <TableRow key={index}>
-                      <TableCell className="text-center p-2">
-                        <Link
-                          className="text-blue-500"
-                          href={`/dashboard/payments/refunds/${encryptURLData(
-                            val.id.toString()
-                          )}`}
-                        >
-                          {val.cpin}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {formateDate(new Date(val.createdAt))}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {val.total_tax_amount}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {val.paymentmode ?? "-"}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {formateDate(new Date(val.expire_date))}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {val.transaction_date
-                          ? formateDate(new Date(val.transaction_date))
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {val.refundsstatus}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <div className="mt-2"></div>
-              <div className="lg:hidden">
-                <Pagination
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  total={pagination.total}
-                  showTotal={(total: number) => `Total ${total} items`}
-                />
+      <main className="relative bg-gray-50 min-h-screen">
+        <div className="p-3">
+          <div className="mx-auto max-w-7xl">
+            {/* Header Section */}
+            <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-lg font-medium text-gray-900">
+                    Refunds History
+                  </h1>
+                  <p className="text-gray-500 text-sm mt-0.5">
+                    View and manage your refund transactions
+                  </p>
+                </div>
+                <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded font-medium">
+                  {pagination.total} records
+                </span>
               </div>
-              <div className="hidden lg:block">
-                <Pagination
-                  showQuickJumper
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                  total={pagination.total}
-                  responsive={true}
-                  showTotal={(total: number, range: number[]) =>
-                    `${range[0]}-${range[1]} of ${total} items`
+            </div>
+
+            {/* Search Section */}
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-3 p-3">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h2 className="text-sm font-medium text-gray-900">
+                    Search Refunds
+                  </h2>
+                  <p className="text-gray-500 text-xs mt-0.5">
+                    Filter by CPIN or date range
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
+                <Radio.Group
+                  onChange={onChange}
+                  value={searchOption}
+                  disabled={isSearch}
+                >
+                  <Radio value={SearchOption.CPIN}>CPIN</Radio>
+                  <Radio value={SearchOption.DATE}>Date Range</Radio>
+                </Radio.Group>
+                {(() => {
+                  switch (searchOption) {
+                    case SearchOption.CPIN:
+                      return (
+                        <div className="flex gap-2">
+                          <Input
+                            className="w-60"
+                            ref={cpinRef}
+                            placeholder={"Enter CPIN"}
+                            disabled={isSearch}
+                          />
+                          {isSearch ? (
+                            <Button onClick={init} type="primary">
+                              Reset
+                            </Button>
+                          ) : (
+                            <Button onClick={cpinsearch} type="primary">
+                              Search
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    case SearchOption.DATE:
+                      return (
+                        <div className="flex gap-2">
+                          <RangePicker
+                            onChange={onChangeDate}
+                            disabled={isSearch}
+                          />
+                          {isSearch ? (
+                            <Button onClick={init} type="primary">
+                              Reset
+                            </Button>
+                          ) : (
+                            <Button type="primary" onClick={datesearch}>
+                              Search
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    default:
+                      return null;
                   }
-                />
+                })()}
               </div>
-            </>
-          )}
+            </div>
+
+            {/* Results Section */}
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-3">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h2 className="text-sm font-medium text-gray-900">
+                    Refund Records
+                  </h2>
+                  <p className="text-gray-500 text-xs mt-0.5">
+                    Complete list of your refund transactions
+                  </p>
+                </div>
+              </div>
+
+              {refundsData.length == 0 && (
+                <Alert
+                  style={{
+                    marginTop: "10px",
+                    padding: "8px",
+                  }}
+                  type="error"
+                  showIcon
+                  description="There are no refunds to display."
+                />
+              )}
+
+              {refundsData.length > 0 && (
+                <>
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gray-50">
+                          <TableHead className="whitespace-nowrap text-center px-2 font-medium text-gray-700">
+                            CPIN
+                          </TableHead>
+                          <TableHead className="whitespace-nowrap text-center w-36 px-2 font-medium text-gray-700">
+                            Created On
+                          </TableHead>
+                          <TableHead className="whitespace-nowrap text-center px-2 font-medium text-gray-700">
+                            Amount
+                          </TableHead>
+                          <TableHead className="whitespace-nowrap text-center px-2 font-medium text-gray-700">
+                            Mode
+                          </TableHead>
+                          <TableHead className="whitespace-nowrap text-center px-2 font-medium text-gray-700">
+                            Expire Date
+                          </TableHead>
+                          <TableHead className="whitespace-nowrap text-center px-2 font-medium text-gray-700">
+                            Deposit Date
+                          </TableHead>
+                          <TableHead className="whitespace-nowrap text-center px-2 font-medium text-gray-700">
+                            Deposit Status
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {refundsData.map((val: refunds, index: number) => (
+                          <TableRow key={index} className="hover:bg-gray-50">
+                            <TableCell className="text-center p-2">
+                              <Link
+                                className="text-blue-600 hover:text-blue-800 font-medium"
+                                href={`/dashboard/payments/refunds/${encryptURLData(
+                                  val.id.toString()
+                                )}`}
+                              >
+                                {val.cpin}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-gray-600">
+                              {formateDate(new Date(val.createdAt))}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-gray-900 font-medium">
+                              ₹{val.total_tax_amount}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-gray-600">
+                              {val.paymentmode ?? "-"}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-gray-600">
+                              {formateDate(new Date(val.expire_date))}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-gray-600">
+                              {val.transaction_date
+                                ? formateDate(new Date(val.transaction_date))
+                                : "-"}
+                            </TableCell>
+                            <TableCell className="text-center p-2">
+                              <span
+                                className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                  val.refundsstatus === "PAID"
+                                    ? "bg-green-100 text-green-700"
+                                    : val.refundsstatus === "DUE"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : "bg-gray-100 text-gray-700"
+                                }`}
+                              >
+                                {val.refundsstatus}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="mt-3"></div>
+                  <div className="lg:hidden">
+                    <Pagination
+                      align="center"
+                      defaultCurrent={1}
+                      onChange={onChangePageCount}
+                      showSizeChanger
+                      total={pagination.total}
+                      showTotal={(total: number) => `Total ${total} items`}
+                    />
+                  </div>
+                  <div className="hidden lg:block">
+                    <Pagination
+                      showQuickJumper
+                      align="center"
+                      defaultCurrent={1}
+                      onChange={onChangePageCount}
+                      showSizeChanger
+                      pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                      total={pagination.total}
+                      responsive={true}
+                      showTotal={(total: number, range: number[]) =>
+                        `${range[0]}-${range[1]} of ${total} items`
+                      }
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </>
   );
 };

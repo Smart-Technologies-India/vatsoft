@@ -54,7 +54,6 @@ const TestPaymentPage = () => {
                             Amount: amount,
                             applicant_id: orderno,
                         });
-                        console.log(res);
                         setResult(JSON.stringify(res, null, 2));
                     }}
                 >

@@ -183,39 +183,52 @@ const SendNotificationPage = () => {
   ];
 
   return (
-    <main className="bg-white py-6 px-6 rounded-md mt-4 w-full max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Sent Notifications</h1>
-        <div className="flex gap-2">
-          <Button type="primary" onClick={() => setIsModalOpen(true)}>
-            Send Notification
-          </Button>
-          <Button onClick={() => router.back()}>Back</Button>
+    <main className="p-3 bg-gray-50">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+          <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+            <div>
+              <h1 className="text-lg font-medium text-gray-900">
+                Sent Notifications
+              </h1>
+            </div>
+            <div className="grow"></div>
+            <div className="flex flex-wrap gap-2 items-center">
+              <Button size="small" type="primary" onClick={() => setIsModalOpen(true)}>
+                Send Notification
+              </Button>
+              <Button size="small" onClick={() => router.back()}>Back</Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded shadow-sm border p-3">
+          <div className="overflow-x-auto">
+            <Table
+              columns={columns}
+              dataSource={notifications}
+              loading={loadingNotifications}
+              pagination={false}
+              rowKey="id"
+              scroll={{ x: 800 }}
+              size="small"
+            />
+          </div>
+          <div className="px-3 py-2 border-t bg-gray-50">
+            <Pagination
+              align="center"
+              current={currentPage}
+              total={totalNotifications}
+              pageSize={10}
+              onChange={(page) => setCurrentPage(page)}
+              showSizeChanger={false}
+              showTotal={(total, range) =>
+                `${range[0]}-${range[1]} of ${total} notifications`
+              }
+            />
+          </div>
         </div>
       </div>
-
-      <Card>
-        <Table
-          columns={columns}
-          dataSource={notifications}
-          loading={loadingNotifications}
-          pagination={false}
-          rowKey="id"
-          scroll={{ x: 800 }}
-        />
-        <div className="flex justify-end mt-4">
-          <Pagination
-            current={currentPage}
-            total={totalNotifications}
-            pageSize={10}
-            onChange={(page) => setCurrentPage(page)}
-            showSizeChanger={false}
-            showTotal={(total, range) =>
-              `${range[0]}-${range[1]} of ${total} notifications`
-            }
-          />
-        </div>
-      </Card>
 
       <Modal
         title="Send Notification"

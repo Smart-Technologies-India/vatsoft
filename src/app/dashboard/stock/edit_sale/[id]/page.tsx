@@ -64,17 +64,18 @@ const EditPPage = () => {
 
   return (
     <>
-      <div className="p-2 mt-4">
-        <div className="bg-white p-2 shadow mt-2">
-          <div className="flex gap-2">
-            <p className="text-lg font-semibold items-center">
-              Edit Daily Sale
-            </p>
-            <div className="grow"></div>
+      <main className="p-3 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm">
+            <div className="mb-3 pb-2 border-b">
+              <h1 className="text-lg font-medium text-gray-900">
+                Edit Daily Sale
+              </h1>
+            </div>
+            <EditDailySaleProvider id={sid} userid={userid} data={sdata!} />
           </div>
-          <EditDailySaleProvider id={sid} userid={userid} data={sdata!} />
         </div>
-      </div>
+      </main>
     </>
   );
 };

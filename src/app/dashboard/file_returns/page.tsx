@@ -240,15 +240,18 @@ const ViewPage = () => {
 
   return (
     <>
-      <main className="w-full p-4">
-        <div className="rounded-md border bg-white my-4">
-          <h1 className="text-xl px-4 my-2 font-medium">Table Heading one</h1>
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
+      <main className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-4">
+          <div className="bg-linear-to-r from-blue-500 to-indigo-600 px-6 py-4">
+            <h1 className="text-xl font-semibold text-white">Data Table Overview</h1>
+          </div>
+          <div className="overflow-x-auto">
+              <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id} className="bg-linear-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100">
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id} className="font-semibold text-gray-700">
                       {header.isPlaceholder ? null : (
                         <>
                           <div
@@ -281,7 +284,7 @@ const ViewPage = () => {
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow key={row.id} className="hover:bg-blue-50 transition-colors">
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
@@ -294,30 +297,32 @@ const ViewPage = () => {
               ))}
             </TableBody>
           </Table>
-          <div className="flex items-center gap-2 px-4 my-2">
+          </div>
+          <div className="bg-gray-50 border-t border-gray-200 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
             <button
-              className="border rounded p-1"
+              className="border border-gray-300 rounded p-2 hover:bg-blue-50 hover:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               onClick={() => table.firstPage()}
               disabled={!table.getCanPreviousPage()}
             >
               <MaterialSymbolsKeyboardDoubleArrowLeft />
             </button>
             <button
-              className="border rounded p-1"
+              className="border border-gray-300 rounded p-2 hover:bg-blue-50 hover:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
             >
               <CharmChevronLeft />
             </button>
             <button
-              className="border rounded p-1"
+              className="border border-gray-300 rounded p-2 hover:bg-blue-50 hover:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
             >
               <CharmChevronRight />
             </button>
             <button
-              className="border rounded p-1"
+              className="border border-gray-300 rounded p-2 hover:bg-blue-50 hover:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               onClick={() => table.lastPage()}
               disabled={!table.getCanNextPage()}
             >
@@ -336,7 +341,7 @@ const ViewPage = () => {
               {/* {dataQuery.data?.rowCount.toLocaleString()} Rows */}
             </p>
             <div className="grow"></div>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 text-sm text-gray-600">
               Go to page:
               <input
                 type="number"
@@ -345,11 +350,11 @@ const ViewPage = () => {
                   const page = e.target.value ? Number(e.target.value) - 1 : 0;
                   table.setPageIndex(page);
                 }}
-                className="border p-1 rounded w-16"
+                className="border border-gray-300 p-1 rounded w-16 focus:border-blue-400 focus:outline-none"
               />
             </span>
             <select
-              className="border p-1 rounded"
+              className="border border-gray-300 p-2 rounded hover:border-blue-400 focus:border-blue-400 focus:outline-none transition-colors"
               value={table.getState().pagination.pageSize}
               onChange={(e) => {
                 table.setPageSize(Number(e.target.value));
@@ -361,11 +366,15 @@ const ViewPage = () => {
                 </option>
               ))}
             </select>
+            </div>
           </div>
         </div>
-        <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4">
-          <h1>File Returns</h1>
-          <Marquee className="bg-yellow-500/10 mt-2 text-sm">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 px-6 py-5 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1.5 h-6 bg-linear-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+            <h1 className="text-xl font-bold text-gray-900">File Returns</h1>
+          </div>
+          <Marquee className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-800">
             This is a banner can be used for official updates and notifications.
           </Marquee>
 
@@ -475,7 +484,7 @@ const ViewPage = () => {
                 }}
               />
             </div>
-            <button className="bg-[#172e57] px-6  text-white py-2 rounded-md">
+            <button className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 px-8 text-white py-2 rounded-lg font-medium transition-all shadow-md hover:shadow-lg">
               Search
             </button>
           </div>
@@ -487,30 +496,30 @@ const ViewPage = () => {
           <Card />
         </div>
 
-        <div>
-          <div className="bg-emerald-500 w-full mt-2 px-2 text-white flex gap-2 py-1">
-            <p>VAT Details of outward supplied of goods or services</p>
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-4">
+          <div className="bg-linear-to-r from-emerald-500 to-teal-600 px-4 py-3 text-white flex items-center gap-2">
+            <p className="font-semibold">VAT Details of outward supplied of goods or services</p>
             <div className="grow"></div>
-            <button>
+            <button className="hover:bg-white/20 p-1 rounded transition-colors">
               <TablerRefresh />
             </button>
           </div>
-          <div className="bg-white p-4 flex text-xs justify-between">
-            <div>
-              <p>VAT NO. - 9O2UI3HR92U3RH98</p>
-              <p>FY - 2024 - 9O2UI3HR92U3RH98</p>
+          <div className="bg-linear-to-r from-gray-50 to-blue-50 p-4 flex text-xs justify-between flex-wrap gap-4">
+            <div className="space-y-1">
+              <p className="font-semibold text-gray-700">VAT NO. - 9O2UI3HR92U3RH98</p>
+              <p className="text-gray-600">FY - 2024 - 9O2UI3HR92U3RH98</p>
             </div>
-            <div>
-              <p>Legal Name - F23RF243</p>
-              <p>Tax Period - May</p>
+            <div className="space-y-1">
+              <p className="font-semibold text-gray-700">Legal Name - F23RF243</p>
+              <p className="text-gray-600">Tax Period - May</p>
             </div>
-            <div>
-              <p>Trade Name - Smart Technologies</p>
-              <p>Status - Filed</p>
+            <div className="space-y-1">
+              <p className="font-semibold text-gray-700">Trade Name - Smart Technologies</p>
+              <p className="text-gray-600">Status - Filed</p>
             </div>
-            <div>
-              <p>Indicates Mandatory Fields</p>
-              <p>Due Date - 11/06/2024</p>
+            <div className="space-y-1">
+              <p className="font-semibold text-gray-700">Indicates Mandatory Fields</p>
+              <p className="text-gray-600">Due Date - 11/06/2024</p>
             </div>
           </div>
         </div>
@@ -529,20 +538,22 @@ export default ViewPage;
 
 const Card = () => {
   return (
-    <div className=" p-2 bg-white rounded-md">
-      <div className="text-white text-sm font-semibold text-center bg-[#162e57] p-2 rounded-md">
-        <p className="text-white text-xs font-semibold text-center">VAT</p>
+    <div className="p-3 bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all">
+      <div className="text-white text-sm font-semibold text-center bg-linear-to-r from-blue-600 to-indigo-700 p-3 rounded-lg">
+        <p className="text-white text-xs font-semibold mb-1">VAT</p>
         <p>Details of outward supplies of goods or services</p>
       </div>
 
-      <p className="text-[#162e57] mt-2 text-xs text-center">
-        Status : Submitted
-      </p>
-      <div className="flex gap-2 justify-around mt-2">
-        <button className="border flex-1 bg-[#162e57] text-white rounded-md text-sm py-1 text-center">
+      <div className="mt-3 text-center">
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          Status: Submitted
+        </span>
+      </div>
+      <div className="flex gap-2 justify-around mt-3">
+        <button className="flex-1 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg text-sm py-2 font-medium transition-all shadow-md hover:shadow-lg">
           View
         </button>
-        <button className="border flex-1 bg-[#162e57]  text-white rounded-md text-sm py-1 text-center">
+        <button className="flex-1 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg text-sm py-2 font-medium transition-all shadow-md hover:shadow-lg">
           Download
         </button>
       </div>
@@ -556,13 +567,14 @@ interface CardTwoProps {
 
 const CardTwo = (props: CardTwoProps) => {
   return (
-    <div className=" p-2 bg-white rounded-md">
-      <div className="text-white text-sm font-semibold text-center bg-[#162e57] p-2 rounded-md">
+    <div className="p-3 bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all">
+      <div className="text-white text-sm font-semibold text-center bg-gradient-to-r from-blue-600 to-indigo-700 p-3 rounded-lg">
         <p>{props.title}</p>
       </div>
 
-      <div className="text-center flex mt-2 justify-center gap-2">
-        <TablerCheckbox className="text-green-500 text-2xl" /> 23
+      <div className="text-center flex mt-3 justify-center items-center gap-2">
+        <TablerCheckbox className="text-green-500 text-2xl" /> 
+        <span className="text-lg font-semibold text-gray-700">23</span>
       </div>
     </div>
   );

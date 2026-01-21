@@ -21,10 +21,28 @@ const Refunds = () => {
   }, []);
 
   return (
-    <main className="p-4">
-      <div className="p-2 bg-white shadow">
-        <div className="bg-blue-500 p-2 text-white">Refunds</div>
-        <CreateRefundProvider userid={userid} />
+    <main className="relative bg-gray-50 min-h-screen">
+      <div className="p-3">
+        <div className="mx-auto max-w-7xl">
+          {/* Header Section */}
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-lg font-medium text-gray-900">
+                  Create Refund
+                </h1>
+                <p className="text-gray-500 text-sm mt-0.5">
+                  Submit a new refund request
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Refund Form Section */}
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-3">
+            <CreateRefundProvider userid={userid} />
+          </div>
+        </div>
       </div>
     </main>
   );

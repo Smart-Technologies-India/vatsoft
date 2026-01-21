@@ -4,8 +4,8 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
 
 interface OfficerDashboardPayload {
-  selectOffice: SelectOffice;
-  selectCommodity: "FUEL" | "LIQUOR";
+  selectOffice?: SelectOffice;
+  selectCommodity?: "FUEL" | "LIQUOR";
 }
 
 import prisma from "../../../prisma/database";
@@ -30,112 +30,128 @@ const OfficerDashboardReport = async (
 ): Promise<ApiResponseType<ResponseData | null>> => {
   const functionname: string = OfficerDashboardReport.name;
   try {
+    const whereClause: any = {
+      deletedAt: null,
+      deletedBy: null,
+      status: "APPROVED",
+    };
+
+    if (payload.selectOffice) {
+      whereClause.selectOffice = payload.selectOffice;
+    }
+
+    if (payload.selectCommodity === "FUEL") {
+      whereClause.commodity = "FUEL";
+    } else if (payload.selectCommodity === "LIQUOR") {
+      whereClause.commodity = { not: "FUEL" };
+    }
+
     const total_dealer = await prisma.dvat04.count({
-      where: {
-        selectOffice: payload.selectOffice,
-        deletedAt: null,
-        deletedBy: null,
-        status: "APPROVED",
-        ...(payload.selectCommodity == "FUEL"
-          ? {
-              commodity: "FUEL",
-            }
-          : {
-              commodity: {
-                not: "FUEL",
-              },
-            }),
-      },
+      where: whereClause,
     });
+
+    const fueldealerWhere: any = {
+      deletedAt: null,
+      deletedBy: null,
+      commodity: "FUEL",
+      status: "APPROVED",
+    };
+    if (payload.selectOffice) {
+      fueldealerWhere.selectOffice = payload.selectOffice;
+    }
 
     const fueldealer = await prisma.dvat04.count({
-      where: {
-        selectOffice: payload.selectOffice,
-
-        deletedAt: null,
-        deletedBy: null,
-        commodity: "FUEL",
-        status: "APPROVED",
-      },
+      where: fueldealerWhere,
     });
+
+    const liquoredealerWhere: any = {
+      deletedAt: null,
+      deletedBy: null,
+      commodity: "LIQUOR",
+      status: "APPROVED",
+    };
+    if (payload.selectOffice) {
+      liquoredealerWhere.selectOffice = payload.selectOffice;
+    }
 
     const liquoredealer = await prisma.dvat04.count({
-      where: {
-        selectOffice: payload.selectOffice,
-        deletedAt: null,
-        deletedBy: null,
-        commodity: "LIQUOR",
-        status: "APPROVED",
-      },
+      where: liquoredealerWhere,
     });
+    const manufacturerWhere: any = {
+      deletedAt: null,
+      deletedBy: null,
+      commodity: "MANUFACTURER",
+      status: "APPROVED",
+    };
+    if (payload.selectOffice) {
+      manufacturerWhere.selectOffice = payload.selectOffice;
+    }
+
     const manufacturer = await prisma.dvat04.count({
-      where: {
-        selectOffice: payload.selectOffice,
-        deletedAt: null,
-        deletedBy: null,
-        commodity: "MANUFACTURER",
-        status: "APPROVED",
-      },
+      where: manufacturerWhere,
     });
+    const oidcdealerWhere: any = {
+      deletedAt: null,
+      deletedBy: null,
+      commodity: "OIDC",
+      status: "APPROVED",
+    };
+    if (payload.selectOffice) {
+      oidcdealerWhere.selectOffice = payload.selectOffice;
+    }
+
     const oidcdealer = await prisma.dvat04.count({
-      where: {
-        selectOffice: payload.selectOffice,
-        deletedAt: null,
-        deletedBy: null,
-        commodity: "OIDC",
-        status: "APPROVED",
-      },
+      where: oidcdealerWhere,
     });
+    const regWhere: any = {
+      deletedAt: null,
+      deletedBy: null,
+      compositionScheme: false,
+      status: "APPROVED",
+    };
+    if (payload.selectOffice) {
+      regWhere.selectOffice = payload.selectOffice;
+    }
+    if (payload.selectCommodity === "FUEL") {
+      regWhere.commodity = "FUEL";
+    } else if (payload.selectCommodity === "LIQUOR") {
+      regWhere.commodity = { not: "FUEL" };
+    }
+
     const reg = await prisma.dvat04.count({
-      where: {
-        selectOffice: payload.selectOffice,
-        deletedAt: null,
-        deletedBy: null,
-        compositionScheme: false,
-        status: "APPROVED",
-        ...(payload.selectCommodity == "FUEL"
-          ? {
-              commodity: "FUEL",
-            }
-          : {
-              commodity: {
-                not: "FUEL",
-              },
-            }),
-      },
+      where: regWhere,
     });
+    const compWhere: any = {
+      deletedAt: null,
+      deletedBy: null,
+      compositionScheme: true,
+      status: "APPROVED",
+    };
+    if (payload.selectOffice) {
+      compWhere.selectOffice = payload.selectOffice;
+    }
+    if (payload.selectCommodity === "FUEL") {
+      compWhere.commodity = "FUEL";
+    } else if (payload.selectCommodity === "LIQUOR") {
+      compWhere.commodity = { not: "FUEL" };
+    }
+
     const comp = await prisma.dvat04.count({
-      where: {
-        selectOffice: payload.selectOffice,
-        deletedAt: null,
-        deletedBy: null,
-        compositionScheme: true,
-        status: "APPROVED",
-        ...(payload.selectCommodity == "FUEL"
-          ? {
-              commodity: "FUEL",
-            }
-          : {
-              commodity: {
-                not: "FUEL",
-              },
-            }),
-      },
+      where: compWhere,
     });
+    const filedReturnDvatWhere: any = {};
+    if (payload.selectOffice) {
+      filedReturnDvatWhere.selectOffice = payload.selectOffice;
+    }
+    if (payload.selectCommodity === "FUEL") {
+      filedReturnDvatWhere.commodity = "FUEL";
+    } else if (payload.selectCommodity === "LIQUOR") {
+      filedReturnDvatWhere.commodity = { not: "FUEL" };
+    }
+
     const filed_return = await prisma.return_filing.count({
       where: {
-        dvat: {
-          selectOffice: payload.selectOffice,
-          ...(payload.selectCommodity == "FUEL"
-            ? {
-                commodity: "FUEL",
-              }
-            : {
-                commodity: {
-                  not: "FUEL",
-                },
-              }),
-        },
+        dvat: filedReturnDvatWhere,
         deletedAt: null,
         deletedBy: null,
         NOT: [
@@ -146,20 +162,19 @@ const OfficerDashboardReport = async (
       },
     });
 
+    const pendingReturnDvatWhere: any = {};
+    if (payload.selectOffice) {
+      pendingReturnDvatWhere.selectOffice = payload.selectOffice;
+    }
+    if (payload.selectCommodity === "FUEL") {
+      pendingReturnDvatWhere.commodity = "FUEL";
+    } else if (payload.selectCommodity === "LIQUOR") {
+      pendingReturnDvatWhere.commodity = { not: "FUEL" };
+    }
+
     const pending_return = await prisma.return_filing.count({
       where: {
-        dvat: {
-          selectOffice: payload.selectOffice,
-          ...(payload.selectCommodity == "FUEL"
-            ? {
-                commodity: "FUEL",
-              }
-            : {
-                commodity: {
-                  not: "FUEL",
-                },
-              }),
-        },
+        dvat: pendingReturnDvatWhere,
         deletedAt: null,
         deletedBy: null,
         filing_date: null,
@@ -193,21 +208,20 @@ const OfficerDashboardReport = async (
       currentDate.getMonth(),
       0
     );
+    const lastMonthDvatWhere: any = {};
+    if (payload.selectOffice) {
+      lastMonthDvatWhere.selectOffice = payload.selectOffice;
+    }
+    if (payload.selectCommodity === "FUEL") {
+      lastMonthDvatWhere.commodity = "FUEL";
+    } else if (payload.selectCommodity === "LIQUOR") {
+      lastMonthDvatWhere.commodity = { not: "FUEL" };
+    }
+
     // Count records received last month
     const last_month_received_data = await prisma.returns_01.findMany({
       where: {
-        dvat04: {
-          selectOffice: payload.selectOffice,
-          ...(payload.selectCommodity == "FUEL"
-            ? {
-                commodity: "FUEL",
-              }
-            : {
-                commodity: {
-                  not: "FUEL",
-                },
-              }),
-        },
+        dvat04: lastMonthDvatWhere,
         deletedAt: null,
         deletedBy: null,
         OR: [
@@ -233,21 +247,20 @@ const OfficerDashboardReport = async (
       );
     }
 
+    const thisMonthDvatWhere: any = {};
+    if (payload.selectOffice) {
+      thisMonthDvatWhere.selectOffice = payload.selectOffice;
+    }
+    if (payload.selectCommodity === "FUEL") {
+      thisMonthDvatWhere.commodity = "FUEL";
+    } else if (payload.selectCommodity === "LIQUOR") {
+      thisMonthDvatWhere.commodity = { not: "FUEL" };
+    }
+
     // Count records received this month
     const this_month_received_data = await prisma.returns_01.findMany({
       where: {
-        dvat04: {
-          selectOffice: payload.selectOffice,
-          ...(payload.selectCommodity == "FUEL"
-            ? {
-                commodity: "FUEL",
-              }
-            : {
-                commodity: {
-                  not: "FUEL",
-                },
-              }),
-        },
+        dvat04: thisMonthDvatWhere,
         deletedAt: null,
         deletedBy: null,
         OR: [
@@ -295,21 +308,20 @@ const OfficerDashboardReport = async (
       999
     );
 
+    const todayDvatWhere: any = {};
+    if (payload.selectOffice) {
+      todayDvatWhere.selectOffice = payload.selectOffice;
+    }
+    if (payload.selectCommodity === "FUEL") {
+      todayDvatWhere.commodity = "FUEL";
+    } else if (payload.selectCommodity === "LIQUOR") {
+      todayDvatWhere.commodity = { not: "FUEL" };
+    }
+
     // Count records received today
     const today_received_data = await prisma.returns_01.findMany({
       where: {
-        dvat04: {
-          selectOffice: payload.selectOffice,
-          ...(payload.selectCommodity == "FUEL"
-            ? {
-                commodity: "FUEL",
-              }
-            : {
-                commodity: {
-                  not: "FUEL",
-                },
-              }),
-        },
+        dvat04: todayDvatWhere,
         deletedAt: null,
         deletedBy: null,
         OR: [

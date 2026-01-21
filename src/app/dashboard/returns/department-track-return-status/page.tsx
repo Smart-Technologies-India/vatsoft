@@ -1,7 +1,6 @@
 "use client";
 
-import { Alert, Button, Input, Pagination } from "antd";
-import { Button as ShButton } from "@/components/ui/button";
+import { Alert, Button, Input, Pagination, Drawer } from "antd";
 import {
   Table,
   TableBody,
@@ -15,15 +14,6 @@ import { Radio, DatePicker } from "antd";
 import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
 import { dvat04, returns_01, user } from "@prisma/client";
 import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
@@ -36,6 +26,7 @@ import { useRouter } from "next/navigation";
 const TrackAppliation = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [pagination, setPaginatin] = useState<{
     take: number;
     skip: number;
@@ -392,115 +383,42 @@ const TrackAppliation = () => {
 
   return (
     <>
-      <div className="px-3 py-2">
-        <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white flex">
-            <p>Track Filed Return</p>
-            <div className="grow"></div>
-
-            <Drawer>
-              <DrawerTrigger>Info</DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader className="px-0 py-2">
-                  <DrawerTitle>
-                    <p className="w-5/6 mx-auto">Meaning of status</p>
-                  </DrawerTitle>
-                </DrawerHeader>
-                <Table className="border mt-2 w-5/6 mx-auto">
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Pending for Processing
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application filed successfully. Pending with Tax Officer
-                        for Processing.*
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Pending for Clarification
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Notice for seeking clarification issued by officer. File
-                        Clarification within 7 working days of date of notice on
-                        portal.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Clarification filed-Pending for Order
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Clarification filed successfully by Applicant. Pending
-                        with Tax Officer for Order.*
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Clarification not filed Pending for Order
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Clarification not filed by the Applicant. Pending with
-                        Tax Officer for Rejection.*
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Approved
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application is Approved. Registration ID and possward
-                        emailed to Applicant.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Rejected
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application is Rejected by tax officer.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Withdrawn
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application is withdrawn by the Applicant/Tax payer.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Cancelled on Request of Taxpayer
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Registration is cancelled on request to taxpayer.
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-
-                <DrawerFooter>
-                  <DrawerClose>
-                    <ShButton variant="outline">Close</ShButton>
-                  </DrawerClose>
-                </DrawerFooter>
-              </DrawerContent>
-            </Drawer>
+      <main className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+        {/* Header Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+          <div className="bg-linear-to-r from-blue-500 to-indigo-600 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-white rounded-full"></div>
+                <h1 className="text-2xl font-bold text-white">Track Filed Return</h1>
+              </div>
+              <Button
+                type="primary"
+                onClick={() => setDrawerOpen(true)}
+                className="bg-white text-blue-600 hover:bg-gray-100"
+              >
+                Info
+              </Button>
+            </div>
           </div>
-          <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
-            <Radio.Group
-              onChange={onChange}
-              value={searchOption}
-              disabled={isSearch}
-            >
-              <Radio value={SearchOption.ARN}>ARN</Radio>
-              <Radio value={SearchOption.RETURN}>Tax Period</Radio>
-              <Radio value={SearchOption.TIN}>TIN Number</Radio>
-              <Radio value={SearchOption.TRADE}>Trade Name</Radio>
-            </Radio.Group>
-            {(() => {
+        </div>
+
+        {/* Main Content Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          {/* Search Section */}
+          <div className="p-6 bg-gray-50 border-b border-gray-200">
+            <div className="flex flex-col md:flex-row gap-4 md:items-center">
+              <Radio.Group
+                onChange={onChange}
+                value={searchOption}
+                disabled={isSearch}
+              >
+                <Radio value={SearchOption.ARN}>ARN</Radio>
+                <Radio value={SearchOption.RETURN}>Tax Period</Radio>
+                <Radio value={SearchOption.TIN}>TIN Number</Radio>
+                <Radio value={SearchOption.TRADE}>Trade Name</Radio>
+              </Radio.Group>
+              {(() => {
               switch (searchOption) {
                 case SearchOption.ARN:
                   return (
@@ -585,162 +503,255 @@ const TrackAppliation = () => {
                       )}
                     </div>
                   );
-                default:
-                  return null;
-              }
-            })()}
+                  default:
+                    return null;
+                }
+              })()}
+            </div>
           </div>
 
           {paymentData.length == 0 ? (
-            <>
+            <div className="p-6">
               <Alert
                 style={{
-                  marginTop: "10px",
-                  padding: "8px",
+                  padding: "16px",
+                  borderRadius: "12px",
                 }}
                 type="error"
                 showIcon
                 description="There is no Filed Return."
               />
-            </>
+            </div>
           ) : (
             <>
-              <Table className="border mt-2">
-                <TableHeader>
-                  <TableRow className="bg-gray-100 p-2">
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      ARN
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      Return Type
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      Financial Year
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      Tax Period
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      Date of filing
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      Filing Type
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      TIN Number
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      Trade Name
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      Dealer Name
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paymentData.map(
-                    (val: returns_01 & { dvat04: dvat04 }, index: number) => {
-                      return (
-                        <TableRow key={index}>
-                          <TableCell className="border text-center p-2">
-                            <Link
-                              href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                                val.createdById.toString()
-                              )}/${encryptURLData(
-                                val.dvat04Id.toString()
-                              )}?form=30A&year=${val.year}&quarter=${
-                                val.quarter
-                              }&month=${val.month}`}
-                              className="text-blue-500"
-                            >
-                              {val.rr_number}
-                            </Link>
-                          </TableCell>
-                          <TableCell className="border text-center p-2">
-                            {val.return_type}
-                          </TableCell>
-                          <TableCell className="border text-center p-2">
-                            {get_years(
-                              new Date(val.transaction_date!).toLocaleString(
-                                "en-US",
-                                {
-                                  month: "long",
-                                }
-                              ),
-                              val.year
-                            )}
-                          </TableCell>
-                          <TableCell className="border text-center p-2">
-                            {get_month(
-                              val.compositionScheme ?? false,
-                              new Date(val.transaction_date!).toLocaleString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                }
-                              )
-                            )}
-                          </TableCell>
-                          <TableCell className="border text-center p-2">
-                            {formateDate(new Date(val.transaction_date!))}
-                          </TableCell>
-                          <TableCell className="border text-center p-2">
-                            {val.compositionScheme ? "COMP" : "REG"}
-                          </TableCell>
-                          <TableCell className="border text-center p-2">
-                            {val.dvat04.tinNumber}
-                          </TableCell>
-                          <TableCell className="border text-center p-2">
-                            {val.dvat04.tradename}
-                          </TableCell>
-                          <TableCell className="border text-center p-2">
-                            {val.dvat04.name}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    }
-                  )}
-                </TableBody>
-              </Table>
-              <div className="mt-2"></div>
-              <div className="lg:hidden">
-                <Pagination
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  total={pagination.total}
-                  showTotal={(total: number) => `Total ${total} items`}
-                />
+              {/* Table Section */}
+              <div className="p-6">
+                <Table className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                  <TableHeader>
+                    <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        ARN
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        Return Type
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        Financial Year
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        Tax Period
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        Date of filing
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        Filing Type
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        TIN Number
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        Trade Name
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
+                        Dealer Name
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paymentData.map(
+                      (val: returns_01 & { dvat04: dvat04 }, index: number) => {
+                        return (
+                          <TableRow key={index} className="hover:bg-blue-50 transition-colors">
+                            <TableCell className="border text-center p-3">
+                              <Link
+                                href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                                  val.createdById.toString()
+                                )}/${encryptURLData(
+                                  val.dvat04Id.toString()
+                                )}?form=30A&year=${val.year}&quarter=${
+                                  val.quarter
+                                }&month=${val.month}`}
+                                className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                              >
+                                {val.rr_number}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="border text-center p-3 text-gray-900">
+                              {val.return_type}
+                            </TableCell>
+                            <TableCell className="border text-center p-3 text-gray-900">
+                              {get_years(
+                                new Date(val.transaction_date!).toLocaleString(
+                                  "en-US",
+                                  {
+                                    month: "long",
+                                  }
+                                ),
+                                val.year
+                              )}
+                            </TableCell>
+                            <TableCell className="border text-center p-3 text-gray-900">
+                              {get_month(
+                                val.compositionScheme ?? false,
+                                new Date(val.transaction_date!).toLocaleString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                  }
+                                )
+                              )}
+                            </TableCell>
+                            <TableCell className="border text-center p-3 text-gray-900">
+                              {formateDate(new Date(val.transaction_date!))}
+                            </TableCell>
+                            <TableCell className="border text-center p-3">
+                              <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
+                                val.compositionScheme 
+                                  ? "bg-purple-100 text-purple-800" 
+                                  : "bg-blue-100 text-blue-800"
+                              }`}>
+                                {val.compositionScheme ? "COMP" : "REG"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="border text-center p-3 font-medium text-gray-900">
+                              {val.dvat04.tinNumber}
+                            </TableCell>
+                            <TableCell className="border text-center p-3 text-gray-900">
+                              {val.dvat04.tradename}
+                            </TableCell>
+                            <TableCell className="border text-center p-3 text-gray-900">
+                              {val.dvat04.name}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      }
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-              <div className="hidden lg:block">
-                <Pagination
-                  showQuickJumper
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                  total={pagination.total}
-                  responsive={true}
-                  showTotal={(total: number, range: number[]) =>
-                    `${range[0]}-${range[1]} of ${total} items`
-                  }
-                />
+              {/* Pagination Section */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div className="lg:hidden">
+                  <Pagination
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    total={pagination.total}
+                    showTotal={(total: number) => `Total ${total} items`}
+                  />
+                </div>
+                <div className="hidden lg:block">
+                  <Pagination
+                    showQuickJumper
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                    total={pagination.total}
+                    responsive={true}
+                    showTotal={(total: number, range: number[]) =>
+                      `${range[0]}-${range[1]} of ${total} items`
+                    }
+                  />
+                </div>
               </div>
             </>
           )}
-          {/* <div className="mt-2"></div>
-          <Button
-            onClick={(e) => {
-              e.preventDefault();
-              router.back();
-            }}
-          >
-            Back
-          </Button> */}
         </div>
-      </div>
+
+        {/* Antd Drawer for Status Info */}
+        <Drawer
+          title={
+            <div className="text-lg font-semibold text-gray-900">
+              Meaning of Status
+            </div>
+          }
+          placement="right"
+          width={720}
+          onClose={() => setDrawerOpen(false)}
+          open={drawerOpen}
+        >
+          <div className="space-y-4">
+            <Table className="border border-gray-200 rounded-lg overflow-hidden">
+              <TableBody>
+                <TableRow className="hover:bg-gray-50 transition-colors">
+                  <TableCell className="text-left w-60 p-3 font-semibold text-gray-900 border">
+                    Pending for Processing
+                  </TableCell>
+                  <TableCell className="text-left p-3 text-gray-700 border">
+                    Application filed successfully. Pending with Tax Officer for
+                    Processing.*
+                  </TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-gray-50 transition-colors">
+                  <TableCell className="text-left w-60 p-3 font-semibold text-gray-900 border">
+                    Pending for Clarification
+                  </TableCell>
+                  <TableCell className="text-left p-3 text-gray-700 border">
+                    Notice for seeking clarification issued by officer. File
+                    Clarification within 7 working days of date of notice on
+                    portal.
+                  </TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-gray-50 transition-colors">
+                  <TableCell className="text-left w-60 p-3 font-semibold text-gray-900 border">
+                    Clarification filed-Pending for Order
+                  </TableCell>
+                  <TableCell className="text-left p-3 text-gray-700 border">
+                    Clarification filed successfully by Applicant. Pending with
+                    Tax Officer for Order.*
+                  </TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-gray-50 transition-colors">
+                  <TableCell className="text-left w-60 p-3 font-semibold text-gray-900 border">
+                    Clarification not filed Pending for Order
+                  </TableCell>
+                  <TableCell className="text-left p-3 text-gray-700 border">
+                    Clarification not filed by the Applicant. Pending with Tax
+                    Officer for Rejection.*
+                  </TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-gray-50 transition-colors">
+                  <TableCell className="text-left w-60 p-3 font-semibold text-gray-900 border">
+                    Approved
+                  </TableCell>
+                  <TableCell className="text-left p-3 text-gray-700 border">
+                    Application is Approved. Registration ID and password
+                    emailed to Applicant.
+                  </TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-gray-50 transition-colors">
+                  <TableCell className="text-left w-60 p-3 font-semibold text-gray-900 border">
+                    Rejected
+                  </TableCell>
+                  <TableCell className="text-left p-3 text-gray-700 border">
+                    Application is Rejected by tax officer.
+                  </TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-gray-50 transition-colors">
+                  <TableCell className="text-left w-60 p-3 font-semibold text-gray-900 border">
+                    Withdrawn
+                  </TableCell>
+                  <TableCell className="text-left p-3 text-gray-700 border">
+                    Application is withdrawn by the Applicant/Tax payer.
+                  </TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-gray-50 transition-colors">
+                  <TableCell className="text-left w-60 p-3 font-semibold text-gray-900 border">
+                    Cancelled on Request of Taxpayer
+                  </TableCell>
+                  <TableCell className="text-left p-3 text-gray-700 border">
+                    Registration is cancelled on request to taxpayer.
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </Drawer>
+      </main>
     </>
   );
 };

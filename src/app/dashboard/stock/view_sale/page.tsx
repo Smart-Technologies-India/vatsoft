@@ -571,91 +571,98 @@ const DocumentWiseDetails = () => {
         open={addBox}
         size="large"
       >
-        <p className="text-lg text-left">Sale Invoice</p>
+        <div className="mb-3 pb-2 border-b">
+          <h2 className="text-sm font-medium text-gray-900">
+            Sale Invoice
+          </h2>
+        </div>
         <DailySaleProvider userid={userid} setAddBox={setAddBox} init={init} />
       </Drawer>
-      <div className="p-2 mt-4">
-        <div className="bg-white p-2 shadow mt-2">
-          <div className="flex gap-2">
-            <p className="text-lg font-semibold items-center">Daily Sale</p>
-            <div className="grow"></div>
-            {dvatdata?.commodity != "FUEL" && (
-              <div className="flex gap-2 items-center">
-                <Radio.Group
-                  size="small"
-                  onChange={onChange}
-                  value={quantityCount}
-                  optionType="button"
-                >
-                  <Radio.Button className="w-20 text-center" value="pcs">
-                    Pcs
-                  </Radio.Button>
-                  <Radio.Button className="w-20 text-center" value="crate">
-                    Crate
-                  </Radio.Button>
-                </Radio.Group>
+      <main className="p-3 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+            <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+              <div>
+                <h1 className="text-lg font-medium text-gray-900">Daily Sale</h1>
               </div>
-            )}
-            <div>
-              <Button
-                size="small"
-                type="primary"
-                onClick={() => csvRef.current?.click()}
-                className="bg-blue-500 hover:bg-blue-500 w-24 text-white"
-              >
-                {csv ? "Change Sheet" : "Upload Sheet"}
-              </Button>
+              <div className="grow"></div>
+              <div className="flex flex-wrap gap-2 items-center">
+                {dvatdata?.commodity != "FUEL" && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-600">View:</span>
+                    <Radio.Group
+                      size="small"
+                      onChange={onChange}
+                      value={quantityCount}
+                      optionType="button"
+                    >
+                      <Radio.Button value="pcs">
+                        Pcs
+                      </Radio.Button>
+                      <Radio.Button value="crate">
+                        Crate
+                      </Radio.Button>
+                    </Radio.Group>
+                  </div>
+                    )}
+                <Button
+                  size="small"
+                  type="primary"
+                  onClick={() => csvRef.current?.click()}
+                >
+                  {csv ? "Change Sheet" : "Upload Sheet"}
+                </Button>
 
-              <div className="hidden">
-                <input
-                  type="file"
-                  ref={csvRef}
-                  accept="application/vnd.ms-excel, text/csv"
-                  onChange={(val) => handleCSVChange(val, setCsv)}
-                />
+                <div className="hidden">
+                  <input
+                    type="file"
+                    ref={csvRef}
+                    accept="application/vnd.ms-excel, text/csv"
+                    onChange={(val) => handleCSVChange(val, setCsv)}
+                  />
+                </div>
+                <a
+                  download={"vatsoft_sale.csv"}
+                  href="/vatsoft_sale.csv"
+                  className="inline-flex items-center px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                >
+                  Download Sheet
+                </a>
+                <Button
+                  size="small"
+                  type="primary"
+                  onClick={() => {
+                    setAddBox(true);
+                  }}
+                >
+                  Add
+                </Button>
+
+                {dailySale.length > 0 && (
+                  <Button
+                    size="small"
+                    type="default"
+                    onClick={() => {
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    Generate DVAT 31/31 A
+                  </Button>
+                )}
               </div>
             </div>
-            <a
-              download={"vatsoft_sale.csv"}
-              href="/vatsoft_sale.csv"
-              className="bg-blue-500 hover:bg-blue-500 w-24 text-white rounded shadow px-2 text-sm  h-6 text-center grid place-items-start pt-[2px]"
-            >
-              Download Sheet
-            </a>
-            <Button
-              size="small"
-              type="primary"
-              className="bg-blue-500 hover:bg-blue-500 w-14"
-              onClick={() => {
-                setAddBox(true);
-              }}
-            >
-              Add
-            </Button>
-
-            {dailySale.length > 0 && (
-              <Button
-                size="small"
-                type="primary"
-                className="bg-blue-500 hover:bg-blue-500 px-2"
-                onClick={() => {
-                  setIsModalOpen(true);
-                }}
-              >
-                Generate DVAT 31/31 A
-              </Button>
-            )}
           </div>
-          <div className="flex gap-2 mt-2 flex-wrap">
-            <div className="bg-gray-100 p-2 rounded-md flex-1">
-              <p className="text-sm">Total number of invoice</p>
-              <p className="text-lg font-semibold leading-3">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
+              <p className="text-lg font-medium text-gray-900">
                 {new Set(dailySale.map((val) => val.invoice_number)).size}
               </p>
             </div>
-            <div className="bg-gray-100 p-2 rounded-md flex-1">
-              <p className="text-sm">Total taxable value</p>
-              <p className="text-lg font-semibold leading-3">
+            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Total Taxable Value</p>
+              <p className="text-lg font-medium text-gray-900">
                 {dailySale
                   .reduce(
                     (acc, val) =>
@@ -665,17 +672,17 @@ const DocumentWiseDetails = () => {
                   .toFixed(2)}
               </p>
             </div>
-            <div className="bg-gray-100 p-2 rounded-md flex-1">
-              <p className="text-sm">Total tax</p>
-              <p className="text-lg font-semibold leading-3">
+            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Total Tax</p>
+              <p className="text-lg font-medium text-gray-900">
                 {dailySale
                   .reduce((acc, val) => acc + parseFloat(val.vatamount), 0)
                   .toFixed(2)}
               </p>
             </div>
-            <div className="bg-gray-100 p-2 rounded-md flex-1">
-              <p className="text-sm">Total sale price</p>
-              <p className="text-lg font-semibold leading-3">
+            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Total Sale Price</p>
+              <p className="text-lg font-medium text-gray-900">
                 {dailySale
                   .reduce((acc, val) => acc + parseFloat(val.amount), 0)
                   .toFixed(2)}
@@ -684,59 +691,48 @@ const DocumentWiseDetails = () => {
           </div>
 
           {dailySale.length > 0 ? (
-            <>
-              <Table className="border mt-2">
-                <TableHeader>
-                  <TableRow className="bg-gray-100">
-                    <TableHead className="border text-center">
-                      Invoice no.
-                    </TableHead>
-                    <TableHead className="border whitespace-nowrap text-center">
-                      Invoice Date
-                    </TableHead>
-
-                    <TableHead className="border text-center">
-                      Trade Name
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      TIN Number
-                    </TableHead>
-                    <TableHead className="w-64 border text-center">
-                      Product Name
-                    </TableHead>
-                    <TableHead className="w-20 border text-center">
-                      {quantityCount == "pcs"
-                        ? dvatdata?.commodity == "FUEL"
-                          ? "Litres"
-                          : "Qty"
-                        : "Crate"}
-                    </TableHead>
-
-                    {/* <TableHead className="border text-center">
-                      Invoice value (&#x20b9;)
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      VAT Amount
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      Total taxable percentage
-                    </TableHead> */}
-                    <TableHead className="border text-center">
-                      Taxable Value
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      Rate of Tax
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      VAT Amount
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      Invoice value (&#x20b9;)
-                    </TableHead>
-
-                    <TableHead className="w-28 border text-center">
-                      Actions
-                    </TableHead>
+            <div className="bg-white rounded shadow-sm border p-3">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50 border-b">
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Invoice no.
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Invoice Date
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Trade Name
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        TIN Number
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Product Name
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        {quantityCount == "pcs"
+                          ? dvatdata?.commodity == "FUEL"
+                            ? "Litres"
+                            : "Qty"
+                          : "Crate"}
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Taxable Value
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Rate of Tax
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        VAT Amount
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Invoice value (₹)
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Actions
+                      </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -748,25 +744,23 @@ const DocumentWiseDetails = () => {
                       },
                       index: number
                     ) => (
-                      <TableRow key={index}>
-                        <TableCell className="p-2 border text-center">
+                      <TableRow key={index} className="border-b hover:bg-gray-50">
+                        <TableCell className="p-2 text-center text-xs">
                           {val.invoice_number}
                         </TableCell>
-                        <TableCell className="p-2 border text-center">
+                        <TableCell className="p-2 text-center text-xs">
                           {formateDate(val.invoice_date)}
                         </TableCell>
-
-                        <TableCell className="p-2 border text-center">
+                        <TableCell className="p-2 text-center text-xs">
                           {val.seller_tin_number.name_of_dealer}
                         </TableCell>
-                        <TableCell className="p-2 border text-center">
+                        <TableCell className="p-2 text-center text-xs">
                           {val.seller_tin_number.tin_number}
                         </TableCell>
-                        <TableCell className="p-2 border text-center">
+                        <TableCell className="p-2 text-center text-xs">
                           {val.commodity_master.product_name}
                         </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {/* {val.quantity} */}
+                        <TableCell className="p-2 text-center text-xs">
                           {quantityCount == "pcs"
                             ? val.quantity
                             : showCrates(
@@ -774,32 +768,21 @@ const DocumentWiseDetails = () => {
                                 val.commodity_master.crate_size
                               )}
                         </TableCell>
-
-                        {/* <TableCell className="p-2 border text-center">
-                          {parseFloat(val.amount)}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.vatamount}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.tax_percent}%
-                        </TableCell>
-                        */}
-                        <TableCell className="p-2 border text-center">
+                        <TableCell className="p-2 text-center text-xs">
                           {(parseFloat(val.amount_unit) * val.quantity).toFixed(
                             2
                           )}
                         </TableCell>
-                        <TableCell className="p-2 border text-center">
+                        <TableCell className="p-2 text-center text-xs">
                           {val.tax_percent}%
                         </TableCell>
-                        <TableCell className="p-2 border text-center">
+                        <TableCell className="p-2 text-center text-xs">
                           {val.vatamount}
                         </TableCell>
-                        <TableCell className="p-2 border text-center">
+                        <TableCell className="p-2 text-center text-xs">
                           {val.amount}
                         </TableCell>
-                        <TableCell className="p-2 border text-center">
+                        <TableCell className="p-2 text-center text-xs">
                           {val.is_accept ? (
                             "NA"
                           ) : (
@@ -877,50 +860,45 @@ const DocumentWiseDetails = () => {
                       </TableRow>
                     )
                   )}
-                </TableBody>
-              </Table>
-              <div className="mt-2"></div>
-              <div className="lg:hidden">
-                <Pagination
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  total={pagination.total}
-                  showTotal={(total: number) => `Total ${total} items`}
-                />
+                  </TableBody>
+                </Table>
               </div>
-              <div className="hidden lg:block">
-                <Pagination
-                  showQuickJumper
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                  total={pagination.total}
-                  responsive={true}
-                  showTotal={(total: number, range: number[]) =>
-                    `${range[0]}-${range[1]} of ${total} items`
-                  }
-                />
+              {/* Pagination */}
+              <div className="px-3 py-2 border-t bg-gray-50">
+                <div className="lg:hidden">
+                  <Pagination
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    total={pagination.total}
+                    showTotal={(total: number) => `Total ${total} items`}
+                  />
+                </div>
+                <div className="hidden lg:block">
+                  <Pagination
+                    showQuickJumper
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                    total={pagination.total}
+                    responsive={true}
+                    showTotal={(total: number, range: number[]) =>
+                      `${range[0]}-${range[1]} of ${total} items`
+                    }
+                  />
+                </div>
               </div>
-            </>
+            </div>
           ) : (
-            <>
-              <Alert
-                style={{
-                  marginTop: "10px",
-                  padding: "8px",
-                }}
-                type="error"
-                showIcon
-                description="There is no daily sale."
-              />
-            </>
+            <div className="bg-white rounded shadow-sm border p-3 text-center">
+              <p className="text-gray-500 text-sm">There is no daily sale.</p>
+            </div>
           )}
         </div>
-      </div>
+      </main>
     </>
   );
 };

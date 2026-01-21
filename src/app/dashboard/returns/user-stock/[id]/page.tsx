@@ -96,92 +96,106 @@ const CommodityMaster = () => {
     );
   return (
     <>
-      <main className="w-full p-4 ">
-        <div className="bg-white px-4 py-2 mt-2">
-          <div className="flex gap-2">
-            <p className="text-lg font-semibold items-center">Stock</p>
-            <div className="grow"></div>
+      <main className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+        {/* Header Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+          <div className="bg-linear-to-r from-blue-500 to-indigo-600 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-8 bg-white rounded-full"></div>
+              <h1 className="text-2xl font-bold text-white">Stock Management</h1>
+            </div>
           </div>
+        </div>
+
+        {/* Main Content Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           {stocks.length != 0 ? (
             <>
-              <Table className="border mt-2">
-                <TableHeader>
-                  <TableRow className="bg-gray-100">
-                    <TableHead className="whitespace-nowrap w-14 border text-center p-2">
-                      Sr. No.
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap w-56 border text-center p-2">
-                      Product Name
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap border text-center p-2">
-                      Qty
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap border text-center p-2">
-                      Description
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {stocks.map(
-                    (
-                      val: stock & { commodity_master: commodity_master },
-                      index: number
-                    ) => (
-                      <TableRow key={index}>
-                        <TableCell className="p-2 border text-center">
-                          {index + 1 + pagination.skip}
-                        </TableCell>
-                        <TableCell className="p-2 border text-left">
-                          {val.commodity_master.product_name}
-                        </TableCell>
-                        <TableCell className="p-2 border text-center">
-                          {val.quantity}
-                        </TableCell>
-                        <TableCell className="p-2 border text-left">
-                          {val.commodity_master.description}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  )}
-                </TableBody>
-              </Table>
-              <div className="mt-2"></div>
-              <div className="lg:hidden">
-                <Pagination
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  total={pagination.total}
-                  showTotal={(total: number) => `Total ${total} items`}
-                />
+              {/* Table Section */}
+              <div className="p-6">
+                <Table className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                  <TableHeader>
+                    <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                      <TableHead className="whitespace-nowrap w-14 border text-center p-3 font-semibold text-gray-900">
+                        Sr. No.
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap w-56 border text-center p-3 font-semibold text-gray-900">
+                        Product Name
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap border text-center p-3 font-semibold text-gray-900">
+                        Qty
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap border text-center p-3 font-semibold text-gray-900">
+                        Description
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stocks.map(
+                      (
+                        val: stock & { commodity_master: commodity_master },
+                        index: number
+                      ) => (
+                        <TableRow key={index} className="hover:bg-blue-50 transition-colors">
+                          <TableCell className="p-3 border text-center text-gray-900">
+                            {index + 1 + pagination.skip}
+                          </TableCell>
+                          <TableCell className="p-3 border text-left font-medium text-gray-900">
+                            {val.commodity_master.product_name}
+                          </TableCell>
+                          <TableCell className="p-3 border text-center text-gray-900">
+                            {val.quantity}
+                          </TableCell>
+                          <TableCell className="p-3 border text-left text-gray-700">
+                            {val.commodity_master.description}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-              <div className="hidden lg:block">
-                <Pagination
-                  showQuickJumper
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                  total={pagination.total}
-                  responsive={true}
-                  showTotal={(total: number, range: number[]) =>
-                    `${range[0]}-${range[1]} of ${total} items`
-                  }
-                />
+              {/* Pagination Section */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div className="lg:hidden">
+                  <Pagination
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    total={pagination.total}
+                    showTotal={(total: number) => `Total ${total} items`}
+                  />
+                </div>
+                <div className="hidden lg:block">
+                  <Pagination
+                    showQuickJumper
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                    total={pagination.total}
+                    responsive={true}
+                    showTotal={(total: number, range: number[]) =>
+                      `${range[0]}-${range[1]} of ${total} items`
+                    }
+                  />
+                </div>
               </div>
             </>
           ) : (
-            <Alert
-              style={{
-                marginTop: "10px",
-                padding: "8px",
-              }}
-              type="error"
-              showIcon
-              description="There is no stock."
-            />
+            <div className="p-6">
+              <Alert
+                style={{
+                  padding: "16px",
+                  borderRadius: "12px",
+                }}
+                type="error"
+                showIcon
+                description="There is no stock."
+              />
+            </div>
           )}
         </div>
       </main>

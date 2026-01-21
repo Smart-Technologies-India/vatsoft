@@ -20,10 +20,13 @@ const ReturnDashboard = () => {
 
   return (
     <>
-      <main className="w-full p-4">
-        <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4">
-          <h1>Annual Return</h1>
-          <Marquee className="bg-yellow-500/10 mt-2 text-sm">
+      <main className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 px-6 py-5 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1.5 h-6 bg-linear-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+            <h1 className="text-xl font-bold text-gray-900">Annual Return</h1>
+          </div>
+          <Marquee className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-800">
             This is a banner can be used for official updates and notifications.
           </Marquee>
 
@@ -76,7 +79,7 @@ const ReturnDashboard = () => {
               />
             </div>
 
-            <button className="bg-blue-500 px-6  text-white py-2 rounded-md">
+            <button className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 px-8 text-white py-2 rounded-lg font-medium transition-all shadow-md hover:shadow-lg">
               Search
             </button>
           </div>
@@ -111,25 +114,27 @@ interface CardProps {
 const Card = (props: CardProps) => {
   const route = useRouter();
   return (
-    <div className=" p-2 bg-white rounded-md">
-      <div className="text-white text-sm font-semibold text-center bg-[#162e57] p-2 rounded-md h-20 grid place-items-center">
+    <div className="p-3 bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all">
+      <div className="text-white text-sm font-semibold text-center bg-linear-to-r from-blue-600 to-indigo-700 p-3 rounded-lg h-20 grid place-items-center">
         <div>
-          <p className="text-white text-xs font-normal text-center">
+          <p className="text-white text-xs font-normal mb-1">
             {props.subtitle}
           </p>
           <p>{props.title}</p>
         </div>
       </div>
 
-      <p className="text-[#162e57] mt-2 text-xs text-center">
-        Status : Submitted
-      </p>
-      <div className="flex gap-2 justify-around mt-2">
+      <div className="mt-3 text-center">
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          Status: Submitted
+        </span>
+      </div>
+      <div className="flex gap-2 justify-around mt-3">
         <button
           onClick={() => {
             route.push("/dashboard/returns/returns-dashboard/outward-supplies");
           }}
-          className="border flex-1 bg-[#162e57] text-white rounded-md text-sm py-1 text-center"
+          className="flex-1 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg text-sm py-2 font-medium transition-all shadow-md hover:shadow-lg"
         >
           {props.buttonone}
         </button>
@@ -137,7 +142,7 @@ const Card = (props: CardProps) => {
           onClick={() => {
             route.push("/dashboard/returns/returns-dashboard/outward-supplies");
           }}
-          className="border flex-1 bg-[#162e57]  text-white rounded-md text-sm py-1 text-center"
+          className="flex-1 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg text-sm py-2 font-medium transition-all shadow-md hover:shadow-lg"
         >
           {props.buttontwo}
         </button>

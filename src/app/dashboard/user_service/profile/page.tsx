@@ -48,107 +48,115 @@ const UserRegister = () => {
 
   return (
     <>
-      <div className="w-full p-4  mt-2">
-        <div className="bg-white p-4">
-          <Table className="border mt-2">
-            <TableBody>
-              <TableRow>
-                <TableCell className="text-center p-2" colSpan={5}>
-                  <p className="text-lg font-nunito">Profile</p>
-                </TableCell>
-              </TableRow>
-              <TableRow className="bg-gray-100">
-                <TableCell className="text-left w-[16%] p-2 border">
-                  First Name
-                </TableCell>
-                <TableCell className="text-left p-2 border w-[36%]">
-                  {userdata?.firstName ?? ""}
-                </TableCell>
-                <TableCell className="text-left w-[16%] p-2 border hidden lg:table-cell">
-                  Last Name
-                </TableCell>
-                <TableCell className="text-left p-2 border w-[36%]  hidden lg:table-cell">
-                  {userdata?.lastName ?? ""}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left w-60 p-2 border lg:hidden">
-                  Last Name
-                </TableCell>
-                <TableCell className="text-left p-2 border lg:hidden">
-                  {userdata?.lastName ?? ""}
-                </TableCell>
-              </TableRow>
-              <TableRow className="bg-gray-100 lg:bg-transparent">
-                <TableCell className="text-left w-[16&] p-2 border">
-                  Email
-                </TableCell>
-                <TableCell className="text-left p-2 border w-[36%]">
-                  {userdata?.email ?? ""}
-                </TableCell>
-                <TableCell className="text-left w-[16%] p-2 border hidden lg:table-cell">
-                  Mobile Number
-                </TableCell>
-                <TableCell className="text-left p-2 border w-[36%] hidden lg:table-cell">
-                  {userdata?.mobileOne ?? ""}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left w-60 p-2 border lg:hidden">
-                  Mobile Number
-                </TableCell>
-                <TableCell className="text-left p-2 border lg:hidden">
-                  {userdata?.mobileOne ?? ""}
-                </TableCell>
-              </TableRow>
-              <TableRow className="bg-gray-100">
-                <TableCell className="text-left w-[16%] p-2 border">
-                  Alternate Number
-                </TableCell>
-                <TableCell className="text-left p-2 border w-[36%]">
-                  {userdata?.mobileTwo ?? ""}
-                </TableCell>
-                <TableCell className="text-left p-2 border w-[16%] hidden lg:table-cell">
-                  Pan Card
-                </TableCell>
-                <TableCell className="text-left p-2 border w-[36%] hidden lg:table-cell">
-                  {userdata?.pan ?? ""}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left w-60 p-2 border lg:hidden">
-                  Pan Card
-                </TableCell>
-                <TableCell className="text-left p-2 border lg:hidden">
-                  {userdata?.pan ?? ""}
-                </TableCell>
-              </TableRow>
-              <TableRow className="bg-gray-100 lg:bg-transparent">
-                <TableCell className="text-left w-[16%] p-2 border">
-                  Aadhar Card
-                </TableCell>
-                <TableCell className="text-left p-2 border w-[36%]">
-                  {userdata?.aadhar ?? ""}
-                </TableCell>
-                <TableCell className="text-left w-[16%] p-2 border hidden lg:table-cell">
-                  Address
-                </TableCell>
-                <TableCell className="text-left p-2 border 2-[36%] hidden lg:table-cell">
-                  {userdata?.address ?? ""}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left w-60 p-2 border lg:hidden">
-                  Address
-                </TableCell>
-                <TableCell className="text-left p-2 border lg:hidden">
-                  {userdata?.address ?? ""}
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+      <main className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+        {/* Header Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+          <div className="bg-linear-to-r from-blue-500 to-indigo-600 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-8 bg-white rounded-full"></div>
+              <h1 className="text-2xl font-bold text-white">User Profile</h1>
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* Main Content Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="p-6">
+            <Table className="border border-gray-200 rounded-lg overflow-hidden">
+              <TableBody>
+                <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                  <TableCell className="text-left w-[16%] p-3 border font-semibold text-gray-900">
+                    First Name
+                  </TableCell>
+                  <TableCell className="text-left p-3 border w-[36%] text-gray-900">
+                    {userdata?.firstName ?? ""}
+                  </TableCell>
+                  <TableCell className="text-left w-[16%] p-3 border hidden lg:table-cell font-semibold text-gray-900">
+                    Last Name
+                  </TableCell>
+                  <TableCell className="text-left p-3 border w-[36%] hidden lg:table-cell text-gray-900">
+                    {userdata?.lastName ?? ""}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-blue-50 transition-colors">
+                  <TableCell className="text-left w-60 p-3 border lg:hidden font-semibold text-gray-900">
+                    Last Name
+                  </TableCell>
+                  <TableCell className="text-left p-3 border lg:hidden text-gray-900">
+                    {userdata?.lastName ?? ""}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-blue-50 transition-colors">
+                  <TableCell className="text-left w-[16%] p-3 border font-semibold text-gray-900">
+                    Email
+                  </TableCell>
+                  <TableCell className="text-left p-3 border w-[36%] text-gray-900">
+                    {userdata?.email ?? ""}
+                  </TableCell>
+                  <TableCell className="text-left w-[16%] p-3 border hidden lg:table-cell font-semibold text-gray-900">
+                    Mobile Number
+                  </TableCell>
+                  <TableCell className="text-left p-3 border w-[36%] hidden lg:table-cell text-gray-900">
+                    {userdata?.mobileOne ?? ""}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                  <TableCell className="text-left w-60 p-3 border lg:hidden font-semibold text-gray-900">
+                    Mobile Number
+                  </TableCell>
+                  <TableCell className="text-left p-3 border lg:hidden text-gray-900">
+                    {userdata?.mobileOne ?? ""}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-blue-50 transition-colors">
+                  <TableCell className="text-left w-[16%] p-3 border font-semibold text-gray-900">
+                    Alternate Number
+                  </TableCell>
+                  <TableCell className="text-left p-3 border w-[36%] text-gray-900">
+                    {userdata?.mobileTwo ?? ""}
+                  </TableCell>
+                  <TableCell className="text-left p-3 border w-[16%] hidden lg:table-cell font-semibold text-gray-900">
+                    Pan Card
+                  </TableCell>
+                  <TableCell className="text-left p-3 border w-[36%] hidden lg:table-cell text-gray-900">
+                    {userdata?.pan ?? ""}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                  <TableCell className="text-left w-60 p-3 border lg:hidden font-semibold text-gray-900">
+                    Pan Card
+                  </TableCell>
+                  <TableCell className="text-left p-3 border lg:hidden text-gray-900">
+                    {userdata?.pan ?? ""}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-blue-50 transition-colors">
+                  <TableCell className="text-left w-[16%] p-3 border font-semibold text-gray-900">
+                    Aadhar Card
+                  </TableCell>
+                  <TableCell className="text-left p-3 border w-[36%] text-gray-900">
+                    {userdata?.aadhar ?? ""}
+                  </TableCell>
+                  <TableCell className="text-left w-[16%] p-3 border hidden lg:table-cell font-semibold text-gray-900">
+                    Address
+                  </TableCell>
+                  <TableCell className="text-left p-3 border w-[36%] hidden lg:table-cell text-gray-900">
+                    {userdata?.address ?? ""}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                  <TableCell className="text-left w-60 p-3 border lg:hidden font-semibold text-gray-900">
+                    Address
+                  </TableCell>
+                  <TableCell className="text-left p-3 border lg:hidden text-gray-900">
+                    {userdata?.address ?? ""}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </main>
     </>
   );
 };

@@ -12,7 +12,6 @@ interface ResponseType {
   dvat04: dvat04;
   lastfiling: string;
   pending: number;
-  notice: number;
   isLate: boolean;
 }
 
@@ -25,7 +24,7 @@ interface DealersConsistentlyCompliantPayload {
 }
 
 const DealersConsistentlyCompliant = async (
-  payload: DealersConsistentlyCompliantPayload
+  payload: DealersConsistentlyCompliantPayload,
 ): Promise<PaginationResponse<Array<ResponseType> | null>> => {
   const functionname: string = DealersConsistentlyCompliant.name;
   try {
@@ -87,7 +86,7 @@ const DealersConsistentlyCompliant = async (
         dvat: true,
       },
       orderBy: {
-        createdAt: "asc",
+        due_date: "asc",
       },
     });
 
@@ -97,18 +96,7 @@ const DealersConsistentlyCompliant = async (
         functionname,
       });
 
-    const notice = await prisma.order_notice.findMany({
-      where: {
-        deletedAt: null,
-        deletedBy: null,
-        status: "PENDING",
-        notice_order_type: "NOTICE",
-        form_type: "DVAT10",
-      },
-    });
-
     let resMap = new Map<number, ResponseType>(); // Track dvat04 by ID
-    const currentDate = new Date();
 
     for (let i = 0; i < dvat04response.length; i++) {
       const currentDvat: dvat04 = dvat04response[i].dvat;
@@ -117,14 +105,13 @@ const DealersConsistentlyCompliant = async (
 
       const return_status = dvat04response[i].return_status;
 
-      // const isLate = IsFilingLate(filingDate, due_date);
-
       if (currentDvat) {
         if (resMap.has(currentDvat.id)) {
           let existingData: ResponseType = resMap.get(
-            currentDvat.id
+            currentDvat.id,
           ) as ResponseType;
 
+          // Mark as non-compliant if any return is LATEFILED or PENDINGFILING
           if (
             return_status == "LATEFILED" ||
             return_status == "PENDINGFILING"
@@ -132,65 +119,33 @@ const DealersConsistentlyCompliant = async (
             existingData.isLate = true;
           }
 
-          if (return_status == "FILED") {
+          if (return_status == "FILED" || return_status == "DUE") {
             existingData.lastfiling = currentLastFiling;
-            existingData.pending += 1; // Increase pending count if filing_status is true
+            existingData.pending += 1;
           }
         } else {
           resMap.set(currentDvat.id, {
             dvat04: currentDvat,
             lastfiling: filingStatus ? currentLastFiling : "N/A",
-            pending: return_status == "FILED" ? 1 : 0,
-            notice: 0,
+            pending: return_status == "FILED" || return_status == "DUE" ? 1 : 0,
             isLate:
-              return_status == "DUE" || return_status == "FILED" ? false : true,
+              return_status == "LATEFILED" || return_status == "PENDINGFILING",
           });
         }
       }
     }
 
-    interface NoticeType {
-      dvat04id: number;
-      notice_count: number;
-    }
-
-    let noticeMap = new Map<number, NoticeType>(); // Track dvat04 by ID
-
-    for (let i = 0; i < notice.length; i++) {
-      if (noticeMap.has(notice[i].dvatid)) {
-        let existingData: NoticeType = noticeMap.get(
-          notice[i].dvatid
-        ) as NoticeType;
-        existingData.notice_count += 1;
-      } else {
-        noticeMap.set(notice[i].dvatid, {
-          dvat04id: notice[i].dvatid,
-          notice_count: 1,
-        });
-      }
-    }
-
-    const notice_count = Array.from(noticeMap.values());
-
-    // Convert Map to an array
+    // Convert Map to an array and filter only compliant dealers
+    // A dealer is compliant if they have filed all 6 returns on time (FILED status)
+    // If any return is LATEFILED or PENDINGFILING, they are not compliant
     const res: ResponseType[] = Array.from(resMap.values()).filter(
-      (val: ResponseType) => val.isLate == false
+      (val: ResponseType) => val.isLate == false && val.pending == 6,
     );
-
-    res.forEach((response) => {
-      const matchingNotice = notice_count.find(
-        (notice) => notice.dvat04id === response.dvat04.id
-      );
-
-      if (matchingNotice) {
-        response.notice = matchingNotice.notice_count;
-      }
-    });
 
     const paginatedData = res.slice(payload.skip, payload.skip + payload.take);
 
     return createPaginationResponse({
-      message: "Pending returns data get successfully",
+      message: "Compliant dealers data retrieved successfully",
       functionname,
       data: paginatedData,
       skip: payload.skip,
@@ -209,7 +164,7 @@ export default DealersConsistentlyCompliant;
 
 const IsFilingLate = (
   filingDateStr: Date | null,
-  due_date: Date | null
+  due_date: Date | null,
 ): boolean => {
   if (!filingDateStr || !due_date) {
     return false; // Invalid input

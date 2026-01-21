@@ -201,7 +201,7 @@ const Refund = () => {
     );
 
   return (
-    <main className="p-6">
+    <main className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
       <Drawer
         placement="right"
         closeIcon={null}
@@ -210,7 +210,7 @@ const Refund = () => {
         }}
         open={addBox}
       >
-        <p className="text-lg text-left">
+        <p className="text-lg text-left font-semibold text-gray-900">
           {holidayid ? "Update" : "Add"} Holiday
         </p>
         <HolidayMasterProvider
@@ -221,112 +221,109 @@ const Refund = () => {
           init={init}
         />
       </Drawer>
-      <div className="w-full bg-white p-4">
-        <div className="flex gap-2">
-          <p className="text-lg font-semibold">Holiday List</p>
-          <div className="grow"></div>
-          {role != Role.USER && (
-            <Button
-              size="small"
-              type="primary"
-              className="bg-blue-500 hover:bg-blue-500 w-14"
-              onClick={() => {
-                setHolidayid(undefined);
-                setAddBox(true);
-              }}
-            >
-              Add
-            </Button>
-          )}
-        </div>
-        {/* <div className="p-2 bg-gray-50 mt-2">
-          <div className="text-lg my-1">Filter By</div>
-          <div className="flex gap-2">
-            <Input className="w-60" ref={typeRef} placeholder={"Select year"} />
-            <Input
-              className="w-60"
-              ref={typeRef}
-              placeholder={"Select State"}
-            />
-            <Button onClick={typesearch} type="primary">
-              Search
-            </Button>
-            {isSearch && (
-              <Button onClick={init} type="primary">
-                Reset
+
+      {/* Header Card */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+        <div className="bg-linear-to-r from-blue-500 to-indigo-600 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-8 bg-white rounded-full"></div>
+              <h1 className="text-2xl font-bold text-white">Holiday List</h1>
+            </div>
+            {role != Role.USER && (
+              <Button
+                size="middle"
+                type="primary"
+                className="bg-white text-blue-600 hover:bg-gray-100"
+                onClick={() => {
+                  setHolidayid(undefined);
+                  setAddBox(true);
+                }}
+              >
+                Add Holiday
               </Button>
             )}
           </div>
-        </div> */}
-        <Table className="border mt-2">
-          <TableHeader>
-            <TableRow className="bg-gray-200">
-              <TableHead className="whitespace-nowrap border text-center w-1/3">
-                Date and Day
-              </TableHead>
-              <TableHead className="whitespace-nowrap border  text-center w-1/3">
-                Description
-              </TableHead>
-              <TableHead className="whitespace-nowrap border  text-center w-1/3">
-                State/Centre
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {groupByMonth(holidaydata).map(
-              (val: GroupedByMonth, index: number) => (
-                <>
-                  <TableRow key={index}>
-                    <TableCell
-                      className="p-1 border bg-gray-100 px-4 text-left"
-                      colSpan={3}
-                    >
-                      {val.month}
-                    </TableCell>
-                  </TableRow>
-                  {val.data.map((val: holiday, index: number) => (
+        </div>
+      </div>
+
+      {/* Main Content Card */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="p-6">
+          <Table className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+            <TableHeader>
+              <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                <TableHead className="whitespace-nowrap border text-center w-1/3 p-3 font-semibold text-gray-900">
+                  Date and Day
+                </TableHead>
+                <TableHead className="whitespace-nowrap border text-center w-1/3 p-3 font-semibold text-gray-900">
+                  Description
+                </TableHead>
+                <TableHead className="whitespace-nowrap border text-center w-1/3 p-3 font-semibold text-gray-900">
+                  State/Centre
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+              <TableBody>
+              {groupByMonth(holidaydata).map(
+                (val: GroupedByMonth, index: number) => (
+                  <>
                     <TableRow key={index}>
-                      <TableCell className="p-2 border text-center">
-                        {format(val.date, "dd/LL/uuu, EEEE")}
-                      </TableCell>
-                      <TableCell className="p-2 border text-center">
-                        {val.descrilption}
-                      </TableCell>
-                      <TableCell className="p-2 border text-center">
-                        {val.state}
+                      <TableCell
+                        className="p-3 border bg-linear-to-r from-blue-100 to-indigo-100 px-4 text-left font-bold text-gray-900"
+                        colSpan={3}
+                      >
+                        {val.month}
                       </TableCell>
                     </TableRow>
-                  ))}
-                </>
-              )
-            )}
-          </TableBody>
-        </Table>
-        <div className="mt-2"></div>
-        <div className="lg:hidden">
-          <Pagination
-            align="center"
-            defaultCurrent={1}
-            onChange={onChangePageCount}
-            showSizeChanger
-            total={pagination.total}
-            showTotal={(total: number) => `Total ${total} items`}
-          />
+                    {val.data.map((val: holiday, index: number) => (
+                      <TableRow key={index} className="hover:bg-blue-50 transition-colors">
+                        <TableCell className="p-3 border text-center text-gray-900">
+                          {format(val.date, "dd/LL/uuu, EEEE")}
+                        </TableCell>
+                        <TableCell className="p-3 border text-center font-medium text-gray-900">
+                          {val.descrilption}
+                        </TableCell>
+                        <TableCell className="p-3 border text-center">
+                          <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+                            {val.state}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </>
+                )
+              )}
+            </TableBody>
+          </Table>
         </div>
-        <div className="hidden lg:block">
-          <Pagination
-            showQuickJumper
-            align="center"
-            defaultCurrent={1}
-            onChange={onChangePageCount}
-            showSizeChanger
-            pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-            total={pagination.total}
-            responsive={true}
-            showTotal={(total: number, range: number[]) =>
-              `${range[0]}-${range[1]} of ${total} items`
-            }
-          />
+        {/* Pagination Section */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <div className="lg:hidden">
+            <Pagination
+              align="center"
+              defaultCurrent={1}
+              onChange={onChangePageCount}
+              showSizeChanger
+              total={pagination.total}
+              showTotal={(total: number) => `Total ${total} items`}
+            />
+          </div>
+          <div className="hidden lg:block">
+            <Pagination
+              showQuickJumper
+              align="center"
+              defaultCurrent={1}
+              onChange={onChangePageCount}
+              showSizeChanger
+              pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+              total={pagination.total}
+              responsive={true}
+              showTotal={(total: number, range: number[]) =>
+                `${range[0]}-${range[1]} of ${total} items`
+              }
+            />
+          </div>
         </div>
       </div>
     </main>

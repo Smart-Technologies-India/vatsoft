@@ -128,11 +128,29 @@ const CFROM = () => {
 
   return (
     <>
-      <div className="mainpdf">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+        {/* Header Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <div className="w-1.5 h-8 bg-linear-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                C-Form Declaration
+              </h1>
+              <p className="text-sm text-gray-500 mt-2 ml-4">
+                Central Sales Tax Declaration Form
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+          <div className="mainpdf">
         {/* part one start here */}
 
         <div
-          className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto relative font-bold"
+          className="bg-white p-8 shadow h-280.75 w-198.5 mx-auto relative font-bold"
           id="mainpdf"
         >
           <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
@@ -318,7 +336,7 @@ const CFROM = () => {
         {pages.map((pageData, pageIndex) => (
           <div
             key={pageIndex}
-            className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto relative font-bold"
+            className="bg-white p-8 shadow h-280.75 w-198.5 mx-auto relative font-bold"
             style={{
               pageBreakAfter:
                 pageIndex === pages.length - 1 ? "auto" : "always",
@@ -443,7 +461,7 @@ const CFROM = () => {
         {/* part two start here */}
         {/* <div className="p-4 text-center text-sm">Duplicate</div> */}
         <div
-          className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto relative font-bold"
+          className="bg-white p-8 shadow h-280.75 w-198.5 mx-auto relative font-bold"
           id="mainpdf"
         >
           <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
@@ -628,7 +646,7 @@ const CFROM = () => {
         {pages.map((pageData, pageIndex) => (
           <div
             key={pageIndex}
-            className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto relative font-bold"
+            className="bg-white p-8 shadow h-280.75 w-198.5 mx-auto relative font-bold"
             style={{
               pageBreakAfter:
                 pageIndex === pages.length - 1 ? "auto" : "always",
@@ -753,7 +771,7 @@ const CFROM = () => {
 
         {/* part three start here */}
         <div
-          className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto relative font-bold"
+          className="bg-white p-8 shadow h-280.75 w-198.5 mx-auto relative font-bold"
           id="mainpdf"
         >
           <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
@@ -939,7 +957,7 @@ const CFROM = () => {
         {pages.map((pageData, pageIndex) => (
           <div
             key={pageIndex}
-            className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto relative font-bold"
+            className="bg-white p-8 shadow h-280.75 w-198.5 mx-auto relative font-bold"
             style={{
               pageBreakAfter:
                 pageIndex === pages.length - 1 ? "auto" : "always",
@@ -1147,16 +1165,18 @@ const CFROM = () => {
             </table>
           </div>
         </div> */}
-        <div className="grid place-items-center">
+        <div className="flex justify-center mt-6">
           <Button
-            className="hidden-print mx-auto my-4"
+            className="hidden-print bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 text-white px-8 py-2 h-auto rounded-lg font-medium shadow-md hover:shadow-lg transition-all"
             type="primary"
             onClick={async (e) => {
               await generatePDF(`dashboard/cform/${idString}?sidebar=no`);
             }}
           >
-            Download Challan
+            Download C-Form
           </Button>
+        </div>
+          </div>
         </div>
       </div>
     </>

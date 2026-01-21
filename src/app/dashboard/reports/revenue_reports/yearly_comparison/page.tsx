@@ -5,7 +5,7 @@ import {
   MaterialSymbolsKeyboardArrowUpRounded,
 } from "@/components/icons";
 import numberWithIndianFormat from "@/utils/methods";
-import { Radio, RadioChangeEvent, Spin } from "antd";
+import { Radio, RadioChangeEvent, Select, Spin } from "antd";
 import { useEffect, useState } from "react";
 import { Bar, Line } from "react-chartjs-2";
 import { Chart as ChartJS, registerables } from "chart.js";
@@ -41,20 +41,21 @@ const YearlyComparisonReport = () => {
   const [commoditydata, setCommoditydata] = useState<"FUEL" | "LIQUOR" | undefined>(
     undefined
   );
+  const [financialYear, setFinancialYear] = useState<string>("current");
 
   const monthNames: { [key: string]: string } = {
-    "01": "Jan",
-    "02": "Feb",
-    "03": "Mar",
-    "04": "Apr",
-    "05": "May",
-    "06": "Jun",
-    "07": "Jul",
-    "08": "Aug",
-    "09": "Sep",
-    "10": "Oct",
-    "11": "Nov",
-    "12": "Dec",
+    "January": "Jan",
+    "February": "Feb",
+    "March": "Mar",
+    "April": "Apr",
+    "May": "May",
+    "June": "Jun",
+    "July": "Jul",
+    "August": "Aug",
+    "September": "Sep",
+    "October": "Oct",
+    "November": "Nov",
+    "December": "Dec",
   };
 
   useEffect(() => {
@@ -63,6 +64,7 @@ const YearlyComparisonReport = () => {
       const response = await YearlyComparison({
         selectOffice: city,
         selectCommodity: commoditydata,
+        financialYear: financialYear === "current" ? undefined : financialYear,
       });
       if (response.status && response.data) {
         setReportData(response.data);
@@ -72,7 +74,7 @@ const YearlyComparisonReport = () => {
       setLoading(false);
     };
     init();
-  }, [city, commoditydata]);
+  }, [city, commoditydata, financialYear]);
 
   const exportToExcel = () => {
     if (!reportData) return;
@@ -215,6 +217,31 @@ const YearlyComparisonReport = () => {
     setCommoditydata(e.target.value);
   };
 
+  const onFinancialYearChange = (value: string) => {
+    setFinancialYear(value);
+  };
+
+  // Generate financial year options (current and last 9 years = 10 options total)
+  const generateFinancialYears = () => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+    const currentFY = currentMonth >= 3 ? currentYear : currentYear - 1;
+    
+    const years = [{ label: "Current FY", value: "current" }];
+    for (let i = 0; i < 9; i++) {
+      const fyStart = currentFY - i;
+      const fyEnd = (fyStart + 1).toString().slice(-2);
+      years.push({
+        label: `FY ${fyStart}-${fyEnd}`,
+        value: `${fyStart}-${fyEnd}`,
+      });
+    }
+    return years;
+  };
+
+  const financialYears = generateFinancialYears();
+
   const citys = [
     { label: "All", value: undefined },
     { label: "DNH", value: "Dadra_Nagar_Haveli" },
@@ -250,6 +277,16 @@ const YearlyComparisonReport = () => {
 
       <div className="bg-white rounded-lg shadow-sm mt-4 p-4">
         <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Financial Year</label>
+            <Select
+              placeholder="Select Financial Year"
+              options={financialYears}
+              onChange={onFinancialYearChange}
+              value={financialYear}
+              style={{ width: 180 }}
+            />
+          </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">District</label>
             <Radio.Group

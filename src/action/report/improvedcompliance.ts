@@ -24,7 +24,7 @@ interface DealerComplianceData {
 }
 
 const ImprovedCompliance = async (
-  payload: ImprovedCompliancePayload
+  payload: ImprovedCompliancePayload,
 ): Promise<{
   status: boolean;
   data?: DealerComplianceData[];
@@ -107,19 +107,15 @@ const ImprovedCompliance = async (
 
       if (recentFilings.length === 0 || olderFilings.length === 0) continue;
 
-      console.log(`Evaluating dealer ID ${dealer.id}: ${olderFilings.length} older filings, ${recentFilings.length} recent filings`);
-
       // Count defaults in older period (not filed at all)
       const oldDefaultCount = olderFilings.filter(
-        (f) => f.filing_status === false
+        (f) => f.filing_status === false,
       ).length;
 
       // Count successful filings in recent period (filed, whether on time or late)
       const recentSuccessCount = recentFilings.filter(
-        (f) => f.filing_status === true
+        (f) => f.filing_status === true,
       ).length;
-
-      console.log(`Defaults in older period: ${oldDefaultCount}, Successful filings in recent period: ${recentSuccessCount}`);
 
       // Calculate compliance rates
       const oldComplianceRate =
@@ -140,9 +136,7 @@ const ImprovedCompliance = async (
         recentComplianceRate >= 80
       ) {
         // Find last default date
-        const lastDefault = olderFilings.find(
-          (f) => f.filing_status === false
-        );
+        const lastDefault = olderFilings.find((f) => f.filing_status === false);
 
         // Count consecutive recent filings
         let consecutiveCount = 0;

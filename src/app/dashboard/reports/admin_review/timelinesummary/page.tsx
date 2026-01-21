@@ -251,13 +251,25 @@ const AfterDeathLinePage = () => {
 
   return (
     <>
-      <div className="p-3 py-2">
-        <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white flex">
-            <p>Return Filing Timeline Summary - Filed ON Time vs Late</p>
-            <div className="grow"></div>
+      <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+        {/* Header Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <div className="w-1.5 h-8 bg-linear-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                Return Filing Timeline Summary
+              </h1>
+              <p className="text-sm text-gray-500 mt-2 ml-4">
+                Filed ON Time vs Late - Track dealer return filing performance
+              </p>
+            </div>
           </div>
-          <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
+        </div>
+
+        {/* Search Section Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
+          <div className="flex flex-col md:flex-row gap-4 md:items-center">
             <Radio.Group
               onChange={onChange}
               value={searchOption}

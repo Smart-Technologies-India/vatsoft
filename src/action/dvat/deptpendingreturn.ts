@@ -16,7 +16,9 @@ interface ResponseType {
 }
 
 interface DeptPendingReturnPayload {
-  dept: SelectOffice;
+  dept?: SelectOffice;
+  arnnumber?: string;
+  tradename?: string;
   skip: number;
   take: number;
 }
@@ -31,7 +33,14 @@ const DeptPendingReturn = async (
         deletedAt: null,
         deletedBy: null,
         dvat: {
-          selectOffice: payload.dept,
+          ...(payload.dept && { selectOffice: payload.dept }),
+          ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
+          ...(payload.tradename && {
+            OR: [
+              { tradename: { contains: payload.tradename } },
+              { name: { contains: payload.tradename } },
+            ],
+          }),
           deletedAt: null,
           deletedBy: null,
         },

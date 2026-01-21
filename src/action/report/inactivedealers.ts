@@ -18,7 +18,7 @@ interface ResponseType {
 interface GetInactiveDealersPayload {
   arnnumber?: string;
   tradename?: string;
-  dept: SelectOffice;
+  dept?: SelectOffice;
   skip: number;
   take: number;
 }
@@ -40,7 +40,7 @@ const GetInactiveDealers = async (
               { name: { contains: payload.tradename } },
             ],
           }),
-          selectOffice: payload.dept,
+          ...(payload.dept && { selectOffice: payload.dept }),
           deletedAt: null,
           deletedBy: null,
         },

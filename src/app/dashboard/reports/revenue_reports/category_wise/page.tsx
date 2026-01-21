@@ -1,7 +1,6 @@
 "use client";
 import {
   Fa6RegularBuilding,
-  Fa6RegularHourglassHalf,
   FluentMdl2Home,
   IcOutlineReceiptLong,
   MaterialSymbolsPersonRounded,
@@ -9,15 +8,15 @@ import {
   RiMoneyRupeeCircleLine,
 } from "@/components/icons";
 import numberWithIndianFormat, { isNegative } from "@/utils/methods";
-import { Radio, RadioChangeEvent } from "antd";
+import { Radio, RadioChangeEvent, Spin } from "antd";
 import { format, subMonths } from "date-fns";
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Bar } from "react-chartjs-2";
-import { Separator } from "@/components/ui/separator";
+import { Bar, Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, registerables } from "chart.js";
 import Last15ReceivedReport from "@/action/report/last15receivedreport";
 import OfficerDashboardReport from "@/action/report/officerdashboardreport";
+import * as XLSX from "xlsx";
+import { toast } from "react-toastify";
 
 ChartJS.register(...registerables);
 
@@ -58,20 +57,28 @@ const CategoryWiseReport = () => {
   }
 
   const [last15Day, setLast15Day] = useState<Last15DayData[]>([]);
-  const [city, setCity] = useState<"Dadra_Nagar_Haveli" | "DAMAN" | "DIU">(
-    "Dadra_Nagar_Haveli"
-  );
+  const [loading, setLoading] = useState(true);
+  const [city, setCity] = useState<
+    "Dadra_Nagar_Haveli" | "DAMAN" | "DIU" | undefined
+  >(undefined);
 
-  const [commoditydata, setCommoditydata] = useState<"FUEL" | "LIQUOR">("FUEL");
+  const [commoditydata, setCommoditydata] = useState<
+    "FUEL" | "LIQUOR" | undefined
+  >(undefined);
 
   useEffect(() => {
     const init = async () => {
+      setLoading(true);
       const count_data_response = await OfficerDashboardReport({
         selectOffice: city,
         selectCommodity: commoditydata,
       });
       if (count_data_response.status && count_data_response.data) {
         setCountData(count_data_response.data);
+      } else {
+        toast.error(
+          count_data_response.message || "Failed to load dashboard data",
+        );
       }
 
       const last15days = await Last15ReceivedReport({
@@ -80,10 +87,63 @@ const CategoryWiseReport = () => {
       });
       if (last15days.status && last15days.data) {
         setLast15Day(last15days.data);
+      } else {
+        toast.error(last15days.message || "Failed to load daily data");
       }
+      setLoading(false);
     };
     init();
   }, [city, commoditydata]);
+
+  const totalLast15Days = last15Day.reduce((sum, item) => sum + item.amount, 0);
+  const averageDaily =
+    last15Day.length > 0 ? totalLast15Days / last15Day.length : 0;
+
+  const exportToExcel = () => {
+    if (last15Day.length === 0) return;
+
+    const worksheetData = [
+      ["Category Wise Report - Last 15 Days"],
+      [""],
+      ["Summary Statistics"],
+      ["Total Dealers", countData.totaldealer.toString()],
+      ["Fuel Dealers", countData.fueldealer.toString()],
+      [
+        "Liquor Dealers",
+        (countData.liquoredealer + countData.manufacturer).toString(),
+      ],
+      ["Regular", countData.reg.toString()],
+      ["Composition", countData.comp.toString()],
+      ["Today Received", countData.today_received.toString()],
+      ["This Month Received", countData.this_month_received.toString()],
+      ["Last Month Received", countData.last_month_received.toString()],
+      ["Filed Returns", countData.filed_return.toString()],
+      ["Pending Returns", countData.pending_return.toString()],
+      [""],
+      ["Last 15 Days Revenue"],
+      ["Date", "Revenue (₹)"],
+    ];
+
+    last15Day.forEach((item) => {
+      worksheetData.push([
+        format(item.date, "dd MMM yyyy"),
+        item.amount.toString(),
+      ]);
+    });
+
+    worksheetData.push([""]);
+    worksheetData.push(["Total (Last 15 Days)", totalLast15Days.toString()]);
+    worksheetData.push(["Average Daily", averageDaily.toFixed(2)]);
+
+    const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Category Report");
+    XLSX.writeFile(
+      wb,
+      `Category_Wise_Report_${new Date().toISOString().split("T")[0]}.xlsx`,
+    );
+    toast.success("Report exported successfully!");
+  };
 
   const dataset: any = {
     labels: last15Day
@@ -91,11 +151,27 @@ const CategoryWiseReport = () => {
       .reverse(),
     datasets: [
       {
-        label: "Receivable",
+        label: "Revenue (₹)",
         data: last15Day.map((val: Last15DayData) => val.amount).reverse(),
-        backgroundColor: "#95acbe",
+        backgroundColor: "#3b82f6",
         borderWidth: 0,
         barPercentage: 0.6,
+      },
+    ],
+  };
+
+  const doughnutData: any = {
+    labels: ["Fuel Dealers", "Liquor Dealers"],
+    datasets: [
+      {
+        label: "Count",
+        data: [
+          countData.fueldealer,
+          countData.liquoredealer + countData.manufacturer,
+        ],
+        backgroundColor: ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6"],
+        borderWidth: 2,
+        borderColor: "#fff",
       },
     ],
   };
@@ -105,56 +181,65 @@ const CategoryWiseReport = () => {
     maintainAspectRatio: false,
     scales: {
       x: {
-        barThickness: 10,
-        categoryPercentage: 0.8,
-        barPercentage: 0.4,
-        padding: 25,
-        borderWidth: 2,
+        grid: {
+          display: false,
+        },
         ticks: {
           font: {
-            size: 12,
+            size: 11,
           },
-          precision: 0,
         },
       },
       y: {
+        beginAtZero: true,
+        grid: {
+          color: "#f3f4f6",
+        },
         ticks: {
           font: {
-            size: 12,
+            size: 11,
+          },
+          callback: function (value: any) {
+            return "₹" + numberWithIndianFormat(value);
           },
         },
       },
     },
-    indexAxis: "x",
-    elements: {
-      bar: {
-        borderWidth: 1,
-        categorySpacing: 0,
-      },
-    },
     plugins: {
-      datalabels: {
-        anchor: "end",
-        align: "end",
-        color: "#1e293b",
-        font: {
-          size: 10,
-        },
-        formatter: function (value: any) {
-          return value;
-        },
-      },
-
-      labels: {
-        color: "white",
-      },
-      title: {
-        display: false,
-      },
       legend: {
         labels: {
           font: {
-            size: 14,
+            size: 12,
+          },
+        },
+        position: "top",
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context: any) {
+            return "Revenue: ₹" + numberWithIndianFormat(context.parsed.y);
+          },
+        },
+      },
+    },
+  };
+
+  const doughnutOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "bottom",
+        labels: {
+          font: {
+            size: 11,
+          },
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context: any) {
+            return context.label + ": " + context.parsed;
           },
         },
       },
@@ -170,241 +255,289 @@ const CategoryWiseReport = () => {
   };
 
   const citys = [
+    { label: "All", value: undefined },
     { label: "DNH", value: "Dadra_Nagar_Haveli" },
     { label: "DD", value: "DAMAN" },
     { label: "DIU", value: "DIU" },
   ];
 
   const commodity = [
+    { label: "All", value: undefined },
     { label: "FUEL", value: "FUEL" },
     { label: "LIQUOR", value: "LIQUOR" },
   ];
 
+  const monthDifference =
+    countData.this_month_received -
+    (isNegative(countData.last_month_received)
+      ? 0
+      : countData.last_month_received);
+
   return (
     <main className="p-6">
       <div className="flex flex-col lg:flex-row gap-2">
-        <div className="w-96 my-2 ">
-          <Radio.Group
-            block
-            options={citys}
-            size="small"
-            value={city}
-            onChange={onCityChange}
-            defaultValue="DNH"
-            optionType="button"
-            buttonStyle="solid"
-          />
+        <div className="grow">
+          <h1 className="text-2xl font-semibold">Category Wise Report</h1>
+          <p className="text-sm text-gray-600">
+            Comprehensive analysis of dealers, returns, and revenue
+          </p>
         </div>
-        <div className="grow"></div>
-        <div className="w-80 my-2">
-          <Radio.Group
-            block
-            options={commodity}
-            size="small"
-            value={commoditydata}
-            onChange={onCommodityChange}
-            defaultValue="FUEL"
-            optionType="button"
-            buttonStyle="solid"
-          />
+        <div className="shrink-0">
+          <button
+            onClick={exportToExcel}
+            disabled={!last15Day.length}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            Export to Excel
+          </button>
         </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <Link href={"/dashboard/dealer_compliance"}>
-          <DashboardCard
-            name="Total Dealer"
-            count={countData.totaldealer.toString()}
-            color="bg-rose-500"
-            subtitle="Total Dealer Count"
-          >
-            <Fa6RegularBuilding className="text-xl text-white" />
-          </DashboardCard>
-        </Link>
-        <Link href={"/dashboard/dealer_compliance"}>
-          <DashboardCard
-            name={commoditydata == "FUEL" ? "Fuel Dealer" : "LiquorDealer"}
-            count={
-              commoditydata == "FUEL"
-                ? countData.fueldealer.toString()
-                : (countData.liquoredealer + countData.manufacturer).toString()
-            }
-            // count={`${countData.fueldealer}/${countData.liquoredealer}/${countData.manufacturer}`}
-            color="bg-green-500"
-            subtitle="Fuel/Liquor/Mfg Count"
-          >
-            <FluentMdl2Home className="text-xl text-white" />
-          </DashboardCard>
-        </Link>
 
-        <Link href={"/dashboard/dealer_compliance"}>
-          <DashboardCard
-            name="Reg/Comp"
-            count={`${countData.reg}/${countData.comp}`}
-            color="bg-blue-500"
-            subtitle="Reg/Comp Count"
-          >
-            <MaterialSymbolsPersonRounded className="text-xl text-white" />
-          </DashboardCard>
-        </Link>
-
-        <DashboardCard
-          name="Today Received"
-          count={numberWithIndianFormat(countData.today_received)}
-          color="bg-orange-500"
-          subtitle="Today Tax Received"
-          isruppy={true}
-        >
-          <RiAuctionLine className="text-xl text-white" />
-        </DashboardCard>
-        <DashboardCard
-          name="Last Month Received"
-          count={numberWithIndianFormat(
-            isNegative(countData.last_month_received)
-              ? 0
-              : countData.last_month_received
-          )}
-          color="bg-teal-500"
-          subtitle="Total Tax Received"
-          isruppy={true}
-        >
-          <RiMoneyRupeeCircleLine className="text-xl text-white" />
-        </DashboardCard>
-        <DashboardCard
-          name="This Month Received"
-          count={numberWithIndianFormat(countData.this_month_received)}
-          color="bg-violet-500"
-          subtitle="Total Tax Received"
-          isruppy={true}
-        >
-          <RiMoneyRupeeCircleLine className="text-xl text-white" />
-        </DashboardCard>
-        <Link href={"/dashboard/returns/department-track-return-status"}>
-          <DashboardCard
-            name="Filed Return"
-            count={countData.filed_return.toString()}
-            color="bg-pink-500"
-            subtitle="Successful Return count"
-          >
-            <IcOutlineReceiptLong className="text-xl text-white" />
-          </DashboardCard>
-        </Link>
-        <Link href={"/dashboard/returns/department-pending-return"}>
-          <DashboardCard
-            name="Total Pending Return"
-            count={countData.pending_return.toString()}
-            color="bg-cyan-500"
-            subtitle="Total Pending Return count"
-          >
-            <Fa6RegularHourglassHalf className="text-xl text-white" />
-          </DashboardCard>
-        </Link>
-      </div>
-      <div className="grid grid-cols-6 gap-2 mt-2">
-        <div className="bg-white h-80 shadow-sm rounded-md p-4 col-span-6 lg:col-span-4">
-          {last15Day.length > 0 && <Bar options={options} data={dataset} />}
+      <div className="bg-white rounded-lg shadow-sm mt-4 p-4">
+        <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">
+              District
+            </label>
+            <Radio.Group
+              options={citys}
+              onChange={onCityChange}
+              value={city}
+              optionType="button"
+              buttonStyle="solid"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">
+              Commodity
+            </label>
+            <Radio.Group
+              options={commodity}
+              onChange={onCommodityChange}
+              value={commoditydata}
+              optionType="button"
+              buttonStyle="solid"
+            />
+          </div>
         </div>
-        <div className="bg-white h-80 shadow-sm rounded-md p-4 col-span-6 lg:col-span-2 flex flex-col">
-          <h1>Current Month Received Information</h1>
-          <Separator className="shrink-0" />
-          <div className="grow"></div>
-          <div
-            className={`${
-              countData.last_month_received < countData.this_month_received
-                ? "bg-emerald-500/10 text-emerald-500"
-                : "bg-rose-500/10 text-rose-500"
-            } p-2 `}
-          >
-            <h1 className="text-2xl">
-              {numberWithIndianFormat(countData.this_month_received)}
-            </h1>
-            <p className="text-sm">
-              Payment Received in {format(new Date(), "MMMM")}
-            </p>
-          </div>
-          <div className="grow"></div>
+      </div>
 
-          <div
-            className={`${
-              countData.last_month_received > countData.this_month_received
-                ? "bg-emerald-500/10 text-emerald-500"
-                : "bg-rose-500/10 text-rose-500"
-            } p-2`}
-          >
-            <h1 className="text-2xl">
-              {numberWithIndianFormat(
-                isNegative(countData.last_month_received)
-                  ? 0
-                  : countData.last_month_received
-              )}
-            </h1>
-            <p className="text-sm">
-              Payment Received in {format(subMonths(new Date(), 1), "MMMM")}
-            </p>
+      {loading ? (
+        <div className="flex justify-center items-center h-96">
+          <Spin size="large" />
+        </div>
+      ) : (
+        <>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mt-6">
+            <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-lg shadow-md p-4 text-white">
+              <Fa6RegularBuilding className="w-8 h-8 opacity-70 mb-2" />
+              <p className="text-2xl font-bold">{countData.totaldealer}</p>
+              <p className="text-xs opacity-90">Total Dealers</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-4 text-white">
+              <FluentMdl2Home className="w-8 h-8 opacity-70 mb-2" />
+              <p className="text-2xl font-bold">{countData.fueldealer}</p>
+              <p className="text-xs opacity-90">Fuel Dealers</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-md p-4 text-white">
+              <FluentMdl2Home className="w-8 h-8 opacity-70 mb-2" />
+              <p className="text-2xl font-bold">
+                {countData.liquoredealer + countData.manufacturer}
+              </p>
+              <p className="text-xs opacity-90">Liquor Dealers</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-4 text-white">
+              <MaterialSymbolsPersonRounded className="w-8 h-8 opacity-70 mb-2" />
+              <p className="text-2xl font-bold">{countData.reg}</p>
+              <p className="text-xs opacity-90">Regular</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg shadow-md p-4 text-white">
+              <MaterialSymbolsPersonRounded className="w-8 h-8 opacity-70 mb-2" />
+              <p className="text-2xl font-bold">{countData.comp}</p>
+              <p className="text-xs opacity-90">Composition</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-4 text-white">
+              <RiAuctionLine className="w-8 h-8 opacity-70 mb-2" />
+              <p className="text-lg font-bold">
+                ₹{numberWithIndianFormat(countData.today_received)}
+              </p>
+              <p className="text-xs opacity-90">Today Received</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg shadow-md p-4 text-white">
+              <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
+              <p className="text-2xl font-bold">{countData.filed_return}</p>
+              <p className="text-xs opacity-90">Filed Returns</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg shadow-md p-4 text-white">
+              <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
+              <p className="text-2xl font-bold">{countData.pending_return}</p>
+              <p className="text-xs opacity-90">Pending Returns</p>
+            </div>
           </div>
-          <div className="grow"></div>
-          <div
-            className={`${
-              countData.this_month_received -
-                (isNegative(countData.last_month_received)
-                  ? 0
-                  : countData.last_month_received) >
-              0
-                ? "bg-emerald-500/10 text-emerald-500"
-                : "bg-rose-500/10 text-rose-500"
-            } p-2`}
-          >
-            <h1 className="text-2xl">
-              {numberWithIndianFormat(
-                countData.this_month_received -
-                  (isNegative(countData.last_month_received)
+
+          {/* Monthly Revenue Comparison */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg shadow-md p-6 text-white">
+              <RiMoneyRupeeCircleLine className="w-10 h-10 opacity-70 mb-2" />
+              <p className="text-2xl font-bold">
+                ₹
+                {numberWithIndianFormat(
+                  isNegative(countData.last_month_received)
                     ? 0
-                    : countData.last_month_received)
-              )}
-            </h1>
-            <p className="text-sm">Difference over last month</p>
+                    : countData.last_month_received,
+                )}
+              </p>
+              <p className="text-sm opacity-90">
+                {format(subMonths(new Date(), 1), "MMMM")} Revenue
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-violet-500 to-violet-600 rounded-lg shadow-md p-6 text-white">
+              <RiMoneyRupeeCircleLine className="w-10 h-10 opacity-70 mb-2" />
+              <p className="text-2xl font-bold">
+                ₹{numberWithIndianFormat(countData.this_month_received)}
+              </p>
+              <p className="text-sm opacity-90">
+                {format(new Date(), "MMMM")} Revenue
+              </p>
+            </div>
+
+            <div
+              className={`bg-gradient-to-br ${
+                monthDifference >= 0
+                  ? "from-emerald-500 to-emerald-600"
+                  : "from-red-500 to-red-600"
+              } rounded-lg shadow-md p-6 text-white`}
+            >
+              <RiMoneyRupeeCircleLine className="w-10 h-10 opacity-70 mb-2" />
+              <p className="text-2xl font-bold">
+                {monthDifference >= 0 ? "+" : ""}₹
+                {numberWithIndianFormat(Math.abs(monthDifference))}
+              </p>
+              <p className="text-sm opacity-90">Month over Month Change</p>
+            </div>
           </div>
 
-          <div className="grow"></div>
-        </div>
-      </div>
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <div className="bg-white rounded-lg shadow-sm p-6 lg:col-span-2">
+              <h2 className="text-lg font-semibold mb-4">
+                Last 15 Days Revenue
+              </h2>
+              <div className="h-80">
+                {last15Day.length > 0 ? (
+                  <Bar data={dataset} options={options} />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    No data available
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold mb-4">
+                Dealer Distribution
+              </h2>
+              <div className="h-80 flex items-center justify-center">
+                <Doughnut data={doughnutData} options={doughnutOptions} />
+              </div>
+            </div>
+          </div>
+
+          {/* Data Table */}
+          <div className="bg-white rounded-lg shadow-sm mt-6 overflow-hidden">
+            <div className="p-4 border-b">
+              <h2 className="text-lg font-semibold">Daily Revenue Details</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      #
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Revenue (₹)
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      % of Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {last15Day
+                    .slice()
+                    .reverse()
+                    .map((item, index) => {
+                      const percentOfTotal =
+                        totalLast15Days > 0
+                          ? (item.amount / totalLast15Days) * 100
+                          : 0;
+
+                      return (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {index + 1}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                            {format(item.date, "dd MMM yyyy")}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right text-gray-900">
+                            ₹{numberWithIndianFormat(item.amount)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right text-gray-600">
+                            {percentOfTotal.toFixed(2)}%
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+                <tfoot className="bg-gray-50">
+                  <tr className="font-semibold">
+                    <td className="px-4 py-3 text-sm text-gray-900" colSpan={2}>
+                      Total (15 Days)
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-900">
+                      ₹{numberWithIndianFormat(totalLast15Days)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-900">
+                      100%
+                    </td>
+                  </tr>
+                  <tr className="font-semibold">
+                    <td className="px-4 py-3 text-sm text-gray-900" colSpan={2}>
+                      Average Daily
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-900">
+                      ₹{numberWithIndianFormat(Math.round(averageDaily))}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-900">
+                      {last15Day.length > 0
+                        ? (100 / last15Day.length).toFixed(2)
+                        : 0}
+                      %
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </main>
   );
 };
 
 export default CategoryWiseReport;
-
-interface DashboardCardProps {
-  name: string;
-  count: string;
-  color: string;
-  subtitle: string;
-  children?: React.ReactNode;
-  isruppy?: boolean;
-}
-
-const DashboardCard = (props: DashboardCardProps) => {
-  return (
-    <div className="bg-white shadow-sm rounded-md">
-      <h1 className="text-sm text-gray-500 p-1 px-2">{props.name}</h1>
-      <div className="w-full h-[1px] bg-gray-200"></div>
-      <div className="flex gap-2 items-center px-2">
-        <div className="grid place-items-start my-2">
-          {props.isruppy ? (
-            <p className="text-xl text-gray-600">&#8377;{props.count}</p>
-          ) : (
-            <p className="text-xl text-gray-600">{props.count}</p>
-          )}
-          <span className="text-xs text-gray-400">{props.subtitle}</span>
-        </div>
-        <div className="grow"></div>
-        <div>
-          <div
-            className={`rounded-full p-2 h-10 w-10 grid place-items-center ${props.color}`}
-          >
-            {props.children}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};

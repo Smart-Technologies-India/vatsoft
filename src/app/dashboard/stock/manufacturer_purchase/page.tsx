@@ -200,61 +200,63 @@ const ManufacturerStockData = () => {
 
   return (
     <>
-      <div className="p-2 mt-4">
-        <div className="bg-white p-2 shadow mt-2">
-          <div className="flex gap-2">
-            <p className="text-lg font-semibold items-center">
-              Manufacturer Purchase
-            </p>
-            <div className="grow"></div>
-            <div className="flex gap-2 items-center">
-              {/* <div className="p-1 rounded grow text-center bg-gray-100">
-          {commoditymaster.crate_size} Pcs/Crate
-        </div> */}
-              <Radio.Group
-                size="small"
-                onChange={onChange}
-                value={quantityCount}
-                optionType="button"
-              >
-                <Radio.Button className="w-20 text-center" value="pcs">
-                  Pcs
-                </Radio.Button>
-                <Radio.Button className="w-20 text-center" value="crate">
-                  Crate
-                </Radio.Button>
-              </Radio.Group>
+      <main className="p-3 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+            <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+              <div>
+                <h1 className="text-lg font-medium text-gray-900">
+                  Manufacturer Purchase
+                </h1>
+              </div>
+              <div className="grow"></div>
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-xs text-gray-600">View:</span>
+                <Radio.Group
+                  size="small"
+                  onChange={onChange}
+                  value={quantityCount}
+                  optionType="button"
+                >
+                  <Radio.Button value="pcs">
+                    Pcs
+                  </Radio.Button>
+                  <Radio.Button value="crate">
+                    Crate
+                  </Radio.Button>
+                </Radio.Group>
+              </div>
             </div>
           </div>
 
           {manufacturerPurchase.length > 0 ? (
-            <>
-              <Table className="border mt-2">
-                <TableHeader>
-                  <TableRow className="bg-gray-100">
-                    <TableHead className="w-64 border text-center">
-                      Product Name
-                    </TableHead>
-                    <TableHead className="w-20 border text-center">
-                      {/* Quantity */}
-                      {quantityCount == "pcs"
-                        ? dvatdata?.commodity == "FUEL"
-                          ? "Litres"
-                          : "Qty"
-                        : "Crate"}
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      Invoice value (&#x20b9;)
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      Total taxable percentage
-                    </TableHead>
-                    <TableHead className="border text-center">
-                      VAT Amount
-                    </TableHead>
-                    <TableHead className="w-28 border text-center">
-                      Actions
-                    </TableHead>
+            <div className="bg-white rounded shadow-sm border p-3">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50 border-b">
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Product Name
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        {quantityCount == "pcs"
+                          ? dvatdata?.commodity == "FUEL"
+                            ? "Litres"
+                            : "Qty"
+                          : "Crate"}
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Invoice value (₹)
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Tax Rate
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        VAT Amount
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Actions
+                      </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -359,50 +361,45 @@ const ManufacturerStockData = () => {
                       </TableRow>
                     )
                   )}
-                </TableBody>
-              </Table>
-              <div className="mt-2"></div>
-              <div className="lg:hidden">
-                <Pagination
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  total={pagination.total}
-                  showTotal={(total: number) => `Total ${total} items`}
-                />
+                  </TableBody>
+                </Table>
               </div>
-              <div className="hidden lg:block">
-                <Pagination
-                  showQuickJumper
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                  total={pagination.total}
-                  responsive={true}
-                  showTotal={(total: number, range: number[]) =>
-                    `${range[0]}-${range[1]} of ${total} items`
-                  }
-                />
+              {/* Pagination */}
+              <div className="px-3 py-2 border-t bg-gray-50">
+                <div className="lg:hidden">
+                  <Pagination
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    total={pagination.total}
+                    showTotal={(total: number) => `Total ${total} items`}
+                  />
+                </div>
+                <div className="hidden lg:block">
+                  <Pagination
+                    showQuickJumper
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                    total={pagination.total}
+                    responsive={true}
+                    showTotal={(total: number, range: number[]) =>
+                      `${range[0]}-${range[1]} of ${total} items`
+                    }
+                  />
+                </div>
               </div>
-            </>
+            </div>
           ) : (
-            <>
-              <Alert
-                style={{
-                  marginTop: "10px",
-                  padding: "8px",
-                }}
-                type="error"
-                showIcon
-                description="There is no daily purchase"
-              />
-            </>
+            <div className="bg-white rounded shadow-sm border p-3 text-center">
+              <p className="text-gray-500 text-sm">There is no daily purchase</p>
+            </div>
           )}
         </div>
-      </div>
+      </main>
     </>
   );
 };

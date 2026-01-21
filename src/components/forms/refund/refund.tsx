@@ -1,10 +1,5 @@
 "use client";
-import {
-  FieldErrors,
-  FormProvider,
-  useForm,
-  useFormContext,
-} from "react-hook-form";
+import { FormProvider, useForm, useFormContext } from "react-hook-form";
 
 import {
   Table,
@@ -24,7 +19,6 @@ import { ToWords } from "to-words";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { Separator } from "@/components/ui/separator";
 import { CreateRefundForm, CreateRefundSchema } from "@/schema/refunds";
-import { Button } from "antd";
 import CreateRefund from "@/action/refund/createrefund";
 import { onFormError } from "@/utils/methods";
 import { useEffect, useState } from "react";
@@ -180,155 +174,218 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
-          <div className="flex-1">
-            <p className="text-sm font-normal">Payment Type</p>
-            <p className="text-sm font-medium">Refund Against ITC</p>
+        {/* Basic Information Section */}
+        <div className="mb-4">
+          <div className="mb-3">
+            <h2 className="text-sm font-medium text-gray-900">
+              Basic Information
+            </h2>
+            <p className="text-gray-500 text-xs mt-0.5">
+              Provide basic refund details
+            </p>
           </div>
-          <div className="flex-1">
-            <TaxtInput<CreateRefundForm>
-              name="old_grievance_number"
-              required={false}
-              numdes={true}
-              title="Previous Grievance Number"
-              placeholder="Previous Grievance Number"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+              <p className="text-xs font-medium text-gray-600">Payment Type</p>
+              <p className="text-sm font-semibold text-gray-900 mt-1">
+                Refund Against ITC
+              </p>
+            </div>
+            <div>
+              <TaxtInput<CreateRefundForm>
+                name="old_grievance_number"
+                required={false}
+                numdes={true}
+                title="Previous Grievance Number"
+                placeholder="Previous Grievance Number"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+            <div>
+              <TaxtInput<CreateRefundForm>
+                name="oldcpin"
+                required={false}
+                numdes={true}
+                title="Previous CPIN"
+                placeholder="Previous CPIN"
+              />
+            </div>
+            <div>
+              <MultiSelect<CreateRefundForm>
+                placeholder="Select Reason"
+                name="reason"
+                required={true}
+                title="Reason For Challan"
+                options={refundReason}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex sm:gap-4 mt-1 flex-col sm:flex-row">
-          <div className="flex-1">
-            <TaxtInput<CreateRefundForm>
-              name="oldcpin"
-              required={false}
-              numdes={true}
-              title="Previous CPIN"
-              placeholder="Previous CPIN"
-            />
+        <Separator className="my-4" />
+
+        {/* Liability Register Section */}
+        <div className="mb-4">
+          <div className="mb-3">
+            <h2 className="text-sm font-medium text-gray-900">
+              Electronic Liability Register
+            </h2>
+            <p className="text-gray-500 text-xs mt-0.5">
+              Current liability details
+            </p>
           </div>
-          <div className="flex-1">
-            <MultiSelect<CreateRefundForm>
-              placeholder="Select Reason"
-              name="reason"
-              required={true}
-              title="Reason For Challan"
-              options={refundReason}
-            />
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="whitespace-nowrap w-32 border-r p-2 font-medium text-gray-700"></TableHead>
+                  <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
+                    Tax (&#x20b9;)
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
+                    Interest (&#x20b9;)
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
+                    Penalty (&#x20b9;)
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
+                    CESS (&#x20b9;)
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
+                    Others (&#x20b9;)
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap p-2 font-medium text-gray-700">
+                    Total (&#x20b9;)
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow className="hover:bg-gray-50">
+                  <TableCell className="font-medium p-2 border-r bg-gray-50">
+                    VAT Tax
+                  </TableCell>
+                  <TableCell className="p-2 border-r text-gray-600">
+                    0.00
+                  </TableCell>
+                  <TableCell className="p-2 border-r text-gray-600">
+                    0.00
+                  </TableCell>
+                  <TableCell className="p-2 border-r text-gray-600">
+                    0.00
+                  </TableCell>
+                  <TableCell className="p-2 border-r text-gray-600">
+                    0.00
+                  </TableCell>
+                  <TableCell className="p-2 border-r text-gray-600">
+                    0.00
+                  </TableCell>
+                  <TableCell className="p-2 font-medium text-gray-900">
+                    0.00
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
         </div>
 
-        <p className="text-left text-black text-lg mt-2">
-          Refund Amount Details
-        </p>
-        <Table className="border mt-2">
-          <TableHeader>
-            <TableRow className="bg-gray-100">
-              <TableHead className="whitespace-nowrap w-32 border p-2"></TableHead>
-              <TableHead className="whitespace-nowrap border p-2">
-                Tax (&#x20b9;)
-              </TableHead>
-              <TableHead className="whitespace-nowrap border p-2">
-                Interest (&#x20b9;)
-              </TableHead>
-              <TableHead className="whitespace-nowrap border p-2">
-                Penalty (&#x20b9;)
-              </TableHead>
-              <TableHead className="whitespace-nowrap border p-2">
-                CESS (&#x20b9;)
-              </TableHead>
-              <TableHead className="whitespace-nowrap border p-2">
-                Others (&#x20b9;)
-              </TableHead>
-              <TableHead className="whitespace-nowrap border p-1">
-                Total (&#x20b9;)
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell className="font-medium p-2 border">VAT Tax</TableCell>
-              <TableCell className="p-2 border">0.00</TableCell>
-              <TableCell className="p-2 border">0.00</TableCell>
-              <TableCell className="p-2 border">0.00</TableCell>
-              <TableCell className="p-2 border">0.00</TableCell>
-              <TableCell className="p-2 border">0.00</TableCell>
-              <TableCell className="p-2 border">0.00</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-        <p className="text-left text-black text-lg mt-2">
-          Refund Amount Details
-        </p>
-        <Table className="border mt-2">
-          <TableHeader>
-            <TableRow className="bg-gray-100 p-1">
-              <TableHead className="whitespace-nowrap w-32 border p-1"></TableHead>
-              <TableHead className="whitespace-nowrap border p-1">
-                Tax (&#x20b9;)
-              </TableHead>
-              <TableHead className="whitespace-nowrap border p-1">
-                Interest (&#x20b9;)
-              </TableHead>
-              <TableHead className="whitespace-nowrap border p-1">
-                Penalty (&#x20b9;)
-              </TableHead>
+        <Separator className="my-4" />
 
-              <TableHead className="whitespace-nowrap border p-1">
-                CESS (&#x20b9;)
-              </TableHead>
-              <TableHead className="whitespace-nowrap border p-1">
-                Others (&#x20b9;)
-              </TableHead>
-              <TableHead className="whitespace-nowrap border p-1 w-20">
-                Total (&#x20b9;)
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell className="font-medium p-2 border">VAT Tax</TableCell>
-              <TableCell className="p-2 border">
-                <TaxtInput<CreateRefundForm>
-                  name="vat"
-                  required={true}
-                  numdes={true}
-                />
-              </TableCell>
-              <TableCell className="p-2 border">
-                <TaxtInput<CreateRefundForm>
-                  name="interest"
-                  required={true}
-                  numdes={true}
-                />
-              </TableCell>
-              <TableCell className="p-2 border">
-                <TaxtInput<CreateRefundForm>
-                  name="penalty"
-                  numdes={true}
-                  required={true}
-                />
-              </TableCell>
+        {/* Refund Amount Details Section */}
+        <div className="mb-4">
+          <div className="mb-3">
+            <h2 className="text-sm font-medium text-gray-900">
+              Refund Amount Details
+            </h2>
+            <p className="text-gray-500 text-xs mt-0.5">
+              Enter the refund amount breakdown
+            </p>
+          </div>
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="whitespace-nowrap w-32 border-r p-2 font-medium text-gray-700"></TableHead>
+                  <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
+                    Tax (&#x20b9;)
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
+                    Interest (&#x20b9;)
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
+                    Penalty (&#x20b9;)
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
+                    CESS (&#x20b9;)
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
+                    Others (&#x20b9;)
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap p-2 font-medium text-gray-700 w-20">
+                    Total (&#x20b9;)
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow className="hover:bg-gray-50">
+                  <TableCell className="font-medium p-2 border-r bg-gray-50">
+                    VAT Tax
+                  </TableCell>
+                  <TableCell className="p-2 border-r">
+                    <TaxtInput<CreateRefundForm>
+                      name="vat"
+                      required={true}
+                      numdes={true}
+                    />
+                  </TableCell>
+                  <TableCell className="p-2 border-r">
+                    <TaxtInput<CreateRefundForm>
+                      name="interest"
+                      required={true}
+                      numdes={true}
+                    />
+                  </TableCell>
+                  <TableCell className="p-2 border-r">
+                    <TaxtInput<CreateRefundForm>
+                      name="penalty"
+                      numdes={true}
+                      required={true}
+                    />
+                  </TableCell>
+                  <TableCell className="p-2 border-r">
+                    <TaxtInput<CreateRefundForm>
+                      name="cess"
+                      required={true}
+                      numdes={true}
+                    />
+                  </TableCell>
+                  <TableCell className="p-2 border-r">
+                    <TaxtInput<CreateRefundForm>
+                      name="others"
+                      required={true}
+                      numdes={true}
+                    />
+                  </TableCell>
+                  <TableCell className="p-2 font-medium text-gray-900">
+                    {getTotalAmount()}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </div>
 
-              <TableCell className="p-2 border">
-                <TaxtInput<CreateRefundForm>
-                  name="cess"
-                  required={true}
-                  numdes={true}
-                />
-              </TableCell>
-              <TableCell className="p-2 border">
-                <TaxtInput<CreateRefundForm>
-                  name="others"
-                  required={true}
-                  numdes={true}
-                />
-              </TableCell>
-              <TableCell className="p-2 border">{getTotalAmount()}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+        <Separator className="my-4" />
 
-        <div className="flex-1">
+        {/* Remark Section */}
+        <div className="mb-4">
+          <div className="mb-3">
+            <h2 className="text-sm font-medium text-gray-900">
+              Additional Information
+            </h2>
+            <p className="text-gray-500 text-xs mt-0.5">Add remarks or notes</p>
+          </div>
           <TaxtAreaInput<CreateRefundForm>
             placeholder="Remark"
             name="remark"
@@ -337,55 +394,72 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
           />
         </div>
 
-        <p className="text-xs border p-2 bg-[#e2e2e2] mt-2">
-          Note: You may view the Electronic Liability Register that displays
-          your liabilities/ dues of Returns and other than Returns. Hence, you
-          may save this Refund Application and navigate to the dashboard to
-          settle the dues first, or may proceed here to file the application.
-          Please note that the recoverable dues shall be deducted from the gross
-          amount to be paid from the Return Amount claimed in the refund
-          application received, by the Refund Processing officer before
-          processing the refund.
-        </p>
-        <Separator />
-        <p className="text-left text-black text-lg mt-2">
-          Upload Supporting Documents
-        </p>
-        <p className="text-xs border p-2 bg-[#e2e2e2]">
-          Note: In case you seek to change the preference of the bank account
-          wnich is not appearing in the drop down list, please add bank account
-          by filing non-core amendment of registration form.
-        </p>
-        <p className="text-xs border p-2 bg-[#e2e2e2] mt-2">
-          Note: Taxpayers are expected to upload supporting documents while
-          filing refund application.
-        </p>
+        <Separator className="my-4" />
 
-        <div className="w-full flex gap-2 mt-2">
-          <div className="grow"></div>
-          {/* <Button
-            onClick={(e) => {
-              e.preventDefault();
-              router.back();
-            }}
-          >
-            Back
-          </Button> */}
-          <input
+        {/* Important Notes Section */}
+        <div className="mb-4">
+          <div className="mb-3">
+            <h2 className="text-sm font-medium text-gray-900">
+              Important Information
+            </h2>
+            <p className="text-gray-500 text-xs mt-0.5">
+              Please read carefully before proceeding
+            </p>
+          </div>
+          <div className="space-y-3">
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+              <p className="text-xs text-blue-900 leading-relaxed">
+                <span className="font-semibold">Note:</span> You may view the
+                Electronic Liability Register that displays your liabilities/
+                dues of Returns and other than Returns. Hence, you may save this
+                Refund Application and navigate to the dashboard to settle the
+                dues first, or may proceed here to file the application. Please
+                note that the recoverable dues shall be deducted from the gross
+                amount to be paid from the Return Amount claimed in the refund
+                application received, by the Refund Processing officer before
+                processing the refund.
+              </p>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+              <p className="text-xs text-amber-900 leading-relaxed">
+                <span className="font-semibold">Note:</span> In case you seek to
+                change the preference of the bank account which is not appearing
+                in the drop down list, please add bank account by filing
+                non-core amendment of registration form.
+              </p>
+            </div>
+
+            <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+              <p className="text-xs text-green-900 leading-relaxed">
+                <span className="font-semibold">Note:</span> Taxpayers are
+                expected to upload supporting documents while filing refund
+                application.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <Separator className="my-4" />
+
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-3">
+          <button
             type="reset"
             onClick={(e) => {
               e.preventDefault();
               reset({});
             }}
-            value={"Reset"}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
-          />
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            Reset
+          </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? "Loading...." : "Submit"}
+            {isSubmitting ? "Submitting..." : "Submit Refund"}
           </button>
         </div>
       </form>

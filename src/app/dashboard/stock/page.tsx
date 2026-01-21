@@ -37,6 +37,7 @@ import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import CreateMultiDailyPurchase from "@/action/stock/createmultidailypurchase";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
+
 const CommodityMaster = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
@@ -418,84 +419,110 @@ const CommodityMaster = () => {
   return (
     <>
       <Modal
-        title="Bulk Upload"
+        title={
+          <div className="text-xl font-semibold text-gray-800">Bulk Upload</div>
+        }
         open={isBulkModalOpen}
         onOk={handleBulkUpload}
-        width={1000}
+        width={1100}
         onCancel={() => {
           setIsBulkModalOpen(false);
           setCsv(null);
           setTableData([]);
         }}
+        okText="Upload"
+        cancelText="Cancel"
+        okButtonProps={{
+          className: "bg-blue-600 hover:bg-blue-700",
+        }}
       >
-        <Table className="border mt-2">
-          <TableHeader>
-            <TableRow className="bg-gray-100">
-              <TableHead className="border text-center">Sr. No.</TableHead>
-              <TableHead className="border text-center">TIN Number</TableHead>
-              <TableHead className="border text-center">Product Name</TableHead>
-              <TableHead className="border text-center">MRP</TableHead>
-              <TableHead className="border text-center">Invoice no.</TableHead>
-              <TableHead className="border whitespace-nowrap text-center">
-                Invoice Date
-              </TableHead>
-
-              <TableHead className="border text-center">OIDC Code</TableHead>
-              <TableHead className="border text-center">Quantity</TableHead>
-              <TableHead className="border text-center">Crate Size</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tabledata
-              .filter((val) => val.tin != "")
-              .map((val: CsvData, index: number) => (
-                <TableRow
-                  key={index}
-                  className={`${val.error ? "bg-red-200" : ""}`}
-                >
-                  <TableCell className="p-2 border text-center">
-                    {index + 1}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.tin}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.product_name}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.mrp}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.invoice_no}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.invoice_date == null ||
-                    val.invoice_date == "" ||
-                    val.invoice_date == undefined
-                      ? ""
-                      : formateDate(new Date(val.invoice_date))}
-                  </TableCell>
-
-                  <TableCell className="p-2 border text-center">
-                    {val.oidc_code}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.quantity}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.crate_size}
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-        {/* if errorname exist show error name */}
+        <div className="overflow-x-auto rounded-lg shadow-sm">
+          <Table className="border border-gray-200 mt-4">
+            <TableHeader>
+              <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Sr. No.
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  TIN Number
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Product Name
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  MRP
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Invoice No.
+                </TableHead>
+                <TableHead className="border border-gray-200 whitespace-nowrap text-center font-semibold text-gray-700 py-3">
+                  Invoice Date
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  OIDC Code
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Quantity
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Crate Size
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tabledata
+                .filter((val) => val.tin != "")
+                .map((val: CsvData, index: number) => (
+                  <TableRow
+                    key={index}
+                    className={`${
+                      val.error
+                        ? "bg-red-50 hover:bg-red-100"
+                        : "hover:bg-gray-50"
+                    } transition-colors`}
+                  >
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {index + 1}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.tin}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.product_name}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm font-medium">
+                      {val.mrp}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.invoice_no}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.invoice_date == null ||
+                      val.invoice_date == "" ||
+                      val.invoice_date == undefined
+                        ? "-"
+                        : formateDate(new Date(val.invoice_date))}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm font-mono">
+                      {val.oidc_code}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm font-medium">
+                      {val.quantity}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.crate_size}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </div>
         {tabledata.some((val) => val.errorname) && (
           <Alert
             message={tabledata.find((val) => val.errorname)?.errorname}
             type="error"
             showIcon
-            className="mt-2"
+            className="mt-4 rounded-lg"
           />
         )}
       </Modal>
@@ -508,7 +535,11 @@ const CommodityMaster = () => {
         open={materialBox}
         size="large"
       >
-        <p className="text-lg text-left">Add Raw Material</p>
+        <div className="mb-3 pb-2 border-b">
+          <h2 className="text-sm font-medium text-gray-900">
+            Add Raw Material
+          </h2>
+        </div>
         <AddMaterialProvider
           userid={userid}
           setAddBox={setMaterialBox}
@@ -524,7 +555,11 @@ const CommodityMaster = () => {
         open={addBox}
         size="large"
       >
-        <p className="text-lg text-left">Add Purchase</p>
+        <div className="mb-3 pb-2 border-b">
+          <h2 className="text-sm font-medium text-gray-900">
+            Add Purchase
+          </h2>
+        </div>
         <DailyPurchaseMasterProvider
           userid={userid}
           setAddBox={setAddBox}
@@ -540,7 +575,11 @@ const CommodityMaster = () => {
         open={stockBox}
         size="large"
       >
-        <p className="text-lg text-left">Add Stock</p>
+        <div className="mb-3 pb-2 border-b">
+          <h2 className="text-sm font-medium text-gray-900">
+            Add Stock
+          </h2>
+        </div>
         <CreateStockProvider
           userid={userid}
           setAddBox={setStockBox}
@@ -548,208 +587,212 @@ const CommodityMaster = () => {
         />
       </Drawer>
 
-      <main className="w-full p-4 ">
-        <div className="bg-white px-4 py-2 mt-2">
-          <div className="flex gap-2">
-            <p className="text-lg font-semibold items-center">Stock</p>
-            <div className="grow"></div>
-            {dvatdata?.commodity != "FUEL" && (
-              <div className="flex gap-2 items-center">
-                <Radio.Group
-                  size="small"
-                  onChange={onChange}
-                  value={quantityCount}
-                  optionType="button"
-                >
-                  <Radio.Button className="w-20 text-center" value="pcs">
-                    Pcs
-                  </Radio.Button>
-                  <Radio.Button className="w-20 text-center" value="crate">
-                    Crate
-                  </Radio.Button>
-                </Radio.Group>
+      <main className="p-3 bg-gray-50">
+        <div className=" mx-auto">
+          {/* Header Card */}
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+            <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+              {/* Title Section */}
+              <div>
+                <h1 className="text-lg font-medium text-gray-900">
+                  Stock Management
+                </h1>
               </div>
-            )}
 
-            {dvatdata?.commodity == "FUEL" && (
-              <div className="flex gap-2 items-center">
+              <div className="grow"></div>
+
+              {/* Controls Section */}
+              <div className="flex flex-wrap gap-2 items-center">
+                {/* Quantity Toggle for Non-Fuel */}
+                {dvatdata?.commodity != "FUEL" && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-600">View:</span>
+                    <Radio.Group
+                      size="small"
+                      onChange={onChange}
+                      value={quantityCount}
+                      optionType="button"
+                    >
+                      <Radio.Button value="pcs">Pcs</Radio.Button>
+                      <Radio.Button value="crate">Crate</Radio.Button>
+                    </Radio.Group>
+                  </div>
+                )}
+
+                {/* Fuel-specific Upload */}
+                {dvatdata?.commodity == "FUEL" && (
+                  <div className="flex gap-2 items-center">
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={() => csvRef.current?.click()}
+                    >
+                      {csv ? "Change Sheet" : "Upload Sheet"}
+                    </Button>
+                    <div className="hidden">
+                      <input
+                        type="file"
+                        ref={csvRef}
+                        accept="application/vnd.ms-excel, text/csv"
+                        onChange={(val) => handleCSVChange(val, setCsv)}
+                      />
+                    </div>
+                    <a
+                      download={"vatsoft_purchase.csv"}
+                      href="/vatsoft_purchase.csv"
+                      className="inline-flex items-center px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                    >
+                      Download Sheet
+                    </a>
+                  </div>
+                )}
+
+                {/* Manufacturer-specific Buttons */}
+                {dvatdata && dvatdata.commodity == "MANUFACTURER" && (
+                  <>
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={() => setStockBox(true)}
+                    >
+                      Add Stock
+                    </Button>
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={() => setMaterialBox(true)}
+                    >
+                      Add Raw Material
+                    </Button>
+                  </>
+                )}
+
+                {/* Common Buttons */}
                 <Button
                   size="small"
                   type="primary"
-                  onClick={() => csvRef.current?.click()}
-                  className="bg-blue-500 hover:bg-blue-500 w-24 text-white"
+                  onClick={() => setAddBox(true)}
                 >
-                  {csv ? "Change Sheet" : "Upload Sheet"}
+                  Add Purchase
                 </Button>
 
-                <div className="hidden">
-                  <input
-                    type="file"
-                    ref={csvRef}
-                    accept="application/vnd.ms-excel, text/csv"
-                    onChange={(val) => handleCSVChange(val, setCsv)}
+                <Button
+                  size="small"
+                  type="default"
+                  onClick={() => router.push("/dashboard/stock/view_purchase")}
+                >
+                  View Purchase
+                </Button>
+
+                {dvatdata && dvatdata.commodity == "MANUFACTURER" && (
+                  <Button
+                    size="small"
+                    type="default"
+                    onClick={() =>
+                      router.push("/dashboard/stock/manufacturer_purchase")
+                    }
+                  >
+                    Manufacturer Purchase
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Stock Table Card */}
+          {stocks.length != 0 ? (
+            <div className="bg-white rounded shadow-sm border p-3">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50 border-b">
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Sr. No.
+                      </TableHead>
+                      <TableHead className="text-left p-2 font-medium text-gray-700 text-xs">
+                        Product Name
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        {quantityCount == "pcs"
+                          ? dvatdata?.commodity == "FUEL"
+                            ? "Litres"
+                            : "Quantity"
+                          : "Crate"}
+                      </TableHead>
+                      <TableHead className="text-left p-2 font-medium text-gray-700 text-xs">
+                        Description
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stocks
+                      .filter((val) => val.quantity != 0)
+                      .map(
+                        (
+                          val: stock & { commodity_master: commodity_master },
+                          index: number
+                        ) => (
+                          <TableRow
+                            key={index}
+                            className="border-b hover:bg-gray-50"
+                          >
+                            <TableCell className="p-2 text-center text-xs">
+                              {index + 1 + pagination.skip}
+                            </TableCell>
+                            <TableCell className="p-2 text-left text-xs">
+                              {val.commodity_master.product_name}
+                            </TableCell>
+                            <TableCell className="p-2 text-center text-xs">
+                              {quantityCount == "pcs"
+                                ? val.quantity
+                                : showCrates(
+                                    val.quantity,
+                                    val.commodity_master.crate_size
+                                  )}
+                            </TableCell>
+                            <TableCell className="p-2 text-left text-xs text-gray-600">
+                              {val.commodity_master.description || "-"}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination Section */}
+              <div className="px-3 py-2 border-t bg-gray-50">
+                <div className="lg:hidden">
+                  <Pagination
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    total={pagination.total}
+                    showTotal={(total: number) => `Total ${total} items`}
                   />
                 </div>
-                <a
-                  download={"vatsoft_purchase.csv"}
-                  href="/vatsoft_purchase.csv"
-                  className="bg-blue-500 hover:bg-blue-500 w-24 text-white rounded shadow px-2 text-sm h-6 text-center grid place-items-start pt-[2px]"
-                >
-                  Download Sheet
-                </a>
+                <div className="hidden lg:block">
+                  <Pagination
+                    showQuickJumper
+                    align="center"
+                    defaultCurrent={1}
+                    onChange={onChangePageCount}
+                    showSizeChanger
+                    pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                    total={pagination.total}
+                    responsive={true}
+                    showTotal={(total: number, range: number[]) =>
+                      `${range[0]}-${range[1]} of ${total} items`
+                    }
+                  />
+                </div>
               </div>
-            )}
-
-            {dvatdata && dvatdata.commodity == "MANUFACTURER" && (
-              <>
-                <Button
-                  size="small"
-                  type="primary"
-                  className="bg-blue-500 hover:bg-blue-500"
-                  onClick={() => {
-                    setStockBox(true);
-                  }}
-                >
-                  Add Stock
-                </Button>
-                <Button
-                  size="small"
-                  type="primary"
-                  className="bg-blue-500 hover:bg-blue-500"
-                  onClick={() => {
-                    setMaterialBox(true);
-                  }}
-                >
-                  Add Raw Material
-                </Button>
-              </>
-            )}
-            <Button
-              size="small"
-              type="primary"
-              className="bg-blue-500 hover:bg-blue-500"
-              onClick={() => {
-                // setCommid(undefined);
-                setAddBox(true);
-              }}
-            >
-              Add Purchase
-            </Button>
-
-            <Button
-              size="small"
-              type="primary"
-              onClick={() => {
-                router.push("/dashboard/stock/view_purchase");
-              }}
-              className="bg-blue-500 text-white hover:bg-blue-500  rounded text-sm px-2"
-            >
-              View Purchase
-            </Button>
-            {dvatdata && dvatdata.commodity == "MANUFACTURER" && (
-              <Button
-                size="small"
-                type="primary"
-                onClick={() => {
-                  router.push("/dashboard/stock/manufacturer_purchase");
-                }}
-                className="bg-blue-500 text-white hover:bg-blue-500  rounded text-sm px-2"
-              >
-                Manufacturer Purchase
-              </Button>
-            )}
-          </div>
-          {stocks.length != 0 ? (
-            <>
-              <Table className="border mt-2">
-                <TableHeader>
-                  <TableRow className="bg-gray-100">
-                    <TableHead className="whitespace-nowrap w-14 border text-center p-2">
-                      Sr. No.
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap w-56 border text-center p-2">
-                      Product Name
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap border text-center p-2">
-                      {quantityCount == "pcs"
-                        ? dvatdata?.commodity == "FUEL"
-                          ? "Litres"
-                          : "Qty"
-                        : "Crate"}
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap border text-center p-2">
-                      Description
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {stocks
-                    .filter((val) => val.quantity != 0)
-                    .map(
-                      (
-                        val: stock & { commodity_master: commodity_master },
-                        index: number
-                      ) => (
-                        <TableRow key={index}>
-                          <TableCell className="p-2 border text-center">
-                            {index + 1 + pagination.skip}
-                          </TableCell>
-                          <TableCell className="p-2 border text-left">
-                            {val.commodity_master.product_name}
-                          </TableCell>
-                          <TableCell className="p-2 border text-center">
-                            {quantityCount == "pcs"
-                              ? val.quantity
-                              : showCrates(
-                                  val.quantity,
-                                  val.commodity_master.crate_size
-                                )}
-                          </TableCell>
-                          <TableCell className="p-2 border text-left">
-                            {val.commodity_master.description}
-                          </TableCell>
-                        </TableRow>
-                      )
-                    )}
-                </TableBody>
-              </Table>
-              <div className="mt-2"></div>
-              <div className="lg:hidden">
-                <Pagination
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  total={pagination.total}
-                  showTotal={(total: number) => `Total ${total} items`}
-                />
-              </div>
-              <div className="hidden lg:block">
-                <Pagination
-                  showQuickJumper
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                  total={pagination.total}
-                  responsive={true}
-                  showTotal={(total: number, range: number[]) =>
-                    `${range[0]}-${range[1]} of ${total} items`
-                  }
-                />
-              </div>
-            </>
+            </div>
           ) : (
-            <Alert
-              style={{
-                marginTop: "10px",
-                padding: "8px",
-              }}
-              type="error"
-              showIcon
-              description="There is no stock."
-            />
+            <div className="bg-white rounded shadow-sm border p-3 text-center">
+              <p className="text-gray-500 text-sm">No stock available.</p>
+            </div>
           )}
         </div>
       </main>

@@ -18,12 +18,9 @@ import {
   RiAuctionLine,
   RiMoneyRupeeCircleLine,
 } from "@/components/icons";
-
 import { Chart as ChartJS, registerables } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
-
 import { Bar, Pie } from "react-chartjs-2";
-
 import numberWithIndianFormat, {
   due_date_of_month,
   formateDate,
@@ -46,6 +43,9 @@ import OfficerDashboard from "@/action/dashboard/officerdashboard";
 import Last15Received from "@/action/dashboard/last15received";
 import GetTopLiquorDealers from "@/action/dashboard/gettopliquordealers";
 import GetTopFuelDealers from "@/action/dashboard/gettopfueldealers";
+import GetTopCommodities from "@/action/dashboard/gettopcommodities";
+import DistrictWiseRevenue from "@/action/report/districtwiserevenue";
+import OfficerDashboardReport from "@/action/report/officerdashboardreport";
 import { format, subMonths } from "date-fns";
 import { Radio, RadioChangeEvent } from "antd";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
@@ -126,55 +126,50 @@ const Page = () => {
       {user?.role == "USER" ? (
         <>
           <main
-            className={`relative bg-slate-50 overflow-hidden ${
+            className={`relative bg-gray-50 overflow-hidden ${
               !isProfileCompletd ? "h-[calc(100vh-2.5rem)]" : ""
             }`}
           >
-            <div className="pb-6 relative h-full">
-              <div className="mx-auto md:px-4 px-3 max-w-4xl lg:max-w-full py-4 relative lg:grid lg:grid-cols-12 lg:gap-4">
+            <div className="p-3 relative h-full">
+              <div className="mx-auto max-w-4xl lg:max-w-full relative lg:grid lg:grid-cols-12 lg:gap-3">
                 {/* Welcome Header */}
-                <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm mb-6 lg:mb-0 lg:col-span-12">
+                <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3 lg:mb-0 lg:col-span-12">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h1 className="text-2xl font-semibold mb-2 text-slate-800">
+                      <h1 className="text-lg font-medium text-gray-900">
                         Welcome, {user?.firstName ?? ""} {user?.lastName ?? ""}
                       </h1>
-                      <p className="text-slate-600 text-base">
+                      <p className="text-gray-500 text-sm mt-0.5">
                         VATSMART Portal Dashboard
                       </p>
                       {dvat != null && dvat?.tinNumber && (
-                        <div className="mt-3 inline-flex items-center bg-slate-100 px-3 py-1.5 rounded-lg">
-                          <span className="text-sm font-medium text-slate-700">
+                        <div className="mt-1.5 inline-flex items-center bg-gray-100 px-2.5 py-1 rounded">
+                          <span className="text-xs font-medium text-gray-700">
                             TIN: {dvat.tinNumber}
                           </span>
                         </div>
                       )}
                     </div>
-                    <div className="hidden md:flex items-center">
-                      <div className="bg-slate-100 p-3 rounded-xl">
-                        <Fa6RegularBuilding className="text-2xl text-slate-600" />
-                      </div>
-                    </div>
                   </div>
                 </div>
 
                 {/* Returns Calendar Section */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 lg:mb-0 lg:col-span-9">
-                  <div className="flex items-center justify-between mb-5">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-3 lg:mb-0 lg:col-span-9">
+                  <div className="flex items-center justify-between mb-3">
                     <div>
-                      <h2 className="text-xl font-semibold text-slate-800">
+                      <h2 className="text-sm font-medium text-gray-900">
                         Returns Calendar
                       </h2>
-                      <p className="text-slate-600 text-sm mt-1">
+                      <p className="text-gray-500 text-xs mt-0.5">
                         Track your VAT return submissions
                       </p>
                     </div>
-                    <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg font-medium">
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded font-medium">
                       {month.length} periods
                     </span>
                   </div>
                   {/* VAT Returns List */}
-                  <div className="space-y-3 lg:grid lg:grid-cols-2 gap-4">
+                  <div className="grid lg:grid-cols-2 gap-3">
                     {month.map((val: any, index: number) => (
                       <RentCard
                         key={index}
@@ -199,16 +194,16 @@ const Page = () => {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 lg:col-span-3">
-                  <div className="mb-5">
-                    <h2 className="text-xl font-semibold text-slate-800">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 lg:col-span-3">
+                  <div className="mb-3">
+                    <h2 className="text-sm font-medium text-gray-900">
                       Quick Actions
                     </h2>
-                    <p className="text-slate-600 text-sm mt-1">
+                    <p className="text-gray-500 text-xs mt-0.5">
                       Access key portal features
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-3">
                     <ButtonCard
                       title="Return Dashboard"
                       icon={
@@ -358,7 +353,6 @@ const Page = () => {
                         <button
                           onClick={async () => {
                             // Get the current dvat first
-                            console.log("dvat", dvat);
                             if (dvat) {
                               // Check if dvat status is VERIFICATION
                               if (dvat.status === "VERIFICATION") {
@@ -457,12 +451,12 @@ const RentCard = (props: RentCardProps) => {
     return formateDate(res);
   };
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-100 transition-all duration-200 gap-3">
-      <div className="flex items-start sm:items-center gap-3 flex-1">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-2.5 bg-gray-50 rounded border border-gray-200 hover:border-gray-300 hover:bg-gray-100 transition-all gap-2">
+      <div className="flex items-start sm:items-center gap-2 flex-1">
         {/* Status Indicator */}
         <div className="relative shrink-0">
           <div
-            className={`w-14 h-14 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-sm font-semibold ${
+            className={`w-10 h-10 rounded flex items-center justify-center text-xs font-semibold ${
               props.filestatus == FileStatus.FILED
                 ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
                 : "bg-amber-100 text-amber-700 border border-amber-200"
@@ -474,9 +468,9 @@ const RentCard = (props: RentCardProps) => {
             </div>
           </div>
           {props.filestatus == FileStatus.FILED && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-4 sm:h-4 bg-emerald-500 rounded-full flex items-center justify-center">
+            <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center">
               <svg
-                className="w-3 h-3 sm:w-2.5 sm:h-2.5 text-white"
+                className="w-2 h-2 text-white"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -492,12 +486,12 @@ const RentCard = (props: RentCardProps) => {
 
         {/* Return Info */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-slate-800 text-base mb-2">
+          <h3 className="font-medium text-gray-800 text-sm mb-1">
             {props.title}
           </h3>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
             <span
-              className={`text-xs sm:text-sm px-2.5 sm:px-3 py-1 rounded-full font-medium inline-block w-fit ${
+              className={`text-xs px-2 py-0.5 rounded font-medium inline-block w-fit ${
                 props.filestatus == FileStatus.FILED
                   ? "bg-emerald-100 text-emerald-700"
                   : "bg-amber-100 text-amber-700"
@@ -505,9 +499,9 @@ const RentCard = (props: RentCardProps) => {
             >
               {props.status}
             </span>
-            <span className="text-xs sm:text-sm text-slate-600">
+            <span className="text-xs text-gray-600">
               {props.statusdate}:{" "}
-              <span className="font-medium text-slate-800">
+              <span className="font-medium text-gray-800">
                 {props.filestatus == FileStatus.FILED
                   ? formateDate(new Date(props.date))
                   : getnextmonth()}
@@ -522,7 +516,7 @@ const RentCard = (props: RentCardProps) => {
         href={`/dashboard/returns/returns-dashboard?month=${
           monthNames[parseInt(props.month) - 1]
         }&year=${new Date(props.date).getFullYear()}`}
-        className="text-sm px-4 py-2.5 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 font-medium text-center sm:text-left shrink-0 w-full sm:w-auto"
+        className="text-xs px-3 py-1.5 text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 transition-all font-medium text-center sm:text-left shrink-0 w-full sm:w-auto"
       >
         Open
       </Link>
@@ -539,13 +533,13 @@ interface ButtonCardProps {
 const ButtonCard = (props: ButtonCardProps) => {
   return (
     <Link href={props.link} className="group">
-      <div className="bg-white hover:bg-slate-50 p-4 rounded-lg border border-slate-200 hover:border-slate-300 transition-all hover:shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <div className="p-3 bg-slate-100 rounded-xl group-hover:bg-slate-200 transition-colors">
+      <div className="bg-white hover:bg-gray-50 p-3 rounded border border-gray-200 hover:border-gray-300 transition-all">
+        <div className="flex items-center justify-between mb-2">
+          <div className="p-2 bg-gray-100 rounded group-hover:bg-gray-200 transition-colors">
             {props.icon}
           </div>
           <svg
-            className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors"
+            className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 transition-colors"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -558,12 +552,9 @@ const ButtonCard = (props: ButtonCardProps) => {
             />
           </svg>
         </div>
-        <h3 className="text-base font-semibold text-slate-800 group-hover:text-slate-900 transition-colors mb-1">
+        <h3 className="text-sm font-medium text-gray-800 group-hover:text-gray-900 transition-colors">
           {props.title}
         </h3>
-        <p className="text-sm text-slate-600">
-          Access {props.title.toLowerCase()}
-        </p>
       </div>
     </Link>
   );
@@ -704,97 +695,6 @@ const pieOptions: any = {
   },
 };
 
-// Sample data for District-wise Revenue
-const districtRevenueData = {
-  labels: ["Dadra & Nagar Haveli", "Daman", "Diu"],
-  datasets: [
-    {
-      data: [4500000, 3200000, 1800000],
-      backgroundColor: [
-        "#667eea", // Purple Blue
-        "#f093fb", // Pink
-        "#4facfe", // Light Blue
-      ],
-      borderWidth: 3,
-      borderColor: "#ffffff",
-      hoverBackgroundColor: ["#5a67d8", "#e53e3e", "#3182ce"],
-      hoverBorderWidth: 4,
-    },
-  ],
-};
-
-// Sample data for Category-wise Revenue
-const categoryRevenueData = {
-  labels: ["Liquor", "Petroleum"],
-  datasets: [
-    {
-      data: [5800000, 3700000],
-      backgroundColor: [
-        "#a8edea", // Light Teal
-        "#ffecd2", // Light Peach
-      ],
-      borderWidth: 3,
-      borderColor: "#ffffff",
-      hoverBackgroundColor: ["#805ad5", "#dd6b20"],
-      hoverBorderWidth: 4,
-    },
-  ],
-};
-
-// Sample data for Top Petroleum Commodities
-const petroleumCommoditiesData = {
-  labels: ["Petrol", "Diesel", "CNG", "PNG", "Additives"],
-  datasets: [
-    {
-      data: [1500000, 1200000, 800000, 600000, 300000],
-      backgroundColor: [
-        "#FF6B6B", // Coral Red
-        "#4ECDC4", // Teal
-        "#45B7D1", // Sky Blue
-        "#96CEB4", // Mint Green
-        "#FFEAA7", // Light Yellow
-      ],
-      borderWidth: 3,
-      borderColor: "#ffffff",
-      hoverBackgroundColor: [
-        "#ff5252",
-        "#26c6da",
-        "#42a5f5",
-        "#66bb6a",
-        "#ffcc02",
-      ],
-      hoverBorderWidth: 4,
-    },
-  ],
-};
-
-// Sample data for Top Liquor Commodities
-const liquorCommoditiesData = {
-  labels: ["Beer", "Wine", "Whiskey", "Rum", "Vodka"],
-  datasets: [
-    {
-      data: [2200000, 1800000, 1500000, 800000, 500000],
-      backgroundColor: [
-        "#A8E6CF", // Mint
-        "#DDA0DD", // Plum
-        "#F4A460", // Sandy Brown
-        "#87CEEB", // Sky Blue
-        "#FFB6C1", // Light Pink
-      ],
-      borderWidth: 3,
-      borderColor: "#ffffff",
-      hoverBackgroundColor: [
-        "#7ed321",
-        "#9013fe",
-        "#f5a623",
-        "#50e3c2",
-        "#ff6b9d",
-      ],
-      hoverBorderWidth: 4,
-    },
-  ],
-};
-
 // Bar Chart Options for Dealer Charts
 const dealerBarOptions: any = {
   responsive: true,
@@ -907,6 +807,38 @@ const OfficerDashboardPage = () => {
   const [topLiquorDealers, setTopLiquorDealers] = useState<TopDealerData[]>([]);
   const [topFuelDealers, setTopFuelDealers] = useState<TopDealerData[]>([]);
 
+  interface DistrictRevenue {
+    district: string;
+    revenue: number;
+    returnCount: number;
+    dealerCount: number;
+  }
+
+  interface DistrictWiseRevenueData {
+    districts: DistrictRevenue[];
+    totalRevenue: number;
+    totalReturns: number;
+    totalDealers: number;
+  }
+
+  interface CategoryWiseData {
+    fuelRevenue: number;
+    liquorRevenue: number;
+    totalRevenue: number;
+  }
+
+  const [districtRevenueData, setDistrictRevenueData] = useState<DistrictWiseRevenueData | null>(null);
+  const [categoryWiseData, setCategoryWiseData] = useState<CategoryWiseData | null>(null);
+
+  interface TopCommodityData {
+    commodityName: string;
+    totalRevenue: number;
+    returnCount: number;
+  }
+
+  const [topFuelCommodities, setTopFuelCommodities] = useState<TopCommodityData[]>([]);
+  const [topLiquorCommodities, setTopLiquorCommodities] = useState<TopCommodityData[]>([]);
+
   useEffect(() => {
     const init = async () => {
       const count_data_response = await OfficerDashboard({
@@ -936,9 +868,58 @@ const OfficerDashboardPage = () => {
       if (fuelDealersResponse.status && fuelDealersResponse.data) {
         setTopFuelDealers(fuelDealersResponse.data);
       }
+
+      // Fetch category-wise revenue (fuel and liquor)
+      const fuelRevenueResponse = await OfficerDashboardReport({
+        selectOffice: city,
+        selectCommodity: "FUEL",
+      });
+      const liquorRevenueResponse = await OfficerDashboardReport({
+        selectOffice: city,
+        selectCommodity: "LIQUOR",
+      });
+
+      if (fuelRevenueResponse.status && fuelRevenueResponse.data &&
+          liquorRevenueResponse.status && liquorRevenueResponse.data) {
+        setCategoryWiseData({
+          fuelRevenue: fuelRevenueResponse.data.this_month_received,
+          liquorRevenue: liquorRevenueResponse.data.this_month_received,
+          totalRevenue: fuelRevenueResponse.data.this_month_received + liquorRevenueResponse.data.this_month_received,
+        });
+      }
+
+      // Fetch top commodities
+      const fuelCommoditiesResponse = await GetTopCommodities({
+        selectOffice: city,
+        commodityType: "FUEL",
+        limit: 5,
+      });
+      if (fuelCommoditiesResponse.status && fuelCommoditiesResponse.data) {
+        setTopFuelCommodities(fuelCommoditiesResponse.data);
+      }
+
+      const liquorCommoditiesResponse = await GetTopCommodities({
+        selectOffice: city,
+        commodityType: "LIQUOR",
+        limit: 5,
+      });
+      if (liquorCommoditiesResponse.status && liquorCommoditiesResponse.data) {
+            (liquorCommoditiesResponse.data);
+      }
     };
     init();
   }, [city]);
+
+  // Fetch district-wise revenue independently (not affected by region filter)
+  useEffect(() => {
+    const fetchDistrictRevenue = async () => {
+      const districtResponse = await DistrictWiseRevenue({});
+      if (districtResponse.status && districtResponse.data) {
+        setDistrictRevenueData(districtResponse.data);
+      }
+    };
+    fetchDistrictRevenue();
+  }, []);
 
   const dataset: any = {
     labels: last15Day
@@ -1007,6 +988,97 @@ const OfficerDashboardPage = () => {
         borderColor: "#ffffff",
         borderWidth: 2,
         borderRadius: 6,
+      },
+    ],
+  };
+
+  // Dynamic district-wise revenue data from database
+  const districtRevenueChartData = {
+    labels: districtRevenueData?.districts.map((d: DistrictRevenue) => d.district) || ["Dadra & Nagar Haveli", "Daman", "Diu"],
+    datasets: [
+      {
+        data: districtRevenueData?.districts.map((d: DistrictRevenue) => d.revenue) || [4500000, 3200000, 1800000],
+        backgroundColor: [
+          "#667eea", // Purple Blue
+          "#f093fb", // Pink
+          "#4facfe", // Light Blue
+        ],
+        borderWidth: 3,
+        borderColor: "#ffffff",
+        hoverBackgroundColor: ["#5a67d8", "#e53e3e", "#3182ce"],
+        hoverBorderWidth: 4,
+      },
+    ],
+  };
+
+  // Dynamic category-wise revenue data from database
+  const categoryRevenueChartData = {
+    labels: ["Liquor", "Petroleum"],
+    datasets: [
+      {
+        data: categoryWiseData ? [categoryWiseData.liquorRevenue, categoryWiseData.fuelRevenue] : [5800000, 3700000],
+        backgroundColor: [
+          "#a8edea", // Light Teal
+          "#ffecd2", // Light Peach
+        ],
+        borderWidth: 3,
+        borderColor: "#ffffff",
+        hoverBackgroundColor: ["#805ad5", "#dd6b20"],
+        hoverBorderWidth: 4,
+      },
+    ],
+  };
+
+  // Dynamic petroleum commodities data from database
+  const petroleumCommoditiesChartData = {
+    labels: topFuelCommodities.map(c => c.commodityName),
+    datasets: [
+      {
+        data: topFuelCommodities.map(c => c.totalRevenue),
+        backgroundColor: [
+          "#FF6B6B", // Coral Red
+          "#4ECDC4", // Teal
+          "#45B7D1", // Sky Blue
+          "#96CEB4", // Mint Green
+          "#FFEAA7", // Light Yellow
+        ],
+        borderWidth: 3,
+        borderColor: "#ffffff",
+        hoverBackgroundColor: [
+          "#ff5252",
+          "#26c6da",
+          "#42a5f5",
+          "#66bb6a",
+          "#ffcc02",
+        ],
+        hoverBorderWidth: 4,
+      },
+    ],
+  };
+
+  // Dynamic liquor commodities data from database
+  const liquorCommoditiesChartData = {
+    labels: topLiquorCommodities.map(c => c.commodityName),
+    datasets: [
+      {
+        data: topLiquorCommodities.map(c => c.totalRevenue),
+        backgroundColor: [
+          "#A8E6CF", // Mint
+          "#DDA0DD", // Plum
+          "#F4A460", // Sandy Brown
+          "#87CEEB", // Sky Blue
+          "#FFB6C1", // Light Pink
+        ],
+        borderWidth: 3,
+        borderColor: "#ffffff",
+        hoverBackgroundColor: [
+          "#7ed321",
+          "#9013fe",
+          "#f5a623",
+          "#50e3c2",
+          "#ff6b9d",
+        ],
+        hoverBorderWidth: 4,
       },
     ],
   };
@@ -1371,7 +1443,7 @@ const OfficerDashboardPage = () => {
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Dealers</span>
                 <span className="font-medium text-gray-700">
-                  {topLiquorDealers.length} Active Dealers
+                  {countData.liquoredealer} Active Dealers
                 </span>
               </div>
             </div>
@@ -1412,7 +1484,7 @@ const OfficerDashboardPage = () => {
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Dealers</span>
                 <span className="font-medium text-gray-700">
-                  {topFuelDealers.length} Active Dealers
+                  {countData.fueldealer} Active Dealers
                 </span>
               </div>
             </div>
@@ -1451,14 +1523,14 @@ const OfficerDashboardPage = () => {
             </div>
             <div className="h-64 flex items-center justify-center">
               <div className="w-full h-full">
-                <Pie data={districtRevenueData} options={pieOptions} />
+                <Pie data={districtRevenueChartData} options={pieOptions} />
               </div>
             </div>
             <div className="mt-3 pt-3 border-t border-gray-100">
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Revenue</span>
                 <span className="font-medium text-gray-700">
-                  ₹{numberWithIndianFormat(9500000)}
+                  ₹{numberWithIndianFormat(districtRevenueData?.totalRevenue || 0)}
                 </span>
               </div>
             </div>
@@ -1500,14 +1572,14 @@ const OfficerDashboardPage = () => {
             </div>
             <div className="h-64 flex items-center justify-center">
               <div className="w-full h-full">
-                <Pie data={categoryRevenueData} options={pieOptions} />
+                <Pie data={categoryRevenueChartData} options={pieOptions} />
               </div>
             </div>
             <div className="mt-3 pt-3 border-t border-gray-100">
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Categories</span>
                 <span className="font-medium text-gray-700">
-                  ₹{numberWithIndianFormat(9500000)}
+                  ₹{numberWithIndianFormat(categoryWiseData?.totalRevenue || 0)}
                 </span>
               </div>
             </div>
@@ -1545,15 +1617,36 @@ const OfficerDashboardPage = () => {
               </div>
             </div>
             <div className="h-64 flex items-center justify-center">
-              <div className="w-full h-full">
-                <Pie data={petroleumCommoditiesData} options={pieOptions} />
-              </div>
+              {topFuelCommodities.length > 0 ? (
+                <div className="w-full h-full">
+                  <Pie data={petroleumCommoditiesChartData} options={pieOptions} />
+                </div>
+              ) : (
+                <div className="text-center text-gray-400">
+                  <svg
+                    className="w-16 h-16 mx-auto mb-2 opacity-50"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  <p className="text-sm">No data available</p>
+                </div>
+              )}
             </div>
             <div className="mt-3 pt-3 border-t border-gray-100">
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Products</span>
                 <span className="font-medium text-gray-700">
-                  ₹{numberWithIndianFormat(4400000)}
+                  ₹{numberWithIndianFormat(
+                    topFuelCommodities.reduce((sum, c) => sum + c.totalRevenue, 0)
+                  )}
                 </span>
               </div>
             </div>
@@ -1588,15 +1681,36 @@ const OfficerDashboardPage = () => {
               </div>
             </div>
             <div className="h-64 flex items-center justify-center">
-              <div className="w-full h-full">
-                <Pie data={liquorCommoditiesData} options={pieOptions} />
-              </div>
+              {topLiquorCommodities.length > 0 ? (
+                <div className="w-full h-full">
+                  <Pie data={liquorCommoditiesChartData} options={pieOptions} />
+                </div>
+              ) : (
+                <div className="text-center text-gray-400">
+                  <svg
+                    className="w-16 h-16 mx-auto mb-2 opacity-50"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  <p className="text-sm">No data available</p>
+                </div>
+              )}
             </div>
             <div className="mt-3 pt-3 border-t border-gray-100">
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Products</span>
                 <span className="font-medium text-gray-700">
-                  ₹{numberWithIndianFormat(6800000)}
+                  ₹{numberWithIndianFormat(
+                    topLiquorCommodities.reduce((sum, c) => sum + c.totalRevenue, 0)
+                  )}
                 </span>
               </div>
             </div>

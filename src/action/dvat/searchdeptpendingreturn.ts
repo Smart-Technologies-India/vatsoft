@@ -1,7 +1,7 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { dvat04 } from "@prisma/client";
+import { dvat04, SelectOffice } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import {
   createPaginationResponse,
@@ -13,6 +13,7 @@ interface DeptPendingReturnPayload {
   todate?: Date;
   arnnumber?: string;
   tradename?: string;
+  dept?: SelectOffice;
   skip: number;
   take: number;
 }
@@ -34,6 +35,7 @@ const SearchDeptPendingReturn = async (
         deletedAt: null,
         deletedBy: null,
         dvat: {
+          ...(payload.dept && { selectOffice: payload.dept }),
           ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
           ...(payload.tradename && {
             OR: [

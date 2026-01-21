@@ -206,111 +206,117 @@ const ShopView = () => {
     );
 
   return (
-    <div className="p-3 py-2">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 ">
-        <div className="bg-white rounded-sm shadow-sm pb-4">
-          <div className="flex gap-2 p-2 border-b border-gray-300">
-            <p className="text-xl  font-semibold">Dealer Details</p>
-            <div className="grow"></div>
-            {/* <Button
-              onClick={() => {
-                router.back();
-              }}
-            >
-              Back
-            </Button> */}
-          </div>
-
-          <div className="px-4 py-2 grid grid-cols-2 gap-4 mt-2">
-            <p className="text-xs leading-3">
-              TIN Number <br />
-              <span className="text-sm text-gray-500 font-medium">
-                {dvatData?.tinNumber}
-              </span>
-            </p>
-            <p className="text-xs leading-3">
-              Applicant Name <br />
-              <span className="text-sm text-gray-500 font-medium">
-                {user?.firstName}-{user?.lastName}
-              </span>
-            </p>
-          </div>
-          <div className="px-4 py-2 grid grid-cols-2 gap-4">
-            <p className="text-xs leading-3">
-              Trade Name
-              <br />
-              <span className="text-sm text-gray-500 font-medium">
-                {dvatData?.tradename}
-              </span>
-            </p>
-            <p className="text-xs leading-3">
-              Constitution of Business
-              <br />
-              <span className="text-sm text-gray-500 font-medium">
-                {capitalcase(dvatData?.constitutionOfBusiness!)}
-              </span>
-            </p>
-            <p className="text-xs leading-3">
-              Liquor/Fuel
-              <br />
-              <span className="text-sm text-gray-500 font-medium">Liquor</span>
-            </p>
-          </div>
-        </div>
-        <div className="bg-white rounded-sm shadow-sm pb-4">
-          <div className="border-b border-gray-300 flex items-center pr-2 gap-2">
-            <p className="text-xl p-2  font-semibold">Return Details</p>
-            <div className="grow"></div>
-          </div>
-          <div className="px-4 py-2 grid grid-cols-2 gap-4 mt-2">
-            <p className="text-xs leading-3">
-              VAT Liable Date <br />
-              <span className="text-sm text-gray-500 font-medium">
-                {formateDate(dvatData?.vatLiableDate!)}
-              </span>
-            </p>
-            <p className="text-xs leading-3">
-              Composition/Regular <br />
-              <span className="text-sm text-gray-500 font-medium">
-                {dvatData?.compositionScheme ? "COMP" : "REG"}
-              </span>
-            </p>
-            <p className="text-xs leading-3">
-              Last Filed Return Period <br />
-              <span className="text-sm text-gray-500 font-medium">
-                {pendingreturn?.lastfiling}
-              </span>
-            </p>
-            <p className="text-xs leading-3">
-              Pending Returns <br />
-              <span className="text-sm text-gray-500 font-medium">
-                {pendingreturn?.pending}
-              </span>
-            </p>
-            <p className="text-xs leading-3">
-              Demand Pending <br />
-              <span className="text-sm text-gray-500 font-medium">
-                {pendingchallan.count}
-              </span>
-            </p>
-            <p className="text-xs leading-3">
-              Demand Amount Pending <br />
-              <span className="text-sm text-gray-500 font-medium">
-                {pendingchallan.pending}
-              </span>
-            </p>
+    <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+      {/* Header Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+        <div className="bg-linear-to-r from-blue-500 to-indigo-600 px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-8 bg-white rounded-full"></div>
+            <h1 className="text-2xl font-bold text-white">Pending Returns Overview</h1>
           </div>
         </div>
       </div>
 
-      {returndetails.map((item, index) => (
-        <div key={index} className="w-full bg-white rounded-sm shadow-sm mt-4">
-          <div className="bg-white rounded-sm shadow-sm">
-            <p className="text-xl p-2  font-semibold border-b border-gray-300">
-              Return History - {item.displayyear}
-            </p>
+      {/* Details Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">Dealer Details</h2>
+          </div>
 
-            <div className="grow grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 md:grid-cols-4 gap-2 flex-wrap justify-center items-center p-2">
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">TIN Number</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {dvatData?.tinNumber}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Applicant Name</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {user?.firstName}-{user?.lastName}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Trade Name</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {dvatData?.tradename}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Constitution of Business</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {capitalcase(dvatData?.constitutionOfBusiness!)}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Liquor/Fuel</p>
+                <p className="text-sm font-semibold text-gray-900">Liquor</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">Return Details</h2>
+          </div>
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">VAT Liable Date</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {formateDate(dvatData?.vatLiableDate!)}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Composition/Regular</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {dvatData?.compositionScheme ? "COMP" : "REG"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Last Filed Return Period</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {pendingreturn?.lastfiling}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Pending Returns</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {pendingreturn?.pending}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Demand Pending</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {pendingchallan.count}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Demand Amount Pending</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {pendingchallan.pending}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Return History Section */}
+      {returndetails.map((item, index) => (
+        <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+          <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Return History - {item.displayyear}
+            </h2>
+          </div>
+
+          <div className="p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 md:grid-cols-4 gap-3">
               {item.rentdetails.map((item, index: number) => (
                 <PropertiesDeatils
                   key={index}
@@ -394,7 +400,7 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
 
   return (
     <div
-      className={`p-1 flex items-center justify-start min-w-28 bg-[#F5F5F5] rounded-md gap-2`}
+      className={`p-3 flex items-center justify-start min-w-28 bg-linear-to-br from-gray-50 to-gray-100 rounded-lg gap-2 border border-gray-200 hover:shadow-md transition-shadow`}
     >
       <Component />
       <div>

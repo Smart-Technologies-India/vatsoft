@@ -34,7 +34,6 @@ const GetNewDealers = async (
     currentDate.getDate()
   );
 
-  console.log(currentDate, sixMonthsAgo);
   try {
     const dvat04response = await prisma.return_filing.findMany({
       where: {

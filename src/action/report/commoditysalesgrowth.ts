@@ -25,7 +25,7 @@ interface CommodityGrowthData {
 }
 
 const CommoditySalesGrowth = async (
-  payload: CommoditySalesGrowthPayload
+  payload: CommoditySalesGrowthPayload,
 ): Promise<{
   status: boolean;
   data?: CommodityGrowthData[];
@@ -46,7 +46,8 @@ const CommoditySalesGrowth = async (
       const currentMonthStr = String(currentMonth + 1).padStart(2, "0");
       const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
       const previousMonthStr = String(previousMonth + 1).padStart(2, "0");
-      const previousMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+      const previousMonthYear =
+        currentMonth === 0 ? currentYear - 1 : currentYear;
 
       currentPeriodLabel = `${currentYear}-${currentMonthStr}`;
       previousPeriodLabel = `${previousMonthYear}-${previousMonthStr}`;
@@ -96,6 +97,7 @@ const CommoditySalesGrowth = async (
       }
     }
 
+
     // Fetch current period data
     const currentPeriodData = await prisma.returns_entry.findMany({
       where: {
@@ -122,6 +124,7 @@ const CommoditySalesGrowth = async (
         },
       },
     });
+
 
     // Fetch previous period data
     const previousPeriodData = await prisma.returns_entry.findMany({

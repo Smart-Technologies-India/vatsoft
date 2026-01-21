@@ -9,41 +9,42 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
-import { Radio, Button, Input, Pagination, Spin, Select } from "antd";
+import { Radio, Button, Input, Pagination, Spin } from "antd";
 import { useEffect, useRef, useState } from "react";
 import type { Dayjs } from "dayjs";
-import { dvat04, user } from "@prisma/client";
+import { dvat04, user, SelectOffice } from "@prisma/client";
 import { capitalcase, encryptURLData } from "@/utils/methods";
 import numberWithIndianFormat from "@/utils/methods";
 import { useRouter } from "next/navigation";
-import { SelectOffice } from "@prisma/client";
 import { toast } from "react-toastify";
 import GetUser from "@/action/user/getuser";
-import GetInactiveDealers from "@/action/report/inactivedealers";
+import OutstandingDealers from "@/action/report/outstanding";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import { Bar, Doughnut, Pie } from "react-chartjs-2";
+import { Bar, Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, registerables } from "chart.js";
 import * as XLSX from "xlsx";
 import {
+  RiMoneyRupeeCircleLine,
   MaterialSymbolsPersonRounded,
   IcOutlineReceiptLong,
-  Fa6RegularBuilding,
 } from "@/components/icons";
 
 ChartJS.register(...registerables);
 
 interface ResponseType {
   dvat04: dvat04;
-  lastfiling: string;
-  pending: number;
+  penalty: number;
+  penalty_count: number;
+  interest: number;
+  interest_count: number;
 }
 
-const InactiveDealers = () => {
+const AfterDeathLinePage = () => {
   const [userid, setUserid] = useState<number>(0);
-
   const router = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
+  const [selectedOffice, setSelectedOffice] = useState<SelectOffice | undefined>(undefined);
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -61,7 +62,7 @@ const InactiveDealers = () => {
   }
 
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.TIN
+    SearchOption.TIN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -78,37 +79,40 @@ const InactiveDealers = () => {
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
 
   const [user, setUpser] = useState<user | null>(null);
-  const [selectedOffice, setSelectedOffice] = useState<SelectOffice | "ALL">("ALL");
 
   // Calculate statistics
-  const totalInactiveDealers = pagination.total;
-  const totalPendingReturns = dvatData.reduce(
-    (sum, item) => sum + item.pending,
-    0
+  const totalInterest = dvatData.reduce((sum, item) => sum + item.interest, 0);
+  const totalPenalty = dvatData.reduce((sum, item) => sum + item.penalty, 0);
+  const totalInterestCount = dvatData.reduce(
+    (sum, item) => sum + item.interest_count,
+    0,
   );
-  const averagePending =
-    dvatData.length > 0 ? totalPendingReturns / dvatData.length : 0;
+  const totalPenaltyCount = dvatData.reduce(
+    (sum, item) => sum + item.penalty_count,
+    0,
+  );
+  const totalDealers = dvatData.length;
   const compositionDealers = dvatData.filter(
-    (item) => item.dvat04.compositionScheme
+    (item) => item.dvat04.compositionScheme,
   ).length;
-  const regularDealers = dvatData.length - compositionDealers;
-  const maxPending = dvatData.length > 0 ? Math.max(...dvatData.map((d) => d.pending)) : 0;
-  const minPending = dvatData.length > 0 ? Math.min(...dvatData.map((d) => d.pending)) : 0;
+  const regularDealers = totalDealers - compositionDealers;
 
   const init = async () => {
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
-      const payment_data = await GetInactiveDealers({
-        dept: selectedOffice === "ALL" ? undefined : selectedOffice,
+      const payment_data = await OutstandingDealers({
+        dept: selectedOffice,
         take: 10,
         skip: 0,
       });
 
       if (payment_data.status && payment_data.data.result) {
-        const sortedData = payment_data.data.result.sort(
-          (a: ResponseType, b: ResponseType) => b.pending - a.pending
-        );
+        const sortedData = payment_data.data.result.sort((a, b) => {
+          const totalA = a.interest + a.penalty;
+          const totalB = b.interest + b.penalty;
+          return totalB - totalA;
+        });
         setPaginatin({
           skip: payment_data.data.skip,
           take: payment_data.data.take,
@@ -130,21 +134,21 @@ const InactiveDealers = () => {
         return router.push("/");
       }
       setUserid(authResponse.data);
-
-      const userrespone = await GetUser({ id: authResponse.data });
+      const userrespone = await GetUser({ id: userid });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
-        setSelectedOffice(userrespone.data.selectOffice!);
-        const payment_data = await GetInactiveDealers({
-          dept: userrespone.data.selectOffice!,
+        const payment_data = await OutstandingDealers({
+          dept: selectedOffice,
           take: 10,
           skip: 0,
         });
 
         if (payment_data.status && payment_data.data.result) {
-          const sortedData = payment_data.data.result.sort(
-            (a: ResponseType, b: ResponseType) => b.pending - a.pending
-          );
+          const sortedData = payment_data.data.result.sort((a, b) => {
+            const totalA = a.interest + a.penalty;
+            const totalB = b.interest + b.penalty;
+            return totalB - totalA;
+          });
           setDvatData(sortedData);
           setPaginatin({
             skip: payment_data.data.skip,
@@ -156,39 +160,7 @@ const InactiveDealers = () => {
       setLoading(false);
     };
     init();
-  }, [userid]);
-
-  // Reload data when office selection changes
-  useEffect(() => {
-    const loadDataByOffice = async () => {
-      if (!user || !selectedOffice) return;
-      
-      setLoading(true);
-      const payment_data = await GetInactiveDealers({
-        dept: selectedOffice === "ALL" ? undefined : selectedOffice,
-        take: 10,
-        skip: 0,
-      });
-
-      if (payment_data.status && payment_data.data.result) {
-        const sortedData = payment_data.data.result.sort(
-          (a: ResponseType, b: ResponseType) => b.pending - a.pending
-        );
-        setDvatData(sortedData);
-        setPaginatin({
-          skip: payment_data.data.skip,
-          take: payment_data.data.take,
-          total: payment_data.data.total,
-        });
-      }
-      setLoading(false);
-    };
-
-    if (user && selectedOffice && !isSearch) {
-      loadDataByOffice();
-    }
-  }, [selectedOffice]);
-
+  }, [userid, selectedOffice]);
   const get_years = (month: string, year: string): string => {
     const monthNames = [
       "January",
@@ -244,14 +216,24 @@ const InactiveDealers = () => {
     ) {
       return toast.error("Enter arn number");
     }
-    const search_response = await GetInactiveDealers({
+    const search_response = await OutstandingDealers({
+      dept: selectedOffice,
       arnnumber: arnRef.current?.input?.value,
-      dept: selectedOffice === "ALL" ? undefined : selectedOffice,
       take: 10,
       skip: 0,
     });
     if (search_response.status && search_response.data.result) {
-      setDvatData(search_response.data.result);
+      const sortedData = search_response.data.result.sort((a, b) => {
+        const totalA = a.interest + a.penalty;
+        const totalB = b.interest + b.penalty;
+        return totalB - totalA;
+      });
+      setDvatData(sortedData);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -281,14 +263,24 @@ const InactiveDealers = () => {
     ) {
       return toast.error("Enter TIN Number");
     }
-    const search_response = await GetInactiveDealers({
+    const search_response = await OutstandingDealers({
+      dept: selectedOffice,
       tradename: nameRef.current?.input?.value,
-      dept: selectedOffice === "ALL" ? undefined : selectedOffice,
       take: 10,
       skip: 0,
     });
     if (search_response.status && search_response.data.result) {
-      setDvatData(search_response.data.result);
+      const sortedData = search_response.data.result.sort((a, b) => {
+        const totalA = a.interest + a.penalty;
+        const totalB = b.interest + b.penalty;
+        return totalB - totalA;
+      });
+      setDvatData(sortedData);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
       setSearch(true);
     }
   };
@@ -302,15 +294,20 @@ const InactiveDealers = () => {
         ) {
           return toast.error("Enter arn number");
         }
-        const search_response = await GetInactiveDealers({
+        const search_response = await OutstandingDealers({
+          dept: selectedOffice,
           arnnumber: arnRef.current?.input?.value,
-          dept: selectedOffice === "ALL" ? undefined : selectedOffice,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
 
         if (search_response.status && search_response.data.result) {
-          setDvatData(search_response.data.result);
+          const sortedData = search_response.data.result.sort((a, b) => {
+            const totalA = a.interest + a.penalty;
+            const totalB = b.interest + b.penalty;
+            return totalB - totalA;
+          });
+          setDvatData(sortedData);
           setPaginatin({
             skip: search_response.data.skip,
             take: search_response.data.take,
@@ -326,15 +323,20 @@ const InactiveDealers = () => {
         ) {
           return toast.error("Enter TIN Number");
         }
-        const search_response = await GetInactiveDealers({
+        const search_response = await OutstandingDealers({
+          dept: selectedOffice,
           tradename: nameRef.current?.input?.value,
-          dept: selectedOffice === "ALL" ? undefined : selectedOffice,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
 
         if (search_response.status && search_response.data.result) {
-          setDvatData(search_response.data.result);
+          const sortedData = search_response.data.result.sort((a, b) => {
+            const totalA = a.interest + a.penalty;
+            const totalB = b.interest + b.penalty;
+            return totalB - totalA;
+          });
+          setDvatData(sortedData);
           setPaginatin({
             skip: search_response.data.skip,
             take: search_response.data.take,
@@ -344,13 +346,18 @@ const InactiveDealers = () => {
         }
       }
     } else {
-      const payment_data = await GetInactiveDealers({
-        dept: selectedOffice === "ALL" ? undefined : selectedOffice,
+      const payment_data = await OutstandingDealers({
+        dept: selectedOffice,
         take: pagesize,
         skip: pagesize * (page - 1),
       });
       if (payment_data.status && payment_data.data.result) {
-        setDvatData(payment_data.data.result);
+        const sortedData = payment_data.data.result.sort((a, b) => {
+          const totalA = a.interest + a.penalty;
+          const totalB = b.interest + b.penalty;
+          return totalB - totalA;
+        });
+        setDvatData(sortedData);
         setPaginatin({
           skip: payment_data.data.skip,
           take: payment_data.data.take,
@@ -364,14 +371,17 @@ const InactiveDealers = () => {
     if (dvatData.length === 0) return;
 
     const worksheetData = [
-      ["Inactive Dealers Report"],
+      ["Interest & Penalty Collected Report"],
       [""],
       [
         "TIN Number",
         "Trade Name",
         "Type",
-        "Last Filing Period",
-        "Pending Returns",
+        "Interest Amount",
+        "Interest Count",
+        "Penalty Amount",
+        "Penalty Count",
+        "Total Collected",
       ],
     ];
 
@@ -380,40 +390,32 @@ const InactiveDealers = () => {
         item.dvat04.tinNumber || "",
         item.dvat04.tradename || "",
         item.dvat04.compositionScheme ? "COMP" : "REG",
-        item.lastfiling || "",
-        item.pending.toString(),
+        item.interest.toString(),
+        item.interest_count.toString(),
+        item.penalty.toString(),
+        item.penalty_count.toString(),
+        (item.interest + item.penalty).toString(),
       ]);
     });
 
     worksheetData.push([""]);
     worksheetData.push([
-      "Summary",
+      "Total",
       "",
       "",
-      "Total Dealers:",
-      totalInactiveDealers.toString(),
-    ]);
-    worksheetData.push([
-      "",
-      "",
-      "",
-      "Total Pending:",
-      totalPendingReturns.toString(),
-    ]);
-    worksheetData.push([
-      "",
-      "",
-      "",
-      "Average Pending:",
-      averagePending.toFixed(2),
+      totalInterest.toString(),
+      totalInterestCount.toString(),
+      totalPenalty.toString(),
+      totalPenaltyCount.toString(),
+      (totalInterest + totalPenalty).toString(),
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet(worksheetData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Inactive Dealers");
+    XLSX.utils.book_append_sheet(wb, ws, "Penalty Collected Report");
     XLSX.writeFile(
       wb,
-      `Inactive_Dealers_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+      `Interest_Penalty_Collected_Report_${new Date().toISOString().split("T")[0]}.xlsx`,
     );
     toast.success("Report exported successfully!");
   };
@@ -422,8 +424,14 @@ const InactiveDealers = () => {
     labels: dvatData.slice(0, 10).map((item) => item.dvat04.tinNumber || ""),
     datasets: [
       {
-        label: "Pending Returns",
-        data: dvatData.slice(0, 10).map((item) => item.pending),
+        label: "Interest Collected (₹)",
+        data: dvatData.slice(0, 10).map((item) => item.interest),
+        backgroundColor: "#3b82f6",
+        borderWidth: 0,
+      },
+      {
+        label: "Penalty Collected (₹)",
+        data: dvatData.slice(0, 10).map((item) => item.penalty),
         backgroundColor: "#ef4444",
         borderWidth: 0,
       },
@@ -439,32 +447,6 @@ const InactiveDealers = () => {
         backgroundColor: ["#3b82f6", "#10b981"],
         borderWidth: 2,
         borderColor: "#fff",
-      },
-    ],
-  };
-
-  // Group by pending ranges
-  const pendingRanges = {
-    "1-5": dvatData.filter((d) => d.pending >= 1 && d.pending <= 5).length,
-    "6-10": dvatData.filter((d) => d.pending >= 6 && d.pending <= 10).length,
-    "11-20": dvatData.filter((d) => d.pending >= 11 && d.pending <= 20).length,
-    "20+": dvatData.filter((d) => d.pending > 20).length,
-  };
-
-  const pieChartData: any = {
-    labels: ["1-5 Returns", "6-10 Returns", "11-20 Returns", "20+ Returns"],
-    datasets: [
-      {
-        label: "Dealers by Pending Range",
-        data: [
-          pendingRanges["1-5"],
-          pendingRanges["6-10"],
-          pendingRanges["11-20"],
-          pendingRanges["20+"],
-        ],
-        backgroundColor: ["#10b981", "#f59e0b", "#ef4444", "#7c3aed"],
-        borderColor: "#fff",
-        borderWidth: 2,
       },
     ],
   };
@@ -494,6 +476,9 @@ const InactiveDealers = () => {
           font: {
             size: 11,
           },
+          callback: function (value: any) {
+            return "₹" + numberWithIndianFormat(value);
+          },
         },
       },
     },
@@ -506,10 +491,21 @@ const InactiveDealers = () => {
         },
         position: "top",
       },
+      tooltip: {
+        callbacks: {
+          label: function (context: any) {
+            return (
+              context.dataset.label +
+              ": ₹" +
+              numberWithIndianFormat(context.parsed.y)
+            );
+          },
+        },
+      },
     },
   };
 
-  const pieOptions: any = {
+  const doughnutOptions: any = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -537,9 +533,11 @@ const InactiveDealers = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row gap-2 mb-4">
           <div className="grow">
-            <h1 className="text-2xl font-semibold">Inactive Dealers Report</h1>
+            <h1 className="text-2xl font-semibold">
+              Interest / Late Penalty Collected Report
+            </h1>
             <p className="text-sm text-gray-600">
-              Dealers with pending returns and no recent filing activity
+              Track interest and late penalty collected from dealers
             </p>
           </div>
           <div className="shrink-0">
@@ -554,72 +552,73 @@ const InactiveDealers = () => {
         </div>
 
         {/* Office Filter */}
-        <div className="bg-white p-4 shadow rounded-lg mb-6">
-          <div className="flex items-center gap-4">
-            <label className="font-semibold text-gray-700">Filter by Office:</label>
-            <Select
-              value={selectedOffice}
-              onChange={(value) => {
-                setSelectedOffice(value);
-                setSearch(false);
-                // Reset pagination when office changes
-                setPaginatin({
-                  take: 10,
-                  skip: 0,
-                  total: 0,
-                });
-              }}
-              style={{ width: 250 }}
-              disabled={isSearch}
-            >
-              <Select.Option value="ALL">All Offices</Select.Option>
-              <Select.Option value={SelectOffice.DAMAN}>DAMAN</Select.Option>
-              <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
-              <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>DNH (Dadra & Nagar Haveli)</Select.Option>
-            </Select>
-            {selectedOffice !== "ALL" && (
-              <span className="text-sm text-gray-600">
-                Showing data for: <span className="font-semibold">{selectedOffice === SelectOffice.Dadra_Nagar_Haveli ? "DNH" : selectedOffice}</span>
-              </span>
-            )}
+        <div className="bg-white rounded-lg shadow-sm mb-4 p-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">District/Office</label>
+              <Radio.Group
+                options={[
+                  { label: "All", value: undefined },
+                  { label: "DNH", value: "Dadra_Nagar_Haveli" as SelectOffice },
+                  { label: "DD", value: "DAMAN" as SelectOffice },
+                  { label: "DIU", value: "DIU" as SelectOffice },
+                ]}
+                onChange={(e: RadioChangeEvent) => setSelectedOffice(e.target.value)}
+                value={selectedOffice}
+                optionType="button"
+                buttonStyle="solid"
+              />
+            </div>
           </div>
         </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-md p-6 text-white">
-            <Fa6RegularBuilding className="w-8 h-8 opacity-70 mb-2" />
-            <p className="text-2xl font-bold">{totalInactiveDealers}</p>
-            <p className="text-xs opacity-90">Inactive Dealers</p>
-            <p className="text-xs opacity-75 mt-1">Total Count</p>
+          <div className="bg-linear-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
+            <RiMoneyRupeeCircleLine className="w-8 h-8 opacity-70 mb-2" />
+            <p className="text-2xl font-bold">
+              ₹{numberWithIndianFormat(totalInterest)}
+            </p>
+            <p className="text-xs opacity-90">Total Interest</p>
+            <p className="text-xs opacity-75 mt-1">
+              {totalInterestCount} instances
+            </p>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-6 text-white">
-            <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
-            <p className="text-2xl font-bold">{totalPendingReturns}</p>
-            <p className="text-xs opacity-90">Total Pending</p>
-            <p className="text-xs opacity-75 mt-1">All Returns</p>
+          <div className="bg-linear-to-br from-red-500 to-red-600 rounded-lg shadow-md p-6 text-white">
+            <RiMoneyRupeeCircleLine className="w-8 h-8 opacity-70 mb-2" />
+            <p className="text-2xl font-bold">
+              ₹{numberWithIndianFormat(totalPenalty)}
+            </p>
+            <p className="text-xs opacity-90">Total Penalty</p>
+            <p className="text-xs opacity-75 mt-1">
+              {totalPenaltyCount} instances
+            </p>
           </div>
 
-          <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg shadow-md p-6 text-white">
-            <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
-            <p className="text-2xl font-bold">{averagePending.toFixed(1)}</p>
-            <p className="text-xs opacity-90">Avg Pending</p>
-            <p className="text-xs opacity-75 mt-1">Per Dealer</p>
+          <div className="bg-linear-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
+            <RiMoneyRupeeCircleLine className="w-8 h-8 opacity-70 mb-2" />
+            <p className="text-2xl font-bold">
+              ₹{numberWithIndianFormat(totalInterest + totalPenalty)}
+            </p>
+            <p className="text-xs opacity-90">Total Collected</p>
+            <p className="text-xs opacity-75 mt-1">Interest + Penalty</p>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
+          <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-6 text-white">
             <MaterialSymbolsPersonRounded className="w-8 h-8 opacity-70 mb-2" />
-            <p className="text-2xl font-bold">{regularDealers}/{compositionDealers}</p>
+            <p className="text-2xl font-bold">{totalDealers}</p>
+            <p className="text-xs opacity-90">Total Dealers</p>
+            <p className="text-xs opacity-75 mt-1">Paid Interest/Penalty</p>
+          </div>
+
+          <div className="bg-linear-to-br from-teal-500 to-teal-600 rounded-lg shadow-md p-6 text-white">
+            <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
+            <p className="text-2xl font-bold">
+              {regularDealers}/{compositionDealers}
+            </p>
             <p className="text-xs opacity-90">REG / COMP</p>
             <p className="text-xs opacity-75 mt-1">Dealer Types</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg shadow-md p-6 text-white">
-            <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
-            <p className="text-lg font-bold">{maxPending} / {minPending}</p>
-            <p className="text-xs opacity-90">Max / Min Pending</p>
-            <p className="text-xs opacity-75 mt-1">Return Range</p>
           </div>
         </div>
 
@@ -627,7 +626,7 @@ const InactiveDealers = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow-sm p-6 lg:col-span-2">
             <h2 className="text-lg font-semibold mb-4">
-              Top 10 Inactive Dealers by Pending Returns
+              Top 10 Dealers by Collected Amount
             </h2>
             <div className="h-80">
               {dvatData.length > 0 ? (
@@ -645,18 +644,8 @@ const InactiveDealers = () => {
               Dealer Type Distribution
             </h2>
             <div className="h-80 flex items-center justify-center">
-              <Doughnut data={doughnutData} options={pieOptions} />
+              <Doughnut data={doughnutData} options={doughnutOptions} />
             </div>
-          </div>
-        </div>
-
-        {/* Additional Chart */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">
-            Dealers by Pending Returns Range
-          </h2>
-          <div className="h-80 flex items-center justify-center">
-            <Pie data={pieChartData} options={pieOptions} />
           </div>
         </div>
 
@@ -665,7 +654,6 @@ const InactiveDealers = () => {
           <div className="bg-blue-500 p-3 text-white rounded-t-lg -mt-4 -mx-4 mb-4">
             <p className="font-semibold">Search & Filter Dealers</p>
           </div>
-          
           <div className="flex flex-col md:flex-row lg:gap-4 lg:items-center">
             <Radio.Group
               onChange={onChange}
@@ -732,7 +720,7 @@ const InactiveDealers = () => {
         {/* Data Table */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="p-4 border-b bg-gray-50">
-            <h2 className="text-lg font-semibold">Inactive Dealer Details</h2>
+            <h2 className="text-lg font-semibold">Dealer Details</h2>
           </div>
           <div className="overflow-x-auto">
             <Table className="border">
@@ -751,10 +739,13 @@ const InactiveDealers = () => {
                     Type
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
-                    Last Filing Period
+                    Interest
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
-                    Pending Returns
+                    Penalty
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
+                    Total Collected
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
                     Action
@@ -763,6 +754,7 @@ const InactiveDealers = () => {
               </TableHeader>
               <TableBody>
                 {dvatData.map((val: ResponseType, index: number) => {
+                  const totalCollected = val.interest + val.penalty;
                   return (
                     <TableRow key={index} className="hover:bg-gray-50">
                       <TableCell className="border text-center p-3 text-sm">
@@ -785,23 +777,20 @@ const InactiveDealers = () => {
                           {val.dvat04.compositionScheme ? "COMP" : "REG"}
                         </span>
                       </TableCell>
-                      <TableCell className="border text-center p-3 text-sm">
-                        {val.lastfiling || "N/A"}
+                      <TableCell className="border text-right p-3 text-sm">
+                        <div>₹{numberWithIndianFormat(val.interest)}</div>
+                        <div className="text-xs text-gray-500">
+                          ({val.interest_count} instances)
+                        </div>
                       </TableCell>
-                      <TableCell className="border text-center p-3 text-sm">
-                        <span
-                          className={`inline-flex px-3 py-1 rounded-full text-sm font-bold ${
-                            val.pending > 20
-                              ? "bg-red-100 text-red-800"
-                              : val.pending > 10
-                              ? "bg-orange-100 text-orange-800"
-                              : val.pending > 5
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-green-100 text-green-800"
-                          }`}
-                        >
-                          {val.pending}
-                        </span>
+                      <TableCell className="border text-right p-3 text-sm">
+                        <div>₹{numberWithIndianFormat(val.penalty)}</div>
+                        <div className="text-xs text-gray-500">
+                          ({val.penalty_count} instances)
+                        </div>
+                      </TableCell>
+                      <TableCell className="border text-right p-3 text-sm font-semibold text-green-600">
+                        ₹{numberWithIndianFormat(totalCollected)}
                       </TableCell>
                       <TableCell className="border text-center p-3">
                         <Button
@@ -810,8 +799,8 @@ const InactiveDealers = () => {
                           onClick={() => {
                             router.push(
                               `/dashboard/returns/department-pending-return/${encryptURLData(
-                                val.dvat04.id.toString()
-                              )}`
+                                val.dvat04.id.toString(),
+                              )}`,
                             );
                           }}
                         >
@@ -859,4 +848,4 @@ const InactiveDealers = () => {
   );
 };
 
-export default InactiveDealers;
+export default AfterDeathLinePage;
