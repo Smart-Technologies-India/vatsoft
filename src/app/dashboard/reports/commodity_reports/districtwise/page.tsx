@@ -9,13 +9,41 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
-import numberWithIndianFormat, { encryptURLData } from "@/utils/methods";
+import numberWithIndianFormat from "@/utils/methods";
 import { Alert, Radio, RadioChangeEvent } from "antd";
 import DistrictWiseCommodityReport from "@/action/report/districtwisecommodityreport";
 
 const DistrictWiseCommodityPage = () => {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [total, setTotal] = useState<number>(0);
+
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    currentDate.getMonth() + 1,
+  );
+  const [selectedYear, setSelectedYear] = useState<number>(
+    currentDate.getFullYear(),
+  );
+
+  const months = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
+  const years = Array.from(
+    { length: 10 },
+    (_, i) => currentDate.getFullYear() - i,
+  );
 
   interface DvatData {
     id: number;
@@ -29,7 +57,7 @@ const DistrictWiseCommodityPage = () => {
   const [dvatData, setDvatData] = useState<Array<DvatData>>([]);
 
   const [city, setCity] = useState<"Dadra_Nagar_Haveli" | "DAMAN" | "DIU">(
-    "Dadra_Nagar_Haveli"
+    "Dadra_Nagar_Haveli",
   );
   const citys = [
     { label: "DNH", value: "Dadra_Nagar_Haveli" },
@@ -41,6 +69,8 @@ const DistrictWiseCommodityPage = () => {
     setLoading(true);
     const response = await DistrictWiseCommodityReport({
       office: e.target.value,
+      month: selectedMonth,
+      year: selectedYear,
     });
     if (response.status == true && response.data) {
       setDvatData(response.data);
@@ -54,17 +84,19 @@ const DistrictWiseCommodityPage = () => {
       setLoading(true);
       const response = await DistrictWiseCommodityReport({
         office: city,
+        month: selectedMonth,
+        year: selectedYear,
       });
       if (response.status == true && response.data) {
         setDvatData(response.data);
         setTotal(
-          response.data.reduce((acc, item) => acc + item.total_amount, 0)
+          response.data.reduce((acc, item) => acc + item.total_amount, 0),
         );
       }
       setLoading(false);
     };
     init();
-  }, [city]);
+  }, [city, selectedMonth, selectedYear]);
 
   if (isLoading)
     return (
@@ -77,17 +109,49 @@ const DistrictWiseCommodityPage = () => {
     <>
       <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
-          <div className=" p-2 text-black flex">
-            <p>Top Selling Commodities</p>
+          <div className="bg-blue-500 p-2 text-white">
+            <p className="text-lg font-semibold">Top Selling Commodities</p>
+          </div>
+          <div className="flex items-center gap-4 p-3 bg-gray-50 border-b">
+            <label className="text-sm font-medium text-gray-700">
+              Filter by:
+            </label>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Month:</label>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {months.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Year:</label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="grow"></div>
-            <div className="w-96">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">District:</label>
               <Radio.Group
-                block
                 options={citys}
                 size="small"
                 value={city}
                 onChange={onCityChange}
-                defaultValue="DNH"
                 optionType="button"
                 buttonStyle="solid"
               />

@@ -71,7 +71,7 @@ const onlyNumbersRegex = /^[0-9]*$/;
  * @returns None
  */
 const handleNumberChange = (
-  event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
 ) => {
   const { value } = event.target;
   if (!onlyNumbersRegex.test(value)) {
@@ -89,7 +89,7 @@ const onlyDecimalRegex = /^[0-9.]*$/;
  * @returns None
  */
 const handleDecimalChange = (
-  event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
 ) => {
   const { value } = event.target;
   if (!onlyDecimalRegex.test(value)) {
@@ -181,7 +181,7 @@ const numberWithIndianFormat = (x: number) => {
 export default numberWithIndianFormat;
 
 const getEnumData = <T extends object>(
-  enumObject: T
+  enumObject: T,
 ): { value: T[keyof T]; label: string }[] => {
   return Object.keys(enumObject).map((key) => ({
     value: enumObject[key as keyof T],
@@ -271,7 +271,7 @@ const onFormError = <T extends FieldValues>(error: FieldErrors<T>) => {
   setTimeout(() => {
     if (firstErrorMessage) {
       const errorElement = Array.from(document.querySelectorAll("p")).find(
-        (el) => el.textContent == firstErrorMessage
+        (el) => el.textContent == firstErrorMessage,
       );
       if (errorElement) {
         // Scroll to the error message element
@@ -335,33 +335,48 @@ const getDateFromMonth = (args: {
 
 export { getPreviousMonth, getMonthDifference, getDateFromMonth };
 
-const generatePDF = async (path: string) => {
+const generatePDF = async (path: string, filename: string = "output.pdf") => {
   try {
-    // Fetch the PDF from the server
-
-    const response = await fetch("/api/getpdf", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ url: path }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to generate PDF");
+    console.log("Starting PDF generation for:", path);
+    
+    // Open the page with print parameter to trigger browser's print-to-PDF
+    const fullPath = `${window.location.origin}/${path}`;
+    const printWindow = window.open(fullPath, '_blank');
+    
+    if (!printWindow) {
+      throw new Error("Popup blocked. Please allow popups for PDF download.");
     }
-
-    const blob = await response.blob();
-
-    // Create a link element for the download
-    const link = document.createElement("a");
-    link.href = window.URL.createObjectURL(blob);
-    link.download = "output.pdf";
-
-    // Programmatically click the link to trigger the download
-    link.click();
-  } catch (error) {
-    toast.error("Unable to download pdf try again.");
+    
+    // Wait for the page to load and inject print styles
+    printWindow.addEventListener('load', () => {
+      // Add CSS to remove headers and footers
+      const style = printWindow.document.createElement('style');
+      style.textContent = `
+        @page {
+          margin: 20mm 15mm 20mm 15mm;
+          size: A4;
+        }
+        @media print {
+          body {
+            margin: 0;
+          }
+          /* Hide browser default headers and footers */
+          header, footer, nav, .no-print {
+            display: none !important;
+          }
+        }
+      `;
+      printWindow.document.head.appendChild(style);
+      
+      setTimeout(() => {
+        printWindow.print();
+      }, 2000);
+    });
+    
+    toast.success("Opening print dialog. Use 'Save as PDF' and disable 'Headers and footers' in print settings.");
+  } catch (error: any) {
+    console.error("Error generating PDF:", error);
+    toast.error("Unable to download pdf. Please try again.");
   }
 };
 
@@ -383,7 +398,7 @@ export const encryptURLData = (data: string): string => {
 
 export const decryptURLData = (
   cipherText: string,
-  router: AppRouterInstance
+  router: AppRouterInstance,
 ): string => {
   try {
     const decodedCipherText = fromBase64Url(cipherText); // Convert back from URL-safe Base64
@@ -400,5 +415,3 @@ const isNegative = (value: number): boolean => {
 };
 
 export { isNegative };
-
-

@@ -1,4 +1,5 @@
 "use server";
+
 interface CreateDailySalePayload {
   dvatid: number;
   commodityid: number;
@@ -163,6 +164,7 @@ const CreateDailySale = async (
           if (!saller_response) {
             throw new Error("Seller TIN number not found.");
           }
+
           const create_response = await prisma.daily_purchase.create({
             data: {
               dvat04Id: userstock.id,

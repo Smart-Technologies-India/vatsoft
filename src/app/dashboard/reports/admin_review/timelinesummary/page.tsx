@@ -1,16 +1,8 @@
 "use client";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
 import { Radio, Button, Input, Pagination } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { dvat04, user } from "@prisma/client";
 import { encryptURLData } from "@/utils/methods";
 import { useRouter } from "next/navigation";
@@ -18,6 +10,12 @@ import { toast } from "react-toastify";
 import GetUser from "@/action/user/getuser";
 import TimeLineSummary from "@/action/report/timeline_summary";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  ColumnDef,
+} from "@tanstack/react-table";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -32,6 +30,16 @@ const AfterDeathLinePage = () => {
   const router = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
+
+  const currentDate = new Date();
+  const [selectedYear, setSelectedYear] = useState<number>(
+    currentDate.getFullYear(),
+  );
+
+  const years = Array.from(
+    { length: 10 },
+    (_, i) => currentDate.getFullYear() - i,
+  );
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -63,6 +71,109 @@ const AfterDeathLinePage = () => {
 
   const [user, setUpser] = useState<user | null>(null);
 
+  const [sortField, setSortField] = useState<"filed" | "late" | "pending" | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (field: "filed" | "late" | "pending") => {
+    if (sortField === field) {
+      // Toggle order or clear
+      if (sortOrder === "asc") {
+        setSortOrder("desc");
+      } else {
+        setSortField(null);
+        setSortOrder("desc");
+      }
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
+  // Define columns for TanStack Table
+  const columns = useMemo<ColumnDef<ResponseType>[]>(
+    () => [
+      {
+        accessorKey: "dvat04.tinNumber",
+        header: "TIN Number",
+        cell: (info) => info.row.original.dvat04.tinNumber,
+      },
+      {
+        accessorKey: "dvat04.tradename",
+        header: "Trade Name",
+        cell: (info) => info.row.original.dvat04.tradename,
+      },
+      {
+        accessorKey: "filed",
+        header: () => (
+          <div
+            className="cursor-pointer select-none flex items-center justify-center gap-1"
+            onClick={() => handleSort("filed")}
+          >
+            Timely Filed
+            {sortField === "filed" && sortOrder === "asc" ? " ↑" : sortField === "filed" && sortOrder === "desc" ? " ↓" : " ↕"}
+          </div>
+        ),
+        cell: (info) => info.getValue(),
+      },
+      {
+        accessorKey: "late",
+        header: () => (
+          <div
+            className="cursor-pointer select-none flex items-center justify-center gap-1"
+            onClick={() => handleSort("late")}
+          >
+            Late Filing
+            {sortField === "late" && sortOrder === "asc" ? " ↑" : sortField === "late" && sortOrder === "desc" ? " ↓" : " ↕"}
+          </div>
+        ),
+        cell: (info) => info.getValue(),
+      },
+      {
+        accessorKey: "pending",
+        header: () => (
+          <div
+            className="cursor-pointer select-none flex items-center justify-center gap-1"
+            onClick={() => handleSort("pending")}
+          >
+            Pending Filing
+            {sortField === "pending" && sortOrder === "asc" ? " ↑" : sortField === "pending" && sortOrder === "desc" ? " ↓" : " ↕"}
+          </div>
+        ),
+        cell: (info) => info.getValue(),
+      },
+      {
+        accessorKey: "due",
+        header: "Due",
+        cell: (info) => info.getValue(),
+      },
+      {
+        id: "actions",
+        header: "View",
+        cell: (info) => (
+          <Button
+            type="primary"
+            onClick={() => {
+              router.push(
+                `/dashboard/returns/department-pending-return/${encryptURLData(
+                  info.row.original.dvat04.id.toString()
+                )}`
+              );
+            }}
+          >
+            View
+          </Button>
+        ),
+      },
+    ],
+    [router, sortField, sortOrder]
+  );
+
+  const table = useReactTable({
+    data: dvatData,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
   const init = async () => {
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
@@ -71,18 +182,18 @@ const AfterDeathLinePage = () => {
         dept: userrespone.data.selectOffice!,
         take: 10,
         skip: 0,
+        year: selectedYear,
+        sortField: sortField || undefined,
+        sortOrder: sortField ? sortOrder : undefined,
       });
 
       if (payment_data.status && payment_data.data.result) {
-        const sortedData = payment_data.data.result.sort(
-          (a: ResponseType, b: ResponseType) => b.pending - a.pending
-        );
         setPaginatin({
           skip: payment_data.data.skip,
           take: payment_data.data.take,
           total: payment_data.data.total,
         });
-        setDvatData(sortedData);
+        setDvatData(payment_data.data.result);
       }
     }
 
@@ -106,13 +217,13 @@ const AfterDeathLinePage = () => {
           dept: userrespone.data.selectOffice!,
           take: 10,
           skip: 0,
+          year: selectedYear,
+          sortField: sortField || undefined,
+          sortOrder: sortField ? sortOrder : undefined,
         });
 
         if (payment_data.status && payment_data.data.result) {
-          const sortedData = payment_data.data.result.sort(
-            (a: ResponseType, b: ResponseType) => b.pending - a.pending
-          );
-          setDvatData(sortedData);
+          setDvatData(payment_data.data.result);
           setPaginatin({
             skip: payment_data.data.skip,
             take: payment_data.data.take,
@@ -123,7 +234,7 @@ const AfterDeathLinePage = () => {
       setLoading(false);
     };
     init();
-  }, [userid]);
+  }, [userid, selectedYear, sortField, sortOrder]);
 
   const arnsearch = async () => {
     if (
@@ -138,6 +249,9 @@ const AfterDeathLinePage = () => {
       arnnumber: arnRef.current?.input?.value,
       take: 10,
       skip: 0,
+      year: selectedYear,
+      sortField: sortField || undefined,
+      sortOrder: sortField ? sortOrder : undefined,
     });
     if (search_response.status && search_response.data.result) {
       setDvatData(search_response.data.result);
@@ -163,6 +277,9 @@ const AfterDeathLinePage = () => {
       tradename: nameRef.current?.input?.value,
       take: 10,
       skip: 0,
+      year: selectedYear,
+      sortField: sortField || undefined,
+      sortOrder: sortField ? sortOrder : undefined,
     });
     if (search_response.status && search_response.data.result) {
       setDvatData(search_response.data.result);
@@ -189,6 +306,9 @@ const AfterDeathLinePage = () => {
           arnnumber: arnRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
+          year: selectedYear,
+          sortField: sortField || undefined,
+          sortOrder: sortField ? sortOrder : undefined,
         });
 
         if (search_response.status && search_response.data.result) {
@@ -213,6 +333,9 @@ const AfterDeathLinePage = () => {
           tradename: nameRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
+          year: selectedYear,
+          sortField: sortField || undefined,
+          sortOrder: sortField ? sortOrder : undefined,
         });
 
         if (search_response.status && search_response.data.result) {
@@ -230,6 +353,9 @@ const AfterDeathLinePage = () => {
         dept: user!.selectOffice!,
         take: pagesize,
         skip: pagesize * (page - 1),
+        year: selectedYear,
+        sortField: sortField || undefined,
+        sortOrder: sortField ? sortOrder : undefined,
       });
       if (payment_data.status && payment_data.data.result) {
         setDvatData(payment_data.data.result);
@@ -251,25 +377,38 @@ const AfterDeathLinePage = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
-        {/* Header Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <div className="w-1.5 h-8 bg-linear-to-b from-blue-500 to-indigo-600 rounded-full"></div>
-                Return Filing Timeline Summary
-              </h1>
-              <p className="text-sm text-gray-500 mt-2 ml-4">
-                Filed ON Time vs Late - Track dealer return filing performance
-              </p>
-            </div>
+      <div className="p-3 py-2">
+        {/* Header */}
+        <div className="bg-white p-2 shadow mt-4">
+          <div className="bg-blue-500 p-2 text-white">
+            <p className="text-lg font-semibold">
+              Return Filing Timeline Summary Report
+            </p>
           </div>
-        </div>
+          
+          {/* Filters Section - All in One Line */}
+          <div className="flex flex-wrap items-center gap-4 p-3 bg-gray-50 border-b">
+            <label className="text-sm font-medium text-gray-700">
+              Filter by:
+            </label>
+            
+            {/* Year Filter */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Year:</label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {/* Search Section Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
-          <div className="flex flex-col md:flex-row gap-4 md:items-center">
+            {/* Search Type */}
             <Radio.Group
               onChange={onChange}
               value={searchOption}
@@ -278,7 +417,8 @@ const AfterDeathLinePage = () => {
               <Radio value={SearchOption.TIN}>TIN</Radio>
               <Radio value={SearchOption.NAME}>Trade Name</Radio>
             </Radio.Group>
-            <div className="h-2"></div>
+
+            {/* Search Input */}
             {(() => {
               switch (searchOption) {
                 case SearchOption.TIN:
@@ -331,73 +471,47 @@ const AfterDeathLinePage = () => {
             })()}
           </div>
 
-          <Table className="border mt-2">
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  TIN Number
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Trade Name
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Timely Filed
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Late Filing
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Pending Filing
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  Due
-                </TableHead>
-                <TableHead className="whitespace-nowrap text-center border p-2">
-                  View
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dvatData.map((val: ResponseType, index: number) => {
-                return (
-                  <TableRow key={index}>
-                    <TableCell className="border text-center p-2">
-                      {val.dvat04.tinNumber}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.dvat04.tradename}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.filed}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.late}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.pending}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      {val.due}
-                    </TableCell>
-                    <TableCell className="border text-center p-2">
-                      <Button
-                        type="primary"
-                        onClick={() => {
-                          router.push(
-                            `/dashboard/returns/department-pending-return/${encryptURLData(
-                              val.dvat04.id.toString()
-                            )}`
-                          );
-                        }}
+          {/* Data Table */}
+          <div className="mt-2 overflow-x-auto">
+            <table className="w-full border border-gray-200">
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id} className="bg-gray-100">
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className="whitespace-nowrap text-center border p-2 font-semibold text-gray-700"
                       >
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="hover:bg-gray-50">
+                    {row.getVisibleCells().map((cell) => (
+                      <td
+                        key={cell.id}
+                        className="border text-center p-2 text-gray-600"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <div className="mt-2"></div>
           <div className="lg:hidden">
             <Pagination

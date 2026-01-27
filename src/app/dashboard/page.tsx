@@ -175,7 +175,7 @@ const Page = () => {
                         key={index}
                         year={val.year.toString().substring(2)}
                         month={formateDate(
-                          new Date(val.date.toString())
+                          new Date(val.date.toString()),
                         ).substring(3, 5)}
                         title={
                           val.month.toString().toUpperCase() +
@@ -366,12 +366,12 @@ const Page = () => {
                                 ) {
                                   router.push(
                                     `/dashboard/new-registration/${encryptURLData(
-                                      registrationResponse.data.id.toString()
-                                    )}/dvat1`
+                                      registrationResponse.data.id.toString(),
+                                    )}/dvat1`,
                                   );
                                 } else {
                                   toast.error(
-                                    "Unable to get registration data"
+                                    "Unable to get registration data",
                                   );
                                 }
                               } else {
@@ -446,7 +446,7 @@ const RentCard = (props: RentCardProps) => {
   const getnextmonth = () => {
     const date: Date = new Date(props.date);
     const res: Date = new Date(
-      date.setMonth(date.getMonth() + 1, due_date_of_month)
+      date.setMonth(date.getMonth() + 1, due_date_of_month),
     );
     return formateDate(res);
   };
@@ -654,7 +654,7 @@ const pieOptions: any = {
           const value = context.parsed;
           const total = context.dataset.data.reduce(
             (a: number, b: number) => a + b,
-            0
+            0,
           );
           const percentage = ((value / total) * 100).toFixed(1);
           return `${label}: ₹${numberWithIndianFormat(value)} (${percentage}%)`;
@@ -671,7 +671,7 @@ const pieOptions: any = {
       formatter: function (value: number, context: any) {
         const total = context.dataset.data.reduce(
           (a: number, b: number) => a + b,
-          0
+          0,
         );
         const percentage = ((value / total) * 100).toFixed(1);
         return percentage + "%";
@@ -794,7 +794,7 @@ const OfficerDashboardPage = () => {
 
   const [last15Day, setLast15Day] = useState<Last15DayData[]>([]);
   const [city, setCity] = useState<"Dadra_Nagar_Haveli" | "DAMAN" | "DIU">(
-    "Dadra_Nagar_Haveli"
+    "Dadra_Nagar_Haveli",
   );
 
   interface TopDealerData {
@@ -802,6 +802,7 @@ const OfficerDashboardPage = () => {
     name: string;
     tinNumber: string;
     totalRevenue: number;
+    tradename: string;
   }
 
   const [topLiquorDealers, setTopLiquorDealers] = useState<TopDealerData[]>([]);
@@ -827,8 +828,10 @@ const OfficerDashboardPage = () => {
     totalRevenue: number;
   }
 
-  const [districtRevenueData, setDistrictRevenueData] = useState<DistrictWiseRevenueData | null>(null);
-  const [categoryWiseData, setCategoryWiseData] = useState<CategoryWiseData | null>(null);
+  const [districtRevenueData, setDistrictRevenueData] =
+    useState<DistrictWiseRevenueData | null>(null);
+  const [categoryWiseData, setCategoryWiseData] =
+    useState<CategoryWiseData | null>(null);
 
   interface TopCommodityData {
     commodityName: string;
@@ -836,8 +839,12 @@ const OfficerDashboardPage = () => {
     returnCount: number;
   }
 
-  const [topFuelCommodities, setTopFuelCommodities] = useState<TopCommodityData[]>([]);
-  const [topLiquorCommodities, setTopLiquorCommodities] = useState<TopCommodityData[]>([]);
+  const [topFuelCommodities, setTopFuelCommodities] = useState<
+    TopCommodityData[]
+  >([]);
+  const [topLiquorCommodities, setTopLiquorCommodities] = useState<
+    TopCommodityData[]
+  >([]);
 
   useEffect(() => {
     const init = async () => {
@@ -879,12 +886,18 @@ const OfficerDashboardPage = () => {
         selectCommodity: "LIQUOR",
       });
 
-      if (fuelRevenueResponse.status && fuelRevenueResponse.data &&
-          liquorRevenueResponse.status && liquorRevenueResponse.data) {
+      if (
+        fuelRevenueResponse.status &&
+        fuelRevenueResponse.data &&
+        liquorRevenueResponse.status &&
+        liquorRevenueResponse.data
+      ) {
         setCategoryWiseData({
           fuelRevenue: fuelRevenueResponse.data.this_month_received,
           liquorRevenue: liquorRevenueResponse.data.this_month_received,
-          totalRevenue: fuelRevenueResponse.data.this_month_received + liquorRevenueResponse.data.this_month_received,
+          totalRevenue:
+            fuelRevenueResponse.data.this_month_received +
+            liquorRevenueResponse.data.this_month_received,
         });
       }
 
@@ -904,7 +917,7 @@ const OfficerDashboardPage = () => {
         limit: 5,
       });
       if (liquorCommoditiesResponse.status && liquorCommoditiesResponse.data) {
-            (liquorCommoditiesResponse.data);
+        liquorCommoditiesResponse.data;
       }
     };
     init();
@@ -939,7 +952,7 @@ const OfficerDashboardPage = () => {
   // Dynamic liquor dealers data from database
   const liquorDealersData = {
     labels: topLiquorDealers.map(
-      (dealer) => `${dealer.name} (${dealer.tinNumber})`
+      (dealer) => `${dealer.tradename} (${dealer.tinNumber})`,
     ),
     datasets: [
       {
@@ -967,7 +980,7 @@ const OfficerDashboardPage = () => {
   // Dynamic fuel dealers data from database
   const fuelDealersData = {
     labels: topFuelDealers.map(
-      (dealer) => `${dealer.name} (${dealer.tinNumber})`
+      (dealer) => `${dealer.tradename} (${dealer.tinNumber})`,
     ),
     datasets: [
       {
@@ -994,10 +1007,14 @@ const OfficerDashboardPage = () => {
 
   // Dynamic district-wise revenue data from database
   const districtRevenueChartData = {
-    labels: districtRevenueData?.districts.map((d: DistrictRevenue) => d.district) || ["Dadra & Nagar Haveli", "Daman", "Diu"],
+    labels: districtRevenueData?.districts.map(
+      (d: DistrictRevenue) => d.district,
+    ) || ["Dadra & Nagar Haveli", "Daman", "Diu"],
     datasets: [
       {
-        data: districtRevenueData?.districts.map((d: DistrictRevenue) => d.revenue) || [4500000, 3200000, 1800000],
+        data: districtRevenueData?.districts.map(
+          (d: DistrictRevenue) => d.revenue,
+        ) || [4500000, 3200000, 1800000],
         backgroundColor: [
           "#667eea", // Purple Blue
           "#f093fb", // Pink
@@ -1016,7 +1033,9 @@ const OfficerDashboardPage = () => {
     labels: ["Liquor", "Petroleum"],
     datasets: [
       {
-        data: categoryWiseData ? [categoryWiseData.liquorRevenue, categoryWiseData.fuelRevenue] : [5800000, 3700000],
+        data: categoryWiseData
+          ? [categoryWiseData.liquorRevenue, categoryWiseData.fuelRevenue]
+          : [5800000, 3700000],
         backgroundColor: [
           "#a8edea", // Light Teal
           "#ffecd2", // Light Peach
@@ -1031,10 +1050,10 @@ const OfficerDashboardPage = () => {
 
   // Dynamic petroleum commodities data from database
   const petroleumCommoditiesChartData = {
-    labels: topFuelCommodities.map(c => c.commodityName),
+    labels: topFuelCommodities.map((c) => c.commodityName),
     datasets: [
       {
-        data: topFuelCommodities.map(c => c.totalRevenue),
+        data: topFuelCommodities.map((c) => c.totalRevenue),
         backgroundColor: [
           "#FF6B6B", // Coral Red
           "#4ECDC4", // Teal
@@ -1058,10 +1077,10 @@ const OfficerDashboardPage = () => {
 
   // Dynamic liquor commodities data from database
   const liquorCommoditiesChartData = {
-    labels: topLiquorCommodities.map(c => c.commodityName),
+    labels: topLiquorCommodities.map((c) => c.commodityName),
     datasets: [
       {
-        data: topLiquorCommodities.map(c => c.totalRevenue),
+        data: topLiquorCommodities.map((c) => c.totalRevenue),
         backgroundColor: [
           "#A8E6CF", // Mint
           "#DDA0DD", // Plum
@@ -1233,7 +1252,7 @@ const OfficerDashboardPage = () => {
           count={numberWithIndianFormat(
             isNegative(countData.last_month_received)
               ? 0
-              : countData.last_month_received
+              : countData.last_month_received,
           )}
           color="bg-teal-500"
           subtitle="Total Tax Received"
@@ -1362,7 +1381,7 @@ const OfficerDashboardPage = () => {
                 {numberWithIndianFormat(
                   isNegative(countData.last_month_received)
                     ? 0
-                    : countData.last_month_received
+                    : countData.last_month_received,
                 )}
               </p>
             </div>
@@ -1381,7 +1400,7 @@ const OfficerDashboardPage = () => {
                   countData.this_month_received -
                     (isNegative(countData.last_month_received)
                       ? 0
-                      : countData.last_month_received)
+                      : countData.last_month_received),
                 )}
               </p>
             </div>
@@ -1530,7 +1549,10 @@ const OfficerDashboardPage = () => {
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Revenue</span>
                 <span className="font-medium text-gray-700">
-                  ₹{numberWithIndianFormat(districtRevenueData?.totalRevenue || 0)}
+                  ₹
+                  {numberWithIndianFormat(
+                    districtRevenueData?.totalRevenue || 0,
+                  )}
                 </span>
               </div>
             </div>
@@ -1619,7 +1641,10 @@ const OfficerDashboardPage = () => {
             <div className="h-64 flex items-center justify-center">
               {topFuelCommodities.length > 0 ? (
                 <div className="w-full h-full">
-                  <Pie data={petroleumCommoditiesChartData} options={pieOptions} />
+                  <Pie
+                    data={petroleumCommoditiesChartData}
+                    options={pieOptions}
+                  />
                 </div>
               ) : (
                 <div className="text-center text-gray-400">
@@ -1644,8 +1669,12 @@ const OfficerDashboardPage = () => {
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Products</span>
                 <span className="font-medium text-gray-700">
-                  ₹{numberWithIndianFormat(
-                    topFuelCommodities.reduce((sum, c) => sum + c.totalRevenue, 0)
+                  ₹
+                  {numberWithIndianFormat(
+                    topFuelCommodities.reduce(
+                      (sum, c) => sum + c.totalRevenue,
+                      0,
+                    ),
                   )}
                 </span>
               </div>
@@ -1708,8 +1737,12 @@ const OfficerDashboardPage = () => {
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Products</span>
                 <span className="font-medium text-gray-700">
-                  ₹{numberWithIndianFormat(
-                    topLiquorCommodities.reduce((sum, c) => sum + c.totalRevenue, 0)
+                  ₹
+                  {numberWithIndianFormat(
+                    topLiquorCommodities.reduce(
+                      (sum, c) => sum + c.totalRevenue,
+                      0,
+                    ),
                   )}
                 </span>
               </div>

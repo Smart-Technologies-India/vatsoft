@@ -43,6 +43,34 @@ const CommoditySalesGrowthReport = () => {
     "MONTH_ON_MONTH" | "YEAR_ON_YEAR"
   >("MONTH_ON_MONTH");
 
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    currentDate.getMonth() + 1,
+  );
+  const [selectedYear, setSelectedYear] = useState<number>(
+    currentDate.getFullYear(),
+  );
+
+  const months = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
+  const years = Array.from(
+    { length: 10 },
+    (_, i) => currentDate.getFullYear() - i,
+  );
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
@@ -50,6 +78,8 @@ const CommoditySalesGrowthReport = () => {
         selectOffice: city,
         selectCommodity: commoditydata,
         growthType: growthType,
+        month: growthType === "MONTH_ON_MONTH" ? selectedMonth : undefined,
+        year: selectedYear,
       });
       if (response.status && response.data) {
         setReportData(response.data);
@@ -60,7 +90,7 @@ const CommoditySalesGrowthReport = () => {
       setLoading(false);
     };
     init();
-  }, [city, commoditydata, growthType]);
+  }, [city, commoditydata, growthType, selectedMonth, selectedYear]);
 
   const exportToExcel = () => {
     if (!reportData || reportData.length === 0) return;
@@ -256,6 +286,36 @@ const CommoditySalesGrowthReport = () => {
               optionType="button"
               buttonStyle="solid"
             />
+          </div>
+          {growthType === "MONTH_ON_MONTH" && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Month</label>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {months.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Year</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">

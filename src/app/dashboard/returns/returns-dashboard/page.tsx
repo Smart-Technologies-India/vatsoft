@@ -22,7 +22,6 @@ import { encryptURLData, formateDate, generatePDF } from "@/utils/methods";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
 import CreateReturnRevised from "@/action/return/createreturnrevised";
 import GetUserLastPandingReturn from "@/action/return/userlastpandingreturn";
-import { is } from "valibot";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 declare module "@tanstack/react-table" {
@@ -43,7 +42,7 @@ const ReturnDashboard = () => {
 
   const [return01, setReturn01] = useState<returns_01 | null>(null);
   const [returns_entryData, setReturns_entryData] = useState<returns_entry[]>(
-    []
+    [],
   );
 
   const [duedate, setDueDate] = useState<Date>(new Date());
@@ -135,7 +134,7 @@ const ReturnDashboard = () => {
     let tax: string = "0";
 
     const output: returns_entry[] = returns_entryData.filter(
-      (val: returns_entry) => val.dvat_type == dvatType && val.isnil == false
+      (val: returns_entry) => val.dvat_type == dvatType && val.isnil == false,
     );
 
     // out invoice_value shuold not repeat
@@ -155,7 +154,7 @@ const ReturnDashboard = () => {
         parseFloat(amount) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       tax = (parseFloat(tax) + parseFloat(output[i].vatamount ?? "0")).toFixed(
-        2
+        2,
       );
     }
 
@@ -166,7 +165,8 @@ const ReturnDashboard = () => {
       isnil:
         0 <
         returns_entryData.filter(
-          (val: returns_entry) => val.dvat_type == dvatType && val.isnil == true
+          (val: returns_entry) =>
+            val.dvat_type == dvatType && val.isnil == true,
         ).length,
     };
   };
@@ -228,7 +228,7 @@ const ReturnDashboard = () => {
           currentMonth === fiscalYearStartMonth
             ? (fiscalYear - 1).toString()
             : fiscalYear.toString(),
-          response.data?.vatLiableDate ?? new Date()
+          response.data?.vatLiableDate ?? new Date(),
         );
 
         const selectedQuarter = quarters.at(-1)?.value as Quarter;
@@ -311,8 +311,8 @@ const ReturnDashboard = () => {
           const last_next_month = isfail
             ? monthNames.indexOf(lastmonth)
             : monthNames.indexOf(lastmonth) + 1 == 12
-            ? 0
-            : monthNames.indexOf(lastmonth) + 1;
+              ? 0
+              : monthNames.indexOf(lastmonth) + 1;
 
           if (["January", "February"].includes(lastmonth)) {
             lastyear = (parseInt(lastyear) - 1).toString();
@@ -328,7 +328,7 @@ const ReturnDashboard = () => {
 
           setYear(lastyear);
           setQuarter(
-            getQuarterForMonth(monthNames[last_next_month]) ?? Quarter.QUARTER1
+            getQuarterForMonth(monthNames[last_next_month]) ?? Quarter.QUARTER1,
           );
           setPeriod(monthNames[last_next_month]);
         }
@@ -345,13 +345,14 @@ const ReturnDashboard = () => {
   const getYearList = (dateValue: Date): PeriodValue[] => {
     const liableDate: Date = davtdata?.vatLiableDate ?? new Date();
 
-    // Fiscal year starts from April, but switch to new FY only after May 1
+    // Fiscal year starts from April (month 3)
     const getFiscalYearStart = (date: Date) => {
       const month = date.getMonth(); // 0-indexed: April = 3
-      const day = date.getDate();
-      if (month > 4 || (month === 4 && day >= 1)) {
+      if (month >= 3) {
+        // April onwards
         return date.getFullYear();
       } else {
+        // Jan-March
         return date.getFullYear() - 1;
       }
     };
@@ -361,22 +362,17 @@ const ReturnDashboard = () => {
 
     const periodValues: PeriodValue[] = [];
 
-    // Always push current fiscal year
+    // Push previous fiscal year
     periodValues.push({
       value: (currentFY - 1).toString(),
       label: `${currentFY - 1}-${currentFY.toString().slice(-2)}`,
     });
 
-    // Only push next FY if date is on or after May 1st
-    const isAfterMay =
-      dateValue.getMonth() > 4 ||
-      (dateValue.getMonth() === 4 && dateValue.getDate() >= 1);
-    if (isAfterMay) {
-      periodValues.push({
-        value: currentFY.toString(),
-        label: `${currentFY}-${(currentFY + 1).toString().slice(-2)}`,
-      });
-    }
+    // Push current fiscal year
+    periodValues.push({
+      value: currentFY.toString(),
+      label: `${currentFY}-${(currentFY + 1).toString().slice(-2)}`,
+    });
 
     return periodValues;
   };
@@ -391,14 +387,15 @@ const ReturnDashboard = () => {
   const getQuarterList = (
     dateValue: Date,
     selectedYear: string,
-    vatLiableDate: Date
+    vatLiableDate: Date,
   ): PeriodValue[] => {
     const getFiscalYearStart = (date: Date) => {
-      const month = date.getMonth(); // 0-indexed
-      const day = date.getDate();
-      if (month > 3 || (month === 3 && day >= 1)) {
+      const month = date.getMonth(); // 0-indexed: April = 3
+      if (month >= 3) {
+        // April onwards
         return date.getFullYear();
       } else {
+        // Jan-March
         return date.getFullYear() - 1;
       }
     };
@@ -467,7 +464,7 @@ const ReturnDashboard = () => {
     dateValue: Date,
     year: string,
     quarter: Quarter,
-    vatLiableDate: Date
+    vatLiableDate: Date,
   ): PeriodValue[] => {
     const currentYear = dateValue.getFullYear();
     const currentMonth = dateValue.getMonth();
@@ -546,19 +543,19 @@ const ReturnDashboard = () => {
   const ispreview = (): boolean => {
     const dvat_30 =
       returns_entryData.filter(
-        (val: returns_entry) => val.dvat_type == DvatType.DVAT_30
+        (val: returns_entry) => val.dvat_type == DvatType.DVAT_30,
       ).length > 0;
     const dvat_30A =
       returns_entryData.filter(
-        (val: returns_entry) => val.dvat_type == DvatType.DVAT_30_A
+        (val: returns_entry) => val.dvat_type == DvatType.DVAT_30_A,
       ).length > 0;
     const dvat_31 =
       returns_entryData.filter(
-        (val: returns_entry) => val.dvat_type == DvatType.DVAT_31
+        (val: returns_entry) => val.dvat_type == DvatType.DVAT_31,
       ).length > 0;
     const dvat_31A =
       returns_entryData.filter(
-        (val: returns_entry) => val.dvat_type == DvatType.DVAT_31_A
+        (val: returns_entry) => val.dvat_type == DvatType.DVAT_31_A,
       ).length > 0;
 
     if (dvat_30 && dvat_30A && dvat_31 && dvat_31A) return true;
@@ -567,16 +564,16 @@ const ReturnDashboard = () => {
   };
   const isanynil = (): boolean => {
     const dvat_30 = returns_entryData.some(
-      (val: returns_entry) => val.dvat_type == DvatType.DVAT_30 && val.isnil
+      (val: returns_entry) => val.dvat_type == DvatType.DVAT_30 && val.isnil,
     );
     const dvat_30A = returns_entryData.some(
-      (val: returns_entry) => val.dvat_type == DvatType.DVAT_30_A && val.isnil
+      (val: returns_entry) => val.dvat_type == DvatType.DVAT_30_A && val.isnil,
     );
     const dvat_31 = returns_entryData.some(
-      (val: returns_entry) => val.dvat_type == DvatType.DVAT_31 && val.isnil
+      (val: returns_entry) => val.dvat_type == DvatType.DVAT_31 && val.isnil,
     );
     const dvat_31A = returns_entryData.some(
-      (val: returns_entry) => val.dvat_type == DvatType.DVAT_31_A && val.isnil
+      (val: returns_entry) => val.dvat_type == DvatType.DVAT_31_A && val.isnil,
     );
 
     // Return true if any of the conditions are true
@@ -593,22 +590,22 @@ const ReturnDashboard = () => {
 
   const salesLocalData = useMemo(
     () => getDvatData(DvatType.DVAT_31),
-    [returns_entryData, year, quarter, period] // Include relevant dependencies
+    [returns_entryData, year, quarter, period], // Include relevant dependencies
   );
 
   const purchaseLocalData = useMemo(
     () => getDvatData(DvatType.DVAT_30),
-    [returns_entryData, year, quarter, period] // Same here
+    [returns_entryData, year, quarter, period], // Same here
   );
 
   const salesInterStateData = useMemo(
     () => getDvatData(DvatType.DVAT_31_A),
-    [returns_entryData, year, quarter, period]
+    [returns_entryData, year, quarter, period],
   );
 
   const purchaseInterStateData = useMemo(
     () => getDvatData(DvatType.DVAT_30_A),
-    [returns_entryData, year, quarter, period]
+    [returns_entryData, year, quarter, period],
   );
 
   const [nilBox, setNilBox] = useState<boolean>(false);
@@ -622,11 +619,11 @@ const ReturnDashboard = () => {
     }
     router.push(
       `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-        userid.toString()
+        userid.toString(),
       )}?form=30A&year=${getNewYear(
         year!,
-        period!
-      )}&quarter=${quarter}&month=${period}`
+        period!,
+      )}&quarter=${quarter}&month=${period}`,
     );
   };
 
@@ -745,158 +742,170 @@ const ReturnDashboard = () => {
           <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
             <h1 className="text-lg font-medium text-gray-900">File Returns</h1>
             <Marquee className="bg-yellow-50 border border-yellow-200 mt-2 text-xs rounded px-2 py-1">
-              This is a banner can be used for official updates and notifications.
+              This is a banner can be used for official updates and
+              notifications.
             </Marquee>
 
             <div className="flex flex-col sm:flex-row w-full gap-2 items-end mt-3">
               <div className="grid items-center gap-1.5 w-full">
-                <Label htmlFor="duedate" className="text-xs font-medium text-gray-700">
+                <Label
+                  htmlFor="duedate"
+                  className="text-xs font-medium text-gray-700"
+                >
                   Financial Year <span className="text-rose-500">*</span>
                 </Label>
-              <Select
-                value={year}
-                placeholder="Select a year"
-                size="small"
-                options={getYearList(new Date())}
-                onChange={(val: string) => {
-                  if (!val) return;
-                  setYear(val.toString());
+                <Select
+                  value={year}
+                  placeholder="Select a year"
+                  size="small"
+                  options={getYearList(new Date())}
+                  onChange={(val: string) => {
+                    if (!val) return;
+                    setYear(val.toString());
 
-                  const quarters = getQuarterList(
-                    new Date(),
-                    val,
-                    davtdata?.vatLiableDate ?? new Date()
-                  );
+                    const quarters = getQuarterList(
+                      new Date(),
+                      val,
+                      davtdata?.vatLiableDate ?? new Date(),
+                    );
 
-                  const selectedQuarter = quarters[0]?.value as Quarter;
-                  setQuarter(selectedQuarter);
+                    const selectedQuarter = quarters[0]?.value as Quarter;
+                    setQuarter(selectedQuarter);
 
-                  const quarterMonthsMap: Record<Quarter, [number, number]> = {
-                    QUARTER1: [3, 5], // Apr (3) to Jun (5)
-                    QUARTER2: [6, 8], // Jul (6) to Sep (8)
-                    QUARTER3: [9, 11], // Oct (9) to Dec (11)
-                    QUARTER4: [0, 2], // Jan (0) to Mar (2)
-                  };
+                    const quarterMonthsMap: Record<Quarter, [number, number]> =
+                      {
+                        QUARTER1: [3, 5], // Apr (3) to Jun (5)
+                        QUARTER2: [6, 8], // Jul (6) to Sep (8)
+                        QUARTER3: [9, 11], // Oct (9) to Dec (11)
+                        QUARTER4: [0, 2], // Jan (0) to Mar (2)
+                      };
 
-                  const monthNames = [
-                    "January",
-                    "February",
-                    "March",
-                    "April",
-                    "May",
-                    "June",
-                    "July",
-                    "August",
-                    "September",
-                    "October",
-                    "November",
-                    "December",
-                  ];
+                    const monthNames = [
+                      "January",
+                      "February",
+                      "March",
+                      "April",
+                      "May",
+                      "June",
+                      "July",
+                      "August",
+                      "September",
+                      "October",
+                      "November",
+                      "December",
+                    ];
 
-                  const [startMonthIndex, endMonthIndex] =
-                    quarterMonthsMap[selectedQuarter];
+                    const [startMonthIndex, endMonthIndex] =
+                      quarterMonthsMap[selectedQuarter];
 
-                  let monthToSet: string;
+                    let monthToSet: string;
 
-                  // Pick first month of quarter or vatLiableDate month if it's later
-                  const liableMonth =
-                    davtdata?.vatLiableDate?.getMonth() ?? startMonthIndex;
+                    // Pick first month of quarter or vatLiableDate month if it's later
+                    const liableMonth =
+                      davtdata?.vatLiableDate?.getMonth() ?? startMonthIndex;
 
-                  if (
-                    davtdata?.vatLiableDate?.getFullYear().toString() == val
-                  ) {
-                    if (davtdata?.compositionScheme) {
-                      // Pick last month of the quarter
-                      monthToSet = monthNames[endMonthIndex];
+                    if (
+                      davtdata?.vatLiableDate?.getFullYear().toString() == val
+                    ) {
+                      if (davtdata?.compositionScheme) {
+                        // Pick last month of the quarter
+                        monthToSet = monthNames[endMonthIndex];
+                      } else {
+                        const adjustedStartMonth = Math.max(
+                          startMonthIndex,
+                          liableMonth,
+                        );
+                        monthToSet = monthNames[adjustedStartMonth];
+                      }
                     } else {
-                      const adjustedStartMonth = Math.max(
-                        startMonthIndex,
-                        liableMonth
-                      );
-                      monthToSet = monthNames[adjustedStartMonth];
+                      monthToSet = monthNames[startMonthIndex];
                     }
-                  } else {
-                    monthToSet = monthNames[startMonthIndex];
-                  }
 
-                  setPeriod(monthToSet);
-                }}
-              />
-            </div>
+                    setPeriod(monthToSet);
+                  }}
+                />
+              </div>
               <div className="grid items-center gap-1.5 w-full">
-                <Label htmlFor="duedate" className="text-xs font-medium text-gray-700">
+                <Label
+                  htmlFor="duedate"
+                  className="text-xs font-medium text-gray-700"
+                >
                   Quarter <span className="text-rose-500">*</span>
                 </Label>
 
-              <Select
-                value={quarter}
-                placeholder="Select quarter"
-                size="small"
-                options={getQuarterList(
-                  new Date(),
-                  year!,
-                  davtdata?.vatLiableDate ?? new Date()
-                )}
-                onChange={(val: Quarter) => {
-                  if (!val || !davtdata) return;
+                <Select
+                  value={quarter}
+                  placeholder="Select quarter"
+                  size="small"
+                  options={getQuarterList(
+                    new Date(),
+                    year!,
+                    davtdata?.vatLiableDate ?? new Date(),
+                  )}
+                  onChange={(val: Quarter) => {
+                    if (!val || !davtdata) return;
 
-                  setQuarter(val);
+                    setQuarter(val);
 
-                  const quarterMonthsMap: Record<Quarter, [number, number]> = {
-                    QUARTER1: [3, 5], // Apr - Jun
-                    QUARTER2: [6, 8], // Jul - Sep
-                    QUARTER3: [9, 11], // Oct - Dec
-                    QUARTER4: [0, 2], // Jan - Mar
-                  };
+                    const quarterMonthsMap: Record<Quarter, [number, number]> =
+                      {
+                        QUARTER1: [3, 5], // Apr - Jun
+                        QUARTER2: [6, 8], // Jul - Sep
+                        QUARTER3: [9, 11], // Oct - Dec
+                        QUARTER4: [0, 2], // Jan - Mar
+                      };
 
-                  const monthNames = [
-                    "January",
-                    "February",
-                    "March",
-                    "April",
-                    "May",
-                    "June",
-                    "July",
-                    "August",
-                    "September",
-                    "October",
-                    "November",
-                    "December",
-                  ];
+                    const monthNames = [
+                      "January",
+                      "February",
+                      "March",
+                      "April",
+                      "May",
+                      "June",
+                      "July",
+                      "August",
+                      "September",
+                      "October",
+                      "November",
+                      "December",
+                    ];
 
-                  const [startMonthIndex, endMonthIndex] =
-                    quarterMonthsMap[val];
-                  const selectedYear = parseInt(year!);
-                  const liableYear = davtdata.vatLiableDate?.getFullYear();
-                  const liableMonth = davtdata.vatLiableDate?.getMonth();
+                    const [startMonthIndex, endMonthIndex] =
+                      quarterMonthsMap[val];
+                    const selectedYear = parseInt(year!);
+                    const liableYear = davtdata.vatLiableDate?.getFullYear();
+                    const liableMonth = davtdata.vatLiableDate?.getMonth();
 
-                  let monthToSet: string;
+                    let monthToSet: string;
 
-                  if (davtdata.compositionScheme) {
-                    // Use the last month of the quarter
-                    monthToSet = monthNames[endMonthIndex];
-                  } else {
-                    const isSameYear = selectedYear === liableYear;
-                    const isLiableMonthInQuarter =
-                      liableMonth !== undefined &&
-                      liableMonth >= startMonthIndex &&
-                      liableMonth <= endMonthIndex;
+                    if (davtdata.compositionScheme) {
+                      // Use the last month of the quarter
+                      monthToSet = monthNames[endMonthIndex];
+                    } else {
+                      const isSameYear = selectedYear === liableYear;
+                      const isLiableMonthInQuarter =
+                        liableMonth !== undefined &&
+                        liableMonth >= startMonthIndex &&
+                        liableMonth <= endMonthIndex;
 
-                    const effectiveMonthIndex =
-                      isSameYear && isLiableMonthInQuarter
-                        ? liableMonth
-                        : startMonthIndex;
+                      const effectiveMonthIndex =
+                        isSameYear && isLiableMonthInQuarter
+                          ? liableMonth
+                          : startMonthIndex;
 
-                    monthToSet = monthNames[effectiveMonthIndex];
-                  }
+                      monthToSet = monthNames[effectiveMonthIndex];
+                    }
 
-                  setPeriod(monthToSet);
-                }}
-              />
-            </div>
+                    setPeriod(monthToSet);
+                  }}
+                />
+              </div>
               {davtdata?.compositionScheme == false && (
                 <div className="grid items-center gap-1.5 w-full">
-                  <Label htmlFor="duedate" className="text-xs font-medium text-gray-700">
+                  <Label
+                    htmlFor="duedate"
+                    className="text-xs font-medium text-gray-700"
+                  >
                     Period <span className="text-rose-500">*</span>
                   </Label>
                   <Select
@@ -907,7 +916,7 @@ const ReturnDashboard = () => {
                       new Date(),
                       year!,
                       quarter,
-                      davtdata.vatLiableDate ?? new Date()
+                      davtdata.vatLiableDate ?? new Date(),
                     )}
                     onChange={(val: string) => {
                       if (!val) return;
@@ -925,9 +934,9 @@ const ReturnDashboard = () => {
               </button>
             </div>
           </div>
-        {isSearch && (
-          <>
-            {/* {lastPending != null ? (
+          {isSearch && (
+            <>
+              {/* {lastPending != null ? (
               <>
                 <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-between mt-4 border">
                   <div>
@@ -960,158 +969,165 @@ const ReturnDashboard = () => {
                 </div>
               </>
             ) : ( */}
-            <>
-              <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                <div>
-                  <p className="text-xs text-gray-600">RR Number</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {return01?.rr_number == null ||
-                    return01?.rr_number == undefined ||
-                    return01?.rr_number == ""
-                      ? "N/A"
-                      : return01?.rr_number}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">User TIN Number</p>
-                  <p className="text-sm font-medium text-gray-900">{davtdata?.tinNumber}</p>
-                </div>
+              <>
+                <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-600">RR Number</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {return01?.rr_number == null ||
+                      return01?.rr_number == undefined ||
+                      return01?.rr_number == ""
+                        ? "N/A"
+                        : return01?.rr_number}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">User TIN Number</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {davtdata?.tinNumber}
+                    </p>
+                  </div>
 
-                <div>
-                  <p className="text-xs text-gray-600">
-                    {return01?.rr_number != "" &&
-                    return01?.rr_number != undefined &&
-                    return01?.rr_number != null
-                      ? "Filed Date"
-                      : "Filing Date"}
-                  </p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {return01?.rr_number != "" &&
-                    return01?.rr_number != undefined &&
-                    return01?.rr_number != null
-                      ? formateDate(return01.filing_datetime)
-                      : formateDate(duedate)}
-                  </p>
+                  <div>
+                    <p className="text-xs text-gray-600">
+                      {return01?.rr_number != "" &&
+                      return01?.rr_number != undefined &&
+                      return01?.rr_number != null
+                        ? "Filed Date"
+                        : "Filing Date"}
+                    </p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {return01?.rr_number != "" &&
+                      return01?.rr_number != undefined &&
+                      return01?.rr_number != null
+                        ? formateDate(return01.filing_datetime)
+                        : formateDate(duedate)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">Status</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {return01?.rr_number != "" &&
+                      return01?.rr_number != undefined &&
+                      return01?.rr_number != null
+                        ? "Filed"
+                        : "Due - Not Filed"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">Return Type</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {return01?.return_type ?? "ORIGINAL"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600">Status</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {return01?.rr_number != "" &&
-                    return01?.rr_number != undefined &&
-                    return01?.rr_number != null
-                      ? "Filed"
-                      : "Due - Not Filed"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Return Type</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {return01?.return_type ?? "ORIGINAL"}
-                  </p>
-                </div>
+              </>
+              {/* )} */}
+
+              <div className="grid w-full grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <Card
+                  title={"Sales Local"}
+                  subtitle={"Form 31"}
+                  buttonone="View"
+                  buttontwo="Add"
+                  entry={salesLocalData.entry}
+                  amount={salesLocalData.amount.toFixed(2)}
+                  tax={salesLocalData.tax.toFixed(2)}
+                  isnil={salesLocalData.isnil}
+                  link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31&year=${getNewYear(
+                    year!,
+                    period!,
+                  )}&quarter=${quarter}&month=${period}`}
+                />
+                <Card
+                  title={"Purchase Local"}
+                  subtitle={"Form 30"}
+                  buttonone="View"
+                  buttontwo="Add"
+                  entry={purchaseLocalData.entry}
+                  amount={purchaseLocalData.amount.toFixed(2)}
+                  tax={purchaseLocalData.tax.toFixed(2)}
+                  isnil={purchaseLocalData.isnil}
+                  link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30&year=${getNewYear(
+                    year!,
+                    period!,
+                  )}&quarter=${quarter}&month=${period}`}
+                />
+                <Card
+                  title={"Sales Inter-State"}
+                  subtitle={"Form 31-A"}
+                  buttonone="View"
+                  buttontwo="Add"
+                  entry={salesInterStateData.entry}
+                  amount={salesInterStateData.amount.toFixed(2)}
+                  tax={salesInterStateData.tax.toFixed(2)}
+                  isnil={salesInterStateData.isnil}
+                  link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31A&year=${getNewYear(
+                    year!,
+                    period!,
+                  )}&quarter=${quarter}&month=${period}`}
+                />
+                <Card
+                  title={"Purchase Inter-State"}
+                  subtitle={"Form 30-A"}
+                  buttonone="View"
+                  buttontwo="Add"
+                  entry={purchaseInterStateData.entry}
+                  amount={purchaseInterStateData.amount.toFixed(2)}
+                  tax={purchaseInterStateData.tax.toFixed(2)}
+                  isnil={purchaseInterStateData.isnil}
+                  link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30A&year=${getNewYear(
+                    year!,
+                    period!,
+                  )}&quarter=${quarter}&month=${period}`}
+                />
+              </div>
+              <div className="mt-3">
+                <Alert
+                  message="To move forward, ensure all 4 forms are either filed or NIL filed."
+                  type="warning"
+                  showIcon
+                  closable
+                />
               </div>
             </>
-            {/* )} */}
-
-            <div className="grid w-full grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              <Card
-                title={"Sales Local"}
-                subtitle={"Form 31"}
-                buttonone="View"
-                buttontwo="Add"
-                entry={salesLocalData.entry}
-                amount={salesLocalData.amount.toFixed(2)}
-                tax={salesLocalData.tax.toFixed(2)}
-                isnil={salesLocalData.isnil}
-                link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31&year=${getNewYear(
-                  year!,
-                  period!
-                )}&quarter=${quarter}&month=${period}`}
-              />
-              <Card
-                title={"Purchase Local"}
-                subtitle={"Form 30"}
-                buttonone="View"
-                buttontwo="Add"
-                entry={purchaseLocalData.entry}
-                amount={purchaseLocalData.amount.toFixed(2)}
-                tax={purchaseLocalData.tax.toFixed(2)}
-                isnil={purchaseLocalData.isnil}
-                link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30&year=${getNewYear(
-                  year!,
-                  period!
-                )}&quarter=${quarter}&month=${period}`}
-              />
-              <Card
-                title={"Sales Inter-State"}
-                subtitle={"Form 31-A"}
-                buttonone="View"
-                buttontwo="Add"
-                entry={salesInterStateData.entry}
-                amount={salesInterStateData.amount.toFixed(2)}
-                tax={salesInterStateData.tax.toFixed(2)}
-                isnil={salesInterStateData.isnil}
-                link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31A&year=${getNewYear(
-                  year!,
-                  period!
-                )}&quarter=${quarter}&month=${period}`}
-              />
-              <Card
-                title={"Purchase Inter-State"}
-                subtitle={"Form 30-A"}
-                buttonone="View"
-                buttontwo="Add"
-                entry={purchaseInterStateData.entry}
-                amount={purchaseInterStateData.amount.toFixed(2)}
-                tax={purchaseInterStateData.tax.toFixed(2)}
-                isnil={purchaseInterStateData.isnil}
-                link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30A&year=${getNewYear(
-                  year!,
-                  period!
-                )}&quarter=${quarter}&month=${period}`}
-              />
-            </div>
-            <div className="mt-3">
-              <Alert
-                message="To move forward, ensure all 4 forms are either filed or NIL filed."
-                type="warning"
-                showIcon
-                closable
-              />
-            </div>
-          </>
-        )}
+          )}
 
           <div className="fixed bottom-4 right-4 rounded shadow bg-white p-2 flex gap-2 z-10">
-          {isSearch && (
-            <>
-              {ispreview() && (
-                <>
-                  {ispayment() && (
-                    <>
-                      <button
-                        disabled={isDownload}
-                        onClick={async () => {
-                          await generatePDF(
-                            `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                              "1"
-                            )}/${encryptURLData(
-                              return01!.dvat04Id.toString()
-                            )}?form=30A&year=${getNewYear(
-                              year!,
-                              period!
-                            )}&quarter=${quarter}&month=${period}&sidebar=no`
-                          );
-                          setTimeout(() => {
-                            setDownload(false);
-                          }, 3600);
-                        }}
-                        className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-                      >
-                        {isDownload ? "Downloading..." : "Download Return"}
-                        {/* Download Return */}
-                      </button>
-                      {/* <button
+            {isSearch && (
+              <>
+                {ispreview() && (
+                  <>
+                    {ispayment() && (
+                      <>
+                        <button
+                          disabled={isDownload}
+                          onClick={async () => {
+                            try {
+                              console.log("Generating PDF...");
+                              await generatePDF(
+                                `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                                  "11",
+                                )}/${encryptURLData(
+                                  return01!.dvat04Id.toString(),
+                                )}?form=30A&year=${getNewYear(
+                                  year!,
+                                  period!,
+                                )}&quarter=${quarter}&month=${period}&sidebar=no`,
+                              );
+                            } catch (error) {
+                              console.log("Error generating PDF:", error);
+                            }
+                            setTimeout(() => {
+                              setDownload(false);
+                            }, 3600);
+                          }}
+                          className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                        >
+                          {isDownload ? "Downloading..." : "Download Return"}
+                          {/* Download Return */}
+                        </button>
+                        {/* <button
                         onClick={() => {
                           setRRBox(true);
                         }}
@@ -1119,7 +1135,7 @@ const ReturnDashboard = () => {
                       >
                         Revise Return
                       </button> */}
-                      {/* <button
+                        {/* <button
                         onClick={async () => {
                           router.push(
                             `/dashboard/cform/${encryptURLData(
@@ -1131,33 +1147,33 @@ const ReturnDashboard = () => {
                       >
                         C-FORM
                       </button> */}
-                    </>
-                  )}
-                  {!ispayment() && (
-                    <button
-                      onClick={() => {
-                        if (isanynil()) {
-                          setNilBox(true);
-                        } else {
-                          router.push(
-                            `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                              userid.toString()
-                            )}?form=30A&year=${getNewYear(
-                              year!,
-                              period!
-                            )}&quarter=${quarter}&month=${period}`
-                          );
-                        }
-                      }}
-                      className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-                    >
-                      Preview for DVAT-16
-                    </button>
-                  )}
-                </>
-              )}
-            </>
-          )}
+                      </>
+                    )}
+                    {!ispayment() && (
+                      <button
+                        onClick={() => {
+                          if (isanynil()) {
+                            setNilBox(true);
+                          } else {
+                            router.push(
+                              `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                                userid.toString(),
+                              )}?form=30A&year=${getNewYear(
+                                year!,
+                                period!,
+                              )}&quarter=${quarter}&month=${period}`,
+                            );
+                          }
+                        }}
+                        className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                      >
+                        Preview for DVAT-16
+                      </button>
+                    )}
+                  </>
+                )}
+              </>
+            )}
           </div>
         </div>
       </main>
@@ -1193,7 +1209,10 @@ const Card = (props: CardProps) => {
 
       <div className="mt-2 space-y-1">
         <p className="text-gray-700 text-xs">
-          No Of Invoices: <span className="font-medium">{props.isnil ? "Nil Filed" : props.entry}</span>
+          No Of Invoices:{" "}
+          <span className="font-medium">
+            {props.isnil ? "Nil Filed" : props.entry}
+          </span>
         </p>
         <p className="text-gray-700 text-xs">
           Taxable Amount: <span className="font-medium">{props.amount}</span>

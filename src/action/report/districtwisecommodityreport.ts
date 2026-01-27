@@ -17,6 +17,8 @@ function getDateMonthsAgo(date: Date, monthsAgo: number): Date {
 
 interface DistrictWiseCommodityReportProps {
   office: string;
+  month?: number;
+  year?: number;
 }
 
 const DistrictWiseCommodityReport = async (
@@ -34,27 +36,19 @@ const DistrictWiseCommodityReport = async (
   const functionname: string = DistrictWiseCommodityReport.name;
   try {
     const currentDate = new Date();
-    const twoMonthsAgo = getDateMonthsAgo(currentDate, 7);
+    const targetMonth = props.month ?? currentDate.getMonth() + 1;
+    const targetYear = props.year ?? currentDate.getFullYear();
 
-    const firstDateOfTwoMonthsAgo = new Date(
-      twoMonthsAgo.getFullYear(),
-      twoMonthsAgo.getMonth(),
-      2
-    );
-
-    const lastDateOfTwoMonthsAgo = new Date(
-      twoMonthsAgo.getFullYear(),
-      twoMonthsAgo.getMonth() + 1,
-      1
-    );
+    const firstDateOfMonth = new Date(targetYear, targetMonth - 1, 2);
+    const lastDateOfMonth = new Date(targetYear, targetMonth, 1);
 
     const response = await prisma.returns_entry.findMany({
       where: {
         deletedAt: null,
         deletedBy: null,
         invoice_date: {
-          gte: firstDateOfTwoMonthsAgo,
-          lt: lastDateOfTwoMonthsAgo,
+          gte: firstDateOfMonth,
+          lt: lastDateOfMonth,
         },
         createdBy: {
           selectOffice: props.office as SelectOffice,

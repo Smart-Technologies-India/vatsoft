@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-import { FormProvider, useForm, useFormContext } from "react-hook-form";
 
+import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
@@ -36,6 +36,7 @@ type DailySaleProviderProps = {
   setAddBox: Dispatch<SetStateAction<boolean>>;
   init: () => Promise<void>;
 };
+
 export const DailySaleProvider = (props: DailySaleProviderProps) => {
   const methods = useForm<DailySaleForm>({
     resolver: valibotResolver(DailySaleSchema),

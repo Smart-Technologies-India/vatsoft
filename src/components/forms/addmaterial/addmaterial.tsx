@@ -6,7 +6,6 @@ import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { MultiSelect } from "../inputfields/multiselect";
-import { OptionValue } from "@/models/main";
 
 import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";

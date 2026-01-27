@@ -44,7 +44,7 @@ const TrackAppliation = () => {
     TRADE,
   }
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.ARN
+    SearchOption.ARN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -57,7 +57,7 @@ const TrackAppliation = () => {
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    dateStrings: [string, string],
   ) => {
     setSearchDate(dates);
   };
@@ -390,7 +390,9 @@ const TrackAppliation = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-white rounded-full"></div>
-                <h1 className="text-2xl font-bold text-white">Track Filed Return</h1>
+                <h1 className="text-2xl font-bold text-white">
+                  Track Filed Return
+                </h1>
               </div>
               <Button
                 type="primary"
@@ -419,90 +421,90 @@ const TrackAppliation = () => {
                 <Radio value={SearchOption.TRADE}>Trade Name</Radio>
               </Radio.Group>
               {(() => {
-              switch (searchOption) {
-                case SearchOption.ARN:
-                  return (
-                    <div className="flex gap-2">
-                      <Input
-                        className="w-60"
-                        ref={arnRef}
-                        placeholder={"Enter ARN"}
-                        disabled={isSearch}
-                      />
+                switch (searchOption) {
+                  case SearchOption.ARN:
+                    return (
+                      <div className="flex gap-2">
+                        <Input
+                          className="w-60"
+                          ref={arnRef}
+                          placeholder={"Enter ARN"}
+                          disabled={isSearch}
+                        />
 
-                      {isSearch ? (
-                        <Button onClick={init} type="primary">
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button onClick={cpinsearch} type="primary">
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
+                        {isSearch ? (
+                          <Button onClick={init} type="primary">
+                            Reset
+                          </Button>
+                        ) : (
+                          <Button onClick={cpinsearch} type="primary">
+                            Search
+                          </Button>
+                        )}
+                      </div>
+                    );
 
-                case SearchOption.RETURN:
-                  return (
-                    <div className="flex gap-2">
-                      <RangePicker
-                        onChange={onChangeDate}
-                        disabled={isSearch}
-                      />
+                  case SearchOption.RETURN:
+                    return (
+                      <div className="flex gap-2">
+                        <RangePicker
+                          onChange={onChangeDate}
+                          disabled={isSearch}
+                        />
 
-                      {isSearch ? (
-                        <Button onClick={init} type="primary">
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button type="primary" onClick={datesearch}>
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
-                case SearchOption.TIN:
-                  return (
-                    <div className="flex gap-2">
-                      <Input
-                        className="w-60"
-                        ref={tinRef}
-                        placeholder={"Enter TIN Number"}
-                        disabled={isSearch}
-                      />
+                        {isSearch ? (
+                          <Button onClick={init} type="primary">
+                            Reset
+                          </Button>
+                        ) : (
+                          <Button type="primary" onClick={datesearch}>
+                            Search
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  case SearchOption.TIN:
+                    return (
+                      <div className="flex gap-2">
+                        <Input
+                          className="w-60"
+                          ref={tinRef}
+                          placeholder={"Enter TIN Number"}
+                          disabled={isSearch}
+                        />
 
-                      {isSearch ? (
-                        <Button onClick={init} type="primary">
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button onClick={tinsearch} type="primary">
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
-                case SearchOption.TRADE:
-                  return (
-                    <div className="flex gap-2">
-                      <Input
-                        className="w-60"
-                        ref={tradeRef}
-                        disabled={isSearch}
-                        placeholder={"Enter Trade Name"}
-                      />
+                        {isSearch ? (
+                          <Button onClick={init} type="primary">
+                            Reset
+                          </Button>
+                        ) : (
+                          <Button onClick={tinsearch} type="primary">
+                            Search
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  case SearchOption.TRADE:
+                    return (
+                      <div className="flex gap-2">
+                        <Input
+                          className="w-60"
+                          ref={tradeRef}
+                          disabled={isSearch}
+                          placeholder={"Enter Trade Name"}
+                        />
 
-                      {isSearch ? (
-                        <Button onClick={init} type="primary">
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button onClick={tradesearch} type="primary">
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
+                        {isSearch ? (
+                          <Button onClick={init} type="primary">
+                            Reset
+                          </Button>
+                        ) : (
+                          <Button onClick={tradesearch} type="primary">
+                            Search
+                          </Button>
+                        )}
+                      </div>
+                    );
                   default:
                     return null;
                 }
@@ -562,13 +564,16 @@ const TrackAppliation = () => {
                     {paymentData.map(
                       (val: returns_01 & { dvat04: dvat04 }, index: number) => {
                         return (
-                          <TableRow key={index} className="hover:bg-blue-50 transition-colors">
+                          <TableRow
+                            key={index}
+                            className="hover:bg-blue-50 transition-colors"
+                          >
                             <TableCell className="border text-center p-3">
                               <Link
                                 href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                                  val.createdById.toString()
+                                  val.createdById.toString(),
                                 )}/${encryptURLData(
-                                  val.dvat04Id.toString()
+                                  val.dvat04Id.toString(),
                                 )}?form=30A&year=${val.year}&quarter=${
                                   val.quarter
                                 }&month=${val.month}`}
@@ -586,13 +591,13 @@ const TrackAppliation = () => {
                                   "en-US",
                                   {
                                     month: "long",
-                                  }
+                                  },
                                 ),
-                                val.year
+                                val.year,
                               )}
                             </TableCell>
                             <TableCell className="border text-center p-3 text-gray-900">
-                              {get_month(
+                              {/* {get_month(
                                 val.compositionScheme ?? false,
                                 new Date(val.transaction_date!).toLocaleString(
                                   "en-US",
@@ -600,17 +605,20 @@ const TrackAppliation = () => {
                                     month: "short",
                                   }
                                 )
-                              )}
+                              )} */}
+                              {val.month}
                             </TableCell>
                             <TableCell className="border text-center p-3 text-gray-900">
                               {formateDate(new Date(val.transaction_date!))}
                             </TableCell>
                             <TableCell className="border text-center p-3">
-                              <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
-                                val.compositionScheme 
-                                  ? "bg-purple-100 text-purple-800" 
-                                  : "bg-blue-100 text-blue-800"
-                              }`}>
+                              <span
+                                className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
+                                  val.compositionScheme
+                                    ? "bg-purple-100 text-purple-800"
+                                    : "bg-blue-100 text-blue-800"
+                                }`}
+                              >
                                 {val.compositionScheme ? "COMP" : "REG"}
                               </span>
                             </TableCell>
@@ -625,7 +633,7 @@ const TrackAppliation = () => {
                             </TableCell>
                           </TableRow>
                         );
-                      }
+                      },
                     )}
                   </TableBody>
                 </Table>

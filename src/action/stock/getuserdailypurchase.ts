@@ -19,7 +19,7 @@ interface GetUserDailyPurchasePayload {
 }
 
 const GetUserDailyPurchase = async (
-  payload: GetUserDailyPurchasePayload
+  payload: GetUserDailyPurchasePayload,
 ): Promise<
   PaginationResponse<Array<
     daily_purchase & {
@@ -44,6 +44,9 @@ const GetUserDailyPurchase = async (
           commodity_master: true,
           seller_tin_number: true,
         },
+        orderBy: {
+          invoice_date: "asc",
+        },
         take: payload.take,
         skip: payload.skip,
       }),
@@ -57,7 +60,6 @@ const GetUserDailyPurchase = async (
         },
       }),
     ]);
-
 
     if (!daily_purchase_response) {
       return createPaginationResponse({

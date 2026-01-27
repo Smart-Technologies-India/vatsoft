@@ -14,7 +14,10 @@ function getDateMonthsAgo(date: Date, monthsAgo: number): Date {
   return newDate;
 }
 
-const LiquorCommodityReport = async (): Promise<
+const LiquorCommodityReport = async (
+  month?: number,
+  year?: number,
+): Promise<
   ApiResponseType<Array<{
     id: number;
     name: string;
@@ -27,27 +30,19 @@ const LiquorCommodityReport = async (): Promise<
   const functionname: string = LiquorCommodityReport.name;
   try {
     const currentDate = new Date();
-    const twoMonthsAgo = getDateMonthsAgo(currentDate, 7);
+    const targetMonth = month ?? currentDate.getMonth() + 1;
+    const targetYear = year ?? currentDate.getFullYear();
 
-    const firstDateOfTwoMonthsAgo = new Date(
-      twoMonthsAgo.getFullYear(),
-      twoMonthsAgo.getMonth(),
-      2
-    );
-
-    const lastDateOfTwoMonthsAgo = new Date(
-      twoMonthsAgo.getFullYear(),
-      twoMonthsAgo.getMonth() + 1,
-      1
-    );
+    const firstDateOfMonth = new Date(targetYear, targetMonth - 1, 2);
+    const lastDateOfMonth = new Date(targetYear, targetMonth, 1);
 
     const response = await prisma.returns_entry.findMany({
       where: {
         deletedAt: null,
         deletedBy: null,
         invoice_date: {
-          gte: firstDateOfTwoMonthsAgo,
-          lt: lastDateOfTwoMonthsAgo,
+          gte: firstDateOfMonth,
+          lt: lastDateOfMonth,
         },
       },
       include: {

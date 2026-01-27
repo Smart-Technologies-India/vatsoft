@@ -7,6 +7,8 @@ interface CommoditySalesGrowthPayload {
   selectOffice?: "Dadra_Nagar_Haveli" | "DAMAN" | "DIU";
   selectCommodity?: "FUEL" | "LIQUOR";
   growthType: "MONTH_ON_MONTH" | "YEAR_ON_YEAR";
+  month?: number;
+  year?: number;
 }
 
 interface CommodityGrowthData {
@@ -33,8 +35,14 @@ const CommoditySalesGrowth = async (
 }> => {
   try {
     const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth(); // 0-11
+    const selectedYear = payload.year ?? currentDate.getFullYear();
+    const selectedMonth = payload.month ?? currentDate.getMonth(); // 0-11 from getMonth()
+
+    // Month names array to match database format
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
 
     let currentPeriodLabel = "";
     let previousPeriodLabel = "";
@@ -42,41 +50,39 @@ const CommoditySalesGrowth = async (
     let previousPeriodCondition: any = {};
 
     if (payload.growthType === "MONTH_ON_MONTH") {
-      // Current month vs previous month
-      const currentMonthStr = String(currentMonth + 1).padStart(2, "0");
-      const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-      const previousMonthStr = String(previousMonth + 1).padStart(2, "0");
-      const previousMonthYear =
-        currentMonth === 0 ? currentYear - 1 : currentYear;
+      // Current month vs previous month - use selectedMonth (1-12) for calculation
+      const currentMonthIndex = selectedMonth - 1; // Convert to 0-11 for array index
+      const currentMonthStr = String(selectedMonth).padStart(2, "0");
+      const previousMonth = selectedMonth === 1 ? 12 : selectedMonth - 1;
+      const previousMonthIndex = previousMonth - 1;
+      const previousMonthStr = String(previousMonth).padStart(2, "0");
+      const previousMonthYear = selectedMonth === 1 ? selectedYear - 1 : selectedYear;
 
-      currentPeriodLabel = `${currentYear}-${currentMonthStr}`;
+      currentPeriodLabel = `${selectedYear}-${currentMonthStr}`;
       previousPeriodLabel = `${previousMonthYear}-${previousMonthStr}`;
 
       currentPeriodCondition = {
-        year: currentYear.toString(),
-        month: currentMonthStr,
+        year: selectedYear.toString(),
+        month: monthNames[currentMonthIndex],
       };
 
       previousPeriodCondition = {
         year: previousMonthYear.toString(),
-        month: previousMonthStr,
+        month: monthNames[previousMonthIndex],
       };
     } else {
-      // Year on Year - same month, previous year
-      const currentMonthStr = String(currentMonth + 1).padStart(2, "0");
-      const previousYear = currentYear - 1;
+      // Year on Year - compare entire years
+      const previousYear = selectedYear - 1;
 
-      currentPeriodLabel = `${currentYear}-${currentMonthStr}`;
-      previousPeriodLabel = `${previousYear}-${currentMonthStr}`;
+      currentPeriodLabel = `${selectedYear}`;
+      previousPeriodLabel = `${previousYear}`;
 
       currentPeriodCondition = {
-        year: currentYear.toString(),
-        month: currentMonthStr,
+        year: selectedYear.toString(),
       };
 
       previousPeriodCondition = {
         year: previousYear.toString(),
-        month: currentMonthStr,
       };
     }
 
@@ -97,6 +103,8 @@ const CommoditySalesGrowth = async (
       }
     }
 
+    console.log("DVAT Where Clause:", dvatWhereClause);
+    console.log("currentPeriodCondition:", currentPeriodCondition);
 
     // Fetch current period data
     const currentPeriodData = await prisma.returns_entry.findMany({
@@ -124,7 +132,6 @@ const CommoditySalesGrowth = async (
         },
       },
     });
-
 
     // Fetch previous period data
     const previousPeriodData = await prisma.returns_entry.findMany({

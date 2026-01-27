@@ -45,7 +45,7 @@ const Dvat16ReturnPreview = () => {
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
   const userid: number = parseInt(
-    decryptURLData(Array.isArray(id) ? id[0] : id, router)
+    decryptURLData(Array.isArray(id) ? id[0] : id, router),
   );
 
   const [isDownload, setDownload] = useState<boolean>(false);
@@ -110,22 +110,22 @@ const Dvat16ReturnPreview = () => {
         const dvat_30: boolean =
           returnformsresponse.data.returns_entry.filter(
             (val: returns_entry) =>
-              val.dvat_type == DvatType.DVAT_30 && val.isnil == true
+              val.dvat_type == DvatType.DVAT_30 && val.isnil == true,
           ).length > 0;
         const dvat_30a: boolean =
           returnformsresponse.data.returns_entry.filter(
             (val: returns_entry) =>
-              val.dvat_type == DvatType.DVAT_30_A && val.isnil == true
+              val.dvat_type == DvatType.DVAT_30_A && val.isnil == true,
           ).length > 0;
         const dvat_31: boolean =
           returnformsresponse.data.returns_entry.filter(
             (val: returns_entry) =>
-              val.dvat_type == DvatType.DVAT_31 && val.isnil == true
+              val.dvat_type == DvatType.DVAT_31 && val.isnil == true,
           ).length > 0;
         const dvat_31a: boolean =
           returnformsresponse.data.returns_entry.filter(
             (val: returns_entry) =>
-              val.dvat_type == DvatType.DVAT_31_A && val.isnil == true
+              val.dvat_type == DvatType.DVAT_31_A && val.isnil == true,
           ).length > 0;
 
         if (dvat_30 && dvat_30a && dvat_31 && dvat_31a) {
@@ -136,7 +136,7 @@ const Dvat16ReturnPreview = () => {
 
         // Get the month index from the month name
         let monthIndex = monthNames.indexOf(
-          returnformsresponse.data.returns_01.month!
+          returnformsresponse.data.returns_01.month!,
         );
 
         // Check if it's December (index 11) and increment year if needed
@@ -152,9 +152,9 @@ const Dvat16ReturnPreview = () => {
           new Date(
             parseInt(returnformsresponse.data.returns_01.year),
             monthIndex,
-            11
+            11,
           ),
-          currentDate
+          currentDate,
         );
         if (
           returnformsresponse.data.returns_01.rr_number == null ||
@@ -236,7 +236,7 @@ const Dvat16ReturnPreview = () => {
 
     const diff_days = getDaysBetweenDates(
       new Date(parseInt(return01!.year), monthIndex, 15),
-      currentDate
+      currentDate,
     );
     setDiffDays(diff_days);
   }, [return01]);
@@ -321,7 +321,7 @@ const Dvat16ReturnPreview = () => {
               parseFloat(getGoodsReturnsNote().decrease)))) *
           0.15) /
           365) *
-          DiffDays
+          DiffDays,
       )
         ? 0
         : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -376,7 +376,7 @@ const Dvat16ReturnPreview = () => {
             parseFloat(getGoodsReturnsNote().decrease)))) *
         0.15) /
         365) *
-        DiffDays
+        DiffDays,
     )
       ? 0
       : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -472,7 +472,7 @@ const Dvat16ReturnPreview = () => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -495,7 +495,7 @@ const Dvat16ReturnPreview = () => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -518,7 +518,7 @@ const Dvat16ReturnPreview = () => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -541,7 +541,7 @@ const Dvat16ReturnPreview = () => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -565,7 +565,7 @@ const Dvat16ReturnPreview = () => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -589,7 +589,7 @@ const Dvat16ReturnPreview = () => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -613,7 +613,7 @@ const Dvat16ReturnPreview = () => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -637,7 +637,7 @@ const Dvat16ReturnPreview = () => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -663,7 +663,7 @@ const Dvat16ReturnPreview = () => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -688,7 +688,7 @@ const Dvat16ReturnPreview = () => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -713,7 +713,7 @@ const Dvat16ReturnPreview = () => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -750,7 +750,8 @@ const Dvat16ReturnPreview = () => {
         parseFloat(get5_2().decrease) +
         (parseFloat(getCreditNote().decrease) -
           parseFloat(getDebitNote().decrease) -
-          parseFloat(getGoodsReturnsNote().decrease))) +
+          parseFloat(getGoodsReturnsNote().decrease) -
+          parseFloat(lastmonthdue))) +
       (isNegative(
         (((parseFloat(getInvoicePercentage("0").decrease) +
           parseFloat(getInvoicePercentage("1").decrease) +
@@ -772,10 +773,11 @@ const Dvat16ReturnPreview = () => {
             parseFloat(get5_2().decrease) +
             (parseFloat(getCreditNote().decrease) -
               parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease)))) *
+              parseFloat(getGoodsReturnsNote().decrease) -
+              parseFloat(lastmonthdue)))) *
           0.15) /
           365) *
-          DiffDays
+          DiffDays,
       )
         ? 0
         : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -798,13 +800,91 @@ const Dvat16ReturnPreview = () => {
               parseFloat(get5_2().decrease) +
               (parseFloat(getCreditNote().decrease) -
                 parseFloat(getDebitNote().decrease) -
-                parseFloat(getGoodsReturnsNote().decrease)))) *
+                parseFloat(getGoodsReturnsNote().decrease) -
+                parseFloat(lastmonthdue)))) *
             0.15) /
             365) *
           DiffDays) +
       (isNegative(lateFees) ? 0 : lateFees) +
       0 -
       0;
+    // const val: number =
+    //   parseFloat(getInvoicePercentage("0").decrease) +
+    //   parseFloat(getInvoicePercentage("1").decrease) +
+    //   parseFloat(getInvoicePercentage("4").decrease) +
+    //   parseFloat(getInvoicePercentage("5").decrease) +
+    //   parseFloat(getInvoicePercentage("6").decrease) +
+    //   parseFloat(getInvoicePercentage("12.5").decrease) +
+    //   parseFloat(getInvoicePercentage("12.75").decrease) +
+    //   parseFloat(getInvoicePercentage("13.5").decrease) +
+    //   parseFloat(getInvoicePercentage("15").decrease) +
+    //   parseFloat(getInvoicePercentage("20").decrease) +
+    //   parseFloat(getSaleOfPercentage("4").decrease) +
+    //   parseFloat(getSaleOfPercentage("5").decrease) +
+    //   parseFloat(getSaleOfPercentage("12.5").decrease) +
+    //   parseFloat(get4_6().decrease) +
+    //   parseFloat(get4_7().decrease) -
+    //   parseFloat(get4_9().decrease) -
+    //   (parseFloat(get5_1().decrease) +
+    //     parseFloat(get5_2().decrease) +
+    //     (parseFloat(getCreditNote().decrease) -
+    //       parseFloat(getDebitNote().decrease) -
+    //       parseFloat(getGoodsReturnsNote().decrease))) +
+    //   (isNegative(
+    //     (((parseFloat(getInvoicePercentage("0").decrease) +
+    //       parseFloat(getInvoicePercentage("1").decrease) +
+    //       parseFloat(getInvoicePercentage("4").decrease) +
+    //       parseFloat(getInvoicePercentage("5").decrease) +
+    //       parseFloat(getInvoicePercentage("6").decrease) +
+    //       parseFloat(getInvoicePercentage("12.5").decrease) +
+    //       parseFloat(getInvoicePercentage("12.75").decrease) +
+    //       parseFloat(getInvoicePercentage("13.5").decrease) +
+    //       parseFloat(getInvoicePercentage("15").decrease) +
+    //       parseFloat(getInvoicePercentage("20").decrease) +
+    //       parseFloat(getSaleOfPercentage("4").decrease) +
+    //       parseFloat(getSaleOfPercentage("5").decrease) +
+    //       parseFloat(getSaleOfPercentage("12.5").decrease) +
+    //       parseFloat(get4_6().decrease) +
+    //       parseFloat(get4_7().decrease) -
+    //       parseFloat(get4_9().decrease) -
+    //       (parseFloat(get5_1().decrease) +
+    //         parseFloat(get5_2().decrease) +
+    //         (parseFloat(getCreditNote().decrease) -
+    //           parseFloat(getDebitNote().decrease) -
+    //           parseFloat(getGoodsReturnsNote().decrease)))) *
+    //       0.15) /
+    //       365) *
+    //       DiffDays,
+    //   )
+    //     ? 0
+    //     : (((parseFloat(getInvoicePercentage("0").decrease) +
+    //         parseFloat(getInvoicePercentage("1").decrease) +
+    //         parseFloat(getInvoicePercentage("4").decrease) +
+    //         parseFloat(getInvoicePercentage("5").decrease) +
+    //         parseFloat(getInvoicePercentage("6").decrease) +
+    //         parseFloat(getInvoicePercentage("12.5").decrease) +
+    //         parseFloat(getInvoicePercentage("12.75").decrease) +
+    //         parseFloat(getInvoicePercentage("13.5").decrease) +
+    //         parseFloat(getInvoicePercentage("15").decrease) +
+    //         parseFloat(getInvoicePercentage("20").decrease) +
+    //         parseFloat(getSaleOfPercentage("4").decrease) +
+    //         parseFloat(getSaleOfPercentage("5").decrease) +
+    //         parseFloat(getSaleOfPercentage("12.5").decrease) +
+    //         parseFloat(get4_6().decrease) +
+    //         parseFloat(get4_7().decrease) -
+    //         parseFloat(get4_9().decrease) -
+    //         (parseFloat(get5_1().decrease) +
+    //           parseFloat(get5_2().decrease) +
+    //           (parseFloat(getCreditNote().decrease) -
+    //             parseFloat(getDebitNote().decrease) -
+    //             parseFloat(getGoodsReturnsNote().decrease)))) *
+    //         0.15) /
+    //         365) *
+    //       DiffDays) +
+    //   (isNegative(lateFees) ? 0 : lateFees) +
+    //   0 -
+    //   0;
+    console.log("net payable", val);
     return val;
   };
   // net payable amount end here
@@ -1057,8 +1137,8 @@ const Dvat16ReturnPreview = () => {
                       <td className="border border-black px-2 leading-4 text-[0.6rem]">
                         {formatDateTime(
                           getPrismaDatabaseDate(
-                            new Date(return01?.transaction_date!)
-                          )
+                            new Date(return01?.transaction_date!),
+                          ),
                         )}
                       </td>
                       <td className="border border-black px-2 leading-4 text-[0.6rem]">
@@ -1082,12 +1162,12 @@ const Dvat16ReturnPreview = () => {
                   onClick={() =>
                     router.push(
                       `/dashboard/returns/department-dvat24?returnid=${encryptURLData(
-                        return01.id.toString()
+                        return01.id.toString(),
                       )}&tin=${encryptURLData(
                         return01.dvat04.tinNumber
                           ? return01.dvat04.tinNumber.toString()
-                          : ""
-                      )}`
+                          : "",
+                      )}`,
                     )
                   }
                 >
@@ -1098,12 +1178,12 @@ const Dvat16ReturnPreview = () => {
                   onClick={() =>
                     router.push(
                       `/dashboard/returns/department-dvat24a?returnid=${encryptURLData(
-                        return01.id.toString()
+                        return01.id.toString(),
                       )}&tin=${encryptURLData(
                         return01.dvat04.tinNumber
                           ? return01.dvat04.tinNumber.toString()
-                          : ""
-                      )}`
+                          : "",
+                      )}`,
                     )
                   }
                 >
@@ -1127,10 +1207,10 @@ const Dvat16ReturnPreview = () => {
                 }
                 await generatePDF(
                   `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                    "1"
+                    "1",
                   )}/${encryptURLData(
-                    return01.dvat04Id.toString()
-                  )}?year=${year}&month=${month}&sidebar=no`
+                    return01.dvat04Id.toString(),
+                  )}?year=${year}&month=${month}&sidebar=no`,
                 );
               }}
               disabled={isDownload}
@@ -1172,8 +1252,8 @@ const Dvat16ReturnPreview = () => {
                       }
                       router.push(
                         `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                          return01.id.toString()
-                        )}/challan-payment`
+                          return01.id.toString(),
+                        )}/challan-payment`,
                       );
                     }}
                   >
@@ -1235,7 +1315,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
 
     const diff_days = getDaysBetweenDates(
       new Date(parseInt(props.return01.year), monthIndex, 15),
-      currentDate
+      currentDate,
     );
     setDiffDays(diff_days);
 
@@ -1256,7 +1336,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1279,7 +1359,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1302,7 +1382,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1325,7 +1405,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1349,7 +1429,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1373,7 +1453,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1397,7 +1477,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1423,7 +1503,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1448,7 +1528,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1473,7 +1553,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1591,7 +1671,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
                 parseFloat(props.lastMonthDue)))) *
             0.15) /
             365) *
-            DiffDays
+            DiffDays,
         )
           ? 0
           : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -1621,7 +1701,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
             DiffDays) +
         (isNegative(lateFees) ? 0 : lateFees) +
         0 -
-        0
+        0,
     )
       ? 0
       : parseFloat(getInvoicePercentage("0").decrease) +
@@ -1671,7 +1751,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
                   parseFloat(props.lastMonthDue)))) *
               0.15) /
               365) *
-              DiffDays
+              DiffDays,
           )
             ? 0
             : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -1794,7 +1874,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
 
     const diff_days = getDaysBetweenDates(
       new Date(parseInt(props.return01.year), monthIndex, 15),
-      currentDate
+      currentDate,
     );
     setDiffDays(diff_days);
 
@@ -1815,7 +1895,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1838,7 +1918,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1861,7 +1941,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1884,7 +1964,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1908,7 +1988,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1932,7 +2012,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1956,7 +2036,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1980,7 +2060,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2006,7 +2086,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2031,7 +2111,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2056,7 +2136,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2189,7 +2269,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
                         parseFloat(getGoodsReturnsNote().decrease)))) *
                     0.15) /
                     365) *
-                    DiffDays
+                    DiffDays,
                 )
                   ? 0
                   : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -2218,7 +2298,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
                     DiffDays) +
                 (isNegative(lateFees) ? 0 : lateFees) +
                 0 -
-                0
+                0,
             )
               ? (
                   parseFloat(getInvoicePercentage("0").decrease) +
@@ -2266,7 +2346,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
                           parseFloat(getGoodsReturnsNote().decrease)))) *
                       0.15) /
                       365) *
-                      DiffDays
+                      DiffDays,
                   )
                     ? 0
                     : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -2367,7 +2447,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
                         parseFloat(getGoodsReturnsNote().decrease)))) *
                     0.15) /
                     365) *
-                    DiffDays
+                    DiffDays,
                 )
                   ? 0
                   : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -2396,7 +2476,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
                     DiffDays) +
                 (isNegative(lateFees) ? 0 : lateFees) +
                 0 -
-                0
+                0,
             )
               ? (
                   parseFloat(getInvoicePercentage("0").decrease) +
@@ -2444,7 +2524,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
                           parseFloat(getGoodsReturnsNote().decrease)))) *
                       0.15) /
                       365) *
-                      DiffDays
+                      DiffDays,
                   )
                     ? 0
                     : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -2495,7 +2575,7 @@ const TurnOver = (props: TurnOverProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2518,7 +2598,7 @@ const TurnOver = (props: TurnOverProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2541,7 +2621,7 @@ const TurnOver = (props: TurnOverProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2564,7 +2644,7 @@ const TurnOver = (props: TurnOverProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2587,7 +2667,7 @@ const TurnOver = (props: TurnOverProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2903,7 +2983,7 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2925,7 +3005,7 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.SALE_CANCELLED &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3107,7 +3187,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3131,7 +3211,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3155,7 +3235,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3181,7 +3261,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3206,7 +3286,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3231,7 +3311,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3380,7 +3460,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3405,7 +3485,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3430,7 +3510,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3671,7 +3751,7 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
 
     const grouped: Record<string, returns_entry> = {};
@@ -3858,7 +3938,7 @@ const NetTax = (props: NetTaxProps) => {
 
     const diff_days = getDaysBetweenDates(
       new Date(parseInt(props.return01.year), monthIndex, 15),
-      currentDate
+      currentDate,
     );
     setDiffDays(diff_days);
 
@@ -3879,7 +3959,7 @@ const NetTax = (props: NetTaxProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3902,7 +3982,7 @@ const NetTax = (props: NetTaxProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3925,7 +4005,7 @@ const NetTax = (props: NetTaxProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3948,7 +4028,7 @@ const NetTax = (props: NetTaxProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3972,7 +4052,7 @@ const NetTax = (props: NetTaxProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3996,7 +4076,7 @@ const NetTax = (props: NetTaxProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4020,7 +4100,7 @@ const NetTax = (props: NetTaxProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4044,7 +4124,7 @@ const NetTax = (props: NetTaxProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4070,7 +4150,7 @@ const NetTax = (props: NetTaxProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4095,7 +4175,7 @@ const NetTax = (props: NetTaxProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4120,7 +4200,7 @@ const NetTax = (props: NetTaxProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4201,7 +4281,7 @@ const NetTax = (props: NetTaxProps) => {
                     parseFloat(getGoodsReturnsNote().decrease)))) *
                 0.15) /
                 365) *
-                DiffDays
+                DiffDays,
             )
               ? "0"
               : (
@@ -4314,7 +4394,7 @@ const NetTax = (props: NetTaxProps) => {
                       parseFloat(props.lastMonthDue)))) *
                   0.15) /
                   365) *
-                  DiffDays
+                  DiffDays,
               )
                 ? 0
                 : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -4397,7 +4477,7 @@ const CentralSales = (props: CentralSalesProps) => {
 
     const diff_days = getDaysBetweenDates(
       new Date(parseInt(props.return01.year), monthIndex, 15),
-      currentDate
+      currentDate,
     );
     setDiffDays(diff_days);
     if (
@@ -4416,7 +4496,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.LABOUR
+        val.sale_of == SaleOf.LABOUR,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4438,7 +4518,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.FORMF
+        val.sale_of_interstate == SaleOfInterstate.FORMF,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4461,7 +4541,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.EXPORT_OUTOF_INDIA
+        val.sale_of_interstate == SaleOfInterstate.EXPORT_OUTOF_INDIA,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4484,7 +4564,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE
+        val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4507,7 +4587,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4529,7 +4609,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4550,7 +4630,7 @@ const CentralSales = (props: CentralSalesProps) => {
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
-        val.category_of_entry == CategoryOfEntry.FREIGHT_CHARGES
+        val.category_of_entry == CategoryOfEntry.FREIGHT_CHARGES,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4572,7 +4652,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
-          val.category_of_entry == CategoryOfEntry.SALE_CANCELLED)
+          val.category_of_entry == CategoryOfEntry.SALE_CANCELLED),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4595,7 +4675,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.EXEMPT_US6
+        val.sale_of_interstate == SaleOfInterstate.EXEMPT_US6,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4617,7 +4697,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.SCHI
+        val.sale_of_interstate == SaleOfInterstate.SCHI,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4640,7 +4720,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.FORMI
+        val.sale_of_interstate == SaleOfInterstate.FORMI,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4663,7 +4743,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.sale_of_interstate == SaleOfInterstate.FORMC ||
-          val.purchase_type == PurchaseType.FORMC_CONCESSION)
+          val.purchase_type == PurchaseType.FORMC_CONCESSION),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4686,7 +4766,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.sale_of_interstate == SaleOfInterstate.FORMC ||
-          val.purchase_type == PurchaseType.FORMC_CONCESSION)
+          val.purchase_type == PurchaseType.FORMC_CONCESSION),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4710,7 +4790,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4732,7 +4812,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.PROCESSED_GOODS
+        val.sale_of_interstate == SaleOfInterstate.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4758,7 +4838,7 @@ const CentralSales = (props: CentralSalesProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4783,7 +4863,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4806,7 +4886,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4829,7 +4909,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4852,7 +4932,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4876,7 +4956,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4900,7 +4980,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4924,7 +5004,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4948,7 +5028,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4974,7 +5054,7 @@ const CentralSales = (props: CentralSalesProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4999,7 +5079,7 @@ const CentralSales = (props: CentralSalesProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5046,7 +5126,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.GOODS_TAXABLE || val.sale_of == SaleOf.TAXABLE)
+        (val.sale_of == SaleOf.GOODS_TAXABLE || val.sale_of == SaleOf.TAXABLE),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5625,7 +5705,7 @@ const CentralSales = (props: CentralSalesProps) => {
                     parseFloat(getGoodsReturnsNote().decrease)))) *
                 0.15) /
                 365) *
-                DiffDays
+                DiffDays,
             )
               ? 0
               : (
@@ -5798,7 +5878,7 @@ const CentralSales = (props: CentralSalesProps) => {
                       parseFloat(props.lastMonthDue)))) *
                   0.15) /
                   365) *
-                  DiffDays
+                  DiffDays,
               )
                 ? 0
                 : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -5849,7 +5929,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       (val: returns_entry) =>
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.FORMF
+        val.sale_of_interstate == SaleOfInterstate.FORMF,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5872,7 +5952,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.sale_of_interstate == SaleOfInterstate.FORMC ||
-          val.purchase_type == PurchaseType.FORMC_CONCESSION)
+          val.purchase_type == PurchaseType.FORMC_CONCESSION),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5894,7 +5974,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       (val: returns_entry) =>
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.FORMI
+        val.sale_of_interstate == SaleOfInterstate.FORMI,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5916,7 +5996,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       (val: returns_entry) =>
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.FORMH
+        val.sale_of_interstate == SaleOfInterstate.FORMH,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5939,7 +6019,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.purchase_type == PurchaseType.TAXABLE_RATE &&
-        val.nature_purchase == NaturePurchase.OTHER_GOODS
+        val.nature_purchase == NaturePurchase.OTHER_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5962,7 +6042,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE &&
-        val.nature_purchase == NaturePurchase.CAPITAL_GOODS
+        val.nature_purchase == NaturePurchase.CAPITAL_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5984,7 +6064,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       (val: returns_entry) =>
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.EXPORT_OUTOF_INDIA
+        val.sale_of_interstate == SaleOfInterstate.EXPORT_OUTOF_INDIA,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (

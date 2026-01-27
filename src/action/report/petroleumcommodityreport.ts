@@ -16,7 +16,10 @@ function getDateMonthsAgo(date: Date, monthsAgo: number): Date {
   return newDate;
 }
 
-const PetroleumCommodityReport = async (): Promise<
+const PetroleumCommodityReport = async (
+  month?: number,
+  year?: number,
+): Promise<
   ApiResponseType<Array<{
     id: number;
     name: string;
@@ -29,27 +32,19 @@ const PetroleumCommodityReport = async (): Promise<
   const functionname: string = PetroleumCommodityReport.name;
   try {
     const currentDate = new Date();
-    const twoMonthsAgo = getDateMonthsAgo(currentDate, 7);
+    const targetMonth = month ?? currentDate.getMonth() + 1;
+    const targetYear = year ?? currentDate.getFullYear();
 
-    const firstDateOfTwoMonthsAgo = new Date(
-      twoMonthsAgo.getFullYear(),
-      twoMonthsAgo.getMonth(),
-      2
-    );
-
-    const lastDateOfTwoMonthsAgo = new Date(
-      twoMonthsAgo.getFullYear(),
-      twoMonthsAgo.getMonth() + 1,
-      1
-    );
+    const firstDateOfMonth = new Date(targetYear, targetMonth - 1, 2);
+    const lastDateOfMonth = new Date(targetYear, targetMonth, 1);
 
     const response = await prisma.returns_entry.findMany({
       where: {
         deletedAt: null,
         deletedBy: null,
         invoice_date: {
-          gte: firstDateOfTwoMonthsAgo,
-          lt: lastDateOfTwoMonthsAgo,
+          gte: firstDateOfMonth,
+          lt: lastDateOfMonth,
         },
       },
       include: {
@@ -57,7 +52,7 @@ const PetroleumCommodityReport = async (): Promise<
       },
     });
 
-    if (response.length === 0) {
+    if (response.length == 0) {
       return createResponse({
         functionname: functionname,
         message: "No data found for the specified period.",

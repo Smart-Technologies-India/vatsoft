@@ -22,6 +22,9 @@ interface TimeLineSummaryPayload {
   dept: SelectOffice;
   skip: number;
   take: number;
+  year?: number;
+  sortField?: "filed" | "late" | "pending";
+  sortOrder?: "asc" | "desc";
 }
 
 const TimeLineSummary = async (
@@ -33,10 +36,11 @@ const TimeLineSummary = async (
       where: {
         deletedAt: null,
         deletedBy: null,
+        ...(payload.year && { year: payload.year.toString() }),
         dvat: {
           ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
           ...(payload.tradename && {
-            OR: [
+            OR: [    
               { tradename: { contains: payload.tradename } },
               { name: { contains: payload.tradename } },
             ],
@@ -96,6 +100,20 @@ const TimeLineSummary = async (
 
     // Convert Map to an array
     const res: ResponseType[] = Array.from(resMap.values());
+
+    // Apply sorting if specified
+    if (payload.sortField && payload.sortOrder) {
+      res.sort((a, b) => {
+        const aValue = a[payload.sortField!];
+        const bValue = b[payload.sortField!];
+        
+        if (payload.sortOrder === "asc") {
+          return aValue - bValue;
+        } else {
+          return bValue - aValue;
+        }
+      });
+    }
 
     const paginatedData = res.slice(payload.skip, payload.skip + payload.take);
 

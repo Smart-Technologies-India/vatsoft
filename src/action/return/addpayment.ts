@@ -27,7 +27,7 @@ interface AddPaymentPayload {
 }
 
 const AddPayment = async (
-  payload: AddPaymentPayload
+  payload: AddPaymentPayload,
 ): Promise<ApiResponseType<returns_01 | null>> => {
   const functionname: string = AddPayment.name;
   const nanoid = customAlphabet("1234567890", 12);
@@ -94,7 +94,10 @@ const AddPayment = async (
 
       if (updateresponse.dvat04.compositionScheme) {
         const monthsToUpdate = getMonthGroup(updateresponse.month ?? "");
-        await prisma.return_filing.updateMany({
+        const filingDate = new Date();
+        
+        // Get all records to update to check due dates
+        const recordsToUpdate = await prisma.return_filing.findMany({
           where: {
             filing_status: false,
             dvatid: updateresponse.dvat04Id,
@@ -102,13 +105,26 @@ const AddPayment = async (
             year: updateresponse.year,
             month: { in: monthsToUpdate },
           },
-          data: {
-            filing_date: new Date(),
-            filing_status: true,
-          },
         });
+        
+        // Update each record with appropriate return_status
+        await Promise.all(
+          recordsToUpdate.map((record) =>
+            prisma.return_filing.update({
+              where: { id: record.id },
+              data: {
+                filing_date: filingDate,
+                filing_status: true,
+                return_status: record.due_date && record.due_date >= filingDate ? "FILED" : "LATEFILED",
+              },
+            })
+          )
+        );
       } else {
-        await prisma.return_filing.updateMany({
+        const filingDate = new Date();
+        
+        // Get all records to update to check due dates
+        const recordsToUpdate = await prisma.return_filing.findMany({
           where: {
             filing_status: false,
             dvatid: updateresponse.dvat04Id,
@@ -116,11 +132,21 @@ const AddPayment = async (
             year: updateresponse.year,
             month: updateresponse.month ?? "",
           },
-          data: {
-            filing_date: new Date(),
-            filing_status: true,
-          },
         });
+        
+        // Update each record with appropriate return_status
+        await Promise.all(
+          recordsToUpdate.map((record) =>
+            prisma.return_filing.update({
+              where: { id: record.id },
+              data: {
+                filing_date: filingDate,
+                filing_status: true,
+                return_status: record.due_date && record.due_date >= filingDate ? "FILED" : "LATEFILED",
+              },
+            })
+          )
+        );
       }
 
       if (
@@ -183,7 +209,7 @@ const AddPayment = async (
           group.entries.map((entry) => ({
             ...entry,
             amount: group.totalAmount.toString(), // Overwrite or add the total amount
-          }))
+          })),
         );
 
         const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
@@ -211,9 +237,9 @@ const AddPayment = async (
                 sr_no: getsrno(
                   isExist.dvat04.selectOffice!,
                   parseInt(
-                    lastcform ? lastcform.sr_no.split("/").pop() ?? "0" : "1"
+                    lastcform ? (lastcform.sr_no.split("/").pop() ?? "0") : "1",
                   ),
-                  index
+                  index,
                 ),
                 seller_address:
                   representativeEntry.seller_tin_number.state ?? "",
@@ -223,16 +249,16 @@ const AddPayment = async (
                   representativeEntry.seller_tin_number.tin_number ?? "",
                 cform_type: ReturnType.ORIGINAL,
                 from_period: new Date(
-                  dates.fromDate.split("-").reverse().join("-")
+                  dates.fromDate.split("-").reverse().join("-"),
                 ),
                 to_period: new Date(
-                  dates.toDate.split("-").reverse().join("-")
+                  dates.toDate.split("-").reverse().join("-"),
                 ),
                 status: "ACTIVE",
                 createdById: isExist.createdById,
               },
             });
-          })
+          }),
         );
 
         // const cformResponses = await Promise.all(
@@ -280,7 +306,7 @@ const AddPayment = async (
 
           if (!cform || !cform.id) {
             throw new Error(
-              `CForm entry for group ${groupIndex} was not created`
+              `CForm entry for group ${groupIndex} was not created`,
             );
           }
 
@@ -422,7 +448,7 @@ const getMonthGroup = (currentMonth: string): string[] => {
 
 function getFromDateAndToDate(
   year: string,
-  month: string
+  month: string,
 ): { fromDate: string; toDate: string } {
   const monthNames = [
     "January",
@@ -470,14 +496,14 @@ function getFromDateAndToDate(
 const getsrno = (
   selectOffice: SelectOffice,
   id: number,
-  index: number
+  index: number,
 ): string => {
   let pre =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
       ? "DNH"
       : selectOffice == SelectOffice.DAMAN
-      ? "DD"
-      : "DIU";
+        ? "DD"
+        : "DIU";
 
   return `${pre}/C/${id + index}`;
 };

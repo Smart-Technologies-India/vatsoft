@@ -223,6 +223,39 @@ const Sidebar = (props: SidebarProps) => {
             />
           </>
         )}
+
+        {[
+          "SYSTEM",
+          "ADMIN",
+          "VATOFFICER",
+          "ASST_VAT_OFFICER",
+          "DY_COMMISSIONER",
+          "INSPECTOR",
+        ].includes(props.role) && (
+          <>
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentBuildingBank48Regular className="w-5 h-5" />}
+              name="First Stock"
+              path={path}
+              pathcheck={"/dashboard/test/first_stock"}
+            />
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentCalendar12Regular className="w-5 h-5" />}
+              name="Add Sell"
+              path={path}
+              pathcheck={"/dashboard/test/add_sale"}
+            />
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentCalendar12Regular className="w-5 h-5" />}
+              name="Add Purchase"
+              path={path}
+              pathcheck={"/dashboard/test/add_purchase"}
+            />
+          </>
+        )}
       </div>
 
       {/* Footer */}

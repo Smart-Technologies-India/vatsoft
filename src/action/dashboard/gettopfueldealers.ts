@@ -8,6 +8,7 @@ interface TopDealerData {
   name: string;
   tinNumber: string;
   totalRevenue: number;
+  tradename: string;
 }
 
 export default async function GetTopFuelDealers(data: {
@@ -34,6 +35,7 @@ export default async function GetTopFuelDealers(data: {
         id: true,
         name: true,
         tinNumber: true,
+        tradename: true,
       },
     });
 
@@ -67,11 +69,11 @@ export default async function GetTopFuelDealers(data: {
         // Manually sum up the VAT amounts
         const salesTax = sales.reduce(
           (sum, sale) => sum + parseFloat(sale.vatamount || "0"),
-          0
+          0,
         );
         const purchaseTax = purchases.reduce(
           (sum, purchase) => sum + parseFloat(purchase.vatamount || "0"),
-          0
+          0,
         );
 
         // Total revenue is sales tax + purchase tax
@@ -82,8 +84,9 @@ export default async function GetTopFuelDealers(data: {
           name: dealer.name || "Unknown Dealer",
           tinNumber: dealer.tinNumber || "N/A",
           totalRevenue: totalRevenue,
+          tradename: dealer.tradename || "N/A",
         };
-      })
+      }),
     );
 
     // Sort by revenue and get top 10

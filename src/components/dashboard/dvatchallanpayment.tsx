@@ -72,7 +72,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   const [InterestDiffDays, setInterestDiffDays] = useState<number>(0);
   const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
-    []
+    [],
   );
 
   const [user, setUser] = useState<user | null>(null);
@@ -80,7 +80,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   useEffect(() => {
     const init = async () => {
       const returns_response = await GetReturn01({
-        id: parseInt(decryptURLData(props.returnid, router)),
+        id: parseInt(props.returnid),
       });
       if (returns_response.status && returns_response.data) {
         setReturn01(returns_response.data);
@@ -110,7 +110,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         getLateFees(
           returns_response.data.year,
           returns_response.data.month!,
-          returns_response.data.rr_number
+          returns_response.data.rr_number,
         );
       }
     };
@@ -149,13 +149,13 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
     const idiff_days = getDaysBetweenDates(
       new Date(newYear, monthIndex, 15),
-      currentDate
+      currentDate,
     );
 
     setInterestDiffDays(idiff_days);
     const pdiff_days = getDaysBetweenDates(
       new Date(newYear, monthIndex, 28),
-      currentDate
+      currentDate,
     );
 
     setPenaltyDiffDays(pdiff_days);
@@ -243,7 +243,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -266,7 +266,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -289,7 +289,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -312,7 +312,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -336,7 +336,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -360,7 +360,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -384,7 +384,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -408,7 +408,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -434,7 +434,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -459,7 +459,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -484,7 +484,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -525,7 +525,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
             parseFloat(getGoodsReturnsNote().decrease)))) *
         0.15) /
         365) *
-        InterestDiffDays
+        InterestDiffDays,
     )
       ? 0
       : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -661,7 +661,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
               parseFloat(getGoodsReturnsNote().decrease)))) *
           0.15) /
           365) *
-          InterestDiffDays
+          InterestDiffDays,
       )
         ? 0
         : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -717,7 +717,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
           <div>
             <p className="text-sm">Name</p>
             <p className="text-sm  font-medium">
-              {user?.firstName} - {user?.lastName}
+              {return01?.dvat04?.tradename}
+              {/* {user?.firstName} - {user?.lastName} */}
             </p>
           </div>
           <div>
@@ -803,7 +804,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                 </TableCell>
                 <TableCell className="text-left p-2 border">
                   {capitalcase(
-                    toWords.convert(parseFloat(getTotalTaxAmount().toFixed(0)))
+                    toWords.convert(parseFloat(getTotalTaxAmount().toFixed(0))),
                   )}
                 </TableCell>
               </TableRow>
@@ -1044,7 +1045,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                         onClick={async (e) => {
                           e.preventDefault();
                           await generatePDF(
-                            `/dashboard/returns/returns-dashboard/preview/${props.returnid.toString()}/download-challan?sidebar=no`
+                            `/dashboard/returns/returns-dashboard/preview/${props.returnid.toString()}/download-challan?sidebar=no`,
                           );
                         }}
                       >
