@@ -1104,7 +1104,6 @@ const ReturnDashboard = () => {
                           disabled={isDownload}
                           onClick={async () => {
                             try {
-                              console.log("Generating PDF...");
                               await generatePDF(
                                 `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
                                   "11",

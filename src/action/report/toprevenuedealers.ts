@@ -81,7 +81,7 @@ const TopRevenueDealers = async (
           year: selectedYear,
         },
         select: {
-          total_tax_amount: true,
+          vatamount: true,
         },
       });
 
@@ -89,7 +89,7 @@ const TopRevenueDealers = async (
 
       // Calculate total revenue
       const totalRevenue = returns.reduce(
-        (sum, ret) => sum + parseFloat(ret.total_tax_amount || "0"),
+        (sum, ret) => sum + Math.max(0, parseFloat(ret.vatamount || "0")),
         0
       );
 
@@ -103,9 +103,9 @@ const TopRevenueDealers = async (
         commodity: dealer.commodity || "OTHER",
         selectOffice: dealer.selectOffice || "N/A",
         contact_one: dealer.contact_one || "N/A",
-        totalRevenue: totalRevenue,
-        returnsFiled: returns.length,
-        averageRevenuePerReturn: averageRevenuePerReturn,
+        totalRevenue: Math.max(0, totalRevenue),
+        returnsFiled: Math.max(0, returns.length),
+        averageRevenuePerReturn: Math.max(0, averageRevenuePerReturn),
         rank: 0,
       });
     }

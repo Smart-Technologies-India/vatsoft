@@ -57,6 +57,7 @@ const LiquorCommodityPage = () => {
     total_amount: number;
     count: number;
     office: string;
+    vatamount: number;
   }
 
   const [dvatData, setDvatData] = useState<Array<DvatData>>([]);
@@ -78,10 +79,7 @@ const LiquorCommodityPage = () => {
 
     const fetchData = async () => {
       setLoading(true);
-      const response = await LiquorCommodityReport(
-        selectedMonth,
-        selectedYear,
-      );
+      const response = await LiquorCommodityReport(selectedMonth, selectedYear);
       if (response.status == true && response.data) {
         setDvatData(response.data);
         setTotal(
@@ -162,6 +160,9 @@ const LiquorCommodityPage = () => {
                     Total Sales
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-2">
+                    VAT Amount
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-2">
                     No. of Transactions
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-2">
@@ -176,7 +177,11 @@ const LiquorCommodityPage = () => {
                     return (
                       <TableRow key={index}>
                         <TableCell className="border text-center p-2">
-                          {val.office}
+                          <TableCell className="border text-center p-2">
+                            {val.office == "Dadra_Nagar_Haveli"
+                              ? "Dadra & Nagar Haveli"
+                              : val.office}
+                          </TableCell>
                         </TableCell>
                         <TableCell className="border text-center p-2">
                           {val.name}
@@ -186,6 +191,9 @@ const LiquorCommodityPage = () => {
                         </TableCell>
                         <TableCell className="border text-center p-2">
                           {numberWithIndianFormat(val.total_amount)}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          {numberWithIndianFormat(val.vatamount)}
                         </TableCell>
                         <TableCell className="border text-center p-2">
                           {val.count}

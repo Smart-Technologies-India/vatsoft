@@ -1,8 +1,8 @@
 "use client";
 
-import { Button, Drawer, Input, Modal, Radio, RadioChangeEvent } from "antd";
+import { Button, Drawer, Input } from "antd";
 import Marquee from "react-fast-marquee";
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -22,7 +22,6 @@ import {
 import { addMonths, format } from "date-fns";
 
 import { FluentEye12Regular, FluentEyeOff16Regular } from "@/components/icons";
-import PasswordLogin from "@/action/user/passwordlogin";
 import DvatPasswordLogin from "@/action/user/dvatpasswordlogin";
 
 const Home = () => {
@@ -54,7 +53,7 @@ const Home = () => {
     setOpenItems((prev) =>
       prev.includes(value)
         ? prev.filter((item) => item !== value)
-        : [...prev, value]
+        : [...prev, value],
     );
   };
 
@@ -549,7 +548,7 @@ const PasswordLoginComponent = () => {
 
   const handleNumberChange = (
     event: React.ChangeEvent<HTMLInputElement>,
-    setData: Dispatch<SetStateAction<string | undefined>>
+    setData: Dispatch<SetStateAction<string | undefined>>,
   ) => {
     const onlyNumbersRegex = /^[0-9]*$/;
     const { value } = event.target;
@@ -1206,16 +1205,16 @@ const CardComponent = () => {
   // Get current date and calculate current month and next two months
   const currentDate = new Date();
   const months = Array.from({ length: 3 }, (_, i) =>
-    addMonths(currentDate, i - 1)
+    addMonths(currentDate, i - 1),
   ).map((date) => ({
     title: format(date, "MMM, yyyy"), // Format as "Jun, 2024"
     paymentdate: format(
       new Date(date.getFullYear(), date.getMonth() + 1, 15),
-      "MMM d, yyyy"
+      "MMM d, yyyy",
     ), // Format as "Jun 15, 2024"
     returndate: format(
       new Date(date.getFullYear(), date.getMonth() + 1, 28),
-      "MMM d, yyyy"
+      "MMM d, yyyy",
     ), // Format as "Jun 28, 2024"
   }));
 
@@ -1255,7 +1254,7 @@ const CardQuarterComponent = () => {
 
   // Find the current quarter group
   const currentQuarter = monthGroups.find((group) =>
-    group.includes(currentMonth)
+    group.includes(currentMonth),
   );
 
   // Generate data for current and next two quarters

@@ -65,6 +65,7 @@ const PetroleumCommodityPage = () => {
     total_amount: number;
     count: number;
     office: string;
+    vatamount: number;
   }
 
   const [dvatData, setDvatData] = useState<Array<DvatData>>([]);
@@ -170,6 +171,9 @@ const PetroleumCommodityPage = () => {
                     Total Sales
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-2">
+                    VAT Amount
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-2">
                     No. of Transactions
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-2">
@@ -196,6 +200,9 @@ const PetroleumCommodityPage = () => {
                         </TableCell>
                         <TableCell className="border text-center p-2">
                           {numberWithIndianFormat(val.total_amount)}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          {numberWithIndianFormat(val.vatamount)}
                         </TableCell>
                         <TableCell className="border text-center p-2">
                           {val.count}

@@ -28,7 +28,7 @@ export { createResponse };
 
 export interface PaginationResponse<T> {
   status: boolean;
-  data: { total: number; skip: number; take: number; result: T | null };
+  data: { total: number; skip: number; take: number; result: T | null; allData?: T | null };
   message: string;
   functionname: string;
 }
@@ -40,6 +40,7 @@ interface createPaginationResponsePayload<T> {
   skip?: number;
   take?: number;
   total?: number;
+  allData?: T | null;
 }
 
 const createPaginationResponse = <T>({
@@ -49,6 +50,7 @@ const createPaginationResponse = <T>({
   take,
   skip,
   total,
+  allData,
 }: createPaginationResponsePayload<T>): PaginationResponse<T> => {
   return {
     message,
@@ -57,6 +59,7 @@ const createPaginationResponse = <T>({
       result: data,
       skip: skip ?? 0,
       total: total ?? 0,
+      allData: allData,
     },
     status: data == null || data == undefined ? false : true,
     functionname,

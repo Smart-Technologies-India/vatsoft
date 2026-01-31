@@ -132,6 +132,7 @@ const OutstandingDealers = async (
       message: "Pending returns data get successfully",
       functionname,
       data: paginatedData,
+      allData: res, // Return all data for statistics calculation
       skip: payload.skip,
       take: payload.take,
       total: res.length ?? 0,

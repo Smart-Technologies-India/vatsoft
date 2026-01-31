@@ -99,7 +99,6 @@ const YearlyComparison = async (
         total_tax_amount: true,
       },
     });
-    console.log("Current Year Returns Count: ", currentYearReturns.length);
     // Fetch previous fiscal year data
     const previousYearReturns = await prisma.returns_01.findMany({
       where: {
@@ -158,7 +157,7 @@ const YearlyComparison = async (
         amount: 0,
         count: 0,
       };
-      existing.amount += parseFloat(ret.total_tax_amount || "0");
+      existing.amount += Math.max(0, parseFloat(ret.total_tax_amount || "0"));
       existing.count += 1;
       currentYearMonthlyData.set(month, existing);
     });
@@ -179,7 +178,7 @@ const YearlyComparison = async (
         amount: 0,
         count: 0,
       };
-      existing.amount += parseFloat(ret.total_tax_amount || "0");
+      existing.amount += Math.max(0, parseFloat(ret.total_tax_amount || "0"));
       existing.count += 1;
       previousYearMonthlyData.set(month, existing);
     });
@@ -208,8 +207,8 @@ const YearlyComparison = async (
       return {
         month: month,
         year: year.toString(),
-        amount: data.amount,
-        count: data.count,
+        amount: Math.max(0, data.amount),
+        count: Math.max(0, data.count),
       };
     });
 
@@ -223,8 +222,8 @@ const YearlyComparison = async (
       return {
         month: month,
         year: year.toString(),
-        amount: data.amount,
-        count: data.count,
+        amount: Math.max(0, data.amount),
+        count: Math.max(0, data.count),
       };
     });
 
@@ -251,8 +250,8 @@ const YearlyComparison = async (
         previousYear: previousYearData,
         currentYearLabel: currentFYLabel,
         previousYearLabel: previousFYLabel,
-        currentYearTotal: currentYearTotal,
-        previousYearTotal: previousYearTotal,
+        currentYearTotal: Math.max(0, currentYearTotal),
+        previousYearTotal: Math.max(0, previousYearTotal),
         percentageChange: percentageChange,
       },
     };

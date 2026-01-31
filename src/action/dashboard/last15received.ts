@@ -15,7 +15,7 @@ interface ResponseData {
   amount: number; // Total amount for the day
 }
 const Last15Received = async (
-  payload: Last15ReceivedPayload
+  payload: Last15ReceivedPayload,
 ): Promise<ApiResponseType<ResponseData[] | null>> => {
   const functionname: string = Last15Received.name;
   try {
@@ -33,7 +33,7 @@ const Last15Received = async (
         0,
         0,
         0,
-        0
+        0,
       );
       const nextDay = new Date(
         currentDate.getFullYear(),
@@ -42,7 +42,7 @@ const Last15Received = async (
         0,
         0,
         0,
-        0
+        0,
       );
 
       const dayReceivedData = await prisma.returns_01.findMany({
@@ -52,14 +52,7 @@ const Last15Received = async (
           },
           deletedAt: null,
           deletedBy: null,
-          OR: [
-            {
-              status: "LATE",
-            },
-            {
-              status: "PAID",
-            },
-          ],
+          status: "PAID",
           transaction_date: {
             gte: day,
             lt: nextDay,
@@ -70,17 +63,17 @@ const Last15Received = async (
       let totalAmountForDay = 0;
       for (let j = 0; j < dayReceivedData.length; j++) {
         totalAmountForDay += parseInt(
-          dayReceivedData[j].total_tax_amount == "" ||
-            dayReceivedData[j].total_tax_amount == null ||
-            dayReceivedData[j].total_tax_amount == undefined
+          dayReceivedData[j].vatamount == "" ||
+            dayReceivedData[j].vatamount == null ||
+            dayReceivedData[j].vatamount == undefined
             ? "0"
-            : dayReceivedData[j].total_tax_amount ?? "0"
+            : (dayReceivedData[j].vatamount ?? "0"),
         );
       }
 
       receivedDataArray.push({
         date: day,
-        amount: totalAmountForDay,
+        amount: Math.max(0, totalAmountForDay),
       });
     }
 

@@ -147,7 +147,8 @@ const DeptPendingReturn = async (
       }
     });
 
-    const paginatedData = res.slice(payload.skip, payload.skip + payload.take);
+
+    const paginatedData = res.sort((a, b) => b.pending - a.pending).slice(payload.skip, payload.skip + payload.take);
 
     return createPaginationResponse({
       message: "Pending returns data get successfully",

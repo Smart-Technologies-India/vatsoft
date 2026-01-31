@@ -337,7 +337,6 @@ export { getPreviousMonth, getMonthDifference, getDateFromMonth };
 
 const generatePDF = async (path: string, filename: string = "output.pdf") => {
   try {
-    console.log("Starting PDF generation for:", path);
     
     // Open the page with print parameter to trigger browser's print-to-PDF
     const fullPath = `${window.location.origin}/${path}`;

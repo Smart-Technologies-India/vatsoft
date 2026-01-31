@@ -884,7 +884,6 @@ const Dvat16ReturnPreview = () => {
     //   (isNegative(lateFees) ? 0 : lateFees) +
     //   0 -
     //   0;
-    console.log("net payable", val);
     return val;
   };
   // net payable amount end here

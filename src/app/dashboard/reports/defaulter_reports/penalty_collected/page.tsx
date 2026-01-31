@@ -44,7 +44,9 @@ const AfterDeathLinePage = () => {
   const router = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
-  const [selectedOffice, setSelectedOffice] = useState<SelectOffice | undefined>(undefined);
+  const [selectedOffice, setSelectedOffice] = useState<
+    SelectOffice | undefined
+  >(undefined);
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -77,22 +79,23 @@ const AfterDeathLinePage = () => {
   >(null);
 
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
+  const [allDvatData, setAllDvatData] = useState<Array<ResponseType>>([]); // All data for statistics
 
   const [user, setUpser] = useState<user | null>(null);
 
-  // Calculate statistics
-  const totalInterest = dvatData.reduce((sum, item) => sum + item.interest, 0);
-  const totalPenalty = dvatData.reduce((sum, item) => sum + item.penalty, 0);
-  const totalInterestCount = dvatData.reduce(
+  // Calculate statistics from ALL data, not just paginated data
+  const totalInterest = allDvatData.reduce((sum, item) => sum + item.interest, 0);
+  const totalPenalty = allDvatData.reduce((sum, item) => sum + item.penalty, 0);
+  const totalInterestCount = allDvatData.reduce(
     (sum, item) => sum + item.interest_count,
     0,
   );
-  const totalPenaltyCount = dvatData.reduce(
+  const totalPenaltyCount = allDvatData.reduce(
     (sum, item) => sum + item.penalty_count,
     0,
   );
-  const totalDealers = dvatData.length;
-  const compositionDealers = dvatData.filter(
+  const totalDealers = allDvatData.length;
+  const compositionDealers = allDvatData.filter(
     (item) => item.dvat04.compositionScheme,
   ).length;
   const regularDealers = totalDealers - compositionDealers;
@@ -119,6 +122,10 @@ const AfterDeathLinePage = () => {
           total: payment_data.data.total,
         });
         setDvatData(sortedData);
+        // Set all data for statistics calculation
+        if (payment_data.data.allData) {
+          setAllDvatData(payment_data.data.allData);
+        }
       }
     }
 
@@ -155,6 +162,10 @@ const AfterDeathLinePage = () => {
             take: payment_data.data.take,
             total: payment_data.data.total,
           });
+          // Set all data for statistics calculation
+          if (payment_data.data.allData) {
+            setAllDvatData(payment_data.data.allData);
+          }
         }
       }
       setLoading(false);
@@ -189,25 +200,6 @@ const AfterDeathLinePage = () => {
     }
   };
 
-  // const get_month = (composition: boolean, month: string): string => {
-  //   if (composition) {
-  //     if (["January", "February", "March"].includes(capitalcase(month))) {
-  //       return "Jan-Mar";
-  //     } else if (["April", "May", "June"].includes(capitalcase(month))) {
-  //       return "Apr-Jun";
-  //     } else if (["July", "August", "September"].includes(capitalcase(month))) {
-  //       return "Jul-Sep";
-  //     } else if (
-  //       ["October", "November", "December"].includes(capitalcase(month))
-  //     ) {
-  //       return "Oct-Dec";
-  //     } else {
-  //       return "Jan-Mar";
-  //     }
-  //   } else {
-  //     return month;
-  //   }
-  // };
   const arnsearch = async () => {
     if (
       arnRef.current?.input?.value == undefined ||
@@ -234,26 +226,13 @@ const AfterDeathLinePage = () => {
         take: search_response.data.take,
         total: search_response.data.total,
       });
+      // Set all data for statistics calculation
+      if (search_response.data.allData) {
+        setAllDvatData(search_response.data.allData);
+      }
       setSearch(true);
     }
   };
-
-  // const datesearch = async () => {
-  //   if (searchDate == null || searchDate.length <= 1) {
-  //     return toast.error("Select state date and end date");
-  //   }
-
-  //   const search_response = await SearchDeptPendingReturn({
-  //     fromdate: searchDate[0]?.toDate(),
-  //     todate: searchDate[1]?.toDate(),
-  //     take: 10,
-  //     skip: 0,
-  //   });
-  //   if (search_response.status && search_response.data.result) {
-  //     setDvatData(search_response.data.result);
-  //     setSearch(true);
-  //   }
-  // };
 
   const namesearch = async () => {
     if (
@@ -281,6 +260,10 @@ const AfterDeathLinePage = () => {
         take: search_response.data.take,
         total: search_response.data.total,
       });
+      // Set all data for statistics calculation
+      if (search_response.data.allData) {
+        setAllDvatData(search_response.data.allData);
+      }
       setSearch(true);
     }
   };
@@ -368,7 +351,7 @@ const AfterDeathLinePage = () => {
   };
 
   const exportToExcel = () => {
-    if (dvatData.length === 0) return;
+    if (allDvatData.length === 0) return;
 
     const worksheetData = [
       ["Interest & Penalty Collected Report"],
@@ -385,7 +368,7 @@ const AfterDeathLinePage = () => {
       ],
     ];
 
-    dvatData.forEach((item) => {
+    allDvatData.forEach((item) => {
       worksheetData.push([
         item.dvat04.tinNumber || "",
         item.dvat04.tradename || "",
@@ -421,17 +404,17 @@ const AfterDeathLinePage = () => {
   };
 
   const barChartData: any = {
-    labels: dvatData.slice(0, 10).map((item) => item.dvat04.tinNumber || ""),
+    labels: allDvatData.slice(0, 10).map((item) => item.dvat04.tinNumber || ""),
     datasets: [
       {
         label: "Interest Collected (₹)",
-        data: dvatData.slice(0, 10).map((item) => item.interest),
+        data: allDvatData.slice(0, 10).map((item) => item.interest),
         backgroundColor: "#3b82f6",
         borderWidth: 0,
       },
       {
         label: "Penalty Collected (₹)",
-        data: dvatData.slice(0, 10).map((item) => item.penalty),
+        data: allDvatData.slice(0, 10).map((item) => item.penalty),
         backgroundColor: "#ef4444",
         borderWidth: 0,
       },
@@ -543,7 +526,7 @@ const AfterDeathLinePage = () => {
           <div className="shrink-0">
             <button
               onClick={exportToExcel}
-              disabled={dvatData.length === 0}
+              disabled={allDvatData.length === 0}
               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               Export to Excel
@@ -555,7 +538,9 @@ const AfterDeathLinePage = () => {
         <div className="bg-white rounded-lg shadow-sm mb-4 p-4">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">District/Office</label>
+              <label className="text-sm font-medium text-gray-700">
+                District/Office
+              </label>
               <Radio.Group
                 options={[
                   { label: "All", value: undefined },
@@ -563,7 +548,9 @@ const AfterDeathLinePage = () => {
                   { label: "DD", value: "DAMAN" as SelectOffice },
                   { label: "DIU", value: "DIU" as SelectOffice },
                 ]}
-                onChange={(e: RadioChangeEvent) => setSelectedOffice(e.target.value)}
+                onChange={(e: RadioChangeEvent) =>
+                  setSelectedOffice(e.target.value)
+                }
                 value={selectedOffice}
                 optionType="button"
                 buttonStyle="solid"
@@ -629,7 +616,7 @@ const AfterDeathLinePage = () => {
               Top 10 Dealers by Collected Amount
             </h2>
             <div className="h-80">
-              {dvatData.length > 0 ? (
+              {allDvatData.length > 0 ? (
                 <Bar data={barChartData} options={chartOptions} />
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-500">

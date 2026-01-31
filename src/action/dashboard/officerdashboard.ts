@@ -2,11 +2,9 @@
 
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
-
 interface OfficerDashboardPayload {
   selectOffice: SelectOffice;
 }
-
 import prisma from "../../../prisma/database";
 import { SelectOffice } from "@prisma/client";
 
@@ -24,8 +22,9 @@ interface ResponseData {
   pending_return: number;
   today_received: number;
 }
+
 const OfficerDashboard = async (
-  payload: OfficerDashboardPayload
+  payload: OfficerDashboardPayload,
 ): Promise<ApiResponseType<ResponseData | null>> => {
   const functionname: string = OfficerDashboard.name;
   try {
@@ -126,26 +125,26 @@ const OfficerDashboard = async (
     const firstDayOfThisMonth = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
-      1
+      1,
     );
     // Get the first day of the next month
     const firstDayOfNextMonth = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth() + 1,
-      1
+      1,
     );
 
     // Get the first day of the previous month
     const firstDayOfLastMonth = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth() - 1,
-      1
+      1,
     );
     // Get the last day of the previous month
     const lastDayOfLastMonth = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
-      0
+      0,
     );
     // Count records received last month
     const last_month_received_data = await prisma.returns_01.findMany({
@@ -155,14 +154,7 @@ const OfficerDashboard = async (
         },
         deletedAt: null,
         deletedBy: null,
-        OR: [
-          {
-            status: "LATE",
-          },
-          {
-            status: "PAID",
-          },
-        ],
+        status: "PAID",
         transaction_date: {
           gte: firstDayOfLastMonth,
           lte: lastDayOfLastMonth,
@@ -174,7 +166,7 @@ const OfficerDashboard = async (
 
     for (let i = 0; i < last_month_received_data.length; i++) {
       last_month_received += parseInt(
-        last_month_received_data[i].total_tax_amount ?? "0"
+        last_month_received_data[i].vatamount ?? "0",
       );
     }
 
@@ -186,14 +178,7 @@ const OfficerDashboard = async (
         },
         deletedAt: null,
         deletedBy: null,
-        OR: [
-          {
-            status: "LATE",
-          },
-          {
-            status: "PAID",
-          },
-        ],
+        status: "PAID",
         transaction_date: {
           gte: firstDayOfThisMonth,
           lt: firstDayOfNextMonth,
@@ -205,7 +190,7 @@ const OfficerDashboard = async (
 
     for (let i = 0; i < this_month_received_data.length; i++) {
       this_month_received += parseInt(
-        this_month_received_data[i].total_tax_amount ?? "0"
+        this_month_received_data[i].vatamount ?? "0",
       );
     }
 
@@ -217,7 +202,7 @@ const OfficerDashboard = async (
       0,
       0,
       0,
-      0
+      0,
     );
 
     // Get today's end (end of the day)
@@ -228,7 +213,7 @@ const OfficerDashboard = async (
       23,
       59,
       59,
-      999
+      999,
     );
 
     // Count records received today
@@ -239,14 +224,7 @@ const OfficerDashboard = async (
         },
         deletedAt: null,
         deletedBy: null,
-        OR: [
-          {
-            status: "LATE",
-          },
-          {
-            status: "PAID",
-          },
-        ],
+        status: "PAID",
         transaction_date: {
           gte: startOfToday,
           lte: endOfToday,
@@ -256,24 +234,28 @@ const OfficerDashboard = async (
 
     let today_received: number = 0;
     for (let i = 0; i < today_received_data.length; i++) {
-      today_received += parseInt(
-        today_received_data[i].total_tax_amount ?? "0"
-      );
+      today_received += parseInt(today_received_data[i].vatamount ?? "0");
     }
 
     const response: ResponseData = {
-      totaldealer: total_dealer,
-      fueldealer: fueldealer,
-      liquoredealer: liquoredealer,
-      manufacturer: manufacturer,
-      oidcdealer: oidcdealer,
-      reg: reg,
-      comp: comp,
-      last_month_received: isNaN(last_month_received) ? 0 : last_month_received,
-      this_month_received: isNaN(this_month_received) ? 0 : this_month_received,
-      filed_return: filed_return,
-      pending_return: pending_return,
-      today_received: today_received,
+      totaldealer: Math.max(0, total_dealer),
+      fueldealer: Math.max(0, fueldealer),
+      liquoredealer: Math.max(0, liquoredealer),
+      manufacturer: Math.max(0, manufacturer),
+      oidcdealer: Math.max(0, oidcdealer),
+      reg: Math.max(0, reg),
+      comp: Math.max(0, comp),
+      last_month_received: Math.max(
+        0,
+        isNaN(last_month_received) ? 0 : last_month_received,
+      ),
+      this_month_received: Math.max(
+        0,
+        isNaN(this_month_received) ? 0 : this_month_received,
+      ),
+      filed_return: Math.max(0, filed_return),
+      pending_return: Math.max(0, pending_return),
+      today_received: Math.max(0, today_received),
     };
 
     return createResponse({

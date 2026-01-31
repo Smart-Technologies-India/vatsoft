@@ -80,18 +80,18 @@ const Last15ReceivedReport = async (
 
       let totalAmountForDay = 0;
       for (let j = 0; j < dayReceivedData.length; j++) {
-        totalAmountForDay += parseInt(
+        totalAmountForDay += Math.max(0, parseInt(
           dayReceivedData[j].total_tax_amount == "" ||
             dayReceivedData[j].total_tax_amount == null ||
             dayReceivedData[j].total_tax_amount == undefined
             ? "0"
             : dayReceivedData[j].total_tax_amount ?? "0"
-        );
+        ));
       }
 
       receivedDataArray.push({
         date: day,
-        amount: totalAmountForDay,
+        amount: Math.max(0, totalAmountForDay),
       });
     }
 

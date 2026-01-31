@@ -74,31 +74,32 @@ const AfterDeathLinePage = () => {
   >(null);
 
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
+  const [allDvatData, setAllDvatData] = useState<Array<ResponseType>>([]); // All data for statistics
 
   const [user, setUpser] = useState<user | null>(null);
   const [selectedOffice, setSelectedOffice] = useState<SelectOffice | "ALL">(
     "ALL",
   );
 
-  // Calculate statistics
-  const totalDealers = dvatData.length;
-  const totalLateReturns = dvatData.reduce(
+  // Calculate statistics from ALL data, not just paginated data
+  const totalDealers = allDvatData.length;
+  const totalLateReturns = allDvatData.reduce(
     (sum, item) => sum + item.pending,
     0,
   );
   const averageLate = totalDealers > 0 ? totalLateReturns / totalDealers : 0;
-  const compositionDealers = dvatData.filter(
+  const compositionDealers = allDvatData.filter(
     (item) => item.dvat04.compositionScheme,
   ).length;
   const regularDealers = totalDealers - compositionDealers;
   const maxLate =
-    dvatData.length > 0 ? Math.max(...dvatData.map((d) => d.pending)) : 0;
+    allDvatData.length > 0 ? Math.max(...allDvatData.map((d) => d.pending)) : 0;
   const minLate =
-    dvatData.length > 0 ? Math.min(...dvatData.map((d) => d.pending)) : 0;
+    allDvatData.length > 0 ? Math.min(...allDvatData.map((d) => d.pending)) : 0;
 
   // Export to Excel function
   const exportToExcel = () => {
-    if (dvatData.length === 0) return;
+    if (allDvatData.length === 0) return;
 
     const worksheetData = [
       ["Late Filed Returns Report"],
@@ -110,7 +111,7 @@ const AfterDeathLinePage = () => {
         "Last Filing Period",
         "Late Filed Returns",
       ],
-      ...dvatData.map((item) => [
+      ...allDvatData.map((item) => [
         item.dvat04.tinNumber,
         item.dvat04.tradename,
         item.dvat04.compositionScheme ? "COMP" : "REG",
@@ -134,8 +135,8 @@ const AfterDeathLinePage = () => {
     XLSX.writeFile(workbook, "late_filed_returns_report.xlsx");
   };
 
-  // Chart data - Top 10 dealers by late returns
-  const top10Dealers = [...dvatData]
+  // Chart data - Top 10 dealers by late returns (from all data)
+  const top10Dealers = [...allDvatData]
     .sort((a, b) => b.pending - a.pending)
     .slice(0, 10);
 
@@ -161,12 +162,12 @@ const AfterDeathLinePage = () => {
     ],
   };
 
-  // Late returns distribution
+  // Late returns distribution (from all data)
   const lateRanges = {
-    "0-5": dvatData.filter((d) => d.pending <= 5).length,
-    "6-10": dvatData.filter((d) => d.pending > 5 && d.pending <= 10).length,
-    "11-20": dvatData.filter((d) => d.pending > 10 && d.pending <= 20).length,
-    "21+": dvatData.filter((d) => d.pending > 20).length,
+    "0-5": allDvatData.filter((d) => d.pending <= 5).length,
+    "6-10": allDvatData.filter((d) => d.pending > 5 && d.pending <= 10).length,
+    "11-20": allDvatData.filter((d) => d.pending > 10 && d.pending <= 20).length,
+    "21+": allDvatData.filter((d) => d.pending > 20).length,
   };
 
   const pieChartData = {
@@ -229,6 +230,10 @@ const AfterDeathLinePage = () => {
           total: payment_data.data.total,
         });
         setDvatData(sortedData);
+        // Set all data for statistics calculation
+        if (payment_data.data.allData) {
+          setAllDvatData(payment_data.data.allData);
+        }
       }
     }
 
@@ -265,6 +270,10 @@ const AfterDeathLinePage = () => {
             take: payment_data.data.take,
             total: payment_data.data.total,
           });
+          // Set all data for statistics calculation
+          if (payment_data.data.allData) {
+            setAllDvatData(payment_data.data.allData);
+          }
         }
       }
       setLoading(false);
@@ -294,6 +303,10 @@ const AfterDeathLinePage = () => {
           take: payment_data.data.take,
           total: payment_data.data.total,
         });
+        // Set all data for statistics calculation
+        if (payment_data.data.allData) {
+          setAllDvatData(payment_data.data.allData);
+        }
       }
       setLoading(false);
     };
@@ -371,6 +384,10 @@ const AfterDeathLinePage = () => {
         take: search_response.data.take,
         total: search_response.data.total,
       });
+      // Set all data for statistics calculation
+      if (search_response.data.allData) {
+        setAllDvatData(search_response.data.allData);
+      }
       setSearch(true);
     }
   };
@@ -415,6 +432,10 @@ const AfterDeathLinePage = () => {
         take: search_response.data.take,
         total: search_response.data.total,
       });
+      // Set all data for statistics calculation
+      if (search_response.data.allData) {
+        setAllDvatData(search_response.data.allData);
+      }
       setSearch(true);
     }
   };
@@ -612,7 +633,7 @@ const AfterDeathLinePage = () => {
               Top 10 Dealers by Late Filed Returns
             </h2>
             <div className="h-80">
-              {dvatData.length > 0 ? (
+              {allDvatData.length > 0 ? (
                 <Bar data={barChartData} options={chartOptions} />
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-500">

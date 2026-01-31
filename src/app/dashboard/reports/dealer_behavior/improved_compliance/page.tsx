@@ -1,6 +1,5 @@
 "use client";
 import { FluentMdl2Home, MaterialSymbolsKeyboardArrowUpRounded } from "@/components/icons";
-import numberWithIndianFormat from "@/utils/methods";
 import { Radio, RadioChangeEvent, Spin, Badge } from "antd";
 import { useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";

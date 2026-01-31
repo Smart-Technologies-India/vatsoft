@@ -208,6 +208,26 @@ const OfficerDashboardReport = async (
       currentDate.getMonth(),
       0
     );
+
+    // Calculate date range for last 30 days
+    const endDateLast30Days = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate(),
+      23,
+      59,
+      59,
+      999
+    );
+    const startDateLast30Days = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate() - 30,
+      0,
+      0,
+      0,
+      0
+    );
     const lastMonthDvatWhere: any = {};
     if (payload.selectOffice) {
       lastMonthDvatWhere.selectOffice = payload.selectOffice;
@@ -242,9 +262,9 @@ const OfficerDashboardReport = async (
     let last_month_received: number = 0;
 
     for (let i = 0; i < last_month_received_data.length; i++) {
-      last_month_received += parseInt(
-        last_month_received_data[i].total_tax_amount ?? "0"
-      );
+      last_month_received += Math.max(0, parseInt(
+        last_month_received_data[i].vatamount ?? "0"
+      ));
     }
 
     const thisMonthDvatWhere: any = {};
@@ -257,7 +277,7 @@ const OfficerDashboardReport = async (
       thisMonthDvatWhere.commodity = { not: "FUEL" };
     }
 
-    // Count records received this month
+    // Count records received in last 30 days (instead of this month)
     const this_month_received_data = await prisma.returns_01.findMany({
       where: {
         dvat04: thisMonthDvatWhere,
@@ -272,8 +292,8 @@ const OfficerDashboardReport = async (
           },
         ],
         transaction_date: {
-          gte: firstDayOfThisMonth,
-          lt: firstDayOfNextMonth,
+          gte: startDateLast30Days,
+          lte: endDateLast30Days,
         },
       },
     });
@@ -281,9 +301,9 @@ const OfficerDashboardReport = async (
     let this_month_received: number = 0;
 
     for (let i = 0; i < this_month_received_data.length; i++) {
-      this_month_received += parseInt(
-        this_month_received_data[i].total_tax_amount ?? "0"
-      );
+      this_month_received += Math.max(0, parseInt(
+        this_month_received_data[i].vatamount ?? "0"
+      ));
     }
 
     // Get today's start (beginning of the day)
@@ -341,24 +361,24 @@ const OfficerDashboardReport = async (
 
     let today_received: number = 0;
     for (let i = 0; i < today_received_data.length; i++) {
-      today_received += parseInt(
-        today_received_data[i].total_tax_amount ?? "0"
-      );
+      today_received += Math.max(0, parseInt(
+        today_received_data[i].vatamount ?? "0"
+      ));
     }
 
     const response: ResponseData = {
-      totaldealer: total_dealer,
-      fueldealer: fueldealer,
-      liquoredealer: liquoredealer,
-      manufacturer: manufacturer,
-      oidcdealer: oidcdealer,
-      reg: reg,
-      comp: comp,
-      last_month_received: isNaN(last_month_received) ? 0 : last_month_received,
-      this_month_received: isNaN(this_month_received) ? 0 : this_month_received,
-      filed_return: filed_return,
-      pending_return: pending_return,
-      today_received: today_received,
+      totaldealer: Math.max(0, total_dealer),
+      fueldealer: Math.max(0, fueldealer),
+      liquoredealer: Math.max(0, liquoredealer),
+      manufacturer: Math.max(0, manufacturer),
+      oidcdealer: Math.max(0, oidcdealer),
+      reg: Math.max(0, reg),
+      comp: Math.max(0, comp),
+      last_month_received: Math.max(0, isNaN(last_month_received) ? 0 : last_month_received),
+      this_month_received: Math.max(0, isNaN(this_month_received) ? 0 : this_month_received),
+      filed_return: Math.max(0, filed_return),
+      pending_return: Math.max(0, pending_return),
+      today_received: Math.max(0, today_received),
     };
 
     return createResponse({

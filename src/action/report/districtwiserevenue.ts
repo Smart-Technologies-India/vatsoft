@@ -33,13 +33,25 @@ const DistrictWiseRevenue = async (
   try {
     const currentDate = new Date();
     
-    // Default date range: current fiscal year
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-    const fiscalYearStart = currentMonth >= 3 ? currentYear : currentYear - 1;
-    
-    const defaultStartDate = new Date(fiscalYearStart, 3, 1); // April 1
-    const defaultEndDate = new Date(fiscalYearStart + 1, 2, 31); // March 31
+    // Default date range: last 30 days from today
+    const defaultEndDate = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate(),
+      23,
+      59,
+      59,
+      999
+    );
+    const defaultStartDate = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate() - 30,
+      0,
+      0,
+      0,
+      0
+    );
     
     const startDate = payload.startDate || defaultStartDate;
     const endDate = payload.endDate || defaultEndDate;
@@ -85,34 +97,34 @@ const DistrictWiseRevenue = async (
           },
         },
         select: {
-          total_tax_amount: true,
+          vatamount: true,
         },
       });
 
       const revenue = returns.reduce(
-        (sum, ret) => sum + parseFloat(ret.total_tax_amount || "0"),
+        (sum, ret) => sum + Math.max(0, parseFloat(ret.vatamount || "0")),
         0
       );
 
       districtRevenues.push({
         district: district.label,
-        revenue: revenue,
-        returnCount: returns.length,
-        dealerCount: dealerCount,
+        revenue: Math.max(0, revenue),
+        returnCount: Math.max(0, returns.length),
+        dealerCount: Math.max(0, dealerCount),
       });
 
-      totalRevenue += revenue;
-      totalReturns += returns.length;
-      totalDealers += dealerCount;
+      totalRevenue += Math.max(0, revenue);
+      totalReturns += Math.max(0, returns.length);
+      totalDealers += Math.max(0, dealerCount);
     }
 
     return {
       status: true,
       data: {
         districts: districtRevenues,
-        totalRevenue,
-        totalReturns,
-        totalDealers,
+        totalRevenue: Math.max(0, totalRevenue),
+        totalReturns: Math.max(0, totalReturns),
+        totalDealers: Math.max(0, totalDealers),
       },
     };
   } catch (e) {

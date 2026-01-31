@@ -68,7 +68,7 @@ const ReportsPage = () => {
             // onClick={userExportToExcel}
             onClick={() => {
               router.push(
-                "/dashboard/reports/defaulter_reports/defaulter_analysis"
+                "/dashboard/reports/defaulter_reports/defaulter_analysis",
               );
             }}
           >
@@ -85,7 +85,7 @@ const ReportsPage = () => {
             // onClick={userExportToExcel}
             onClick={() => {
               router.push(
-                "/dashboard/reports/defaulter_reports/inactive_dealers"
+                "/dashboard/reports/defaulter_reports/inactive_dealers",
               );
             }}
           >
@@ -101,7 +101,9 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/defaulter_reports/penalty_collected");
+              router.push(
+                "/dashboard/reports/defaulter_reports/penalty_collected",
+              );
             }}
           >
             View Report
@@ -114,7 +116,7 @@ const ReportsPage = () => {
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
               router.push(
-                "/dashboard/reports/defaulter_reports/afterdeathline"
+                "/dashboard/reports/defaulter_reports/afterdeathline",
               );
             }}
           >
@@ -131,7 +133,7 @@ const ReportsPage = () => {
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
               router.push(
-                "/dashboard/reports/defaulter_reports/demand_penalty"
+                "/dashboard/reports/defaulter_reports/demand_penalty",
               );
             }}
           >
@@ -190,7 +192,9 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/revenue_reports/yearly_comparison");
+              router.push(
+                "/dashboard/reports/revenue_reports/yearly_comparison",
+              );
             }}
           >
             View Report
@@ -281,7 +285,9 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/dealer_behavior/improved_compliance");
+              router.push(
+                "/dashboard/reports/dealer_behavior/improved_compliance",
+              );
             }}
           >
             View Report
@@ -296,7 +302,7 @@ const ReportsPage = () => {
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
               router.push(
-                "/dashboard/reports/dealer_behavior/dealers_consistently_compliant"
+                "/dashboard/reports/dealer_behavior/dealers_consistently_compliant",
               );
             }}
           >
@@ -311,7 +317,9 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/dealer_behavior/top_revenue_dealers");
+              router.push(
+                "/dashboard/reports/dealer_behavior/top_revenue_dealers",
+              );
             }}
           >
             View Report
@@ -325,7 +333,9 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/dealer_behavior/dealer_type_revenue");
+              router.push(
+                "/dashboard/reports/dealer_behavior/dealer_type_revenue",
+              );
             }}
           >
             View Report
@@ -343,10 +353,10 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/reports/nodata");
+              router.push("/dashboard/user_service/department-notice_order");
             }}
           >
-            - View Report
+            View Report
           </button>
         </div>
         <div className="p-2 rounded shadow bg-white relative pb-8">

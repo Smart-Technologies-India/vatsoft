@@ -103,8 +103,6 @@ const CommoditySalesGrowth = async (
       }
     }
 
-    console.log("DVAT Where Clause:", dvatWhereClause);
-    console.log("currentPeriodCondition:", currentPeriodCondition);
 
     // Fetch current period data
     const currentPeriodData = await prisma.returns_entry.findMany({
@@ -213,11 +211,11 @@ const CommoditySalesGrowth = async (
       const quantityGrowth = data.currentQuantity - data.previousQuantity;
       const amountGrowthPercent =
         data.previousAmount === 0
-          ? 0
+          ? (data.currentAmount > 0 ? 100 : 0)
           : (amountGrowth / data.previousAmount) * 100;
       const quantityGrowthPercent =
         data.previousQuantity === 0
-          ? 0
+          ? (data.currentQuantity > 0 ? 100 : 0)
           : (quantityGrowth / data.previousQuantity) * 100;
 
       growthData.push({

@@ -62,7 +62,7 @@ const TrackAppliation = () => {
     NAME,
   }
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.TIN
+    SearchOption.TIN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -78,7 +78,7 @@ const TrackAppliation = () => {
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    dateStrings: [string, string],
   ) => {
     setSearchDate(dates);
   };
@@ -88,14 +88,7 @@ const TrackAppliation = () => {
   const [user, setUpser] = useState<user | null>(null);
 
   const init = async () => {
-    const authResponse = await getAuthenticatedUserId();
-    if (!authResponse.status || !authResponse.data) {
-      toast.error(authResponse.message);
-      return router.push("/");
-    }
-
-    setUserId(authResponse.data);
-    const userrespone = await GetUser({ id: authResponse.data });
+    const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
       const payment_data = await DeptPendingReturn({
@@ -106,7 +99,7 @@ const TrackAppliation = () => {
 
       if (payment_data.status && payment_data.data.result) {
         const sortedData = payment_data.data.result.sort(
-          (a: ResponseType, b: ResponseType) => b.pending - a.pending
+          (a: ResponseType, b: ResponseType) => b.pending - a.pending,
         );
         setDvatData(sortedData);
         setPaginatin({
@@ -122,9 +115,17 @@ const TrackAppliation = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const userrespone = await GetUser({ id: userid });
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+
+      setUserId(authResponse.data);
+      const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
+
         const payment_data = await DeptPendingReturn({
           dept: userrespone.data.selectOffice!,
           take: 10,
@@ -133,7 +134,7 @@ const TrackAppliation = () => {
 
         if (payment_data.status && payment_data.data.result) {
           const sortedData = payment_data.data.result.sort(
-            (a: ResponseType, b: ResponseType) => b.pending - a.pending
+            (a: ResponseType, b: ResponseType) => b.pending - a.pending,
           );
           setDvatData(sortedData);
           setPaginatin({
@@ -513,7 +514,7 @@ const TrackAppliation = () => {
                         <TableCell className="border text-center text-blue-500 p-2">
                           <Link
                             href={`/dashboard/returns/department-pending-return/notice/${encryptURLData(
-                              val.dvat04.id.toString()
+                              val.dvat04.id.toString(),
                             )}`}
                           >
                             {val.notice}
@@ -525,8 +526,8 @@ const TrackAppliation = () => {
                             onClick={() => {
                               router.push(
                                 `/dashboard/returns/department-pending-return/${encryptURLData(
-                                  val.dvat04.id.toString()
-                                )}`
+                                  val.dvat04.id.toString(),
+                                )}`,
                               );
                             }}
                           >

@@ -35,7 +35,7 @@ const TopRevenueDealersReport = () => {
     "FUEL" | "LIQUOR" | undefined
   >(undefined);
   const [selectedYear, setSelectedYear] = useState<string>(
-    new Date().getFullYear().toString()
+    new Date().getFullYear().toString(),
   );
 
   useEffect(() => {
@@ -306,7 +306,7 @@ const TopRevenueDealersReport = () => {
                   <p className="text-2xl font-bold mt-1">
                     ₹
                     {numberWithIndianFormat(
-                      reportData.reduce((sum, d) => sum + d.totalRevenue, 0)
+                      reportData.reduce((sum, d) => sum + d.totalRevenue, 0),
                     )}
                   </p>
                   <p className="text-xs opacity-90 mt-1">
@@ -325,7 +325,7 @@ const TopRevenueDealersReport = () => {
                     ₹
                     {numberWithIndianFormat(
                       reportData.reduce((sum, d) => sum + d.totalRevenue, 0) /
-                        reportData.length
+                        reportData.length,
                     )}
                   </p>
                   <p className="text-xs opacity-90 mt-1">Per dealer</p>
@@ -387,7 +387,7 @@ const TopRevenueDealersReport = () => {
                         <td className="px-4 py-3 text-sm text-center">
                           <span
                             className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${getRankBadgeColor(
-                              dealer.rank
+                              dealer.rank,
                             )}`}
                           >
                             {dealer.rank}
@@ -422,7 +422,7 @@ const TopRevenueDealersReport = () => {
                         <td className="px-4 py-3 text-sm text-right text-gray-600">
                           ₹
                           {numberWithIndianFormat(
-                            dealer.averageRevenuePerReturn
+                            Number(dealer.averageRevenuePerReturn.toFixed(0)),
                           )}
                         </td>
                       </tr>
@@ -440,7 +440,7 @@ const TopRevenueDealersReport = () => {
                     <td className="px-4 py-3 text-sm text-right text-green-600">
                       ₹
                       {numberWithIndianFormat(
-                        reportData.reduce((sum, d) => sum + d.totalRevenue, 0)
+                        reportData.reduce((sum, d) => sum + d.totalRevenue, 0),
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-center text-gray-600">
@@ -451,8 +451,8 @@ const TopRevenueDealersReport = () => {
                       {numberWithIndianFormat(
                         reportData.reduce(
                           (sum, d) => sum + d.averageRevenuePerReturn,
-                          0
-                        ) / reportData.length
+                          0,
+                        ) / reportData.length,
                       )}
                     </td>
                   </tr>

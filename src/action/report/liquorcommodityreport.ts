@@ -25,6 +25,7 @@ const LiquorCommodityReport = async (
     total_amount: number;
     count: number;
     office: string;
+    vatamount: number;
   }> | null>
 > => {
   const functionname: string = LiquorCommodityReport.name;
@@ -94,6 +95,7 @@ const LiquorCommodityReport = async (
         total_quantity: number;
         total_amount: number;
         count: number;
+        vatamount: number;
       }
     > = {};
 
@@ -115,6 +117,7 @@ const LiquorCommodityReport = async (
           total_quantity: 0,
           total_amount: 0,
           count: 0,
+          vatamount: 0,
         };
       }
 
@@ -122,6 +125,10 @@ const LiquorCommodityReport = async (
       aggregationMap[key].total_amount +=
         parseInt(entry.total_invoice_number?.toString() ?? "0") || 0;
       aggregationMap[key].count += 1;
+      aggregationMap[key].vatamount += Math.max(
+        0,
+        parseInt(entry.vatamount?.toString() ?? "0"),
+      );
     }
 
     const groupedByOffice: Record<string, (typeof aggregationMap)[string][]> =
@@ -138,7 +145,7 @@ const LiquorCommodityReport = async (
 
     for (const office in groupedByOffice) {
       const sorted = groupedByOffice[office].sort(
-        (a, b) => b.total_amount - a.total_amount
+        (a, b) => b.total_amount - a.total_amount,
       );
       finalData.push(...sorted.slice(0, 10));
     }

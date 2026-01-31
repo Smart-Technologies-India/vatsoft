@@ -4,6 +4,10 @@ import prisma from "../../../prisma/database";
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import dayjs, { Dayjs } from "dayjs";
+import utc from "dayjs/plugin/utc";
+import { customAlphabet } from "nanoid";
+
+dayjs.extend(utc);
 
 const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = ReturnFiling.name;
@@ -82,9 +86,9 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
               },
               update: {}, // Do nothing if record already exists
             });
-          })
+          }),
         );
-      })
+      }),
     );
 
     const returnfiling_response = await prisma.return_filing.findMany({
@@ -119,10 +123,56 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
                 ? "FILED"
                 : "LATEFILED"
               : filing.due_date! < currentdate
-              ? "PENDINGFILING"
-              : "DUE",
+                ? "PENDINGFILING"
+                : "DUE",
           },
         });
+
+        if (filing.filing_status === false && filing.due_date! < currentdate) {
+          // Check if order_notice already exists for this filing period to avoid duplicates
+          const { startDate, endDate } = MonthToStartEnd(filing.month, filing.year);
+          
+          const existingNotice = await prisma.order_notice.findFirst({
+            where: {
+              dvatid: filing.dvatid,
+              tax_period_from: startDate,
+              tax_period_to: endDate,
+              form_type: "DVAT10",
+              deletedAt: null,
+              deletedById: null,
+            },
+          });
+
+          // Only create a new notice if one doesn't already exist
+          if (!existingNotice) {
+            // 15 days after today date
+            const due_date = new Date();
+            due_date.setDate(due_date.getDate() + 15);
+            const nanoid = customAlphabet(
+              "1234567890abcdefghijklmnopqrstuvwyz",
+              12,
+            );
+            const ref_no: string = nanoid();
+
+            await prisma.order_notice.create({
+              data: {
+                dvatid: filing.dvatid,
+                ref_no: ref_no,
+                dvat24_reason: "NOTFURNISHED",
+                notice_order_type: "NOTICE",
+                status: "PENDING",
+                tax_period_from: startDate,
+                tax_period_to: endDate,
+                due_date: due_date,
+                form_type: "DVAT10",
+                issuedId: 1,
+                officerId: 1,
+                createdById: 1,
+                remark: "DVAT Return Not Furnished",
+              },
+            });
+          }
+        }
       }
     }
 
@@ -159,6 +209,37 @@ const GetCompDueDate = (year: string, month: string): Dayjs => {
 
   // Create the due date using Day.js and convert it to a Date object
   return dayjs(
-    `${parseInt(year) + (nextMonth === 0 ? 1 : 0)}-${nextMonth + 1}-29`
+    `${parseInt(year) + (nextMonth === 0 ? 1 : 0)}-${nextMonth + 1}-29`,
   );
+};
+
+const MonthToStartEnd = (
+  month: string,
+  year: string
+): {
+  startDate: Date;
+  endDate: Date;
+} => {
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const monthIndex = monthNames.indexOf(month);
+
+  // Use dayjs to create dates in UTC to avoid timezone issues
+  const startDate = dayjs.utc(`${year}-${String(monthIndex + 1).padStart(2, '0')}-01T00:00:00Z`).toDate();
+  const endDate = dayjs.utc(`${year}-${String(monthIndex + 1).padStart(2, '0')}-01T00:00:00Z`).endOf('month').toDate();
+  
+  return { startDate, endDate };
 };

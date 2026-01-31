@@ -39,51 +39,57 @@ export default async function GetTopLiquorDealers(data: {
       },
     });
 
-    // Calculate revenue for each dealer from daily_sale and daily_purchase
+    // Calculate date range for last 30 days
+    const currentDate = new Date();
+    const startDate = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate() - 30,
+      0,
+      0,
+      0,
+      0
+    );
+    const endDate = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate(),
+      23,
+      59,
+      59,
+      999
+    );
+
+    // Calculate revenue for each dealer from returns_01 table (last 30 days)
     const dealersWithRevenue = await Promise.all(
       liquorDealers.map(async (dealer) => {
-        // Get all sales for this dealer
-        const sales = await prisma.daily_sale.findMany({
+        // Get all returns for this dealer from last 30 days
+        const returns = await prisma.returns_01.findMany({
           where: {
             dvat04Id: dealer.id,
             deletedAt: null,
-            status: "ACTIVE",
+            file_status: "ACTIVE",
+            transaction_date: {
+              gte: startDate,
+              lte: endDate,
+            },
           },
           select: {
             vatamount: true,
           },
         });
 
-        // Get all purchases for this dealer
-        const purchases = await prisma.daily_purchase.findMany({
-          where: {
-            dvat04Id: dealer.id,
-            deletedAt: null,
-            status: "ACTIVE",
-          },
-          select: {
-            vatamount: true,
-          },
-        });
-
-        // Manually sum up the VAT amounts
-        const salesTax = sales.reduce(
-          (sum, sale) => sum + parseFloat(sale.vatamount || "0"),
+        // Sum up the VAT amounts, ensuring no negative values
+        const totalRevenue = returns.reduce(
+          (sum, ret) => sum + Math.max(0, parseFloat(ret.vatamount || "0")),
           0,
         );
-        const purchaseTax = purchases.reduce(
-          (sum, purchase) => sum + parseFloat(purchase.vatamount || "0"),
-          0,
-        );
-
-        // Total revenue is sales tax + purchase tax
-        const totalRevenue = salesTax + purchaseTax;
 
         return {
           id: dealer.id,
           name: dealer.name || "Unknown Dealer",
           tinNumber: dealer.tinNumber || "N/A",
-          totalRevenue: totalRevenue,
+          totalRevenue: Math.max(0, totalRevenue),
           tradename: dealer.tradename || "N/A",
         };
       }),

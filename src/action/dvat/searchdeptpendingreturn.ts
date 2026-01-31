@@ -26,7 +26,7 @@ interface ResponseType {
 }
 
 const SearchDeptPendingReturn = async (
-  payload: DeptPendingReturnPayload
+  payload: DeptPendingReturnPayload,
 ): Promise<PaginationResponse<Array<ResponseType> | null>> => {
   const functionname: string = SearchDeptPendingReturn.name;
   try {
@@ -118,7 +118,7 @@ const SearchDeptPendingReturn = async (
     for (let i = 0; i < notice.length; i++) {
       if (noticeMap.has(notice[i].dvatid)) {
         let existingData: NoticeType = noticeMap.get(
-          notice[i].dvatid
+          notice[i].dvatid,
         ) as NoticeType;
         existingData.notice_count += 1;
       } else {
@@ -132,12 +132,12 @@ const SearchDeptPendingReturn = async (
     const notice_count = Array.from(noticeMap.values());
 
     const res = Array.from(resMap.values()).filter(
-      (val: ResponseType) => val.pending != 0
+      (val: ResponseType) => val.pending != 0,
     );
 
     res.forEach((response) => {
       const matchingNotice = notice_count.find(
-        (notice) => notice.dvat04id === response.dvat04.id
+        (notice) => notice.dvat04id === response.dvat04.id,
       );
 
       if (matchingNotice) {
@@ -145,7 +145,9 @@ const SearchDeptPendingReturn = async (
       }
     });
 
-    const paginatedData = res.slice(payload.skip, payload.skip + payload.take);
+    const paginatedData = res
+      .sort((a, b) => b.pending - a.pending)
+      .slice(payload.skip, payload.skip + payload.take);
 
     return createPaginationResponse({
       message: "Pending returns data get successfully",

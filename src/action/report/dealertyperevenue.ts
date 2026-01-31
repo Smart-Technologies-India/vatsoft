@@ -28,7 +28,7 @@ interface DealerTypeRevenueData {
 }
 
 const DealerTypeRevenue = async (
-  payload: DealerTypeRevenuePayload
+  payload: DealerTypeRevenuePayload,
 ): Promise<{
   status: boolean;
   data?: DealerTypeRevenueData;
@@ -77,7 +77,7 @@ const DealerTypeRevenue = async (
       },
       select: {
         month: true,
-        total_tax_amount: true,
+        vatamount: true,
       },
     });
 
@@ -95,24 +95,24 @@ const DealerTypeRevenue = async (
       },
       select: {
         month: true,
-        total_tax_amount: true,
+        vatamount: true,
       },
     });
 
     // Month name to number mapping
     const monthNameToNumber: { [key: string]: string } = {
-      "January": "01",
-      "February": "02",
-      "March": "03",
-      "April": "04",
-      "May": "05",
-      "June": "06",
-      "July": "07",
-      "August": "08",
-      "September": "09",
-      "October": "10",
-      "November": "11",
-      "December": "12",
+      January: "01",
+      February: "02",
+      March: "03",
+      April: "04",
+      May: "05",
+      June: "06",
+      July: "07",
+      August: "08",
+      September: "09",
+      October: "10",
+      November: "11",
+      December: "12",
     };
 
     // Aggregate data by month
@@ -154,12 +154,12 @@ const DealerTypeRevenue = async (
       if (monthNameToNumber[monthNum]) {
         monthNum = monthNameToNumber[monthNum];
       }
-      
+
       const existing = monthlyDataMap.get(monthNum) || {
         fuelRevenue: 0,
         liquorRevenue: 0,
       };
-      existing.fuelRevenue += parseFloat(ret.total_tax_amount || "0");
+      existing.fuelRevenue += Math.max(0, parseFloat(ret.vatamount || "0"));
       monthlyDataMap.set(monthNum, existing);
     });
 
@@ -170,12 +170,12 @@ const DealerTypeRevenue = async (
       if (monthNameToNumber[monthNum]) {
         monthNum = monthNameToNumber[monthNum];
       }
-      
+
       const existing = monthlyDataMap.get(monthNum) || {
         fuelRevenue: 0,
         liquorRevenue: 0,
       };
-      existing.liquorRevenue += parseFloat(ret.total_tax_amount || "0");
+      existing.liquorRevenue += Math.max(0, parseFloat(ret.vatamount || "0"));
       monthlyDataMap.set(monthNum, existing);
     });
 
@@ -187,29 +187,29 @@ const DealerTypeRevenue = async (
       };
       return {
         month: month,
-        fuelRevenue: data.fuelRevenue,
-        liquorRevenue: data.liquorRevenue,
-        fuelDealers: fuelDealersCount,
-        liquorDealers: liquorDealersCount,
+        fuelRevenue: Math.max(0, data.fuelRevenue),
+        liquorRevenue: Math.max(0, data.liquorRevenue),
+        fuelDealers: Math.max(0, fuelDealersCount),
+        liquorDealers: Math.max(0, liquorDealersCount),
       };
     });
 
     // Calculate totals
-    const totalFuelRevenue = monthlyData.reduce(
+    const totalFuelRevenue = Math.max(0, monthlyData.reduce(
       (sum, item) => sum + item.fuelRevenue,
-      0
-    );
-    const totalLiquorRevenue = monthlyData.reduce(
+      0,
+    ));
+    const totalLiquorRevenue = Math.max(0, monthlyData.reduce(
       (sum, item) => sum + item.liquorRevenue,
-      0
-    );
+      0,
+    ));
     const totalRevenue = totalFuelRevenue + totalLiquorRevenue;
 
     // Calculate percentages
-    const fuelPercentage =
-      totalRevenue === 0 ? 0 : (totalFuelRevenue / totalRevenue) * 100;
-    const liquorPercentage =
-      totalRevenue === 0 ? 0 : (totalLiquorRevenue / totalRevenue) * 100;
+    const fuelPercentage = Math.max(0,
+      totalRevenue === 0 ? 0 : (totalFuelRevenue / totalRevenue) * 100);
+    const liquorPercentage = Math.max(0,
+      totalRevenue === 0 ? 0 : (totalLiquorRevenue / totalRevenue) * 100);
 
     return {
       status: true,

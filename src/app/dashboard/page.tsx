@@ -656,8 +656,9 @@ const pieOptions: any = {
             (a: number, b: number) => a + b,
             0,
           );
-          const percentage = ((value / total) * 100).toFixed(1);
-          return `${label}: ₹${numberWithIndianFormat(value)} (${percentage}%)`;
+          // const percentage = ((value / total) * 100).toFixed(1);
+          return `${label}: ${numberWithIndianFormat(value)}`;
+          // return `${label}: ${numberWithIndianFormat(value)} (${percentage}%)`;
         },
       },
     },
@@ -905,7 +906,7 @@ const OfficerDashboardPage = () => {
       const fuelCommoditiesResponse = await GetTopCommodities({
         selectOffice: city,
         commodityType: "FUEL",
-        limit: 5,
+        limit: 10,
       });
       if (fuelCommoditiesResponse.status && fuelCommoditiesResponse.data) {
         setTopFuelCommodities(fuelCommoditiesResponse.data);
@@ -914,10 +915,10 @@ const OfficerDashboardPage = () => {
       const liquorCommoditiesResponse = await GetTopCommodities({
         selectOffice: city,
         commodityType: "LIQUOR",
-        limit: 5,
+        limit: 10,
       });
       if (liquorCommoditiesResponse.status && liquorCommoditiesResponse.data) {
-        liquorCommoditiesResponse.data;
+        setTopLiquorCommodities(liquorCommoditiesResponse.data);
       }
     };
     init();
@@ -1518,7 +1519,7 @@ const OfficerDashboardPage = () => {
               <div>
                 <h3 className="text-base font-semibold text-gray-900 flex items-center">
                   <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                  District-wise Revenue
+                  District-wise Revenue (Last 30 Days)
                 </h3>
                 <p className="text-xs text-gray-500 mt-1">
                   Revenue distribution across regions
@@ -1564,7 +1565,7 @@ const OfficerDashboardPage = () => {
               <div>
                 <h3 className="text-base font-semibold text-gray-900 flex items-center">
                   <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                  Category-wise Revenue
+                  Category-wise Revenue (Last 30 Days)
                 </h3>
                 <p className="text-xs text-gray-500 mt-1">
                   Liquor vs Petroleum comparison

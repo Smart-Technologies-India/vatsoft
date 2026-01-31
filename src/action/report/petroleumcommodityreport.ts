@@ -27,6 +27,7 @@ const PetroleumCommodityReport = async (
     total_amount: number;
     count: number;
     office: string;
+    vatamount: number;
   }> | null>
 > => {
   const functionname: string = PetroleumCommodityReport.name;
@@ -86,6 +87,7 @@ const PetroleumCommodityReport = async (
         total_quantity: number;
         total_amount: number;
         count: number;
+        vatamount: number;
       }
     > = {};
 
@@ -107,6 +109,7 @@ const PetroleumCommodityReport = async (
           total_quantity: 0,
           total_amount: 0,
           count: 0,
+          vatamount: 0,
         };
       }
 
@@ -114,6 +117,10 @@ const PetroleumCommodityReport = async (
       aggregationMap[key].total_amount +=
         parseInt(entry.total_invoice_number?.toString() ?? "0") || 0;
       aggregationMap[key].count += 1;
+      aggregationMap[key].vatamount += Math.max(
+        0,
+        parseInt(entry.vatamount?.toString() ?? "0"),
+      );
     }
 
     const finalData = Object.values(aggregationMap);

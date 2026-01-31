@@ -1,8 +1,26 @@
 "use client";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
-import { Radio, Button, Input, Pagination } from "antd";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { Radio, Button, Input, Pagination, Spin } from "antd";
+import { Bar, Doughnut, Pie } from "react-chartjs-2";
+import { Chart as ChartJS, registerables } from "chart.js";
+import * as XLSX from "xlsx";
+import {
+  MaterialSymbolsPersonRounded,
+  IcOutlineReceiptLong,
+  Fa6RegularBuilding,
+} from "@/components/icons";
+
+ChartJS.register(...registerables);
+import { useEffect, useRef, useState } from "react";
 import { dvat04, user } from "@prisma/client";
 import { encryptURLData } from "@/utils/methods";
 import { useRouter } from "next/navigation";
@@ -10,12 +28,6 @@ import { toast } from "react-toastify";
 import GetUser from "@/action/user/getuser";
 import TimeLineSummary from "@/action/report/timeline_summary";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  ColumnDef,
-} from "@tanstack/react-table";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -68,111 +80,143 @@ const AfterDeathLinePage = () => {
   const nameRef = useRef<InputRef>(null);
 
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
+  const [allDvatData, setAllDvatData] = useState<Array<ResponseType>>([]); // All data for statistics
 
   const [user, setUpser] = useState<user | null>(null);
 
-  const [sortField, setSortField] = useState<"filed" | "late" | "pending" | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  // Calculate statistics from ALL data, not just paginated data
+  const totalDealers = allDvatData.length;
+  const totalFiled = allDvatData.reduce((sum, item) => sum + item.filed, 0);
+  const totalLate = allDvatData.reduce((sum, item) => sum + item.late, 0);
+  const totalPending = allDvatData.reduce((sum, item) => sum + item.pending, 0);
+  const totalDue = allDvatData.reduce((sum, item) => sum + item.due, 0);
+  const compositionDealers = allDvatData.filter(
+    (item) => item.dvat04.compositionScheme
+  ).length;
+  const regularDealers = totalDealers - compositionDealers;
 
-  const handleSort = (field: "filed" | "late" | "pending") => {
-    if (sortField === field) {
-      // Toggle order or clear
-      if (sortOrder === "asc") {
-        setSortOrder("desc");
-      } else {
-        setSortField(null);
-        setSortOrder("desc");
-      }
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
+  // Export to Excel function
+  const exportToExcel = () => {
+    if (allDvatData.length === 0) return;
+
+    const worksheetData = [
+      ["Return Filing Timeline Summary Report"],
+      ["Year: " + selectedYear],
+      [""],
+      [
+        "TIN Number",
+        "Trade Name",
+        "Type",
+        "Timely Filed",
+        "Late Filing",
+        "Pending Filing",
+        "Due",
+      ],
+      ...allDvatData.map((item) => [
+        item.dvat04.tinNumber,
+        item.dvat04.tradename,
+        item.dvat04.compositionScheme ? "COMP" : "REG",
+        item.filed,
+        item.late,
+        item.pending,
+        item.due,
+      ]),
+      [""],
+      ["Summary"],
+      ["Total Dealers", totalDealers],
+      ["Total Filed", totalFiled],
+      ["Total Late", totalLate],
+      ["Total Pending", totalPending],
+      ["Total Due", totalDue],
+      ["Regular Dealers", regularDealers],
+      ["Composition Dealers", compositionDealers],
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Timeline Summary");
+    XLSX.writeFile(
+      workbook,
+      `timeline_summary_report_${selectedYear}.xlsx`
+    );
   };
 
-  // Define columns for TanStack Table
-  const columns = useMemo<ColumnDef<ResponseType>[]>(
-    () => [
+  // Chart data - Top 10 dealers by late returns (from all data)
+  const top10Dealers = [...allDvatData]
+    .sort((a, b) => b.late - a.late)
+    .slice(0, 10);
+
+  const barChartData = {
+    labels: top10Dealers.map((item) => item.dvat04.tinNumber || "Unknown"),
+    datasets: [
       {
-        accessorKey: "dvat04.tinNumber",
-        header: "TIN Number",
-        cell: (info) => info.row.original.dvat04.tinNumber,
+        label: "Timely Filed",
+        data: top10Dealers.map((item) => item.filed),
+        backgroundColor: "rgba(34, 197, 94, 0.8)",
       },
       {
-        accessorKey: "dvat04.tradename",
-        header: "Trade Name",
-        cell: (info) => info.row.original.dvat04.tradename,
+        label: "Late Filing",
+        data: top10Dealers.map((item) => item.late),
+        backgroundColor: "rgba(239, 68, 68, 0.8)",
       },
       {
-        accessorKey: "filed",
-        header: () => (
-          <div
-            className="cursor-pointer select-none flex items-center justify-center gap-1"
-            onClick={() => handleSort("filed")}
-          >
-            Timely Filed
-            {sortField === "filed" && sortOrder === "asc" ? " ↑" : sortField === "filed" && sortOrder === "desc" ? " ↓" : " ↕"}
-          </div>
-        ),
-        cell: (info) => info.getValue(),
-      },
-      {
-        accessorKey: "late",
-        header: () => (
-          <div
-            className="cursor-pointer select-none flex items-center justify-center gap-1"
-            onClick={() => handleSort("late")}
-          >
-            Late Filing
-            {sortField === "late" && sortOrder === "asc" ? " ↑" : sortField === "late" && sortOrder === "desc" ? " ↓" : " ↕"}
-          </div>
-        ),
-        cell: (info) => info.getValue(),
-      },
-      {
-        accessorKey: "pending",
-        header: () => (
-          <div
-            className="cursor-pointer select-none flex items-center justify-center gap-1"
-            onClick={() => handleSort("pending")}
-          >
-            Pending Filing
-            {sortField === "pending" && sortOrder === "asc" ? " ↑" : sortField === "pending" && sortOrder === "desc" ? " ↓" : " ↕"}
-          </div>
-        ),
-        cell: (info) => info.getValue(),
-      },
-      {
-        accessorKey: "due",
-        header: "Due",
-        cell: (info) => info.getValue(),
-      },
-      {
-        id: "actions",
-        header: "View",
-        cell: (info) => (
-          <Button
-            type="primary"
-            onClick={() => {
-              router.push(
-                `/dashboard/returns/department-pending-return/${encryptURLData(
-                  info.row.original.dvat04.id.toString()
-                )}`
-              );
-            }}
-          >
-            View
-          </Button>
-        ),
+        label: "Pending",
+        data: top10Dealers.map((item) => item.pending),
+        backgroundColor: "rgba(251, 191, 36, 0.8)",
       },
     ],
-    [router, sortField, sortOrder]
-  );
+  };
 
-  const table = useReactTable({
-    data: dvatData,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
+  // Dealer type distribution
+  const doughnutData = {
+    labels: ["Regular Dealers", "Composition Dealers"],
+    datasets: [
+      {
+        data: [regularDealers, compositionDealers],
+        backgroundColor: ["rgba(59, 130, 246, 0.8)", "rgba(34, 197, 94, 0.8)"],
+      },
+    ],
+  };
+
+  // Filing status distribution
+  const pieChartData = {
+    labels: ["Timely Filed", "Late Filing", "Pending"],
+    datasets: [
+      {
+        data: [totalFiled, totalLate, totalPending],
+        backgroundColor: [
+          "rgba(34, 197, 94, 0.8)",
+          "rgba(239, 68, 68, 0.8)",
+          "rgba(251, 191, 36, 0.8)",
+        ],
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
+  };
+
+  const pieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+    },
+  };
 
   const init = async () => {
     const userrespone = await GetUser({ id: userid });
@@ -183,8 +227,6 @@ const AfterDeathLinePage = () => {
         take: 10,
         skip: 0,
         year: selectedYear,
-        sortField: sortField || undefined,
-        sortOrder: sortField ? sortOrder : undefined,
       });
 
       if (payment_data.status && payment_data.data.result) {
@@ -194,6 +236,10 @@ const AfterDeathLinePage = () => {
           total: payment_data.data.total,
         });
         setDvatData(payment_data.data.result);
+        // Set all data for statistics calculation
+        if (payment_data.data.allData) {
+          setAllDvatData(payment_data.data.allData);
+        }
       }
     }
 
@@ -218,8 +264,6 @@ const AfterDeathLinePage = () => {
           take: 10,
           skip: 0,
           year: selectedYear,
-          sortField: sortField || undefined,
-          sortOrder: sortField ? sortOrder : undefined,
         });
 
         if (payment_data.status && payment_data.data.result) {
@@ -229,12 +273,16 @@ const AfterDeathLinePage = () => {
             take: payment_data.data.take,
             total: payment_data.data.total,
           });
+          // Set all data for statistics calculation
+          if (payment_data.data.allData) {
+            setAllDvatData(payment_data.data.allData);
+          }
         }
       }
       setLoading(false);
     };
     init();
-  }, [userid, selectedYear, sortField, sortOrder]);
+  }, [userid, selectedYear]);
 
   const arnsearch = async () => {
     if (
@@ -250,8 +298,6 @@ const AfterDeathLinePage = () => {
       take: 10,
       skip: 0,
       year: selectedYear,
-      sortField: sortField || undefined,
-      sortOrder: sortField ? sortOrder : undefined,
     });
     if (search_response.status && search_response.data.result) {
       setDvatData(search_response.data.result);
@@ -260,6 +306,10 @@ const AfterDeathLinePage = () => {
         take: search_response.data.take,
         total: search_response.data.total,
       });
+      // Set all data for statistics calculation
+      if (search_response.data.allData) {
+        setAllDvatData(search_response.data.allData);
+      }
       setSearch(true);
     }
   };
@@ -278,8 +328,6 @@ const AfterDeathLinePage = () => {
       take: 10,
       skip: 0,
       year: selectedYear,
-      sortField: sortField || undefined,
-      sortOrder: sortField ? sortOrder : undefined,
     });
     if (search_response.status && search_response.data.result) {
       setDvatData(search_response.data.result);
@@ -288,6 +336,10 @@ const AfterDeathLinePage = () => {
         take: search_response.data.take,
         total: search_response.data.total,
       });
+      // Set all data for statistics calculation
+      if (search_response.data.allData) {
+        setAllDvatData(search_response.data.allData);
+      }
       setSearch(true);
     }
   };
@@ -307,8 +359,6 @@ const AfterDeathLinePage = () => {
           take: pagesize,
           skip: pagesize * (page - 1),
           year: selectedYear,
-          sortField: sortField || undefined,
-          sortOrder: sortField ? sortOrder : undefined,
         });
 
         if (search_response.status && search_response.data.result) {
@@ -334,8 +384,6 @@ const AfterDeathLinePage = () => {
           take: pagesize,
           skip: pagesize * (page - 1),
           year: selectedYear,
-          sortField: sortField || undefined,
-          sortOrder: sortField ? sortOrder : undefined,
         });
 
         if (search_response.status && search_response.data.result) {
@@ -354,8 +402,6 @@ const AfterDeathLinePage = () => {
         take: pagesize,
         skip: pagesize * (page - 1),
         year: selectedYear,
-        sortField: sortField || undefined,
-        sortOrder: sortField ? sortOrder : undefined,
       });
       if (payment_data.status && payment_data.data.result) {
         setDvatData(payment_data.data.result);
@@ -370,45 +416,137 @@ const AfterDeathLinePage = () => {
 
   if (isLoading)
     return (
-      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
-        Loading...
+      <div className="h-screen w-full grid place-items-center">
+        <Spin size="large" />
       </div>
     );
 
   return (
     <>
-      <div className="p-3 py-2">
+      <div className="p-6">
         {/* Header */}
-        <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white">
-            <p className="text-lg font-semibold">
+        <div className="flex flex-col lg:flex-row gap-2 mb-4">
+          <div className="grow">
+            <h1 className="text-2xl font-semibold">
               Return Filing Timeline Summary Report
+            </h1>
+            <p className="text-sm text-gray-600">
+              Analysis of dealer filing patterns for year {selectedYear}
             </p>
           </div>
-          
-          {/* Filters Section - All in One Line */}
-          <div className="flex flex-wrap items-center gap-4 p-3 bg-gray-50 border-b">
-            <label className="text-sm font-medium text-gray-700">
-              Filter by:
-            </label>
-            
-            {/* Year Filter */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Year:</label>
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {years.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="shrink-0">
+            <button
+              onClick={exportToExcel}
+              disabled={allDvatData.length === 0}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              Export to Excel
+            </button>
+          </div>
+        </div>
 
-            {/* Search Type */}
+        {/* Year Filter */}
+        <div className="bg-white p-4 shadow rounded-lg mb-6">
+          <div className="flex items-center gap-4">
+            <label className="font-semibold text-gray-700">Select Year:</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="px-4 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
+            <Fa6RegularBuilding className="w-8 h-8 opacity-70 mb-2" />
+            <p className="text-2xl font-bold">{totalDealers}</p>
+            <p className="text-xs opacity-90">Total Dealers</p>
+            <p className="text-xs opacity-75 mt-1">Active in {selectedYear}</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-md p-6 text-white">
+            <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
+            <p className="text-2xl font-bold">{totalFiled}</p>
+            <p className="text-xs opacity-90">Timely Filed</p>
+            <p className="text-xs opacity-75 mt-1">On-time Returns</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-md p-6 text-white">
+            <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
+            <p className="text-2xl font-bold">{totalLate}</p>
+            <p className="text-xs opacity-90">Late Filing</p>
+            <p className="text-xs opacity-75 mt-1">Overdue Returns</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg shadow-md p-6 text-white">
+            <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
+            <p className="text-2xl font-bold">{totalPending}</p>
+            <p className="text-xs opacity-90">Pending Filing</p>
+            <p className="text-xs opacity-75 mt-1">Not Yet Filed</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
+            <MaterialSymbolsPersonRounded className="w-8 h-8 opacity-70 mb-2" />
+            <p className="text-lg font-bold">
+              {regularDealers}/{compositionDealers}
+            </p>
+            <p className="text-xs opacity-90">REG / COMP</p>
+            <p className="text-xs opacity-75 mt-1">Dealer Types</p>
+          </div>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-6 lg:col-span-2">
+            <h2 className="text-lg font-semibold mb-4">
+              Top 10 Dealers Filing Status
+            </h2>
+            <div className="h-80">
+              {allDvatData.length > 0 ? (
+                <Bar data={barChartData} options={chartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  No data available
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold mb-4">
+              Dealer Type Distribution
+            </h2>
+            <div className="h-80 flex items-center justify-center">
+              <Doughnut data={doughnutData} options={pieOptions} />
+            </div>
+          </div>
+        </div>
+
+        {/* Filing Status Pie Chart */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">
+            Overall Filing Status Distribution
+          </h2>
+          <div className="h-80 flex items-center justify-center">
+            <Pie data={pieChartData} options={pieOptions} />
+          </div>
+        </div>
+
+        {/* Search and Filter Section */}
+        <div className="bg-white p-4 shadow rounded-lg mb-4">
+          <div className="bg-blue-500 p-3 text-white rounded-t-lg -mt-4 -mx-4 mb-4">
+            <p className="font-semibold">Search & Filter Dealers</p>
+          </div>
+
+          <div className="flex flex-col md:flex-row lg:gap-4 lg:items-center">
             <Radio.Group
               onChange={onChange}
               value={searchOption}
@@ -417,8 +555,7 @@ const AfterDeathLinePage = () => {
               <Radio value={SearchOption.TIN}>TIN</Radio>
               <Radio value={SearchOption.NAME}>Trade Name</Radio>
             </Radio.Group>
-
-            {/* Search Input */}
+            <div className="h-2"></div>
             {(() => {
               switch (searchOption) {
                 case SearchOption.TIN:
@@ -470,73 +607,116 @@ const AfterDeathLinePage = () => {
               }
             })()}
           </div>
+        </div>
 
-          {/* Data Table */}
-          <div className="mt-2 overflow-x-auto">
-            <table className="w-full border border-gray-200">
-              <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id} className="bg-gray-100">
-                    {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        className="whitespace-nowrap text-center border p-2 font-semibold text-gray-700"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-              <tbody>
-                {table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-gray-50">
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        className="border text-center p-2 text-gray-600"
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Data Table */}
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-center">TIN Number</TableHead>
+                  <TableHead className="text-center">Trade Name</TableHead>
+                  <TableHead className="text-center">Type</TableHead>
+                  <TableHead className="text-center">Timely Filed</TableHead>
+                  <TableHead className="text-center">Late Filing</TableHead>
+                  <TableHead className="text-center">Pending</TableHead>
+                  <TableHead className="text-center">Due</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {dvatData.length > 0 ? (
+                  dvatData.map((val: ResponseType, index: number) => (
+                    <TableRow key={index}>
+                      <TableCell className="text-center">
+                        {val.dvat04.tinNumber}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {val.dvat04.tradename}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-semibold ${
+                            val.dvat04.compositionScheme
+                              ? "bg-green-100 text-green-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {val.dvat04.compositionScheme ? "COMP" : "REG"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm font-medium">
+                          {val.filed}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-sm font-medium">
+                          {val.late}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-medium">
+                          {val.pending}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">{val.due}</TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          type="primary"
+                          size="small"
+                          onClick={() => {
+                            router.push(
+                              `/dashboard/returns/department-pending-return/${encryptURLData(
+                                val.dvat04.id.toString()
+                              )}`
+                            );
+                          }}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      No data available
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
-          <div className="mt-2"></div>
-          <div className="lg:hidden">
-            <Pagination
-              align="center"
-              defaultCurrent={1}
-              onChange={onChangePageCount}
-              showSizeChanger
-              total={pagination.total}
-              showTotal={(total: number) => `Total ${total} items`}
-            />
-          </div>
-          <div className="hidden lg:block">
-            <Pagination
-              showQuickJumper
-              align="center"
-              defaultCurrent={1}
-              onChange={onChangePageCount}
-              showSizeChanger
-              pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-              total={pagination.total}
-              responsive={true}
-              showTotal={(total: number, range: number[]) =>
-                `${range[0]}-${range[1]} of ${total} items`
-              }
-            />
+
+          {/* Pagination */}
+          <div className="p-4 border-t">
+            <div className="lg:hidden">
+              <Pagination
+                align="center"
+                defaultCurrent={1}
+                onChange={onChangePageCount}
+                showSizeChanger
+                total={pagination.total}
+                showTotal={(total: number) => `Total ${total} items`}
+              />
+            </div>
+            <div className="hidden lg:block">
+              <Pagination
+                showQuickJumper
+                align="center"
+                defaultCurrent={1}
+                onChange={onChangePageCount}
+                showSizeChanger
+                pageSizeOptions={[10, 20, 25, 50, 100]}
+                total={pagination.total}
+                responsive={true}
+                showTotal={(total: number, range: number[]) =>
+                  `${range[0]}-${range[1]} of ${total} items`
+                }
+              />
+            </div>
           </div>
         </div>
       </div>

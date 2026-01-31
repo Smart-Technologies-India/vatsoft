@@ -31,6 +31,7 @@ const DistrictWiseCommodityReport = async (
     total_amount: number;
     count: number;
     office: string;
+    vatamount: number;
   }> | null>
 > => {
   const functionname: string = DistrictWiseCommodityReport.name;
@@ -98,6 +99,7 @@ const DistrictWiseCommodityReport = async (
         total_quantity: number;
         total_amount: number;
         count: number;
+        vatamount: number;
       }
     > = {};
 
@@ -118,6 +120,7 @@ const DistrictWiseCommodityReport = async (
           total_quantity: 0,
           total_amount: 0,
           count: 0,
+          vatamount: 0,
         };
       }
 
@@ -125,6 +128,8 @@ const DistrictWiseCommodityReport = async (
       aggregationMap[key].total_amount +=
         parseInt(entry.total_invoice_number?.toString() ?? "0") || 0;
       aggregationMap[key].count += 1;
+      aggregationMap[key].vatamount +=
+        parseInt(entry.vatamount?.toString() ?? "0") || 0;
     }
 
     const filteredData = Object.values(aggregationMap).filter(
