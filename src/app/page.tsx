@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/accordion";
 import { addMonths, format } from "date-fns";
 
+
 import { FluentEye12Regular, FluentEyeOff16Regular } from "@/components/icons";
 import DvatPasswordLogin from "@/action/user/dvatpasswordlogin";
 
@@ -47,6 +48,7 @@ const Home = () => {
         "The C-Form is automatically generated three months after interstate filing has been completed.",
     },
   ];
+  
   const [openItems, setOpenItems] = useState<string[]>([]);
 
   const toggleItem = (value: string) => {

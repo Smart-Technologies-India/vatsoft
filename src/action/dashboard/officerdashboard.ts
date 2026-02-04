@@ -165,8 +165,9 @@ const OfficerDashboard = async (
     let last_month_received: number = 0;
 
     for (let i = 0; i < last_month_received_data.length; i++) {
-      last_month_received += parseInt(
-        last_month_received_data[i].vatamount ?? "0",
+      last_month_received += Math.max(
+        0,
+        parseInt(last_month_received_data[i].total_tax_amount ?? "0"),
       );
     }
 
@@ -189,8 +190,9 @@ const OfficerDashboard = async (
     let this_month_received: number = 0;
 
     for (let i = 0; i < this_month_received_data.length; i++) {
-      this_month_received += parseInt(
-        this_month_received_data[i].vatamount ?? "0",
+      this_month_received += Math.max(
+        0,
+        parseInt(this_month_received_data[i].total_tax_amount ?? "0"),
       );
     }
 
@@ -234,7 +236,10 @@ const OfficerDashboard = async (
 
     let today_received: number = 0;
     for (let i = 0; i < today_received_data.length; i++) {
-      today_received += parseInt(today_received_data[i].vatamount ?? "0");
+      today_received += Math.max(
+        0,
+        parseInt(today_received_data[i].total_tax_amount ?? "0"),
+      );
     }
 
     const response: ResponseData = {

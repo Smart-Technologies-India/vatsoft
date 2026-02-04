@@ -5,8 +5,9 @@ import prisma from "../../../prisma/database";
 
 interface DistrictWiseRevenuePayload {
   selectCommodity?: "FUEL" | "LIQUOR";
-  startDate?: Date;
-  endDate?: Date;
+  filterType?: "MONTH" | "YEAR";
+  month?: number;
+  year?: number;
 }
 
 interface DistrictRevenue {
@@ -33,28 +34,26 @@ const DistrictWiseRevenue = async (
   try {
     const currentDate = new Date();
     
-    // Default date range: last 30 days from today
-    const defaultEndDate = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      currentDate.getDate(),
-      23,
-      59,
-      59,
-      999
-    );
-    const defaultStartDate = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      currentDate.getDate() - 30,
-      0,
-      0,
-      0,
-      0
-    );
-    
-    const startDate = payload.startDate || defaultStartDate;
-    const endDate = payload.endDate || defaultEndDate;
+    // Build date filter based on filterType
+    let startDate: Date;
+    let endDate: Date;
+
+    if (payload.year) {
+      if (payload.filterType === "MONTH" && payload.month) {
+        // Filter by specific month and year
+        startDate = new Date(payload.year, payload.month - 1, 1, 0, 0, 0, 0);
+        endDate = new Date(payload.year, payload.month, 0, 23, 59, 59, 999);
+      } else {
+        // Filter by year only
+        startDate = new Date(payload.year, 0, 1, 0, 0, 0, 0);
+        endDate = new Date(payload.year, 11, 31, 23, 59, 59, 999);
+      }
+    } else {
+      // Default: current year
+      const year = currentDate.getFullYear();
+      startDate = new Date(year, 0, 1, 0, 0, 0, 0);
+      endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+    }
 
     const districts = [
       { value: "Dadra_Nagar_Haveli", label: "Dadra & Nagar Haveli" },
@@ -97,12 +96,12 @@ const DistrictWiseRevenue = async (
           },
         },
         select: {
-          vatamount: true,
+          total_tax_amount: true,
         },
       });
 
       const revenue = returns.reduce(
-        (sum, ret) => sum + Math.max(0, parseFloat(ret.vatamount || "0")),
+        (sum, ret) => sum + Math.max(0, parseFloat(ret.total_tax_amount || "0")),
         0
       );
 

@@ -29,12 +29,10 @@ import numberWithIndianFormat, {
 } from "@/utils/methods";
 
 ChartJS.register(...registerables, ChartDataLabels);
-
 enum FileStatus {
   FILED,
   NOTFILED,
 }
-
 import { dvat04, user } from "@prisma/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -60,9 +58,7 @@ const Page = () => {
   const [user, setUser] = useState<user | null>(null);
   const [month, setMonth] = useState<any[]>([]);
   const [isLoading, setLoading] = useState<boolean>(true);
-
   const [isProfileCompletd, setIsProfileCompleted] = useState<boolean>(false);
-
   const [dvat, setDvat] = useState<dvat04 | null>(null);
   const [hasFirstStock, setHasFirstStock] = useState<boolean>(false);
 
@@ -773,6 +769,8 @@ const OfficerDashboardPage = () => {
     today_received: number;
   }
 
+  const router = useRouter();
+
   const [countData, setCountData] = useState<ResponseData>({
     totaldealer: 0,
     fueldealer: 0,
@@ -847,31 +845,66 @@ const OfficerDashboardPage = () => {
     TopCommodityData[]
   >([]);
 
+  const [user, setUser] = useState<user | null>(null);
+
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+      const userrespone = await GetUser({ id: authResponse.data });
+
+      console.log("Selected City:", userrespone);
+
+      if (userrespone.status && userrespone.data) {
+        setUser(userrespone.data);
+        
+        // Set city based on user.selectOffice for specific roles
+        if (
+          userrespone.data.role === "VATOFFICER" ||
+          userrespone.data.role === "DY_COMMISSIONER" ||
+          userrespone.data.role === "JOINT_COMMISSIONER"
+        ) {
+          if (userrespone.data.selectOffice) {
+            setCity(userrespone.data.selectOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU");
+          }
+        }
+      }
+
+      // Determine which office to use for filtering
+      const filterOffice = 
+        userrespone.status && 
+        userrespone.data && 
+        ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userrespone.data.role) && 
+        userrespone.data.selectOffice
+          ? userrespone.data.selectOffice
+          : city;
+
       const count_data_response = await OfficerDashboard({
-        selectOffice: city,
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
       });
       if (count_data_response.status && count_data_response.data) {
         setCountData(count_data_response.data);
       }
 
       const last15days = await Last15Received({
-        selectOffice: city,
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
       });
       if (last15days.status && last15days.data) {
         setLast15Day(last15days.data);
       }
 
       const liquorDealersResponse = await GetTopLiquorDealers({
-        selectOffice: city,
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
       });
       if (liquorDealersResponse.status && liquorDealersResponse.data) {
         setTopLiquorDealers(liquorDealersResponse.data);
       }
 
       const fuelDealersResponse = await GetTopFuelDealers({
-        selectOffice: city,
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
       });
       if (fuelDealersResponse.status && fuelDealersResponse.data) {
         setTopFuelDealers(fuelDealersResponse.data);
@@ -879,11 +912,11 @@ const OfficerDashboardPage = () => {
 
       // Fetch category-wise revenue (fuel and liquor)
       const fuelRevenueResponse = await OfficerDashboardReport({
-        selectOffice: city,
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
         selectCommodity: "FUEL",
       });
       const liquorRevenueResponse = await OfficerDashboardReport({
-        selectOffice: city,
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
         selectCommodity: "LIQUOR",
       });
 
@@ -904,7 +937,7 @@ const OfficerDashboardPage = () => {
 
       // Fetch top commodities
       const fuelCommoditiesResponse = await GetTopCommodities({
-        selectOffice: city,
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
         commodityType: "FUEL",
         limit: 10,
       });
@@ -913,7 +946,7 @@ const OfficerDashboardPage = () => {
       }
 
       const liquorCommoditiesResponse = await GetTopCommodities({
-        selectOffice: city,
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
         commodityType: "LIQUOR",
         limit: 10,
       });
@@ -1190,16 +1223,39 @@ const OfficerDashboardPage = () => {
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-xs text-gray-500 mb-0.5">Select Region</p>
-                <Radio.Group
-                  options={citys}
-                  size="small"
-                  value={city}
-                  onChange={onCityChange}
-                  defaultValue="DNH"
-                  optionType="button"
-                  buttonStyle="solid"
-                />
+                {[
+                  "VATOFFICER",
+                  "DY_COMMISSIONER",
+                  "JOINT_COMMISSIONER",
+                ].includes(user?.role || "") ? (
+                  <>
+                    <p className="text-xs text-gray-500 mb-0.5">
+                      Assigned Office
+                    </p>
+                    <div className="bg-blue-50 border border-blue-200 px-3 py-1.5 rounded text-sm font-medium text-blue-700">
+                      {city === "Dadra_Nagar_Haveli"
+                        ? "DNH"
+                        : city === "DAMAN"
+                        ? "DD"
+                        : "DIU"}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-500 mb-0.5">
+                      Select Region
+                    </p>
+                    <Radio.Group
+                      options={citys}
+                      size="small"
+                      value={city}
+                      onChange={onCityChange}
+                      defaultValue="DNH"
+                      optionType="button"
+                      buttonStyle="solid"
+                    />
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1511,103 +1567,112 @@ const OfficerDashboardPage = () => {
           </div>
         </div>
 
-        {/* Top Row - District and Category Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-          {/* District-wise Revenue Chart */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 flex items-center">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                  District-wise Revenue (Last 30 Days)
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Revenue distribution across regions
-                </p>
+        {!["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+          user?.role || "",
+        ) && (
+          <>
+            {/* Top Row - District and Category Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+              {/* District-wise Revenue Chart */}
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 flex items-center">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                      District-wise Revenue (Last 30 Days)
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Revenue distribution across regions
+                    </p>
+                  </div>
+                  <div className="bg-linear-to-r from-blue-50 to-purple-50 p-2 rounded-lg">
+                    <svg
+                      className="w-4 h-4 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <div className="h-64 flex items-center justify-center">
+                  <div className="w-full h-full">
+                    <Pie data={districtRevenueChartData} options={pieOptions} />
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Total Revenue</span>
+                    <span className="font-medium text-gray-700">
+                      ₹
+                      {numberWithIndianFormat(
+                        districtRevenueData?.totalRevenue || 0,
+                      )}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="bg-linear-to-r from-blue-50 to-purple-50 p-2 rounded-lg">
-                <svg
-                  className="w-4 h-4 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-              </div>
-            </div>
-            <div className="h-64 flex items-center justify-center">
-              <div className="w-full h-full">
-                <Pie data={districtRevenueChartData} options={pieOptions} />
-              </div>
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Total Revenue</span>
-                <span className="font-medium text-gray-700">
-                  ₹
-                  {numberWithIndianFormat(
-                    districtRevenueData?.totalRevenue || 0,
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
 
-          {/* Category-wise Revenue Chart */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 flex items-center">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                  Category-wise Revenue (Last 30 Days)
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Liquor vs Petroleum comparison
-                </p>
-              </div>
-              <div className="bg-linear-to-r from-purple-50 to-pink-50 p-2 rounded-lg">
-                <svg
-                  className="w-4 h-4 text-purple-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
-                  />
-                </svg>
+              {/* Category-wise Revenue Chart */}
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 flex items-center">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                      Category-wise Revenue (Last 30 Days)
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Liquor vs Petroleum comparison
+                    </p>
+                  </div>
+                  <div className="bg-linear-to-r from-purple-50 to-pink-50 p-2 rounded-lg">
+                    <svg
+                      className="w-4 h-4 text-purple-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <div className="h-64 flex items-center justify-center">
+                  <div className="w-full h-full">
+                    <Pie data={categoryRevenueChartData} options={pieOptions} />
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Total Categories</span>
+                    <span className="font-medium text-gray-700">
+                      ₹
+                      {numberWithIndianFormat(
+                        categoryWiseData?.totalRevenue || 0,
+                      )}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="h-64 flex items-center justify-center">
-              <div className="w-full h-full">
-                <Pie data={categoryRevenueChartData} options={pieOptions} />
-              </div>
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Total Categories</span>
-                <span className="font-medium text-gray-700">
-                  ₹{numberWithIndianFormat(categoryWiseData?.totalRevenue || 0)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Bottom Row - Commodity Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1670,7 +1735,6 @@ const OfficerDashboardPage = () => {
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Products</span>
                 <span className="font-medium text-gray-700">
-                  ₹
                   {numberWithIndianFormat(
                     topFuelCommodities.reduce(
                       (sum, c) => sum + c.totalRevenue,
@@ -1738,7 +1802,6 @@ const OfficerDashboardPage = () => {
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Total Products</span>
                 <span className="font-medium text-gray-700">
-                  ₹
                   {numberWithIndianFormat(
                     topLiquorCommodities.reduce(
                       (sum, c) => sum + c.totalRevenue,

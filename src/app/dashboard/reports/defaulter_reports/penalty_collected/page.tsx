@@ -48,6 +48,35 @@ const AfterDeathLinePage = () => {
     SelectOffice | undefined
   >(undefined);
 
+  const [filterType, setFilterType] = useState<"MONTH" | "YEAR">("YEAR");
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    currentDate.getMonth() + 1,
+  );
+  const [selectedYear, setSelectedYear] = useState<number>(
+    currentDate.getFullYear(),
+  );
+
+  const months = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
+  const years = Array.from(
+    { length: 10 },
+    (_, i) => currentDate.getFullYear() - i,
+  );
+
   const [pagination, setPaginatin] = useState<{
     take: number;
     skip: number;
@@ -104,10 +133,19 @@ const AfterDeathLinePage = () => {
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
+      
+      // Set office filter based on role
+      const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userrespone.data.role)
+        ? (userrespone.data.selectOffice ?? undefined)
+        : selectedOffice;
+      
       const payment_data = await OutstandingDealers({
-        dept: selectedOffice,
+        dept: filterOffice,
         take: 10,
         skip: 0,
+        filterType: filterType,
+        month: filterType === "MONTH" ? selectedMonth : undefined,
+        year: selectedYear,
       });
 
       if (payment_data.status && payment_data.data.result) {
@@ -144,10 +182,19 @@ const AfterDeathLinePage = () => {
       const userrespone = await GetUser({ id: userid });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
+        
+        // Set office filter based on role
+        const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userrespone.data.role)
+          ? (userrespone.data.selectOffice ?? undefined)
+          : selectedOffice;
+        
         const payment_data = await OutstandingDealers({
-          dept: selectedOffice,
+          dept: filterOffice,
           take: 10,
           skip: 0,
+          filterType: filterType,
+          month: filterType === "MONTH" ? selectedMonth : undefined,
+          year: selectedYear,
         });
 
         if (payment_data.status && payment_data.data.result) {
@@ -171,7 +218,7 @@ const AfterDeathLinePage = () => {
       setLoading(false);
     };
     init();
-  }, [userid, selectedOffice]);
+  }, [userid, selectedOffice, filterType, selectedMonth, selectedYear]);
   const get_years = (month: string, year: string): string => {
     const monthNames = [
       "January",
@@ -208,11 +255,20 @@ const AfterDeathLinePage = () => {
     ) {
       return toast.error("Enter arn number");
     }
+    
+    // Set office filter based on role
+    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+      ? (user.selectOffice ?? undefined)
+      : selectedOffice;
+    
     const search_response = await OutstandingDealers({
-      dept: selectedOffice,
+      dept: filterOffice,
       arnnumber: arnRef.current?.input?.value,
       take: 10,
       skip: 0,
+      filterType: filterType,
+      month: filterType === "MONTH" ? selectedMonth : undefined,
+      year: selectedYear,
     });
     if (search_response.status && search_response.data.result) {
       const sortedData = search_response.data.result.sort((a, b) => {
@@ -242,11 +298,20 @@ const AfterDeathLinePage = () => {
     ) {
       return toast.error("Enter TIN Number");
     }
+    
+    // Set office filter based on role
+    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+      ? (user.selectOffice ?? undefined)
+      : selectedOffice;
+    
     const search_response = await OutstandingDealers({
-      dept: selectedOffice,
+      dept: filterOffice,
       tradename: nameRef.current?.input?.value,
       take: 10,
       skip: 0,
+      filterType: filterType,
+      month: filterType === "MONTH" ? selectedMonth : undefined,
+      year: selectedYear,
     });
     if (search_response.status && search_response.data.result) {
       const sortedData = search_response.data.result.sort((a, b) => {
@@ -268,6 +333,11 @@ const AfterDeathLinePage = () => {
     }
   };
   const onChangePageCount = async (page: number, pagesize: number) => {
+    // Set office filter based on role
+    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+      ? (user.selectOffice ?? undefined)
+      : selectedOffice;
+    
     if (isSearch) {
       if (searchOption == SearchOption.TIN) {
         if (
@@ -278,10 +348,13 @@ const AfterDeathLinePage = () => {
           return toast.error("Enter arn number");
         }
         const search_response = await OutstandingDealers({
-          dept: selectedOffice,
+          dept: filterOffice,
           arnnumber: arnRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
+          filterType: filterType,
+          month: filterType === "MONTH" ? selectedMonth : undefined,
+          year: selectedYear,
         });
 
         if (search_response.status && search_response.data.result) {
@@ -307,10 +380,13 @@ const AfterDeathLinePage = () => {
           return toast.error("Enter TIN Number");
         }
         const search_response = await OutstandingDealers({
-          dept: selectedOffice,
+          dept: filterOffice,
           tradename: nameRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
+          filterType: filterType,
+          month: filterType === "MONTH" ? selectedMonth : undefined,
+          year: selectedYear,
         });
 
         if (search_response.status && search_response.data.result) {
@@ -330,9 +406,12 @@ const AfterDeathLinePage = () => {
       }
     } else {
       const payment_data = await OutstandingDealers({
-        dept: selectedOffice,
+        dept: filterOffice,
         take: pagesize,
         skip: pagesize * (page - 1),
+        filterType: filterType,
+        month: filterType === "MONTH" ? selectedMonth : undefined,
+        year: selectedYear,
       });
       if (payment_data.status && payment_data.data.result) {
         const sortedData = payment_data.data.result.sort((a, b) => {
@@ -534,28 +613,79 @@ const AfterDeathLinePage = () => {
           </div>
         </div>
 
-        {/* Office Filter */}
+        {/* Filters */}
         <div className="bg-white rounded-lg shadow-sm mb-4 p-4">
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700">
-                District/Office
+                Filter Type
               </label>
               <Radio.Group
                 options={[
-                  { label: "All", value: undefined },
-                  { label: "DNH", value: "Dadra_Nagar_Haveli" as SelectOffice },
-                  { label: "DD", value: "DAMAN" as SelectOffice },
-                  { label: "DIU", value: "DIU" as SelectOffice },
+                  { label: "By Year", value: "YEAR" },
+                  { label: "By Month", value: "MONTH" },
                 ]}
-                onChange={(e: RadioChangeEvent) =>
-                  setSelectedOffice(e.target.value)
-                }
-                value={selectedOffice}
+                onChange={(e: RadioChangeEvent) => setFilterType(e.target.value)}
+                value={filterType}
                 optionType="button"
                 buttonStyle="solid"
               />
             </div>
+            {filterType === "MONTH" && (
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">Month</label>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {months.map((month) => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Year</label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {user && ![
+              "VATOFFICER",
+              "DY_COMMISSIONER",
+              "JOINT_COMMISSIONER",
+            ].includes(user.role) && (
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">
+                  District/Office
+                </label>
+                <Radio.Group
+                  options={[
+                    { label: "All", value: undefined },
+                    { label: "DNH", value: "Dadra_Nagar_Haveli" as SelectOffice },
+                    { label: "DD", value: "DAMAN" as SelectOffice },
+                    { label: "DIU", value: "DIU" as SelectOffice },
+                  ]}
+                  onChange={(e: RadioChangeEvent) =>
+                    setSelectedOffice(e.target.value)
+                  }
+                  value={selectedOffice}
+                  optionType="button"
+                  buttonStyle="solid"
+                />
+              </div>
+            )}
           </div>
         </div>
 

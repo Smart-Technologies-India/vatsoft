@@ -9,14 +9,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { Button, Radio } from "antd";
 import { ToWords } from "to-words";
 import {
   capitalcase,
-  decryptURLData,
-  encryptURLData,
   formateDate,
   generatePDF,
   getDaysBetweenDates,
@@ -48,6 +46,8 @@ import GetReturn01 from "@/action/return/getreturn";
 import getReturnEntry from "@/action/return/getreturnentry";
 import GetUser from "@/action/user/getuser";
 import { CheckboxGroupProps } from "antd/es/checkbox";
+import getPdfReturn from "@/action/return/getpdfreturn";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 // import SendOtp from "@/action/user/sendotp";
 // import VerifyOtp from "@/action/user/verifyotp";
 
@@ -74,6 +74,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
     [],
   );
+  const [lastmonthdue, setLastMonthDue] = useState<string>("0");
+  const searchparam = useSearchParams();
 
   const [user, setUser] = useState<user | null>(null);
 
@@ -116,6 +118,56 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     };
     init();
   }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        return router.push("/");
+      }
+
+      const year: string = searchparam.get("year") ?? "";
+      const month: string = searchparam.get("month") ?? "";
+
+      const monthNames = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+
+      const currentMonthIndex = monthNames.indexOf(month);
+
+      if (currentMonthIndex === -1) {
+      } else {
+        // Calculate the last month index and handle wrapping
+        const lastMonthIndex = (currentMonthIndex - 1 + 12) % 12;
+
+        // Get the last month's name
+        const lastMonth: string = monthNames[lastMonthIndex];
+
+        const lastmonthdata = await getPdfReturn({
+          year: month == "January" ? (parseInt(year) - 1).toString() : year,
+          month: lastMonth,
+          userid: 0,
+        });
+
+        if (lastmonthdata.status && lastmonthdata.data) {
+          setLastMonthDue(lastmonthdata.data.returns_01.pending_payment ?? "0");
+        }
+      }
+    };
+    init();
+  }, [searchparam]);
 
   const getLateFees = (year: string, month: string, rr_number: string) => {
     const currentDate = new Date();
@@ -522,7 +574,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
           parseFloat(get5_2().decrease) +
           (parseFloat(getCreditNote().decrease) -
             parseFloat(getDebitNote().decrease) -
-            parseFloat(getGoodsReturnsNote().decrease)))) *
+            parseFloat(getGoodsReturnsNote().decrease) -
+            parseFloat(lastmonthdue)))) *
         0.15) /
         365) *
         InterestDiffDays,
@@ -548,7 +601,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
             parseFloat(get5_2().decrease) +
             (parseFloat(getCreditNote().decrease) -
               parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease)))) *
+              parseFloat(getGoodsReturnsNote().decrease) -
+              parseFloat(lastmonthdue)))) *
           0.15) /
           365) *
           InterestDiffDays;
@@ -576,7 +630,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         parseFloat(get5_2().decrease) +
         (parseFloat(getCreditNote().decrease) -
           parseFloat(getDebitNote().decrease) -
-          parseFloat(getGoodsReturnsNote().decrease)))
+          parseFloat(getGoodsReturnsNote().decrease) -
+          parseFloat(lastmonthdue)))
     );
   };
 
@@ -623,7 +678,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
           parseFloat(get5_2().decrease) +
           (parseFloat(getCreditNote().decrease) -
             parseFloat(getDebitNote().decrease) -
-            parseFloat(getGoodsReturnsNote().decrease)))) *
+            parseFloat(getGoodsReturnsNote().decrease) -
+            parseFloat(lastmonthdue)))) *
         0.15) /
         365) *
         PenaltyDiffDays +
@@ -658,7 +714,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
             parseFloat(get5_2().decrease) +
             (parseFloat(getCreditNote().decrease) -
               parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease)))) *
+              parseFloat(getGoodsReturnsNote().decrease) -
+              parseFloat(lastmonthdue)))) *
           0.15) /
           365) *
           InterestDiffDays,
@@ -684,7 +741,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
               parseFloat(get5_2().decrease) +
               (parseFloat(getCreditNote().decrease) -
                 parseFloat(getDebitNote().decrease) -
-                parseFloat(getGoodsReturnsNote().decrease)))) *
+                parseFloat(getGoodsReturnsNote().decrease) -
+                parseFloat(lastmonthdue)))) *
             0.15) /
             365) *
           InterestDiffDays)

@@ -17,7 +17,7 @@ interface ResponseData {
 }
 
 const LastYearReceived = async (
-  payload: LastYearReceivedPayload
+  payload: LastYearReceivedPayload,
 ): Promise<ApiResponseType<ResponseData[] | null>> => {
   const functionname: string = LastYearReceived.name;
   try {
@@ -44,7 +44,7 @@ const LastYearReceived = async (
       const targetDate = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth() - i,
-        1
+        1,
       );
       const year = targetDate.getFullYear();
       const month = targetDate.getMonth();
@@ -53,11 +53,11 @@ const LastYearReceived = async (
       const endDate = new Date(year, month + 1, 1);
 
       const dvat04Where: any = {};
-      
+
       if (payload.selectOffice) {
         dvat04Where.selectOffice = payload.selectOffice;
       }
-      
+
       if (payload.selectCommodity === "FUEL") {
         dvat04Where.commodity = "FUEL";
       } else if (payload.selectCommodity === "LIQUOR") {
@@ -85,15 +85,17 @@ const LastYearReceived = async (
         },
       });
 
-
       let totalAmountForMonth = 0;
       for (let j = 0; j < monthReceivedData.length; j++) {
-        totalAmountForMonth += parseInt(
-          monthReceivedData[j].total_tax_amount == "" ||
-            monthReceivedData[j].total_tax_amount == null ||
-            monthReceivedData[j].total_tax_amount == undefined
-            ? "0"
-            : monthReceivedData[j].total_tax_amount ?? "0"
+        totalAmountForMonth += Math.max(
+          0,
+          parseInt(
+            monthReceivedData[j].total_tax_amount == "" ||
+              monthReceivedData[j].total_tax_amount == null ||
+              monthReceivedData[j].total_tax_amount == undefined
+              ? "0"
+              : (monthReceivedData[j].total_tax_amount ?? "0"),
+          ),
         );
       }
 

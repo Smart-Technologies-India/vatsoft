@@ -10,6 +10,7 @@ import GetDvatById from "@/action/user/register/getdvatbyid";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { toast } from "react-toastify";
 import { getCurrentDvatId } from "@/lib/auth";
+import Image from "next/image";
 
 export default function DashboardLayout({
   children,
@@ -25,7 +26,7 @@ export default function DashboardLayout({
   const [isLoading, setLoading] = useState<boolean>(true);
 
   const [isbluck, setBluck] = useState<boolean>(
-    searchParams.get("sidebar") == "no" ? true : false
+    searchParams.get("sidebar") == "no" ? true : false,
   );
   const path = usePathname();
   const init = async () => {
@@ -84,6 +85,20 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen w-full bg-[#f5f6f8] relative">
+      <div className="h-6 w-full border-b flex items-center justify-center text-black bg-white text-sm hidden-print fixed top-0 left-0 z-50">
+        <div className="relative w-5 h-5 mr-2">
+          <Image
+            fill
+            src="/flag.jpg"
+            alt="Gov Logo"
+            className="object-contain"
+          />
+        </div>
+        <p>
+          An official website of U.T. Administration of Dadra & Nagar Haveli and
+          Daman & Diu
+        </p>
+      </div>
       {!isbluck && (
         <Sidebar
           isOpen={isOpen}
@@ -104,16 +119,16 @@ export default function DashboardLayout({
             setIsOpen={setIsOpen}
             name={
               userdata?.role != Role.USER
-                ? userdata?.firstName ?? ""
+                ? (userdata?.firstName ?? "")
                 : dvat != null
-                ? dvat.tradename ?? ""
-                : userdata?.firstName ?? ""
+                  ? (dvat.tradename ?? "")
+                  : (userdata?.firstName ?? "")
             }
             isbluck={isbluck}
           ></Navbar>
         )}
 
-        {!isbluck && <div className="h-16"></div>}
+        {!isbluck && <div className="h-22"></div>}
         {children}
 
         {isOpen && (

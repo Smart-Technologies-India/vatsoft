@@ -40,6 +40,7 @@ const Page = () => {
             "SYSTEM",
             "ADMIN",
             "COMMISSIONER",
+            "VATOFFICER_DNH",
             "JOINT_COMMISSIONER",
             "DY_COMMISSIONER",
             "VATOFFICER",

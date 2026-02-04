@@ -1,5 +1,8 @@
 "use client";
-import { FluentMdl2Home, MaterialSymbolsKeyboardArrowUpRounded } from "@/components/icons";
+import {
+  FluentMdl2Home,
+  MaterialSymbolsKeyboardArrowUpRounded,
+} from "@/components/icons";
 import { Radio, RadioChangeEvent, Spin, Badge } from "antd";
 import { useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";
@@ -7,10 +10,17 @@ import { Chart as ChartJS, registerables } from "chart.js";
 import ImprovedCompliance from "@/action/report/improvedcompliance";
 import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
+import { user } from "@prisma/client";
+import GetUser from "@/action/user/getuser";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 ChartJS.register(...registerables);
 
 const ImprovedComplianceReport = () => {
+  const router = useRouter();
+  const [user, setUser] = useState<user | null>(null);
+
   interface DealerComplianceData {
     id: number;
     tinNumber: string;
@@ -35,15 +45,38 @@ const ImprovedComplianceReport = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const response = await ImprovedCompliance({
-        selectOffice: city,
-        improvementPeriod: 6,
-      });
-      if (response.status && response.data) {
-        setReportData(response.data);
-      } else {
-        toast.error(response.message || "Failed to load data");
-        setReportData([]);
+
+      // Fetch authenticated user
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        router.push("/");
+        return;
+      }
+
+      const userResponse = await GetUser({ id: authResponse.data });
+      if (userResponse.status && userResponse.data) {
+        setUser(userResponse.data);
+
+        // Set office filter based on role
+        const filterOffice = [
+          "VATOFFICER",
+          "DY_COMMISSIONER",
+          "JOINT_COMMISSIONER",
+        ].includes(userResponse.data.role)
+          ? (userResponse.data.selectOffice ?? undefined)
+          : city;
+
+        const response = await ImprovedCompliance({
+          selectOffice: filterOffice,
+          improvementPeriod: 6,
+        });
+        if (response.status && response.data) {
+          setReportData(response.data);
+        } else {
+          toast.error(response.message || "Failed to load data");
+          setReportData([]);
+        }
       }
       setLoading(false);
     };
@@ -192,22 +225,27 @@ const ImprovedComplianceReport = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm mt-4 p-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">
-              District
-            </label>
-            <Radio.Group
-              options={citys}
-              onChange={onCityChange}
-              value={city}
-              optionType="button"
-              buttonStyle="solid"
-            />
+      {user &&
+        !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+          user.role,
+        ) && (
+          <div className="bg-white rounded-lg shadow-sm mt-4 p-4">
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">
+                  District
+                </label>
+                <Radio.Group
+                  options={citys}
+                  onChange={onCityChange}
+                  value={city}
+                  optionType="button"
+                  buttonStyle="solid"
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
 
       {loading ? (
         <div className="flex justify-center items-center h-96">
@@ -221,9 +259,7 @@ const ImprovedComplianceReport = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm opacity-90">Improved Dealers</p>
-                  <p className="text-3xl font-bold mt-1">
-                    {reportData.length}
-                  </p>
+                  <p className="text-3xl font-bold mt-1">{reportData.length}</p>
                   <p className="text-xs opacity-90 mt-1">
                     Former defaulters now compliant
                   </p>
@@ -239,8 +275,10 @@ const ImprovedComplianceReport = () => {
                   <p className="text-3xl font-bold mt-1">
                     {reportData.length > 0
                       ? (
-                          reportData.reduce((sum, d) => sum + d.improvementScore, 0) /
-                          reportData.length
+                          reportData.reduce(
+                            (sum, d) => sum + d.improvementScore,
+                            0,
+                          ) / reportData.length
                         ).toFixed(1)
                       : 0}
                     %
@@ -260,7 +298,7 @@ const ImprovedComplianceReport = () => {
                   <p className="text-3xl font-bold mt-1">
                     {reportData.reduce(
                       (sum, d) => sum + d.previousDefaultCount,
-                      0
+                      0,
                     )}
                   </p>
                   <p className="text-xs opacity-90 mt-1">
@@ -367,7 +405,9 @@ const ImprovedComplianceReport = () => {
                         </td>
                         <td className="px-4 py-3 text-sm text-center text-gray-600">
                           {dealer.lastDefaultDate !== "N/A"
-                            ? new Date(dealer.lastDefaultDate).toLocaleDateString()
+                            ? new Date(
+                                dealer.lastDefaultDate,
+                              ).toLocaleDateString()
                             : "N/A"}
                         </td>
                       </tr>

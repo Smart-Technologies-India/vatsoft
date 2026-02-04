@@ -17,10 +17,17 @@ import Last15ReceivedReport from "@/action/report/last15receivedreport";
 import OfficerDashboardReport from "@/action/report/officerdashboardreport";
 import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
+import { user } from "@prisma/client";
+import GetUser from "@/action/user/getuser";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 ChartJS.register(...registerables);
 
 const CategoryWiseReport = () => {
+  const router = useRouter();
+  const [user, setUser] = useState<user | null>(null);
+  
   interface ResponseData {
     totaldealer: number;
     fueldealer: number;
@@ -66,34 +73,87 @@ const CategoryWiseReport = () => {
     "FUEL" | "LIQUOR" | undefined
   >(undefined);
 
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    currentDate.getMonth() + 1,
+  );
+  const [selectedYear, setSelectedYear] = useState<number>(
+    currentDate.getFullYear(),
+  );
+
+  const months = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
+  const years = Array.from(
+    { length: 10 },
+    (_, i) => currentDate.getFullYear() - i,
+  );
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const count_data_response = await OfficerDashboardReport({
-        selectOffice: city,
-        selectCommodity: commoditydata,
-      });
-      if (count_data_response.status && count_data_response.data) {
-        setCountData(count_data_response.data);
-      } else {
-        toast.error(
-          count_data_response.message || "Failed to load dashboard data",
-        );
+      
+      // Fetch authenticated user
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        router.push("/");
+        return;
       }
+      
+      const userResponse = await GetUser({ id: authResponse.data });
+      if (userResponse.status && userResponse.data) {
+        setUser(userResponse.data);
+        
+        // Set office filter based on role
+        const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userResponse.data.role)
+          ? (userResponse.data.selectOffice ?? undefined)
+          : city;
+        
+        const count_data_response = await OfficerDashboardReport({
+          selectOffice: filterOffice,
+          selectCommodity: commoditydata,
+          filterType: "MONTH",
+          month: selectedMonth,
+          year: selectedYear,
+        });
+        if (count_data_response.status && count_data_response.data) {
+          setCountData(count_data_response.data);
+        } else {
+          toast.error(
+            count_data_response.message || "Failed to load dashboard data",
+          );
+        }
 
-      const last15days = await Last15ReceivedReport({
-        selectOffice: city,
-        selectCommodity: commoditydata,
-      });
-      if (last15days.status && last15days.data) {
-        setLast15Day(last15days.data);
-      } else {
-        toast.error(last15days.message || "Failed to load daily data");
+        const last15days = await Last15ReceivedReport({
+          selectOffice: filterOffice,
+          selectCommodity: commoditydata,
+          filterType: "MONTH",
+          month: selectedMonth,
+          year: selectedYear,
+        });
+        if (last15days.status && last15days.data) {
+          setLast15Day(last15days.data);
+        } else {
+          toast.error(last15days.message || "Failed to load daily data");
+        }
       }
       setLoading(false);
     };
     init();
-  }, [city, commoditydata]);
+  }, [city, commoditydata, selectedMonth, selectedYear]);
 
   const totalLast15Days = last15Day.reduce((sum, item) => sum + item.amount, 0);
   const averageDaily =
@@ -103,7 +163,7 @@ const CategoryWiseReport = () => {
     if (last15Day.length === 0) return;
 
     const worksheetData = [
-      ["Category Wise Report - Last 15 Days"],
+      ["Category Wise Report - Monthly Data"],
       [""],
       ["Summary Statistics"],
       ["Total Dealers", countData.totaldealer.toString()],
@@ -120,7 +180,7 @@ const CategoryWiseReport = () => {
       ["Filed Returns", countData.filed_return.toString()],
       ["Pending Returns", countData.pending_return.toString()],
       [""],
-      ["Last 15 Days Revenue"],
+      ["Selected Month Revenue"],
       ["Date", "Revenue (₹)"],
     ];
 
@@ -132,7 +192,7 @@ const CategoryWiseReport = () => {
     });
 
     worksheetData.push([""]);
-    worksheetData.push(["Total (Last 15 Days)", totalLast15Days.toString()]);
+    worksheetData.push(["Total (Selected Month)", totalLast15Days.toString()]);
     worksheetData.push(["Average Daily", averageDaily.toFixed(2)]);
 
     const ws = XLSX.utils.aoa_to_sheet(worksheetData);
@@ -273,6 +333,10 @@ const CategoryWiseReport = () => {
       ? 0
       : countData.last_month_received);
 
+  // Create date object for the selected month
+  const selectedDate = new Date(selectedYear, selectedMonth - 1, 1);
+  const previousMonthDate = subMonths(selectedDate, 1);
+
   return (
     <main className="p-6">
       <div className="flex flex-col lg:flex-row gap-2">
@@ -294,19 +358,49 @@ const CategoryWiseReport = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm mt-4 p-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center">
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">
-              District
-            </label>
-            <Radio.Group
-              options={citys}
-              onChange={onCityChange}
-              value={city}
-              optionType="button"
-              buttonStyle="solid"
-            />
+            <label className="text-sm font-medium text-gray-700">Month</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              className="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {months.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
           </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Year</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+          {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">
+                District
+              </label>
+              <Radio.Group
+                options={citys}
+                onChange={onCityChange}
+                value={city}
+                optionType="button"
+                buttonStyle="solid"
+              />
+            </div>
+          )}
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">
               Commodity
@@ -396,7 +490,7 @@ const CategoryWiseReport = () => {
                 )}
               </p>
               <p className="text-sm opacity-90">
-                {format(subMonths(new Date(), 1), "MMMM")} Revenue
+                {format(previousMonthDate, "MMMM yyyy")} Revenue
               </p>
             </div>
 
@@ -406,7 +500,7 @@ const CategoryWiseReport = () => {
                 ₹{numberWithIndianFormat(countData.this_month_received)}
               </p>
               <p className="text-sm opacity-90">
-                {format(new Date(), "MMMM")} Revenue
+                {format(selectedDate, "MMMM yyyy")} Revenue
               </p>
             </div>
 
@@ -430,7 +524,7 @@ const CategoryWiseReport = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             <div className="bg-white rounded-lg shadow-sm p-6 lg:col-span-2">
               <h2 className="text-lg font-semibold mb-4">
-                Last 15 Days Revenue
+                Selected Month Revenue
               </h2>
               <div className="h-80">
                 {last15Day.length > 0 ? (

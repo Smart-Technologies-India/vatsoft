@@ -1,6 +1,5 @@
 "use client";
 
-import { Button as ShButton } from "@/components/ui/button";
 import {
   Table,
   TableBody,

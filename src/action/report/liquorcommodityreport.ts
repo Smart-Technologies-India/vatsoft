@@ -2,6 +2,7 @@
 
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
+import { SelectOffice } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 function getDateMonthsAgo(date: Date, monthsAgo: number): Date {
@@ -17,6 +18,7 @@ function getDateMonthsAgo(date: Date, monthsAgo: number): Date {
 const LiquorCommodityReport = async (
   month?: number,
   year?: number,
+  selectOffice?: SelectOffice,
 ): Promise<
   ApiResponseType<Array<{
     id: number;
@@ -45,6 +47,13 @@ const LiquorCommodityReport = async (
           gte: firstDateOfMonth,
           lt: lastDateOfMonth,
         },
+        ...(selectOffice && {
+          returns_01: {
+            dvat04: {
+              selectOffice: selectOffice,
+            },
+          },
+        }),
       },
       include: {
         createdBy: true,

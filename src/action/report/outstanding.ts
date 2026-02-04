@@ -22,6 +22,9 @@ interface OutstandingDealersPayload {
   dept?: SelectOffice;
   skip: number;
   take: number;
+  filterType?: "MONTH" | "YEAR";
+  month?: number;
+  year?: number;
 }
 
 const OutstandingDealers = async (
@@ -29,10 +32,36 @@ const OutstandingDealers = async (
 ): Promise<PaginationResponse<Array<ResponseType> | null>> => {
   const functionname: string = OutstandingDealers.name;
   try {
+    // Build date filter condition using transaction_date
+    const dateFilter: any = {};
+    
+    if (payload.year) {
+      if (payload.filterType === "MONTH" && payload.month) {
+        // Filter by specific month and year using transaction_date
+        const startDate = new Date(payload.year, payload.month - 1, 1);
+        const endDate = new Date(payload.year, payload.month, 1);
+        
+        dateFilter.transaction_date = {
+          gte: startDate,
+          lt: endDate,
+        };
+      } else {
+        // Filter by year only using transaction_date
+        const startDate = new Date(payload.year, 0, 1);
+        const endDate = new Date(payload.year + 1, 0, 1);
+        
+        dateFilter.transaction_date = {
+          gte: startDate,
+          lt: endDate,
+        };
+      }
+    }
+
     const dvat04response = await prisma.returns_01.findMany({
       where: {
         deletedAt: null,
         deletedBy: null,
+        ...dateFilter,
         dvat04: {
           ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
           ...(payload.tradename && {

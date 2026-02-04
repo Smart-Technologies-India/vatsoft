@@ -6,6 +6,9 @@ import { errorToString } from "@/utils/methods";
 interface Last15ReceivedPayload {
   selectOffice?: SelectOffice;
   selectCommodity?: "FUEL" | "LIQUOR";
+  filterType?: "MONTH" | "YEAR";
+  month?: number;
+  year?: number;
 }
 
 import prisma from "../../../prisma/database";
@@ -22,24 +25,53 @@ const Last15ReceivedReport = async (
   try {
     const currentDate = new Date();
 
-    // Create an array to store the result for the last 15 days including today
+    // Determine the start and end dates based on filterType
+    let startDate: Date;
+    let endDate: Date;
+
+    if (payload.year) {
+      if (payload.filterType === "MONTH" && payload.month) {
+        // Filter by specific month and year
+        startDate = new Date(payload.year, payload.month - 1, 1, 0, 0, 0, 0);
+        endDate = new Date(payload.year, payload.month, 0, 23, 59, 59, 999);
+      } else {
+        // Filter by year only
+        startDate = new Date(payload.year, 0, 1, 0, 0, 0, 0);
+        endDate = new Date(payload.year, 11, 31, 23, 59, 59, 999);
+      }
+    } else {
+      // Default: current year
+      const year = currentDate.getFullYear();
+      startDate = new Date(year, 0, 1, 0, 0, 0, 0);
+      endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+    }
+
+    // Calculate the number of days in the date range
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysToShow = Math.min(daysDiff, 30); // Show max 30 days or all days in range
+
+    // Create an array to store the result
     let receivedDataArray: ResponseData[] = [];
 
-    // Iterate over the last 15 days (including today)
-    for (let i = 0; i <= 15; i++) {
+    // Iterate over the days
+    for (let i = 0; i < daysToShow; i++) {
       const day = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate() - i,
+        endDate.getFullYear(),
+        endDate.getMonth(),
+        endDate.getDate() - i,
         0,
         0,
         0,
         0
       );
+      
+      // Skip if day is before start date
+      if (day < startDate) continue;
+      
       const nextDay = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate() - i + 1,
+        day.getFullYear(),
+        day.getMonth(),
+        day.getDate() + 1,
         0,
         0,
         0,

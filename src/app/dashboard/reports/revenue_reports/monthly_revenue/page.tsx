@@ -10,10 +10,17 @@ import { Chart as ChartJS, registerables } from "chart.js";
 import LastYearReceived from "@/action/report/lastyearreceivedreport";
 import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
+import { user } from "@prisma/client";
+import GetUser from "@/action/user/getuser";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 ChartJS.register(...registerables);
 
 const MonthlyRevenueReport = () => {
+  const router = useRouter();
+  const [user, setUser] = useState<user | null>(null);
+  
   interface LastYearData {
     monthYear: string;
     amount: number;
@@ -33,15 +40,33 @@ const MonthlyRevenueReport = () => {
     const init = async () => {
       setLoading(true);
 
-      const last12months = await LastYearReceived({
-        selectOffice: city,
-        selectCommodity: commoditydata,
-      });
+      // Fetch authenticated user
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        router.push("/");
+        return;
+      }
+      
+      const userResponse = await GetUser({ id: authResponse.data });
+      if (userResponse.status && userResponse.data) {
+        setUser(userResponse.data);
+        
+        // Set office filter based on role
+        const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userResponse.data.role)
+          ? (userResponse.data.selectOffice ?? undefined)
+          : city;
 
-      if (last12months.status && last12months.data) {
-        setLastYearData(last12months.data);
-      } else {
-        toast.error(last12months.message || "Failed to load data");
+        const last12months = await LastYearReceived({
+          selectOffice: filterOffice,
+          selectCommodity: commoditydata,
+        });
+
+        if (last12months.status && last12months.data) {
+          setLastYearData(last12months.data);
+        } else {
+          toast.error(last12months.message || "Failed to load data");
+        }
       }
       setLoading(false);
     };
@@ -203,16 +228,18 @@ const MonthlyRevenueReport = () => {
 
       <div className="bg-white rounded-lg shadow-sm mt-4 p-4">
         <div className="flex flex-col md:flex-row gap-4 items-center">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">District</label>
-            <Radio.Group
-              options={citys}
-              onChange={onCityChange}
-              value={city}
-              optionType="button"
-              buttonStyle="solid"
-            />
-          </div>
+          {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">District</label>
+              <Radio.Group
+                options={citys}
+                onChange={onCityChange}
+                value={city}
+                optionType="button"
+                buttonStyle="solid"
+              />
+            </div>
+          )}
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Commodity</label>
             <Radio.Group

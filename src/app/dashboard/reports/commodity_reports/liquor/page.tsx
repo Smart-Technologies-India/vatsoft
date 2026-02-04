@@ -15,10 +15,13 @@ import { Alert } from "antd";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { user } from "@prisma/client";
+import GetUser from "@/action/user/getuser";
 
 const LiquorCommodityPage = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
+  const [user, setUser] = useState<user | null>(null);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [total, setTotal] = useState<number>(0);
 
@@ -70,16 +73,27 @@ const LiquorCommodityPage = () => {
         return router.push("/");
       }
       setUserid(authResponse.data);
+      
+      const userResponse = await GetUser({ id: authResponse.data });
+      if (userResponse.status && userResponse.data) {
+        setUser(userResponse.data);
+      }
     };
     init();
   }, []);
 
   useEffect(() => {
-    if (userid === 0) return;
+    if (userid === 0 || !user) return;
 
     const fetchData = async () => {
       setLoading(true);
-      const response = await LiquorCommodityReport(selectedMonth, selectedYear);
+      
+      // Determine filter office based on role
+      const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+        ? user.selectOffice ?? undefined
+        : undefined;
+      
+      const response = await LiquorCommodityReport(selectedMonth, selectedYear, filterOffice);
       if (response.status == true && response.data) {
         setDvatData(response.data);
         setTotal(
@@ -92,7 +106,7 @@ const LiquorCommodityPage = () => {
       setLoading(false);
     };
     fetchData();
-  }, [userid, selectedMonth, selectedYear]);
+  }, [userid, user, selectedMonth, selectedYear]);
 
   if (isLoading)
     return (

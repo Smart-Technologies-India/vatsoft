@@ -14,7 +14,6 @@ import { useEffect, useRef, useState } from "react";
 import type { Dayjs } from "dayjs";
 import { dvat04, user } from "@prisma/client";
 import { capitalcase, encryptURLData } from "@/utils/methods";
-import numberWithIndianFormat from "@/utils/methods";
 import { useRouter } from "next/navigation";
 import { SelectOffice } from "@prisma/client";
 import { toast } from "react-toastify";
@@ -554,36 +553,38 @@ const InactiveDealers = () => {
         </div>
 
         {/* Office Filter */}
-        <div className="bg-white p-4 shadow rounded-lg mb-6">
-          <div className="flex items-center gap-4">
-            <label className="font-semibold text-gray-700">Filter by Office:</label>
-            <Select
-              value={selectedOffice}
-              onChange={(value) => {
-                setSelectedOffice(value);
-                setSearch(false);
-                // Reset pagination when office changes
-                setPaginatin({
-                  take: 10,
-                  skip: 0,
-                  total: 0,
-                });
-              }}
-              style={{ width: 250 }}
-              disabled={isSearch}
-            >
-              <Select.Option value="ALL">All Offices</Select.Option>
-              <Select.Option value={SelectOffice.DAMAN}>DAMAN</Select.Option>
-              <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
-              <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>DNH (Dadra & Nagar Haveli)</Select.Option>
-            </Select>
-            {selectedOffice !== "ALL" && (
-              <span className="text-sm text-gray-600">
-                Showing data for: <span className="font-semibold">{selectedOffice === SelectOffice.Dadra_Nagar_Haveli ? "DNH" : selectedOffice}</span>
-              </span>
-            )}
+        {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
+          <div className="bg-white p-4 shadow rounded-lg mb-6">
+            <div className="flex items-center gap-4">
+              <label className="font-semibold text-gray-700">Filter by Office:</label>
+              <Select
+                value={selectedOffice}
+                onChange={(value) => {
+                  setSelectedOffice(value);
+                  setSearch(false);
+                  // Reset pagination when office changes
+                  setPaginatin({
+                    take: 10,
+                    skip: 0,
+                    total: 0,
+                  });
+                }}
+                style={{ width: 250 }}
+                disabled={isSearch}
+              >
+                <Select.Option value="ALL">All Offices</Select.Option>
+                <Select.Option value={SelectOffice.DAMAN}>DAMAN</Select.Option>
+                <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
+                <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>DNH (Dadra & Nagar Haveli)</Select.Option>
+              </Select>
+              {selectedOffice !== "ALL" && (
+                <span className="text-sm text-gray-600">
+                  Showing data for: <span className="font-semibold">{selectedOffice === SelectOffice.Dadra_Nagar_Haveli ? "DNH" : selectedOffice}</span>
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">

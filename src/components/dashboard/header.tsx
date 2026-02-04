@@ -24,6 +24,7 @@ import { onFormError } from "@/utils/methods";
 import { getCurrentDvatId, logout } from "@/lib/auth";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import DvatChangePassword from "@/action/user/dvatchangepassword";
+import Image from "next/image";
 
 interface NavbarProps {
   isOpen: boolean;
@@ -101,9 +102,9 @@ const Navbar = (props: NavbarProps) => {
 
   return (
     <nav
-      className={`h-16 px-6 w-full hidden-print ${
+      className={`h-16 px-3 w-full hidden-print ${
         !props.isbluck ? "md:ml-64 md:w-[calc(100%-16rem)]" : ""
-      } bg-white border-b border-gray-200 flex items-center gap-4 fixed top-0 left-0 z-10`}
+      } bg-white border-b border-gray-200 flex items-center gap-2 fixed top-6 left-0 z-10`}
     >
       {/* Mobile Menu Toggle */}
       <button
@@ -119,7 +120,7 @@ const Navbar = (props: NavbarProps) => {
 
       {/* Back Button */}
       {canBack() && (
-        <Tooltip title="Go to previous page">
+        <Tooltip title="Go to previous page" className="p-4">
           <button
             className="hidden md:flex p-2 hover:bg-gray-100 rounded-lg transition-colors"
             onClick={() => router.back()}
@@ -129,8 +130,22 @@ const Navbar = (props: NavbarProps) => {
         </Tooltip>
       )}
 
+      <div className="relative h-14 w-14">
+        <Image fill src="/favicon.png" alt="Logo" className="object-contain" />
+      </div>
+
       {/* Page Title */}
-      <h1 className="text-base font-semibold text-gray-900">{returnTitle()}</h1>
+
+      <div
+      className="h-full"
+      >
+        <h1 className="font-semibold text-2xl text-gray-900/80">
+          Department of Value Added Tax/GST
+        </h1>
+        <h1 className="font-normal text-sm text-gray-900/60 leading-4">
+          U.T. Administration of Dadra & Nagar Haveli and Daman & Diu
+        </h1>
+      </div>
 
       <div className="grow"></div>
 

@@ -32,11 +32,43 @@ const DistrictWiseReport = () => {
     "FUEL" | "LIQUOR" | undefined
   >(undefined);
 
+  const [filterType, setFilterType] = useState<"MONTH" | "YEAR">("YEAR");
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    currentDate.getMonth() + 1,
+  );
+  const [selectedYear, setSelectedYear] = useState<number>(
+    currentDate.getFullYear(),
+  );
+
+  const months = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
+  const years = Array.from(
+    { length: 10 },
+    (_, i) => currentDate.getFullYear() - i,
+  );
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
       const response = await DistrictWiseRevenue({
         selectCommodity: commoditydata,
+        filterType: filterType,
+        month: filterType === "MONTH" ? selectedMonth : undefined,
+        year: selectedYear,
       });
 
       if (response.status && response.data) {
@@ -47,7 +79,7 @@ const DistrictWiseReport = () => {
       setLoading(false);
     };
     init();
-  }, [commoditydata]);
+  }, [commoditydata, filterType, selectedMonth, selectedYear]);
 
   const exportToExcel = () => {
     if (!reportData) return;
@@ -255,7 +287,52 @@ const DistrictWiseReport = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm mt-4 p-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center">
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">
+              Filter Type
+            </label>
+            <Radio.Group
+              options={[
+                { label: "By Year", value: "YEAR" },
+                { label: "By Month", value: "MONTH" },
+              ]}
+              onChange={(e: RadioChangeEvent) => setFilterType(e.target.value)}
+              value={filterType}
+              optionType="button"
+              buttonStyle="solid"
+            />
+          </div>
+          {filterType === "MONTH" && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Month</label>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {months.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Year</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">
               Commodity

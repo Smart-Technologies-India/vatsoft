@@ -6,6 +6,9 @@ import { errorToString } from "@/utils/methods";
 interface OfficerDashboardPayload {
   selectOffice?: SelectOffice;
   selectCommodity?: "FUEL" | "LIQUOR";
+  filterType?: "MONTH" | "YEAR";
+  month?: number;
+  year?: number;
 }
 
 import prisma from "../../../prisma/database";
@@ -183,51 +186,42 @@ const OfficerDashboardReport = async (
 
     const currentDate = new Date();
 
-    // Get the first day of the current month
-    const firstDayOfThisMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      1
-    );
-    // Get the first day of the next month
-    const firstDayOfNextMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth() + 1,
-      1
-    );
+    // Build date filters based on filterType
+    let firstDayOfThisMonth: Date;
+    let firstDayOfNextMonth: Date;
+    let firstDayOfLastMonth: Date;
+    let lastDayOfLastMonth: Date;
+    let startDateLast30Days: Date;
+    let endDateLast30Days: Date;
 
-    // Get the first day of the previous month
-    const firstDayOfLastMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth() - 1,
-      1
-    );
-    // Get the last day of the previous month
-    const lastDayOfLastMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      0
-    );
-
-    // Calculate date range for last 30 days
-    const endDateLast30Days = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      currentDate.getDate(),
-      23,
-      59,
-      59,
-      999
-    );
-    const startDateLast30Days = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      currentDate.getDate() - 30,
-      0,
-      0,
-      0,
-      0
-    );
+    if (payload.year) {
+      if (payload.filterType === "MONTH" && payload.month) {
+        // Filter by specific month and year
+        firstDayOfThisMonth = new Date(payload.year, payload.month - 1, 1, 0, 0, 0, 0);
+        firstDayOfNextMonth = new Date(payload.year, payload.month, 1, 0, 0, 0, 0);
+        firstDayOfLastMonth = new Date(payload.year, payload.month - 2, 1, 0, 0, 0, 0);
+        lastDayOfLastMonth = new Date(payload.year, payload.month - 1, 0, 23, 59, 59, 999);
+        startDateLast30Days = firstDayOfThisMonth;
+        endDateLast30Days = new Date(payload.year, payload.month, 0, 23, 59, 59, 999);
+      } else {
+        // Filter by year only
+        firstDayOfThisMonth = new Date(payload.year, 0, 1, 0, 0, 0, 0);
+        firstDayOfNextMonth = new Date(payload.year + 1, 0, 1, 0, 0, 0, 0);
+        firstDayOfLastMonth = new Date(payload.year - 1, 0, 1, 0, 0, 0, 0);
+        lastDayOfLastMonth = new Date(payload.year - 1, 11, 31, 23, 59, 59, 999);
+        startDateLast30Days = firstDayOfThisMonth;
+        endDateLast30Days = new Date(payload.year, 11, 31, 23, 59, 59, 999);
+      }
+    } else {
+      // Default: current year
+      const year = currentDate.getFullYear();
+      firstDayOfThisMonth = new Date(year, 0, 1, 0, 0, 0, 0);
+      firstDayOfNextMonth = new Date(year + 1, 0, 1, 0, 0, 0, 0);
+      firstDayOfLastMonth = new Date(year - 1, 0, 1, 0, 0, 0, 0);
+      lastDayOfLastMonth = new Date(year - 1, 11, 31, 23, 59, 59, 999);
+      startDateLast30Days = firstDayOfThisMonth;
+      endDateLast30Days = new Date(year, 11, 31, 23, 59, 59, 999);
+    }
     const lastMonthDvatWhere: any = {};
     if (payload.selectOffice) {
       lastMonthDvatWhere.selectOffice = payload.selectOffice;
@@ -263,7 +257,7 @@ const OfficerDashboardReport = async (
 
     for (let i = 0; i < last_month_received_data.length; i++) {
       last_month_received += Math.max(0, parseInt(
-        last_month_received_data[i].vatamount ?? "0"
+        last_month_received_data[i].total_tax_amount ?? "0"
       ));
     }
 
@@ -302,7 +296,7 @@ const OfficerDashboardReport = async (
 
     for (let i = 0; i < this_month_received_data.length; i++) {
       this_month_received += Math.max(0, parseInt(
-        this_month_received_data[i].vatamount ?? "0"
+        this_month_received_data[i].total_tax_amount ?? "0"
       ));
     }
 
@@ -362,7 +356,7 @@ const OfficerDashboardReport = async (
     let today_received: number = 0;
     for (let i = 0; i < today_received_data.length; i++) {
       today_received += Math.max(0, parseInt(
-        today_received_data[i].vatamount ?? "0"
+        today_received_data[i].total_tax_amount ?? "0"
       ));
     }
 

@@ -214,8 +214,14 @@ const AfterDeathLinePage = () => {
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
+      
+      // Set office filter based on role
+      const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userrespone.data.role)
+        ? (userrespone.data.selectOffice ?? undefined)
+        : (selectedOffice === "ALL" ? undefined : selectedOffice);
+      
       const payment_data = await AfterDeathline({
-        dept: selectedOffice === "ALL" ? undefined : selectedOffice,
+        dept: filterOffice,
         take: 10,
         skip: 0,
       });
@@ -253,9 +259,15 @@ const AfterDeathLinePage = () => {
       const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
+        
+        // Set office filter based on role
+        const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userrespone.data.role)
+          ? (userrespone.data.selectOffice ?? undefined)
+          : undefined;
+        
         setSelectedOffice("ALL");
         const payment_data = await AfterDeathline({
-          dept: undefined,
+          dept: filterOffice,
           take: 10,
           skip: 0,
         });
@@ -287,8 +299,14 @@ const AfterDeathLinePage = () => {
       if (!user || !selectedOffice) return;
 
       setLoading(true);
+      
+      // Set office filter based on role
+      const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+        ? (user.selectOffice ?? undefined)
+        : (selectedOffice === "ALL" ? undefined : selectedOffice);
+      
       const payment_data = await AfterDeathline({
-        dept: selectedOffice === "ALL" ? undefined : selectedOffice,
+        dept: filterOffice,
         take: 10,
         skip: 0,
       });
@@ -371,8 +389,14 @@ const AfterDeathLinePage = () => {
     ) {
       return toast.error("Enter arn number");
     }
+    
+    // Set office filter based on role
+    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+      ? (user.selectOffice ?? undefined)
+      : (selectedOffice === "ALL" ? undefined : selectedOffice);
+    
     const search_response = await AfterDeathline({
-      dept: selectedOffice === "ALL" ? undefined : selectedOffice,
+      dept: filterOffice,
       arnnumber: arnRef.current?.input?.value,
       take: 10,
       skip: 0,
@@ -417,10 +441,14 @@ const AfterDeathLinePage = () => {
     ) {
       return toast.error("Enter TIN Number");
     }
-    const office =
-      selectedOffice === "ALL" ? user!.selectOffice! : selectedOffice;
+    
+    // Set office filter based on role
+    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+      ? (user.selectOffice ?? undefined)
+      : (selectedOffice === "ALL" ? undefined : selectedOffice);
+    
     const search_response = await AfterDeathline({
-      dept: office,
+      dept: filterOffice,
       tradename: nameRef.current?.input?.value,
       take: 10,
       skip: 0,
@@ -449,10 +477,14 @@ const AfterDeathLinePage = () => {
         ) {
           return toast.error("Enter arn number");
         }
-        const office =
-          selectedOffice === "ALL" ? user!.selectOffice! : selectedOffice;
+        
+        // Set office filter based on role
+        const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+          ? (user.selectOffice ?? undefined)
+          : (selectedOffice === "ALL" ? undefined : selectedOffice);
+        
         const search_response = await AfterDeathline({
-          dept: office,
+          dept: filterOffice,
           arnnumber: arnRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -475,10 +507,14 @@ const AfterDeathLinePage = () => {
         ) {
           return toast.error("Enter TIN Number");
         }
-        const office =
-          selectedOffice === "ALL" ? user!.selectOffice! : selectedOffice;
+        
+        // Set office filter based on role
+        const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+          ? (user.selectOffice ?? undefined)
+          : (selectedOffice === "ALL" ? undefined : selectedOffice);
+        
         const search_response = await AfterDeathline({
-          dept: office,
+          dept: filterOffice,
           tradename: nameRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -495,10 +531,13 @@ const AfterDeathLinePage = () => {
         }
       }
     } else {
-      const office =
-        selectedOffice === "ALL" ? user!.selectOffice! : selectedOffice;
+      // Set office filter based on role
+      const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+        ? (user.selectOffice ?? undefined)
+        : (selectedOffice === "ALL" ? undefined : selectedOffice);
+      
       const payment_data = await AfterDeathline({
-        dept: office,
+        dept: filterOffice,
         take: pagesize,
         skip: pagesize * (page - 1),
       });
@@ -545,44 +584,46 @@ const AfterDeathLinePage = () => {
         </div>
 
         {/* Office Filter */}
-        <div className="bg-white p-4 shadow rounded-lg mb-6">
-          <div className="flex items-center gap-4">
-            <label className="font-semibold text-gray-700">
-              Filter by Office:
-            </label>
-            <Select
-              value={selectedOffice}
-              onChange={(value) => {
-                setSelectedOffice(value);
-                setSearch(false);
-                setPaginatin({
-                  take: 10,
-                  skip: 0,
-                  total: 0,
-                });
-              }}
-              style={{ width: 250 }}
-              disabled={isSearch}
-            >
-              <Select.Option value="ALL">All Offices</Select.Option>
-              <Select.Option value={SelectOffice.DAMAN}>DAMAN</Select.Option>
-              <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
-              <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>
-                DNH (Dadra & Nagar Haveli)
-              </Select.Option>
-            </Select>
-            {selectedOffice !== "ALL" && (
-              <span className="text-sm text-gray-600">
-                Showing data for:{" "}
-                <span className="font-semibold">
-                  {selectedOffice === SelectOffice.Dadra_Nagar_Haveli
-                    ? "DNH"
-                    : selectedOffice}
+        {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
+          <div className="bg-white p-4 shadow rounded-lg mb-6">
+            <div className="flex items-center gap-4">
+              <label className="font-semibold text-gray-700">
+                Filter by Office:
+              </label>
+              <Select
+                value={selectedOffice}
+                onChange={(value) => {
+                  setSelectedOffice(value);
+                  setSearch(false);
+                  setPaginatin({
+                    take: 10,
+                    skip: 0,
+                    total: 0,
+                  });
+                }}
+                style={{ width: 250 }}
+                disabled={isSearch}
+              >
+                <Select.Option value="ALL">All Offices</Select.Option>
+                <Select.Option value={SelectOffice.DAMAN}>DAMAN</Select.Option>
+                <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
+                <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>
+                  DNH (Dadra & Nagar Haveli)
+                </Select.Option>
+              </Select>
+              {selectedOffice !== "ALL" && (
+                <span className="text-sm text-gray-600">
+                  Showing data for:{" "}
+                  <span className="font-semibold">
+                    {selectedOffice === SelectOffice.Dadra_Nagar_Haveli
+                      ? "DNH"
+                      : selectedOffice}
+                  </span>
                 </span>
-              </span>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">

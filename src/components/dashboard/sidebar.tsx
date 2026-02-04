@@ -23,6 +23,7 @@ import GetUserStatus from "@/action/user/userstatus";
 import { logout } from "@/lib/auth";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { toast } from "react-toastify";
+import Image from "next/image";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -66,15 +67,22 @@ const Sidebar = (props: SidebarProps) => {
 
   return (
     <div
-      className={`hidden-print fixed top-0 left-0 z-20 w-64 h-screen flex flex-col bg-white border-r border-gray-200 shadow-lg md:translate-x-0 ${
+      className={`hidden-print fixed top-6 left-0 z-20 w-64 h-[calc(100vh-1.5rem)] flex flex-col bg-white border-r border-gray-200 md:translate-x-0 ${
         props.isOpen ? "translate-x-0" : "-translate-x-64"
       } transition-transform duration-300 ease-in-out`}
     >
       {/* Header */}
-      <div className="px-6 py-5 border-b border-gray-200">
+      <div className="px-6 py-2 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-linear-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-sm">
-            <span className="text-white font-bold text-lg">V</span>
+          <div className="w-10 h-10 relative">
+            <Image
+              fill
+              src="/favicon.png"
+              alt="Logo"
+              className="object-contain"
+            />
+
+            {/* <span className="text-white font-bold text-lg">V</span> */}
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900">VATSMART</h1>
@@ -88,11 +96,12 @@ const Sidebar = (props: SidebarProps) => {
         {[
           "SYSTEM",
           "ADMIN",
-          "VATOFFICER",
           "COMMISSIONER",
+          "VATOFFICER_DNH",
+          "USER",
+          "VATOFFICER",
           "DY_COMMISSIONER",
           "JOINT_COMMISSIONER",
-          "USER",
         ].includes(props.role) && (
           <MenuTab
             click={() => props.setIsOpen(false)}
@@ -202,6 +211,7 @@ const Sidebar = (props: SidebarProps) => {
           "SYSTEM",
           "ADMIN",
           "VATOFFICER",
+          "VATOFFICER_DNH",
           "ASST_VAT_OFFICER",
           "DY_COMMISSIONER",
           "INSPECTOR",
@@ -224,14 +234,7 @@ const Sidebar = (props: SidebarProps) => {
           </>
         )}
 
-        {[
-          "SYSTEM",
-          "ADMIN",
-          "VATOFFICER",
-          "ASST_VAT_OFFICER",
-          "DY_COMMISSIONER",
-          "INSPECTOR",
-        ].includes(props.role) && (
+        {["SYSTEM", "ADMIN"].includes(props.role) && (
           <>
             <MenuTab
               click={() => props.setIsOpen(false)}

@@ -75,13 +75,13 @@ export default async function GetTopLiquorDealers(data: {
             },
           },
           select: {
-            vatamount: true,
+            total_tax_amount: true,
           },
         });
 
         // Sum up the VAT amounts, ensuring no negative values
         const totalRevenue = returns.reduce(
-          (sum, ret) => sum + Math.max(0, parseFloat(ret.vatamount || "0")),
+          (sum, ret) => sum + Math.max(0, parseFloat(ret.total_tax_amount || "0")),
           0,
         );
 

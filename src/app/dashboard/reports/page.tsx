@@ -1,5 +1,10 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { user } from "@prisma/client";
+import GetUser from "@/action/user/getuser";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { toast } from "react-toastify";
 
 interface CowReportResponse {
   beneficiary_code: string;
@@ -52,6 +57,21 @@ interface UserReportResponse {
 
 const ReportsPage = () => {
   const router = useRouter();
+  const [user, setUser] = useState<user | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (authResponse.status && authResponse.data) {
+        const userResponse = await GetUser({ id: authResponse.data });
+        if (userResponse.status && userResponse.data) {
+          setUser(userResponse.data);
+        }
+      }
+    };
+    fetchUser();
+  }, []);
+
   return (
     <div className="p-6">
       <h1>A. Compliance and Defaulter Report</h1>
@@ -144,20 +164,22 @@ const ReportsPage = () => {
       <hr className="my-4" />
       <h1>B. Revenue Reports</h1>
       <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-        <div className="p-2 rounded shadow bg-white relative pb-8">
-          <p className="text-sm">
-            District-Wise Revenue Report (Dadra & Nager Haveli/Daman/Diu)
-          </p>
+        {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
+          <div className="p-2 rounded shadow bg-white relative pb-8">
+            <p className="text-sm">
+              District-Wise Revenue Report (Dadra & Nager Haveli/Daman/Diu)
+            </p>
 
-          <button
-            className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            onClick={() => {
-              router.push("/dashboard/reports/revenue_reports/district_wise");
-            }}
-          >
-            View Report
-          </button>
-        </div>
+            <button
+              className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
+              onClick={() => {
+                router.push("/dashboard/reports/revenue_reports/district_wise");
+              }}
+            >
+              View Report
+            </button>
+          </div>
+        )}
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">Category-wise Revenue(Liquor / Petroleum)</p>
 
@@ -230,21 +252,23 @@ const ReportsPage = () => {
             View Report
           </button>
         </div>
-        <div className="p-2 rounded shadow bg-white relative pb-8">
-          <p className="text-sm">
-            District-wise Commodity Revenue Split (e.g, how much Diesel sold in
-            Diu)
-          </p>
+        {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
+          <div className="p-2 rounded shadow bg-white relative pb-8">
+            <p className="text-sm">
+              District-wise Commodity Revenue Split (e.g, how much Diesel sold in
+              Diu)
+            </p>
 
-          <button
-            className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-            onClick={() => {
-              router.push("/dashboard/reports/commodity_reports/districtwise");
-            }}
-          >
-            View Report
-          </button>
-        </div>
+            <button
+              className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
+              onClick={() => {
+                router.push("/dashboard/reports/commodity_reports/districtwise");
+              }}
+            >
+              View Report
+            </button>
+          </div>
+        )}
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
             Commodity Sales Growth Report (Month-on-Month or Year-on-Year)

@@ -11,12 +11,13 @@ import {
 import { Alert } from "antd";
 import { useEffect, useState } from "react";
 
-import { dvat04 } from "@prisma/client";
+import { dvat04, user } from "@prisma/client";
 import numberWithIndianFormat from "@/utils/methods";
 import PetroleumCommodityReport from "@/action/report/petroleumcommodityreport";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import GetUser from "@/action/user/getuser";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -27,6 +28,7 @@ interface ResponseType {
 const PetroleumCommodityPage = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
+  const [user, setUser] = useState<user | null>(null);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [total, setTotal] = useState<number>(0);
 
@@ -78,18 +80,30 @@ const PetroleumCommodityPage = () => {
         return router.push("/");
       }
       setUserid(authResponse.data);
+      
+      const userResponse = await GetUser({ id: authResponse.data });
+      if (userResponse.status && userResponse.data) {
+        setUser(userResponse.data);
+      }
     };
     init();
   }, []);
 
   useEffect(() => {
-    if (userid === 0) return;
+    if (userid === 0 || !user) return;
 
     const fetchData = async () => {
       setLoading(true);
+      
+      // Determine filter office based on role
+      const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+        ? user.selectOffice ?? undefined
+        : undefined;
+      
       const response = await PetroleumCommodityReport(
         selectedMonth,
         selectedYear,
+        filterOffice,
       );
       if (response.status == true && response.data) {
         setDvatData(response.data);
@@ -103,7 +117,7 @@ const PetroleumCommodityPage = () => {
       setLoading(false);
     };
     fetchData();
-  }, [userid, selectedMonth, selectedYear]);
+  }, [userid, user, selectedMonth, selectedYear]);
 
   if (isLoading)
     return (

@@ -12,10 +12,17 @@ import { Chart as ChartJS, registerables } from "chart.js";
 import YearlyComparison from "@/action/report/yearlycomparison";
 import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
+import { user } from "@prisma/client";
+import GetUser from "@/action/user/getuser";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { useRouter } from "next/navigation";
 
 ChartJS.register(...registerables);
 
 const YearlyComparisonReport = () => {
+  const router = useRouter();
+  const [user, setUser] = useState<user | null>(null);
+  
   interface MonthlyData {
     month: string;
     year: string;
@@ -61,15 +68,34 @@ const YearlyComparisonReport = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const response = await YearlyComparison({
-        selectOffice: city,
-        selectCommodity: commoditydata,
-        financialYear: financialYear === "current" ? undefined : financialYear,
-      });
-      if (response.status && response.data) {
-        setReportData(response.data);
-      } else {
-        toast.error(response.message || "Failed to load data");
+      
+      // Fetch authenticated user
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        router.push("/");
+        return;
+      }
+      
+      const userResponse = await GetUser({ id: authResponse.data });
+      if (userResponse.status && userResponse.data) {
+        setUser(userResponse.data);
+        
+        // Set office filter based on role
+        const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userResponse.data.role)
+          ? (userResponse.data.selectOffice ?? undefined)
+          : city;
+        
+        const response = await YearlyComparison({
+          selectOffice: filterOffice,
+          selectCommodity: commoditydata,
+          financialYear: financialYear === "current" ? undefined : financialYear,
+        });
+        if (response.status && response.data) {
+          setReportData(response.data);
+        } else {
+          toast.error(response.message || "Failed to load data");
+        }
       }
       setLoading(false);
     };
@@ -287,16 +313,18 @@ const YearlyComparisonReport = () => {
               style={{ width: 180 }}
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">District</label>
-            <Radio.Group
-              options={citys}
-              onChange={onCityChange}
-              value={city}
-              optionType="button"
-              buttonStyle="solid"
-            />
-          </div>
+          {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">District</label>
+              <Radio.Group
+                options={citys}
+                onChange={onCityChange}
+                value={city}
+                optionType="button"
+                buttonStyle="solid"
+              />
+            </div>
+          )}
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Commodity</label>
             <Radio.Group

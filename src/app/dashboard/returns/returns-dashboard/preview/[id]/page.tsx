@@ -1252,7 +1252,9 @@ const Dvat16ReturnPreview = () => {
                       router.push(
                         `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
                           return01.id.toString(),
-                        )}/challan-payment`,
+                        )}/challan-payment?year=${searchparam.get("year")}&month=${searchparam.get(
+                          "month",
+                        )}`,
                       );
                     }}
                   >
@@ -4277,7 +4279,8 @@ const NetTax = (props: NetTaxProps) => {
                   parseFloat(get5_2().decrease) +
                   (parseFloat(getCreditNote().decrease) -
                     parseFloat(getDebitNote().decrease) -
-                    parseFloat(getGoodsReturnsNote().decrease)))) *
+                    parseFloat(getGoodsReturnsNote().decrease) -
+                    parseFloat(props.lastMonthDue)))) *
                 0.15) /
                 365) *
                 DiffDays,
@@ -4304,7 +4307,8 @@ const NetTax = (props: NetTaxProps) => {
                       parseFloat(get5_2().decrease) +
                       (parseFloat(getCreditNote().decrease) -
                         parseFloat(getDebitNote().decrease) -
-                        parseFloat(getGoodsReturnsNote().decrease)))) *
+                        parseFloat(getGoodsReturnsNote().decrease) -
+                        parseFloat(props.lastMonthDue)))) *
                     0.15) /
                     365) *
                   DiffDays
@@ -5236,7 +5240,7 @@ const CentralSales = (props: CentralSalesProps) => {
                 parseFloat(getLabour().increase) -
                 parseFloat(getFormF().increase) -
                 parseFloat(getExportIndia().increase))
-            ).toFixed(2)}
+            ).toFixed(0)}
           </td>
         </tr>
         <tr className="w-full">
@@ -5701,7 +5705,8 @@ const CentralSales = (props: CentralSalesProps) => {
                   parseFloat(get5_2().decrease) +
                   (parseFloat(getCreditNote().decrease) -
                     parseFloat(getDebitNote().decrease) -
-                    parseFloat(getGoodsReturnsNote().decrease)))) *
+                    parseFloat(getGoodsReturnsNote().decrease) -
+                    parseFloat(props.lastMonthDue)))) *
                 0.15) /
                 365) *
                 DiffDays,
@@ -5728,7 +5733,8 @@ const CentralSales = (props: CentralSalesProps) => {
                       parseFloat(get5_2().decrease) +
                       (parseFloat(getCreditNote().decrease) -
                         parseFloat(getDebitNote().decrease) -
-                        parseFloat(getGoodsReturnsNote().decrease)))) *
+                        parseFloat(getGoodsReturnsNote().decrease) -
+                        parseFloat(props.lastMonthDue)))) *
                     0.15) /
                     365) *
                   DiffDays
