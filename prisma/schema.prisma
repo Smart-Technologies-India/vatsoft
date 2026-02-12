@@ -664,6 +664,8 @@ model challan {
   track_id         String?
   remark           String?        @db.MediumText
   challanstatus    ChallanStatus  @default(CREATED)
+  paymentstatus    PaymentStatus  @default(PENDING)
+  paymentData      String?        @db.LongText
   status           Status         @default(ACTIVE)
   expire_date      DateTime
   createdAt        DateTime       @default(now())
@@ -1509,7 +1511,6 @@ enum Role {
   OIDC1
   EXCISE
   VATOFFICER_DNH
-  
 }
 
 enum Gender {
@@ -1542,6 +1543,14 @@ enum ChallanStatus {
   DUE
   CREATED
 }
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  COMPLETED
+  FAILED
+}
+
 
 enum RefundStatus {
   PAID
@@ -1755,6 +1764,7 @@ enum ChallanReason {
   PASTDUES
   DEMAND
   OTHERS
+  NEWREGISTRATION
 }
 
 enum NoticeOrderType {

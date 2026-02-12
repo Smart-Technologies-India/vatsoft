@@ -5,7 +5,7 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import { cookies } from "next/headers";
 import prisma from "../../../prisma/database";
 import { compare } from "bcrypt";
-import { user } from "../../../generated/prisma/client";
+import { user } from "@prisma/client";
 import { generateToken } from "@/lib/jwt";
 
 interface DvatPasswordLoginPayload {

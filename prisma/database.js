@@ -1,6 +1,6 @@
-require("dotenv").config();
-const { PrismaMariaDb } = require("@prisma/adapter-mariadb");
-const { PrismaClient } = require("@prisma/client");
+import "dotenv/config";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaClient } from "@prisma/client";
 
 const prismaClientSingleton = () => {
   const adapter = new PrismaMariaDb({
@@ -23,7 +23,7 @@ const prismaClientSingleton = () => {
 
 const prisma = globalThis.prisma ?? prismaClientSingleton();
 
-module.exports = prisma;
+export default prisma;
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.prisma = prisma;
