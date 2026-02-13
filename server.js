@@ -23,16 +23,8 @@ app.prepare().then(() => {
   });
 
   server.get("/payamount", async function (request, response) {
-    response.status(405).send("Use POST /payamount to initiate payment.");
+    payamount(request, response);
   });
-
-  server.post(
-    "/payamount",
-    express.urlencoded({ extended: true }),
-    async function (request, response) {
-      payamount(request, response);
-    },
-  );
 
   server.post("/ccavRequestHandler", function (request, response) {
     postReq(request, response);

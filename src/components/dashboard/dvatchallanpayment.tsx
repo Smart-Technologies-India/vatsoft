@@ -237,71 +237,52 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   };
 
   const onSubmit = async (data: SubmitPaymentFormCopy) => {
-    const nanoid = customAlphabet("1234567890abcdef", 10);
+    if (return01 == null) return toast.error("No return exist");
 
-    const uniqueid: string = nanoid();
+    if (paymentMode == "ONLINE") {
+      const nanoid = customAlphabet("1234567890abcdef", 10);
 
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "/payamount";
+      const uniqueid: string = nanoid();
+      router.push(
+        `/payamount?xlmnx=${1}&ynboy=${uniqueid}&zgvfz=${1}_${1}_${1}_bid_${9586908178}&name=${"karan"}&email=${"karan@gmail.com"}&mobile=${9586908178}`,
+      );
+    } else {
+      const lastPayment = await CheckLastPayment({
+        id: return01.id ?? 0,
+      });
 
-    const fields: Record<string, string> = {
-      amount: "1",
-      order_id: uniqueid,
-      purpose: `1_1_1_bid_9586908178`,
-      name: "karan",
-      email: "karan@gmail.com",
-      mobile: "9586908178",
-    };
+      if (!lastPayment.status) {
+        toast.error(lastPayment.message);
+        reset();
+        return;
+      }
 
-    Object.entries(fields).forEach(([key, value]) => {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = key;
-      input.value = value;
-      form.appendChild(input);
-    });
+      if (lastPayment.data == false) {
+        toast.error(lastPayment.message);
+        reset();
+        return;
+      }
 
-    document.body.appendChild(form);
-    form.submit();
+      const response = await AddPayment({
+        id: return01.id ?? 0,
+        bank_name: data.bank_name,
+        track_id: data.track_id,
+        transaction_id: data.transaction_id,
+        rr_number: get_rr_number(),
+        penalty: lateFees.toString(),
+        ...(isNegative(getValue()) && {
+          pending_payment: getValue().toFixed(),
+        }),
+        interestamount: getInterest().toFixed(0),
+        totaltaxamount: getTotalTaxAmount().toFixed(0),
+        vatamount: getVatAmount().toFixed(0),
+      });
 
-    // if (return01 == null) return toast.error("No return exist");
-
-    // const lastPayment = await CheckLastPayment({ 
-    //   id: return01.id ?? 0,
-    // });
-
-    // if (!lastPayment.status) {
-    //   toast.error(lastPayment.message);
-    //   reset();
-    //   return;
-    // }
-
-    // if (lastPayment.data == false) {
-    //   toast.error(lastPayment.message);
-    //   reset();
-    //   return;
-    // }
-
-    // const response = await AddPayment({
-    //   id: return01.id ?? 0,
-    //   bank_name: data.bank_name,
-    //   track_id: data.track_id,
-    //   transaction_id: data.transaction_id,
-    //   rr_number: get_rr_number(),
-    //   penalty: lateFees.toString(),
-    //   ...(isNegative(getValue()) && {
-    //     pending_payment: getValue().toFixed(),
-    //   }),
-    //   interestamount: getInterest().toFixed(0),
-    //   totaltaxamount: getTotalTaxAmount().toFixed(0),
-    //   vatamount: getVatAmount().toFixed(0),
-    // });
-
-    // if (!response.status) return toast.error(response.message);
-    // toast.success(response.message);
-    // router.push("/dashboard/returns/returns-dashboard");
-    // reset();
+      if (!response.status) return toast.error(response.message);
+      toast.success(response.message);
+      router.push("/dashboard/returns/returns-dashboard");
+      reset();
+    }
   };
 
   // extra calcuation
