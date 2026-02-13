@@ -38,7 +38,7 @@ import { toast } from "react-toastify";
 const DocumentWiseDetails = () => {
   const router = useRouter();
   const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
-    {}
+    {},
   );
   const handleOpenChange = (newOpen: boolean, index: number) => {
     setOpenPopovers((prev) => ({
@@ -246,7 +246,7 @@ const DocumentWiseDetails = () => {
     (val) =>
       (val.seller_tin_number.tin_number.startsWith("25") ||
         val.seller_tin_number.tin_number.startsWith("26")) &&
-      !val.is_accept
+      !val.is_accept,
   );
 
   return (
@@ -261,9 +261,7 @@ const DocumentWiseDetails = () => {
         size="large"
       >
         <div className="mb-3 pb-2 border-b">
-          <h2 className="text-sm font-medium text-gray-900">
-            Add Purchase
-          </h2>
+          <h2 className="text-sm font-medium text-gray-900">Add Purchase</h2>
         </div>
         <DailyPurchaseMasterProvider
           userid={userid}
@@ -304,21 +302,15 @@ const DocumentWiseDetails = () => {
               <div className="flex flex-wrap gap-2 items-center">
                 {dvatdata!.commodity != "FUEL" && (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600">
-                      View:
-                    </span>
+                    <span className="text-xs text-gray-600">View:</span>
                     <Radio.Group
                       size="small"
                       onChange={onChange}
                       value={quantityCount}
                       optionType="button"
                     >
-                      <Radio.Button value="pcs">
-                        Pcs
-                      </Radio.Button>
-                      <Radio.Button value="crate">
-                        Crate
-                      </Radio.Button>
+                      <Radio.Button value="pcs">Pcs</Radio.Button>
+                      <Radio.Button value="crate">Crate</Radio.Button>
                     </Radio.Group>
                   </div>
                 )}
@@ -353,38 +345,43 @@ const DocumentWiseDetails = () => {
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
               <p className="text-lg font-medium text-gray-900">
-                    {new Set(dailyPurchase.map((val) => val.invoice_number)).size}
+                {new Set(dailyPurchase.map((val) => val.invoice_number)).size}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Invoice Value</p>
               <p className="text-lg font-medium text-gray-900">
-                    ₹{dailyPurchase
-                      .reduce(
-                        (acc, val) =>
-                          acc + parseFloat(val.amount_unit) * val.quantity,
-                        0
-                      )
-                      .toFixed(2)}
+                ₹
+                {dailyPurchase
+                  .reduce(
+                    (acc, val) =>
+                      acc +
+                      parseFloat(val.amount_unit) * val.quantity +
+                      parseFloat(val.vatamount),
+                    0,
+                  )
+                  .toFixed(2)}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Tax</p>
               <p className="text-lg font-medium text-gray-900">
-                    ₹{dailyPurchase
-                      .reduce((acc, val) => acc + parseFloat(val.vatamount), 0)
-                      .toFixed(2)}
+                ₹
+                {dailyPurchase
+                  .reduce((acc, val) => acc + parseFloat(val.vatamount), 0)
+                  .toFixed(2)}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Taxable Value</p>
               <p className="text-lg font-medium text-gray-900">
-                    ₹{dailyPurchase
-                      .reduce((acc, val) => acc + parseFloat(val.amount), 0)
-                      .toFixed(2)}
+                ₹
+                {dailyPurchase
+                  .reduce((acc, val) => acc + parseFloat(val.amount), 0)
+                  .toFixed(2)}
               </p>
             </div>
           </div>
@@ -450,7 +447,7 @@ const DocumentWiseDetails = () => {
                           commodity_master: commodity_master;
                           seller_tin_number: tin_number_master;
                         },
-                        index: number
+                        index: number,
                       ) => (
                         <TableRow
                           key={index}
@@ -476,13 +473,15 @@ const DocumentWiseDetails = () => {
                               ? val.quantity
                               : showCrates(
                                   val.quantity,
-                                  val.commodity_master.crate_size
+                                  val.commodity_master.crate_size,
                                 )}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
-                            ₹{(parseFloat(val.amount_unit) * val.quantity).toFixed(
-                              2
-                            )}
+                            ₹
+                            {(
+                              parseFloat(val.amount_unit) * val.quantity +
+                              parseFloat(val.vatamount)
+                            ).toFixed(2)}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
                             {val.tax_percent}%
@@ -494,10 +493,16 @@ const DocumentWiseDetails = () => {
                             ₹{val.amount}
                           </TableCell>
                           <TableCell className="p-2 text-center">
-                            {val.seller_tin_number.tin_number.startsWith("25") ||
-                            val.seller_tin_number.tin_number.startsWith("26") ? (
+                            {val.seller_tin_number.tin_number.startsWith(
+                              "25",
+                            ) ||
+                            val.seller_tin_number.tin_number.startsWith(
+                              "26",
+                            ) ? (
                               val.is_accept ? (
-                                <span className="text-sm text-gray-400">N/A</span>
+                                <span className="text-sm text-gray-400">
+                                  N/A
+                                </span>
                               ) : (
                                 <button
                                   onClick={async () => {
@@ -540,8 +545,8 @@ const DocumentWiseDetails = () => {
                                       onClick={() => {
                                         router.push(
                                           `/dashboard/stock/edit_purchase/${encryptURLData(
-                                            val.id.toString()
-                                          )}`
+                                            val.id.toString(),
+                                          )}`,
                                         );
                                       }}
                                       className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded"
@@ -569,7 +574,8 @@ const DocumentWiseDetails = () => {
                               footer={null}
                             >
                               <p className="mb-4">
-                                Are you sure you want to delete this purchase entry?
+                                Are you sure you want to delete this purchase
+                                entry?
                               </p>
                               <div className="flex gap-2 justify-end">
                                 <button
@@ -590,7 +596,7 @@ const DocumentWiseDetails = () => {
                             </Modal>
                           </TableCell>
                         </TableRow>
-                      )
+                      ),
                     )}
                   </TableBody>
                 </Table>
@@ -627,7 +633,9 @@ const DocumentWiseDetails = () => {
             </div>
           ) : (
             <div className="bg-white rounded shadow-sm border p-3 text-center">
-              <p className="text-gray-500 text-sm">No purchase records found.</p>
+              <p className="text-gray-500 text-sm">
+                No purchase records found.
+              </p>
             </div>
           )}
         </div>

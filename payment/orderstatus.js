@@ -1,12 +1,12 @@
 import crypto from "crypto";
 import axios from "axios";
-import { encrypt, decrypt, workingKey, accessCode } from "./ccavutil.js";
+import { encrypt, decrypt} from "./ccavutil.js";
 
 export const orderstatus = async (request, response) => {
   var encRequest = "";
 
   //Generate Md5 hash for the key and then convert in base64 string
-  var md5 = crypto.createHash("md5").update(workingKey).digest();
+  var md5 = crypto.createHash("md5").update(process.env.WORKING_KEY).digest();
   var keyBase64 = Buffer.from(md5).toString("base64");
 
   //Initializing Vector and then convert in base64 string
@@ -28,7 +28,7 @@ export const orderstatus = async (request, response) => {
     encRequest = encrypt(`{order_no:'${orderNo}'}`, keyBase64, ivBase64);
 
     const result = await axios.post(
-      `https://api.ccavenue.com/apis/servlet/DoWebTrans?access_code=${accessCode}&command=orderStatusTracker&request_type=JSON&response_type=JSON&version=1.2&enc_request=${encRequest}`,
+      `https://api.ccavenue.com/apis/servlet/DoWebTrans?access_code=${process.env.ACCESS_CODE}&command=orderStatusTracker&request_type=JSON&response_type=JSON&version=1.2&enc_request=${encRequest}`,
     );
 
     let enc_code = result.data.toString().split("=").pop();

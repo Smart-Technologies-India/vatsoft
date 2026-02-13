@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { createRequire } from "module";
-import { decrypt, workingKey } from "./ccavutil.js";
+import { decrypt } from "./ccavutil.js";
 
 const require = createRequire(import.meta.url);
 const prisma = require("../prisma/database.js");
@@ -11,7 +11,7 @@ export const postRes = (request, response) => {
     ccavPOST = "";
 
   //Generate Md5 hash for the key and then convert in base64 string
-  var md5 = crypto.createHash("md5").update(workingKey).digest();
+  var md5 = crypto.createHash("md5").update(process.env.WORKING_KEY).digest();
   var keyBase64 = Buffer.from(md5).toString("base64");
 
   //Initializing Vector and then convert in base64 string

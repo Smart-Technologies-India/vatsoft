@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { encrypt, decrypt, workingKey, accessCode } from "./ccavutil.js";
+import { encrypt } from "./ccavutil.js";
 
 export const postReq = (request, response) => {
   var body = "",
@@ -7,7 +7,7 @@ export const postReq = (request, response) => {
     formbody = "";
 
   //Generate Md5 hash for the key and then convert in base64 string
-  var md5 = crypto.createHash("md5").update(workingKey).digest();
+  var md5 = crypto.createHash("md5").update(process.env.WORKING_KEY).digest();
   var keyBase64 = Buffer.from(md5).toString("base64");
 
   //Initializing Vector and then convert in base64 string
@@ -23,7 +23,7 @@ export const postReq = (request, response) => {
       '<form id="nonseamless" method="post" name="redirect" action="https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction"/> <input type="hidden" id="encRequest" name="encRequest" value="' +
       encRequest +
       '"><input type="hidden" name="access_code" id="access_code" value="' +
-      accessCode +
+      process.env.ACCESS_CODE +
       '"><script language="javascript">document.redirect.submit();</script></form>';
   });
 

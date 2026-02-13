@@ -246,10 +246,11 @@ const DailySale = (props: DailySaleProviderProps) => {
         parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at)) /
       100;
     setVatAmount(
-      isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
+      isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2),
     );
 
-    const temp_amount = calculatedTaxableValue + calculatedVatAmount;
+    // const temp_amount = calculatedTaxableValue + calculatedVatAmount;
+    const temp_amount = calculatedTaxableValue;
 
     setTaxableValue(isNaN(temp_amount) ? "0" : temp_amount.toFixed(2));
   }, [quantity, amount_unit, commoditymaster, isAgainstCForm]);
@@ -305,13 +306,13 @@ const DailySale = (props: DailySaleProviderProps) => {
       davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
         ? quantityCount == "crate"
           ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(
-              2
+              2,
             )
           : data.amount_unit
         : data.amount_unit;
 
     const date = new Date(
-      new Date(data.invoice_date).toISOString().split("T")[0]
+      new Date(data.invoice_date).toISOString().split("T")[0],
     );
     date.setDate(date.getDate() + 1);
 
@@ -443,13 +444,13 @@ const DailySale = (props: DailySaleProviderProps) => {
       davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
         ? quantityCount == "crate"
           ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(
-              2
+              2,
             )
           : data.amount_unit
         : data.amount_unit;
 
     const date = new Date(
-      new Date(data.invoice_date).toISOString().split("T")[0]
+      new Date(data.invoice_date).toISOString().split("T")[0],
     );
     date.setDate(date.getDate() + 1);
 
@@ -631,7 +632,7 @@ const DailySale = (props: DailySaleProviderProps) => {
               options={commodityMaster.map(
                 (
                   val: commodity_master & { quantity: number },
-                  index: number
+                  index: number,
                 ) => ({
                   value: val.id.toString(),
                   // label: val.product_name,
@@ -641,7 +642,7 @@ const DailySale = (props: DailySaleProviderProps) => {
                     ` [${val.quantity} ${
                       val.product_type == "FUEL" ? "Litre" : "PCS"
                     }]`,
-                })
+                }),
               )}
             />
           </div>
@@ -710,13 +711,18 @@ const DailySale = (props: DailySaleProviderProps) => {
               {isAgainstCForm
                 ? "2%"
                 : commoditymaster != null
-                ? commoditymaster.taxable_at + "%"
-                : "0%"}
+                  ? commoditymaster.taxable_at + "%"
+                  : "0%"}
             </p>
           </div>
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
             <p className="text-xs font-normal">Total Invoice Value</p>
-            <p className="text-sm font-semibold">{taxableValue}</p>
+            <p className="text-sm font-semibold">
+              {(
+                parseInt(quantity) * parseFloat(amount_unit) +
+                parseFloat(vatamount)
+              ).toFixed(2)}
+            </p>
           </div>
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
             <p className="text-xs font-normal">Total Taxable Value</p>

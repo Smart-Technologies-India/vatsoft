@@ -1,9 +1,9 @@
 // var crypto = require("crypto");
 import crypto from "crypto";
 
-export const workingKey = "370F518A36775EFEA425EB27C8DC0CC6";
-export const accessCode = "AVHK88LE92BW69KHWB";
-export const merchant_id = 4417350;
+// export const workingKey = "";
+// export const accessCode = "";
+// export const merchant_id = "";
 
 function getAlgorithm(keyBase64) {
   var key = Buffer.from(keyBase64, "base64");
