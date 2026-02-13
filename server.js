@@ -24,7 +24,8 @@ app.prepare().then(() => {
   });
 
   server.get("/payamount", async function (request, response) {
-    payamount(request, response);
+    // payamount(request, response);
+    response.sendFile('data.html', { root: './public' });
   });
 
   server.post("/ccavRequestHandler", function (request, response) {
