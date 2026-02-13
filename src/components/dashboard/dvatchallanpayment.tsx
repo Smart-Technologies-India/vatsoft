@@ -241,9 +241,29 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
     const uniqueid: string = nanoid();
 
-    router.push(
-      `/payamount?xlmnx=${1}&ynboy=${uniqueid}&zgvfz=${1}_${1}_${1}_bid_${9586908178}&name=${"karan"}&email=${"karan@gmail.com"}&mobile=${9586908178}`,
-    );
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/payamount";
+
+    const fields: Record<string, string> = {
+      amount: "1",
+      order_id: uniqueid,
+      purpose: `1_1_1_bid_9586908178`,
+      name: "karan",
+      email: "karan@gmail.com",
+      mobile: "9586908178",
+    };
+
+    Object.entries(fields).forEach(([key, value]) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
 
     // if (return01 == null) return toast.error("No return exist");
 

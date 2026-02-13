@@ -17,15 +17,22 @@ app.prepare().then(() => {
   const server = express();
 
   server.use(express.json());
-  // server.use(express.urlencoded({ extended: true }));
 
   server.get("/orderstatus", async function (request, response) {
     await orderstatus(request, response);
   });
 
   server.get("/payamount", async function (request, response) {
-    payamount(request, response);
+    response.status(405).send("Use POST /payamount to initiate payment.");
   });
+
+  server.post(
+    "/payamount",
+    express.urlencoded({ extended: true }),
+    async function (request, response) {
+      payamount(request, response);
+    },
+  );
 
   server.post("/ccavRequestHandler", function (request, response) {
     postReq(request, response);
