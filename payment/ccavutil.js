@@ -36,18 +36,3 @@ export function decrypt(messagebase64, keyBase64, ivBase64) {
   return decrypted;
 }
 
-// function encrypt(input, key) {
-//   const iv = key.slice(0, 16);
-//   const cipher = crypto.createCipheriv("aes-128-cbc", key.slice(0, 16), iv);
-//   let encrypted = cipher.update(input, "utf8", "base64");
-//   encrypted += cipher.final("base64");
-//   return encrypted;
-// }
-
-// function decrypt(cipherText, key) {
-//   const iv = key.slice(0, 16);
-//   const decipher = crypto.createDecipheriv("aes-128-cbc", key.slice(0, 16), iv);
-//   let decryptedData = decipher.update(cipherText, "base64", "utf8");
-//   decryptedData += decipher.final("utf8");
-//   return decryptedData;
-// }

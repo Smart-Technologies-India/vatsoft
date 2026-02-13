@@ -17,15 +17,14 @@ app.prepare().then(() => {
   const server = express();
 
   server.use(express.json());
-  server.use(express.urlencoded({ extended: true }));
+  // server.use(express.urlencoded({ extended: true }));
 
   server.get("/orderstatus", async function (request, response) {
     await orderstatus(request, response);
   });
 
   server.get("/payamount", async function (request, response) {
-    // payamount(request, response);
-    response.sendFile('data.html', { root: './public' });
+    payamount(request, response);
   });
 
   server.post("/ccavRequestHandler", function (request, response) {
