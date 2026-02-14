@@ -323,9 +323,9 @@ const AddRecord = () => {
                   <TableHead className="whitespace-nowrap border text-center">
                     Pending/Errored Invoices
                   </TableHead>
-                  <TableHead className="whitespace-nowrap w-28 border text-center">
+                  {/* <TableHead className="whitespace-nowrap w-28 border text-center">
                     Add Invoice
-                  </TableHead>
+                  </TableHead> */}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -360,7 +360,7 @@ const AddRecord = () => {
                       <TableCell className="p-2 border text-center">
                         0
                       </TableCell>
-                      <TableCell className="p-2 border text-center">
+                      {/* <TableCell className="p-2 border text-center">
                         <Link
                           href={getUrlTin(
                             val.seller_tin_number.tin_number.toString()
@@ -370,7 +370,7 @@ const AddRecord = () => {
                             <MdiPlusCircle className="text-white text-sm" />
                           </div>
                         </Link>
-                      </TableCell>
+                      </TableCell> */}
                     </TableRow>
                   );
                 })}
@@ -378,17 +378,18 @@ const AddRecord = () => {
             </Table>
           </>
         )}
-
+        
+{/* 
         <div className="flex mt-2 gap-2">
-          <div className="grow"></div>
+          <div className="grow"></div> */}
 
-          {return01 != null &&
+          {/* {return01 != null &&
           return01.rr_number != "" &&
           return01.rr_number != undefined &&
           return01.rr_number != null ? (
             <></>
           ) : (
-            <>
+            <> */}
               {/* <Button
                 type="primary"
                 onClick={() => {
@@ -405,7 +406,7 @@ const AddRecord = () => {
               >
                 Bulk Upload
               </Button> */}
-              <Button
+              {/* <Button
                 type="primary"
                 onClick={() => {
                   router.push(getUrl());
@@ -414,7 +415,7 @@ const AddRecord = () => {
                 Add Record
               </Button>
             </>
-          )}
+          )} */}
 
           {/* <Button
             // className="text-sm border hover:border-blue-500 hover:text-blue-500 bg-white text-[#172e57] py-1 px-4"
@@ -422,7 +423,7 @@ const AddRecord = () => {
           >
             Back
           </Button> */}
-        </div>
+        {/* </div> */}
       </div>
     </div>
   );

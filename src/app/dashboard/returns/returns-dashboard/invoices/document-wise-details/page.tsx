@@ -344,11 +344,11 @@ const DocumentWiseDetails = () => {
                     VAT Amount
                   </TableHead>
 
-                  {!ispayment() && (
+                  {/* {!ispayment() && (
                     <TableHead className="w-28 border text-center">
                       Actions
                     </TableHead>
-                  )}
+                  )} */}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -371,7 +371,7 @@ const DocumentWiseDetails = () => {
                         {val.vatamount}
                       </TableCell>
                       {/* {!ispayment() && ( */}
-                      <TableCell className="p-2 border text-center">
+                      {/* <TableCell className="p-2 border text-center">
                         <button
                           onClick={() => {
                             router.push(getUrl(val.invoice_number));
@@ -380,7 +380,7 @@ const DocumentWiseDetails = () => {
                         >
                           View
                         </button>
-                      </TableCell>
+                      </TableCell> */}
                       {/* )} */}
                     </TableRow>
                   )

@@ -4,7 +4,9 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AcceptSale from "@/action/stock/acceptsell";
 import ConvertDvat30A from "@/action/stock/convertdvat30a";
 import DeletePurchase from "@/action/stock/deletepurchase";
-import GetUserDailyPurchase from "@/action/stock/getuserdailypurchase";
+import GetUserDailyPurchase, {
+  GroupedDailyPurchase,
+} from "@/action/stock/getuserdailypurchase";
 import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
 import {
   Table,
@@ -69,13 +71,12 @@ const DocumentWiseDetails = () => {
   const [dvatdata, setDvatData] = useState<dvat04>();
 
   const [dailyPurchase, setDailyPurchase] = useState<
-    Array<
-      daily_purchase & {
-        commodity_master: commodity_master;
-        seller_tin_number: tin_number_master;
-      }
-    >
+    Array<GroupedDailyPurchase>
   >([]);
+
+  const [selectedGroup, setSelectedGroup] =
+    useState<GroupedDailyPurchase | null>(null);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
   //   const [name, setName] = useState<string>("");
 
@@ -227,30 +228,187 @@ const DocumentWiseDetails = () => {
       </div>
     );
 
-  const sortedDailyPurchase = [...dailyPurchase].sort((a, b) => {
-    // Acceptable if TIN starts with 25/26 and not accepted yet
-    const aAcceptable =
-      (a.seller_tin_number.tin_number.startsWith("25") ||
-        a.seller_tin_number.tin_number.startsWith("26")) &&
-      !a.is_accept;
-    const bAcceptable =
-      (b.seller_tin_number.tin_number.startsWith("25") ||
-        b.seller_tin_number.tin_number.startsWith("26")) &&
-      !b.is_accept;
-    // Sort acceptable to top
-    if (aAcceptable === bAcceptable) return 0;
-    return aAcceptable ? -1 : 1;
-  });
-
-  const hasPendingAcceptable = dailyPurchase.some(
-    (val) =>
-      (val.seller_tin_number.tin_number.startsWith("25") ||
-        val.seller_tin_number.tin_number.startsWith("26")) &&
-      !val.is_accept,
-  );
-
   return (
     <>
+      <Modal
+        title="Invoice Details"
+        open={isGroupModalOpen}
+        onCancel={() => {
+          setIsGroupModalOpen(false);
+          setSelectedGroup(null);
+        }}
+        footer={null}
+        width={1200}
+      >
+        {selectedGroup && (
+          <div>
+            <div className="mb-4 p-3 bg-gray-50 rounded">
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <p className="text-xs text-gray-600">Invoice Number</p>
+                  <p className="font-semibold">
+                    {selectedGroup.invoice_number}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Invoice Date</p>
+                  <p className="font-semibold">
+                    {formateDate(selectedGroup.invoice_date)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Seller</p>
+                  <p className="font-semibold">
+                    {selectedGroup.seller_tin_number.name_of_dealer}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <Table className="border">
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="border text-center text-xs">
+                      Sr. No.
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Product Name
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      {quantityCount == "pcs"
+                        ? dvatdata?.commodity == "FUEL"
+                          ? "Litres"
+                          : "Quantity"
+                        : "Crate"}
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Invoice Value
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Tax Rate
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      VAT Amount
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Taxable Value
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Actions
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedGroup.records.map((record, idx) => (
+                    <TableRow key={idx} className="hover:bg-gray-50">
+                      <TableCell className="p-2 border text-center text-xs">
+                        {idx + 1}
+                      </TableCell>
+                      <TableCell className="p-2 border text-left text-xs">
+                        {record.commodity_master.product_name}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {quantityCount == "pcs"
+                          ? record.quantity
+                          : showCrates(
+                              record.quantity,
+                              record.commodity_master.crate_size,
+                            )}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        ₹
+                        {(
+                          parseFloat(record.amount_unit) * record.quantity +
+                          parseFloat(record.vatamount)
+                        ).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {record.tax_percent}%
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        ₹{record.vatamount}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        ₹{record.amount}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {record.seller_tin_number.tin_number.startsWith("25") ||
+                        record.seller_tin_number.tin_number.startsWith("26") ? (
+                          record.is_accept ? (
+                            <span className="text-xs text-gray-400">
+                              Accepted
+                            </span>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                if (!dvatdata)
+                                  return toast.error("DVAT not found.");
+                                const response = await AcceptSale({
+                                  commodityid: record.commodity_master.id,
+                                  createdById: userid,
+                                  dvatid: dvatdata.id,
+                                  quantity: record.quantity,
+                                  puchaseid: record.id,
+                                  urn: record.urn_number ?? "",
+                                });
+                                if (response.status && response.data) {
+                                  toast.success(response.message);
+                                  await init();
+                                  setIsGroupModalOpen(false);
+                                } else {
+                                  toast.error(response.message);
+                                }
+                              }}
+                              className="text-xs bg-rose-500 hover:bg-rose-600 text-white py-1 px-3 rounded"
+                            >
+                              Accept
+                            </button>
+                          )
+                        ) : (
+                          <button
+                            onClick={() => {
+                              router.push(
+                                `/dashboard/stock/edit_purchase/${encryptURLData(
+                                  record.id.toString(),
+                                )}`,
+                              );
+                            }}
+                            className="text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded"
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="mt-4 p-3 bg-gray-50 rounded">
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <p className="text-xs text-gray-600">Total Taxable Value</p>
+                  <p className="font-semibold">
+                    ₹{selectedGroup.totalTaxableValue.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Total VAT Amount</p>
+                  <p className="font-semibold">
+                    ₹{selectedGroup.totalVatAmount.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Total Invoice Value</p>
+                  <p className="font-semibold">
+                    ₹{selectedGroup.totalInvoiceValue.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
       <Drawer
         placement="right"
         closeIcon={null}
@@ -345,7 +503,7 @@ const DocumentWiseDetails = () => {
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
               <p className="text-lg font-medium text-gray-900">
-                {new Set(dailyPurchase.map((val) => val.invoice_number)).size}
+                {dailyPurchase.length}
               </p>
             </div>
 
@@ -354,13 +512,7 @@ const DocumentWiseDetails = () => {
               <p className="text-lg font-medium text-gray-900">
                 ₹
                 {dailyPurchase
-                  .reduce(
-                    (acc, val) =>
-                      acc +
-                      parseFloat(val.amount_unit) * val.quantity +
-                      parseFloat(val.vatamount),
-                    0,
-                  )
+                  .reduce((acc, val) => acc + val.totalInvoiceValue, 0)
                   .toFixed(2)}
               </p>
             </div>
@@ -370,7 +522,7 @@ const DocumentWiseDetails = () => {
               <p className="text-lg font-medium text-gray-900">
                 ₹
                 {dailyPurchase
-                  .reduce((acc, val) => acc + parseFloat(val.vatamount), 0)
+                  .reduce((acc, val) => acc + val.totalVatAmount, 0)
                   .toFixed(2)}
               </p>
             </div>
@@ -380,13 +532,13 @@ const DocumentWiseDetails = () => {
               <p className="text-lg font-medium text-gray-900">
                 ₹
                 {dailyPurchase
-                  .reduce((acc, val) => acc + parseFloat(val.amount), 0)
+                  .reduce((acc, val) => acc + val.totalTaxableValue, 0)
                   .toFixed(2)}
               </p>
             </div>
           </div>
 
-          {hasPendingAcceptable && (
+          {dailyPurchase.some((group) => group.hasPendingAcceptable) && (
             <Alert
               message="Kindly accept pending purchase invoices."
               type="warning"
@@ -402,6 +554,9 @@ const DocumentWiseDetails = () => {
                   <TableHeader>
                     <TableRow className="bg-gray-50 border-b">
                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Count
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                         Invoice No.
                       </TableHead>
                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
@@ -414,20 +569,7 @@ const DocumentWiseDetails = () => {
                         TIN Number
                       </TableHead>
                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Product Name
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        {quantityCount == "pcs"
-                          ? dvatdata?.commodity == "FUEL"
-                            ? "Litres"
-                            : "Quantity"
-                          : "Crate"}
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                         Invoice Value (₹)
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Tax Rate
                       </TableHead>
                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                         VAT Amount
@@ -441,92 +583,90 @@ const DocumentWiseDetails = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedDailyPurchase.map(
-                      (
-                        val: daily_purchase & {
-                          commodity_master: commodity_master;
-                          seller_tin_number: tin_number_master;
-                        },
-                        index: number,
-                      ) => (
+                    {dailyPurchase.map(
+                      (group: GroupedDailyPurchase, index: number) => (
                         <TableRow
                           key={index}
                           className="border-b hover:bg-gray-50"
                         >
                           <TableCell className="p-2 text-center text-xs">
-                            {val.invoice_number}
+                            {group.count > 1 ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedGroup(group);
+                                  setIsGroupModalOpen(true);
+                                }}
+                                className="text-blue-600 hover:text-blue-800 underline"
+                              >
+                                {group.count} items
+                              </button>
+                            ) : (
+                              <span>{group.count}</span>
+                            )}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
-                            {formateDate(val.invoice_date)}
+                            {group.invoice_number}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
-                            {val.seller_tin_number.name_of_dealer}
+                            {formateDate(group.invoice_date)}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
-                            {val.seller_tin_number.tin_number}
-                          </TableCell>
-                          <TableCell className="p-2 text-left text-xs">
-                            {val.commodity_master.product_name}
+                            {group.seller_tin_number.name_of_dealer}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
-                            {quantityCount == "pcs"
-                              ? val.quantity
-                              : showCrates(
-                                  val.quantity,
-                                  val.commodity_master.crate_size,
-                                )}
+                            {group.seller_tin_number.tin_number}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
-                            ₹
-                            {(
-                              parseFloat(val.amount_unit) * val.quantity +
-                              parseFloat(val.vatamount)
-                            ).toFixed(2)}
+                            ₹{group.totalInvoiceValue.toFixed(2)}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
-                            {val.tax_percent}%
+                            ₹{group.totalVatAmount.toFixed(2)}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
-                            ₹{val.vatamount}
-                          </TableCell>
-                          <TableCell className="p-2 text-center text-xs">
-                            ₹{val.amount}
+                            ₹{group.totalTaxableValue.toFixed(2)}
                           </TableCell>
                           <TableCell className="p-2 text-center">
-                            {val.seller_tin_number.tin_number.startsWith(
+                            {group.seller_tin_number.tin_number.startsWith(
                               "25",
                             ) ||
-                            val.seller_tin_number.tin_number.startsWith(
+                            group.seller_tin_number.tin_number.startsWith(
                               "26",
                             ) ? (
-                              val.is_accept ? (
-                                <span className="text-sm text-gray-400">
-                                  N/A
-                                </span>
-                              ) : (
+                              group.hasPendingAcceptable ? (
                                 <button
                                   onClick={async () => {
-                                    if (!dvatdata)
-                                      return toast.error("DVAT not found.");
-                                    const response = await AcceptSale({
-                                      commodityid: val.commodity_master.id,
-                                      createdById: userid,
-                                      dvatid: dvatdata.id,
-                                      quantity: val.quantity,
-                                      puchaseid: val.id,
-                                      urn: val.urn_number ?? "",
-                                    });
-                                    if (response.status && response.data) {
-                                      toast.success(response.message);
-                                      await init();
+                                    if (group.count === 1) {
+                                      if (!dvatdata)
+                                        return toast.error("DVAT not found.");
+                                      const record = group.records[0];
+                                      const response = await AcceptSale({
+                                        commodityid: record.commodity_master.id,
+                                        createdById: userid,
+                                        dvatid: dvatdata.id,
+                                        quantity: record.quantity,
+                                        puchaseid: record.id,
+                                        urn: record.urn_number ?? "",
+                                      });
+                                      if (response.status && response.data) {
+                                        toast.success(response.message);
+                                        await init();
+                                      } else {
+                                        toast.error(response.message);
+                                      }
                                     } else {
-                                      toast.error(response.message);
+                                      toast.info(
+                                        "Please select a specific record from Show More",
+                                      );
                                     }
                                   }}
                                   className="text-sm bg-rose-500 hover:bg-rose-600 text-white py-1 px-3 rounded"
                                 >
                                   Accept
                                 </button>
+                              ) : (
+                                <span className="text-sm text-gray-400">
+                                  N/A
+                                </span>
                               )
                             ) : (
                               <Popover
@@ -543,11 +683,17 @@ const DocumentWiseDetails = () => {
                                     </button>
                                     <button
                                       onClick={() => {
-                                        router.push(
-                                          `/dashboard/stock/edit_purchase/${encryptURLData(
-                                            val.id.toString(),
-                                          )}`,
-                                        );
+                                        if (group.count === 1) {
+                                          router.push(
+                                            `/dashboard/stock/edit_purchase/${encryptURLData(
+                                              group.records[0].id.toString(),
+                                            )}`,
+                                          );
+                                        } else {
+                                          toast.info(
+                                            "Please select a specific record from Show More",
+                                          );
+                                        }
                                       }}
                                       className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded"
                                     >
@@ -557,14 +703,20 @@ const DocumentWiseDetails = () => {
                                 }
                                 title="Actions"
                                 trigger="click"
-                                open={!!openPopovers[index]}
-                                onOpenChange={(newOpen) =>
-                                  handleOpenChange(newOpen, index)
-                                }
+                                // open={!!openPopovers[index]}
+                                // onOpenChange={(newOpen) =>
+                                //   handleOpenChange(newOpen, index)
+                                // }
                               >
-                                <button className="text-sm bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded">
-                                  Actions
-                                </button>
+                                <span className="text-sm text-gray-400">
+                                  N/A
+                                </span>
+                                {/* <button
+                                  disabled={true}
+                                  className="text-sm bg-gray-500 hover:bg-gray-600 text-white py-1 px-3 rounded"
+                                >
+                                  N/A
+                                </button> */}
                               </Popover>
                             )}
 
@@ -587,7 +739,9 @@ const DocumentWiseDetails = () => {
                                   Cancel
                                 </button>
                                 <button
-                                  onClick={() => delete_purchase_entry(val.id)}
+                                  onClick={() =>
+                                    delete_purchase_entry(group.records[0].id)
+                                  }
                                   className="py-1 px-4 bg-rose-500 hover:bg-rose-600 text-white rounded text-sm"
                                 >
                                   Delete

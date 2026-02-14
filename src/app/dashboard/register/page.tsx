@@ -32,7 +32,6 @@ const Page = () => {
       const userresponse = await GetUser({
         id: authResponse.data,
       });
-      console.log("User Response:", userresponse);
       if (userresponse.status && userresponse.data) {
         setUser(userresponse.data);
       }

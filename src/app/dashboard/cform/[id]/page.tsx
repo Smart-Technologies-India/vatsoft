@@ -444,7 +444,7 @@ const CFROM = () => {
                         For Resale
                       </td>
                       <td className="px-2 py-1 border border-black text-xs leading-6 w-[15%]">
-                        {formateDate(new Date(val.createdAt)).replaceAll(
+                        {formateDate(new Date(val.invoice_date)).replaceAll(
                           "-",
                           "/"
                         )}

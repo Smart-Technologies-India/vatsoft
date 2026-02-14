@@ -503,6 +503,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     setLiquoreDealerAmount(0);
     setTinBox(false);
     setCommodityMaster([]);
+    setIsAddMoreMode(true);
     await props.init();
     await init();
   };
@@ -536,6 +537,8 @@ const DailySale = (props: DailySaleProviderProps) => {
   };
 
   const [quantityCount, setQuantityCount] = useState("pcs");
+
+  const [isAddMoreMode, setIsAddMoreMode] = useState(false);
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
     setQuantityCount(value);
@@ -574,6 +577,7 @@ const DailySale = (props: DailySaleProviderProps) => {
             name="recipient_vat_no"
             required={true}
             title="Purchaser VAT Number"
+            disable={isAddMoreMode}
           />
         </div>
         {tindata != null && (
@@ -604,10 +608,11 @@ const DailySale = (props: DailySaleProviderProps) => {
         )}
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
-            name="invoice_number"
+            name="invoice_number"  
             required={true}
             title="Invoice no."
             placeholder="Invoice no."
+            disable={isAddMoreMode}
           />
         </div>
         <div className="mt-2">
@@ -620,6 +625,7 @@ const DailySale = (props: DailySaleProviderProps) => {
             // mindate={dayjs(getMonthDateas().start, dateFormat)}
             // maxdate={dayjs(getMonthDateas().end, dateFormat)}
             maxdate={dayjs()}
+            disable={isAddMoreMode}
           />
         </div>
         <div className="mt-2">
@@ -758,7 +764,9 @@ const DailySale = (props: DailySaleProviderProps) => {
                 invoice_date: "",
                 invoice_number: undefined,
                 quantity: "",
+                recipient_vat_no: "",
               });
+              setIsAddMoreMode(false);
             }}
             value={"Reset"}
             className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"

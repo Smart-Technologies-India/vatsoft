@@ -856,7 +856,6 @@ const OfficerDashboardPage = () => {
       }
       const userrespone = await GetUser({ id: authResponse.data });
 
-      console.log("Selected City:", userrespone);
 
       if (userrespone.status && userrespone.data) {
         setUser(userrespone.data);

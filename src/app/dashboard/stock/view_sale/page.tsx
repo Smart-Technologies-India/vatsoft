@@ -2,7 +2,7 @@
 // import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import ConvertDvat31 from "@/action/stock/convertdvat31";
 import DeleteSale from "@/action/stock/deletesale";
-import GetUserDailySale from "@/action/stock/getuserdailysale";
+import GetUserDailySale, { GroupedDailySale } from "@/action/stock/getuserdailysale";
 import { DailySaleProvider } from "@/components/forms/dailysale/dailysale";
 import Papa from "papaparse";
 import {
@@ -233,14 +233,10 @@ const DocumentWiseDetails = () => {
 
   const [dvatdata, setDvatData] = useState<dvat04>();
 
-  const [dailySale, setDailySale] = useState<
-    Array<
-      daily_sale & {
-        commodity_master: commodity_master;
-        seller_tin_number: tin_number_master;
-      }
-    >
-  >([]);
+  const [dailySale, setDailySale] = useState<Array<GroupedDailySale>>([]);
+
+  const [selectedGroup, setSelectedGroup] = useState<GroupedDailySale | null>(null);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
   //   const [name, setName] = useState<string>("");
 
@@ -470,6 +466,125 @@ const DocumentWiseDetails = () => {
   return (
     <>
       <Modal
+        title="Invoice Details"
+        open={isGroupModalOpen}
+        onCancel={() => {
+          setIsGroupModalOpen(false);
+          setSelectedGroup(null);
+        }}
+        footer={null}
+        width={1200}
+      >
+        {selectedGroup && (
+          <div>
+            <div className="mb-4 p-3 bg-gray-50 rounded">
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <p className="text-xs text-gray-600">Invoice Number</p>
+                  <p className="font-semibold">{selectedGroup.invoice_number}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Invoice Date</p>
+                  <p className="font-semibold">{formateDate(selectedGroup.invoice_date)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Purchaser</p>
+                  <p className="font-semibold">{selectedGroup.seller_tin_number.name_of_dealer}</p>
+                </div>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <Table className="border">
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="border text-center text-xs">Sr. No.</TableHead>
+                    <TableHead className="border text-center text-xs">Product Name</TableHead>
+                    <TableHead className="border text-center text-xs">
+                      {quantityCount == "pcs"
+                        ? dvatdata?.commodity == "FUEL"
+                          ? "Litres"
+                          : "Qty"
+                        : "Crate"}
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">Taxable Value</TableHead>
+                    <TableHead className="border text-center text-xs">Rate of Tax</TableHead>
+                    <TableHead className="border text-center text-xs">VAT Amount</TableHead>
+                    <TableHead className="border text-center text-xs">Invoice Value</TableHead>
+                    <TableHead className="border text-center text-xs">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedGroup.records.map((record, idx) => (
+                    <TableRow key={idx} className="hover:bg-gray-50">
+                      <TableCell className="p-2 border text-center text-xs">
+                        {idx + 1}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {record.commodity_master.product_name}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {quantityCount == "pcs"
+                          ? record.quantity
+                          : showCrates(
+                              record.quantity,
+                              record.commodity_master.crate_size
+                            )}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {(parseFloat(record.amount_unit) * record.quantity).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {record.tax_percent}%
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {record.vatamount}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {record.amount}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {record.is_accept ? (
+                          "NA"
+                        ) : (
+                          <button
+                            onClick={() => {
+                              route.push(
+                                `/dashboard/stock/edit_sale/${encryptURLData(
+                                  record.id.toString()
+                                )}`
+                              );
+                            }}
+                            className="text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded"
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="mt-4 p-3 bg-gray-50 rounded">
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <p className="text-xs text-gray-600">Total Taxable Value</p>
+                  <p className="font-semibold">{selectedGroup.totalTaxableValue.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Total VAT Amount</p>
+                  <p className="font-semibold">{selectedGroup.totalVatAmount.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Total Invoice Value</p>
+                  <p className="font-semibold">{selectedGroup.totalInvoiceValue.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+      <Modal
         title="Bulk Upload"
         open={isBulkModalOpen}
         onOk={handleBulkUpload}
@@ -657,7 +772,7 @@ const DocumentWiseDetails = () => {
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
               <p className="text-lg font-medium text-gray-900">
-                {new Set(dailySale.map((val) => val.invoice_number)).size}
+                {dailySale.length}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
@@ -665,8 +780,7 @@ const DocumentWiseDetails = () => {
               <p className="text-lg font-medium text-gray-900">
                 {dailySale
                   .reduce(
-                    (acc, val) =>
-                      acc + parseFloat(val.amount_unit) * val.quantity,
+                    (acc, val) => acc + val.totalTaxableValue,
                     0
                   )
                   .toFixed(2)}
@@ -676,7 +790,7 @@ const DocumentWiseDetails = () => {
               <p className="text-xs text-gray-600 mb-1">Total Tax</p>
               <p className="text-lg font-medium text-gray-900">
                 {dailySale
-                  .reduce((acc, val) => acc + parseFloat(val.vatamount), 0)
+                  .reduce((acc, val) => acc + val.totalVatAmount, 0)
                   .toFixed(2)}
               </p>
             </div>
@@ -684,7 +798,7 @@ const DocumentWiseDetails = () => {
               <p className="text-xs text-gray-600 mb-1">Total Sale Price</p>
               <p className="text-lg font-medium text-gray-900">
                 {dailySale
-                  .reduce((acc, val) => acc + parseFloat(val.amount), 0)
+                  .reduce((acc, val) => acc + val.totalInvoiceValue, 0)
                   .toFixed(2)}
               </p>
             </div>
@@ -696,6 +810,9 @@ const DocumentWiseDetails = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50 border-b">
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Count
+                      </TableHead>
                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                         Invoice no.
                       </TableHead>
@@ -709,20 +826,7 @@ const DocumentWiseDetails = () => {
                         TIN Number
                       </TableHead>
                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Product Name
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        {quantityCount == "pcs"
-                          ? dvatdata?.commodity == "FUEL"
-                            ? "Litres"
-                            : "Qty"
-                          : "Crate"}
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                         Taxable Value
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Rate of Tax
                       </TableHead>
                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                         VAT Amount
@@ -738,74 +842,65 @@ const DocumentWiseDetails = () => {
                 <TableBody>
                   {dailySale.map(
                     (
-                      val: daily_sale & {
-                        commodity_master: commodity_master;
-                        seller_tin_number: tin_number_master;
-                      },
+                      group: GroupedDailySale,
                       index: number
                     ) => (
                       <TableRow key={index} className="border-b hover:bg-gray-50">
                         <TableCell className="p-2 text-center text-xs">
-                          {val.invoice_number}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {formateDate(val.invoice_date)}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {val.seller_tin_number.name_of_dealer}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {val.seller_tin_number.tin_number}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {val.commodity_master.product_name}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {quantityCount == "pcs"
-                            ? val.quantity
-                            : showCrates(
-                                val.quantity,
-                                val.commodity_master.crate_size
-                              )}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {(parseFloat(val.amount_unit) * val.quantity).toFixed(
-                            2
+                          {group.count > 1 ? (
+                            <button
+                              onClick={() => {
+                                setSelectedGroup(group);
+                                setIsGroupModalOpen(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 underline"
+                            >
+                              {group.count} items
+                            </button>
+                          ) : (
+                            <span>{group.count}</span>
                           )}
                         </TableCell>
                         <TableCell className="p-2 text-center text-xs">
-                          {val.tax_percent}%
+                          {group.invoice_number}
                         </TableCell>
                         <TableCell className="p-2 text-center text-xs">
-                          {val.vatamount}
+                          {formateDate(group.invoice_date)}
                         </TableCell>
                         <TableCell className="p-2 text-center text-xs">
-                          {val.amount}
+                          {group.seller_tin_number.name_of_dealer}
                         </TableCell>
                         <TableCell className="p-2 text-center text-xs">
-                          {val.is_accept ? (
+                          {group.seller_tin_number.tin_number}
+                        </TableCell>
+                        <TableCell className="p-2 text-center text-xs">
+                          {group.totalTaxableValue.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="p-2 text-center text-xs">
+                          {group.totalVatAmount.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="p-2 text-center text-xs">
+                          {group.totalInvoiceValue.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="p-2 text-center text-xs">
+                          {group.records[0].is_accept ? (
                             "NA"
                           ) : (
                             <>
                               <Popover
                                 content={
                                   <div className="flex flex-col gap-2">
-                                    {/* <button
-                                      onClick={() => {
-                                        setDeleteBox(true);
-                                        handelClose(index);
-                                      }}
-                                      className="text-sm bg-white border hover:border-rose-500 hover:text-rose-500 text-[#172e57] py-1 px-4"
-                                    >
-                                      Delete
-                                    </button> */}
                                     <button
                                       onClick={() => {
-                                        route.push(
-                                          `/dashboard/stock/edit_sale/${encryptURLData(
-                                            val.id.toString()
-                                          )}`
-                                        );
+                                        if (group.count === 1) {
+                                          route.push(
+                                            `/dashboard/stock/edit_sale/${encryptURLData(
+                                              group.records[0].id.toString()
+                                            )}`
+                                          );
+                                        } else {
+                                          toast.info("Please select a specific record from Show More");
+                                        }
                                       }}
                                       className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4"
                                     >
@@ -849,7 +944,7 @@ const DocumentWiseDetails = () => {
                                 Close
                               </button>
                               <button
-                                onClick={() => delete_sale_entry(val.id)}
+                                onClick={() => delete_sale_entry(group.records[0].id)}
                                 className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white"
                               >
                                 Delete

@@ -408,6 +408,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     setTinBox(false);
     setCommodityMaster([]);
     setDvatdata(null);
+    setIsAddMoreMode(true);
 
     await props.init();
     await init();
@@ -442,6 +443,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
   };
 
   const [quantityCount, setQuantityCount] = useState("pcs");
+
+  const [isAddMoreMode, setIsAddMoreMode] = useState(false);
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
     setQuantityCount(value);
@@ -480,6 +483,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             name="recipient_vat_no"
             required={true}
             title="Seller VAT Number"
+            disable={isAddMoreMode}
           />
         </div>
         {tindata != null && (
@@ -515,6 +519,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             required={true}
             title="Invoice no."
             placeholder="Invoice no."
+            disable={isAddMoreMode}
           />
         </div>
         <div className="mt-2">
@@ -527,6 +532,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             // mindate={dayjs(getMonthDateas().start, dateFormat)}
             // maxdate={dayjs(getMonthDateas().end, dateFormat)}
             maxdate={dayjs()}
+            disable={isAddMoreMode}
           />
         </div>
         {
@@ -656,6 +662,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
                 quantity: "",
                 recipient_vat_no: "",
               });
+              setIsAddMoreMode(false);
             }}
             value={"Reset"}
             className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"
