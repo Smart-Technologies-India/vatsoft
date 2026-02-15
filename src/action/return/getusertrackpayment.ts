@@ -21,11 +21,19 @@ const GetUserTrackPayment = async (
   try {
     const dvatid = await getCurrentDvatId();
 
+    if (!dvatid) {
+      return createPaginationResponse({
+        message: "Invalid user id. Please try again.",
+        functionname,
+      });
+    }
+
     const [dvat04response, totalCount] = await Promise.all([
       prisma.returns_01.findMany({
         where: {
           deletedAt: null,
           deletedBy: null,
+          dvat04Id: dvatid,
           // dvat04Id
           // createdById: payload.user_id,
           NOT: [{ transaction_id: null, track_id: null }],
@@ -37,7 +45,7 @@ const GetUserTrackPayment = async (
         where: {
           deletedAt: null,
           deletedBy: null,
-          // dvat04Id:
+          dvat04Id: dvatid,
           // createdById: payload.user_id,
           NOT: [{ transaction_id: null, track_id: null }],
         },

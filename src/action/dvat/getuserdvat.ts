@@ -38,6 +38,7 @@ const GetUserDvat04 = async (
         deletedAt: null,
         deletedBy: null,
         id: dvatid,
+        
         // createdById: payload.userid,
         status: "APPROVED",
       },
