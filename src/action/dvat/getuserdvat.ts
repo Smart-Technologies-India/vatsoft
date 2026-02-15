@@ -1,15 +1,16 @@
 "use server";
 interface GetUserDvat04Payload {
-  userid: number;
+  // userid: number;
 }
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
+import { getCurrentDvatId } from "@/lib/auth";
 
 const GetUserDvat04 = async (
-  payload: GetUserDvat04Payload
+  payload: GetUserDvat04Payload,
 ): Promise<ApiResponseType<dvat04 | null>> => {
   const functionname: string = GetUserDvat04.name;
 
@@ -23,12 +24,21 @@ const GetUserDvat04 = async (
     //   });
     // }
 
+    const dvatid = await getCurrentDvatId();
+
+    if (!dvatid) {
+      return createResponse({
+        message: "Invalid id. Please try again.",
+        functionname,
+      });
+    }
+
     const dvat04response = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
         deletedBy: null,
-        // id: parseInt(dvatid),
-        createdById: payload.userid,
+        id: dvatid,
+        // createdById: payload.userid,
         status: "APPROVED",
       },
     });
