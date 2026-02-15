@@ -222,7 +222,7 @@ const ConvertDvat31 = async (
     });
 
     return createResponse({
-      message: "Convert to convert to DVAT 31 Completed.",
+      message: "Convert to DVAT 31 Completed.",
       functionname,
       data: result,
     });

@@ -251,7 +251,7 @@ const ConvertDvat30A = async (
     });
 
     return createResponse({
-      message: "Convert to convert to DVAT 30 A Completed.",
+      message: "Convert to DVAT 30 A Completed.",
       functionname,
       data: result,
     });
