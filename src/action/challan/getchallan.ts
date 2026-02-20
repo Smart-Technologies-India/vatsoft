@@ -17,7 +17,6 @@ const GetChallan = async (
   try {
     const challan = await prisma.challan.findFirst({
       where: {
-        status: "ACTIVE",
         deletedAt: null,
         deletedById: null,
         id: payload.id,

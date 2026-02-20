@@ -89,7 +89,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
     const challan_response = await CreateChallan({
       dvatid: dvatdata.id,
       createdby: props.userid,
-      cess: data.cess.toString(),
+      latefees: data.latefees.toString(),
       vat: data.vat.toString(),
       interest: data.interest.toString(),
       others: data.others ?? "0",
@@ -113,14 +113,14 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
   const getTotalAmount = (): number => {
     const vat = parseFloat(watch("vat"));
     const interest = parseFloat(watch("interest"));
-    const cess = parseFloat(watch("cess"));
+    const latefees = parseFloat(watch("latefees"));
     const penalty = parseFloat(watch("penalty"));
     const others = parseFloat(watch("others") ?? "0");
 
     const total: number =
       (isNaN(vat) ? 0 : vat) +
       (isNaN(interest) ? 0 : interest) +
-      (isNaN(cess) ? 0 : cess) +
+      (isNaN(latefees) ? 0 : latefees) +
       (isNaN(penalty) ? 0 : penalty) +
       (isNaN(others) ? 0 : others);
 
@@ -158,7 +158,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
               <TableBody>
                 <TableRow className="border-b hover:bg-gray-50">
                   <TableCell className="text-left p-2 text-xs">
-                    VAT(0005)
+                    VAT
                   </TableCell>
                   <TableCell className="text-center p-2">
                   <TaxtInput<CreateChallanForm>
@@ -170,7 +170,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
               </TableRow>
               <TableRow className="border-b hover:bg-gray-50">
                 <TableCell className="text-left p-2 text-xs">
-                  Interest(0008)
+                  Interest
                 </TableCell>
                 <TableCell className="text-center p-2">
                   <TaxtInput<CreateChallanForm>
@@ -182,11 +182,11 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
               </TableRow>
               <TableRow className="border-b hover:bg-gray-50">
                 <TableCell className="text-left p-2 text-xs">
-                  CESS(0009)
+                  Late Fees
                 </TableCell>
                 <TableCell className="text-center p-2">
                   <TaxtInput<CreateChallanForm>
-                    name="cess"
+                    name="latefees"
                     required={true}
                     numdes={true}
                   />

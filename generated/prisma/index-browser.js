@@ -503,23 +503,37 @@ exports.Prisma.Department_doc_uploadScalarFieldEnum = {
 
 exports.Prisma.ChallanScalarFieldEnum = {
   id: 'id',
-  reason: 'reason',
   dvatid: 'dvatid',
+  returnid: 'returnid',
   cpin: 'cpin',
   vat: 'vat',
   interest: 'interest',
   penalty: 'penalty',
-  cess: 'cess',
+  latefees: 'latefees',
   others: 'others',
+  newregistration: 'newregistration',
+  security_deposit: 'security_deposit',
   total_tax_amount: 'total_tax_amount',
-  transaction_date: 'transaction_date',
-  paymentmode: 'paymentmode',
-  transaction_id: 'transaction_id',
-  bank_name: 'bank_name',
   track_id: 'track_id',
+  order_id: 'order_id',
+  paymentmode: 'paymentmode',
+  transaction_date: 'transaction_date',
+  bank_name: 'bank_name',
+  order_status: 'order_status',
+  failure_message: 'failure_message',
+  card_name: 'card_name',
+  status_code: 'status_code',
+  status_message: 'status_message',
+  response_code: 'response_code',
+  bene_account: 'bene_account',
+  bene_name: 'bene_name',
+  bene_ifsc: 'bene_ifsc',
+  bene_bank: 'bene_bank',
+  bene_branch: 'bene_branch',
+  trans_fee: 'trans_fee',
+  reason: 'reason',
   remark: 'remark',
-  challanstatus: 'challanstatus',
-  status: 'status',
+  paymentstatus: 'paymentstatus',
   expire_date: 'expire_date',
   createdAt: 'createdAt',
   createdById: 'createdById',
@@ -539,7 +553,7 @@ exports.Prisma.RefundsScalarFieldEnum = {
   vat: 'vat',
   interest: 'interest',
   penalty: 'penalty',
-  cess: 'cess',
+  latefees: 'latefees',
   others: 'others',
   total_tax_amount: 'total_tax_amount',
   transaction_date: 'transaction_date',
@@ -1254,13 +1268,27 @@ exports.Prisma.challanOrderByRelevanceFieldEnum = {
   vat: 'vat',
   interest: 'interest',
   penalty: 'penalty',
-  cess: 'cess',
+  latefees: 'latefees',
   others: 'others',
+  newregistration: 'newregistration',
+  security_deposit: 'security_deposit',
   total_tax_amount: 'total_tax_amount',
-  paymentmode: 'paymentmode',
-  transaction_id: 'transaction_id',
-  bank_name: 'bank_name',
   track_id: 'track_id',
+  order_id: 'order_id',
+  paymentmode: 'paymentmode',
+  bank_name: 'bank_name',
+  order_status: 'order_status',
+  failure_message: 'failure_message',
+  card_name: 'card_name',
+  status_code: 'status_code',
+  status_message: 'status_message',
+  response_code: 'response_code',
+  bene_account: 'bene_account',
+  bene_name: 'bene_name',
+  bene_ifsc: 'bene_ifsc',
+  bene_bank: 'bene_bank',
+  bene_branch: 'bene_branch',
+  trans_fee: 'trans_fee',
   remark: 'remark'
 };
 
@@ -1272,7 +1300,7 @@ exports.Prisma.refundsOrderByRelevanceFieldEnum = {
   vat: 'vat',
   interest: 'interest',
   penalty: 'penalty',
-  cess: 'cess',
+  latefees: 'latefees',
   others: 'others',
   total_tax_amount: 'total_tax_amount',
   paymentmode: 'paymentmode',
@@ -1482,7 +1510,8 @@ exports.Role = exports.$Enums.Role = {
   CA: 'CA',
   OIDC: 'OIDC',
   OIDC1: 'OIDC1',
-  EXCISE: 'EXCISE'
+  EXCISE: 'EXCISE',
+  VATOFFICER_DNH: 'VATOFFICER_DNH'
 };
 
 exports.Gender = exports.$Enums.Gender = {
@@ -1722,15 +1751,18 @@ exports.PurchaseType = exports.$Enums.PurchaseType = {
 
 exports.ChallanReason = exports.$Enums.ChallanReason = {
   MONTHLYPAYMENT: 'MONTHLYPAYMENT',
+  RETURN: 'RETURN',
   PASTDUES: 'PASTDUES',
   DEMAND: 'DEMAND',
-  OTHERS: 'OTHERS'
+  OTHERS: 'OTHERS',
+  NEWREGISTRATION: 'NEWREGISTRATION'
 };
 
-exports.ChallanStatus = exports.$Enums.ChallanStatus = {
+exports.PaymentStatus = exports.$Enums.PaymentStatus = {
+  CREATED: 'CREATED',
+  PENDING: 'PENDING',
   PAID: 'PAID',
-  DUE: 'DUE',
-  CREATED: 'CREATED'
+  FAILED: 'FAILED'
 };
 
 exports.RefundStatus = exports.$Enums.RefundStatus = {

@@ -148,7 +148,7 @@ const ChallanData = () => {
             <div>
               <p className="text-sm">Status</p>
               <p className="text-sm  font-medium">
-                {challanData?.challanstatus}
+                {challanData?.paymentmode}
               </p>
             </div>
             <div>
@@ -218,7 +218,7 @@ const ChallanData = () => {
               <TableBody>
                 <TableRow>
                   <TableCell className="text-left p-2 border">
-                    VAT(0005)
+                    VAT
                   </TableCell>
                   <TableCell className="text-center p-2 border ">
                     {challanData?.vat}
@@ -226,7 +226,7 @@ const ChallanData = () => {
                 </TableRow>
                 <TableRow>
                   <TableCell className="text-left p-2 border">
-                    Interest(0008)
+                    Interest
                   </TableCell>
                   <TableCell className="text-center p-2 border">
                     {challanData?.interest}
@@ -234,10 +234,10 @@ const ChallanData = () => {
                 </TableRow>
                 <TableRow>
                   <TableCell className="text-left p-2 border">
-                    CESS(0009)
+                    Late Fees
                   </TableCell>
                   <TableCell className="text-center p-2 border">
-                    {challanData?.cess}
+                    {challanData?.latefees}
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -277,7 +277,7 @@ const ChallanData = () => {
               </TableBody>
             </Table>
             <div className="w-96">
-              {challanData?.challanstatus == "PAID" ? (
+              {challanData?.paymentmode == "PAID" ? (
                 <>
                   <div className="p-2 flex flex-col gap-2 border bg-gray-100 mt-2">
                     <div>
@@ -292,12 +292,12 @@ const ChallanData = () => {
                         {challanData?.track_id}
                       </p>
                     </div>
-                    <div>
+                    {/* <div>
                       <p className="text-sm">Transaction Id</p>
                       <p className="text-sm  font-medium">
                         {challanData?.transaction_id}
                       </p>
-                    </div>
+                    </div> */}
                     <div>
                       <p className="text-sm">Transaction Date</p>
                       <p className="text-sm  font-medium">

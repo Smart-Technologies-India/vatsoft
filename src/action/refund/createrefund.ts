@@ -12,7 +12,7 @@ interface CreateRefundPayload {
   old_grievance_number?: string;
   oldcpin?: string;
   vat: string;
-  cess: string;
+  latefees: string;
   interest: string;
   penalty: string;
   others?: string;
@@ -38,8 +38,8 @@ const CreateRefund = async (
         dvatid: payload.dvatid,
         cpin: cpin,
         vat: payload.vat,
-        cess: payload.cess,
-        interest: payload.cess,
+        latefees: payload.latefees,
+        interest: payload.interest,
         others: payload.others,
         penalty: payload.penalty,
         createdById: payload.createdby,

@@ -132,7 +132,7 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
     const challan_response = await CreateRefund({
       dvatid: dvatdata.id ?? 0,
       createdby: props.userid,
-      cess: data.cess.toString(),
+      latefees: data.latefees.toString(),
       vat: data.vat.toString(),
       interest: data.interest.toString(),
       others: data.others ?? "0",
@@ -157,14 +157,14 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
   const getTotalAmount = (): number => {
     const vat = parseFloat(watch("vat"));
     const interest = parseFloat(watch("interest"));
-    const cess = parseFloat(watch("cess"));
+    const latefees = parseFloat(watch("latefees") ?? "0");
     const penalty = parseFloat(watch("penalty"));
     const others = parseFloat(watch("others") ?? "0");
 
     const total: number =
       (isNaN(vat) ? 0 : vat) +
       (isNaN(interest) ? 0 : interest) +
-      (isNaN(cess) ? 0 : cess) +
+      (isNaN(latefees) ? 0 : latefees) +
       (isNaN(penalty) ? 0 : penalty) +
       (isNaN(others) ? 0 : others);
 
@@ -251,7 +251,7 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
                     Penalty (&#x20b9;)
                   </TableHead>
                   <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
-                    CESS (&#x20b9;)
+                    Late Fees (&#x20b9;)
                   </TableHead>
                   <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
                     Others (&#x20b9;)
@@ -317,7 +317,7 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
                     Penalty (&#x20b9;)
                   </TableHead>
                   <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
-                    CESS (&#x20b9;)
+                    Late Fees (&#x20b9;)
                   </TableHead>
                   <TableHead className="whitespace-nowrap border-r p-2 font-medium text-gray-700">
                     Others (&#x20b9;)
@@ -355,7 +355,7 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
                   </TableCell>
                   <TableCell className="p-2 border-r">
                     <TaxtInput<CreateRefundForm>
-                      name="cess"
+                      name="latefees"
                       required={true}
                       numdes={true}
                     />

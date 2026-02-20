@@ -571,6 +571,7 @@ model returns_01 {
   dvat04            dvat04          @relation(fields: [dvat04Id], references: [id])
   updatedBy         user?           @relation("returns_01_updatedBy", fields: [updatedById], references: [id])
   returns_entry     returns_entry[]
+  challans          challan[]
 
   @@index([createdById], map: "returns_01_createdById_fkey")
   @@index([deletedById], map: "returns_01_deletedById_fkey")
@@ -648,36 +649,54 @@ model department_doc_upload {
 }
 
 model challan {
-  id               Int            @id @default(autoincrement())
-  reason           ChallanReason  @default(MONTHLYPAYMENT)
-  dvatid           Int
+  id         Int         @id @default(autoincrement())
+  dvatid     Int
+  dvat       dvat04      @relation(fields: [dvatid], references: [id])
+  returnid   Int?
+  returns_01 returns_01? @relation(fields: [returnid], references: [id])
+
   cpin             String
   vat              String
   interest         String
   penalty          String
-  cess             String
+  latefees         String
   others           String
+  newregistration  String?
+  security_deposit String?
   total_tax_amount String
-  transaction_date DateTime?
-  paymentmode      String?
-  transaction_id   String?
-  bank_name        String?
+
   track_id         String?
-  remark           String?        @db.MediumText
-  challanstatus    ChallanStatus  @default(CREATED)
-  status           Status         @default(ACTIVE)
-  expire_date      DateTime
-  createdAt        DateTime       @default(now())
-  createdById      Int
-  updatedAt        DateTime       @updatedAt
-  updatedById      Int?
-  deletedAt        DateTime?
-  deletedById      Int?
-  createdBy        user           @relation("challan_createdBy", fields: [createdById], references: [id])
-  deletedBy        user?          @relation("challan_deletedBy", fields: [deletedById], references: [id])
-  dvat             dvat04         @relation(fields: [dvatid], references: [id])
-  updatedBy        user?          @relation("challan_updatedBy", fields: [updatedById], references: [id])
-  order_notice     order_notice[]
+  order_id         String?
+  paymentmode      String?
+  transaction_date DateTime?
+  bank_name        String?
+  order_status     String?
+  failure_message  String?
+  card_name        String?
+  status_code      String?
+  status_message   String?
+  response_code    String?
+  bene_account     String?
+  bene_name        String?
+  bene_ifsc        String?
+  bene_bank        String?
+  bene_branch      String?
+  trans_fee        String?
+
+  reason        ChallanReason  @default(MONTHLYPAYMENT)
+  remark        String?        @db.MediumText
+  paymentstatus PaymentStatus  @default(PENDING)
+  expire_date   DateTime
+  createdAt     DateTime       @default(now())
+  createdById   Int
+  updatedAt     DateTime       @updatedAt
+  updatedById   Int?
+  deletedAt     DateTime?
+  deletedById   Int?
+  createdBy     user           @relation("challan_createdBy", fields: [createdById], references: [id])
+  deletedBy     user?          @relation("challan_deletedBy", fields: [deletedById], references: [id])
+  updatedBy     user?          @relation("challan_updatedBy", fields: [updatedById], references: [id])
+  order_notice  order_notice[]
 
   @@index([createdById], map: "challan_createdById_fkey")
   @@index([deletedById], map: "challan_deletedById_fkey")
@@ -695,7 +714,7 @@ model refunds {
   vat                  String
   interest             String
   penalty              String
-  cess                 String
+  latefees             String
   others               String?
   total_tax_amount     String?
   transaction_date     DateTime?
@@ -1509,6 +1528,7 @@ enum Role {
   OIDC
   OIDC1
   EXCISE
+  VATOFFICER_DNH
 }
 
 enum Gender {
@@ -1536,10 +1556,11 @@ enum CompositionStatus {
   COMPLETED
 }
 
-enum ChallanStatus {
-  PAID
-  DUE
+enum PaymentStatus {
   CREATED
+  PENDING
+  PAID
+  FAILED
 }
 
 enum RefundStatus {
@@ -1751,9 +1772,17 @@ enum Quarter {
 
 enum ChallanReason {
   MONTHLYPAYMENT
+  RETURN
   PASTDUES
   DEMAND
   OTHERS
+  NEWREGISTRATION
+}
+
+enum PaymentType {
+  REGISTRATION
+  RETURN
+  DEMAND
 }
 
 enum NoticeOrderType {

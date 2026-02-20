@@ -15,7 +15,6 @@ const GetAllChallan = async (
   try {
     const challan = await prisma.challan.findMany({
       where: {
-        status: "ACTIVE",
         deletedAt: null,
         deletedById: null,
       },

@@ -23,7 +23,6 @@ const GetDeptChallan = async (
     const [challan, totalCount] = await Promise.all([
       await prisma.challan.findMany({
         where: {
-          status: "ACTIVE",
           deletedAt: null,
           deletedById: null,
           dvat: {
@@ -35,7 +34,6 @@ const GetDeptChallan = async (
       }),
       prisma.challan.count({
         where: {
-          status: "ACTIVE",
           deletedAt: null,
           deletedById: null,
           dvat: {

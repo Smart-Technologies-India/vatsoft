@@ -21,7 +21,6 @@ const AddChallanPayment = async (
   try {
     const is_challan = await prisma.challan.findFirst({
       where: {
-        status: "ACTIVE",
         deletedAt: null,
         deletedById: null,
         id: payload.id,
@@ -36,7 +35,6 @@ const AddChallanPayment = async (
     }
     const response = await prisma.challan.update({
       where: {
-        status: "ACTIVE",
         deletedAt: null,
         deletedById: null,
         id: is_challan.id,
@@ -44,11 +42,10 @@ const AddChallanPayment = async (
       data: {
         track_id: payload.track_id,
         transaction_date: new Date(),
-        transaction_id: payload.track_id,
         paymentmode: "ONLINE",
         bank_name: payload.bank_name,
         updatedById: payload.userid,
-        challanstatus: "PAID",
+        paymentstatus: "PAID",
       },
     });
 

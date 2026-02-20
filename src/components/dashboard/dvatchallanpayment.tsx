@@ -49,8 +49,7 @@ import { CheckboxGroupProps } from "antd/es/checkbox";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { customAlphabet } from "nanoid";
-// import SendOtp from "@/action/user/sendotp";
-// import VerifyOtp from "@/action/user/verifyotp";
+import AddPaymentOnline from "@/action/return/addpaymentonline";
 
 interface PercentageOutput {
   increase: string;
@@ -243,9 +242,27 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       const nanoid = customAlphabet("1234567890abcdef", 10);
 
       const uniqueid: string = nanoid();
+
+      const response = await AddPaymentOnline({
+        id: return01.id ?? 0,
+        rr_number: get_rr_number(),
+        penalty: lateFees.toString(),
+        ...(isNegative(getValue()) && {
+          pending_payment: getValue().toFixed(),
+        }),
+        interestamount: getInterest().toFixed(0),
+        totaltaxamount: getTotalTaxAmount().toFixed(0),
+        vatamount: getVatAmount().toFixed(0),
+      });
+
+      if (!response.status) return toast.error(response.message);
+
       router.push(
-        `/payamount?xlmnx=${1}&ynboy=${uniqueid}&zgvfz=${1}_${1}_${1}_bid_${9586908178}&name=${"karan"}&email=${"karan@gmail.com"}&mobile=${9586908178}`,
+        `/payamount?xlmnx=${1}&ynboy=${uniqueid}&zgvfz=${response.data?.id}_${return01.dvat04Id}_0_DEMAND`,
       );
+      // router.push(
+      //   `/payamount?xlmnx=${1}&ynboy=${uniqueid}&zgvfz=${1}_${1}_${1}_bid_${9586908178}&name=${"karan"}&email=${"karan@gmail.com"}&mobile=${9586908178}`,
+      // );
     } else {
       const lastPayment = await CheckLastPayment({
         id: return01.id ?? 0,
@@ -834,7 +851,9 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className="text-left p-2 border">CESS</TableCell>
+                <TableCell className="text-left p-2 border">
+                  Late Fees
+                </TableCell>
                 <TableCell className="text-center p-2 border">0</TableCell>
               </TableRow>
               <TableRow>

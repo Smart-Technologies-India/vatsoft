@@ -23,7 +23,6 @@ const GetUserChallan = async (
     const [challan, totalCount] = await Promise.all([
       prisma.challan.findMany({
         where: {
-          status: "ACTIVE",
           deletedAt: null,
           deletedById: null,
           dvatid: payload.dvatid,
@@ -33,7 +32,6 @@ const GetUserChallan = async (
       }),
       prisma.challan.count({
         where: {
-          status: "ACTIVE",
           deletedAt: null,
           deletedById: null,
           dvatid: payload.dvatid,

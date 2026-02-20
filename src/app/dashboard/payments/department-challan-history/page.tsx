@@ -361,7 +361,7 @@ const ChallanHistory = () => {
                   {challanData.map((val: challan, index: number) => (
                     <TableRow key={index}>
                       <TableCell className="text-center p-2">
-                        {val.challanstatus == "PAID" ? (
+                        {val.paymentmode == "PAID" ? (
                           <Link
                             className="text-blue-500"
                             href={`/dashboard/payments/saved-challan/${encryptURLData(
@@ -395,7 +395,7 @@ const ChallanHistory = () => {
                           : "-"}
                       </TableCell>
                       <TableCell className="text-center p-2">
-                        {val.challanstatus}
+                        {val.paymentmode}
                       </TableCell>
                     </TableRow>
                   ))}

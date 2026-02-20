@@ -15,17 +15,16 @@ interface ChallanResponse {
 }
 
 const GetPendingChallan = async (
-  payload: GetPendingChallanPayload
+  payload: GetPendingChallanPayload,
 ): Promise<ApiResponseType<ChallanResponse | null>> => {
   const functionname: string = GetPendingChallan.name;
 
   try {
     const challan = await prisma.challan.findMany({
       where: {
-        status: "ACTIVE",
         NOT: [
           {
-            challanstatus: "PAID",
+            paymentstatus: "PAID",
           },
         ],
         deletedAt: null,

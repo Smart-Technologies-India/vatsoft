@@ -10,10 +10,10 @@ interface CreateChallanPayload {
   dvatid: number;
   createdby: number;
   vat: string;
-  cess: string;
   interest: string;
   penalty: string;
   others: string;
+  latefees: string;
   reason: ChallanReason;
   remark?: string;
   total_tax_amount: string;
@@ -36,7 +36,7 @@ const CreateChallan = async (
         dvatid: payload.dvatid,
         cpin: cpin,
         vat: payload.vat,
-        cess: payload.cess,
+        latefees: payload.latefees,
         interest: payload.interest,
         others: payload.others,
         penalty: payload.penalty,
@@ -44,8 +44,7 @@ const CreateChallan = async (
         expire_date: today,
         total_tax_amount: payload.total_tax_amount,
         reason: payload.reason,
-        status: "ACTIVE",
-        challanstatus: "CREATED",
+        paymentstatus: "CREATED",
         ...(payload.remark && { remark: payload.remark }),
       },
     });

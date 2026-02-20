@@ -191,7 +191,7 @@ const AddSubmitPayment = async (
           flatData.map((val: any, index: number) =>
             prisma.cform.create({
               data: {
-                amount: val.amount,
+                amount: val.amount.toFixed(2),
                 dvat04Id: isExist.dvat04Id,
                 office_of_issue: isExist.dvat04.selectOffice,
                 date_of_issue: dates.toDate,

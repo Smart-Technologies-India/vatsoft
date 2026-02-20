@@ -229,7 +229,7 @@ const AddPayment = async (
 
             return prisma.cform.create({
               data: {
-                amount: group.totalAmount.toString(),
+                amount: group.totalAmount.toFixed(2),
                 dvat04Id: isExist.dvat04Id,
                 office_of_issue: isExist.dvat04.selectOffice,
                 date_of_issue: new Date(),
@@ -388,7 +388,7 @@ const AddPayment = async (
           dvatid: isExist.dvat04Id,
           cpin: cpin,
           vat: payload.vatamount,
-          cess: "0",
+          latefees: "0",
           interest: payload.interestamount,
           others: "0",
           penalty: payload.penalty,
@@ -396,12 +396,10 @@ const AddPayment = async (
           expire_date: today,
           total_tax_amount: payload.totaltaxamount,
           reason: "MONTHLYPAYMENT",
-          status: "ACTIVE",
-          challanstatus: "PAID",
+          paymentstatus: "PAID",
           transaction_date: new Date(),
           paymentmode: "ONLINE",
           track_id: payload.track_id,
-          transaction_id: payload.transaction_id,
           bank_name: payload.bank_name,
         },
       });

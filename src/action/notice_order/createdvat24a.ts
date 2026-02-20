@@ -21,7 +21,7 @@ interface CreateDvat24APayload {
 }
 
 const CreateDvat24A = async (
-  payload: CreateDvat24APayload
+  payload: CreateDvat24APayload,
 ): Promise<ApiResponseType<order_notice | null>> => {
   const functionname: string = CreateDvat24A.name;
   let today = new Date();
@@ -38,18 +38,19 @@ const CreateDvat24A = async (
         dvatid: payload.dvatid,
         cpin: cpin,
         vat: payload.tax,
-        cess: "0",
+        latefees: "0",
         interest: payload.interest,
         others: "0",
         penalty: payload.penalty,
         createdById: payload.createdby,
         expire_date: today,
         total_tax_amount: (
-          parseInt(payload.tax) + parseInt(payload.interest) + parseInt(payload.penalty)
+          parseInt(payload.tax) +
+          parseInt(payload.interest) +
+          parseInt(payload.penalty)
         ).toString(),
         reason: "DEMAND",
-        status: "ACTIVE",
-        challanstatus: "CREATED",
+        paymentstatus: "CREATED",
         ...(payload.remark && { remark: payload.remark }),
       },
     });

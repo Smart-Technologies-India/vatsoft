@@ -398,7 +398,7 @@ const ChallanHistory = () => {
                           : "-"}
                       </TableCell>
                       <TableCell className="text-center p-2">
-                        {val.challanstatus}
+                        {val.paymentmode}
                       </TableCell>
                     </TableRow>
                   ))}

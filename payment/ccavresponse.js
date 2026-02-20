@@ -33,11 +33,21 @@ export const postRes = (request, response) => {
       "tracking_id",
       "bank_ref_no",
       "order_status",
+      "failure_message",
       "payment_mode",
       "card_name",
+      "status_code",
+      "status_message",
       "amount",
       "billing_name",
       "merchant_param1",
+      "response_code",
+      "bene_account",
+      "bene_name",
+      "bene_ifsc",
+      "bene_bank",
+      "bene_branch",
+      "trans_fee",
     ];
 
     const pairs = ccavResponse.split("&");
@@ -49,14 +59,14 @@ export const postRes = (request, response) => {
         result[key] = value === "null" ? null : decodeURIComponent(value);
       }
     });
+    console.log(result);
+
+    const challanid = result.merchant_param1.toString().split("_")[0];
+    const dvatid = result.merchant_param1.toString().split("_")[1];
+    const return_id = result.merchant_param1.toString().split("_")[2];
+    const type = result.merchant_param1.toString().split("_")[3];
 
     if (result.order_status == "Aborted") {
-      const challanid = result.merchant_param1.toString().split("_")[0];
-      const dvatid = result.merchant_param1.toString().split("_")[1];
-      const shopid = result.merchant_param1.toString().split("_")[2];
-      const type = result.merchant_param1.toString().split("_")[3];
-      const mobile_number = result.merchant_param1.toString().split("_")[4];
-
       const update_response = await prisma.challan.updateMany({
         where: {
           dvatid: dvatid ? parseInt(dvatid) : 0,
@@ -64,8 +74,9 @@ export const postRes = (request, response) => {
         },
         data: {
           paymentstatus: "FAILED",
+          order_status: result.order_status,
           deletedAt: new Date().toISOString(),
-          deletedById: userid ? parseInt(userid) : 1,
+          deletedById: 1,
         },
       });
 
@@ -74,250 +85,141 @@ export const postRes = (request, response) => {
       response.write(htmlcode);
       response.end();
     } else if (result.order_status == "Success") {
-      const bidid = result.merchant_param1.toString().split("_")[0];
-      const userid = result.merchant_param1.toString().split("_")[1];
-      const shopid = result.merchant_param1.toString().split("_")[2];
-      const type = result.merchant_param1.toString().split("_")[3];
-      const mobile_number = result.merchant_param1.toString().split("_")[4];
-
-      if (type == "bid") {
+      if (type == "NEWREGISTRATION") {
         try {
-          const bidpaymentresponse = await prisma.bid_payment.findMany({
+       
+          await prisma.challan.updateMany({
             where: {
-              userId: userid ? parseInt(userid) : 0,
-              shopId: shopid ? parseInt(shopid) : 0,
-              bidId: bidid ? parseInt(bidid) : 0,
-            },
-            orderBy: {
-              createdAt: "desc",
-            },
-          });
-
-          const time = new Date(bidpaymentresponse[0].createdAt);
-          const interval = 2000;
-
-          const idlistdata = bidpaymentresponse.filter((data) => {
-            const createdAtTime = new Date(data.createdAt);
-            const timeDifference = Math.abs(time - createdAtTime);
-            return timeDifference <= interval;
-          });
-
-          const idsToUpdate = idlistdata.map((data) => data.id);
-
-          const update_response = await prisma.bid_payment.updateMany({
-            where: {
-              id: {
-                in: idsToUpdate,
-              },
+              id: parseInt(challanid),
+              dvatid: parseInt(dvatid),
+              return_id: parseInt(return_id),
             },
             data: {
-              transactionid: result.bank_ref_no,
-              trackid: result.tracking_id,
-              transaction_date: new Date().toISOString(),
+              paymentstatus: "PAID",
+              track_id: result.tracking_id,
+              order_id: result.order_id,
               paymentmode: result.payment_mode.toString().toUpperCase(),
-              remarks: result.order_status,
-              deletedAt: null,
-            },
-          });
-
-          const tranId = await prisma.bid_transact.findFirst({
-            where: {
-              userId: userid ? parseInt(userid) : 0,
-              shopId: shopid ? parseInt(shopid) : 0,
-              bidId: bidid ? parseInt(bidid) : 0,
-            },
-            orderBy: {
-              createdAt: "desc",
-            },
-          });
-
-          const bid_tranresponse = await prisma.bid_transact.updateMany({
-            where: {
-              id: tranId.id,
-            },
-            data: {
-              deletedAt: null,
+              transaction_date: new Date().toISOString(),
+              bank_name: result.bank_name,
+              order_status: result.order_status,
+              failure_message: result.failure_message,
+              card_name: result.card_name,
+              status_code: result.status_code,
+              status_message: result.status_message,
+              response_code: result.response_code,
+              bene_account: result.bene_account,
+              bene_name: result.bene_name,
+              bene_ifsc: result.bene_ifsc,
+              bene_bank: result.bene_bank,
+              bene_branch: result.bene_branch,
+              trans_fee: result.trans_fee,
             },
           });
         } catch (e) {
           console.log(e);
         }
 
-        const NewBidSubmitted = `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=Thank%20you%20for%20submitting%20your%20bid.%20We%20have%20received%20it%20successfully.%20You%20will%20be%20notified%20of%20any%20updates%20or%20further%20actions.%20-%20PDA%2C%20DNH.&MobileNumbers=91${mobile_number}&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`;
+        // const NewBidSubmitted = `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=Thank%20you%20for%20submitting%20your%20bid.%20We%20have%20received%20it%20successfully.%20You%20will%20be%20notified%20of%20any%20updates%20or%20further%20actions.%20-%20PDA%2C%20DNH.&MobileNumbers=91${mobile_number}&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`;
 
-        await axios.get(NewBidSubmitted);
-      } else if (type == "rent") {
-        let updatedata;
-
-        let gstnumber;
-
-        const id_value = bidid.split(",").map((id) => parseInt(id));
-
-        if (id_value.length > 0) {
-          gstnumber = await prisma.gstinvoice.findFirst({
-            orderBy: { id: "desc" },
-          });
-
-          await prisma.gstinvoice.create({
+        // await axios.get(NewBidSubmitted);
+      } else if (type == "RETURN") {
+        try {
+          await prisma.challan.updateMany({
+            where: {
+              id: parseInt(challanid),
+              dvatid: parseInt(dvatid),
+              return_id: parseInt(return_id),
+            },
             data: {
-              number: gstnumber?.number + 1,
+              paymentstatus: "PAID",
+              track_id: result.tracking_id,
+              order_id: result.order_id,
+              paymentmode: result.payment_mode.toString().toUpperCase(),
+              transaction_date: new Date().toISOString(),
+              bank_name: result.bank_name,
+              order_status: result.order_status,
+              failure_message: result.failure_message,
+              card_name: result.card_name,
+              status_code: result.status_code,
+              status_message: result.status_message,
+              response_code: result.response_code,
+              bene_account: result.bene_account,
+              bene_name: result.bene_name,
+              bene_ifsc: result.bene_ifsc,
+              bene_bank: result.bene_bank,
+              bene_branch: result.bene_branch,
+              trans_fee: result.trans_fee,
             },
           });
-
-          for (let i = 0; i < id_value.length; i++) {
-            updatedata = await prisma.rent_transact.update({
-              where: {
-                id: id_value[i],
-              },
-              data: {
-                gstinvoice: gstnumber.number,
-                transactionid: result.bank_ref_no,
-                trackid: result.tracking_id,
-                status: "PAID",
-                transaction_date: new Date().toISOString(),
-                paymentmode: result.payment_mode.toString().toUpperCase(),
-                remarks: result.order_status,
-              },
-              include: {
-                user: true,
-                shop: {
-                  include: {
-                    property: true,
-                    shop_category: true,
-                  },
-                },
-              },
-            });
-          }
+        } catch (e) {
+          console.log(e);
         }
 
-        const RentIsPaid = `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=Confirmation%3A%20Your%20rent%20for%20${updatedata.shop.shop_category.name}%20at%20${updatedata.shop.property.name}%20has%20been%20paid.%20We%20appreciate%20your%20timely%20payment%20-DNH%20PDA.&MobileNumbers=91${updatedata.user.contactone}&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`;
+        // const RentIsPaid = `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=Confirmation%3A%20Your%20rent%20for%20${updatedata.shop.shop_category.name}%20at%20${updatedata.shop.property.name}%20has%20been%20paid.%20We%20appreciate%20your%20timely%20payment%20-DNH%20PDA.&MobileNumbers=91${updatedata.user.contactone}&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`;
 
-        const message_response = await fetch(RentIsPaid, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-      } else if (type == "dailyrent") {
-        let updatedata;
-
-        let gstnumber;
-
-        gstnumber = await prisma.gstinvoice.findFirst({
-          orderBy: { id: "desc" },
-        });
-
-        await prisma.gstinvoice.create({
-          data: {
-            number: gstnumber?.number + 1,
-          },
-        });
-
-        updatedata = await prisma.daily_rent_transact.update({
-          where: {
-            id: bidid ? parseInt(bidid) : 0,
-          },
-          data: {
-            gstinvoice: gstnumber.number,
-            transactionid: result.bank_ref_no,
-            trackid: result.tracking_id,
-            status: "PAID",
-            transaction_date: new Date().toISOString(),
-            paymentmode: result.payment_mode.toString().toUpperCase(),
-            remarks: result.order_status,
-          },
-          include: {
-            user: true,
-            daily_rent: true,
-            daily_shop: {
-              include: {
-                property: true,
-                shop_category: true,
-              },
+        // const message_response = await fetch(RentIsPaid, {
+        //   method: "GET",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        // });
+      } else if (type == "DEMAND") {
+        try {
+          await prisma.challan.updateMany({
+            where: {
+              id: parseInt(challanid),
+              dvatid: parseInt(dvatid),
             },
-          },
-        });
-
-        await prisma.daily_rent.update({
-          where: {
-            id: updatedata.daily_rent.id,
-          },
-          data: {
-            status: "DEPOSITDUE",
-          },
-        });
-
-        const RentIsPaid = `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=Your%20booking%20at%20${updatedata.daily_shop.property.name}%20at%20${updatedata.daily_shop.name}%20is%20due.%20Please%20pay%20to%20confirm.%20Failing%20to%20pay%20would%20cancel%20booking.%20%E2%80%93DNHPDA.&MobileNumbers=91${updatedata.user.contactone}&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`;
-
-        const message_response = await fetch(RentIsPaid, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        const RentIsPaid2 = `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=Your%20deposit%20for%20booking%20ID%20${
-          "PDA-EVENT-" + updatedata.id
-        }%20on%20${
-          updatedata.daily_shop.name
-        }%20is%20confirmed.%20Booking%20ID%3A%20${
-          "PDA-EVENT-" + updatedata.id
-        }.%20%E2%80%93DNHPDA&MobileNumbers=91${
-          updatedata.user.contactone
-        }&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`;
-
-        const message_response2 = await fetch(RentIsPaid2, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-      } else if (type == "deposit") {
-        let updatedata;
-
-        // for (let i = 0; i < id_value.length; i++) {
-        updatedata = await prisma.daily_rent_transact.update({
-          where: {
-            id: bidid,
-          },
-          data: {
-            transactionid: result.bank_ref_no,
-            trackid: result.tracking_id,
-            status: "PAID",
-            transaction_date: new Date().toISOString(),
-            paymentmode: result.payment_mode.toString().toUpperCase(),
-            remarks: result.order_status,
-          },
-          include: {
-            user: true,
-            daily_rent: true,
-            shop: {
-              include: {
-                property: true,
-                shop_category: true,
-              },
+            data: {
+              paymentstatus: "PAID",
+              track_id: result.tracking_id,
+              order_id: result.order_id,
+              paymentmode: result.payment_mode.toString().toUpperCase(),
+              transaction_date: new Date().toISOString(),
+              bank_name: result.bank_name,
+              order_status: result.order_status,
+              failure_message: result.failure_message,
+              card_name: result.card_name,
+              status_code: result.status_code,
+              status_message: result.status_message,
+              response_code: result.response_code,
+              bene_account: result.bene_account,
+              bene_name: result.bene_name,
+              bene_ifsc: result.bene_ifsc,
+              bene_bank: result.bene_bank,
+              bene_branch: result.bene_branch,
+              trans_fee: result.trans_fee,
             },
-          },
-        });
+          });
+        } catch (e) {
+          console.log(e);
+        }
 
-        await prisma.daily_rent.update({
-          where: {
-            id: updatedata.daily_rent.id,
-          },
-          data: {
-            status: "COMPLETED",
-          },
-        });
+        // const RentIsPaid = `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=Your%20booking%20at%20${updatedata.daily_shop.property.name}%20at%20${updatedata.daily_shop.name}%20is%20due.%20Please%20pay%20to%20confirm.%20Failing%20to%20pay%20would%20cancel%20booking.%20%E2%80%93DNHPDA.&MobileNumbers=91${updatedata.user.contactone}&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`;
 
-        const RentIsPaid = `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=Confirmation%3A%20Your%20rent%20for%20${updatedata.shop.shop_category.name}%20at%20${updatedata.shop.property.name}%20has%20been%20paid.%20We%20appreciate%20your%20timely%20payment%20-DNH%20PDA.&MobileNumbers=91${updatedata.user.contactone}&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`;
+        // const message_response = await fetch(RentIsPaid, {
+        //   method: "GET",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        // });
 
-        const message_response = await fetch(RentIsPaid, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        // const RentIsPaid2 = `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=Your%20deposit%20for%20booking%20ID%20${
+        //   "PDA-EVENT-" + updatedata.id
+        // }%20on%20${
+        //   updatedata.daily_shop.name
+        // }%20is%20confirmed.%20Booking%20ID%3A%20${
+        //   "PDA-EVENT-" + updatedata.id
+        // }.%20%E2%80%93DNHPDA&MobileNumbers=91${
+        //   updatedata.user.contactone
+        // }&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`;
+
+        // const message_response2 = await fetch(RentIsPaid2, {
+        //   method: "GET",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        // });
       }
 
       const htmlcode = `<html lang="en">
@@ -518,21 +420,16 @@ export const postRes = (request, response) => {
       response.write(htmlcode);
       response.end();
     } else {
-      const challanid = result.merchant_param1.toString().split("_")[0];
-      const dvatid = result.merchant_param1.toString().split("_")[1];
-      const shopid = result.merchant_param1.toString().split("_")[2];
-      const type = result.merchant_param1.toString().split("_")[3];
-      const mobile_number = result.merchant_param1.toString().split("_")[4];
-
-      const update_response = await prisma.challan.updateMany({
+      await prisma.challan.updateMany({
         where: {
           dvatid: dvatid ? parseInt(dvatid) : 0,
           id: challanid ? parseInt(challanid) : 0,
         },
         data: {
           paymentstatus: "FAILED",
+          order_status: result.order_status,
           deletedAt: new Date().toISOString(),
-          deletedById: userid ? parseInt(userid) : 1,
+          deletedById: 1,
         },
       });
 

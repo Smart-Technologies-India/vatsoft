@@ -23,6 +23,7 @@ import { CheckboxChangeEvent } from "antd/es/checkbox";
 import CreateReturnRevised from "@/action/return/createreturnrevised";
 import GetUserLastPandingReturn from "@/action/return/userlastpandingreturn";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import AddNil from "@/action/return/addnil";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -610,6 +611,10 @@ const ReturnDashboard = () => {
 
   const [nilBox, setNilBox] = useState<boolean>(false);
   const [rrbox, setRRBox] = useState<boolean>(false);
+  const [nilModalOpen, setNilModalOpen] = useState<boolean>(false);
+  const [nilForm, setNilForm] = useState<"30" | "30A" | "31" | "31A" | null>(
+    null,
+  );
 
   const [isAccept, setIsAccept] = useState<boolean>(false);
 
@@ -664,6 +669,66 @@ const ReturnDashboard = () => {
   }
 
   const [isDownload, setDownload] = useState<boolean>(false);
+
+  const getNilFormName = (form: "30" | "30A" | "31" | "31A"): string => {
+    switch (form) {
+      case "30":
+        return "DVAT 30";
+      case "30A":
+        return "DVAT 30-A";
+      case "31":
+        return "DVAT 31";
+      case "31A":
+        return "DVAT 31-A";
+      default:
+        return "DVAT 30";
+    }
+  };
+
+  const getNilFormType = (form: "30" | "30A" | "31" | "31A"): DvatType => {
+    switch (form) {
+      case "30":
+        return DvatType.DVAT_30;
+      case "30A":
+        return DvatType.DVAT_30_A;
+      case "31":
+        return DvatType.DVAT_31;
+      case "31A":
+        return DvatType.DVAT_31_A;
+      default:
+        return DvatType.DVAT_30;
+    }
+  };
+
+  const openNilModal = (form: "30" | "30A" | "31" | "31A") => {
+    setNilForm(form);
+    setNilModalOpen(true);
+  };
+
+  const submitNil = async () => {
+    if (!nilForm || !year || !period) {
+      toast.error("Please select the return period.");
+      return;
+    }
+
+    setNilModalOpen(false);
+
+    const response = await AddNil({
+      createdById: userid,
+      dvat_type: getNilFormType(nilForm),
+      month: period,
+      quarter: quarter,
+      seller_tin_numberId: 1,
+      year: getNewYear(year, period),
+    });
+
+    if (response.status) {
+      toast.success(response.message);
+      await search(year, period);
+    } else {
+      toast.error(response.message);
+    }
+  };
 
   return (
     <>
@@ -736,6 +801,17 @@ const ReturnDashboard = () => {
             Submit
           </button>
         </div>
+      </Modal>
+      <Modal
+        title="Nil Filing"
+        open={nilModalOpen}
+        onOk={submitNil}
+        onCancel={() => setNilModalOpen(false)}
+      >
+        <p>
+          Do you want to submit Nil details for
+          {nilForm ? ` ${getNilFormName(nilForm)}` : " this form"}?
+        </p>
       </Modal>
       <main className="p-3 bg-gray-50">
         <div className="max-w-7xl mx-auto">
@@ -1034,6 +1110,7 @@ const ReturnDashboard = () => {
                   amount={salesLocalData.amount.toFixed(2)}
                   tax={salesLocalData.tax.toFixed(2)}
                   isnil={salesLocalData.isnil}
+                  onDeclareNil={() => openNilModal("31")}
                   link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31&year=${getNewYear(
                     year!,
                     period!,
@@ -1048,6 +1125,7 @@ const ReturnDashboard = () => {
                   amount={purchaseLocalData.amount.toFixed(2)}
                   tax={purchaseLocalData.tax.toFixed(2)}
                   isnil={purchaseLocalData.isnil}
+                  onDeclareNil={() => openNilModal("30")}
                   link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30&year=${getNewYear(
                     year!,
                     period!,
@@ -1062,6 +1140,7 @@ const ReturnDashboard = () => {
                   amount={salesInterStateData.amount.toFixed(2)}
                   tax={salesInterStateData.tax.toFixed(2)}
                   isnil={salesInterStateData.isnil}
+                  onDeclareNil={() => openNilModal("31A")}
                   link={`/dashboard/returns/returns-dashboard/outward-supplies?form=31A&year=${getNewYear(
                     year!,
                     period!,
@@ -1076,6 +1155,7 @@ const ReturnDashboard = () => {
                   amount={purchaseInterStateData.amount.toFixed(2)}
                   tax={purchaseInterStateData.tax.toFixed(2)}
                   isnil={purchaseInterStateData.isnil}
+                  onDeclareNil={() => openNilModal("30A")}
                   link={`/dashboard/returns/returns-dashboard/inward-supplies?form=30A&year=${getNewYear(
                     year!,
                     period!,
@@ -1191,10 +1271,12 @@ interface CardProps {
   tax: string;
   link: string;
   isnil: boolean;
+  onDeclareNil?: () => void;
 }
 
 const Card = (props: CardProps) => {
   const route = useRouter();
+  const showDeclareNil = props.entry === 0;
   return (
     <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
       <div className="text-white text-sm font-medium text-center bg-blue-600 p-2 rounded grid place-items-center">
@@ -1231,15 +1313,27 @@ const Card = (props: CardProps) => {
           {props.buttonone}
         </button>
 
-        {!props.isnil && (
-          <button
-            onClick={() => {
-              route.push(props.link);
-            }}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center"
-          >
-            {props.buttontwo}
-          </button>
+        {showDeclareNil ? (
+          !props.isnil && (
+            <button
+              onClick={props.onDeclareNil}
+              disabled={!props.onDeclareNil}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              Declare Nil
+            </button>
+          )
+        ) : (
+          !props.isnil && (
+            <button
+              onClick={() => {
+                route.push(props.link);
+              }}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center"
+            >
+              {props.buttontwo}
+            </button>
+          )
         )}
       </div>
     </div>

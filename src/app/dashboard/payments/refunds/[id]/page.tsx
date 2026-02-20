@@ -209,7 +209,7 @@ const RefundsData = () => {
               <TableBody>
                 <TableRow>
                   <TableCell className="text-left p-2 border">
-                    VAT(0005)
+                    VAT
                   </TableCell>
                   <TableCell className="text-center p-2 border ">
                     {refundsData?.vat}
@@ -217,7 +217,7 @@ const RefundsData = () => {
                 </TableRow>
                 <TableRow>
                   <TableCell className="text-left p-2 border">
-                    Interest(0008)
+                    Interest
                   </TableCell>
                   <TableCell className="text-center p-2 border">
                     {refundsData?.interest}
@@ -225,10 +225,10 @@ const RefundsData = () => {
                 </TableRow>
                 <TableRow>
                   <TableCell className="text-left p-2 border">
-                    CESS(0009)
+                    Late Fees
                   </TableCell>
                   <TableCell className="text-center p-2 border">
-                    {refundsData?.cess}
+                    {refundsData?.latefees}
                   </TableCell>
                 </TableRow>
                 <TableRow>

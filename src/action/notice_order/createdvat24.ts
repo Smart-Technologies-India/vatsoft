@@ -40,7 +40,7 @@ const CreateDvat24 = async (
         dvatid: payload.dvatid,
         cpin: cpin,
         vat: payload.tax,
-        cess: "0",
+        latefees: "0",
         interest: payload.interest,
         others: "0",
         penalty: payload.penalty,
@@ -52,8 +52,7 @@ const CreateDvat24 = async (
           parseInt(payload.penalty)
         ).toString(),
         reason: "DEMAND",
-        status: "ACTIVE",
-        challanstatus: "CREATED",
+        paymentstatus: "CREATED",
         ...(payload.remark && { remark: payload.remark }),
       },
     });

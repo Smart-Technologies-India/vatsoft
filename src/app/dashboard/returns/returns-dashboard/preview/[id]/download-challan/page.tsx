@@ -738,7 +738,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="text-left p-2 border">CESS</TableCell>
+                    <TableCell className="text-left p-2 border">Late Fees</TableCell>
                     <TableCell className="text-center p-2 border">0</TableCell>
                   </TableRow>
                   <TableRow>

@@ -5,6 +5,7 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import {
   CategoryOfEntry,
+  challan,
   DvatType,
   PurchaseType,
   returns_01,
@@ -13,7 +14,7 @@ import {
 } from "@prisma/client";
 import { customAlphabet } from "nanoid";
 
-interface AddPaymentSubmitPayload {
+interface AddPaymentOnlinePayload {
   id: number;
   rr_number: string;
   penalty: string;
@@ -23,16 +24,16 @@ interface AddPaymentSubmitPayload {
   totaltaxamount: string;
 }
 
-const AddPaymentSubmit = async (
-  payload: AddPaymentSubmitPayload
-): Promise<ApiResponseType<returns_01 | null>> => {
-  const functionname: string = AddPaymentSubmit.name;
+const AddPaymentOnline = async (
+  payload: AddPaymentOnlinePayload,
+): Promise<ApiResponseType<challan | null>> => {
+  const functionname: string = AddPaymentOnline.name;
   const nanoid = customAlphabet("1234567890", 12);
 
   const cpin: string = nanoid();
 
   try {
-    const result: returns_01 = await prisma.$transaction(async (prisma) => {
+    const result: challan = await prisma.$transaction(async (prisma) => {
       const isExist = await prisma.returns_01.findFirst({
         where: {
           id: payload.id,
@@ -64,6 +65,9 @@ const AddPaymentSubmit = async (
           status: "ACTIVE",
         },
         data: {
+          // bank_name: payload.bank_name,
+          // track_id: payload.track_id,
+          // transaction_id: payload.transaction_id,
           transaction_date: addPrismaDatabaseDate(new Date()).toISOString(),
           paymentmode: "ONLINE",
           rr_number: payload.rr_number,
@@ -77,8 +81,6 @@ const AddPaymentSubmit = async (
           vatamount: payload.vatamount,
           total_tax_amount: payload.totaltaxamount,
           status: "PAID",
-          track_id: "0",
-          transaction_id: "0",
         },
         include: {
           dvat04: true,
@@ -90,7 +92,10 @@ const AddPaymentSubmit = async (
 
       if (updateresponse.dvat04.compositionScheme) {
         const monthsToUpdate = getMonthGroup(updateresponse.month ?? "");
-        await prisma.return_filing.updateMany({
+        const filingDate = new Date();
+
+        // Get all records to update to check due dates
+        const recordsToUpdate = await prisma.return_filing.findMany({
           where: {
             filing_status: false,
             dvatid: updateresponse.dvat04Id,
@@ -98,13 +103,29 @@ const AddPaymentSubmit = async (
             year: updateresponse.year,
             month: { in: monthsToUpdate },
           },
-          data: {
-            filing_date: new Date(),
-            filing_status: true,
-          },
         });
+
+        // Update each record with appropriate return_status
+        await Promise.all(
+          recordsToUpdate.map((record) =>
+            prisma.return_filing.update({
+              where: { id: record.id },
+              data: {
+                filing_date: filingDate,
+                filing_status: true,
+                return_status:
+                  record.due_date && record.due_date >= filingDate
+                    ? "FILED"
+                    : "LATEFILED",
+              },
+            }),
+          ),
+        );
       } else {
-        await prisma.return_filing.updateMany({
+        const filingDate = new Date();
+
+        // Get all records to update to check due dates
+        const recordsToUpdate = await prisma.return_filing.findMany({
           where: {
             filing_status: false,
             dvatid: updateresponse.dvat04Id,
@@ -112,11 +133,24 @@ const AddPaymentSubmit = async (
             year: updateresponse.year,
             month: updateresponse.month ?? "",
           },
-          data: {
-            filing_date: new Date(),
-            filing_status: true,
-          },
         });
+
+        // Update each record with appropriate return_status
+        await Promise.all(
+          recordsToUpdate.map((record) =>
+            prisma.return_filing.update({
+              where: { id: record.id },
+              data: {
+                filing_date: filingDate,
+                filing_status: true,
+                return_status:
+                  record.due_date && record.due_date >= filingDate
+                    ? "FILED"
+                    : "LATEFILED",
+              },
+            }),
+          ),
+        );
       }
 
       if (
@@ -179,7 +213,7 @@ const AddPaymentSubmit = async (
           group.entries.map((entry) => ({
             ...entry,
             amount: group.totalAmount.toString(), // Overwrite or add the total amount
-          }))
+          })),
         );
 
         const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
@@ -207,9 +241,9 @@ const AddPaymentSubmit = async (
                 sr_no: getsrno(
                   isExist.dvat04.selectOffice!,
                   parseInt(
-                    lastcform ? lastcform.sr_no.split("/").pop() ?? "0" : "1"
+                    lastcform ? (lastcform.sr_no.split("/").pop() ?? "0") : "1",
                   ),
-                  index
+                  index,
                 ),
                 seller_address:
                   representativeEntry.seller_tin_number.state ?? "",
@@ -219,16 +253,16 @@ const AddPaymentSubmit = async (
                   representativeEntry.seller_tin_number.tin_number ?? "",
                 cform_type: ReturnType.ORIGINAL,
                 from_period: new Date(
-                  dates.fromDate.split("-").reverse().join("-")
+                  dates.fromDate.split("-").reverse().join("-"),
                 ),
                 to_period: new Date(
-                  dates.toDate.split("-").reverse().join("-")
+                  dates.toDate.split("-").reverse().join("-"),
                 ),
                 status: "ACTIVE",
                 createdById: isExist.createdById,
               },
             });
-          })
+          }),
         );
 
         const cformReturnsEntries: Array<{
@@ -241,7 +275,7 @@ const AddPaymentSubmit = async (
 
           if (!cform || !cform.id) {
             throw new Error(
-              `CForm entry for group ${groupIndex} was not created`
+              `CForm entry for group ${groupIndex} was not created`,
             );
           }
 
@@ -264,7 +298,35 @@ const AddPaymentSubmit = async (
         }
       }
 
-      return updateresponse;
+      let today = new Date();
+      today.setDate(today.getDate() + 3);
+
+      const challan_response = await prisma.challan.create({
+        data: {
+          dvatid: isExist.dvat04Id,
+          cpin: cpin,
+          vat: payload.vatamount,
+          latefees: "0",
+          interest: payload.interestamount,
+          others: "0",
+          penalty: payload.penalty,
+          createdById: isExist.createdById,
+          expire_date: today,
+          total_tax_amount: payload.totaltaxamount,
+          reason: "MONTHLYPAYMENT",
+          paymentstatus: "CREATED",
+          transaction_date: new Date(),
+          paymentmode: "ONLINE",
+          // track_id: payload.track_id,
+          // bank_name: payload.bank_name,
+        },
+      });
+
+      if (!challan_response) {
+        throw new Error(`Challan was not created`);
+      }
+
+      return challan_response;
     });
 
     return createResponse({
@@ -280,7 +342,7 @@ const AddPaymentSubmit = async (
   }
 };
 
-export default AddPaymentSubmit;
+export default AddPaymentOnline;
 
 const getMonthGroup = (currentMonth: string): string[] => {
   const monthGroups = [
@@ -302,7 +364,7 @@ const getMonthGroup = (currentMonth: string): string[] => {
 
 function getFromDateAndToDate(
   year: string,
-  month: string
+  month: string,
 ): { fromDate: string; toDate: string } {
   const monthNames = [
     "January",
@@ -350,14 +412,14 @@ function getFromDateAndToDate(
 const getsrno = (
   selectOffice: SelectOffice,
   id: number,
-  index: number
+  index: number,
 ): string => {
   let pre =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
       ? "DNH"
       : selectOffice == SelectOffice.DAMAN
-      ? "DD"
-      : "DIU";
+        ? "DD"
+        : "DIU";
 
   return `${pre}/C/${id + index}`;
 };

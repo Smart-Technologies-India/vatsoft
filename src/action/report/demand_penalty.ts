@@ -36,10 +36,10 @@ const DemandPenalty = async (
         reason: "DEMAND",
         OR: [
           {
-            challanstatus: "CREATED",
+            paymentmode: "CREATED",
           },
           {
-            challanstatus: "DUE",
+            paymentmode: "DUE",
           },
         ],
         dvat: {

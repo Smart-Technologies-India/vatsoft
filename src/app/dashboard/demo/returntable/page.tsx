@@ -49,7 +49,7 @@ const ReturnTable = () => {
                   State/UT Tax (&#x20b9;)
                 </TableHead>
                 <TableHead className="whitespace-nowrap w-28 border">
-                  CESS (&#x20b9;)
+                  Late Fees (&#x20b9;)
                 </TableHead>
               </TableRow>
             </TableHeader>

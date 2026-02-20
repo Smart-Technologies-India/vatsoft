@@ -22,9 +22,9 @@ const CreateRefundSchema = object({
     string("VAT amount is required."),
     minLength(1, "VAT amount is required.")
   ),
-  cess: pipe(
-    string("CESS amount is required."),
-    minLength(1, "CESS amount is required.")
+  latefees: pipe(
+    string("Late fees amount is required."),
+    minLength(1, "Late fees amount is required.")
   ),
   interest: pipe(
     string("Interest amount is required."),
