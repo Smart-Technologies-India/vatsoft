@@ -1,10 +1,7 @@
 import crypto from "crypto";
-import { createRequire } from "module";
 import { decrypt } from "./ccavutil.js";
 import qs from "querystring";
-
-const require = createRequire(import.meta.url);
-const prisma = require("../prisma/database.js");
+import prisma from "../prisma/database.js";
 
 export const postRes = (request, response) => {
   var ccavEncResponse = "",
