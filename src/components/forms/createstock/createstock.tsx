@@ -80,9 +80,7 @@ const CreateStockData = (props: CreateStockProviderProps) => {
       }
       setUserid(authResponse.data);
 
-      const response = await GetUserDvat04({
-        userid: userid,
-      });
+      const response = await GetUserDvat04();
 
       if (response.status && response.data) {
         setDvatdata(response.data);

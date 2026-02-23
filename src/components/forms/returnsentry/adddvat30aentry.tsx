@@ -176,9 +176,7 @@ const AddDvat30AEntry = (props: AddDvat30AEntryProviderProps) => {
     });
 
     const init = async () => {
-      const response = await GetUserDvat04({
-        userid: userid,
-      });
+      const response = await GetUserDvat04();
 
       if (response.status && response.data) {
         setDvatdata(response.data);

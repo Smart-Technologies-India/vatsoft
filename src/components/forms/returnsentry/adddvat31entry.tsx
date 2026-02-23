@@ -158,9 +158,7 @@ const AddDvat31Entry = (props: AddDvat31EntryProviderProps) => {
         return router.push("/");
       }
       setUserid(authResponse.data);
-      const response = await GetUserDvat04({
-        userid: authResponse.data,
-      });
+      const response = await GetUserDvat04();
 
       if (response.status && response.data) {
         setDvatdata(response.data);

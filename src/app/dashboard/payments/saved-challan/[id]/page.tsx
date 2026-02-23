@@ -35,13 +35,14 @@ import GetUser from "@/action/user/getuser";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { Button } from "antd";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { customAlphabet } from "nanoid";
 
 const ChallanData = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
   const challanid: number = parseInt(
-    decryptURLData(Array.isArray(id) ? id[0] : id, router)
+    decryptURLData(Array.isArray(id) ? id[0] : id, router),
   );
   const [userid, setUserid] = useState<number>(0);
 
@@ -76,9 +77,7 @@ const ChallanData = () => {
       if (user_response.data && user_response.status) {
         setUser(user_response.data);
       }
-      const dvat_response = await GetUserDvat04({
-        userid: current_user_id,
-      });
+      const dvat_response = await GetUserDvat04();
       if (dvat_response.data && dvat_response.status) {
         setDvat(dvat_response.data);
       }
@@ -107,21 +106,28 @@ const ChallanData = () => {
   });
 
   const onSubmit = async (data: SubmitPaymentForm) => {
+    const nanoid = customAlphabet("1234567890abcdef", 10);
+
+    const uniqueid: string = nanoid();
     if (!challanData || challanData == null) {
       return toast.error("There is no challan data.");
     }
     const response = await AddChallanPayment({
       id: challanData.id,
       userid: userid,
-      bank_name: data.bank_name,
-      track_id: data.track_id,
-      transaction_id: data.transaction_id,
+      // bank_name: data.bank_name,
+      // track_id: data.track_id,
+      // transaction_id: data.transaction_id,
     });
 
     if (!response.status) return toast.error(response.message);
 
-    toast.success(response.message);
-    router.back();
+    router.push(
+      `/payamount?xlmnx=${1}&ynboy=${uniqueid}&zgvfz=${response.data?.id}_${dvat?.id}_0_DEMAND`,
+    );
+
+    // toast.success(response.message);
+    // router.back();
   };
 
   if (isLoading)
@@ -147,9 +153,7 @@ const ChallanData = () => {
             </div>
             <div>
               <p className="text-sm">Status</p>
-              <p className="text-sm  font-medium">
-                {challanData?.paymentmode}
-              </p>
+              <p className="text-sm  font-medium">{challanData?.paymentmode}</p>
             </div>
             <div>
               <p className="text-sm">Challan Generation Date</p>
@@ -217,9 +221,7 @@ const ChallanData = () => {
               </TableHeader>
               <TableBody>
                 <TableRow>
-                  <TableCell className="text-left p-2 border">
-                    VAT
-                  </TableCell>
+                  <TableCell className="text-left p-2 border">VAT</TableCell>
                   <TableCell className="text-center p-2 border ">
                     {challanData?.vat}
                   </TableCell>
@@ -269,8 +271,8 @@ const ChallanData = () => {
                   <TableCell className="text-center p-2 border">
                     {capitalcase(
                       toWords.convert(
-                        parseInt(challanData?.total_tax_amount ?? "0")
-                      )
+                        parseInt(challanData?.total_tax_amount ?? "0"),
+                      ),
                     )}
                   </TableCell>
                 </TableRow>
@@ -312,8 +314,8 @@ const ChallanData = () => {
                     onClick={async (e) => {
                       await generatePDF(
                         `/dashboard/payments/saved-challan/${encryptURLData(
-                          challanid.toString()
-                        )}?sidebar=no&userid=${userid}`
+                          challanid.toString(),
+                        )}?sidebar=no&userid=${userid}`,
                       );
                     }}
                   >

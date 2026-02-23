@@ -74,9 +74,7 @@ const TrackAppliation = () => {
 
   const init = async () => {
     setLoading(true);
-    const dvat_response = await GetUserDvat04({
-      userid: userid,
-    });
+    const dvat_response = await GetUserDvat04();
 
     if (dvat_response.data && dvat_response.status) {
       setDvatData(dvat_response.data);
@@ -101,9 +99,7 @@ const TrackAppliation = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const dvat_response = await GetUserDvat04({
-        userid: userid,
-      });
+      const dvat_response = await GetUserDvat04();
 
       if (dvat_response.data && dvat_response.status) {
         setDvatData(dvat_response.data);

@@ -68,8 +68,8 @@ const AddPaymentOnline = async (
           // bank_name: payload.bank_name,
           // track_id: payload.track_id,
           // transaction_id: payload.transaction_id,
-          transaction_date: addPrismaDatabaseDate(new Date()).toISOString(),
-          paymentmode: "ONLINE",
+          // transaction_date: addPrismaDatabaseDate(new Date()).toISOString(),
+          // paymentmode: "ONLINE",
           rr_number: payload.rr_number,
           penalty: payload.penalty,
           filing_datetime: new Date(),
@@ -80,7 +80,6 @@ const AddPaymentOnline = async (
           interest: payload.interestamount,
           vatamount: payload.vatamount,
           total_tax_amount: payload.totaltaxamount,
-          status: "PAID",
         },
         include: {
           dvat04: true,

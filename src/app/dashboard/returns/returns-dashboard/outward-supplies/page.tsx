@@ -126,9 +126,7 @@ const GSTR = () => {
 
   useEffect(() => {
     const init = async () => {
-      const dvat_response = await GetUserDvat04({
-        userid: userid,
-      });
+      const dvat_response = await GetUserDvat04();
 
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);

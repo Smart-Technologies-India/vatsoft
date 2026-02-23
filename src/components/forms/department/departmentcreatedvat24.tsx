@@ -182,7 +182,8 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
       remark: data.remark,
       interest: data.interest,
       penalty: data.penalty,
-
+      latefees: data.latefees,
+      others: data.others ?? "0",
       tax: data.vat,
       createdby: props.userid,
       issuedId: props.userid,
@@ -206,10 +207,17 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
 
   const getTotalAmount = (): number => {
     const vat = parseFloat(watch("vat"));
+    const latefees = parseFloat(watch("latefees"));
     const interest = parseFloat(watch("interest"));
+    const penalty = parseFloat(watch("penalty"));
+    const others = parseFloat(watch("others") ?? "0");
 
     const total: number =
-      (isNaN(vat) ? 0 : vat) + (isNaN(interest) ? 0 : interest);
+      (isNaN(vat) ? 0 : vat) +
+      (isNaN(latefees) ? 0 : latefees) +
+      (isNaN(interest) ? 0 : interest) +
+      (isNaN(penalty) ? 0 : penalty) +
+      (isNaN(others) ? 0 : others);
 
     return total;
   };
@@ -385,11 +393,33 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
                   </TableRow>
                   <TableRow>
                     <TableCell className="text-left p-2 border">
+                      Late Fees
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">
+                      <TaxtInput<CreateDvat24Form>
+                        name="latefees"
+                        required={true}
+                        numdes={true}
+                      />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
                       Penalty
                     </TableCell>
                     <TableCell className="text-center p-2 border">
                       <TaxtInput<CreateDvat24Form>
                         name="penalty"
+                        required={true}
+                        numdes={true}
+                      />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">Others</TableCell>
+                    <TableCell className="text-center p-2 border">
+                      <TaxtInput<CreateDvat24Form>
+                        name="others"
                         required={true}
                         numdes={true}
                       />

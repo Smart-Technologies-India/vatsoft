@@ -127,8 +127,8 @@ const ConvertDvat31 = async (
         where: {
           year: targetDate.getFullYear().toString(),
           month: monthNames[targetDate.getMonth()],
-          createdById: payload.createdById,
           return_type: "REVISED",
+          dvat04Id: payload.dvatid,
         },
       });
 
@@ -137,7 +137,7 @@ const ConvertDvat31 = async (
           where: {
             year: targetDate.getFullYear().toString(),
             month: monthNames[targetDate.getMonth()],
-            createdById: payload.createdById,
+            dvat04Id: payload.dvatid,
             return_type: "ORIGINAL",
           },
         });
@@ -145,7 +145,7 @@ const ConvertDvat31 = async (
 
       if (!returnInvoice) {
         const dvat04 = await prisma.dvat04.findFirst({
-          where: { createdById: payload.createdById },
+          where: { id: payload.dvatid },
         });
 
         if (!dvat04) {

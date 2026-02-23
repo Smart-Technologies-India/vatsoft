@@ -8,9 +8,9 @@ import prisma from "../../../prisma/database";
 interface AddChallanPaymentPayload {
   userid: number;
   id: number;
-  transaction_id: string;
-  bank_name: string;
-  track_id: string;
+  // transaction_id: string;
+  // bank_name: string;
+  // track_id: string;
 }
 
 const AddChallanPayment = async (
@@ -40,12 +40,10 @@ const AddChallanPayment = async (
         id: is_challan.id,
       },
       data: {
-        track_id: payload.track_id,
         transaction_date: new Date(),
         paymentmode: "ONLINE",
-        bank_name: payload.bank_name,
         updatedById: payload.userid,
-        paymentstatus: "PAID",
+        paymentstatus: "CREATED",
       },
     });
 

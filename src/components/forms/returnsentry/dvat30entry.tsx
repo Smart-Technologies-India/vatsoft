@@ -169,9 +169,7 @@ const CreateDvat30Entry = (props: CreateDvat30EntryProviderProps) => {
       }
       setUserid(authResponse.data);
 
-      const response = await GetUserDvat04({
-        userid: authResponse.data,
-      });
+      const response = await GetUserDvat04();
 
       if (response.status && response.data) {
         setDvatdata(response.data);

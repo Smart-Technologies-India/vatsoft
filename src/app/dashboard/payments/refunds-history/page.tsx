@@ -70,9 +70,7 @@ const RefundsHistory = () => {
   const init = async () => {
     setLoading(true);
 
-    const dvat = await GetUserDvat04({
-      userid: userid,
-    });
+    const dvat = await GetUserDvat04();
     if (dvat.status && dvat.data) {
       const refunds_resposne = await GetUserRefunds({
         dvatid: dvat.data.id,
@@ -104,9 +102,7 @@ const RefundsHistory = () => {
       }
       setUserid(authResponse.data);
 
-      const dvat = await GetUserDvat04({
-        userid: authResponse.data,
-      });
+      const dvat = await GetUserDvat04();
 
       if (dvat.status && dvat.data) {
         setDvatData(dvat.data);

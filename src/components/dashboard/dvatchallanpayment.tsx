@@ -258,7 +258,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       if (!response.status) return toast.error(response.message);
 
       router.push(
-        `/payamount?xlmnx=${1}&ynboy=${uniqueid}&zgvfz=${response.data?.id}_${return01.dvat04Id}_0_DEMAND`,
+        `/payamount?xlmnx=${1}&ynboy=${uniqueid}&zgvfz=${response.data?.id}_${return01.dvat04Id}_${return01.id}_DEMAND`,
       );
       // router.push(
       //   `/payamount?xlmnx=${1}&ynboy=${uniqueid}&zgvfz=${1}_${1}_${1}_bid_${9586908178}&name=${"karan"}&email=${"karan@gmail.com"}&mobile=${9586908178}`,

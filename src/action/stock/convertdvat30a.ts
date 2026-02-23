@@ -128,8 +128,8 @@ const ConvertDvat30A = async (
         where: {
           year: targetDate.getFullYear().toString(),
           month: monthNames[targetDate.getMonth()],
-          createdById: payload.createdById,
           return_type: "REVISED",
+          dvat04Id: payload.dvatid,
         },
       });
 
@@ -138,15 +138,15 @@ const ConvertDvat30A = async (
           where: {
             year: targetDate.getFullYear().toString(),
             month: monthNames[targetDate.getMonth()],
-            createdById: payload.createdById,
             return_type: "ORIGINAL",
+            dvat04Id: payload.dvatid,
           },
         });
       }
 
       if (!returnInvoice) {
         const dvat04 = await prisma.dvat04.findFirst({
-          where: { createdById: payload.createdById },
+          where: { id: payload.dvatid },
         });
 
         if (!dvat04) {

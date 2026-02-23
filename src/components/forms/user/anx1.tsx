@@ -35,7 +35,6 @@ import GetAnx1 from "@/action/anx1/getanx1";
 import Anx1Create from "@/action/anx1/addanx1";
 import DeleteAnx1 from "@/action/anx1/deleteanx1";
 import { encryptURLData, onFormError } from "@/utils/methods";
-import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 
 type Anx1ProviderProps = {

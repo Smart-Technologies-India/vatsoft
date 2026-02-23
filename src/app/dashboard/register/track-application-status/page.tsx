@@ -60,9 +60,7 @@ const TrackAppliation = () => {
         setUser(userresponse.data);
       }
 
-      const dvat = await GetUserDvat04({
-        userid: authResponse.data,
-      });
+      const dvat = await GetUserDvat04();
 
       if (dvat.status && dvat.data) {
         setDvat(dvat.data);

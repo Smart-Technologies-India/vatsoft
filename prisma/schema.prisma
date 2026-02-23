@@ -791,6 +791,9 @@ model order_notice {
   due_date          DateTime
   tax               String?
   interest          String?
+  penalty           String?
+  latefees          String?
+  others            String?
   amount            String?
   notice            String?
   description       String?

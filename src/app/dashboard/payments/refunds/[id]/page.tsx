@@ -69,9 +69,7 @@ const RefundsData = () => {
         setRefundsData(refunds_resposne.data);
         setUser(refunds_resposne.data.createdBy);
 
-        const dvat_response = await GetUserDvat04({
-          userid: refunds_resposne.data.createdBy.id,
-        });
+        const dvat_response = await GetUserDvat04();
         if (dvat_response.data && dvat_response.status) {
           setDvat(dvat_response.data);
         }

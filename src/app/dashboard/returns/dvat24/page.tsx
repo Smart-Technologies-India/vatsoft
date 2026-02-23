@@ -73,9 +73,16 @@ const Dvat24Page = () => {
   const getTotalAmount = (): number => {
     const vat = parseFloat(data?.notice?.tax ?? "0");
     const interest = parseFloat(data?.notice?.interest ?? "0");
+    const penalty = parseFloat(data?.notice?.penalty ?? "0");
+    const latefees = parseFloat(data?.notice?.latefees ?? "0");
+    const others = parseFloat(data?.notice?.others ?? "0");
 
     const total: number =
-      (isNaN(vat) ? 0 : vat) + (isNaN(interest) ? 0 : interest);
+      (isNaN(vat) ? 0 : vat) +
+      (isNaN(interest) ? 0 : interest) +
+      (isNaN(penalty) ? 0 : penalty) +
+      (isNaN(latefees) ? 0 : latefees) +
+      (isNaN(others) ? 0 : others);
 
     return total;
   };
@@ -258,6 +265,30 @@ const Dvat24Page = () => {
                     </TableCell>
                     <TableCell className="text-center px-4 py-3 border font-semibold text-gray-900">
                       {data?.notice.interest}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow className="hover:bg-blue-50 transition-colors">
+                    <TableCell className="text-left px-4 py-3 border font-medium text-gray-900">
+                      Penalty
+                    </TableCell>
+                    <TableCell className="text-center px-4 py-3 border font-semibold text-gray-900">
+                      {data?.notice.penalty}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow className="hover:bg-blue-50 transition-colors">
+                    <TableCell className="text-left px-4 py-3 border font-medium text-gray-900">
+                      Late Fees
+                    </TableCell>
+                    <TableCell className="text-center px-4 py-3 border font-semibold text-gray-900">
+                      {data?.notice.latefees}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow className="hover:bg-blue-50 transition-colors">
+                    <TableCell className="text-left px-4 py-3 border font-medium text-gray-900">
+                      Others
+                    </TableCell>
+                    <TableCell className="text-center px-4 py-3 border font-semibold text-gray-900">
+                      {data?.notice.others}
                     </TableCell>
                   </TableRow>
                   <TableRow className="hover:bg-blue-50 transition-colors bg-blue-50">

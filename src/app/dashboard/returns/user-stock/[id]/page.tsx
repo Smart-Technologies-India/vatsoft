@@ -44,9 +44,7 @@ const CommodityMaster = () => {
     const init = async () => {
       setLoading(true);
 
-      const dvat = await GetUserDvat04({
-        userid: userid,
-      });
+      const dvat = await GetUserDvat04();
       if (dvat.status && dvat.data) {
         setDvatData(dvat.data);
 

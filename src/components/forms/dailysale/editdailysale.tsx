@@ -106,9 +106,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
         setTinData(tin_response.data);
       }
 
-      const response = await GetUserDvat04({
-        userid: authResponse.data,
-      });
+      const response = await GetUserDvat04();
 
       if (response.status && response.data) {
         setDvatdata(response.data);

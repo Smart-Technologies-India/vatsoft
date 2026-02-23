@@ -72,9 +72,7 @@ const ChallanHistory = () => {
   const init = async () => {
     setLoading(true);
 
-    const dvat = await GetUserDvat04({
-      userid: userid,
-    });
+    const dvat = await GetUserDvat04();
     if (dvat.status && dvat.data) {
       const challan_resposne = await GetUserChallan({
         dvatid: dvat.data.id,
@@ -105,9 +103,7 @@ const ChallanHistory = () => {
       }
       setUserid(authResponse.data);
 
-      const dvat = await GetUserDvat04({
-        userid: authResponse.data,
-      });
+      const dvat = await GetUserDvat04();
       if (dvat.status && dvat.data) {
         setDvatData(dvat.data);
         const challan_resposne = await GetUserChallan({

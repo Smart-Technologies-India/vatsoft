@@ -80,9 +80,7 @@ const EditStockData = (props: EditStockProviderProps) => {
       if (commmaster.status && commmaster.data) {
         setCommoditymaster(commmaster.data);
       }
-      const response = await GetUserDvat04({
-        userid: authResponse.data,
-      });
+      const response = await GetUserDvat04();
 
       if (response.status && response.data) {
         setDvatdata(response.data);

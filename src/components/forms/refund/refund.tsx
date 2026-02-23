@@ -46,9 +46,7 @@ const CreateRefundPage = (props: CreateChallanProviderProps) => {
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
   useEffect(() => {
     const init = async () => {
-      const dvat = await GetUserDvat04({
-        userid: props.userid,
-      });
+      const dvat = await GetUserDvat04();
       if (dvat.status && dvat.data) {
         setDvatData(dvat.data);
       }

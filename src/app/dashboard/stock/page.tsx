@@ -67,9 +67,7 @@ const CommodityMaster = () => {
 
   const init = async () => {
     // setLoading(true);
-    const dvat = await GetUserDvat04({
-      userid: userid,
-    });
+    const dvat = await GetUserDvat04();
     if (dvat.status && dvat.data) {
       setDvatData(dvat.data);
 
@@ -112,9 +110,7 @@ const CommodityMaster = () => {
       }
       setUserid(authResponse.data);
 
-      const dvat = await GetUserDvat04({
-        userid: authResponse.data,
-      });
+      const dvat = await GetUserDvat04();
       if (dvat.status && dvat.data) {
         setDvatData(dvat.data);
 

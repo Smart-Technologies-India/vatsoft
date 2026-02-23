@@ -65,9 +65,7 @@ const DocumentWiseDetails = () => {
       }
       setUserid(authResponse.data);
 
-      const dvat_response = await GetUserDvat04({
-        userid: authResponse.data,
-      });
+      const dvat_response = await GetUserDvat04();
 
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);

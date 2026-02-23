@@ -17,8 +17,10 @@ interface CreateDvat24Payload {
   issuedId: number;
   officerId: number;
   tax: string;
+  latefees: string;
   interest: string;
   penalty: string;
+  others?: string;
   returns_01Id: number;
 }
 
@@ -34,23 +36,25 @@ const CreateDvat24 = async (
 
   try {
     const cpin: string = nanoid();
+    const totalTaxAmount: number =
+      (parseFloat(payload.tax) || 0) +
+      (parseFloat(payload.latefees) || 0) +
+      (parseFloat(payload.interest) || 0) +
+      (parseFloat(payload.penalty) || 0) +
+      (parseFloat(payload.others ?? "0") || 0);
 
     const challan = await prisma.challan.create({
       data: {
         dvatid: payload.dvatid,
         cpin: cpin,
         vat: payload.tax,
-        latefees: "0",
+        latefees: payload.latefees,
         interest: payload.interest,
-        others: "0",
+        others: payload.others ?? "0",
         penalty: payload.penalty,
         createdById: payload.createdby,
         expire_date: today,
-        total_tax_amount: (
-          parseInt(payload.tax) +
-          parseInt(payload.interest) +
-          parseInt(payload.penalty)
-        ).toString(),
+        total_tax_amount: totalTaxAmount.toString(),
         reason: "DEMAND",
         paymentstatus: "CREATED",
         ...(payload.remark && { remark: payload.remark }),
@@ -78,7 +82,10 @@ const CreateDvat24 = async (
         form_type: "DVAT24",
         tax: payload.tax,
         interest: payload.interest,
-        amount: (parseInt(payload.tax) + parseInt(payload.interest)).toString(),
+        penalty: payload.penalty,
+        latefees: payload.latefees,
+        others: payload.others ?? "0",
+        amount: totalTaxAmount.toString(),
         issuedId: payload.issuedId,
         officerId: payload.officerId,
         createdById: payload.createdby,

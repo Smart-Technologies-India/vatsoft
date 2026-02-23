@@ -157,9 +157,7 @@ const ShopView = () => {
     const init = async () => {
       setIsLoading(true);
 
-      const dvat_response = await GetUserDvat04({
-        userid: current_user_id,
-      });
+      const dvat_response = await GetUserDvat04();
 
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);

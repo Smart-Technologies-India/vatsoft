@@ -1,7 +1,5 @@
 "use server";
-interface GetUserDvat04Payload {
-  // userid: number;
-}
+interface GetUserDvat04Payload {}
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -9,9 +7,7 @@ import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import { getCurrentDvatId } from "@/lib/auth";
 
-const GetUserDvat04 = async (
-  payload: GetUserDvat04Payload,
-): Promise<ApiResponseType<dvat04 | null>> => {
+const GetUserDvat04 = async (): Promise<ApiResponseType<dvat04 | null>> => {
   const functionname: string = GetUserDvat04.name;
 
   try {
@@ -38,7 +34,7 @@ const GetUserDvat04 = async (
         deletedAt: null,
         deletedBy: null,
         id: dvatid,
-        
+
         // createdById: payload.userid,
         status: "APPROVED",
       },

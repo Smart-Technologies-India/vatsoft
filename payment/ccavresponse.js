@@ -65,9 +65,40 @@ export const postRes = (request, response) => {
     const type = result.merchant_param1.toString().split("_")[3];
 
     if (result.order_status == "Aborted") {
-      const update_response = await prisma.challan.updateMany({
+      // Get original challan
+      const originalChallan = await prisma.challan.findFirst({
         where: {
           dvatid: dvatid ? parseInt(dvatid) : 0,
+          id: challanid ? parseInt(challanid) : 0,
+        },
+      });
+
+      // Create new challan with same data
+      if (originalChallan) {
+        await prisma.challan.create({
+          data: {
+            dvatid: originalChallan.dvatid,
+            cpin: originalChallan.cpin,
+            returnid: originalChallan.returnid,
+            vat: originalChallan.vat,
+            latefees: originalChallan.latefees,
+            interest: originalChallan.interest,
+            others: originalChallan.others,
+            penalty: originalChallan.penalty,
+            createdById: originalChallan.createdById,
+            expire_date: originalChallan.expire_date,
+            total_tax_amount: originalChallan.total_tax_amount,
+            reason: "MONTHLYPAYMENT",
+            paymentstatus: "CREATED",
+            transaction_date: new Date().toISOString(),
+            paymentmode: "ONLINE",
+          },
+        });
+      }
+
+      // Update original challan
+      const update_response = await prisma.challan.update({
+        where: {
           id: challanid ? parseInt(challanid) : 0,
         },
         data: {
@@ -85,12 +116,9 @@ export const postRes = (request, response) => {
     } else if (result.order_status == "Success") {
       if (type == "NEWREGISTRATION") {
         try {
-       
-          await prisma.challan.updateMany({
+          await prisma.challan.update({
             where: {
               id: parseInt(challanid),
-              dvatid: parseInt(dvatid),
-              return_id: parseInt(return_id),
             },
             data: {
               paymentstatus: "PAID",
@@ -122,11 +150,9 @@ export const postRes = (request, response) => {
         // await axios.get(NewBidSubmitted);
       } else if (type == "RETURN") {
         try {
-          await prisma.challan.updateMany({
+          await prisma.challan.update({
             where: {
               id: parseInt(challanid),
-              dvatid: parseInt(dvatid),
-              return_id: parseInt(return_id),
             },
             data: {
               paymentstatus: "PAID",
@@ -134,7 +160,7 @@ export const postRes = (request, response) => {
               order_id: result.order_id,
               paymentmode: result.payment_mode.toString().toUpperCase(),
               transaction_date: new Date().toISOString(),
-              bank_name: result.bank_name,
+              bank_name: result.bank_ref_no,
               order_status: result.order_status,
               failure_message: result.failure_message,
               card_name: result.card_name,
@@ -147,6 +173,20 @@ export const postRes = (request, response) => {
               bene_bank: result.bene_bank,
               bene_branch: result.bene_branch,
               trans_fee: result.trans_fee,
+            },
+          });
+
+          await prisma.returns_01.update({
+            where: {
+              id: parseInt(return_id),
+            },
+            data: {
+              paymentmode: result.payment_mode.toString().toUpperCase(),
+              transaction_date: new Date().toISOString(),
+              track_id: result.tracking_id,
+              bank_name: result.bank_ref_no,
+              transaction_id: result.order_id,
+              status: "PAID",
             },
           });
         } catch (e) {
@@ -163,10 +203,9 @@ export const postRes = (request, response) => {
         // });
       } else if (type == "DEMAND") {
         try {
-          await prisma.challan.updateMany({
+          await prisma.challan.update({
             where: {
               id: parseInt(challanid),
-              dvatid: parseInt(dvatid),
             },
             data: {
               paymentstatus: "PAID",
@@ -418,9 +457,40 @@ export const postRes = (request, response) => {
       response.write(htmlcode);
       response.end();
     } else {
-      await prisma.challan.updateMany({
+      // Get original challan
+      const originalChallan = await prisma.challan.findFirst({
         where: {
           dvatid: dvatid ? parseInt(dvatid) : 0,
+          id: challanid ? parseInt(challanid) : 0,
+        },
+      });
+
+      // Create new challan with same data
+      if (originalChallan) {
+        await prisma.challan.create({
+          data: {
+            dvatid: originalChallan.dvatid,
+            cpin: originalChallan.cpin,
+            returnid: originalChallan.returnid,
+            vat: originalChallan.vat,
+            latefees: originalChallan.latefees,
+            interest: originalChallan.interest,
+            others: originalChallan.others,
+            penalty: originalChallan.penalty,
+            createdById: originalChallan.createdById,
+            expire_date: originalChallan.expire_date,
+            total_tax_amount: originalChallan.total_tax_amount,
+            reason: "MONTHLYPAYMENT",
+            paymentstatus: "CREATED",
+            transaction_date: new Date().toISOString(),
+            paymentmode: "ONLINE",
+          },
+        });
+      }
+
+      // Update original challan
+      await prisma.challan.update({
+        where: {
           id: challanid ? parseInt(challanid) : 0,
         },
         data: {

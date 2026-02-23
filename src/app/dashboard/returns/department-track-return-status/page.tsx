@@ -79,6 +79,7 @@ const TrackAppliation = () => {
       const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
+        console.log("User Office", userrespone.data.selectOffice);
         const payment_data = await SearchReturnPayment({
           dept: userrespone.data.selectOffice!,
           take: 10,

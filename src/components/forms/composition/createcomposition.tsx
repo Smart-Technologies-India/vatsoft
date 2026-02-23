@@ -55,9 +55,7 @@ const Composition = (props: CompositionProviderProps) => {
   const [davtData, setDvatData] = useState<dvat04 | null>(null);
   const [isPending, setIsPending] = useState<boolean>(false);
   const init = async () => {
-    const dvat_response = await GetUserDvat04({
-      userid: props.userid,
-    });
+    const dvat_response = await GetUserDvat04();
     if (dvat_response.status || dvat_response.data) {
       setDvatData(dvat_response.data);
     }
@@ -73,9 +71,7 @@ const Composition = (props: CompositionProviderProps) => {
   };
   useEffect(() => {
     const init = async () => {
-      const dvat_response = await GetUserDvat04({
-        userid: props.userid,
-      });
+      const dvat_response = await GetUserDvat04();
       if (dvat_response.status || dvat_response.data) {
         setDvatData(dvat_response.data);
       }
