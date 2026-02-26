@@ -244,14 +244,14 @@ const ConvertDvat30A = async (
       });
 
       if (!returnentryresponse) {
-        throw new Error("Unable to convert to DVAT 30 A.");
+        throw new Error("Unable to convert to DVAT 30/30 A.");
       }
 
       return returnInvoice;
     });
 
     return createResponse({
-      message: "Convert to DVAT 30 A Completed.",
+      message: "Convert to DVAT 30/30 A Completed.",
       functionname,
       data: result,
     });

@@ -35,6 +35,7 @@ import CheckLastPayment from "@/action/return/checklastpayment";
 import GetUser from "@/action/user/getuser";
 import AddPaymentSubmit from "@/action/return/addpaymentsubmit";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { get } from "node:http";
 
 interface PercentageOutput {
   increase: string;
@@ -728,9 +729,33 @@ const Dvat16ReturnPreview = () => {
       decrease,
     };
   };
-  const getNetPayable = (): number => {
-    const val: number =
-      parseFloat(getInvoicePercentage("0").decrease) +
+
+  const getR6_1 = (): number =>
+    parseFloat(getInvoicePercentage("0").decrease) +
+    parseFloat(getInvoicePercentage("1").decrease) +
+    parseFloat(getInvoicePercentage("4").decrease) +
+    parseFloat(getInvoicePercentage("5").decrease) +
+    parseFloat(getInvoicePercentage("6").decrease) +
+    parseFloat(getInvoicePercentage("12.5").decrease) +
+    parseFloat(getInvoicePercentage("12.75").decrease) +
+    parseFloat(getInvoicePercentage("13.5").decrease) +
+    parseFloat(getInvoicePercentage("15").decrease) +
+    parseFloat(getInvoicePercentage("20").decrease) +
+    parseFloat(getSaleOfPercentage("4").decrease) +
+    parseFloat(getSaleOfPercentage("5").decrease) +
+    parseFloat(getSaleOfPercentage("12.5").decrease) +
+    parseFloat(get4_6().decrease) +
+    parseFloat(get4_7().decrease) -
+    parseFloat(get4_9().decrease) -
+    (parseFloat(get5_1().decrease) +
+      parseFloat(get5_2().decrease) +
+      (parseFloat(getCreditNote().decrease) -
+        parseFloat(getDebitNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(lastmonthdue)));
+
+  const getR6_2a = (): number =>
+    (((parseFloat(getInvoicePercentage("0").decrease) +
       parseFloat(getInvoicePercentage("1").decrease) +
       parseFloat(getInvoicePercentage("4").decrease) +
       parseFloat(getInvoicePercentage("5").decrease) +
@@ -751,63 +776,94 @@ const Dvat16ReturnPreview = () => {
         (parseFloat(getCreditNote().decrease) -
           parseFloat(getDebitNote().decrease) -
           parseFloat(getGoodsReturnsNote().decrease) -
-          parseFloat(lastmonthdue))) +
-      (isNegative(
-        (((parseFloat(getInvoicePercentage("0").decrease) +
-          parseFloat(getInvoicePercentage("1").decrease) +
-          parseFloat(getInvoicePercentage("4").decrease) +
-          parseFloat(getInvoicePercentage("5").decrease) +
-          parseFloat(getInvoicePercentage("6").decrease) +
-          parseFloat(getInvoicePercentage("12.5").decrease) +
-          parseFloat(getInvoicePercentage("12.75").decrease) +
-          parseFloat(getInvoicePercentage("13.5").decrease) +
-          parseFloat(getInvoicePercentage("15").decrease) +
-          parseFloat(getInvoicePercentage("20").decrease) +
-          parseFloat(getSaleOfPercentage("4").decrease) +
-          parseFloat(getSaleOfPercentage("5").decrease) +
-          parseFloat(getSaleOfPercentage("12.5").decrease) +
-          parseFloat(get4_6().decrease) +
-          parseFloat(get4_7().decrease) -
-          parseFloat(get4_9().decrease) -
-          (parseFloat(get5_1().decrease) +
-            parseFloat(get5_2().decrease) +
-            (parseFloat(getCreditNote().decrease) -
-              parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease) -
-              parseFloat(lastmonthdue)))) *
-          0.15) /
-          365) *
-          DiffDays,
-      )
-        ? 0
-        : (((parseFloat(getInvoicePercentage("0").decrease) +
-            parseFloat(getInvoicePercentage("1").decrease) +
-            parseFloat(getInvoicePercentage("4").decrease) +
-            parseFloat(getInvoicePercentage("5").decrease) +
-            parseFloat(getInvoicePercentage("6").decrease) +
-            parseFloat(getInvoicePercentage("12.5").decrease) +
-            parseFloat(getInvoicePercentage("12.75").decrease) +
-            parseFloat(getInvoicePercentage("13.5").decrease) +
-            parseFloat(getInvoicePercentage("15").decrease) +
-            parseFloat(getInvoicePercentage("20").decrease) +
-            parseFloat(getSaleOfPercentage("4").decrease) +
-            parseFloat(getSaleOfPercentage("5").decrease) +
-            parseFloat(getSaleOfPercentage("12.5").decrease) +
-            parseFloat(get4_6().decrease) +
-            parseFloat(get4_7().decrease) -
-            parseFloat(get4_9().decrease) -
-            (parseFloat(get5_1().decrease) +
-              parseFloat(get5_2().decrease) +
-              (parseFloat(getCreditNote().decrease) -
-                parseFloat(getDebitNote().decrease) -
-                parseFloat(getGoodsReturnsNote().decrease) -
-                parseFloat(lastmonthdue)))) *
-            0.15) /
-            365) *
-          DiffDays) +
-      (isNegative(lateFees) ? 0 : lateFees) +
-      0 -
-      0;
+          parseFloat(lastmonthdue)))) *
+      0.15) /
+      365) *
+    DiffDays;
+
+  const getR7 = (): number =>
+    getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a());
+
+  const getNetPayable = (): number => {
+    // const val: number =
+    //   parseFloat(getInvoicePercentage("0").decrease) +
+    //   parseFloat(getInvoicePercentage("1").decrease) +
+    //   parseFloat(getInvoicePercentage("4").decrease) +
+    //   parseFloat(getInvoicePercentage("5").decrease) +
+    //   parseFloat(getInvoicePercentage("6").decrease) +
+    //   parseFloat(getInvoicePercentage("12.5").decrease) +
+    //   parseFloat(getInvoicePercentage("12.75").decrease) +
+    //   parseFloat(getInvoicePercentage("13.5").decrease) +
+    //   parseFloat(getInvoicePercentage("15").decrease) +
+    //   parseFloat(getInvoicePercentage("20").decrease) +
+    //   parseFloat(getSaleOfPercentage("4").decrease) +
+    //   parseFloat(getSaleOfPercentage("5").decrease) +
+    //   parseFloat(getSaleOfPercentage("12.5").decrease) +
+    //   parseFloat(get4_6().decrease) +
+    //   parseFloat(get4_7().decrease) -
+    //   parseFloat(get4_9().decrease) -
+    //   (parseFloat(get5_1().decrease) +
+    //     parseFloat(get5_2().decrease) +
+    //     (parseFloat(getCreditNote().decrease) -
+    //       parseFloat(getDebitNote().decrease) -
+    //       parseFloat(getGoodsReturnsNote().decrease) -
+    //       parseFloat(lastmonthdue))) +
+    //   (isNegative(
+    //     (((parseFloat(getInvoicePercentage("0").decrease) +
+    //       parseFloat(getInvoicePercentage("1").decrease) +
+    //       parseFloat(getInvoicePercentage("4").decrease) +
+    //       parseFloat(getInvoicePercentage("5").decrease) +
+    //       parseFloat(getInvoicePercentage("6").decrease) +
+    //       parseFloat(getInvoicePercentage("12.5").decrease) +
+    //       parseFloat(getInvoicePercentage("12.75").decrease) +
+    //       parseFloat(getInvoicePercentage("13.5").decrease) +
+    //       parseFloat(getInvoicePercentage("15").decrease) +
+    //       parseFloat(getInvoicePercentage("20").decrease) +
+    //       parseFloat(getSaleOfPercentage("4").decrease) +
+    //       parseFloat(getSaleOfPercentage("5").decrease) +
+    //       parseFloat(getSaleOfPercentage("12.5").decrease) +
+    //       parseFloat(get4_6().decrease) +
+    //       parseFloat(get4_7().decrease) -
+    //       parseFloat(get4_9().decrease) -
+    //       (parseFloat(get5_1().decrease) +
+    //         parseFloat(get5_2().decrease) +
+    //         (parseFloat(getCreditNote().decrease) -
+    //           parseFloat(getDebitNote().decrease) -
+    //           parseFloat(getGoodsReturnsNote().decrease) -
+    //           parseFloat(lastmonthdue)))) *
+    //       0.15) /
+    //       365) *
+    //       DiffDays,
+    //   )
+    //     ? 0
+    //     : (((parseFloat(getInvoicePercentage("0").decrease) +
+    //         parseFloat(getInvoicePercentage("1").decrease) +
+    //         parseFloat(getInvoicePercentage("4").decrease) +
+    //         parseFloat(getInvoicePercentage("5").decrease) +
+    //         parseFloat(getInvoicePercentage("6").decrease) +
+    //         parseFloat(getInvoicePercentage("12.5").decrease) +
+    //         parseFloat(getInvoicePercentage("12.75").decrease) +
+    //         parseFloat(getInvoicePercentage("13.5").decrease) +
+    //         parseFloat(getInvoicePercentage("15").decrease) +
+    //         parseFloat(getInvoicePercentage("20").decrease) +
+    //         parseFloat(getSaleOfPercentage("4").decrease) +
+    //         parseFloat(getSaleOfPercentage("5").decrease) +
+    //         parseFloat(getSaleOfPercentage("12.5").decrease) +
+    //         parseFloat(get4_6().decrease) +
+    //         parseFloat(get4_7().decrease) -
+    //         parseFloat(get4_9().decrease) -
+    //         (parseFloat(get5_1().decrease) +
+    //           parseFloat(get5_2().decrease) +
+    //           (parseFloat(getCreditNote().decrease) -
+    //             parseFloat(getDebitNote().decrease) -
+    //             parseFloat(getGoodsReturnsNote().decrease) -
+    //             parseFloat(lastmonthdue)))) *
+    //         0.15) /
+    //         365) *
+    //       DiffDays) +
+    //   (isNegative(lateFees) ? 0 : lateFees) +
+    //   0 -
+    //   0;
     // const val: number =
     //   parseFloat(getInvoicePercentage("0").decrease) +
     //   parseFloat(getInvoicePercentage("1").decrease) +
@@ -884,7 +940,12 @@ const Dvat16ReturnPreview = () => {
     //   (isNegative(lateFees) ? 0 : lateFees) +
     //   0 -
     //   0;
-    return val;
+    // return val;
+    return isNegative(getR7())
+      ? isNegative(lateFees)
+        ? 0
+        : lateFees
+      : getR7() + (isNegative(lateFees) ? 0 : lateFees);
   };
   // net payable amount end here
 
@@ -1623,167 +1684,167 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     );
   };
 
-  const getR7 = (): number => {
-    return isNegative(
-      parseFloat(getInvoicePercentage("0").decrease) +
-        parseFloat(getInvoicePercentage("1").decrease) +
-        parseFloat(getInvoicePercentage("4").decrease) +
-        parseFloat(getInvoicePercentage("5").decrease) +
-        parseFloat(getInvoicePercentage("6").decrease) +
-        parseFloat(getInvoicePercentage("12.5").decrease) +
-        parseFloat(getInvoicePercentage("12.75").decrease) +
-        parseFloat(getInvoicePercentage("13.5").decrease) +
-        parseFloat(getInvoicePercentage("15").decrease) +
-        parseFloat(getInvoicePercentage("20").decrease) +
-        parseFloat(getSaleOfPercentage("4").decrease) +
-        parseFloat(getSaleOfPercentage("5").decrease) +
-        parseFloat(getSaleOfPercentage("12.5").decrease) +
-        parseFloat(get4_6().decrease) +
-        parseFloat(get4_7().decrease) -
-        parseFloat(get4_9().decrease) -
-        (parseFloat(get5_1().decrease) +
-          parseFloat(get5_2().decrease) +
-          (parseFloat(getCreditNote().decrease) -
-            parseFloat(getDebitNote().decrease) -
-            parseFloat(getGoodsReturnsNote().decrease) -
-            parseFloat(props.lastMonthDue))) +
-        (isNegative(
-          (((parseFloat(getInvoicePercentage("0").decrease) +
-            parseFloat(getInvoicePercentage("1").decrease) +
-            parseFloat(getInvoicePercentage("4").decrease) +
-            parseFloat(getInvoicePercentage("5").decrease) +
-            parseFloat(getInvoicePercentage("6").decrease) +
-            parseFloat(getInvoicePercentage("12.5").decrease) +
-            parseFloat(getInvoicePercentage("12.75").decrease) +
-            parseFloat(getInvoicePercentage("13.5").decrease) +
-            parseFloat(getInvoicePercentage("15").decrease) +
-            parseFloat(getInvoicePercentage("20").decrease) +
-            parseFloat(getSaleOfPercentage("4").decrease) +
-            parseFloat(getSaleOfPercentage("5").decrease) +
-            parseFloat(getSaleOfPercentage("12.5").decrease) +
-            parseFloat(get4_6().decrease) +
-            parseFloat(get4_7().decrease) -
-            parseFloat(get4_9().decrease) -
-            (parseFloat(get5_1().decrease) +
-              parseFloat(get5_2().decrease) +
-              (parseFloat(getCreditNote().decrease) -
-                parseFloat(getDebitNote().decrease) -
-                parseFloat(getGoodsReturnsNote().decrease) -
-                parseFloat(props.lastMonthDue)))) *
-            0.15) /
-            365) *
-            DiffDays,
-        )
-          ? 0
-          : (((parseFloat(getInvoicePercentage("0").decrease) +
-              parseFloat(getInvoicePercentage("1").decrease) +
-              parseFloat(getInvoicePercentage("4").decrease) +
-              parseFloat(getInvoicePercentage("5").decrease) +
-              parseFloat(getInvoicePercentage("6").decrease) +
-              parseFloat(getInvoicePercentage("12.5").decrease) +
-              parseFloat(getInvoicePercentage("12.75").decrease) +
-              parseFloat(getInvoicePercentage("13.5").decrease) +
-              parseFloat(getInvoicePercentage("15").decrease) +
-              parseFloat(getInvoicePercentage("20").decrease) +
-              parseFloat(getSaleOfPercentage("4").decrease) +
-              parseFloat(getSaleOfPercentage("5").decrease) +
-              parseFloat(getSaleOfPercentage("12.5").decrease) +
-              parseFloat(get4_6().decrease) +
-              parseFloat(get4_7().decrease) -
-              parseFloat(get4_9().decrease) -
-              (parseFloat(get5_1().decrease) +
-                parseFloat(get5_2().decrease) +
-                (parseFloat(getCreditNote().decrease) -
-                  parseFloat(getDebitNote().decrease) -
-                  parseFloat(getGoodsReturnsNote().decrease) -
-                  parseFloat(props.lastMonthDue)))) *
-              0.15) /
-              365) *
-            DiffDays) +
-        (isNegative(lateFees) ? 0 : lateFees) +
-        0 -
-        0,
-    )
-      ? 0
-      : parseFloat(getInvoicePercentage("0").decrease) +
-          parseFloat(getInvoicePercentage("1").decrease) +
-          parseFloat(getInvoicePercentage("4").decrease) +
-          parseFloat(getInvoicePercentage("5").decrease) +
-          parseFloat(getInvoicePercentage("6").decrease) +
-          parseFloat(getInvoicePercentage("12.5").decrease) +
-          parseFloat(getInvoicePercentage("12.75").decrease) +
-          parseFloat(getInvoicePercentage("13.5").decrease) +
-          parseFloat(getInvoicePercentage("15").decrease) +
-          parseFloat(getInvoicePercentage("20").decrease) +
-          parseFloat(getSaleOfPercentage("4").decrease) +
-          parseFloat(getSaleOfPercentage("5").decrease) +
-          parseFloat(getSaleOfPercentage("12.5").decrease) +
-          parseFloat(get4_6().decrease) +
-          parseFloat(get4_7().decrease) -
-          parseFloat(get4_9().decrease) -
-          (parseFloat(get5_1().decrease) +
-            parseFloat(get5_2().decrease) +
-            (parseFloat(getCreditNote().decrease) -
-              parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease) -
-              parseFloat(props.lastMonthDue))) +
-          (isNegative(
-            (((parseFloat(getInvoicePercentage("0").decrease) +
-              parseFloat(getInvoicePercentage("1").decrease) +
-              parseFloat(getInvoicePercentage("4").decrease) +
-              parseFloat(getInvoicePercentage("5").decrease) +
-              parseFloat(getInvoicePercentage("6").decrease) +
-              parseFloat(getInvoicePercentage("12.5").decrease) +
-              parseFloat(getInvoicePercentage("12.75").decrease) +
-              parseFloat(getInvoicePercentage("13.5").decrease) +
-              parseFloat(getInvoicePercentage("15").decrease) +
-              parseFloat(getInvoicePercentage("20").decrease) +
-              parseFloat(getSaleOfPercentage("4").decrease) +
-              parseFloat(getSaleOfPercentage("5").decrease) +
-              parseFloat(getSaleOfPercentage("12.5").decrease) +
-              parseFloat(get4_6().decrease) +
-              parseFloat(get4_7().decrease) -
-              parseFloat(get4_9().decrease) -
-              (parseFloat(get5_1().decrease) +
-                parseFloat(get5_2().decrease) +
-                (parseFloat(getCreditNote().decrease) -
-                  parseFloat(getDebitNote().decrease) -
-                  parseFloat(getGoodsReturnsNote().decrease) -
-                  parseFloat(props.lastMonthDue)))) *
-              0.15) /
-              365) *
-              DiffDays,
-          )
-            ? 0
-            : (((parseFloat(getInvoicePercentage("0").decrease) +
-                parseFloat(getInvoicePercentage("1").decrease) +
-                parseFloat(getInvoicePercentage("4").decrease) +
-                parseFloat(getInvoicePercentage("5").decrease) +
-                parseFloat(getInvoicePercentage("6").decrease) +
-                parseFloat(getInvoicePercentage("12.5").decrease) +
-                parseFloat(getInvoicePercentage("12.75").decrease) +
-                parseFloat(getInvoicePercentage("13.5").decrease) +
-                parseFloat(getInvoicePercentage("15").decrease) +
-                parseFloat(getInvoicePercentage("20").decrease) +
-                parseFloat(getSaleOfPercentage("4").decrease) +
-                parseFloat(getSaleOfPercentage("5").decrease) +
-                parseFloat(getSaleOfPercentage("12.5").decrease) +
-                parseFloat(get4_6().decrease) +
-                parseFloat(get4_7().decrease) -
-                parseFloat(get4_9().decrease) -
-                (parseFloat(get5_1().decrease) +
-                  parseFloat(get5_2().decrease) +
-                  (parseFloat(getCreditNote().decrease) -
-                    parseFloat(getDebitNote().decrease) -
-                    parseFloat(getGoodsReturnsNote().decrease) -
-                    parseFloat(props.lastMonthDue)))) *
-                0.15) /
-                365) *
-              DiffDays) +
-          (isNegative(lateFees) ? 0 : lateFees) +
-          0 -
-          0;
-  };
+  // const getR7 = (): number => {
+  //   return isNegative(
+  //     parseFloat(getInvoicePercentage("0").decrease) +
+  //       parseFloat(getInvoicePercentage("1").decrease) +
+  //       parseFloat(getInvoicePercentage("4").decrease) +
+  //       parseFloat(getInvoicePercentage("5").decrease) +
+  //       parseFloat(getInvoicePercentage("6").decrease) +
+  //       parseFloat(getInvoicePercentage("12.5").decrease) +
+  //       parseFloat(getInvoicePercentage("12.75").decrease) +
+  //       parseFloat(getInvoicePercentage("13.5").decrease) +
+  //       parseFloat(getInvoicePercentage("15").decrease) +
+  //       parseFloat(getInvoicePercentage("20").decrease) +
+  //       parseFloat(getSaleOfPercentage("4").decrease) +
+  //       parseFloat(getSaleOfPercentage("5").decrease) +
+  //       parseFloat(getSaleOfPercentage("12.5").decrease) +
+  //       parseFloat(get4_6().decrease) +
+  //       parseFloat(get4_7().decrease) -
+  //       parseFloat(get4_9().decrease) -
+  //       (parseFloat(get5_1().decrease) +
+  //         parseFloat(get5_2().decrease) +
+  //         (parseFloat(getCreditNote().decrease) -
+  //           parseFloat(getDebitNote().decrease) -
+  //           parseFloat(getGoodsReturnsNote().decrease) -
+  //           parseFloat(props.lastMonthDue))) +
+  //       (isNegative(
+  //         (((parseFloat(getInvoicePercentage("0").decrease) +
+  //           parseFloat(getInvoicePercentage("1").decrease) +
+  //           parseFloat(getInvoicePercentage("4").decrease) +
+  //           parseFloat(getInvoicePercentage("5").decrease) +
+  //           parseFloat(getInvoicePercentage("6").decrease) +
+  //           parseFloat(getInvoicePercentage("12.5").decrease) +
+  //           parseFloat(getInvoicePercentage("12.75").decrease) +
+  //           parseFloat(getInvoicePercentage("13.5").decrease) +
+  //           parseFloat(getInvoicePercentage("15").decrease) +
+  //           parseFloat(getInvoicePercentage("20").decrease) +
+  //           parseFloat(getSaleOfPercentage("4").decrease) +
+  //           parseFloat(getSaleOfPercentage("5").decrease) +
+  //           parseFloat(getSaleOfPercentage("12.5").decrease) +
+  //           parseFloat(get4_6().decrease) +
+  //           parseFloat(get4_7().decrease) -
+  //           parseFloat(get4_9().decrease) -
+  //           (parseFloat(get5_1().decrease) +
+  //             parseFloat(get5_2().decrease) +
+  //             (parseFloat(getCreditNote().decrease) -
+  //               parseFloat(getDebitNote().decrease) -
+  //               parseFloat(getGoodsReturnsNote().decrease) -
+  //               parseFloat(props.lastMonthDue)))) *
+  //           0.15) /
+  //           365) *
+  //           DiffDays,
+  //       )
+  //         ? 0
+  //         : (((parseFloat(getInvoicePercentage("0").decrease) +
+  //             parseFloat(getInvoicePercentage("1").decrease) +
+  //             parseFloat(getInvoicePercentage("4").decrease) +
+  //             parseFloat(getInvoicePercentage("5").decrease) +
+  //             parseFloat(getInvoicePercentage("6").decrease) +
+  //             parseFloat(getInvoicePercentage("12.5").decrease) +
+  //             parseFloat(getInvoicePercentage("12.75").decrease) +
+  //             parseFloat(getInvoicePercentage("13.5").decrease) +
+  //             parseFloat(getInvoicePercentage("15").decrease) +
+  //             parseFloat(getInvoicePercentage("20").decrease) +
+  //             parseFloat(getSaleOfPercentage("4").decrease) +
+  //             parseFloat(getSaleOfPercentage("5").decrease) +
+  //             parseFloat(getSaleOfPercentage("12.5").decrease) +
+  //             parseFloat(get4_6().decrease) +
+  //             parseFloat(get4_7().decrease) -
+  //             parseFloat(get4_9().decrease) -
+  //             (parseFloat(get5_1().decrease) +
+  //               parseFloat(get5_2().decrease) +
+  //               (parseFloat(getCreditNote().decrease) -
+  //                 parseFloat(getDebitNote().decrease) -
+  //                 parseFloat(getGoodsReturnsNote().decrease) -
+  //                 parseFloat(props.lastMonthDue)))) *
+  //             0.15) /
+  //             365) *
+  //           DiffDays) +
+  //       (isNegative(lateFees) ? 0 : lateFees) +
+  //       0 -
+  //       0,
+  //   )
+  //     ? 0
+  //     : parseFloat(getInvoicePercentage("0").decrease) +
+  //         parseFloat(getInvoicePercentage("1").decrease) +
+  //         parseFloat(getInvoicePercentage("4").decrease) +
+  //         parseFloat(getInvoicePercentage("5").decrease) +
+  //         parseFloat(getInvoicePercentage("6").decrease) +
+  //         parseFloat(getInvoicePercentage("12.5").decrease) +
+  //         parseFloat(getInvoicePercentage("12.75").decrease) +
+  //         parseFloat(getInvoicePercentage("13.5").decrease) +
+  //         parseFloat(getInvoicePercentage("15").decrease) +
+  //         parseFloat(getInvoicePercentage("20").decrease) +
+  //         parseFloat(getSaleOfPercentage("4").decrease) +
+  //         parseFloat(getSaleOfPercentage("5").decrease) +
+  //         parseFloat(getSaleOfPercentage("12.5").decrease) +
+  //         parseFloat(get4_6().decrease) +
+  //         parseFloat(get4_7().decrease) -
+  //         parseFloat(get4_9().decrease) -
+  //         (parseFloat(get5_1().decrease) +
+  //           parseFloat(get5_2().decrease) +
+  //           (parseFloat(getCreditNote().decrease) -
+  //             parseFloat(getDebitNote().decrease) -
+  //             parseFloat(getGoodsReturnsNote().decrease) -
+  //             parseFloat(props.lastMonthDue))) +
+  //         (isNegative(
+  //           (((parseFloat(getInvoicePercentage("0").decrease) +
+  //             parseFloat(getInvoicePercentage("1").decrease) +
+  //             parseFloat(getInvoicePercentage("4").decrease) +
+  //             parseFloat(getInvoicePercentage("5").decrease) +
+  //             parseFloat(getInvoicePercentage("6").decrease) +
+  //             parseFloat(getInvoicePercentage("12.5").decrease) +
+  //             parseFloat(getInvoicePercentage("12.75").decrease) +
+  //             parseFloat(getInvoicePercentage("13.5").decrease) +
+  //             parseFloat(getInvoicePercentage("15").decrease) +
+  //             parseFloat(getInvoicePercentage("20").decrease) +
+  //             parseFloat(getSaleOfPercentage("4").decrease) +
+  //             parseFloat(getSaleOfPercentage("5").decrease) +
+  //             parseFloat(getSaleOfPercentage("12.5").decrease) +
+  //             parseFloat(get4_6().decrease) +
+  //             parseFloat(get4_7().decrease) -
+  //             parseFloat(get4_9().decrease) -
+  //             (parseFloat(get5_1().decrease) +
+  //               parseFloat(get5_2().decrease) +
+  //               (parseFloat(getCreditNote().decrease) -
+  //                 parseFloat(getDebitNote().decrease) -
+  //                 parseFloat(getGoodsReturnsNote().decrease) -
+  //                 parseFloat(props.lastMonthDue)))) *
+  //             0.15) /
+  //             365) *
+  //             DiffDays,
+  //         )
+  //           ? 0
+  //           : (((parseFloat(getInvoicePercentage("0").decrease) +
+  //               parseFloat(getInvoicePercentage("1").decrease) +
+  //               parseFloat(getInvoicePercentage("4").decrease) +
+  //               parseFloat(getInvoicePercentage("5").decrease) +
+  //               parseFloat(getInvoicePercentage("6").decrease) +
+  //               parseFloat(getInvoicePercentage("12.5").decrease) +
+  //               parseFloat(getInvoicePercentage("12.75").decrease) +
+  //               parseFloat(getInvoicePercentage("13.5").decrease) +
+  //               parseFloat(getInvoicePercentage("15").decrease) +
+  //               parseFloat(getInvoicePercentage("20").decrease) +
+  //               parseFloat(getSaleOfPercentage("4").decrease) +
+  //               parseFloat(getSaleOfPercentage("5").decrease) +
+  //               parseFloat(getSaleOfPercentage("12.5").decrease) +
+  //               parseFloat(get4_6().decrease) +
+  //               parseFloat(get4_7().decrease) -
+  //               parseFloat(get4_9().decrease) -
+  //               (parseFloat(get5_1().decrease) +
+  //                 parseFloat(get5_2().decrease) +
+  //                 (parseFloat(getCreditNote().decrease) -
+  //                   parseFloat(getDebitNote().decrease) -
+  //                   parseFloat(getGoodsReturnsNote().decrease) -
+  //                   parseFloat(props.lastMonthDue)))) *
+  //               0.15) /
+  //               365) *
+  //             DiffDays) +
+  //         (isNegative(lateFees) ? 0 : lateFees) +
+  //         0 -
+  //         0;
+  // };
 
   const isPayment = (): boolean => {
     let res: boolean =
@@ -1792,6 +1853,60 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       props.return01.rr_number == "";
     return res == false;
   };
+
+  const getR6_1 = (): number =>
+    parseFloat(getInvoicePercentage("0").decrease) +
+    parseFloat(getInvoicePercentage("1").decrease) +
+    parseFloat(getInvoicePercentage("4").decrease) +
+    parseFloat(getInvoicePercentage("5").decrease) +
+    parseFloat(getInvoicePercentage("6").decrease) +
+    parseFloat(getInvoicePercentage("12.5").decrease) +
+    parseFloat(getInvoicePercentage("12.75").decrease) +
+    parseFloat(getInvoicePercentage("13.5").decrease) +
+    parseFloat(getInvoicePercentage("15").decrease) +
+    parseFloat(getInvoicePercentage("20").decrease) +
+    parseFloat(getSaleOfPercentage("4").decrease) +
+    parseFloat(getSaleOfPercentage("5").decrease) +
+    parseFloat(getSaleOfPercentage("12.5").decrease) +
+    parseFloat(get4_6().decrease) +
+    parseFloat(get4_7().decrease) -
+    parseFloat(get4_9().decrease) -
+    (parseFloat(get5_1().decrease) +
+      parseFloat(get5_2().decrease) +
+      (parseFloat(getCreditNote().decrease) -
+        parseFloat(getDebitNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(props.lastMonthDue)));
+
+  const getR6_2a = (): number =>
+    (((parseFloat(getInvoicePercentage("0").decrease) +
+      parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("4").decrease) +
+      parseFloat(getInvoicePercentage("5").decrease) +
+      parseFloat(getInvoicePercentage("6").decrease) +
+      parseFloat(getInvoicePercentage("12.5").decrease) +
+      parseFloat(getInvoicePercentage("12.75").decrease) +
+      parseFloat(getInvoicePercentage("13.5").decrease) +
+      parseFloat(getInvoicePercentage("15").decrease) +
+      parseFloat(getInvoicePercentage("20").decrease) +
+      parseFloat(getSaleOfPercentage("4").decrease) +
+      parseFloat(getSaleOfPercentage("5").decrease) +
+      parseFloat(getSaleOfPercentage("12.5").decrease) +
+      parseFloat(get4_6().decrease) +
+      parseFloat(get4_7().decrease) -
+      parseFloat(get4_9().decrease) -
+      (parseFloat(get5_1().decrease) +
+        parseFloat(get5_2().decrease) +
+        (parseFloat(getCreditNote().decrease) -
+          parseFloat(getDebitNote().decrease) -
+          parseFloat(getGoodsReturnsNote().decrease) -
+          parseFloat(props.lastMonthDue)))) *
+      0.15) /
+      365) *
+    DiffDays;
+
+  const getR7 = (): number =>
+    getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a());
 
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
@@ -1812,7 +1927,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
             Balance brought forward from line R7
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {getR7().toFixed(2)}
+            {isNegative(getR7()) ? "-" : getR7().toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -2206,6 +2321,60 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
     );
   };
 
+  const getR6_1 = (): number =>
+    parseFloat(getInvoicePercentage("0").decrease) +
+    parseFloat(getInvoicePercentage("1").decrease) +
+    parseFloat(getInvoicePercentage("4").decrease) +
+    parseFloat(getInvoicePercentage("5").decrease) +
+    parseFloat(getInvoicePercentage("6").decrease) +
+    parseFloat(getInvoicePercentage("12.5").decrease) +
+    parseFloat(getInvoicePercentage("12.75").decrease) +
+    parseFloat(getInvoicePercentage("13.5").decrease) +
+    parseFloat(getInvoicePercentage("15").decrease) +
+    parseFloat(getInvoicePercentage("20").decrease) +
+    parseFloat(getSaleOfPercentage("4").decrease) +
+    parseFloat(getSaleOfPercentage("5").decrease) +
+    parseFloat(getSaleOfPercentage("12.5").decrease) +
+    parseFloat(get4_6().decrease) +
+    parseFloat(get4_7().decrease) -
+    parseFloat(get4_9().decrease) -
+    (parseFloat(get5_1().decrease) +
+      parseFloat(get5_2().decrease) +
+      (parseFloat(getCreditNote().decrease) -
+        parseFloat(getDebitNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(props.lastMonthDue)));
+
+  const getR6_2a = (): number =>
+    (((parseFloat(getInvoicePercentage("0").decrease) +
+      parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("4").decrease) +
+      parseFloat(getInvoicePercentage("5").decrease) +
+      parseFloat(getInvoicePercentage("6").decrease) +
+      parseFloat(getInvoicePercentage("12.5").decrease) +
+      parseFloat(getInvoicePercentage("12.75").decrease) +
+      parseFloat(getInvoicePercentage("13.5").decrease) +
+      parseFloat(getInvoicePercentage("15").decrease) +
+      parseFloat(getInvoicePercentage("20").decrease) +
+      parseFloat(getSaleOfPercentage("4").decrease) +
+      parseFloat(getSaleOfPercentage("5").decrease) +
+      parseFloat(getSaleOfPercentage("12.5").decrease) +
+      parseFloat(get4_6().decrease) +
+      parseFloat(get4_7().decrease) -
+      parseFloat(get4_9().decrease) -
+      (parseFloat(get5_1().decrease) +
+        parseFloat(get5_2().decrease) +
+        (parseFloat(getCreditNote().decrease) -
+          parseFloat(getDebitNote().decrease) -
+          parseFloat(getGoodsReturnsNote().decrease) -
+          parseFloat(props.lastMonthDue)))) *
+      0.15) /
+      365) *
+    DiffDays;
+
+  const getR7 = (): number =>
+    getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a());
+
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
       <thead>
@@ -2224,161 +2393,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
             Balance brought forward from line R7
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {isNegative(
-              parseFloat(getInvoicePercentage("0").decrease) +
-                parseFloat(getInvoicePercentage("1").decrease) +
-                parseFloat(getInvoicePercentage("4").decrease) +
-                parseFloat(getInvoicePercentage("5").decrease) +
-                parseFloat(getInvoicePercentage("6").decrease) +
-                parseFloat(getInvoicePercentage("12.5").decrease) +
-                parseFloat(getInvoicePercentage("12.75").decrease) +
-                parseFloat(getInvoicePercentage("13.5").decrease) +
-                parseFloat(getInvoicePercentage("15").decrease) +
-                parseFloat(getInvoicePercentage("20").decrease) +
-                parseFloat(getSaleOfPercentage("4").decrease) +
-                parseFloat(getSaleOfPercentage("5").decrease) +
-                parseFloat(getSaleOfPercentage("12.5").decrease) +
-                parseFloat(get4_6().decrease) +
-                parseFloat(get4_7().decrease) -
-                parseFloat(get4_9().decrease) -
-                (parseFloat(get5_1().decrease) +
-                  parseFloat(get5_2().decrease) +
-                  (parseFloat(getCreditNote().decrease) -
-                    parseFloat(getDebitNote().decrease) -
-                    parseFloat(getGoodsReturnsNote().decrease))) +
-                (isNegative(
-                  (((parseFloat(getInvoicePercentage("0").decrease) +
-                    parseFloat(getInvoicePercentage("1").decrease) +
-                    parseFloat(getInvoicePercentage("4").decrease) +
-                    parseFloat(getInvoicePercentage("5").decrease) +
-                    parseFloat(getInvoicePercentage("6").decrease) +
-                    parseFloat(getInvoicePercentage("12.5").decrease) +
-                    parseFloat(getInvoicePercentage("12.75").decrease) +
-                    parseFloat(getInvoicePercentage("13.5").decrease) +
-                    parseFloat(getInvoicePercentage("15").decrease) +
-                    parseFloat(getInvoicePercentage("20").decrease) +
-                    parseFloat(getSaleOfPercentage("4").decrease) +
-                    parseFloat(getSaleOfPercentage("5").decrease) +
-                    parseFloat(getSaleOfPercentage("12.5").decrease) +
-                    parseFloat(get4_6().decrease) +
-                    parseFloat(get4_7().decrease) -
-                    parseFloat(get4_9().decrease) -
-                    (parseFloat(get5_1().decrease) +
-                      parseFloat(get5_2().decrease) +
-                      (parseFloat(getCreditNote().decrease) -
-                        parseFloat(getDebitNote().decrease) -
-                        parseFloat(getGoodsReturnsNote().decrease)))) *
-                    0.15) /
-                    365) *
-                    DiffDays,
-                )
-                  ? 0
-                  : (((parseFloat(getInvoicePercentage("0").decrease) +
-                      parseFloat(getInvoicePercentage("1").decrease) +
-                      parseFloat(getInvoicePercentage("4").decrease) +
-                      parseFloat(getInvoicePercentage("5").decrease) +
-                      parseFloat(getInvoicePercentage("6").decrease) +
-                      parseFloat(getInvoicePercentage("12.5").decrease) +
-                      parseFloat(getInvoicePercentage("12.75").decrease) +
-                      parseFloat(getInvoicePercentage("13.5").decrease) +
-                      parseFloat(getInvoicePercentage("15").decrease) +
-                      parseFloat(getInvoicePercentage("20").decrease) +
-                      parseFloat(getSaleOfPercentage("4").decrease) +
-                      parseFloat(getSaleOfPercentage("5").decrease) +
-                      parseFloat(getSaleOfPercentage("12.5").decrease) +
-                      parseFloat(get4_6().decrease) +
-                      parseFloat(get4_7().decrease) -
-                      parseFloat(get4_9().decrease) -
-                      (parseFloat(get5_1().decrease) +
-                        parseFloat(get5_2().decrease) +
-                        (parseFloat(getCreditNote().decrease) -
-                          parseFloat(getDebitNote().decrease) -
-                          parseFloat(getGoodsReturnsNote().decrease)))) *
-                      0.15) /
-                      365) *
-                    DiffDays) +
-                (isNegative(lateFees) ? 0 : lateFees) +
-                0 -
-                0,
-            )
-              ? (
-                  parseFloat(getInvoicePercentage("0").decrease) +
-                  parseFloat(getInvoicePercentage("1").decrease) +
-                  parseFloat(getInvoicePercentage("4").decrease) +
-                  parseFloat(getInvoicePercentage("5").decrease) +
-                  parseFloat(getInvoicePercentage("6").decrease) +
-                  parseFloat(getInvoicePercentage("12.5").decrease) +
-                  parseFloat(getInvoicePercentage("12.75").decrease) +
-                  parseFloat(getInvoicePercentage("13.5").decrease) +
-                  parseFloat(getInvoicePercentage("15").decrease) +
-                  parseFloat(getInvoicePercentage("20").decrease) +
-                  parseFloat(getSaleOfPercentage("4").decrease) +
-                  parseFloat(getSaleOfPercentage("5").decrease) +
-                  parseFloat(getSaleOfPercentage("12.5").decrease) +
-                  parseFloat(get4_6().decrease) +
-                  parseFloat(get4_7().decrease) -
-                  parseFloat(get4_9().decrease) -
-                  (parseFloat(get5_1().decrease) +
-                    parseFloat(get5_2().decrease) +
-                    (parseFloat(getCreditNote().decrease) -
-                      parseFloat(getDebitNote().decrease) -
-                      parseFloat(getGoodsReturnsNote().decrease))) +
-                  (isNegative(
-                    (((parseFloat(getInvoicePercentage("0").decrease) +
-                      parseFloat(getInvoicePercentage("1").decrease) +
-                      parseFloat(getInvoicePercentage("4").decrease) +
-                      parseFloat(getInvoicePercentage("5").decrease) +
-                      parseFloat(getInvoicePercentage("6").decrease) +
-                      parseFloat(getInvoicePercentage("12.5").decrease) +
-                      parseFloat(getInvoicePercentage("12.75").decrease) +
-                      parseFloat(getInvoicePercentage("13.5").decrease) +
-                      parseFloat(getInvoicePercentage("15").decrease) +
-                      parseFloat(getInvoicePercentage("20").decrease) +
-                      parseFloat(getSaleOfPercentage("4").decrease) +
-                      parseFloat(getSaleOfPercentage("5").decrease) +
-                      parseFloat(getSaleOfPercentage("12.5").decrease) +
-                      parseFloat(get4_6().decrease) +
-                      parseFloat(get4_7().decrease) -
-                      parseFloat(get4_9().decrease) -
-                      (parseFloat(get5_1().decrease) +
-                        parseFloat(get5_2().decrease) +
-                        (parseFloat(getCreditNote().decrease) -
-                          parseFloat(getDebitNote().decrease) -
-                          parseFloat(getGoodsReturnsNote().decrease)))) *
-                      0.15) /
-                      365) *
-                      DiffDays,
-                  )
-                    ? 0
-                    : (((parseFloat(getInvoicePercentage("0").decrease) +
-                        parseFloat(getInvoicePercentage("1").decrease) +
-                        parseFloat(getInvoicePercentage("4").decrease) +
-                        parseFloat(getInvoicePercentage("5").decrease) +
-                        parseFloat(getInvoicePercentage("6").decrease) +
-                        parseFloat(getInvoicePercentage("12.5").decrease) +
-                        parseFloat(getInvoicePercentage("12.75").decrease) +
-                        parseFloat(getInvoicePercentage("13.5").decrease) +
-                        parseFloat(getInvoicePercentage("15").decrease) +
-                        parseFloat(getInvoicePercentage("20").decrease) +
-                        parseFloat(getSaleOfPercentage("4").decrease) +
-                        parseFloat(getSaleOfPercentage("5").decrease) +
-                        parseFloat(getSaleOfPercentage("12.5").decrease) +
-                        parseFloat(get4_6().decrease) +
-                        parseFloat(get4_7().decrease) -
-                        parseFloat(get4_9().decrease) -
-                        (parseFloat(get5_1().decrease) +
-                          parseFloat(get5_2().decrease) +
-                          (parseFloat(getCreditNote().decrease) -
-                            parseFloat(getDebitNote().decrease) -
-                            parseFloat(getGoodsReturnsNote().decrease)))) *
-                        0.15) /
-                        365) *
-                      DiffDays) +
-                  (isNegative(lateFees) ? 0 : lateFees) +
-                  0 -
-                  0
-                ).toFixed(2)
-              : "0"}
+            {isNegative(getR7()) ? getR7().toFixed(2) : 0}
           </td>
         </tr>
         <tr className="w-full">
@@ -2402,161 +2417,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
             R9.3 Balance carried forward to next tax period
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {isNegative(
-              parseFloat(getInvoicePercentage("0").decrease) +
-                parseFloat(getInvoicePercentage("1").decrease) +
-                parseFloat(getInvoicePercentage("4").decrease) +
-                parseFloat(getInvoicePercentage("5").decrease) +
-                parseFloat(getInvoicePercentage("6").decrease) +
-                parseFloat(getInvoicePercentage("12.5").decrease) +
-                parseFloat(getInvoicePercentage("12.75").decrease) +
-                parseFloat(getInvoicePercentage("13.5").decrease) +
-                parseFloat(getInvoicePercentage("15").decrease) +
-                parseFloat(getInvoicePercentage("20").decrease) +
-                parseFloat(getSaleOfPercentage("4").decrease) +
-                parseFloat(getSaleOfPercentage("5").decrease) +
-                parseFloat(getSaleOfPercentage("12.5").decrease) +
-                parseFloat(get4_6().decrease) +
-                parseFloat(get4_7().decrease) -
-                parseFloat(get4_9().decrease) -
-                (parseFloat(get5_1().decrease) +
-                  parseFloat(get5_2().decrease) +
-                  (parseFloat(getCreditNote().decrease) -
-                    parseFloat(getDebitNote().decrease) -
-                    parseFloat(getGoodsReturnsNote().decrease))) +
-                (isNegative(
-                  (((parseFloat(getInvoicePercentage("0").decrease) +
-                    parseFloat(getInvoicePercentage("1").decrease) +
-                    parseFloat(getInvoicePercentage("4").decrease) +
-                    parseFloat(getInvoicePercentage("5").decrease) +
-                    parseFloat(getInvoicePercentage("6").decrease) +
-                    parseFloat(getInvoicePercentage("12.5").decrease) +
-                    parseFloat(getInvoicePercentage("12.75").decrease) +
-                    parseFloat(getInvoicePercentage("13.5").decrease) +
-                    parseFloat(getInvoicePercentage("15").decrease) +
-                    parseFloat(getInvoicePercentage("20").decrease) +
-                    parseFloat(getSaleOfPercentage("4").decrease) +
-                    parseFloat(getSaleOfPercentage("5").decrease) +
-                    parseFloat(getSaleOfPercentage("12.5").decrease) +
-                    parseFloat(get4_6().decrease) +
-                    parseFloat(get4_7().decrease) -
-                    parseFloat(get4_9().decrease) -
-                    (parseFloat(get5_1().decrease) +
-                      parseFloat(get5_2().decrease) +
-                      (parseFloat(getCreditNote().decrease) -
-                        parseFloat(getDebitNote().decrease) -
-                        parseFloat(getGoodsReturnsNote().decrease)))) *
-                    0.15) /
-                    365) *
-                    DiffDays,
-                )
-                  ? 0
-                  : (((parseFloat(getInvoicePercentage("0").decrease) +
-                      parseFloat(getInvoicePercentage("1").decrease) +
-                      parseFloat(getInvoicePercentage("4").decrease) +
-                      parseFloat(getInvoicePercentage("5").decrease) +
-                      parseFloat(getInvoicePercentage("6").decrease) +
-                      parseFloat(getInvoicePercentage("12.5").decrease) +
-                      parseFloat(getInvoicePercentage("12.75").decrease) +
-                      parseFloat(getInvoicePercentage("13.5").decrease) +
-                      parseFloat(getInvoicePercentage("15").decrease) +
-                      parseFloat(getInvoicePercentage("20").decrease) +
-                      parseFloat(getSaleOfPercentage("4").decrease) +
-                      parseFloat(getSaleOfPercentage("5").decrease) +
-                      parseFloat(getSaleOfPercentage("12.5").decrease) +
-                      parseFloat(get4_6().decrease) +
-                      parseFloat(get4_7().decrease) -
-                      parseFloat(get4_9().decrease) -
-                      (parseFloat(get5_1().decrease) +
-                        parseFloat(get5_2().decrease) +
-                        (parseFloat(getCreditNote().decrease) -
-                          parseFloat(getDebitNote().decrease) -
-                          parseFloat(getGoodsReturnsNote().decrease)))) *
-                      0.15) /
-                      365) *
-                    DiffDays) +
-                (isNegative(lateFees) ? 0 : lateFees) +
-                0 -
-                0,
-            )
-              ? (
-                  parseFloat(getInvoicePercentage("0").decrease) +
-                  parseFloat(getInvoicePercentage("1").decrease) +
-                  parseFloat(getInvoicePercentage("4").decrease) +
-                  parseFloat(getInvoicePercentage("5").decrease) +
-                  parseFloat(getInvoicePercentage("6").decrease) +
-                  parseFloat(getInvoicePercentage("12.5").decrease) +
-                  parseFloat(getInvoicePercentage("12.75").decrease) +
-                  parseFloat(getInvoicePercentage("13.5").decrease) +
-                  parseFloat(getInvoicePercentage("15").decrease) +
-                  parseFloat(getInvoicePercentage("20").decrease) +
-                  parseFloat(getSaleOfPercentage("4").decrease) +
-                  parseFloat(getSaleOfPercentage("5").decrease) +
-                  parseFloat(getSaleOfPercentage("12.5").decrease) +
-                  parseFloat(get4_6().decrease) +
-                  parseFloat(get4_7().decrease) -
-                  parseFloat(get4_9().decrease) -
-                  (parseFloat(get5_1().decrease) +
-                    parseFloat(get5_2().decrease) +
-                    (parseFloat(getCreditNote().decrease) -
-                      parseFloat(getDebitNote().decrease) -
-                      parseFloat(getGoodsReturnsNote().decrease))) +
-                  (isNegative(
-                    (((parseFloat(getInvoicePercentage("0").decrease) +
-                      parseFloat(getInvoicePercentage("1").decrease) +
-                      parseFloat(getInvoicePercentage("4").decrease) +
-                      parseFloat(getInvoicePercentage("5").decrease) +
-                      parseFloat(getInvoicePercentage("6").decrease) +
-                      parseFloat(getInvoicePercentage("12.5").decrease) +
-                      parseFloat(getInvoicePercentage("12.75").decrease) +
-                      parseFloat(getInvoicePercentage("13.5").decrease) +
-                      parseFloat(getInvoicePercentage("15").decrease) +
-                      parseFloat(getInvoicePercentage("20").decrease) +
-                      parseFloat(getSaleOfPercentage("4").decrease) +
-                      parseFloat(getSaleOfPercentage("5").decrease) +
-                      parseFloat(getSaleOfPercentage("12.5").decrease) +
-                      parseFloat(get4_6().decrease) +
-                      parseFloat(get4_7().decrease) -
-                      parseFloat(get4_9().decrease) -
-                      (parseFloat(get5_1().decrease) +
-                        parseFloat(get5_2().decrease) +
-                        (parseFloat(getCreditNote().decrease) -
-                          parseFloat(getDebitNote().decrease) -
-                          parseFloat(getGoodsReturnsNote().decrease)))) *
-                      0.15) /
-                      365) *
-                      DiffDays,
-                  )
-                    ? 0
-                    : (((parseFloat(getInvoicePercentage("0").decrease) +
-                        parseFloat(getInvoicePercentage("1").decrease) +
-                        parseFloat(getInvoicePercentage("4").decrease) +
-                        parseFloat(getInvoicePercentage("5").decrease) +
-                        parseFloat(getInvoicePercentage("6").decrease) +
-                        parseFloat(getInvoicePercentage("12.5").decrease) +
-                        parseFloat(getInvoicePercentage("12.75").decrease) +
-                        parseFloat(getInvoicePercentage("13.5").decrease) +
-                        parseFloat(getInvoicePercentage("15").decrease) +
-                        parseFloat(getInvoicePercentage("20").decrease) +
-                        parseFloat(getSaleOfPercentage("4").decrease) +
-                        parseFloat(getSaleOfPercentage("5").decrease) +
-                        parseFloat(getSaleOfPercentage("12.5").decrease) +
-                        parseFloat(get4_6().decrease) +
-                        parseFloat(get4_7().decrease) -
-                        parseFloat(get4_9().decrease) -
-                        (parseFloat(get5_1().decrease) +
-                          parseFloat(get5_2().decrease) +
-                          (parseFloat(getCreditNote().decrease) -
-                            parseFloat(getDebitNote().decrease) -
-                            parseFloat(getGoodsReturnsNote().decrease)))) *
-                        0.15) /
-                        365) *
-                      DiffDays) +
-                  (isNegative(lateFees) ? 0 : lateFees) +
-                  0 -
-                  0
-                ).toFixed(2)
-              : "0"}
+            {isNegative(getR7()) ? getR7().toFixed(2) : 0}
           </td>
         </tr>
       </tbody>
@@ -4217,6 +4078,57 @@ const NetTax = (props: NetTaxProps) => {
     };
   };
 
+  const getR6_1 = (): number =>
+    parseFloat(getInvoicePercentage("0").decrease) +
+    parseFloat(getInvoicePercentage("1").decrease) +
+    parseFloat(getInvoicePercentage("4").decrease) +
+    parseFloat(getInvoicePercentage("5").decrease) +
+    parseFloat(getInvoicePercentage("6").decrease) +
+    parseFloat(getInvoicePercentage("12.5").decrease) +
+    parseFloat(getInvoicePercentage("12.75").decrease) +
+    parseFloat(getInvoicePercentage("13.5").decrease) +
+    parseFloat(getInvoicePercentage("15").decrease) +
+    parseFloat(getInvoicePercentage("20").decrease) +
+    parseFloat(getSaleOfPercentage("4").decrease) +
+    parseFloat(getSaleOfPercentage("5").decrease) +
+    parseFloat(getSaleOfPercentage("12.5").decrease) +
+    parseFloat(get4_6().decrease) +
+    parseFloat(get4_7().decrease) -
+    parseFloat(get4_9().decrease) -
+    (parseFloat(get5_1().decrease) +
+      parseFloat(get5_2().decrease) +
+      (parseFloat(getCreditNote().decrease) -
+        parseFloat(getDebitNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(props.lastMonthDue)));
+
+  const getR6_2a = (): number =>
+    (((parseFloat(getInvoicePercentage("0").decrease) +
+      parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("4").decrease) +
+      parseFloat(getInvoicePercentage("5").decrease) +
+      parseFloat(getInvoicePercentage("6").decrease) +
+      parseFloat(getInvoicePercentage("12.5").decrease) +
+      parseFloat(getInvoicePercentage("12.75").decrease) +
+      parseFloat(getInvoicePercentage("13.5").decrease) +
+      parseFloat(getInvoicePercentage("15").decrease) +
+      parseFloat(getInvoicePercentage("20").decrease) +
+      parseFloat(getSaleOfPercentage("4").decrease) +
+      parseFloat(getSaleOfPercentage("5").decrease) +
+      parseFloat(getSaleOfPercentage("12.5").decrease) +
+      parseFloat(get4_6().decrease) +
+      parseFloat(get4_7().decrease) -
+      parseFloat(get4_9().decrease) -
+      (parseFloat(get5_1().decrease) +
+        parseFloat(get5_2().decrease) +
+        (parseFloat(getCreditNote().decrease) -
+          parseFloat(getDebitNote().decrease) -
+          parseFloat(getGoodsReturnsNote().decrease) -
+          parseFloat(props.lastMonthDue)))) *
+      0.15) /
+      365) *
+    DiffDays;
+
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
       <tbody className="w-full">
@@ -4226,30 +4138,7 @@ const NetTax = (props: NetTaxProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[20%]">
-            {(
-              parseFloat(getInvoicePercentage("0").decrease) +
-              parseFloat(getInvoicePercentage("1").decrease) +
-              parseFloat(getInvoicePercentage("4").decrease) +
-              parseFloat(getInvoicePercentage("5").decrease) +
-              parseFloat(getInvoicePercentage("6").decrease) +
-              parseFloat(getInvoicePercentage("12.5").decrease) +
-              parseFloat(getInvoicePercentage("12.75").decrease) +
-              parseFloat(getInvoicePercentage("13.5").decrease) +
-              parseFloat(getInvoicePercentage("15").decrease) +
-              parseFloat(getInvoicePercentage("20").decrease) +
-              parseFloat(getSaleOfPercentage("4").decrease) +
-              parseFloat(getSaleOfPercentage("5").decrease) +
-              parseFloat(getSaleOfPercentage("12.5").decrease) +
-              parseFloat(get4_6().decrease) +
-              parseFloat(get4_7().decrease) -
-              parseFloat(get4_9().decrease) -
-              (parseFloat(get5_1().decrease) +
-                parseFloat(get5_2().decrease) +
-                (parseFloat(getCreditNote().decrease) -
-                  parseFloat(getDebitNote().decrease) -
-                  parseFloat(getGoodsReturnsNote().decrease) -
-                  parseFloat(props.lastMonthDue)))
-            ).toFixed(2)}
+            {getR6_1().toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -4258,61 +4147,7 @@ const NetTax = (props: NetTaxProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {isNegative(
-              (((parseFloat(getInvoicePercentage("0").decrease) +
-                parseFloat(getInvoicePercentage("1").decrease) +
-                parseFloat(getInvoicePercentage("4").decrease) +
-                parseFloat(getInvoicePercentage("5").decrease) +
-                parseFloat(getInvoicePercentage("6").decrease) +
-                parseFloat(getInvoicePercentage("12.5").decrease) +
-                parseFloat(getInvoicePercentage("12.75").decrease) +
-                parseFloat(getInvoicePercentage("13.5").decrease) +
-                parseFloat(getInvoicePercentage("15").decrease) +
-                parseFloat(getInvoicePercentage("20").decrease) +
-                parseFloat(getSaleOfPercentage("4").decrease) +
-                parseFloat(getSaleOfPercentage("5").decrease) +
-                parseFloat(getSaleOfPercentage("12.5").decrease) +
-                parseFloat(get4_6().decrease) +
-                parseFloat(get4_7().decrease) -
-                parseFloat(get4_9().decrease) -
-                (parseFloat(get5_1().decrease) +
-                  parseFloat(get5_2().decrease) +
-                  (parseFloat(getCreditNote().decrease) -
-                    parseFloat(getDebitNote().decrease) -
-                    parseFloat(getGoodsReturnsNote().decrease) -
-                    parseFloat(props.lastMonthDue)))) *
-                0.15) /
-                365) *
-                DiffDays,
-            )
-              ? "0"
-              : (
-                  (((parseFloat(getInvoicePercentage("0").decrease) +
-                    parseFloat(getInvoicePercentage("1").decrease) +
-                    parseFloat(getInvoicePercentage("4").decrease) +
-                    parseFloat(getInvoicePercentage("5").decrease) +
-                    parseFloat(getInvoicePercentage("6").decrease) +
-                    parseFloat(getInvoicePercentage("12.5").decrease) +
-                    parseFloat(getInvoicePercentage("12.75").decrease) +
-                    parseFloat(getInvoicePercentage("13.5").decrease) +
-                    parseFloat(getInvoicePercentage("15").decrease) +
-                    parseFloat(getInvoicePercentage("20").decrease) +
-                    parseFloat(getSaleOfPercentage("4").decrease) +
-                    parseFloat(getSaleOfPercentage("5").decrease) +
-                    parseFloat(getSaleOfPercentage("12.5").decrease) +
-                    parseFloat(get4_6().decrease) +
-                    parseFloat(get4_7().decrease) -
-                    parseFloat(get4_9().decrease) -
-                    (parseFloat(get5_1().decrease) +
-                      parseFloat(get5_2().decrease) +
-                      (parseFloat(getCreditNote().decrease) -
-                        parseFloat(getDebitNote().decrease) -
-                        parseFloat(getGoodsReturnsNote().decrease) -
-                        parseFloat(props.lastMonthDue)))) *
-                    0.15) /
-                    365) *
-                  DiffDays
-                ).toFixed(0)}
+            {isNegative(getR6_2a()) ? "0" : getR6_2a().toFixed(0)}
           </td>
         </tr>
 
@@ -4349,7 +4184,8 @@ const NetTax = (props: NetTaxProps) => {
             R7 Balance (R6.1+R6.2-R6.3)
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {(
+            {(getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a())).toFixed(2)}
+            {/* {(
               parseFloat(getInvoicePercentage("0").decrease) +
               parseFloat(getInvoicePercentage("1").decrease) +
               parseFloat(getInvoicePercentage("4").decrease) +
@@ -4428,7 +4264,7 @@ const NetTax = (props: NetTaxProps) => {
               (isNegative(lateFees) ? 0 : lateFees) +
               0 -
               0
-            ).toFixed(2)}
+            ).toFixed(2)} */}
           </td>
         </tr>
       </tbody>
@@ -5146,6 +4982,60 @@ const CentralSales = (props: CentralSalesProps) => {
   };
   const [lateFees, setLateFees] = useState<number>(0);
 
+  const getR6_1 = (): number =>
+    parseFloat(getInvoicePercentage("0").decrease) +
+    parseFloat(getInvoicePercentage("1").decrease) +
+    parseFloat(getInvoicePercentage("4").decrease) +
+    parseFloat(getInvoicePercentage("5").decrease) +
+    parseFloat(getInvoicePercentage("6").decrease) +
+    parseFloat(getInvoicePercentage("12.5").decrease) +
+    parseFloat(getInvoicePercentage("12.75").decrease) +
+    parseFloat(getInvoicePercentage("13.5").decrease) +
+    parseFloat(getInvoicePercentage("15").decrease) +
+    parseFloat(getInvoicePercentage("20").decrease) +
+    parseFloat(getSaleOfPercentage("4").decrease) +
+    parseFloat(getSaleOfPercentage("5").decrease) +
+    parseFloat(getSaleOfPercentage("12.5").decrease) +
+    parseFloat(get4_6().decrease) +
+    parseFloat(get4_7().decrease) -
+    parseFloat(get4_9().decrease) -
+    (parseFloat(get5_1().decrease) +
+      parseFloat(get5_2().decrease) +
+      (parseFloat(getCreditNote().decrease) -
+        parseFloat(getDebitNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(props.lastMonthDue)));
+
+  const getR6_2a = (): number =>
+    (((parseFloat(getInvoicePercentage("0").decrease) +
+      parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("4").decrease) +
+      parseFloat(getInvoicePercentage("5").decrease) +
+      parseFloat(getInvoicePercentage("6").decrease) +
+      parseFloat(getInvoicePercentage("12.5").decrease) +
+      parseFloat(getInvoicePercentage("12.75").decrease) +
+      parseFloat(getInvoicePercentage("13.5").decrease) +
+      parseFloat(getInvoicePercentage("15").decrease) +
+      parseFloat(getInvoicePercentage("20").decrease) +
+      parseFloat(getSaleOfPercentage("4").decrease) +
+      parseFloat(getSaleOfPercentage("5").decrease) +
+      parseFloat(getSaleOfPercentage("12.5").decrease) +
+      parseFloat(get4_6().decrease) +
+      parseFloat(get4_7().decrease) -
+      parseFloat(get4_9().decrease) -
+      (parseFloat(get5_1().decrease) +
+        parseFloat(get5_2().decrease) +
+        (parseFloat(getCreditNote().decrease) -
+          parseFloat(getDebitNote().decrease) -
+          parseFloat(getGoodsReturnsNote().decrease) -
+          parseFloat(props.lastMonthDue)))) *
+      0.15) /
+      365) *
+    DiffDays;
+
+  const getR7 = (): number =>
+    getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a());
+
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
       <thead className="w-full">
@@ -5684,61 +5574,7 @@ const CentralSales = (props: CentralSalesProps) => {
             0
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {isNegative(
-              (((parseFloat(getInvoicePercentage("0").decrease) +
-                parseFloat(getInvoicePercentage("1").decrease) +
-                parseFloat(getInvoicePercentage("4").decrease) +
-                parseFloat(getInvoicePercentage("5").decrease) +
-                parseFloat(getInvoicePercentage("6").decrease) +
-                parseFloat(getInvoicePercentage("12.5").decrease) +
-                parseFloat(getInvoicePercentage("12.75").decrease) +
-                parseFloat(getInvoicePercentage("13.5").decrease) +
-                parseFloat(getInvoicePercentage("15").decrease) +
-                parseFloat(getInvoicePercentage("20").decrease) +
-                parseFloat(getSaleOfPercentage("4").decrease) +
-                parseFloat(getSaleOfPercentage("5").decrease) +
-                parseFloat(getSaleOfPercentage("12.5").decrease) +
-                parseFloat(get4_6().decrease) +
-                parseFloat(get4_7().decrease) -
-                parseFloat(get4_9().decrease) -
-                (parseFloat(get5_1().decrease) +
-                  parseFloat(get5_2().decrease) +
-                  (parseFloat(getCreditNote().decrease) -
-                    parseFloat(getDebitNote().decrease) -
-                    parseFloat(getGoodsReturnsNote().decrease) -
-                    parseFloat(props.lastMonthDue)))) *
-                0.15) /
-                365) *
-                DiffDays,
-            )
-              ? 0
-              : (
-                  (((parseFloat(getInvoicePercentage("0").decrease) +
-                    parseFloat(getInvoicePercentage("1").decrease) +
-                    parseFloat(getInvoicePercentage("4").decrease) +
-                    parseFloat(getInvoicePercentage("5").decrease) +
-                    parseFloat(getInvoicePercentage("6").decrease) +
-                    parseFloat(getInvoicePercentage("12.5").decrease) +
-                    parseFloat(getInvoicePercentage("12.75").decrease) +
-                    parseFloat(getInvoicePercentage("13.5").decrease) +
-                    parseFloat(getInvoicePercentage("15").decrease) +
-                    parseFloat(getInvoicePercentage("20").decrease) +
-                    parseFloat(getSaleOfPercentage("4").decrease) +
-                    parseFloat(getSaleOfPercentage("5").decrease) +
-                    parseFloat(getSaleOfPercentage("12.5").decrease) +
-                    parseFloat(get4_6().decrease) +
-                    parseFloat(get4_7().decrease) -
-                    parseFloat(get4_9().decrease) -
-                    (parseFloat(get5_1().decrease) +
-                      parseFloat(get5_2().decrease) +
-                      (parseFloat(getCreditNote().decrease) -
-                        parseFloat(getDebitNote().decrease) -
-                        parseFloat(getGoodsReturnsNote().decrease) -
-                        parseFloat(props.lastMonthDue)))) *
-                    0.15) /
-                    365) *
-                  DiffDays
-                ).toFixed(0)}
+            0
           </td>
         </tr>
         <tr className="w-full">
@@ -5752,7 +5588,7 @@ const CentralSales = (props: CentralSalesProps) => {
             0
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {isNegative(lateFees) ? 0 : lateFees}
+            {/* {isNegative(lateFees) ? 0 : lateFees} */}0
           </td>
         </tr>
         <tr className="w-full">
@@ -5803,28 +5639,12 @@ const CentralSales = (props: CentralSalesProps) => {
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
-              parseFloat(getInvoicePercentage("0").decrease) +
-              parseFloat(getInvoicePercentage("1").decrease) +
-              parseFloat(getInvoicePercentage("4").decrease) +
-              parseFloat(getInvoicePercentage("5").decrease) +
-              parseFloat(getInvoicePercentage("6").decrease) +
-              parseFloat(getInvoicePercentage("12.5").decrease) +
-              parseFloat(getInvoicePercentage("12.75").decrease) +
-              parseFloat(getInvoicePercentage("13.5").decrease) +
-              parseFloat(getInvoicePercentage("15").decrease) +
-              parseFloat(getInvoicePercentage("20").decrease) +
-              parseFloat(getSaleOfPercentage("4").decrease) +
-              parseFloat(getSaleOfPercentage("5").decrease) +
-              parseFloat(getSaleOfPercentage("12.5").decrease) +
-              parseFloat(get4_6().decrease) +
-              parseFloat(get4_7().decrease) -
-              parseFloat(get4_9().decrease) -
-              (parseFloat(get5_1().decrease) +
-                parseFloat(get5_2().decrease) +
-                (parseFloat(getCreditNote().decrease) -
-                  parseFloat(getDebitNote().decrease) -
-                  parseFloat(getGoodsReturnsNote().decrease) -
-                  parseFloat(props.lastMonthDue)))
+              parseFloat(get5_1().decrease) +
+              parseFloat(get5_2().decrease) +
+              (parseFloat(getCreditNote().decrease) -
+                parseFloat(getDebitNote().decrease) -
+                parseFloat(getGoodsReturnsNote().decrease) -
+                parseFloat(props.lastMonthDue))
             ).toFixed(2)}
           </td>
         </tr>
@@ -5835,7 +5655,12 @@ const CentralSales = (props: CentralSalesProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {(
+            {(isNegative(getR7())
+              ? isNegative(lateFees)
+                ? 0
+                : lateFees.toFixed(2)
+              : (getR7() + (isNegative(lateFees) ? 0 : lateFees)).toFixed(2))}
+            {/* {(
               parseFloat(getInvoicePercentage("0").decrease) +
               parseFloat(getInvoicePercentage("1").decrease) +
               parseFloat(getInvoicePercentage("4").decrease) +
@@ -5914,7 +5739,7 @@ const CentralSales = (props: CentralSalesProps) => {
               (isNegative(lateFees) ? 0 : lateFees) +
               0 -
               0
-            ).toFixed(2)}
+            ).toFixed(2)} */}
           </td>
         </tr>
       </tbody>
