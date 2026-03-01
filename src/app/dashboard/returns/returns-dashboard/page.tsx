@@ -1227,25 +1227,40 @@ const ReturnDashboard = () => {
                       </>
                     )}
                     {!ispayment() && (
-                      <button
-                        onClick={() => {
-                          if (isanynil()) {
-                            setNilBox(true);
-                          } else {
+                      <>
+                        <button
+                          onClick={() => {
+                            if (return01 == null) return;
                             router.push(
-                              `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                                userid.toString(),
-                              )}?form=30A&year=${getNewYear(
-                                year!,
-                                period!,
-                              )}&quarter=${quarter}&month=${period}`,
+                              `/dashboard/returns/returns-dashboard/purchase_sale_report/${encryptURLData(
+                                return01.id.toString(),
+                              )}`,
                             );
-                          }
-                        }}
-                        className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-                      >
-                        Preview for DVAT-16
-                      </button>
+                          }}
+                          className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                        >
+                          Purchase & Sale Report
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (isanynil()) {
+                              setNilBox(true);
+                            } else {
+                              router.push(
+                                `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                                  userid.toString(),
+                                )}?form=30A&year=${getNewYear(
+                                  year!,
+                                  period!,
+                                )}&quarter=${quarter}&month=${period}`,
+                              );
+                            }
+                          }}
+                          className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                        >
+                          Preview for DVAT-16
+                        </button>
+                      </>
                     )}
                   </>
                 )}
@@ -1311,28 +1326,26 @@ const Card = (props: CardProps) => {
           {props.buttonone}
         </button>
 
-        {showDeclareNil ? (
-          !props.isnil && (
-            <button
-              onClick={props.onDeclareNil}
-              disabled={!props.onDeclareNil}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              Declare Nil
-            </button>
-          )
-        ) : (
-          !props.isnil && (
-            <button
-              onClick={() => {
-                route.push(props.link);
-              }}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center"
-            >
-              {props.buttontwo}
-            </button>
-          )
-        )}
+        {showDeclareNil
+          ? !props.isnil && (
+              <button
+                onClick={props.onDeclareNil}
+                disabled={!props.onDeclareNil}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Declare Nil
+              </button>
+            )
+          : !props.isnil && (
+              <button
+                onClick={() => {
+                  route.push(props.link);
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center"
+              >
+                {props.buttontwo}
+              </button>
+            )}
       </div>
     </div>
   );

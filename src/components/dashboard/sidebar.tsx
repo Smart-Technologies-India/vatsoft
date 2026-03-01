@@ -74,15 +74,15 @@ const Sidebar = (props: SidebarProps) => {
       {/* Header */}
       <div className="px-6 py-2 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 relative">
-            <Image
+          <div className="w-10 h-10 relative bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+            {/* <Image
               fill
               src="/favicon.png"
               alt="Logo"
               className="object-contain"
-            />
+            /> */}
 
-            {/* <span className="text-white font-bold text-lg">V</span> */}
+            <span className="text-white font-bold text-lg">V</span>
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900">VATSMART</h1>

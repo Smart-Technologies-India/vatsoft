@@ -192,7 +192,7 @@ const AddPaymentOnline = async (
           >
         >((acc, entry) => {
           const sellerId = entry.seller_tin_numberId;
-          const amount = parseFloat(entry.amount || "0");
+          const amount = parseFloat(entry.total_invoice_number || "0");
 
           if (!acc[sellerId]) {
             acc[sellerId] = {
@@ -220,11 +220,16 @@ const AddPaymentOnline = async (
         const lastcform = await prisma.cform.findFirst({
           where: {
             status: "ACTIVE",
+            office_of_issue: isExist.dvat04.selectOffice,
           },
           orderBy: {
             createdAt: "desc",
           },
         });
+
+        const lastOfficeSerial = lastcform
+          ? parseInt(lastcform.sr_no.split("/").pop() ?? "0", 10) || 0
+          : 0;
 
         const cformResponses = await Promise.all(
           Object.values(groupedData).map((group, index) => {
@@ -239,10 +244,7 @@ const AddPaymentOnline = async (
                 valid_date: isExist.dvat04.certificateDate!,
                 sr_no: getsrno(
                   isExist.dvat04.selectOffice!,
-                  parseInt(
-                    lastcform ? (lastcform.sr_no.split("/").pop() ?? "0") : "1",
-                  ),
-                  index,
+                  lastOfficeSerial,
                 ),
                 seller_address:
                   representativeEntry.seller_tin_number.state ?? "",
@@ -410,8 +412,7 @@ function getFromDateAndToDate(
 
 const getsrno = (
   selectOffice: SelectOffice,
-  id: number,
-  index: number,
+  last: number,
 ): string => {
   let pre =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
@@ -420,5 +421,12 @@ const getsrno = (
         ? "DD"
         : "DIU";
 
-  return `${pre}/C/${id + index}`;
+  let value1 =
+    selectOffice == SelectOffice.Dadra_Nagar_Haveli
+      ? "01"
+      : selectOffice == SelectOffice.DAMAN
+        ? "02"
+        : "03";
+
+  return `${pre}/${value1}/C/${last + 1}`;
 };

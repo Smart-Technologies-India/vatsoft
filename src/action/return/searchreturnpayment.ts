@@ -21,7 +21,7 @@ interface SearchReturnPaymentPayload {
 }
 
 const SearchReturnPayment = async (
-  payload: SearchReturnPaymentPayload
+  payload: SearchReturnPaymentPayload,
 ): Promise<
   PaginationResponse<Array<returns_01 & { dvat04: dvat04 }> | null>
 > => {
@@ -69,7 +69,14 @@ const SearchReturnPayment = async (
       }),
       prisma.returns_01.count({
         where: {
-          status: "ACTIVE",
+          OR: [
+            {
+              status: "LATE",
+            },
+            {
+              status: "PAID",
+            },
+          ],
           deletedAt: null,
           deletedById: null,
           dvat04: {
@@ -94,6 +101,7 @@ const SearchReturnPayment = async (
         },
       }),
     ]);
+    console.log("return_01", totalCount);
 
     return createPaginationResponse({
       message: return_01

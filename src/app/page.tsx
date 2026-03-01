@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/accordion";
 import { addMonths, format } from "date-fns";
 
-
 import { FluentEye12Regular, FluentEyeOff16Regular } from "@/components/icons";
 import DvatPasswordLogin from "@/action/user/dvatpasswordlogin";
 
@@ -48,7 +47,7 @@ const Home = () => {
         "The C-Form is automatically generated three months after interstate filing has been completed.",
     },
   ];
-  
+
   const [openItems, setOpenItems] = useState<string[]>([]);
 
   const toggleItem = (value: string) => {
@@ -165,27 +164,6 @@ const Home = () => {
             Verify
           </Link>
         </div>
-
-        {/* <div className="flex bg-[#478494] mx-auto md:w-3/5  p-1">
-          <div className="relative w-8">
-            <Image
-              src={"/favicon.png"}
-              alt="error"
-              fill={true}
-              className="object-contain object-center"
-            />
-          </div>
-          <div>
-            <p className="text-white text-sm">
-              Welcome to Department Of Gujarat State Tax
-            </p>
-            <p className="text-white text-xs">
-              Department Of Gujarat State Tax is the nodal agency for the
-              administration and collection of various taxes in the State of
-              Gujarat
-            </p>
-          </div>
-        </div> */}
 
         <div className="relative w-full h-48 mx-auto md:w-3/5 py-4 px-6 md:px-0">
           <Image

@@ -25,7 +25,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 const TrackAppliation = () => {
   const [userid, setUserid] = useState<number>(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
-    
+
   const router = useRouter();
 
   const [data, setData] = useState<any[]>([]);
@@ -100,7 +100,11 @@ const TrackAppliation = () => {
                   Opening Stock
                 </Button>
 
-                <Button size="small" type="primary" onClick={() => setDrawerOpen(true)}>
+                <Button
+                  size="small"
+                  type="primary"
+                  onClick={() => setDrawerOpen(true)}
+                >
                   Info
                 </Button>
 
@@ -127,9 +131,9 @@ const TrackAppliation = () => {
                           Pending for Clarification
                         </TableCell>
                         <TableCell className="text-left p-2 text-xs">
-                          Notice for seeking clarification issued by
-                          officer. File Clarification within 7 working days
-                          of date of notice on portal.
+                          Notice for seeking clarification issued by officer.
+                          File Clarification within 7 working days of date of
+                          notice on portal.
                         </TableCell>
                       </TableRow>
                       <TableRow>
@@ -137,8 +141,8 @@ const TrackAppliation = () => {
                           Clarification filed-Pending for Order
                         </TableCell>
                         <TableCell className="text-left p-2 text-xs">
-                          Clarification filed successfully by Applicant.
-                          Pending with Tax Officer for Order.*
+                          Clarification filed successfully by Applicant. Pending
+                          with Tax Officer for Order.*
                         </TableCell>
                       </TableRow>
                       <TableRow>
@@ -146,8 +150,8 @@ const TrackAppliation = () => {
                           Clarification not filed Pending for Order
                         </TableCell>
                         <TableCell className="text-left p-2 text-xs">
-                          Clarification not filed by the Applicant. Pending
-                          with Tax Officer for Rejection.*
+                          Clarification not filed by the Applicant. Pending with
+                          Tax Officer for Rejection.*
                         </TableCell>
                       </TableRow>
                       <TableRow>
@@ -155,8 +159,8 @@ const TrackAppliation = () => {
                           Approved
                         </TableCell>
                         <TableCell className="text-left p-2 text-xs">
-                          Application is Approved. Registration ID and
-                          possward emailed to Applicant.
+                          Application is Approved. Registration ID and possward
+                          emailed to Applicant.
                         </TableCell>
                       </TableRow>
                       <TableRow>
@@ -172,8 +176,7 @@ const TrackAppliation = () => {
                           Withdrawn
                         </TableCell>
                         <TableCell className="text-left p-2 text-xs">
-                          Application is withdrawn by the Applicant/Tax
-                          payer.
+                          Application is withdrawn by the Applicant/Tax payer.
                         </TableCell>
                       </TableRow>
                       <TableRow>
@@ -231,7 +234,8 @@ const TrackAppliation = () => {
                           <TableCell className="text-center p-2 text-xs">
                             <Link
                               href={
-                                val?.status == "PENDINGPROCESSING"
+                                val?.status == "PENDINGPROCESSING" ||
+                                val?.status == "APPROVED"
                                   ? `/dashboard/register/${encryptURLData(
                                       val.id.toString(),
                                     )}/preview`

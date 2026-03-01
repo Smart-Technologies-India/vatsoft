@@ -301,26 +301,26 @@ const TrackAppliation = () => {
 
   if (isLoading)
     return (
-      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
+      <div className="h-screen w-full grid place-items-center text-2xl text-gray-600 bg-gray-50">
         Loading...
       </div>
     );
 
   return (
     <>
-      <main className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+      <main className="min-h-screen bg-gray-50 p-4">
         {/* Header Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
-          <div className="bg-linear-to-r from-blue-500 to-indigo-600 px-6 py-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6">
+          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-white rounded-full"></div>
-                <h1 className="text-2xl font-bold text-white">Track Return Status</h1>
+                <div className="w-1 h-7 bg-gray-300 rounded-full"></div>
+                <h1 className="text-xl font-semibold text-gray-900">Track Return Status</h1>
               </div>
               <Button
-                type="primary"
+                type="default"
                 onClick={() => setDrawerOpen(true)}
-                className="bg-white text-blue-600 hover:bg-gray-100"
+                className="border-gray-300 text-gray-700 hover:text-gray-900"
               >
                 Info
               </Button>
@@ -329,7 +329,7 @@ const TrackAppliation = () => {
         </div>
 
         {/* Main Content Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {/* Search Section */}
           <div className="p-6 bg-gray-50 border-b border-gray-200">
             <div className="flex flex-col md:flex-row gap-4 md:items-center">
@@ -393,9 +393,9 @@ const TrackAppliation = () => {
 
           {/* Table Section */}
           <div className="p-6">
-            <Table className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+            <Table className="border border-gray-200 rounded-lg overflow-hidden">
               <TableHeader>
-                <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                <TableRow className="bg-gray-50">
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
                     ARN
                   </TableHead>
@@ -422,7 +422,7 @@ const TrackAppliation = () => {
               <TableBody>
               {paymentData.map((val: returns_01, index: number) => {
                 return (
-                  <TableRow key={index} className="hover:bg-blue-50 transition-colors">
+                  <TableRow key={index} className="hover:bg-gray-50 transition-colors">
                     <TableCell className="border text-center p-3">
                       <Link
                         href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
@@ -430,7 +430,7 @@ const TrackAppliation = () => {
                         )}?form=30A&year=${val.year}&quarter=${
                           val.quarter
                         }&month=${val.month}`}
-                        className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                        className="text-gray-700 hover:text-gray-900 font-medium hover:underline"
                       >
                         {val.rr_number}
                       </Link>

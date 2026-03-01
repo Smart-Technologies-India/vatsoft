@@ -314,8 +314,7 @@ const DocumentWiseDetails = () => {
                       <TableCell className="p-2 border text-center text-xs">
                         ₹
                         {(
-                          parseFloat(record.amount_unit) * record.quantity +
-                          parseFloat(record.vatamount)
+                          parseFloat(record.amount_unit) * record.quantity
                         ).toFixed(2)}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">

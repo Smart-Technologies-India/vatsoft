@@ -54,7 +54,7 @@ const GetUserDailyPurchase = async (
         commodity_master: true,
         seller_tin_number: true,
       },
-      orderBy: [{ invoice_date: "desc" }, { invoice_number: "desc" }],
+      orderBy: [{ invoice_date: "desc" }],
     });
 
     if (!daily_purchase_response) {
@@ -77,8 +77,7 @@ const GetUserDailyPurchase = async (
         existing.totalTaxableValue += parseFloat(record.amount);
         existing.totalVatAmount += parseFloat(record.vatamount);
         existing.totalInvoiceValue +=
-          parseFloat(record.amount_unit) * record.quantity +
-          parseFloat(record.vatamount);
+          parseFloat(record.amount_unit) * record.quantity;
         // Check if any record in the group has pending acceptable
         if (
           (record.seller_tin_number.tin_number.startsWith("25") ||
@@ -97,9 +96,7 @@ const GetUserDailyPurchase = async (
           count: 1,
           totalTaxableValue: parseFloat(record.amount),
           totalVatAmount: parseFloat(record.vatamount),
-          totalInvoiceValue:
-            parseFloat(record.amount_unit) * record.quantity +
-            parseFloat(record.vatamount),
+          totalInvoiceValue: parseFloat(record.amount_unit) * record.quantity,
           hasPendingAcceptable:
             (record.seller_tin_number.tin_number.startsWith("25") ||
               record.seller_tin_number.tin_number.startsWith("26")) &&

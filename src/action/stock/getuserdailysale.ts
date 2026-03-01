@@ -79,7 +79,7 @@ const GetUserDailySale = async (
         existing.count++;
         existing.totalTaxableValue += parseFloat(record.amount_unit) * record.quantity;
         existing.totalVatAmount += parseFloat(record.vatamount);
-        existing.totalInvoiceValue += parseFloat(record.amount);
+        existing.totalInvoiceValue += parseFloat(record.amount_unit) * record.quantity + parseFloat(record.vatamount);
       } else {
         groupedMap.set(key, {
           invoice_number: record.invoice_number,
@@ -90,7 +90,7 @@ const GetUserDailySale = async (
           count: 1,
           totalTaxableValue: parseFloat(record.amount_unit) * record.quantity,
           totalVatAmount: parseFloat(record.vatamount),
-          totalInvoiceValue: parseFloat(record.amount),
+          totalInvoiceValue: parseFloat(record.amount_unit) * record.quantity + parseFloat(record.vatamount),
         });
       }
     });

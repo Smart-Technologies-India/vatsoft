@@ -21,12 +21,14 @@ const CreateDvat24 = async () => {
   }, []);
   return (
     <>
-      <div className="p-2">
-        <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white">
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="mx-auto max-w-6xl bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 text-base font-semibold text-gray-900">
             Create DVAT 10 Notice
           </div>
-          <DepartmentCreateDvat10Provider userid={userid} />
+          <div className="p-4">
+            <DepartmentCreateDvat10Provider userid={userid} />
+          </div>
         </div>
       </div>
     </>

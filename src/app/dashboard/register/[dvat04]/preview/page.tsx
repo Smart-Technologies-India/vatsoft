@@ -170,7 +170,7 @@ const PreviewPage = () => {
                   >
                     Submit
                   </Button>
-                ) : dvat04Data?.status == "PENDINGPROCESSING" ? null : (
+                ) : dvat04Data?.status == "PENDINGPROCESSING" || dvat04Data?.status == "APPROVED" ? null : (
                   <Button
                     onClick={async () => {
                       toast.success(

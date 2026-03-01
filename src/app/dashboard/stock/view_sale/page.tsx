@@ -389,6 +389,12 @@ const DocumentWiseDetails = () => {
     return `${crates} Crate ${pcs} Pcs`;
   };
 
+  const formatAmount = (value: number | string | null | undefined): string => {
+    const numericValue =
+      typeof value === "number" ? value : Number(value ?? 0);
+    return Number.isFinite(numericValue) ? numericValue.toFixed(2) : "0.00";
+  };
+
   const handleBulkUpload = async () => {
     if (!tabledata || tabledata.length === 0) {
       return toast.error("No data to upload.");
@@ -540,7 +546,7 @@ const DocumentWiseDetails = () => {
                         {record.vatamount}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {record.amount}
+                        {record.amount_unit ? (parseFloat(record.amount_unit) * record.quantity + parseFloat(record.vatamount)).toFixed(2) : "0.00"}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.is_accept ? (
@@ -569,7 +575,7 @@ const DocumentWiseDetails = () => {
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <p className="text-xs text-gray-600">Total Taxable Value</p>
-                  <p className="font-semibold">{selectedGroup.totalTaxableValue.toFixed(2)}</p>
+                  <p className="font-semibold">{formatAmount(selectedGroup.totalTaxableValue)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Total VAT Amount</p>
@@ -577,7 +583,7 @@ const DocumentWiseDetails = () => {
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Total Invoice Value</p>
-                  <p className="font-semibold">{selectedGroup.totalInvoiceValue.toFixed(2)}</p>
+                  <p className="font-semibold">{formatAmount(selectedGroup.totalInvoiceValue)}</p>
                 </div>
               </div>
             </div>
@@ -778,12 +784,12 @@ const DocumentWiseDetails = () => {
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Taxable Value</p>
               <p className="text-lg font-medium text-gray-900">
-                {dailySale
-                  .reduce(
-                    (acc, val) => acc + val.totalTaxableValue,
+                {formatAmount(
+                  dailySale.reduce(
+                    (acc, val) => acc + (Number(val.totalTaxableValue) || 0),
                     0
                   )
-                  .toFixed(2)}
+                )}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
@@ -797,9 +803,12 @@ const DocumentWiseDetails = () => {
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Sale Price</p>
               <p className="text-lg font-medium text-gray-900">
-                {dailySale
-                  .reduce((acc, val) => acc + val.totalInvoiceValue, 0)
-                  .toFixed(2)}
+                {formatAmount(
+                  dailySale.reduce(
+                    (acc, val) => acc + (Number(val.totalInvoiceValue) || 0),
+                    0
+                  )
+                )}
               </p>
             </div>
           </div>

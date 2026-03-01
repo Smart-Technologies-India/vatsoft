@@ -79,7 +79,7 @@ const TrackAppliation = () => {
     if (dvat_response.data && dvat_response.status) {
       setDvatData(dvat_response.data);
       const cform_data = await GetUserCform({
-        dvatid: dvat_response.data.id,
+        dvatid: userid,
         take: 10,
         skip: 0,
       });
@@ -104,7 +104,7 @@ const TrackAppliation = () => {
       if (dvat_response.data && dvat_response.status) {
         setDvatData(dvat_response.data);
         const cform_data = await GetUserCform({
-          dvatid: dvat_response.data.id,
+          dvatid: userid,
           take: 10,
           skip: 0,
         });
@@ -185,7 +185,7 @@ const TrackAppliation = () => {
       return toast.error("Enter Purchaser TIN number");
     }
     const search_response = await GetUserCform({
-      dvatid: dvatdata.id,
+      dvatid: userid,
       tin: tinRef.current?.input?.value,
       take: 10,
       skip: 0,
@@ -213,7 +213,7 @@ const TrackAppliation = () => {
     }
     const search_response = await GetUserCform({
       name: nameRef.current?.input?.value,
-      dvatid: dvatdata.id,
+      dvatid: userid,
       take: 10,
       skip: 0,
     });
@@ -240,7 +240,7 @@ const TrackAppliation = () => {
           return toast.error("Enter Purchaser TIN number");
         }
         const search_response = await GetUserCform({
-          dvatid: dvatdata.id,
+          dvatid: userid,
           tin: tinRef.current?.input?.value,
           take: 10,
           skip: 0,
@@ -264,7 +264,7 @@ const TrackAppliation = () => {
         }
         const search_response = await GetUserCform({
           name: nameRef.current?.input?.value,
-          dvatid: dvatdata.id,
+          dvatid: userid,
           take: 10,
           skip: 0,
         });
@@ -280,7 +280,7 @@ const TrackAppliation = () => {
       }
     } else {
       const cform_data = await GetUserCform({
-        dvatid: dvatdata.id,
+        dvatid: userid,
         take: pagesize,
         skip: pagesize * (page - 1),
       });

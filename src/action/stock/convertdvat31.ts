@@ -23,7 +23,7 @@ import prisma from "../../../prisma/database";
 import { customAlphabet } from "nanoid";
 
 const ConvertDvat31 = async (
-  payload: ConvertDvat31Payload
+  payload: ConvertDvat31Payload,
 ): Promise<ApiResponseType<returns_01 | null>> => {
   const functionname: string = ConvertDvat31.name;
 
@@ -177,7 +177,7 @@ const ConvertDvat31 = async (
             val: daily_sale & {
               seller_tin_number: tin_number_master;
               commodity_master: commodity_master;
-            }
+            },
           ) => ({
             returns_01Id: returnInvoice.id,
             dvat_type: val.is_local ? DvatType.DVAT_31 : DvatType.DVAT_31_A,
@@ -188,7 +188,7 @@ const ConvertDvat31 = async (
             invoice_number: val.invoice_number,
             seller_tin_numberId: val.seller_tin_numberId,
             category_of_entry: CategoryOfEntry.INVOICE,
-            total_invoice_number: val.amount,
+            total_invoice_number: (parseFloat(val.amount) + parseFloat(val.vatamount)).toFixed(2),
             commodity_masterId: val.commodity_masterId,
             ...(val.is_local && {
               sale_of: SaleOf.GOODS_TAXABLE,
@@ -199,18 +199,16 @@ const ConvertDvat31 = async (
                 ? SaleOfInterstate.FORMC
                 : SaleOfInterstate.TAXABLE_SALE,
               place_of_supply: parseInt(
-                val.seller_tin_number.tin_number.substring(0, 2)
+                val.seller_tin_number.tin_number.substring(0, 2),
               ),
             }),
             tax_percent: val.tax_percent,
-            amount: (
-              parseFloat(val.amount) - parseFloat(val.vatamount)
-            ).toFixed(2),
-            vatamount: val.vatamount,
+            amount: parseFloat(val.amount).toFixed(2),
+            vatamount: parseFloat(val.vatamount).toFixed(2),
             quantity: val.quantity,
             remarks: "",
             description_of_goods: val.commodity_master.product_name,
-          })
+          }),
         ),
       });
 

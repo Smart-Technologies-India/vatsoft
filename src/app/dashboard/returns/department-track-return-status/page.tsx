@@ -79,7 +79,6 @@ const TrackAppliation = () => {
       const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
-        console.log("User Office", userrespone.data.selectOffice);
         const payment_data = await SearchReturnPayment({
           dept: userrespone.data.selectOffice!,
           take: 10,
@@ -341,14 +340,14 @@ const TrackAppliation = () => {
         }
       } else if (searchOption == SearchOption.TRADE) {
         if (
-          tinRef.current?.input?.value == undefined ||
-          tinRef.current?.input?.value == null ||
-          tinRef.current?.input?.value == ""
+          tradeRef.current?.input?.value == undefined ||
+          tradeRef.current?.input?.value == null ||
+          tradeRef.current?.input?.value == ""
         ) {
-          return toast.error("Enter TIN Number");
+          return toast.error("Enter Trade number");
         }
         const search_response = await SearchReturnPayment({
-          tin: tinRef.current?.input?.value,
+          trade: tradeRef.current?.input?.value,
           dept: user?.selectOffice!,
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -382,23 +381,26 @@ const TrackAppliation = () => {
     }
   };
 
+  const currentPage =
+    pagination.take > 0 ? Math.floor(pagination.skip / pagination.take) + 1 : 1;
+
   return (
     <>
-      <main className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
+      <main className="min-h-screen bg-gray-50 p-4">
         {/* Header Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
-          <div className="bg-linear-to-r from-blue-500 to-indigo-600 px-6 py-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6">
+          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-white rounded-full"></div>
-                <h1 className="text-2xl font-bold text-white">
+                <div className="w-1 h-7 bg-gray-300 rounded-full"></div>
+                <h1 className="text-xl font-semibold text-gray-900">
                   Track Filed Return
                 </h1>
               </div>
               <Button
-                type="primary"
+                type="default"
                 onClick={() => setDrawerOpen(true)}
-                className="bg-white text-blue-600 hover:bg-gray-100"
+                className="border-gray-300 text-gray-700 hover:text-gray-900"
               >
                 Info
               </Button>
@@ -407,7 +409,7 @@ const TrackAppliation = () => {
         </div>
 
         {/* Main Content Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {/* Search Section */}
           <div className="p-6 bg-gray-50 border-b border-gray-200">
             <div className="flex flex-col md:flex-row gap-4 md:items-center">
@@ -529,9 +531,9 @@ const TrackAppliation = () => {
             <>
               {/* Table Section */}
               <div className="p-6">
-                <Table className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                <Table className="border border-gray-200 rounded-lg overflow-hidden">
                   <TableHeader>
-                    <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                    <TableRow className="bg-gray-50">
                       <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
                         ARN
                       </TableHead>
@@ -567,7 +569,7 @@ const TrackAppliation = () => {
                         return (
                           <TableRow
                             key={index}
-                            className="hover:bg-blue-50 transition-colors"
+                            className="hover:bg-gray-50 transition-colors"
                           >
                             <TableCell className="border text-center p-3">
                               <Link
@@ -578,7 +580,7 @@ const TrackAppliation = () => {
                                 )}?form=30A&year=${val.year}&quarter=${
                                   val.quarter
                                 }&month=${val.month}`}
-                                className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                                className="text-gray-700 hover:text-gray-900 font-medium hover:underline"
                               >
                                 {val.rr_number}
                               </Link>
@@ -644,7 +646,8 @@ const TrackAppliation = () => {
                 <div className="lg:hidden">
                   <Pagination
                     align="center"
-                    defaultCurrent={1}
+                    current={currentPage}
+                    pageSize={pagination.take}
                     onChange={onChangePageCount}
                     showSizeChanger
                     total={pagination.total}
@@ -655,7 +658,8 @@ const TrackAppliation = () => {
                   <Pagination
                     showQuickJumper
                     align="center"
-                    defaultCurrent={1}
+                    current={currentPage}
+                    pageSize={pagination.take}
                     onChange={onChangePageCount}
                     showSizeChanger
                     pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}

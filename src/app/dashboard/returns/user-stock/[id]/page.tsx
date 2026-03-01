@@ -19,7 +19,7 @@ import { toast } from "react-toastify";
 const CommodityMaster = () => {
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
-  const userid: number = parseInt(
+  const dvatid: number = parseInt(
     decryptURLData(Array.isArray(id) ? id[0] : id, router)
   );
 
@@ -51,8 +51,10 @@ const CommodityMaster = () => {
         const stock_response = await GetAllStock({
           take: 10,
           skip: 0,
-          dvatid: dvat.data.id,
+          dvatid: dvatid,
         });
+
+        console.log("stock_response", dvatid);
 
         if (stock_response.status && stock_response.data.result) {
           setStocks(stock_response.data.result);
@@ -66,14 +68,14 @@ const CommodityMaster = () => {
       setLoading(false);
     };
     init();
-  }, [userid]);
+  }, [dvatid]);
 
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (!dvatdata) return toast.error("Dvat not found.");
     const stock_resonse = await GetAllStock({
       take: pagesize,
       skip: pagesize * (page - 1),
-      dvatid: dvatdata.id,
+      dvatid: dvatid,
     });
 
     if (stock_resonse.status && stock_resonse.data.result) {

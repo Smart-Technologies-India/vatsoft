@@ -25,7 +25,7 @@ import prisma from "../../../prisma/database";
 import { customAlphabet } from "nanoid";
 
 const ConvertDvat30A = async (
-  payload: ConvertDvat30APayload
+  payload: ConvertDvat30APayload,
 ): Promise<ApiResponseType<returns_01 | null>> => {
   const functionname: string = ConvertDvat30A.name;
 
@@ -178,7 +178,7 @@ const ConvertDvat30A = async (
             val: daily_purchase & {
               seller_tin_number: tin_number_master;
               commodity_master: commodity_master;
-            }
+            },
           ) => ({
             returns_01Id: returnInvoice.id,
             dvat_type: val.is_local ? DvatType.DVAT_30 : DvatType.DVAT_30_A,
@@ -189,9 +189,12 @@ const ConvertDvat30A = async (
             invoice_number: val.invoice_number,
             seller_tin_numberId: val.seller_tin_numberId,
             category_of_entry: CategoryOfEntry.INVOICE,
-            total_invoice_number: !val.is_local
-              ? (parseFloat(val.amount) + parseFloat(val.vatamount)).toFixed(2)
-              : val.amount ?? "0",
+            // total_invoice_number: !val.is_local
+            //   ? (parseFloat(val.amount) + parseFloat(val.vatamount)).toFixed(2)
+            //   : val.amount ?? "0",
+            total_invoice_number: (
+              parseFloat(val.amount) + parseFloat(val.vatamount)
+            ).toFixed(2),
 
             commodity_masterId: val.commodity_masterId,
             ...(val.is_local && {
@@ -223,23 +226,23 @@ const ConvertDvat30A = async (
             nature_purchase_option: NaturePurchaseOption.REGISTER_DEALERS,
             input_tax_credit: InputTaxCredit.ITC_ELIGIBLE,
             place_of_supply: parseInt(
-              val.seller_tin_number.tin_number.substring(0, 2)
+              val.seller_tin_number.tin_number.substring(0, 2),
             ),
             tax_percent: val.tax_percent,
-            ...(val.is_local && {
-              amount: (
-                parseFloat(val.amount) - parseFloat(val.vatamount)
-              ).toFixed(2),
-            }),
-            ...(!val.is_local && {
-              amount: val.amount,
-            }),
-
+            // ...(val.is_local && {
+            //   amount: (
+            //     parseFloat(val.amount) - parseFloat(val.vatamount)
+            //   ).toFixed(2),
+            // }),
+            // ...(!val.is_local && {
+            //   amount: val.amount,
+            // }),
+            amount: val.amount,
             vatamount: val.vatamount,
             remarks: "",
             quantity: val.quantity,
             description_of_goods: val.commodity_master.product_name,
-          })
+          }),
         ),
       });
 

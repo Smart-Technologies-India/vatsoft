@@ -71,11 +71,11 @@ const Page = () => {
 
           {["USER"].includes(user?.role!) && (
             <>
-              <DashboardCards
+              {/* <DashboardCards
                 title="DVAT-20 : Create Challan "
                 description="Payment of pending interest and penalty."
                 link="/dashboard/payments/saved-challan"
-              />
+              /> */}
               <DashboardCards
                 title="Challan History"
                 description="View the history of all your VAT payment challans and their statuses."
@@ -87,11 +87,11 @@ const Page = () => {
                 description="Submit and track complaints related to VAT payments."
                 link="/dashboard/payments/grievance-against-payment"
               />
-              <DashboardCards
+              {/* <DashboardCards
                 title="Electronic Credit Ledger"
                 description="Check the details and status of your electronic credit ledger for input tax credits."
                 link="/dashboard/payments/challan-history"
-              />
+              /> */}
 
               <DashboardCards
                 title="DVAT-21 : Refund Claim Form"

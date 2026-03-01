@@ -204,17 +204,17 @@ const ShopView = () => {
 
   if (isLoading)
     return (
-      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
+      <div className="h-screen w-full grid place-items-center text-2xl text-gray-600 bg-gray-50">
         Loading...
       </div>
     );
 
   return (
-    <div className="p-3 py-2">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 ">
-        <div className="bg-white rounded-sm shadow-sm pb-4">
-          <div className="flex gap-2 p-2 border-b border-gray-300">
-            <p className="text-xl  font-semibold">Dealer Details</p>
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+          <div className="flex gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+            <p className="text-base font-semibold text-gray-900">Dealer Details</p>
             <div className="grow"></div>
             <Button
               size="small"
@@ -223,7 +223,7 @@ const ShopView = () => {
                 if (!dvatData) return;
                 router.push(
                   `/dashboard/returns/user-stock/${encryptURLData(
-                    dvatData.createdById.toString()
+                    dvatData?.id.toString()
                   )}`
                 );
               }}
@@ -232,45 +232,45 @@ const ShopView = () => {
             </Button>
           </div>
 
-          <div className="px-4 py-2 grid grid-cols-2 gap-4 mt-2">
-            <p className="text-xs leading-3">
+          <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <p className="text-xs text-gray-500 leading-4">
               TIN Number <br />
-              <span className="text-sm text-gray-500 font-medium">
+              <span className="text-sm text-gray-900 font-medium">
                 {dvatData?.tinNumber}
               </span>
             </p>
-            <p className="text-xs leading-3">
+            <p className="text-xs text-gray-500 leading-4">
               Applicant Name <br />
-              <span className="text-sm text-gray-500 font-medium">
+              <span className="text-sm text-gray-900 font-medium">
                 {user?.firstName}-{user?.lastName}
               </span>
             </p>
           </div>
-          <div className="px-4 py-2 grid grid-cols-2 gap-4">
-            <p className="text-xs leading-3">
+          <div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <p className="text-xs text-gray-500 leading-4">
               Trade Name
               <br />
-              <span className="text-sm text-gray-500 font-medium">
+              <span className="text-sm text-gray-900 font-medium">
                 {dvatData?.tradename}
               </span>
             </p>
-            <p className="text-xs leading-3">
+            <p className="text-xs text-gray-500 leading-4">
               Constitution of Business
               <br />
-              <span className="text-sm text-gray-500 font-medium">
+              <span className="text-sm text-gray-900 font-medium">
                 {capitalcase(dvatData?.constitutionOfBusiness!)}
               </span>
             </p>
-            <p className="text-xs leading-3">
+            <p className="text-xs text-gray-500 leading-4">
               Liquor/Fuel
               <br />
-              <span className="text-sm text-gray-500 font-medium">Liquor</span>
+              <span className="text-sm text-gray-900 font-medium">Liquor</span>
             </p>
           </div>
         </div>
-        <div className="bg-white rounded-sm shadow-sm pb-4">
-          <div className="border-b border-gray-300 flex items-center pr-2 gap-2">
-            <p className="text-xl p-2  font-semibold">Return Details</p>
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+          <div className="border-b border-gray-200 bg-gray-50 rounded-t-lg flex items-center px-4 py-3 gap-2">
+            <p className="text-base font-semibold text-gray-900">Return Details</p>
             <div className="grow"></div>
             <Button
               size="small"
@@ -279,7 +279,7 @@ const ShopView = () => {
                 if (!dvatData) return;
                 router.push(
                   `/dashboard/returns/user-cform/${encryptURLData(
-                    dvatData.createdById.toString()
+                    dvatData?.id.toString()
                   )}`
                 );
               }}
@@ -287,40 +287,40 @@ const ShopView = () => {
               C-Form
             </Button>
           </div>
-          <div className="px-4 py-2 grid grid-cols-2 gap-4 mt-2">
-            <p className="text-xs leading-3">
+          <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <p className="text-xs text-gray-500 leading-4">
               VAT Liable Date <br />
-              <span className="text-sm text-gray-500 font-medium">
+              <span className="text-sm text-gray-900 font-medium">
                 {formateDate(dvatData?.vatLiableDate!)}
               </span>
             </p>
-            <p className="text-xs leading-3">
+            <p className="text-xs text-gray-500 leading-4">
               Composition/Regular <br />
-              <span className="text-sm text-gray-500 font-medium">
+              <span className="text-sm text-gray-900 font-medium">
                 {dvatData?.compositionScheme ? "COMP" : "REG"}
               </span>
             </p>
-            <p className="text-xs leading-3">
+            <p className="text-xs text-gray-500 leading-4">
               Last Filed Return Period <br />
-              <span className="text-sm text-gray-500 font-medium">
+              <span className="text-sm text-gray-900 font-medium">
                 {pendingreturn?.lastfiling}
               </span>
             </p>
-            <p className="text-xs leading-3">
+            <p className="text-xs text-gray-500 leading-4">
               Pending Returns <br />
-              <span className="text-sm text-gray-500 font-medium">
+              <span className="text-sm text-gray-900 font-medium">
                 {pendingreturn?.pending}
               </span>
             </p>
-            <p className="text-xs leading-3">
+            <p className="text-xs text-gray-500 leading-4">
               Demand Pending <br />
-              <span className="text-sm text-gray-500 font-medium">
+              <span className="text-sm text-gray-900 font-medium">
                 {pendingchallan.count}
               </span>
             </p>
-            <p className="text-xs leading-3">
+            <p className="text-xs text-gray-500 leading-4">
               Demand Amount Pending <br />
-              <span className="text-sm text-gray-500 font-medium">
+              <span className="text-sm text-gray-900 font-medium">
                 {pendingchallan.pending}
               </span>
             </p>
@@ -329,13 +329,13 @@ const ShopView = () => {
       </div>
 
       {returndetails.map((item, index) => (
-        <div key={index} className="w-full bg-white rounded-sm shadow-sm mt-4">
-          <div className="bg-white rounded-sm shadow-sm">
-            <p className="text-xl p-2  font-semibold border-b border-gray-300">
+        <div key={index} className="w-full bg-white rounded-lg border border-gray-200 shadow-sm mt-4 overflow-hidden">
+          <div className="bg-white">
+            <p className="text-base px-4 py-3 font-semibold text-gray-900 border-b border-gray-200 bg-gray-50">
               Return History - {item.displayyear}
             </p>
 
-            <div className="grow grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 md:grid-cols-4 gap-2 flex-wrap justify-center items-center p-2">
+            <div className="grow grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 p-3">
               {item.rentdetails.map((item, index: number) => (
                 <PropertiesDeatils
                   key={index}
@@ -417,38 +417,38 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
     switch (props.status) {
       case Status.INACTIVE:
         return (
-          <div className="bg-indigo-200 grid place-items-center border border-gray-200 rounded-full w-8 h-8">
-            <CarbonWarningSquare className="text-indigo-500 text-lg" />
+          <div className="bg-indigo-100 grid place-items-center border border-indigo-200 rounded-full w-8 h-8">
+            <CarbonWarningSquare className="text-indigo-600 text-base" />
           </div>
         );
       case Status.PAID:
         return (
-          <div className="bg-green-200 grid place-items-center border border-gray-200 rounded-full w-8 h-8">
-            <AntDesignCheckOutlined className="text-green-500 text-lg" />
+          <div className="bg-green-100 grid place-items-center border border-green-200 rounded-full w-8 h-8">
+            <AntDesignCheckOutlined className="text-green-600 text-base" />
           </div>
         );
       case Status.LATE:
         return (
-          <div className="bg-yellow-200 grid place-items-center border border-gray-200 rounded-full w-8 h-8">
-            <MaterialSymbolsCalendarClockRounded className="text-yellow-500 text-lg" />
+          <div className="bg-yellow-100 grid place-items-center border border-yellow-200 rounded-full w-8 h-8">
+            <MaterialSymbolsCalendarClockRounded className="text-yellow-600 text-base" />
           </div>
         );
       case Status.DUE:
         return (
-          <div className="bg-orange-200 grid place-items-center border border-orange-400 rounded-full w-8 h-8">
-            <Fa6RegularHourglassHalf className="text-orange-500 text-lg" />
+          <div className="bg-orange-100 grid place-items-center border border-orange-200 rounded-full w-8 h-8">
+            <Fa6RegularHourglassHalf className="text-orange-600 text-base" />
           </div>
         );
       case Status.PENDING:
         return (
-          <div className="bg-rose-200 grid place-items-center border border-gray-200 rounded-full w-8 h-8">
-            <Fa6RegularCalendarXmark className="text-rose-500 text-lg" />
+          <div className="bg-rose-100 grid place-items-center border border-rose-200 rounded-full w-8 h-8">
+            <Fa6RegularCalendarXmark className="text-rose-600 text-base" />
           </div>
         );
       default:
         return (
-          <div className="bg-rose-200 grid place-items-center border border-gray-200 rounded-full w-8 h-8">
-            <MaterialSymbolsDoNotDisturbOnOutline className="text-rose-500 text-lg" />
+          <div className="bg-rose-100 grid place-items-center border border-rose-200 rounded-full w-8 h-8">
+            <MaterialSymbolsDoNotDisturbOnOutline className="text-rose-600 text-base" />
           </div>
         );
     }
@@ -457,15 +457,15 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
   if (props.status == Status.PAID || props.status == Status.LATE) {
     return (
       <div
-        className={`p-1 flex items-center justify-start min-w-28 bg-[#F5F5F5] rounded-md gap-2`}
+        className="p-2 flex items-center justify-start min-w-40 bg-gray-50 border border-gray-200 rounded-lg gap-2"
       >
         <Component />
         <div>
-          <p className={`text-xs text-black`}>{props.name}</p>
-          <p className={`text-xs text-gray-500`}>{textname()}</p>
+          <p className="text-xs font-medium text-gray-900">{props.name}</p>
+          <p className="text-xs text-gray-500">{textname()}</p>
         </div>
         <div className="grow"></div>
-        <div className="text-xl">
+        <div className="text-lg text-gray-500 hover:text-gray-700 transition-colors">
           <Popover
             content={
               <div className="flex gap-2 flex-col">
@@ -536,15 +536,15 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
   } else if (props.status == Status.PENDING) {
     return (
       <div
-        className={`p-1 flex items-center justify-start min-w-28 bg-[#F5F5F5] rounded-md gap-2`}
+        className="p-2 flex items-center justify-start min-w-40 bg-gray-50 border border-gray-200 rounded-lg gap-2"
       >
         <Component />
         <div>
-          <p className={`text-xs text-black`}>{props.name}</p>
-          <p className={`text-xs text-gray-500`}>{textname()}</p>
+          <p className="text-xs font-medium text-gray-900">{props.name}</p>
+          <p className="text-xs text-gray-500">{textname()}</p>
         </div>
         <div className="grow"></div>
-        <div className="text-xl">
+        <div className="text-lg text-gray-500 hover:text-gray-700 transition-colors">
           <Popover
             content={
               <div className="flex gap-2 flex-col">
@@ -587,12 +587,12 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
   } else {
     return (
       <div
-        className={`p-1 flex items-center justify-start min-w-28 bg-[#F5F5F5] rounded-md gap-2`}
+        className="p-2 flex items-center justify-start min-w-40 bg-gray-50 border border-gray-200 rounded-lg gap-2"
       >
         <Component />
         <div>
-          <p className={`text-xs text-black`}>{props.name}</p>
-          <p className={`text-xs text-gray-500`}>{textname()}</p>
+          <p className="text-xs font-medium text-gray-900">{props.name}</p>
+          <p className="text-xs text-gray-500">{textname()}</p>
         </div>
       </div>
     );

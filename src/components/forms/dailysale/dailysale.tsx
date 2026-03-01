@@ -31,6 +31,8 @@ import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
 
+const DAILY_SALE_ADD_MORE_LOCK_KEY = "dailySaleAddMoreLock";
+
 type DailySaleProviderProps = {
   userid: number;
   setAddBox: Dispatch<SetStateAction<boolean>>;
@@ -150,6 +152,30 @@ const DailySale = (props: DailySaleProviderProps) => {
         }
       }
 
+      const lockData = sessionStorage.getItem(DAILY_SALE_ADD_MORE_LOCK_KEY);
+      if (lockData) {
+        try {
+          const parsed = JSON.parse(lockData) as {
+            recipient_vat_no: string;
+            invoice_number: string;
+            invoice_date: string;
+          };
+
+          reset({
+            recipient_vat_no: parsed.recipient_vat_no,
+            invoice_number: parsed.invoice_number,
+            invoice_date: parsed.invoice_date,
+            amount_unit: "",
+            description_of_goods: undefined,
+            quantity: "",
+          });
+
+          setIsAddMoreMode(true);
+        } catch {
+          sessionStorage.removeItem(DAILY_SALE_ADD_MORE_LOCK_KEY);
+        }
+      }
+
       setIsLoading(false);
     };
     init();
@@ -239,26 +265,66 @@ const DailySale = (props: DailySaleProviderProps) => {
     const calculatedTaxableValue =
       parseFloat(quantity) * parseFloat(amount_unit || "0");
 
-    const calculatedVatAmount =
-      (calculatedTaxableValue *
-        parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at)) /
-      100;
-    setVatAmount(
-      isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2),
+    const calculatedVatAmount = formatAmount(
+      calculatedTaxableValue -
+        (((Number(quantity) || 0) * (Number(amount_unit) || 0)) /
+          (100 +
+            parseFloat(
+              isAgainstCForm ? "2" : (commoditymaster?.taxable_at ?? "0"),
+            ))) *
+          100,
     );
+    setVatAmount(calculatedVatAmount);
+
+    // const calculatedVatAmount =
+    //   (calculatedTaxableValue *
+    //     parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at)) /
+    //   100;
+    // setVatAmount(
+    //   isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2),
+    // );
 
     // const temp_amount = calculatedTaxableValue + calculatedVatAmount;
-    const temp_amount = calculatedTaxableValue;
+    // const temp_amount = calculatedTaxableValue;
 
-    setTaxableValue(isNaN(temp_amount) ? "0" : temp_amount.toFixed(2));
+    const temp_amount = formatAmount(
+      (((Number(quantity) || 0) * (Number(amount_unit) || 0)) /
+        (100 +
+          parseFloat(
+            isAgainstCForm ? "2" : (commoditymaster?.taxable_at ?? "0"),
+          ))) *
+        100,
+    );
+
+    setTaxableValue(temp_amount);
   }, [quantity, amount_unit, commoditymaster, isAgainstCForm]);
+
+  const resolveSellerTin = async (): Promise<tin_number_master | null> => {
+    const currentTin = (getValues("recipient_vat_no") ?? "").trim();
+
+    if (currentTin.length >= 11) {
+      const tinResponse = await SearchTin({
+        tinumber: currentTin,
+      });
+
+      if (tinResponse.status && tinResponse.data) {
+        setTinData(tinResponse.data);
+        return tinResponse.data;
+      }
+    }
+
+    return tindata;
+  };
 
   const onSubmit = async (data: DailySaleForm) => {
     if (davtdata == null || davtdata == undefined)
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
-    if (tindata == null || tindata == undefined)
+
+    const sellerTin = await resolveSellerTin();
+
+    if (sellerTin == null || sellerTin == undefined)
       return toast.error("Seller VAT Number not found.");
 
     if (quantityCount == "pcs") {
@@ -324,7 +390,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       vatamount: vatamount,
       commodityid: commoditymaster.id,
       tax_percent: isAgainstCForm ? "2" : commoditymaster.taxable_at,
-      seller_tin_id: tindata.id,
+      seller_tin_id: sellerTin.id,
       amount: taxableValue,
       against_cfrom: isAgainstCForm,
     });
@@ -335,6 +401,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       return toast.error(stock_response.message);
     }
 
+    sessionStorage.removeItem(DAILY_SALE_ADD_MORE_LOCK_KEY);
     await props.init();
     props.setAddBox(false);
     const currentValues = getValues();
@@ -363,6 +430,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     setVatAmount("0");
     setTaxableValue("0");
     setIsAgainstCForm(false);
+    setIsAddMoreMode(false);
     setLiquore(false);
     setLiquoreOIDCAmount(0);
     setLiquoreDealerAmount(0);
@@ -376,7 +444,10 @@ const DailySale = (props: DailySaleProviderProps) => {
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
-    if (tindata == null || tindata == undefined)
+
+    const sellerTin = await resolveSellerTin();
+
+    if (sellerTin == null || sellerTin == undefined)
       return toast.error("Seller VAT Number not found.");
 
     if (quantityCount == "pcs") {
@@ -462,7 +533,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       vatamount: vatamount,
       commodityid: commoditymaster.id,
       tax_percent: isAgainstCForm ? "2" : commoditymaster.taxable_at,
-      seller_tin_id: tindata.id,
+      seller_tin_id: sellerTin.id,
       amount: taxableValue,
       against_cfrom: isAgainstCForm,
     });
@@ -474,6 +545,17 @@ const DailySale = (props: DailySaleProviderProps) => {
     }
     const currentValues = getValues();
 
+    const lockPayload = {
+      recipient_vat_no: currentValues.recipient_vat_no ?? "",
+      invoice_number: currentValues.invoice_number ?? "",
+      invoice_date: currentValues.invoice_date ?? "",
+    };
+
+    sessionStorage.setItem(
+      DAILY_SALE_ADD_MORE_LOCK_KEY,
+      JSON.stringify(lockPayload),
+    );
+
     // reset({
     //   ...currentValues,
     //   quantity: "",
@@ -484,9 +566,9 @@ const DailySale = (props: DailySaleProviderProps) => {
     // setTaxableValue("0");
 
     reset({
-      invoice_number: currentValues.invoice_number,
-      invoice_date: currentValues.invoice_date,
-      recipient_vat_no: currentValues.recipient_vat_no,
+      invoice_number: lockPayload.invoice_number,
+      invoice_date: lockPayload.invoice_date,
+      recipient_vat_no: lockPayload.recipient_vat_no,
       amount_unit: "",
       description_of_goods: undefined,
       quantity: "",
@@ -504,6 +586,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     setIsAddMoreMode(true);
     await props.init();
     await init();
+    setIsAddMoreMode(true);
   };
 
   const [submitType, setSubmitType] = useState<string>("");
@@ -540,6 +623,11 @@ const DailySale = (props: DailySaleProviderProps) => {
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
     setQuantityCount(value);
+  };
+
+  const formatAmount = (value: string | number | null | undefined): string => {
+    const numericValue = typeof value === "number" ? value : Number(value ?? 0);
+    return Number.isFinite(numericValue) ? numericValue.toFixed(2) : "0.00";
   };
 
   if (isLoading)
@@ -606,7 +694,7 @@ const DailySale = (props: DailySaleProviderProps) => {
         )}
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
-            name="invoice_number"  
+            name="invoice_number"
             required={true}
             title="Invoice no."
             placeholder="Invoice no."
@@ -691,8 +779,8 @@ const DailySale = (props: DailySaleProviderProps) => {
               (davtdata?.commodity == "OIDC" ||
                 davtdata?.commodity == "MANUFACTURER") &&
               quantityCount == "crate"
-                ? "Enter Crate amount (Sale price excluding VAT)"
-                : "Enter Net amount/unit (Sale price excluding VAT)"
+                ? "Enter Crate amount (Sale price including VAT)"
+                : "Enter Net amount/unit (Sale price including VAT)"
             }
             name="amount_unit"
             required={true}
@@ -700,8 +788,8 @@ const DailySale = (props: DailySaleProviderProps) => {
               (davtdata?.commodity == "OIDC" ||
                 davtdata?.commodity == "MANUFACTURER") &&
               quantityCount == "crate"
-                ? "Enter Crate amount (Sale price excluding VAT)"
-                : "Enter Net amount/unit (Sale price excluding VAT)"
+                ? "Enter Crate amount (Sale price including VAT)"
+                : "Enter Net amount/unit (Sale price including VAT)"
             }
             // onlynumber={true}
             numdes={true}
@@ -722,16 +810,24 @@ const DailySale = (props: DailySaleProviderProps) => {
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
             <p className="text-xs font-normal">Total Invoice Value</p>
             <p className="text-sm font-semibold">
-              {(
-                parseInt(quantity) * parseFloat(amount_unit) +
-                parseFloat(vatamount)
-              ).toFixed(2)}
+              {formatAmount(
+                (Number(quantity) || 0) * (Number(amount_unit) || 0),
+              )}
             </p>
           </div>
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
             <p className="text-xs font-normal">Total Taxable Value</p>
             <p className="text-sm font-semibold">
-              {(parseInt(quantity) * parseFloat(amount_unit)).toFixed(2)}
+              {formatAmount(
+                (((Number(quantity) || 0) * (Number(amount_unit) || 0)) /
+                  (100 +
+                    parseFloat(
+                      isAgainstCForm
+                        ? "2"
+                        : (commoditymaster?.taxable_at ?? "0"),
+                    ))) *
+                  100,
+              )}
             </p>
           </div>
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
@@ -745,6 +841,8 @@ const DailySale = (props: DailySaleProviderProps) => {
             type="reset"
             onClick={(e) => {
               e.preventDefault();
+              sessionStorage.removeItem(DAILY_SALE_ADD_MORE_LOCK_KEY);
+              setIsAddMoreMode(false);
               props.setAddBox(false);
               // props.setCommid(undefined);
             }}
@@ -756,6 +854,7 @@ const DailySale = (props: DailySaleProviderProps) => {
             type="reset"
             onClick={(e) => {
               e.preventDefault();
+              sessionStorage.removeItem(DAILY_SALE_ADD_MORE_LOCK_KEY);
               reset({
                 amount_unit: "",
                 description_of_goods: undefined,

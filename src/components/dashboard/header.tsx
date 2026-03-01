@@ -130,7 +130,7 @@ const Navbar = (props: NavbarProps) => {
         </Tooltip>
       )}
 
-      <div className="relative h-14 w-14">
+      <div className="relative h-12 w-12">
         <Image fill src="/favicon.png" alt="Logo" className="object-contain" />
       </div>
 
@@ -139,7 +139,7 @@ const Navbar = (props: NavbarProps) => {
       <div
       className="h-full"
       >
-        <h1 className="font-semibold text-2xl text-gray-900/80">
+        <h1 className="font-semibold text-2xl text-gray-900/80 mt-1">
           Department of Value Added Tax/GST
         </h1>
         <h1 className="font-normal text-sm text-gray-900/60 leading-4">
