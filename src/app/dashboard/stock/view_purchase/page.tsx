@@ -217,6 +217,45 @@ const DocumentWiseDetails = () => {
     return `${crates} Crate ${pcs} Pcs`;
   };
 
+  const markRecordAccepted = (purchaseId: number) => {
+    const getPendingAcceptable = (
+      records: GroupedDailyPurchase["records"],
+    ): boolean => {
+      return records.some(
+        (row) =>
+          (row.seller_tin_number.tin_number.startsWith("25") ||
+            row.seller_tin_number.tin_number.startsWith("26")) &&
+          !row.is_accept,
+      );
+    };
+
+    setSelectedGroup((prev) => {
+      if (!prev) return prev;
+      const updatedRecords = prev.records.map((row) =>
+        row.id === purchaseId ? { ...row, is_accept: true } : row,
+      );
+      return {
+        ...prev,
+        records: updatedRecords,
+        hasPendingAcceptable: getPendingAcceptable(updatedRecords),
+      };
+    });
+
+    setDailyPurchase((prev) =>
+      prev.map((group) => {
+        if (!group.records.some((row) => row.id === purchaseId)) return group;
+        const updatedRecords = group.records.map((row) =>
+          row.id === purchaseId ? { ...row, is_accept: true } : row,
+        );
+        return {
+          ...group,
+          records: updatedRecords,
+          hasPendingAcceptable: getPendingAcceptable(updatedRecords),
+        };
+      }),
+    );
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -348,8 +387,7 @@ const DocumentWiseDetails = () => {
                                 });
                                 if (response.status && response.data) {
                                   toast.success(response.message);
-                                  await init();
-                                  setIsGroupModalOpen(false);
+                                  markRecordAccepted(record.id);
                                 } else {
                                   toast.error(response.message);
                                 }
@@ -621,37 +659,41 @@ const DocumentWiseDetails = () => {
                             ₹{group.totalTaxableValue.toFixed(2)}
                           </TableCell>
                           <TableCell className="p-2 text-center">
-                            {group.seller_tin_number.tin_number.startsWith(
-                              "25",
-                            ) ||
-                            group.seller_tin_number.tin_number.startsWith(
-                              "26",
-                            ) ? (
+                            {group.count > 1 ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedGroup(group);
+                                  setIsGroupModalOpen(true);
+                                }}
+                                className="text-sm bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded"
+                              >
+                                View
+                              </button>
+                            ) : group.seller_tin_number.tin_number.startsWith(
+                                "25",
+                              ) ||
+                              group.seller_tin_number.tin_number.startsWith(
+                                "26",
+                              ) ? (
                               group.hasPendingAcceptable ? (
                                 <button
                                   onClick={async () => {
-                                    if (group.count === 1) {
-                                      if (!dvatdata)
-                                        return toast.error("DVAT not found.");
-                                      const record = group.records[0];
-                                      const response = await AcceptSale({
-                                        commodityid: record.commodity_master.id,
-                                        createdById: userid,
-                                        dvatid: dvatdata.id,
-                                        quantity: record.quantity,
-                                        puchaseid: record.id,
-                                        urn: record.urn_number ?? "",
-                                      });
-                                      if (response.status && response.data) {
-                                        toast.success(response.message);
-                                        await init();
-                                      } else {
-                                        toast.error(response.message);
-                                      }
+                                    if (!dvatdata)
+                                      return toast.error("DVAT not found.");
+                                    const record = group.records[0];
+                                    const response = await AcceptSale({
+                                      commodityid: record.commodity_master.id,
+                                      createdById: userid,
+                                      dvatid: dvatdata.id,
+                                      quantity: record.quantity,
+                                      puchaseid: record.id,
+                                      urn: record.urn_number ?? "",
+                                    });
+                                    if (response.status && response.data) {
+                                      toast.success(response.message);
+                                      await init();
                                     } else {
-                                      toast.info(
-                                        "Please select a specific record from Show More",
-                                      );
+                                      toast.error(response.message);
                                     }
                                   }}
                                   className="text-sm bg-rose-500 hover:bg-rose-600 text-white py-1 px-3 rounded"

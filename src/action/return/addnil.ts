@@ -4,6 +4,7 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { DvatType, Quarter, Status, returns_entry } from "@prisma/client";
+import { getCurrentDvatId } from "@/lib/auth";
 
 interface AddNilPayload {
   year: string;
@@ -15,8 +16,19 @@ interface AddNilPayload {
 }
 
 const AddNil = async (
-  payload: AddNilPayload
+  payload: AddNilPayload,
 ): Promise<ApiResponseType<returns_entry | null>> => {
+  const functionname: string = AddNil.name;
+
+  const dvatid = await getCurrentDvatId();
+
+  if (!dvatid) {
+    return createResponse({
+      message: "Invalid id. Please try again.",
+      functionname,
+    });
+  }
+
   const monthNames = [
     "January",
     "February",
@@ -31,11 +43,10 @@ const AddNil = async (
     "November",
     "December",
   ];
-  const functionname: string = AddNil.name;
   try {
     const dvat04 = await prisma.dvat04.findFirst({
       where: {
-        createdById: payload.createdById,
+        id: dvatid,
         deletedAt: null,
         deletedById: null,
         status: "APPROVED",
@@ -49,12 +60,68 @@ const AddNil = async (
       });
     }
 
+    const purchase = await prisma.daily_purchase.findMany({
+      where: {
+        dvat04Id: dvat04.id,
+        is_dvat_30a: false,
+        deletedAt: null,
+        deletedById: null,
+        invoice_date: {
+          gte: new Date(
+            parseInt(payload.year),
+            monthNames.indexOf(payload.month),
+            1,
+          ).toISOString(),
+          lte: new Date(
+            parseInt(payload.year),
+            monthNames.indexOf(payload.month),
+            31,
+          ).toISOString(),
+        },
+      },
+    });
+
+    if (purchase.length > 0) {
+      return createResponse({
+        message: "Cannot add nil entry. Purchase entry exists for the month.",
+        functionname,
+      });
+    }
+
+    const sale = await prisma.daily_sale.findMany({
+      where: {
+        dvat04Id: dvat04.id,
+        is_dvat_31: false,
+        deletedAt: null,
+        deletedById: null,
+        invoice_date: {
+          gte: new Date(
+            parseInt(payload.year),
+            monthNames.indexOf(payload.month),
+            1,
+          ).toISOString(),
+          lte: new Date(
+            parseInt(payload.year),
+            monthNames.indexOf(payload.month),
+            31,
+          ).toISOString(),
+        },
+      },
+    });
+
+    if (sale.length > 0) {
+      return createResponse({
+        message: "Cannot add nil entry. Sale entry exists for the month.",
+        functionname,
+      });
+    }
+
     const return_res = await prisma.returns_01.findFirst({
       where: {
         year: payload.year,
         quarter: payload.quarter,
         month: payload.month,
-        createdById: payload.createdById,
+        dvat04Id: dvat04.id,
         status: Status.ACTIVE,
         OR: [
           {
@@ -82,7 +149,7 @@ const AddNil = async (
           invoice_date: new Date(
             parseInt(payload.year),
             monthNames.indexOf(payload.month),
-            5
+            5,
           ).toISOString(),
           createdById: payload.createdById,
           isnil: true,
@@ -142,7 +209,7 @@ const AddNil = async (
           invoice_date: new Date(
             parseInt(payload.year),
             monthNames.indexOf(payload.month),
-            5
+            5,
           ).toISOString(),
           createdById: payload.createdById,
           isnil: true,
