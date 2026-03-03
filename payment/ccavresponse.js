@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import CryptoJS from "crypto-js";
 import { decrypt } from "./ccavutil.js";
 import qs from "querystring";
 import prisma from "../prisma/database.js";
@@ -64,6 +65,192 @@ export const postRes = (request, response) => {
     const return_id = result.merchant_param1.toString().split("_")[2];
     const type = result.merchant_param1.toString().split("_")[3];
 
+    const secretKey = "knf92fg#G$%2Ij309pwkn4gf#WTF#WCc2@#$WTfwe4gFVD";
+    const toBase64Url = (str) =>
+      str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const encryptURLData = (data) => {
+      const encryptedData = CryptoJS.AES.encrypt(data, secretKey).toString();
+      return toBase64Url(encryptedData);
+    };
+
+    const renderReceiptHtml = ({
+      statusTitle,
+      statusTone,
+      message,
+      amount,
+      showAmount = true,
+      redirectId,
+    }) => {
+      const toneMap = {
+        success: {
+          badgeBg: "#dcfce7",
+          badgeText: "#166534",
+          accent: "#16a34a",
+          border: "#86efac",
+        },
+        aborted: {
+          badgeBg: "#fef3c7",
+          badgeText: "#92400e",
+          accent: "#d97706",
+          border: "#fcd34d",
+        },
+        failed: {
+          badgeBg: "#fee2e2",
+          badgeText: "#991b1b",
+          accent: "#dc2626",
+          border: "#fca5a5",
+        },
+      };
+
+      const tone = toneMap[statusTone] || toneMap.failed;
+      const formattedDate = new Date().toLocaleString("en-IN", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+      const receiptNo = result.order_id || result.tracking_id || "NA";
+      const txnId = result.tracking_id || "NA";
+      const paidFor = result.billing_name || "VAT Payment";
+      const bankRef = result.bank_ref_no || "NA";
+      const payMode = result.payment_mode || "NA";
+      const statusMsg = result.status_message || result.failure_message || "NA";
+      const numericRedirectId = parseInt(
+        redirectId?.toString() || challanid?.toString() || "0",
+        10,
+      );
+      const encryptedRedirectId = encryptURLData(numericRedirectId.toString());
+      const redirectUrl = `/dashboard/payments/saved-challan/${encryptedRedirectId}`;
+
+      return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${statusTitle} - Receipt</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: Inter, Arial, sans-serif;
+        background: #f3f4f6;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+      }
+      .receipt {
+        width: 100%;
+        max-width: 460px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-top: 6px solid ${tone.accent};
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 30px -20px rgba(0, 0, 0, 0.2);
+      }
+      .header { padding: 18px 20px 14px; border-bottom: 1px dashed #d1d5db; }
+      .brand { font-size: 13px; color: #6b7280; letter-spacing: 0.8px; }
+      .titleRow {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+      .title { font-size: 24px; color: #111827; font-weight: 700; }
+      .badge {
+        background: ${tone.badgeBg};
+        color: ${tone.badgeText};
+        border: 1px solid ${tone.border};
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .subtitle { margin-top: 10px; color: #4b5563; font-size: 14px; }
+      .meta { padding: 14px 20px; background: #f9fafb; border-bottom: 1px dashed #d1d5db; }
+      .metaItem { display: flex; justify-content: space-between; margin: 6px 0; font-size: 13px; }
+      .metaItem .label { color: #6b7280; }
+      .metaItem .value { color: #111827; font-weight: 600; text-align: right; margin-left: 10px; }
+      .amountWrap { padding: 18px 20px; border-bottom: 1px dashed #d1d5db; }
+      .amountBox {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 14px;
+        text-align: center;
+      }
+      .amountLabel { font-size: 13px; color: #6b7280; }
+      .amountValue { margin-top: 6px; font-size: 30px; font-weight: 800; color: #111827; }
+      .details { padding: 14px 20px 8px; }
+      .row { display: flex; justify-content: space-between; margin-bottom: 10px; gap: 10px; }
+      .row .label { color: #6b7280; font-size: 13px; }
+      .row .value { color: #111827; font-size: 13px; font-weight: 600; text-align: right; }
+      .footer {
+        padding: 16px 20px 20px;
+        text-align: center;
+        color: #4b5563;
+        font-size: 13px;
+        border-top: 1px dashed #d1d5db;
+      }
+      .countdown {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: #f3f4f6;
+        color: #111827;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="receipt">
+      <section class="header">
+        <p class="brand">VAT DDDNH • TRANSACTION RECEIPT</p>
+        <div class="titleRow">
+          <h1 class="title">${statusTitle}</h1>
+          <span class="badge">${result.order_status || "NA"}</span>
+        </div>
+        <p class="subtitle">${message}</p>
+      </section>
+
+      <section class="meta">
+        <div class="metaItem"><span class="label">Receipt No.</span><span class="value">${receiptNo}</span></div>
+        <div class="metaItem"><span class="label">Generated On</span><span class="value">${formattedDate}</span></div>
+      </section>
+
+      ${showAmount ? `<section class="amountWrap"><div class="amountBox"><p class="amountLabel">Amount</p><p class="amountValue">₹ ${amount || result.amount || "0.00"}</p></div></section>` : ""}
+
+      <section class="details">
+        <div class="row"><span class="label">Transaction ID</span><span class="value">${txnId}</span></div>
+        <div class="row"><span class="label">Order ID</span><span class="value">${result.order_id || "NA"}</span></div>
+        <div class="row"><span class="label">Paid For</span><span class="value">${paidFor}</span></div>
+        <div class="row"><span class="label">Bank Ref. No.</span><span class="value">${bankRef}</span></div>
+        <div class="row"><span class="label">Payment Mode</span><span class="value">${payMode}</span></div>
+        <div class="row"><span class="label">Status Message</span><span class="value">${statusMsg}</span></div>
+      </section>
+
+      <section class="footer">
+        <p>Redirecting to challan page in <span id="countdown" class="countdown">10</span> seconds...</p>
+      </section>
+    </main>
+    <script>
+      (function () {
+        var seconds = 10;
+        var el = document.getElementById("countdown");
+        var timer = setInterval(function () {
+          seconds -= 1;
+          if (el) el.textContent = String(seconds);
+          if (seconds <= 0) {
+            clearInterval(timer);
+            window.location.href = "${redirectUrl}";
+          }
+        }, 1000);
+      })();
+    </script>
+  </body>
+</html>`;
+    };
+
     if (result.order_status == "Aborted") {
       // Get original challan
       const originalChallan = await prisma.challan.findFirst({
@@ -74,8 +261,9 @@ export const postRes = (request, response) => {
       });
 
       // Create new challan with same data
+      let redirectChallanId = challanid ? parseInt(challanid) : 0;
       if (originalChallan) {
-        await prisma.challan.create({
+        const createdChallan = await prisma.challan.create({
           data: {
             dvatid: originalChallan.dvatid,
             cpin: originalChallan.cpin,
@@ -92,8 +280,10 @@ export const postRes = (request, response) => {
             paymentstatus: "CREATED",
             transaction_date: new Date().toISOString(),
             paymentmode: "ONLINE",
+            bank_name: originalChallan.bank_name,
           },
         });
+        redirectChallanId = createdChallan.id;
       }
 
       // Update original challan
@@ -109,7 +299,13 @@ export const postRes = (request, response) => {
         },
       });
 
-      const htmlcode = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Abort</title><script src="https://cdn.tailwindcss.com"></script></head><body><main class="h-screen w-full bg-[#eeeeee] grid place-items-center"><div class="w-96 bg-white rounded-lg p-6"><h1 class="text-rose-500 text-4xl text-center font-semibold">Abort</h1><div class="h-px bg-gray-400 w-full mt-2"></div><p class="text-xl text-slate-700 text-center font-medium mt-4">Payment declined by client.</p><div class="flex item-center gap-6 mt-4"><a href="https://dddnhvat.com/dashboard" class="grow py-1 text-center rounded-lg bg-blue-500 text-2xl text-white flex items-center gap-2 justify-center cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M4 21v-9.375L2.2 13L1 11.4L12 3l11 8.4l-1.2 1.575l-1.8-1.35V21zm4-6q-.425 0-.712-.288T7 14q0-.425.288-.712T8 13q.425 0 .713.288T9 14q0 .425-.288.713T8 15m4 0q-.425 0-.712-.288T11 14q0-.425.288-.712T12 13q.425 0 .713.288T13 14q0 .425-.288.713T12 15m4 0q-.425 0-.712-.288T15 14q0-.425.288-.712T16 13q.425 0 .713.288T17 14q0 .425-.288.713T16 15"/></svg><p>Home</p></a><a href="https://dddnhvat.com/contact" class="grow py-1 text-center rounded-lg bg-rose-500 text-2xl text-white flex items-center gap-2 justify-center cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11.95q0-2.925-2.037-4.962T12 4.95v-2q1.875 0 3.513.713t2.85 1.925q1.212 1.212 1.925 2.85T21 11.95zm-4 0q0-1.25-.875-2.125T12 8.95v-2q2.075 0 3.538 1.463T17 11.95zM19.95 21q-3.125 0-6.175-1.362t-5.55-3.863q-2.5-2.5-3.862-5.55T3 4.05q0-.45.3-.75t.75-.3H8.1q.35 0 .625.238t.325.562l.65 3.5q.05.4-.025.675T9.4 8.45L6.975 10.9q.5.925 1.187 1.787t1.513 1.663q.775.775 1.625 1.438T13.1 17l2.35-2.35q.225-.225.588-.337t.712-.063l3.45.7q.35.1.575.363T21 15.9v4.05q0 .45-.3.75t-.75.3"/></svg><p>Contact</p></a></div></div></main></body></html>`;
+      const htmlcode = renderReceiptHtml({
+        statusTitle: "Transaction Aborted",
+        statusTone: "aborted",
+        message: "Payment was cancelled by client before completion.",
+        amount: result.amount,
+        redirectId: redirectChallanId,
+      });
       response.writeHeader(200, { "Content-Type": "text/html" });
       response.write(htmlcode);
       response.end();
@@ -126,7 +322,7 @@ export const postRes = (request, response) => {
               order_id: result.order_id,
               paymentmode: result.payment_mode.toString().toUpperCase(),
               transaction_date: new Date().toISOString(),
-              bank_name: result.bank_name,
+              bank_name: result.bank_ref_no,
               order_status: result.order_status,
               failure_message: result.failure_message,
               card_name: result.card_name,
@@ -150,7 +346,7 @@ export const postRes = (request, response) => {
         // await axios.get(NewBidSubmitted);
       } else if (type == "RETURN") {
         try {
-          await prisma.challan.update({
+          const challan = await prisma.challan.update({
             where: {
               id: parseInt(challanid),
             },
@@ -178,7 +374,7 @@ export const postRes = (request, response) => {
 
           await prisma.returns_01.update({
             where: {
-              id: parseInt(return_id),
+              id: challan.returnid,
             },
             data: {
               paymentmode: result.payment_mode.toString().toUpperCase(),
@@ -213,7 +409,7 @@ export const postRes = (request, response) => {
               order_id: result.order_id,
               paymentmode: result.payment_mode.toString().toUpperCase(),
               transaction_date: new Date().toISOString(),
-              bank_name: result.bank_name,
+              bank_name: result.bank_ref_no,
               order_status: result.order_status,
               failure_message: result.failure_message,
               card_name: result.card_name,
@@ -259,199 +455,13 @@ export const postRes = (request, response) => {
         // });
       }
 
-      const htmlcode = `<html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Success</title>
-        <style>
-          @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap");
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          body {
-            min-height: 100vh;
-            background-color: #eee;
-            display: grid;
-            place-items: center;
-          }
-          main {
-            width: 400px;
-            background-color: #fff;
-            border-radius: 20px;
-            padding: 20px;
-          }
-          .title {
-            text-align: center;
-            color: #22c55e;
-            font-size: 30px;
-            font-family: "Roboto", sans-serif;
-          }
-          .subtitle {
-            text-align: center;
-            color: #333;
-            font-size: 18px;
-            font-family: "Roboto", sans-serif;
-            background: linear-gradient(to left, #bfdbfe, #fed7aa);
-            border-radius: 5px;
-            padding: 4px 0;
-            margin-top: 20px;
-            font-weight: 500;
-          }
-          #date {
-            text-align: center;
-            color: #9ca3af;
-            font-size: 14px;
-            font-family: "Roboto", sans-serif;
-            margin-top: 20px;
-          }
-          .header {
-            font-family: "Roboto", sans-serif;
-            background: linear-gradient(to left, #bfdbfe, #fed7aa);
-            text-align: center;
-            padding: 10px;
-            border-top-right-radius: 10px;
-            border-top-left-radius: 10px;
-            margin-top: 20px;
-          }
-          .header .price {
-            font-weight: 700;
-            font-size: 24px;
-          }
-          .paymentdetails {
-            border: 1px solid #eee;
-            padding: 10px;
-          }
-          .paymentdetails .main {
-            display: flex;
-            justify-content: space-between;
-            margin: 6px 0px;
-          }
-          .paymentdetails .main .prop {
-            font-weight: 400;
-            color: #9ca3af;
-            font-size: 14px;
-            font-family: "Roboto", sans-serif;
-          }
-          .paymentdetails .main .value {
-            color: #333;
-            font-size: 14px;
-            font-family: "Roboto", sans-serif;
-            font-weight: 400;
-          }
-          .btnbox {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-          }
-          .btnone {
-            display: flex;
-            align-items: center;
-            padding: 4px 20px;
-            background-color: #3b82f6;
-            border-radius: 5px;
-            color: #fff;
-            text-decoration: none;
-            font-size: 20px;
-            font-family: "Roboto", sans-serif;
-            font-weight: 500;
-          }
-          .btntwo {
-            display: flex;
-            align-items: center;
-            padding: 4px 20px;
-            background-color: #f43f5e;
-            border-radius: 5px;
-            color: #fff;
-            text-decoration: none;
-            font-size: 20px;
-            font-family: "Roboto", sans-serif;
-            font-weight: 500;
-          }
-          .btnone svg,
-          .btntwo svg {
-            margin-right: 10px;
-            transform: scale(0.8);
-          }
-        </style>
-      </head>
-    
-      <body>
-        <main>
-          <h1 class="title">Transaction Successful</h1>
-    
-          <p class="subtitle">Transaction ID : ${result.tracking_id}</p>
-          <p id="date"></p>
-          <div class="header">
-            <p>Total Amount Transfered</p>
-            <p class="price">₹ ${result.amount}</p>
-          </div>
-          <div class="paymentdetails">
-            <div class="main">
-              <div class="prop">Order ID</div>
-              <div class="value">${result.order_id}</div>
-            </div>
-            <div class="main">
-              <div class="prop">Paid For</div>
-              <div class="value">${result.billing_name}</div>
-            </div>
-            <div class="main">
-              <div class="prop">Bank Ref Number</div>
-              <div class="value">${result.bank_ref_no}</div>
-            </div>
-            <div class="main">
-              <div class="prop">Payee Name</div>
-              <div class="value">${result.billing_name}</div>
-            </div>
-            <div class="main">
-              <div class="prop">To</div>
-              <div class="value">PDA, DNH</div>
-            </div>
-            <div class="main">
-              <div class="prop">Payment Type</div>
-              <div class="value">${result.payment_mode}</div>
-            </div>
-          </div>
-    
-          <div class="btnbox">
-            <a href="https://dddnhvat.com/dashboard" class="btnone" target="_self">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="32"
-                height="32"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  fill="currentColor"
-                  d="M4 21v-9.375L2.2 13L1 11.4L12 3l11 8.4l-1.2 1.575l-1.8-1.35V21zm4-6q-.425 0-.712-.288T7 14q0-.425.288-.712T8 13q.425 0 .713.288T9 14q0 .425-.288.713T8 15m4 0q-.425 0-.712-.288T11 14q0-.425.288-.712T12 13q.425 0 .713.288T13 14q0 .425-.288.713T12 15m4 0q-.425 0-.712-.288T15 14q0-.425.288-.712T16 13q.425 0 .713.288T17 14q0 .425-.288.713T16 15"
-                />
-              </svg>
-              <p>Home</p>
-            </a>
-            <a href="https://dddnhvat.com/contact" class="btntwo" target="_self">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="32"
-                height="32"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  fill="currentColor"
-                  d="M19 11.95q0-2.925-2.037-4.962T12 4.95v-2q1.875 0 3.513.713t2.85 1.925q1.212 1.212 1.925 2.85T21 11.95zm-4 0q0-1.25-.875-2.125T12 8.95v-2q2.075 0 3.538 1.463T17 11.95zM19.95 21q-3.125 0-6.175-1.362t-5.55-3.863q-2.5-2.5-3.862-5.55T3 4.05q0-.45.3-.75t.75-.3H8.1q.35 0 .625.238t.325.562l.65 3.5q.05.4-.025.675T9.4 8.45L6.975 10.9q.5.925 1.187 1.787t1.513 1.663q.775.775 1.625 1.438T13.1 17l2.35-2.35q.225-.225.588-.337t.712-.063l3.45.7q.35.1.575.363T21 15.9v4.05q0 .45-.3.75t-.75.3"
-                />
-              </svg>
-              <p>Contact</p>
-            </a>
-          </div>
-        </main>
-        <script>
-          document.getElementById("date").innerHTML = new Date().toDateString();
-        </script>
-      </body>
-    </html>
-    `;
+      const htmlcode = renderReceiptHtml({
+        statusTitle: "Transaction Successful",
+        statusTone: "success",
+        message: "Your payment has been received successfully.",
+        amount: result.amount,
+        redirectId: challanid ? parseInt(challanid) : 0,
+      });
 
       response.writeHeader(200, { "Content-Type": "text/html" });
       response.write(htmlcode);
@@ -466,8 +476,9 @@ export const postRes = (request, response) => {
       });
 
       // Create new challan with same data
+      let redirectChallanId = challanid ? parseInt(challanid) : 0;
       if (originalChallan) {
-        await prisma.challan.create({
+        const createdChallan = await prisma.challan.create({
           data: {
             dvatid: originalChallan.dvatid,
             cpin: originalChallan.cpin,
@@ -484,8 +495,10 @@ export const postRes = (request, response) => {
             paymentstatus: "CREATED",
             transaction_date: new Date().toISOString(),
             paymentmode: "ONLINE",
+            bank_name: originalChallan.bank_name,
           },
         });
+        redirectChallanId = createdChallan.id;
       }
 
       // Update original challan
@@ -501,7 +514,13 @@ export const postRes = (request, response) => {
         },
       });
 
-      const htmlcode = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Failed</title><script src="https://cdn.tailwindcss.com"></script></head><body><main class="h-screen w-full bg-[#eeeeee] grid place-items-center"><div class="w-96 bg-white rounded-lg p-6"><h1 class="text-rose-500 text-4xl text-center font-semibold">Failed</h1><div class="h-px bg-gray-400 w-full mt-2"></div><p class="text-xl text-slate-700 text-center font-medium mt-4">Payment Failed.</p><div class="flex item-center gap-6 mt-4"><a href="https://dddnhvat.com/dashboard" class="grow py-1 text-center rounded-lg bg-blue-500 text-2xl text-white flex items-center gap-2 justify-center cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M4 21v-9.375L2.2 13L1 11.4L12 3l11 8.4l-1.2 1.575l-1.8-1.35V21zm4-6q-.425 0-.712-.288T7 14q0-.425.288-.712T8 13q.425 0 .713.288T9 14q0 .425-.288.713T8 15m4 0q-.425 0-.712-.288T11 14q0-.425.288-.712T12 13q.425 0 .713.288T13 14q0 .425-.288.713T12 15m4 0q-.425 0-.712-.288T15 14q0-.425.288-.712T16 13q.425 0 .713.288T17 14q0 .425-.288.713T16 15"/></svg><p>Home</p></a><a href="https://dddnhvat.com/contact" class="grow py-1 text-center rounded-lg bg-rose-500 text-2xl text-white flex items-center gap-2 justify-center cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11.95q0-2.925-2.037-4.962T12 4.95v-2q1.875 0 3.513.713t2.85 1.925q1.212 1.212 1.925 2.85T21 11.95zm-4 0q0-1.25-.875-2.125T12 8.95v-2q2.075 0 3.538 1.463T17 11.95zM19.95 21q-3.125 0-6.175-1.362t-5.55-3.863q-2.5-2.5-3.862-5.55T3 4.05q0-.45.3-.75t.75-.3H8.1q.35 0 .625.238t.325.562l.65 3.5q.05.4-.025.675T9.4 8.45L6.975 10.9q.5.925 1.187 1.787t1.513 1.663q.775.775 1.625 1.438T13.1 17l2.35-2.35q.225-.225.588-.337t.712-.063l3.45.7q.35.1.575.363T21 15.9v4.05q0 .45-.3.75t-.75.3"/></svg><p>Contact</p></a></div></div></main></body></html>`;
+      const htmlcode = renderReceiptHtml({
+        statusTitle: "Transaction Failed",
+        statusTone: "failed",
+        message: "Payment could not be completed. Please try again.",
+        amount: result.amount,
+        redirectId: redirectChallanId,
+      });
       response.writeHeader(200, { "Content-Type": "text/html" });
       response.write(htmlcode);
       response.end();

@@ -279,7 +279,7 @@ const ChallanData = () => {
               </TableBody>
             </Table>
             <div className="w-96">
-              {challanData?.paymentmode == "PAID" ? (
+              {challanData?.paymentstatus == "PAID" ? (
                 <>
                   <div className="p-2 flex flex-col gap-2 border bg-gray-100 mt-2">
                     <div>
