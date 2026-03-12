@@ -75,8 +75,8 @@ const PaymentStatusPage = () => {
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [dvatId, setDvatId] = useState<number | null>(null);
 
-  const isInitiatedButIncomplete = (row: challan): boolean => {
-    if (row.paymentstatus === "PAID" || row.paymentstatus === "FAILED") {
+  const isOpenOrFailedPayment = (row: challan): boolean => {
+    if (row.paymentstatus === "PAID") {
       return false;
     }
 
@@ -84,13 +84,12 @@ const PaymentStatusPage = () => {
       return false;
     }
 
-    if (row.order_status && failedGatewayStatus.includes(row.order_status)) {
-      return false;
-    }
-
     return (
+      row.paymentstatus === "FAILED" ||
       row.paymentstatus === "PENDING" ||
+      row.paymentstatus === "CREATED" ||
       (row.order_status && pendingGatewayStatus.includes(row.order_status)) ||
+      (row.order_status && failedGatewayStatus.includes(row.order_status)) ||
       Boolean(row.order_id)
     );
   };
@@ -181,16 +180,19 @@ const PaymentStatusPage = () => {
   };
 
   const initiatedRows = useMemo(
-    () => challanData.filter((row) => isInitiatedButIncomplete(row)),
+    () => challanData.filter((row) => isOpenOrFailedPayment(row)),
     [challanData],
   );
 
   const summary = useMemo(() => {
     let pending = 0;
     let created = 0;
+    let failed = 0;
 
     for (let i = 0; i < initiatedRows.length; i++) {
-      if (initiatedRows[i].paymentstatus === "PENDING") {
+      if (getPaymentBucket(initiatedRows[i]) === "failed") {
+        failed += 1;
+      } else if (initiatedRows[i].paymentstatus === "PENDING") {
         pending += 1;
       } else {
         created += 1;
@@ -201,6 +203,7 @@ const PaymentStatusPage = () => {
       total: initiatedRows.length,
       pending,
       created,
+      failed,
     };
   }, [initiatedRows]);
 
@@ -216,7 +219,7 @@ const PaymentStatusPage = () => {
     <div className="p-3">
       <div className="bg-white shadow mt-4 p-3">
         <div className="bg-blue-600 p-3 text-white text-lg font-semibold">
-          Initiated Payments (Not Completed)
+          Initiated/Failed Payments (Not Completed)
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
@@ -232,10 +235,10 @@ const PaymentStatusPage = () => {
               {summary.pending}
             </p>
           </div>
-          <div className="rounded border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs text-slate-700">Created</p>
-            <p className="text-xl font-semibold text-slate-700">
-              {summary.created}
+          <div className="rounded border border-rose-200 bg-rose-50 p-3">
+            <p className="text-xs text-rose-700">Failed</p>
+            <p className="text-xl font-semibold text-rose-700">
+              {summary.failed}
             </p>
           </div>
         </div>
@@ -245,7 +248,7 @@ const PaymentStatusPage = () => {
             style={{ marginTop: "12px" }}
             type="warning"
             showIcon
-            description="No initiated incomplete payment found in last 3 days."
+            description="No initiated or failed payment found in last 3 days."
           />
         )}
 
