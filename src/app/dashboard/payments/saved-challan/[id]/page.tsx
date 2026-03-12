@@ -139,78 +139,112 @@ const ChallanData = () => {
 
   return (
     <>
-      <div className="p-2 mainpdf" id="mainpdf">
-        <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white">Challan</div>
-
-          <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-2">
-            GST Challan
+      <div className="mainpdf min-h-screen bg-gray-100 p-3 md:p-6" id="mainpdf">
+        <div className="mx-auto w-full max-w-5xl rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="rounded-t-2xl border-b border-dashed border-gray-300 bg-gray-50 px-5 py-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold tracking-wide text-gray-500">
+                  VAT DDDNH • PAYMENT RECEIPT
+                </p>
+                <h1 className="mt-1 text-2xl font-semibold text-gray-900">
+                  Challan Receipt
+                </h1>
+                <p className="mt-1 text-sm text-gray-600">Form DVAT 20</p>
+              </div>
+              <div className="rounded-md border border-gray-300 bg-white px-3 py-2 text-right">
+                <p className="text-xs text-gray-500">Receipt Date</p>
+                <p className="text-sm font-medium text-gray-800">
+                  {formatDateTime(new Date())}
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
+
+          <div className="grid grid-cols-1 gap-4 border-b border-dashed border-gray-300 bg-gray-50/70 px-5 py-4 md:grid-cols-2 lg:grid-cols-4">
             <div>
-              <p className="text-sm">CPIN</p>
-              <p className="text-sm  font-medium">{challanData?.cpin}</p>
+              <p className="text-xs text-gray-500">CPIN</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {challanData?.cpin}
+              </p>
             </div>
             <div>
-              <p className="text-sm">Status</p>
-              <p className="text-sm  font-medium">{challanData?.paymentmode}</p>
+              <p className="text-xs text-gray-500">Payment Status</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {challanData?.paymentstatus || "CREATED"}
+              </p>
             </div>
             <div>
-              <p className="text-sm">Challan Generation Date</p>
-              <p className="text-sm  font-medium">
+              <p className="text-xs text-gray-500">Generated On</p>
+              <p className="text-sm font-semibold text-gray-900">
                 {formatDateTime(new Date(challanData?.createdAt!))}
               </p>
             </div>
             <div>
-              <p className="text-sm">Challan Expiry Date</p>
-              <p className="text-sm  font-medium">
+              <p className="text-xs text-gray-500">Expiry Date</p>
+              <p className="text-sm font-semibold text-gray-900">
                 {formatDateTime(new Date(challanData?.expire_date!))}
               </p>
             </div>
           </div>
 
-          <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">
-            Details Of Taxpayer
-          </div>
-          <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
-            <div>
-              <p className="text-sm">Name</p>
-              <p className="text-sm  font-medium">
-                {user?.firstName} - {user?.lastName}
-              </p>
+          <div className="p-5">
+            <div className="rounded-lg border border-gray-200">
+              <div className="border-b border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700">
+                Taxpayer Details
+              </div>
+              <div className="grid grid-cols-1 gap-3 px-4 py-3 md:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <p className="text-xs text-gray-500">Name</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {user?.firstName} - {user?.lastName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Email</p>
+                  <p className="text-sm font-medium text-gray-900">{user?.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Mobile</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {user?.mobileOne}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">TIN Number</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {dvat?.tinNumber}
+                  </p>
+                </div>
+                <div className="md:col-span-2 lg:col-span-2">
+                  <p className="text-xs text-gray-500">Address</p>
+                  <p className="text-sm font-medium text-gray-900">{user?.address}</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm">Email</p>
-              <p className="text-sm  font-medium">{user?.email}</p>
-            </div>
-            <div>
-              <p className="text-sm">Mobile</p>
-              <p className="text-sm  font-medium">{user?.mobileOne}</p>
-            </div>
-            <div>
-              <p className="text-sm">User TIN Number</p>
-              <p className="text-sm  font-medium">{dvat?.tinNumber}</p>
-            </div>
-            <div>
-              <p className="text-sm">Address</p>
-              <p className="text-sm  font-medium">{user?.address}</p>
-            </div>
-          </div>
 
-          <div className="py-1 text-sm font-medium border-y-2 border-gray-300 mt-4">
-            Reason for challan
-          </div>
-          <div className="p-1 bg-gray-50 grid grid-cols-4  gap-2  px-4">
-            <div>
-              <p className="text-sm">Reason for challan</p>
-              <p className="text-sm font-medium">
-                {capitalcase(challanData?.reason ?? "")}
-              </p>
+            <div className="mt-4 rounded-lg border border-gray-200">
+              <div className="border-b border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700">
+                Challan Information
+              </div>
+              <div className="grid grid-cols-1 gap-3 px-4 py-3 md:grid-cols-2">
+                <div>
+                  <p className="text-xs text-gray-500">Reason for Challan</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {capitalcase(challanData?.reason ?? "")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Payment Mode</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {challanData?.paymentmode || "ONLINE"}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="flex gap-4">
-            <Table className="border mt-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+              <Table className="border border-gray-200">
               <TableHeader>
                 <TableRow className="bg-gray-100">
                   <TableHead className="whitespace-nowrap text-center px-2 border"></TableHead>
@@ -278,55 +312,57 @@ const ChallanData = () => {
                 </TableRow>
               </TableBody>
             </Table>
-            <div className="w-96">
-              {challanData?.paymentstatus == "PAID" ? (
-                <>
-                  <div className="p-2 flex flex-col gap-2 border bg-gray-100 mt-2">
-                    <div>
-                      <p className="text-sm">Bank Name</p>
-                      <p className="text-sm  font-medium">
-                        {challanData?.bank_name}
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                {challanData?.paymentstatus == "PAID" ? (
+                  <>
+                    <div className="rounded-md border border-gray-200 bg-white p-3">
+                      <p className="text-sm font-semibold text-gray-800">
+                        Payment Confirmation
                       </p>
+                      <div className="mt-3 space-y-2">
+                        <div>
+                          <p className="text-xs text-gray-500">Bank Name</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {challanData?.bank_name}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Track Id</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {challanData?.track_id}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Transaction Date</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {formateDate(new Date(challanData?.transaction_date!))}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm">Track Id</p>
-                      <p className="text-sm  font-medium">
-                        {challanData?.track_id}
-                      </p>
+                    <div className="mt-3">
+                      <Button
+                        className="hidden-print w-full"
+                        type="primary"
+                        onClick={async (e) => {
+                          await generatePDF(
+                            `/dashboard/payments/saved-challan/${encryptURLData(
+                              challanid.toString(),
+                            )}?sidebar=no&userid=${userid}`,
+                          );
+                        }}
+                      >
+                        Download Challan
+                      </Button>
                     </div>
-                    {/* <div>
-                      <p className="text-sm">Transaction Id</p>
-                      <p className="text-sm  font-medium">
-                        {challanData?.transaction_id}
-                      </p>
-                    </div> */}
-                    <div>
-                      <p className="text-sm">Transaction Date</p>
-                      <p className="text-sm  font-medium">
-                        {formateDate(new Date(challanData?.transaction_date!))}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-2"></div>
-                  <Button
-                    className="hidden-print"
-                    type="primary"
-                    onClick={async (e) => {
-                      await generatePDF(
-                        `/dashboard/payments/saved-challan/${encryptURLData(
-                          challanid.toString(),
-                        )}?sidebar=no&userid=${userid}`,
-                      );
-                    }}
-                  >
-                    Download Challan
-                  </Button>
-                </>
-              ) : (
-                <>
+                  </>
+                ) : (
                   <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-                    <div className="mt-2">
-                      <p>Bank Name</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      Complete Payment
+                    </p>
+                    <div className="mt-3">
+                      <p className="text-sm">Bank Name</p>
                       <input
                         className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
                           errors.bank_name
@@ -344,7 +380,7 @@ const ChallanData = () => {
                       )}
                     </div>
                     <div className="mt-2">
-                      <p>Transaction Id</p>
+                      <p className="text-sm">Transaction Id</p>
                       <input
                         className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500 ${
                           errors.transaction_id
@@ -361,7 +397,7 @@ const ChallanData = () => {
                       )}
                     </div>
                     <div className="mt-2">
-                      <p>Track Id</p>
+                      <p className="text-sm">Track Id</p>
                       <input
                         className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
                           errors.track_id
@@ -377,16 +413,7 @@ const ChallanData = () => {
                         </p>
                       )}
                     </div>
-                    <div className="flex  gap-2 mt-2">
-                      {/* <div className="grow"></div> */}
-                      {/* <Button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          router.back();
-                        }}
-                      >
-                        Back
-                      </Button> */}
+                    <div className="mt-3 flex gap-2">
                       <Button
                         disabled={isSubmitting}
                         onClick={(e) => {
@@ -403,34 +430,39 @@ const ChallanData = () => {
                       />
                     </div>
                   </form>
-                </>
-              )}
+                )}
+              </div>
             </div>
           </div>
+
           {challanData?.remark == null ||
           challanData?.remark == undefined ||
           challanData?.remark == "" ? (
             <></>
           ) : (
-            <div className="mt-2 bg-gray-100 p-2 rounded-md">
-              <p>Remark</p>
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <p className="text-sm font-medium text-gray-700">Remark</p>
               <Separator />
-              <p>{challanData?.remark}</p>
+              <p className="mt-2 text-sm text-gray-800">{challanData?.remark}</p>
             </div>
           )}
 
-          <div className="p-2">
-            <p className="text-center text-xl font-semibold">Form DVAT 20</p>
-            <p className="mt-2 text-sm">
+          <div className="mt-4 rounded-b-2xl border-t border-dashed border-gray-300 bg-gray-50 px-5 py-4">
+            <p className="text-center text-lg font-semibold text-gray-800">
+              Form DVAT 20
+            </p>
+            <p className="mt-2 text-sm text-gray-700">
               (See Rule 28 of the Dadra and Nagar Haveli and Daman and Diu Value
               Added Tax Rules, 2021)
             </p>
-            <p className="mt-3 text-sm">
+            <p className="mt-2 text-sm text-gray-700">
               Challan for the Dadra and Nagar Haveli and Daman and Diu Value
               Added Regulation, 2005
             </p>
-            <p className="mt-3 text-sm">Credited: Consolidated Fund of India</p>
-            <p className="mt-3 text-sm">
+            <p className="mt-2 text-sm text-gray-700">
+              Credited: Consolidated Fund of India
+            </p>
+            <p className="mt-2 text-sm text-gray-700">
               Head: 0040, Value Added Tax Receipt - Value Added Tax Receipt
             </p>
             {/* <p className="text-sm">

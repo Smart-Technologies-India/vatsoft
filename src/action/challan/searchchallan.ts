@@ -13,7 +13,7 @@ interface SearchChallanPayload {
   cpin?: string;
   fromdate?: Date;
   todate?: Date;
-  dept: SelectOffice;
+  dept?: SelectOffice;
   skip: number;
   take: number;
 }
@@ -29,9 +29,11 @@ const SearchChallan = async (
         where: {
           deletedAt: null,
           deletedById: null,
-          dvat: {
-            selectOffice: payload.dept,
-          },
+          ...(payload.dept && {
+            dvat: {
+              selectOffice: payload.dept,
+            },
+          }),
           ...(payload.dvatid && { dvatid: payload.dvatid }),
           ...(payload.cpin && { cpin: payload.cpin }),
           ...(payload.fromdate &&
@@ -49,9 +51,11 @@ const SearchChallan = async (
         where: {
           deletedAt: null,
           deletedById: null,
-          dvat: {
-            selectOffice: payload.dept,
-          },
+          ...(payload.dept && {
+            dvat: {
+              selectOffice: payload.dept,
+            },
+          }),
           ...(payload.dvatid && { dvatid: payload.dvatid }),
           ...(payload.cpin && { cpin: payload.cpin }),
           ...(payload.fromdate &&

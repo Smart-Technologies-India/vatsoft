@@ -66,6 +66,11 @@ const Page = () => {
                 description="View the history of all your VAT payment challans and their statuses."
                 link="/dashboard/payments/department-challan-history"
               />
+              <DashboardCards
+                title="Check Payment Status"
+                description="View the status of your VAT payments."
+                link="/dashboard/paymentstatus"
+              />
             </>
           )}
 
