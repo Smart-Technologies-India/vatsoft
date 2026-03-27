@@ -5130,7 +5130,7 @@ const CentralSales = (props: CentralSalesProps) => {
                 parseFloat(getLabour().increase) -
                 parseFloat(getFormF().increase) -
                 parseFloat(getExportIndia().increase))
-            ).toFixed(0)}
+            )}
           </td>
         </tr>
         <tr className="w-full">

@@ -43,6 +43,29 @@ const AddNil = async (
     "November",
     "December",
   ];
+
+  const monthIndex = monthNames.indexOf(payload.month);
+
+  if (monthIndex === -1) {
+    return createResponse({
+      message: "Invalid month selected.",
+      functionname,
+    });
+  }
+
+  const startDate = new Date(parseInt(payload.year), monthIndex, 1);
+  const endDate = new Date(parseInt(payload.year), monthIndex + 1, 1);
+
+  const isPurchaseType =
+    payload.dvat_type === DvatType.DVAT_30 ||
+    payload.dvat_type === DvatType.DVAT_30_A;
+  const isSaleType =
+    payload.dvat_type === DvatType.DVAT_31 ||
+    payload.dvat_type === DvatType.DVAT_31_A;
+  const isLocalType =
+    payload.dvat_type === DvatType.DVAT_30 ||
+    payload.dvat_type === DvatType.DVAT_31;
+
   try {
     const dvat04 = await prisma.dvat04.findFirst({
       where: {
@@ -60,60 +83,50 @@ const AddNil = async (
       });
     }
 
-    const purchase = await prisma.daily_purchase.findMany({
-      where: {
-        dvat04Id: dvat04.id,
-        is_dvat_30a: false,
-        deletedAt: null,
-        deletedById: null,
-        invoice_date: {
-          gte: new Date(
-            parseInt(payload.year),
-            monthNames.indexOf(payload.month),
-            1,
-          ).toISOString(),
-          lte: new Date(
-            parseInt(payload.year),
-            monthNames.indexOf(payload.month),
-            31,
-          ).toISOString(),
+    if (isPurchaseType) {
+      const purchaseCount = await prisma.daily_purchase.count({
+        where: {
+          dvat04Id: dvat04.id,
+          is_dvat_30a: false,
+          is_local: isLocalType,
+          deletedAt: null,
+          deletedById: null,
+          invoice_date: {
+            gte: startDate,
+            lt: endDate,
+          },
         },
-      },
-    });
-
-    if (purchase.length > 0) {
-      return createResponse({
-        message: "Cannot add nil entry. Purchase entry exists for the month.",
-        functionname,
       });
+
+      if (purchaseCount > 0) {
+        return createResponse({
+          message: "Cannot add nil entry. Purchase entry exists for the month.",
+          functionname,
+        });
+      }
     }
 
-    const sale = await prisma.daily_sale.findMany({
-      where: {
-        dvat04Id: dvat04.id,
-        is_dvat_31: false,
-        deletedAt: null,
-        deletedById: null,
-        invoice_date: {
-          gte: new Date(
-            parseInt(payload.year),
-            monthNames.indexOf(payload.month),
-            1,
-          ).toISOString(),
-          lte: new Date(
-            parseInt(payload.year),
-            monthNames.indexOf(payload.month),
-            31,
-          ).toISOString(),
+    if (isSaleType) {
+      const saleCount = await prisma.daily_sale.count({
+        where: {
+          dvat04Id: dvat04.id,
+          is_dvat_31: false,
+          is_local: isLocalType,
+          deletedAt: null,
+          deletedById: null,
+          invoice_date: {
+            gte: startDate,
+            lt: endDate,
+          },
         },
-      },
-    });
-
-    if (sale.length > 0) {
-      return createResponse({
-        message: "Cannot add nil entry. Sale entry exists for the month.",
-        functionname,
       });
+
+      if (saleCount > 0) {
+        return createResponse({
+          message: "Cannot add nil entry. Sale entry exists for the month.",
+          functionname,
+        });
+      }
     }
 
     const return_res = await prisma.returns_01.findFirst({
@@ -148,7 +161,7 @@ const AddNil = async (
           status: Status.ACTIVE,
           invoice_date: new Date(
             parseInt(payload.year),
-            monthNames.indexOf(payload.month),
+            monthIndex,
             5,
           ).toISOString(),
           createdById: payload.createdById,
@@ -208,7 +221,7 @@ const AddNil = async (
           status: Status.ACTIVE,
           invoice_date: new Date(
             parseInt(payload.year),
-            monthNames.indexOf(payload.month),
+            monthIndex,
             5,
           ).toISOString(),
           createdById: payload.createdById,
