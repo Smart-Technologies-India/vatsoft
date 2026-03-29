@@ -990,7 +990,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     }
 
     const diff_days = getDaysBetweenDates(
-      new Date(parseInt(props.return01.year), monthIndex, 15),
+      new Date(parseInt(props.return01.year), monthIndex, 16),
       currentDate
     );
     setDiffDays(diff_days);
@@ -1549,7 +1549,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
     }
 
     const diff_days = getDaysBetweenDates(
-      new Date(parseInt(props.return01.year), monthIndex, 15),
+      new Date(parseInt(props.return01.year), monthIndex, 16),
       currentDate
     );
     setDiffDays(diff_days);
@@ -3609,7 +3609,7 @@ const NetTax = (props: NetTaxProps) => {
     }
 
     const diff_days = getDaysBetweenDates(
-      new Date(parseInt(props.return01.year), monthIndex, 15),
+      new Date(parseInt(props.return01.year), monthIndex, 16),
       currentDate
     );
     setDiffDays(diff_days);
@@ -4148,7 +4148,7 @@ const CentralSales = (props: CentralSalesProps) => {
     }
 
     const diff_days = getDaysBetweenDates(
-      new Date(parseInt(props.return01.year), monthIndex, 15),
+      new Date(parseInt(props.return01.year), monthIndex, 16),
       currentDate
     );
     setDiffDays(diff_days);

@@ -186,6 +186,8 @@ const DailySale = (props: DailySaleProviderProps) => {
     useState<commodity_master | null>(null);
   const [vatamount, setVatAmount] = useState<string>("0");
   const [taxableValue, setTaxableValue] = useState<string>("0");
+  const [fuelTotalInvoiceValue, setFuelTotalInvoiceValue] =
+    useState<string>("");
 
   const [isLiquore, setLiquore] = useState<boolean>(false);
   const [liquoreOIDCAmount, setLiquoreOIDCAmount] = useState<number>(0);
@@ -231,6 +233,30 @@ const DailySale = (props: DailySaleProviderProps) => {
   const description_of_goods = watch("description_of_goods");
   const quantity = watch("quantity");
   const amount_unit = watch("amount_unit");
+
+  useEffect(() => {
+    if (davtdata?.commodity !== "FUEL") {
+      if (fuelTotalInvoiceValue !== "") {
+        setFuelTotalInvoiceValue("");
+      }
+      return;
+    }
+
+    const totalInvoiceNumeric = Number(fuelTotalInvoiceValue);
+    const quantityNumeric = Number(quantity);
+
+    if (
+      !Number.isFinite(totalInvoiceNumeric) ||
+      totalInvoiceNumeric <= 0 ||
+      !Number.isFinite(quantityNumeric) ||
+      quantityNumeric <= 0
+    ) {
+      setValue("amount_unit", "0");
+      return;
+    }
+
+    setValue("amount_unit", (totalInvoiceNumeric / quantityNumeric).toFixed(2));
+  }, [davtdata?.commodity, fuelTotalInvoiceValue, quantity, setValue]);
 
   useEffect(() => {
     if (description_of_goods == null || description_of_goods == undefined)
@@ -435,6 +461,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     setLiquoreOIDCAmount(0);
     setLiquoreDealerAmount(0);
     setTinBox(false);
+    setFuelTotalInvoiceValue("");
 
     await init();
   };
@@ -584,6 +611,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     setTinBox(false);
     setCommodityMaster([]);
     setIsAddMoreMode(true);
+    setFuelTotalInvoiceValue("");
     await props.init();
     await init();
     setIsAddMoreMode(true);
@@ -751,6 +779,23 @@ const DailySale = (props: DailySaleProviderProps) => {
           />
         </div>
 
+        {davtdata?.commodity == "FUEL" && (
+          <div className="mt-2">
+            <p className="text-sm font-normal">Total Invoice Value</p>
+            <Input
+              value={fuelTotalInvoiceValue}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                  setFuelTotalInvoiceValue(value);
+                }
+              }}
+              placeholder="Enter Total Invoice Value"
+              inputMode="decimal"
+            />
+          </div>
+        )}
+
         {(davtdata?.commodity == "OIDC" ||
           davtdata?.commodity == "MANUFACTURER") &&
           commoditymaster != null && (
@@ -773,29 +818,29 @@ const DailySale = (props: DailySaleProviderProps) => {
               </Radio.Group>
             </div>
           )}
-        <div className="mt-2">
-          <TaxtInput<DailySaleForm>
-            placeholder={
-              (davtdata?.commodity == "OIDC" ||
-                davtdata?.commodity == "MANUFACTURER") &&
-              quantityCount == "crate"
-                ? "Enter Crate amount (Sale price including VAT)"
-                : "Enter Net amount/unit (Sale price including VAT)"
-            }
-            name="amount_unit"
-            required={true}
-            title={
-              (davtdata?.commodity == "OIDC" ||
-                davtdata?.commodity == "MANUFACTURER") &&
-              quantityCount == "crate"
-                ? "Enter Crate amount (Sale price including VAT)"
-                : "Enter Net amount/unit (Sale price including VAT)"
-            }
-            // onlynumber={true}
-            numdes={true}
-          />
-        </div>
-
+        {davtdata?.commodity != "FUEL" && (
+          <div className="mt-2">
+            <TaxtInput<DailySaleForm>
+              placeholder={
+                (davtdata?.commodity == "OIDC" ||
+                  davtdata?.commodity == "MANUFACTURER") &&
+                quantityCount == "crate"
+                  ? "Enter Crate amount (Sale price including VAT)"
+                  : "Enter Net amount/unit (Sale price including VAT)"
+              }
+              name="amount_unit"
+              required={true}
+              title={
+                (davtdata?.commodity == "OIDC" ||
+                  davtdata?.commodity == "MANUFACTURER") &&
+                quantityCount == "crate"
+                  ? "Enter Crate amount (Sale price including VAT)"
+                  : "Enter Net amount/unit (Sale price including VAT)"
+              }
+              numdes={true}
+            />
+          </div>
+        )}
         <div className="flex gap-1 items-center">
           <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
             <p className="text-xs font-normal">Taxable (%)</p>
@@ -807,14 +852,31 @@ const DailySale = (props: DailySaleProviderProps) => {
                   : "0%"}
             </p>
           </div>
-          <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
-            <p className="text-xs font-normal">Total Invoice Value</p>
-            <p className="text-sm font-semibold">
-              {formatAmount(
-                (Number(quantity) || 0) * (Number(amount_unit) || 0),
-              )}
-            </p>
-          </div>
+          {davtdata?.commodity == "FUEL" ? (
+            <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
+               <p className="text-xs font-normal">Net amount/unit</p>
+              <p className="text-sm font-semibold">
+                {amount_unit ? formatAmount(amount_unit) : "0.00"}
+              </p>
+              {/* <TaxtInput<DailySaleForm>
+                placeholder="Quantity and Total Invoice Value"
+                name="amount_unit"
+                required={true}
+                title="Net amount/unit"
+                disable={true}
+                numdes={true}
+              /> */}
+            </div>
+          ) : (
+            <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
+              <p className="text-xs font-normal">Total Invoice Value</p>
+              <p className="text-sm font-semibold">
+                {formatAmount(
+                  (Number(quantity) || 0) * (Number(amount_unit) || 0),
+                )}
+              </p>
+            </div>
+          )}
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
             <p className="text-xs font-normal">Total Taxable Value</p>
             <p className="text-sm font-semibold">
@@ -863,6 +925,7 @@ const DailySale = (props: DailySaleProviderProps) => {
                 quantity: "",
                 recipient_vat_no: "",
               });
+              setFuelTotalInvoiceValue("");
               setIsAddMoreMode(false);
             }}
             value={"Reset"}

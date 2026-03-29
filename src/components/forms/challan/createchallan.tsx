@@ -146,7 +146,7 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
               <TableHeader>
                 <TableRow className="bg-gray-50 border-b">
                   <TableHead className="text-left p-2 font-medium text-gray-700 text-xs">
-                    Payment of account of
+                    Payment on account of
                   </TableHead>
                   <TableHead className="text-center p-2 font-medium text-gray-700 text-xs w-60">
                     Tax (&#x20b9;)

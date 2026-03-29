@@ -16,7 +16,15 @@ import {
   CreateFirstStockSchema,
 } from "@/schema/create_first_stock";
 import GetUserDvat04FirstStock from "@/action/dvat/getuserdvatfirststock";
-import { Checkbox, Radio, RadioChangeEvent, Modal, Form, Input, Select } from "antd";
+import {
+  Checkbox,
+  Radio,
+  RadioChangeEvent,
+  Modal,
+  Form,
+  Input,
+  Select,
+} from "antd";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
 import GetNilCommodity from "@/action/save_stock/getnilcomodity";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
@@ -36,7 +44,7 @@ type CreateFirstStockProviderProps = {
 };
 
 export const CreateFirstStockProvider = (
-  props: CreateFirstStockProviderProps
+  props: CreateFirstStockProviderProps,
 ) => {
   const methods = useForm<CreateFirstStockForm>({
     resolver: valibotResolver(CreateFirstStockSchema),
@@ -64,7 +72,7 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
-    []
+    [],
   );
 
   const [dvatdata, setDvatdata] = useState<dvat04 | null>(null);
@@ -79,19 +87,19 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
 
       if (userdvat.status && userdvat.data) {
         setDvatdata(userdvat.data);
-        const commodity_resposen = await AllCommodityMaster({});
-        if (commodity_resposen.status && commodity_resposen.data) {
+        const commodity_response = await AllCommodityMaster({});
+        if (commodity_response.status && commodity_response.data) {
           if (userdvat.data.commodity == "FUEL") {
             setCommodityMaster(
-              commodity_resposen.data.filter(
-                (val) => val.product_type == "FUEL"
-              )
+              commodity_response.data.filter(
+                (val) => val.product_type == "FUEL",
+              ),
             );
           } else {
             setCommodityMaster(
-              commodity_resposen.data.filter(
-                (val) => val.product_type != "FUEL"
-              )
+              commodity_response.data.filter(
+                (val) => val.product_type != "FUEL",
+              ),
             );
           }
         }
@@ -139,7 +147,7 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
 
     // Check if product already exists in stock
     const existingProductIndex = props.stock.findIndex(
-      (item) => item.item.id === commoditymaster.id
+      (item) => item.item.id === commoditymaster.id,
     );
 
     if (existingProductIndex !== -1) {
@@ -290,7 +298,7 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
               (val: commodity_master, index: number) => ({
                 value: val.id.toString(),
                 label: val.product_name,
-              })
+              }),
             )}
           />
         </div>
@@ -361,16 +369,19 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
           <p>NIL Stock</p>
         </div>
       )}
+      {/* don't show this option for dvat type FUEL */}
 
-      <div className="mt-2 mb-2">
-        <button
-          type="button"
-          onClick={() => setIsProductModalOpen(true)}
-          className="text-blue-600 hover:text-blue-800 text-sm underline cursor-pointer bg-transparent border-none"
-        >
-          Could not find your product? Click here to request
-        </button>
-      </div>
+      {dvatdata?.commodity != "FUEL" && (
+        <div className="mt-2 mb-2">
+          <button
+            type="button"
+            onClick={() => setIsProductModalOpen(true)}
+            className="text-blue-600 hover:text-blue-800 text-sm underline cursor-pointer bg-transparent border-none"
+          >
+            Could not find your product? Click here to request
+          </button>
+        </div>
+      )}
 
       <div className="flex gap-2">
         <button

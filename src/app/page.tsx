@@ -1,18 +1,11 @@
 "use client";
 
-import { Button, Drawer, Input } from "antd";
+import { Button, Input, Modal } from "antd";
 import Marquee from "react-fast-marquee";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import Image from "next/image";
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "react-toastify";
-import { Label } from "@/components/ui/label";
-import { news } from "@prisma/client";
 import { useRouter } from "next/navigation";
-import GetAllNews from "@/action/news/getallnews";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Accordion,
   AccordionContent,
@@ -20,1145 +13,86 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { addMonths, format } from "date-fns";
-
 import { FluentEye12Regular, FluentEyeOff16Regular } from "@/components/icons";
 import DvatPasswordLogin from "@/action/user/dvatpasswordlogin";
+import Image from "next/image";
+import SendForgetPasswordOtp from "@/action/user/sendforgetpasswordotp";
+import VerifyForgetPasswordOtp from "@/action/user/verifyforgetpasswordotp";
+import ResetForgetPassword from "@/action/user/resetforgotpassword";
+
+const navItems = [
+  { href: "/", label: "Home" },
+  { href: "/contact", label: "Contact Us" },
+  {
+    href: "https://docs.google.com/forms/d/e/1FAIpQLSf-bLcpu_zAmyzgv4dxahMfDgOAfeNcnI8fg2y1yyfG2k_Org/viewform?usp=sharing",
+    label: "Registration",
+  },
+  { href: "/verify", label: "Verify" },
+  { href: "/news", label: "Notifications" },
+  { href: "/policy", label: "Disclaimer" },
+];
+
+const faqs = [
+  {
+    question: "How can I register for VAT?",
+    answer:
+      "Use the Registration link and fill in the required details. The department verifies your submission and then shares login credentials on your registered contact details.",
+  },
+  {
+    question: "How do I log in to the portal?",
+    answer:
+      "Use your TIN number and password in Dealer Login. On successful verification, you will be redirected to your dashboard.",
+  },
+  {
+    question: "How do I file a VAT return?",
+    answer:
+      "After you maintain stock, purchase, and sale details, the portal prepares return-ready data and supports filing from your account.",
+  },
+  {
+    question: "How is C-Form handled?",
+    answer:
+      "C-Form related processes are available under the return and statutory forms workflows based on your transaction records.",
+  },
+];
+
+const features = [
+  "Grant of certificate of registration to eligible dealers",
+  "Amendment and cancellation of registration",
+  "Issue of statutory forms such as C, F and H",
+  "Refund processing and compliance workflow",
+  "Recovery tracking for tax, interest and penalty",
+  "Assessment, audit, inspection and appeal support",
+];
+
+const whatsNew = [
+  "Simplified stock management module for compliance-ready records",
+  "Auto-conversion support from purchase and sale data to return sections",
+  "Reminder and notification improvements for filing and payment dates",
+  "Enhanced dashboard summaries for dues and pending actions",
+  "Dealer-side verification workflow for received stock entries",
+];
+
+const videos = [
+  {
+    src: "https://www.youtube.com/embed/SKFZGmgS52o",
+    title: "How to Register on VAT-SMART",
+    description:
+      "Step-by-step walkthrough for dealer onboarding and account creation.",
+  },
+  {
+    src: "https://www.youtube.com/embed/H941IkF71pM",
+    title: "How to Add Local Purchases",
+    description:
+      "Guidance for recording local purchase invoices correctly in the portal.",
+  },
+  {
+    src: "https://www.youtube.com/embed/K398HeqOv7k",
+    title: "How to Convert Sales to Returns",
+    description:
+      "Learn how sale data maps to return sections for faster filing.",
+  },
+];
 
-const Home = () => {
-  const faqs = [
-    {
-      question: "How can I register for VAT?",
-      answer:
-        "To register, simply fill out the Google Form available through the link on the website. The VAT department will create your account based on the provided details and share the login credentials via your registered email and mobile number.",
-    },
-    {
-      question: "How do I log in to the portal?",
-      answer:
-        "You can log in using your TIN number or registered mobile number. After entering your details, you will receive an OTP for verification.",
-    },
-    {
-      question: "How do I file a VAT return?",
-      answer:
-        "The system auto-generates the return when you update your stock and sales details on the web portal. This information is converted into the required return format.",
-    },
-    {
-      question: "How is the C-Form generated?",
-      answer:
-        "The C-Form is automatically generated three months after interstate filing has been completed.",
-    },
-  ];
-
-  const [openItems, setOpenItems] = useState<string[]>([]);
-
-  const toggleItem = (value: string) => {
-    setOpenItems((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value],
-    );
-  };
-
-  const [open, setOpen] = useState(false);
-
-  const showDrawer = () => {
-    setOpen(true);
-  };
-
-  const onClose = () => {
-    setOpen(false);
-  };
-  const [newsdata, setNews] = useState<news[]>([]);
-  const [isLoading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-      const news_resonse = await GetAllNews({
-        take: 5,
-        skip: 0,
-      });
-      if (news_resonse.status && news_resonse.data.result) {
-        setNews(news_resonse.data.result);
-      }
-      setLoading(false);
-    };
-
-    init();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
-        Loading...
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <main className="bg-linear-to-b from-blue-50 to-white pb-8">
-        <header className="bg-linear-to-r from-[#05313c] to-[#0a5b6f] w-full flex gap-2 items-center mx-auto md:w-3/5 px-6 md:px-0 shadow-lg">
-          {/* <h1 className="text-white font-medium text-xl">VATSMART</h1> */}
-          {/* <div className="w-10"></div> */}
-          <div className="mx-auto hidden md:block">
-            <Link
-              href="/"
-              className="text-white inline-block py-2 px-4 rounded-md transition-all duration-200 hover:bg-white/20 hover:shadow-md"
-            >
-              Home
-            </Link>
-            <Link
-              href="/contact"
-              className="text-white inline-block py-2 px-4 rounded-md transition-all duration-200 hover:bg-white/20 hover:shadow-md"
-            >
-              Contact
-            </Link>
-            <Link
-              href="https://docs.google.com/forms/d/e/1FAIpQLSf-bLcpu_zAmyzgv4dxahMfDgOAfeNcnI8fg2y1yyfG2k_Org/viewform?usp=sharing"
-              className="text-white inline-block py-2 px-4 rounded-md transition-all duration-200 hover:bg-white/20 hover:shadow-md"
-            >
-              Registration
-            </Link>
-            <Link
-              href="/verify"
-              className="text-white inline-block py-2 px-4 rounded-md transition-all duration-200 hover:bg-white/20 hover:shadow-md"
-            >
-              Verify
-            </Link>
-          </div>
-          <div className="grow"></div>
-          <Button
-            onClick={showDrawer}
-            className="bg-white hover:bg-blue-50 text-[#05313c] font-semibold rounded-lg px-6 py-1 text-sm inline-block h-8 mr-2 shadow-md transition-all duration-200"
-          >
-            LOGIN
-          </Button>
-          <Drawer closeIcon={null} onClose={onClose} open={open}>
-            {/* <LoginComponent /> */}
-            <PasswordLoginComponent />
-          </Drawer>
-        </header>
-        <div className="mx-auto md:hidden bg-linear-to-r from-[#05313c] to-[#0a5b6f] flex justify-center md:w-3/5 py-4 px-6 md:px-0 shadow-lg">
-          <Link
-            href="/"
-            className="text-white inline-block py-2 px-3 rounded-md transition-all duration-200 hover:bg-white/20"
-          >
-            Home
-          </Link>
-          <Link
-            href="/contact"
-            className="text-white inline-block py-2 px-3 rounded-md transition-all duration-200 hover:bg-white/20"
-          >
-            Contact
-          </Link>
-          <Link
-            href="https://docs.google.com/forms/d/e/1FAIpQLSf-bLcpu_zAmyzgv4dxahMfDgOAfeNcnI8fg2y1yyfG2k_Org/viewform?usp=sharing"
-            className="text-white inline-block py-2 px-3 rounded-md transition-all duration-200 hover:bg-white/20"
-          >
-            Registration
-          </Link>
-          <Link
-            href="/verify"
-            className="text-white inline-block py-2 px-3 rounded-md transition-all duration-200 hover:bg-white/20"
-          >
-            Verify
-          </Link>
-        </div>
-
-        <div className="relative w-full h-48 mx-auto md:w-3/5 py-4 px-6 md:px-0">
-          <Image
-            src="/banner.png"
-            alt="VAT-SMART Banner"
-            fill={true}
-            className="object-contain object-center bg-linear-to-r from-[#0a5b6f] to-[#0a5b6f] shadow-xl"
-          />
-        </div>
-
-        <div className="relative w-full mx-auto md:w-3/5 md:px-0 px-6">
-          <Marquee className="bg-linear-to-r from-yellow-100 to-yellow-50 border border-yellow-300 rounded-lg shadow-sm text-sm py-2 font-medium text-gray-700">
-            📢 This banner shall be used for official updates and notifications.
-          </Marquee>
-        </div>
-
-        <div className="mx-auto md:w-3/5 py-8 px-6 md:px-0">
-          <section className="mx-auto">
-            <h1 className="text-center text-4xl font-bold bg-linear-to-r from-[#05313c] to-[#1096b7] bg-clip-text text-transparent mb-8">
-              Upcoming Due Dates
-            </h1>
-
-            <CardComponent />
-            <div className="h-2"></div>
-            <CardQuarterComponent />
-          </section>
-        </div>
-
-        <section className="mx-auto md:w-3/5 py-8 px-6 md:px-0">
-          <div>
-            <h2 className="text-3xl font-bold bg-linear-to-r from-[#05313c] to-[#1096b7] bg-clip-text text-transparent mb-6">
-              VAT Knowledge Base
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-200 flex flex-col">
-                <iframe
-                  className="w-full aspect-video"
-                  src="https://www.youtube.com/embed/SKFZGmgS52o"
-                  title="How to Register on VAT-SMART"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                ></iframe>
-                <div className="p-4 bg-linear-to-br from-[#05313c] to-[#0a5b6f] grow">
-                  <h3 className="text-white text-base font-semibold mb-2">
-                    How to Register on VAT-SMART
-                  </h3>
-                  <p className="text-gray-200 text-sm leading-relaxed">
-                    Learn how to register on the VAT-SMART portal in this
-                    step-by-step tutorial.
-                  </p>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-200 flex flex-col">
-                <iframe
-                  className="w-full aspect-video"
-                  src="https://www.youtube.com/embed/H941IkF71pM"
-                  title="How to Add Local Purchases on the VAT-SMART Portal"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                ></iframe>
-                <div className="p-4 bg-linear-to-br from-[#05313c] to-[#0a5b6f] grow">
-                  <h3 className="text-white text-base font-semibold mb-2">
-                    How to Add Local Purchases on the VAT-SMART Portal
-                  </h3>
-                  <p className="text-gray-200 text-sm leading-relaxed">
-                    This tutorial explains how to accurately add local purchase
-                    details on the VAT-SMART portal.
-                  </p>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-200">
-                <iframe
-                  className="w-full aspect-video"
-                  src="https://www.youtube.com/embed/K398HeqOv7k"
-                  title="How to Convert Sales to Returns on the VAT-SMART Portal"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                ></iframe>
-                <div className="p-4 bg-linear-to-br from-[#05313c] to-[#0a5b6f]">
-                  <h3 className="text-white text-base font-semibold mb-2">
-                    How to Convert Sales to Returns on the VAT-SMART Portal
-                  </h3>
-                  <p className="text-gray-200 text-sm leading-relaxed">
-                    Discover how to use the VAT-SMART portal to convert sales
-                    data into VAT returns by auto-filling the DVAT 31 and DVAT
-                    31A forms.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-      <div className="grid grid-cols-1 md:grid-cols-9 gap-6 mx-auto md:w-3/5 py-8 px-6 md:px-0">
-        <div className="md:col-span-4 bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-          <div className="bg-linear-to-r from-[#05313c] to-[#1096b7] p-4">
-            <h2 className="text-xl font-bold text-white">Features</h2>
-          </div>
-          <div className="p-6 h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-[#1096b7] scrollbar-track-gray-100">
-            <ul className="space-y-3">
-              <li className="text-sm text-gray-700 flex items-start">
-                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
-                <span>
-                  Grant of Certificate of registration to the dealers (u/s-19 of
-                  VAT Regulation-2005)
-                </span>
-              </li>
-              <li className="text-sm text-gray-700 flex items-start">
-                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
-                <span>
-                  Amendment of registration (u/s-21 of VAT Regulation-2005)
-                </span>
-              </li>
-              <li className="text-sm text-gray-700 flex items-start">
-                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
-                <span>
-                  Cancellation of Certificate of registration (u/s-22 of VAT
-                  Regulation-2005)
-                </span>
-              </li>
-              <li className="text-sm text-gray-700 flex items-start">
-                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
-                <span>Amendment to Registrations (CST)</span>
-              </li>
-              <li className="text-sm text-gray-700 flex items-start">
-                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
-                <span>
-                  Issue of Statutory forms i.e. Declaration forms − C, E1, E11,
-                  F, H. etc.
-                </span>
-              </li>
-              <li className="text-sm text-gray-700 flex items-start">
-                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
-                <span>Assessments</span>
-              </li>
-              <li className="text-sm text-gray-700 flex items-start">
-                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
-                <span>Refunds</span>
-              </li>
-              <li className="text-sm text-gray-700 flex items-start">
-                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
-                <span>Recovery of Tax, interest & Penalty</span>
-              </li>
-              <li className="text-sm text-gray-700 flex items-start">
-                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
-                <span>Tax Audit and Inspection of records</span>
-              </li>
-              <li className="text-sm text-gray-700 flex items-start">
-                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
-                <span>Enforcement</span>
-              </li>
-              <li className="text-sm text-gray-700 flex items-start">
-                <span className="text-[#1096b7] font-bold mr-2 mt-0.5">•</span>
-                <span>Appeals</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="md:col-span-5 bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-          <div className="bg-linear-to-r from-[#05313c] to-[#1096b7] p-4">
-            <h2 className="text-xl font-bold text-white">What&apos;s New</h2>
-          </div>
-          <div className="p-6 h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-[#1096b7] scrollbar-track-gray-100">
-            <ul className="space-y-4">
-              <li className="text-sm text-gray-700">
-                <span className="font-semibold text-[#1096b7]">
-                  1. Simplified Stock Management
-                </span>{" "}
-                – Easily track and manage your inventory with our new stock
-                management tool, helping you stay tax-compliant.
-              </li>
-              <li className="text-sm text-gray-700">
-                <span className="font-semibold text-[#1096b7]">
-                  2. Sales & Purchase Auto-Conversion to Returns
-                </span>{" "}
-                – No need for manual entry! Your sales and purchase data now
-                auto-populate your VAT returns.
-              </li>
-              <li className="text-sm text-gray-700">
-                <span className="font-semibold text-[#1096b7]">
-                  3. Smart Notification System
-                </span>{" "}
-                – Get timely reminders for return filings, payments, and pending
-                compliance tasks (30, 15, and 5 days before the deadline).
-              </li>
-              <li className="text-sm text-gray-700">
-                <span className="font-semibold text-[#1096b7]">
-                  4. Upgraded Dealer Dashboard
-                </span>{" "}
-                – View all your tax-related information, pending payments, and
-                compliance status in one place.
-              </li>
-              <li className="text-sm text-gray-700">
-                <span className="font-semibold text-[#1096b7]">
-                  5. Purchase Stock Verification & Approval
-                </span>{" "}
-                – Dealers can now verify and approve received stock from Local
-                Dealers/OIDC before it reflects in their inventory, eliminating
-                repeated follow-ups and billing errors.
-              </li>
-            </ul>
-          </div>
-          {/*<div className="p-4 h-60 overflow-y-scroll">
-           {newsdata.map((val: news, index: number) => (
-              <NewsCard
-                key={index}
-                title={val.title}
-                descriptio={val.descrilption}
-                topic={val.topic}
-                date={formateDate(val.postdate)}
-                link="https://ddvat.gov.in/docs/Notification/2024/Natural%20GAS%20Revised%20Rate%20of%20Tax%20-%20DNH%20DD.pdf"
-              />
-            ))} 
-          </div>*/}
-        </div>
-      </div>
-
-      <section className="mx-auto md:w-3/5 py-8 px-6 md:px-0 ">
-        <h2 className="text-center text-4xl font-bold bg-linear-to-r from-[#05313c] to-[#1096b7] bg-clip-text text-transparent mb-8">
-          Frequently Asked Questions
-        </h2>
-        <Accordion
-          type="multiple"
-          value={openItems}
-          onValueChange={setOpenItems}
-          className="space-y-4"
-        >
-          {faqs.map((faq, index) => (
-            <AccordionItem
-              key={index}
-              value={`item-${index}`}
-              className="border border-[#1096b7]/20 rounded-lg overflow-hidden transition-all duration-200 ease-in-out hover:border-[#1096b7]/50"
-            >
-              <AccordionTrigger
-                onClick={() => toggleItem(`item-${index}`)}
-                className="px-6 py-4 text-left text-[#1096b7] hover:text-[#0d7a94] transition-colors duration-200"
-              >
-                <span className="text-lg font-medium">{faq.question}</span>
-                {/* <ChevronDown
-                  className={`shrink-0 text-[#1096b7] transition-transform duration-200 ${
-                    openItems.includes(`item-${index}`) ? "rotate-180" : ""
-                  }`}
-                /> */}
-              </AccordionTrigger>
-              <AnimatePresence>
-                {openItems.includes(`item-${index}`) && (
-                  <AccordionContent forceMount asChild>
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                    >
-                      <p className="px-6 py-4 text-[#1096b7]/80">
-                        {faq.answer}
-                      </p>
-                    </motion.div>
-                  </AccordionContent>
-                )}
-              </AnimatePresence>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </section>
-
-      <footer className="mx-auto md:w-3/5 py-6 px-6 md:px-0 text-center md:flex gap-4 items-center bg-linear-to-r from-[#05313c] to-[#0a5b6f] justify-evenly rounded-t-xl shadow-2xl mt-8">
-        <p className="text-gray-200 text-sm font-medium">&copy; VAT-DD-DNH</p>
-        <p className="text-gray-200 text-sm">Site Last Updated on 24-01-2025</p>
-        <Link
-          href="/policy"
-          className="text-gray-200 text-sm hover:text-white hover:underline transition-colors duration-200"
-        >
-          Terms & Policies
-        </Link>
-        <p className="text-gray-200 text-sm">
-          Designed & Developed by Smart Technologies
-        </p>
-      </footer>
-    </>
-  );
-};
-export default Home;
-
-interface NewsCardProps {
-  title: string;
-  descriptio: string;
-  topic: string;
-  date: string;
-  link: string;
-}
-
-const NewsCard = (props: NewsCardProps) => {
-  return (
-    <div className="mt-1">
-      <div className="flex items-center">
-        <h1 className="text-sm">{props.title}</h1>
-        <div className="grow"></div>
-        <p className="text-xs text-gray-500 shrink-0">{props.date}</p>
-      </div>
-      {/* <p className="text-xs text-gray-500 leading-3 my-1">{props.descriptio}</p> 
-      <div className="flex text-xs mt-3 gap-2">
-        <p className="rounded text-xs px-2 bg-gray-100">{props.topic}</p>
-        <div className="grow"></div>
-         <a href={props.link} target="_blank" className="text-blue-500">
-          Read More &gt;&gt;
-        </a> 
-      </div>*/}
-    </div>
-  );
-};
-
-const PasswordLoginComponent = () => {
-  const router = useRouter();
-
-  const [tin, setTin] = useState<string | undefined>(undefined);
-  const [password, setPassword] = useState<string | undefined>(undefined);
-  // const [isPassword, setIsPassword] = useState<boolean>(false);
-  const [isLogin, setIsLogin] = useState<boolean>(false);
-
-  const submit = async () => {
-    setIsLogin(true);
-
-    if (tin == null || tin == undefined || tin == "") {
-      toast.error("Enter valid TIN number");
-      setIsLogin(false);
-      return;
-    }
-
-    if (password == null || password == undefined || password == "") {
-      toast.error("Enter password");
-      setIsLogin(false);
-      return;
-    }
-
-    const response = await DvatPasswordLogin({
-      tin_number: tin,
-      password: password,
-    });
-
-    if (!response.status) {
-      toast.error(response.message);
-      setIsLogin(false);
-      return;
-    }
-
-    // if (!response.status) {
-    //   toast.error(response.message);
-    //   setTimeout(() => {
-    //     setIsLogin(false);
-    //   }, 10000);
-    //   return;
-    // }
-
-    toast.success(response.message);
-    router.push("/dashboard");
-    setTimeout(() => {
-      setIsLogin(false);
-    }, 1000);
-    return;
-  };
-
-  const handleNumberChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    setData: Dispatch<SetStateAction<string | undefined>>,
-  ) => {
-    const onlyNumbersRegex = /^[0-9]*$/;
-    const { value } = event.target;
-
-    if (onlyNumbersRegex.test(value)) {
-      // Parse value and handle empty case
-      // const adddata = value === "" ? undefined : parseInt(value, 10);
-      setData(value);
-    }
-  };
-
-  return (
-    <div className="flex-1 grid place-items-center bg-white rounded-r-md">
-      <div>
-        <h1 className="text-lg font-semibold mt-6 text-center">
-          Welcome to VAT-SMART
-        </h1>
-        <h1 className="text-sm font-normal pb-2 text-center">
-          Login to access your Account
-        </h1>
-
-        <Label htmlFor="tin" className="text-xs">
-          TIN Number
-        </Label>
-        <Input
-          id="tin"
-          type="text"
-          maxLength={12}
-          value={tin === undefined ? "" : tin.toString()} // Controlled input
-          onChange={(e) => handleNumberChange(e, setTin)}
-        />
-        <Label htmlFor="password" className="text-xs">
-          Password
-        </Label>
-
-        <Input.Password
-          id="password"
-          type="password"
-          iconRender={(visible) =>
-            visible ? <FluentEye12Regular /> : <FluentEyeOff16Regular />
-          }
-          value={password === undefined ? "" : password.toString()}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        {isLogin ? (
-          <Button type="primary" className="mt-2 w-full" disabled>
-            Loading...
-          </Button>
-        ) : (
-          <Button
-            onClick={submit}
-            type="primary"
-            className="mt-2 w-full"
-            disabled={isLogin}
-          >
-            Submit
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// const LoginComponent = () => {
-//   enum TimerStatus {
-//     COMPLETED,
-//     RUNNING,
-//   }
-
-//   enum SearchOption {
-//     MOBILE,
-//     TIN,
-//   }
-
-//   const [counter, setCounter] = useState<number>(60);
-//   const [status, setStatus] = useState<TimerStatus>(TimerStatus.COMPLETED);
-//   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-//   const startTimer = () => {
-//     if (status === TimerStatus.RUNNING) return;
-
-//     setStatus(TimerStatus.RUNNING);
-//     intervalRef.current = setInterval(() => {
-//       setCounter((prevCounter) => {
-//         if (prevCounter <= 0) {
-//           stopTimer();
-//           return 0;
-//         }
-//         return prevCounter - 1;
-//       });
-//     }, 1000);
-//   };
-
-//   const stopTimer = () => {
-//     if (intervalRef.current) {
-//       clearInterval(intervalRef.current);
-//       intervalRef.current = null;
-//     }
-//     setStatus(TimerStatus.COMPLETED);
-//   };
-
-//   const resetTimer = () => {
-//     stopTimer();
-//     setCounter(60); // Reset to initial value
-//   };
-
-//   const router = useRouter();
-
-//   const [isLogin, setIsLogin] = useState<boolean>(false);
-
-//   // top section
-//   const firstname = useRef<HTMLInputElement>(null);
-//   const lastname = useRef<HTMLInputElement>(null);
-
-//   const [isOtpSent, setIsOtpSent] = useState(false);
-
-//   const [otpresponse, setOtpResponse] = useState<user>();
-
-//   const [searchOption, setSeachOption] = useState<SearchOption>(
-//     SearchOption.MOBILE
-//   );
-
-//   const onChange = (e: RadioChangeEvent) => {
-//     setSeachOption(e.target.value);
-//   };
-
-//   const [selectTinBox, setSelectTinBox] = useState(false);
-
-//   const [mobile, setMobile] = useState<string | undefined>(undefined);
-
-//   const [dvatData, setDvatData] = useState<dvat04[]>([]);
-
-//   // mobile start here
-//   const [mobileOTP, setMobileOTP] = useState<string | undefined>(undefined);
-
-//   const sendOtp = async () => {
-//     setIsLogin(true);
-//     if (mobile == null || mobile == undefined || mobile == "") {
-//       toast.error("Please enter a valid mobile number");
-//       setIsLogin(false);
-//       return;
-//     }
-
-//     if (mobile.length !== 10) {
-//       toast.error("Mobile number should be 10 digits long");
-//       setIsLogin(false);
-//       return;
-//     }
-//     const response = await SendOtp({ mobile: mobile });
-//     if (!response.status) {
-//       toast.error(response.message);
-//       setIsLogin(false);
-//       return;
-//     }
-//     if (response.data && response.status) {
-//       setOtpResponse(response.data);
-//     }
-//     setCounter(60);
-//     startTimer();
-//     toast.success(response.message);
-//     setIsOtpSent(true);
-//     setIsLogin(false);
-//   };
-
-//   const verifyOtp = async () => {
-//     const firstnameValue: string =
-//       otpresponse &&
-//       otpresponse.firstName &&
-//       otpresponse.firstName !== "undefined"
-//         ? otpresponse.firstName
-//         : firstname.current?.value!;
-//     const lastnameValue =
-//       otpresponse &&
-//       otpresponse.lastName &&
-//       otpresponse.lastName !== "undefined"
-//         ? otpresponse.lastName
-//         : lastname.current?.value!;
-
-//     if (mobile == null || mobile == undefined || mobile == "") {
-//       toast.error("Please enter a valid mobile number");
-//       return;
-//     }
-
-//     if (mobileOTP == null || mobileOTP == undefined) {
-//       toast.error("Please enter a valid otp");
-//       return;
-//     }
-
-//     if (
-//       firstnameValue == null ||
-//       firstnameValue == undefined ||
-//       firstnameValue == ""
-//     ) {
-//       toast.error("Please enter a valid first name");
-//       return;
-//     }
-
-//     if (
-//       lastnameValue == null ||
-//       lastnameValue == undefined ||
-//       lastnameValue == ""
-//     ) {
-//       toast.error("Please enter a valid last name");
-//       return;
-//     }
-
-//     const response = await LoginOtp({
-//       mobile: mobile,
-//       otp: mobileOTP,
-//       firstname: firstnameValue,
-//       lastname: lastnameValue,
-//     });
-
-//     setSelectTinBox(true);
-//     if (response.status && response.data) {
-//       setCookie("id", response.data.id.toString());
-//       setCookie("role", response.data.role.toString());
-
-//       if (response.data.data.length == 0) {
-//         setIsLogin(true);
-//         router.push("/dashboard");
-//         setTimeout(() => {
-//           setIsLogin(false);
-//         }, 5000);
-//       }
-//       setDvatData(response.data.data);
-//       return;
-//     }
-//     toast.error(response.message);
-//   };
-
-//   // mobile end here
-
-//   // tin login option start here
-//   const [tinNumber, setTinNumber] = useState<string | undefined>(undefined);
-//   const [tinOTP, setTinOTP] = useState<string | undefined>(undefined);
-
-//   const tinSendOtp = async () => {
-//     setIsLogin(true);
-
-//     if (tinNumber === undefined) {
-//       toast.error("Please enter a valid TIN number");
-//       return;
-//     }
-
-//     if (tinNumber.length !== 11) {
-//       toast.error("TIN number should be 11 digits long");
-//       return;
-//     }
-
-//     const response = await TinSendOtp({ tin_number: tinNumber });
-//     if (!response.status) {
-//       toast.error(response.message);
-//       setIsLogin(false);
-//       return;
-//     }
-//     if (response.data && response.status) {
-//       setMobile(response.data.mobileOne);
-//       setOtpResponse(response.data);
-//     }
-//     setCounter(60);
-//     startTimer();
-//     toast.success(response.message);
-//     setIsOtpSent(true);
-//     setIsLogin(false);
-//   };
-
-//   const tinVerifyOtp = async () => {
-//     setIsLogin(true);
-
-//     if (tinNumber == null || tinNumber == undefined || tinNumber == "") {
-//       toast.error("Please enter a valid mobile number");
-//       setIsLogin(false);
-//       return;
-//     }
-
-//     if (tinOTP == null || tinOTP == undefined || tinOTP == "") {
-//       toast.error("Please enter a valid otp");
-//       setIsLogin(false);
-
-//       return;
-//     }
-
-//     const response = await TinLoginOtp({
-//       tin_number: tinNumber,
-//       otp: tinOTP,
-//     });
-
-//     if (!response.status) {
-//       toast.error(response.message);
-//       setTimeout(() => {
-//         setIsLogin(false);
-//       }, 5000);
-//       return;
-//     }
-
-//     toast.success(response.message);
-//     router.push("/dashboard");
-//     setTimeout(() => {
-//       setIsLogin(false);
-//     }, 5000);
-//     return;
-//   };
-
-//   // tin login option end here
-
-//   const handleNumberChange = (
-//     event: React.ChangeEvent<HTMLInputElement>,
-//     setData: Dispatch<SetStateAction<string | undefined>>
-//   ) => {
-//     const onlyNumbersRegex = /^[0-9]*$/;
-//     const { value } = event.target;
-
-//     if (onlyNumbersRegex.test(value)) {
-//       // Parse value and handle empty case
-//       // const adddata = value === "" ? undefined : parseInt(value, 10);
-//       setData(value);
-//     }
-//   };
-
-//   return (
-//     <div className="flex-1 grid place-items-center bg-white rounded-r-md">
-//       <div>
-//         <h1 className="text-lg font-semibold mt-6 text-center">
-//           Welcome to VAT-SMART
-//         </h1>
-//         <h1 className="text-sm font-normal pb-2 text-center">
-//           Login to access your Account
-//         </h1>
-//         <Radio.Group
-//           block
-//           onChange={onChange}
-//           value={searchOption}
-//           className="mt-2"
-//         >
-//           <Radio.Button value={SearchOption.MOBILE}>MOBILE NUMBER</Radio.Button>
-//           <Radio.Button value={SearchOption.TIN}>TIN NUMBER</Radio.Button>
-//         </Radio.Group>
-
-//         {(() => {
-//           switch (searchOption) {
-//             case SearchOption.MOBILE:
-//               return (
-//                 <div className="grid max-w-sm items-center gap-1.5 w-80 mt-4">
-//                   {isOtpSent ? (
-//                     <>
-//                       {otpresponse?.firstName == null ||
-//                       otpresponse?.firstName == "" ||
-//                       otpresponse?.lastName == null ||
-//                       otpresponse?.lastName == "" ? (
-//                         <>
-//                           <Label htmlFor="mobile" className="text-xs">
-//                             Mobile Number
-//                           </Label>
-//                           <Input
-//                             id="mobile"
-//                             type="text"
-//                             value={
-//                               mobile === undefined ? "" : mobile.toString()
-//                             }
-//                             disabled
-//                             maxLength={10}
-//                           />
-//                           <Label htmlFor="firstname" className="text-xs">
-//                             First Name
-//                           </Label>
-//                           {/* <Input id="firstname" type="text" ref={firstname} /> */}
-
-//                           <Label htmlFor="lastname" className="text-xs">
-//                             Last Name
-//                           </Label>
-//                           {/* <Input id="lastname" type="text" ref={lastname} /> */}
-//                         </>
-//                       ) : (
-//                         <>
-//                           <h1 className="text-left text-xl mb-6">
-//                             Hello {otpresponse?.firstName}{" "}
-//                             {otpresponse?.lastName}
-//                           </h1>
-//                           <Label htmlFor="mobile" className="text-xs">
-//                             Mobile Number
-//                           </Label>
-//                           <div className="flex">
-//                             <Input
-//                               id="mobile"
-//                               type="text"
-//                               value={
-//                                 mobile === undefined ? "" : mobile.toString()
-//                               }
-//                               maxLength={10}
-//                               disabled
-//                             />
-//                           </div>
-//                         </>
-//                       )}
-
-//                       <Label htmlFor="otp" className="text-xs">
-//                         OTP
-//                       </Label>
-//                       <Input
-//                         id="otp"
-//                         type="text"
-//                         maxLength={6}
-//                         value={
-//                           mobileOTP === undefined ? "" : mobileOTP.toString()
-//                         }
-//                         onChange={(e) => handleNumberChange(e, setMobileOTP)}
-//                       />
-//                       {isLogin ? (
-//                         <Button type="primary" className="mt-2" disabled>
-//                           Loading...
-//                         </Button>
-//                       ) : (
-//                         <Button
-//                           onClick={verifyOtp}
-//                           type="primary"
-//                           className="mt-2"
-//                           disabled={isLogin}
-//                         >
-//                           Verify OTP
-//                         </Button>
-//                       )}
-//                       {status == TimerStatus.COMPLETED ? (
-//                         <p className="text-center mt-2">
-//                           Didn&apos;t receive a OTP?
-//                           <button
-//                             onClick={sendOtp}
-//                             className="underline font-semibold px-2 text-blue-500"
-//                           >
-//                             Resend OTP
-//                           </button>
-//                         </p>
-//                       ) : (
-//                         <p className="text-center mt-2">
-//                           Resend OTP in 00:
-//                           {counter.toString().length == 1
-//                             ? `0${counter}`
-//                             : counter}
-//                         </p>
-//                       )}
-//                     </>
-//                   ) : (
-//                     <>
-//                       <Label htmlFor="mobile" className="text-xs">
-//                         Mobile Number
-//                       </Label>
-//                       <Input
-//                         id="mobile"
-//                         type="text"
-//                         maxLength={10}
-//                         value={mobile === undefined ? "" : mobile.toString()}
-//                         onChange={(e) => handleNumberChange(e, setMobile)}
-//                       />
-//                       {isLogin ? (
-//                         <Button type="primary" className="mt-2" disabled>
-//                           Loading...
-//                         </Button>
-//                       ) : (
-//                         <Button
-//                           onClick={sendOtp}
-//                           type="primary"
-//                           className="mt-2"
-//                           disabled={isLogin}
-//                         >
-//                           Send OTP
-//                         </Button>
-//                       )}
-//                     </>
-//                   )}
-//                 </div>
-//               );
-//             case SearchOption.TIN:
-//               return (
-//                 <div className="grid max-w-sm items-center gap-1.5 w-80 mt-4">
-//                   {isOtpSent ? (
-//                     <>
-//                       <>
-//                         <h1 className="text-center text-xl">
-//                           Hello {otpresponse?.firstName} {otpresponse?.lastName}
-//                         </h1>
-//                         <p className="text-center mb-4">
-//                           Mobile Number : {mobile}
-//                         </p>
-//                         <Label htmlFor="mobile" className="text-xs">
-//                           Tin Number
-//                         </Label>
-//                         <div className="flex">
-//                           <Input
-//                             id="mobile"
-//                             type="text"
-//                             value={tinNumber === undefined ? "" : tinNumber}
-//                             maxLength={10}
-//                             disabled
-//                           />
-//                         </div>
-//                       </>
-
-//                       <Label htmlFor="otp" className="text-xs">
-//                         OTP
-//                       </Label>
-//                       <Input
-//                         id="otp"
-//                         type="text"
-//                         maxLength={6}
-//                         value={tinOTP === undefined ? "" : tinOTP.toString()}
-//                         onChange={(e) => handleNumberChange(e, setTinOTP)}
-//                       />
-//                       {isLogin ? (
-//                         <Button type="primary" className="mt-2" disabled>
-//                           Loading...
-//                         </Button>
-//                       ) : (
-//                         <Button
-//                           onClick={tinVerifyOtp}
-//                           type="primary"
-//                           className="mt-2"
-//                           disabled={isLogin}
-//                         >
-//                           Verify OTP
-//                         </Button>
-//                       )}
-//                       {status == TimerStatus.COMPLETED ? (
-//                         <p className="text-center mt-2">
-//                           Didn&apos;t receive a OTP?
-//                           <button
-//                             onClick={tinSendOtp}
-//                             className="underline font-semibold px-2 text-blue-500"
-//                           >
-//                             Resend OTP
-//                           </button>
-//                         </p>
-//                       ) : (
-//                         <p className="text-center mt-2">
-//                           Resend OTP in 00:
-//                           {counter.toString().length == 1
-//                             ? `0${counter}`
-//                             : counter}
-//                         </p>
-//                       )}
-//                     </>
-//                   ) : (
-//                     <>
-//                       <Label htmlFor="mobile" className="text-xs">
-//                         TIN Number
-//                       </Label>
-//                       <Input
-//                         id="mobile"
-//                         type="text"
-//                         maxLength={12}
-//                         value={
-//                           tinNumber === undefined ? "" : tinNumber.toString()
-//                         } // Controlled input
-//                         onChange={(e) => handleNumberChange(e, setTinNumber)}
-//                       />
-//                       {isLogin ? (
-//                         <Button type="primary" className="mt-2" disabled>
-//                           Loading...
-//                         </Button>
-//                       ) : (
-//                         <Button
-//                           onClick={tinSendOtp}
-//                           type="primary"
-//                           className="mt-2"
-//                           disabled={isLogin}
-//                         >
-//                           Send OTP
-//                         </Button>
-//                       )}
-//                     </>
-//                   )}
-//                 </div>
-//               );
-
-//             default:
-//               return null;
-//           }
-//         })()}
-//       </div>
-//       <Modal
-//         title="Your all TIN Numbers"
-//         style={{ top: 20 }}
-//         open={selectTinBox}
-//         closeIcon={true}
-//         onCancel={() => setSelectTinBox(false)}
-//         footer={false}
-//       >
-//         {isLogin && (
-//           <>
-//             <p className="text-xl text-center font-semibold mt-6">Loading...</p>
-//           </>
-//         )}
-//         <Table>
-//           <TableHeader>
-//             <TableRow>
-//               <TableCell>No.</TableCell>
-//               <TableCell>Tin Number</TableCell>
-//               <TableCell>Trade Name</TableCell>
-//               <TableCell>Action</TableCell>
-//             </TableRow>
-//           </TableHeader>
-//           <TableBody>
-//             {dvatData.map((val: dvat04, index: number) => (
-//               <TableRow key={index}>
-//                 <TableCell>{index + 1}</TableCell>
-//                 <TableCell>{val.tinNumber}</TableCell>
-//                 <TableCell>{val.tradename}</TableCell>
-//                 <TableCell>
-//                   <Button
-//                     disabled={isLogin}
-//                     onClick={() => {
-//                       setIsLogin(true);
-//                       setCookie("dvat", val.id.toString());
-//                       router.push("/dashboard");
-//                       setTimeout(() => {
-//                         setIsLogin(false);
-//                       }, 5000);
-//                     }}
-//                   >
-//                     Login
-//                   </Button>
-//                 </TableCell>
-//               </TableRow>
-//             ))}
-//           </TableBody>
-//         </Table>
-//       </Modal>
-//     </div>
-//   );
-// };
 interface DateCardProps {
   title: string;
   paymentdate: string;
@@ -1167,47 +101,46 @@ interface DateCardProps {
 
 function DateCard({ title, paymentdate, returndate }: DateCardProps) {
   return (
-    <Card className="bg-white border-[#1096b7]/20 hover:border-[#1096b7]/50 transition-colors">
-      <CardContent className="p-4">
-        <h3 className="font-medium text-sm truncate text-[#1096b7]">{title}</h3>
-        <p className="text-xs text-[#1096b7]/70 mt-1">
-          Payment Due Date: {paymentdate}
+    <div className="border border-[#cad6ea]">
+      <div className="bg-[#dce8f8] border-b border-[#cad6ea] px-3 py-1.5">
+        <h3 className="font-semibold text-sm text-[#102a56]">{title}</h3>
+      </div>
+      <div className="px-3 py-1.5 bg-white">
+        <p className="text-sm text-gray-700">
+          Payment: <span className="font-medium">{paymentdate}</span>
         </p>
-        <p className="text-xs text-[#1096b7]/70 mt-1">
-          Return Filing Due Date: {returndate}
+        <p className="text-sm text-gray-700">
+          Return Filing: <span className="font-medium">{returndate}</span>
         </p>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
-const CardComponent = () => {
-  // Get current date and calculate current month and next two months
+const MonthlyCardSection = () => {
   const currentDate = new Date();
   const months = Array.from({ length: 3 }, (_, i) =>
     addMonths(currentDate, i - 1),
   ).map((date) => ({
-    title: format(date, "MMM, yyyy"), // Format as "Jun, 2024"
+    title: format(date, "MMM, yyyy"),
     paymentdate: format(
       new Date(date.getFullYear(), date.getMonth() + 1, 15),
       "MMM d, yyyy",
-    ), // Format as "Jun 15, 2024"
+    ),
     returndate: format(
       new Date(date.getFullYear(), date.getMonth() + 1, 28),
       "MMM d, yyyy",
-    ), // Format as "Jun 28, 2024"
+    ),
   }));
 
   return (
-    <Card className="border-[#1096b7]/30">
-      <CardHeader className="bg-[#1096b7]/10">
-        <CardTitle>
-          <Badge className="bg-[#1096b7] text-xl hover:bg-[#0d7a94] text-white">
-            Monthly
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 p-4">
+    <div className="mb-2">
+      <div className="bg-[#16448b] px-3 py-1.5">
+        <span className="text-white text-sm font-semibold uppercase">
+          Monthly Returns
+        </span>
+      </div>
+      <div className="grid grid-cols-3 gap-2 p-2 bg-[#f7f9fc] border border-t-0 border-[#bfd0e8]">
         {months.map((month, index) => (
           <DateCard
             key={index}
@@ -1216,66 +149,796 @@ const CardComponent = () => {
             returndate={month.returndate}
           />
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
-const CardQuarterComponent = () => {
+const QuarterCardSection = () => {
   const monthGroups = [
-    ["April", "May", "June"],
-    ["July", "August", "September"],
-    ["October", "November", "December"],
-    ["January", "February", "March"],
+    ["Apr", "May", "Jun"],
+    ["Jul", "Aug", "Sep"],
+    ["Oct", "Nov", "Dec"],
+    ["Jan", "Feb", "Mar"],
   ];
 
-  const currentDate = new Date();
-  const currentMonth = currentDate.toLocaleString("default", { month: "long" });
+  const quarters = useMemo(() => {
+    const currentDate = new Date();
+    const currentMonth = currentDate.toLocaleString("default", {
+      month: "long",
+    });
+    const currentQuarter =
+      monthGroups.find((group) => group.includes(currentMonth)) ??
+      monthGroups[0];
 
-  // Find the current quarter group
-  const currentQuarter = monthGroups.find((group) =>
-    group.includes(currentMonth),
-  );
+    return Array.from({ length: 3 }, (_, i) => {
+      const quarterIndex = (monthGroups.indexOf(currentQuarter) + i) % 4;
+      const quarter = monthGroups[quarterIndex];
+      const lastMonth = quarter[quarter.length - 1];
+      const year =
+        quarterIndex === 3 && i > 0
+          ? currentDate.getFullYear() + 1
+          : currentDate.getFullYear();
+      const monthIndex = new Date(`${lastMonth} 1, ${year}`).getMonth();
 
-  // Generate data for current and next two quarters
-  const quarters = Array.from({ length: 3 }, (_, i) => {
-    const quarterIndex = (monthGroups.indexOf(currentQuarter!) + i) % 4;
-    const quarter = monthGroups[quarterIndex];
-    const lastMonth = quarter[quarter.length - 1]; // Get last month of the quarter
-
-    const year =
-      quarterIndex === 3 && i > 0
-        ? currentDate.getFullYear() + 1
-        : currentDate.getFullYear();
-
-    // Generate the date for the last month's 15th and 28th
-    const monthIndex = new Date(`${lastMonth} 1, ${year}`).getMonth();
-    return {
-      title: `${quarter.join(", ")} (${year})`, // Example: "April, May, June (2024)"
-      paymentdate: format(new Date(year, monthIndex + 1, 15), "MMM d, yyyy"), // 15th of last month
-      returndate: format(new Date(year, monthIndex + 1, 28), "MMM d, yyyy"), // 28th of last month
-    };
-  });
+      return {
+        title: `${quarter.join(", ")} (${year})`,
+        paymentdate: format(new Date(year, monthIndex + 1, 15), "MMM d, yyyy"),
+        returndate: format(new Date(year, monthIndex + 1, 28), "MMM d, yyyy"),
+      };
+    });
+  }, []);
 
   return (
-    <Card className="border-[#1096b7]/30">
-      <CardHeader className="bg-[#1096b7]/10">
-        <CardTitle>
-          <Badge className="bg-[#1096b7] text-xl hover:bg-[#0d7a94] text-white">
-            Quarterly
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 p-4">
+    <div>
+      <div className="bg-[#16448b] px-3 py-1.5">
+        <span className="text-white text-sm font-semibold uppercase">
+          Quarterly Returns
+        </span>
+      </div>
+      <div className="grid grid-cols-3 gap-2 p-2 bg-[#f7f9fc] border border-t-0 border-[#bfd0e8]">
         {quarters.map((quarter, index) => (
           <DateCard
             key={index}
-            title={`${quarter.title}`}
+            title={quarter.title}
             paymentdate={quarter.paymentdate}
             returndate={quarter.returndate}
           />
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
+
+export default function HomePage() {
+  return (
+    <div className="min-h-screen flex flex-col bg-[#e8edf5] text-gray-800 text-sm">
+      {/* GOI top utility bar */}
+      {/* <div className="bg-[#003366] text-white">
+        <div className="max-w-300 mx-auto px-2 py-0.5 flex items-center justify-between">
+          <span className="text-sm">Government of Dadra &amp; Nagar Haveli and Daman &amp; Diu</span>
+          <div className="flex items-center gap-3 text-sm">
+            <span>A- A A+</span>
+            <span>|</span>
+            <Link href="#main" className="hover:underline">Skip To Main Content</Link>
+            <span>|</span>
+            <Link href="/policy" className="hover:underline">Screen Reader Access</Link>
+          </div>
+        </div>
+      </div> */}
+
+      {/* Header with tricolor stripe */}
+      <header className="bg-white border-b border-[#b7c6de]">
+        {/* <div className="h-1.5 w-full" style={{background:"linear-gradient(to right, #ff9933 33%, #ffffff 33%, #ffffff 66%, #138808 66%)"}}></div> */}
+        <div className="max-w-300 mx-auto px-4 py-3 flex items-center gap-3">
+          {/* Emblem placeholder */}
+          {/* <div className="w-16 h-16 shrink-0 flex items-center justify-center border border-[#c8d4e8] bg-[#f0f4fb] rounded-full">
+            <span className="text-[#0f2f67] text-[9px] font-bold text-center leading-tight uppercase">Govt<br/>Emblem</span>
+          </div> */}
+          <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
+            <Image
+              src="/favicon.png"
+              alt="DVAT Emblem"
+              fill
+              className="object-contain"
+            />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 uppercase tracking-wide">
+              Union Territory of Dadra &amp; Nagar Haveli and Daman &amp; Diu
+            </p>
+            <h1 className="text-base font-bold text-[#0f2f67] leading-tight">
+              Department of Value Added Tax/GST Administration
+            </h1>
+            <p className="text-sm text-gray-500">
+              VAT-SMART Portal — Unified portal for Registration, Return Filing
+              &amp; Challan Payment
+            </p>
+          </div>
+          <div className="grow" />
+          <div className="hidden md:flex flex-col items-end gap-1 text-sm text-gray-500">
+            <span>Best viewed in Chrome 49+ / Firefox 45+ / Edge</span>
+            <span>Resolution: 1024 x 768</span>
+          </div>
+        </div>
+
+        {/* Nav bar */}
+        <nav className="bg-[#16448b] border-t border-[#0f2f67]">
+          <div className="max-w-300 mx-auto flex flex-wrap">
+            {navItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="text-white text-sm font-medium inline-block py-2 px-3 hover:bg-[#0f2f67] border-r border-[#1e55a8] transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      </header>
+
+      {/* Alerts ticker */}
+      <div className="max-w-300 mx-auto">
+        <div className="flex items-stretch bg-[#fff8dc] border-y border-[#dfc87a]">
+          <span className="bg-[#b8860b] text-white text-sm font-bold px-3 shrink-0 flex items-center uppercase tracking-widest">
+            ALERTS
+          </span>
+          <Marquee className="text-sm py-1 font-medium text-[#5a4000]">
+            &nbsp;&nbsp;&bull;&nbsp;&nbsp;Official updates, notifications, and
+            advisories will be published in this
+            section.&nbsp;&nbsp;&bull;&nbsp;&nbsp;File your VAT returns on time
+            to avoid penalty.&nbsp;&nbsp;&bull;&nbsp;&nbsp;For any queries
+            contact helpline: 0260-2632000&nbsp;&nbsp;
+          </Marquee>
+        </div>
+      </div>
+
+      {/* ── Main body ── */}
+      <main id="main" className="max-w-300 mx-auto py-3 px-0 flex-1 w-full">
+        <div className="flex flex-col gap-3">
+          {/* ── CENTER: Due Dates + Videos + FAQ (top) ── */}
+          <div className="flex flex-col gap-2">
+            <div className="grid gap-2 px-2 py-2 grid-cols-12">
+              {/* Due Dates */}
+              <div className="border border-[#c8d4e8] col-span-8">
+                <div className="bg-[#0f2f67] px-2 py-2">
+                  <h2 className="text-white font-bold text-sm uppercase tracking-wide">
+                    Upcoming Due Dates
+                  </h2>
+                </div>
+                <div className="bg-white p-2">
+                  <MonthlyCardSection />
+                  <QuarterCardSection />
+                </div>
+              </div>
+
+              <div className="border border-[#c8d4e8] col-span-4 h-full flex flex-col">
+                <div className="bg-[#b8860b] px-2 py-2 flex items-center gap-2">
+                  <span className="text-white font-bold text-sm uppercase tracking-wide">
+                    &#128274; Member Login
+                  </span>
+                </div>
+                <div className="bg-white p-3 flex-1">
+                  <p className="text-lg text-gray-500 mb-2">
+                    Login Type:{" "}
+                    <span className="font-semibold text-[#0f2f67]">Dealer</span>
+                  </p>
+                  <InlineLoginForm />
+                </div>
+              </div>
+            </div>
+
+            {/* Guidance Videos */}
+            <div className="border border-[#c8d4e8]">
+              <div className="bg-[#0f2f67] px-2 py-2">
+                <h2 className="text-white font-bold text-sm uppercase tracking-wide">
+                  User Guidance Videos
+                </h2>
+              </div>
+              <div className="bg-white p-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {videos.map((video) => (
+                  <div key={video.title} className="border border-[#d4deee]">
+                    <iframe
+                      className="w-full aspect-video"
+                      src={video.src}
+                      title={video.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                    <div className="px-2 py-2 bg-[#f7f9fc] border-t border-[#d4deee]">
+                      <h3 className="text-[#102a56] text-sm font-semibold mb-0.5">
+                        {video.title}
+                      </h3>
+                      <p className="text-gray-500 text-sm leading-snug">
+                        {video.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* FAQ */}
+            <div className="border border-[#c8d4e8]">
+              <div className="bg-[#0f2f67] px-2 py-2">
+                <h2 className="text-white font-bold text-sm uppercase tracking-wide">
+                  Frequently Asked Questions
+                </h2>
+              </div>
+              <div className="bg-white">
+                <Accordion type="multiple">
+                  {faqs.map((faq, index) => (
+                    <AccordionItem
+                      key={faq.question}
+                      value={`item-${index}`}
+                      className="border-b border-[#edf1f8] last:border-b-0"
+                    >
+                      <AccordionTrigger className="px-4 py-3 text-[#102a56] text-sm font-semibold hover:text-[#1e3f79] hover:no-underline">
+                        {faq.question}
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="px-3 pb-2 pt-0 text-sm text-gray-600">
+                          {faq.answer}
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Lower row: left and right boxes ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+            {/* LEFT: Login + e-Services + Key Services */}
+            <aside className="flex flex-col gap-2">
+              {/* Inline Login panel (Gujarat style) */}
+
+              {/* What's New */}
+              <div className="border border-[#c8d4e8]">
+                <div className="bg-[#0f2f67] px-2 py-2">
+                  <h2 className="text-white font-bold text-sm uppercase tracking-wide">
+                    What is New
+                  </h2>
+                </div>
+                <ul className="bg-white divide-y divide-[#edf1f8]">
+                  {whatsNew.map((item, index) => (
+                    <li
+                      key={item}
+                      className="px-2 py-2 flex items-start gap-2 hover:bg-[#f0f4fb] cursor-default"
+                    >
+                      <span className="text-[#b8860b] font-bold shrink-0 text-sm leading-4">
+                        {index + 1}.
+                      </span>
+                      <span className="text-sm text-gray-700">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Quick Links / e-Services (Gujarat style box) */}
+              <div className="border border-[#c8d4e8]">
+                <div className="bg-[#0f2f67] px-2 py-2">
+                  <h2 className="text-white font-bold text-sm uppercase tracking-wide">
+                    e-Services
+                  </h2>
+                </div>
+                <ul className="bg-white divide-y divide-[#edf1f8]">
+                  {[
+                    {
+                      label: "e-Registration",
+                      href: "https://docs.google.com/forms/d/e/1FAIpQLSf-bLcpu_zAmyzgv4dxahMfDgOAfeNcnI8fg2y1yyfG2k_Org/viewform?usp=sharing",
+                    },
+                    { label: "Track Application Status", href: "/verify" },
+                    { label: "Dealer Login", href: "/dashboard" },
+                    { label: "Verify TIN", href: "/verify" },
+                    { label: "Download Forms", href: "/news" },
+                  ].map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="flex items-center gap-2 px-2 py-2 hover:bg-[#f0f4fb] text-[#0f2f67] hover:text-[#103090]"
+                      >
+                        <span className="text-[#b8860b] font-bold">
+                          &#9658;
+                        </span>
+                        <span className="text-sm">{link.label}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Key Services */}
+              <div className="border border-[#c8d4e8]">
+                <div className="bg-[#0f2f67] px-2 py-2">
+                  <h2 className="text-white font-bold text-sm uppercase tracking-wide">
+                    Key Services
+                  </h2>
+                </div>
+                <ul className="bg-white divide-y divide-[#edf1f8]">
+                  {features.map((feature) => (
+                    <li
+                      key={feature}
+                      className="px-2 py-2 flex items-start gap-2 hover:bg-[#f0f4fb] cursor-default"
+                    >
+                      <span className="text-[#b8860b] font-bold shrink-0">
+                        &#9658;
+                      </span>
+                      <span className="text-sm text-gray-700">
+                        {feature}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
+
+            {/* RIGHT: What's New + Announcements + Important Links */}
+            <aside className="flex flex-col gap-2">
+              {/* Announcements – Contact Details (Gujarat style) */}
+              <div className="border border-[#c8d4e8]">
+                <div className="bg-[#b8860b] px-2 py-2 flex items-center gap-2">
+                  <span className="text-white font-bold text-sm uppercase tracking-wide">
+                    &#128276; Announcements
+                  </span>
+                </div>
+                <div className="bg-white p-2.5 space-y-2.5 text-sm">
+                  <div className="border-l-2 border-[#b8860b] pl-2">
+                    <p className="font-bold text-[#0f2f67]">
+                      Public Relations Officer
+                    </p>
+                    <p className="text-gray-600">Ph: 0260-2632000</p>
+                  </div>
+                  <div className="border-l-2 border-[#0f2f67] pl-2">
+                    <p className="font-bold text-[#0f2f67]">
+                      Helpline (e-Services)
+                    </p>
+                    <p className="text-gray-600">Ph: 0260-2632000</p>
+                    <p className="text-gray-600">Email: vato1-ctd-dnh@nic.in</p>
+                  </div>
+                  <div className="border-l-2 border-[#0f2f67] pl-2">
+                    <p className="font-bold text-[#0f2f67]">Helpline Email</p>
+                    <p className="text-gray-600">Helpline-ctd-dnh@nic.in</p>
+                  </div>
+                  <hr className="border-[#e5ebf5]" />
+                  <div className="border-l-2 border-[#138808] pl-2">
+                    <p className="font-bold text-[#0f2f67]">Office Address</p>
+                    <p className="text-gray-600 leading-relaxed">
+                      VAT &amp; GST Department,
+                      <br />
+                      District Secretariat &quot;A&quot; Wing,
+                      <br />
+                      2nd Floor, D&amp;NH,
+                      <br />
+                      Silvassa – 396230
+                    </p>
+                  </div>
+                  <div className="pt-1 text-center">
+                    <Link
+                      href="/contact"
+                      className="text-[#0f2f67] underline underline-offset-2 hover:text-[#b8860b] text-sm"
+                    >
+                      &#8594; View Full Contact Details
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              {/* Important Links */}
+              <div className="border border-[#c8d4e8]">
+                <div className="bg-[#0f2f67] px-2 py-2">
+                  <h2 className="text-white font-bold text-sm uppercase tracking-wide">
+                    Important Links
+                  </h2>
+                </div>
+                <ul className="bg-white divide-y divide-[#edf1f8]">
+                  {[
+                    { label: "GST Portal", href: "https://www.gst.gov.in" },
+                    {
+                      label: "Income Tax e-Filing",
+                      href: "https://www.incometax.gov.in",
+                    },
+                    {
+                      label: "Government of India",
+                      href: "https://india.gov.in",
+                    },
+                    { label: "DigiLocker", href: "https://digilocker.gov.in" },
+                    { label: "CBEC Portal", href: "https://cbic.gov.in" },
+                  ].map((link) => (
+                    <li key={link.label}>
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-2 py-2 hover:bg-[#f0f4fb] text-[#0f2f67] hover:text-[#b8860b]"
+                      >
+                        <span className="text-[#b8860b] font-bold">
+                          &#9658;
+                        </span>
+                        <span className="text-sm">{link.label}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-[#0f2f67] text-white mt-2">
+        <div
+          className="h-1.5 w-full"
+          style={{
+            background:
+              "linear-gradient(to right, #ff9933 33%, #ffffff 33%, #ffffff 66%, #138808 66%)",
+          }}
+        ></div>
+        {/* Footer links row */}
+        <div className="max-w-300 mx-auto px-4 py-3 flex flex-wrap gap-x-4 gap-y-1 text-sm border-b border-[#1e4a8f]">
+          {[
+            { label: "Home", href: "/" },
+            // { label: "About Us", href: "/policy" },
+            { label: "Contact Us", href: "/contact" },
+            { label: "Disclaimer", href: "/policy" },
+            { label: "Terms &amp; Conditions", href: "/policy" },
+            // { label: "Sitemap", href: "/" },
+          ].map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className="hover:underline"
+              dangerouslySetInnerHTML={{ __html: link.label }}
+            />
+          ))}
+        </div>
+        {/* Footer bottom */}
+        <div className="max-w-300 mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2 text-sm">
+          <span>
+            &#169; VAT Administration, Dadra &amp; Nagar Haveli and Daman &amp;
+            Diu
+          </span>
+          <span>Site Last Updated: 24-01-2025</span>
+          <span>Designed &amp; Developed by Smart Technologies</span>
+          <Link href="/policy" className="underline hover:text-[#e3ecff]">
+            Privacy Policy
+          </Link>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+const InlineLoginForm = () => {
+  const router = useRouter();
+  const [tin, setTin] = useState<string | undefined>(undefined);
+  const [password, setPassword] = useState<string | undefined>(undefined);
+  const [isLogin, setIsLogin] = useState(false);
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
+  const [forgotTin, setForgotTin] = useState("");
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [rePassword, setRePassword] = useState("");
+  const [maskedMobile, setMaskedMobile] = useState("");
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [isOtpVerified, setIsOtpVerified] = useState(false);
+  const [resendInSeconds, setResendInSeconds] = useState(0);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  useEffect(() => {
+    if (resendInSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setResendInSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendInSeconds]);
+
+  const handleNumberChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setData: Dispatch<SetStateAction<string | undefined>>,
+  ) => {
+    const { value } = event.target;
+    if (/^[0-9]*$/.test(value)) setData(value);
+  };
+
+  const submit = async () => {
+    setIsLogin(true);
+    if (!tin) {
+      toast.error("Enter valid TIN number");
+      setIsLogin(false);
+      return;
+    }
+    if (!password) {
+      toast.error("Enter password");
+      setIsLogin(false);
+      return;
+    }
+    const response = await DvatPasswordLogin({ tin_number: tin, password });
+    if (!response.status) {
+      toast.error(response.message);
+      setIsLogin(false);
+      return;
+    }
+    toast.success(response.message);
+    router.push("/dashboard");
+    setTimeout(() => setIsLogin(false), 1000);
+  };
+
+  const resetForgotPasswordModal = () => {
+    setForgotTin("");
+    setForgotOtp("");
+    setNewPassword("");
+    setRePassword("");
+    setMaskedMobile("");
+    setIsOtpSent(false);
+    setIsOtpVerified(false);
+    setResendInSeconds(0);
+  };
+
+  const sendOtp = async () => {
+    setIsSendingOtp(true);
+
+    if (!forgotTin.trim()) {
+      toast.error("Enter valid TIN number");
+      setIsSendingOtp(false);
+      return;
+    }
+
+    const response = await SendForgetPasswordOtp({
+      tin_number: forgotTin.trim(),
+    });
+
+    if (!response.status || !response.data) {
+      toast.error(response.message);
+      setIsSendingOtp(false);
+      return;
+    }
+
+    setMaskedMobile(response.data.maskedMobile);
+    setResendInSeconds(response.data.resendInSeconds);
+
+    if (response.data.otpSent) {
+      setIsOtpSent(true);
+      setIsOtpVerified(false);
+      setForgotOtp("");
+      toast.success(response.message);
+    } else {
+      toast.info(response.message);
+    }
+
+    setIsSendingOtp(false);
+  };
+
+  const verifyOtp = async () => {
+    setIsVerifyingOtp(true);
+
+    if (!forgotTin.trim()) {
+      toast.error("Enter valid TIN number");
+      setIsVerifyingOtp(false);
+      return;
+    }
+
+    if (!forgotOtp.trim()) {
+      toast.error("Enter OTP");
+      setIsVerifyingOtp(false);
+      return;
+    }
+
+    const response = await VerifyForgetPasswordOtp({
+      tin_number: forgotTin.trim(),
+      otp: forgotOtp.trim(),
+    });
+
+    if (!response.status || !response.data) {
+      toast.error(response.message);
+      setIsVerifyingOtp(false);
+      return;
+    }
+
+    if (!response.data.verified) {
+      toast.error(response.message);
+      setIsVerifyingOtp(false);
+      return;
+    }
+
+    setIsOtpVerified(true);
+    toast.success(response.message);
+    setIsVerifyingOtp(false);
+  };
+
+  const submitForgotPassword = async () => {
+    setIsChangingPassword(true);
+
+    if (!isOtpVerified) {
+      toast.error("Verify OTP before changing password");
+      setIsChangingPassword(false);
+      return;
+    }
+
+    const changeResponse = await ResetForgetPassword({
+      tin_number: forgotTin.trim(),
+      password: newPassword,
+      repassword: rePassword,
+    });
+
+    if (!changeResponse.status) {
+      toast.error(changeResponse.message);
+      setIsChangingPassword(false);
+      return;
+    }
+
+    toast.success("Password updated successfully");
+    setIsForgotOpen(false);
+    resetForgotPasswordModal();
+    setIsChangingPassword(false);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div>
+        <label className="text-sm text-gray-500 block mb-2">
+          Login ID (TIN Number)
+        </label>
+        <Input
+          size="small"
+          maxLength={12}
+          placeholder="Enter TIN Number"
+          value={tin ?? ""}
+          onChange={(e) => handleNumberChange(e, setTin)}
+          className="text-sm"
+        />
+      </div>
+      <div>
+        <label className="text-sm text-gray-500 block mb-2">Password</label>
+        <Input.Password
+          size="small"
+          placeholder="Enter Password"
+          iconRender={(visible) =>
+            visible ? <FluentEye12Regular /> : <FluentEyeOff16Regular />
+          }
+          value={password ?? ""}
+          onChange={(e) => setPassword(e.target.value)}
+          className="text-sm"
+        />
+      </div>
+      <div className="text-right">
+        <button
+          type="button"
+          onClick={() => setIsForgotOpen(true)}
+          className="text-sm text-[#0f2f67] underline hover:text-[#16448b] cursor-pointer"
+        >
+          Forgot Password?
+        </button>
+      </div>
+      <div className="h-2"></div>
+      <Button
+        onClick={submit}
+        disabled={isLogin}
+        className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:white"
+      >
+        {isLogin ? "Verifying..." : "Login"}
+      </Button>
+
+      <Modal
+        title="Forgot Password"
+        open={isForgotOpen}
+        onCancel={() => {
+          setIsForgotOpen(false);
+          resetForgotPasswordModal();
+        }}
+        footer={null}
+        destroyOnClose
+      >
+        <div className="space-y-3 mt-1">
+          <div>
+            <label className="text-sm text-gray-600 block mb-1.5">TIN Number</label>
+            <Input
+              maxLength={12}
+              placeholder="Enter TIN Number"
+              value={forgotTin}
+              disabled={isOtpSent}
+              onChange={(e) => {
+                const { value } = e.target;
+                if (/^[0-9]*$/.test(value)) setForgotTin(value);
+              }}
+              className="text-sm"
+            />
+          </div>
+          {!isOtpSent && (
+            <Button
+              onClick={sendOtp}
+              disabled={isSendingOtp}
+              className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:bg-[#16448b]!"
+            >
+              {isSendingOtp ? "Sending OTP..." : "Send OTP"}
+            </Button>
+          )}
+
+          {isOtpSent && (
+            <>
+              <p className="text-sm text-gray-600">
+                OTP sent to registered mobile ending with <b>{maskedMobile}</b>
+              </p>
+              <div>
+                <label className="text-sm text-gray-600 block mb-1.5">OTP</label>
+                <Input
+                  maxLength={6}
+                  placeholder="Enter 6-digit OTP"
+                  value={forgotOtp}
+                  disabled={isOtpVerified}
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    if (/^[0-9]*$/.test(value)) setForgotOtp(value);
+                  }}
+                  className="text-sm"
+                />
+              </div>
+
+              {!isOtpVerified && (
+                <Button
+                  onClick={verifyOtp}
+                  disabled={isVerifyingOtp}
+                  className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:bg-[#16448b]!"
+                >
+                  {isVerifyingOtp ? "Verifying OTP..." : "Verify OTP"}
+                </Button>
+              )}
+
+              <div className="text-right">
+                {resendInSeconds > 0 ? (
+                  <span className="text-sm text-gray-500">
+                    Resend OTP in {resendInSeconds}s
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={sendOtp}
+                    className="text-sm text-[#0f2f67] underline hover:text-[#16448b] cursor-pointer"
+                  >
+                    Resend OTP
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
+          {isOtpVerified && (
+            <>
+          <div>
+            <label className="text-sm text-gray-600 block mb-1.5">New Password</label>
+            <Input.Password
+              placeholder="Enter New Password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-600 block mb-1.5">Re-Password</label>
+            <Input.Password
+              placeholder="Enter Re-Password"
+              value={rePassword}
+              onChange={(e) => setRePassword(e.target.value)}
+              className="text-sm"
+            />
+          </div>
+          <Button
+            onClick={submitForgotPassword}
+            disabled={isChangingPassword}
+            className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:bg-[#16448b]!"
+          >
+            {isChangingPassword ? "Updating..." : "Change Password"}
+          </Button>
+            </>
+          )}
+        </div>
+      </Modal>
+    </div>
+  );
+};
+

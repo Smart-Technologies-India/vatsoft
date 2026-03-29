@@ -318,7 +318,7 @@ const AddStock = () => {
             I, {dvatdata?.tradename}, holding TIN number {dvatdata?.tinNumber},
             hereby acknowledge that the details entered in the VAT registration
             form after logging in on the portal at www.dddnhvat.com and the
-            opening stock data submitted as on 1st January 2026 have been filled
+            opening stock data submitted as on 1st April 2026 have been filled
             by me. I confirm that the information provided is accurate and known
             to me to the best of my knowledge. I take full responsibility for
             the accuracy and completeness of the data provided.

@@ -224,7 +224,7 @@ const Dvat24APage = () => {
                 <TableHeader>
                   <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
                     <TableHead className="whitespace-nowrap text-center px-4 py-3 border font-semibold text-gray-900">
-                      Payment of account of
+                      Payment on account of
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center px-4 py-3 w-60 border font-semibold text-gray-900">
                       Tax (&#x20b9;)

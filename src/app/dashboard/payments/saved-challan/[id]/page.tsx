@@ -123,7 +123,7 @@ const ChallanData = () => {
     if (!response.status) return toast.error(response.message);
 
     router.push(
-      `/payamount?xlmnx=${1}&ynboy=${uniqueid}&zgvfz=${response.data?.id}_${dvat?.id}_0_DEMAND`,
+      `/payamount?xlmnx=${challanData?.total_tax_amount}&ynboy=${uniqueid}&zgvfz=${response.data?.id}_${dvat?.id}_0_DEMAND`,
     );
 
     // toast.success(response.message);

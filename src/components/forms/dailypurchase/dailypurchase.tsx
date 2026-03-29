@@ -40,7 +40,7 @@ type DailyPurchaseProviderProps = {
   init: () => Promise<void>;
 };
 export const DailyPurchaseMasterProvider = (
-  props: DailyPurchaseProviderProps
+  props: DailyPurchaseProviderProps,
 ) => {
   const methods = useForm<DailyPurchaseMasterForm>({
     resolver: valibotResolver(DailyPurchaseMasterSchema),
@@ -76,7 +76,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
   const [davtdata, setDvatdata] = useState<dvat04 | null>(null);
 
   const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
-    []
+    [],
   );
 
   const init = async () => {
@@ -90,13 +90,13 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       if (commodity_resposen.status && commodity_resposen.data) {
         if (response.data.commodity == "OIDC") {
           const filterdata = commodity_resposen.data.filter(
-            (val: commodity_master) => val.product_type == "LIQUOR"
+            (val: commodity_master) => val.product_type == "LIQUOR",
           );
           setCommodityMaster(filterdata);
         } else {
           const filterdata = commodity_resposen.data.filter(
             (val: commodity_master) =>
-              val.product_type == response.data!.commodity
+              val.product_type == response.data!.commodity,
           );
           setCommodityMaster(filterdata);
         }
@@ -133,13 +133,13 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         if (commodity_resposen.status && commodity_resposen.data) {
           if (response.data.commodity == "OIDC") {
             const filterdata = commodity_resposen.data.filter(
-              (val: commodity_master) => val.product_type == "LIQUOR"
+              (val: commodity_master) => val.product_type == "LIQUOR",
             );
             setCommodityMaster(filterdata);
           } else {
             const filterdata = commodity_resposen.data.filter(
               (val: commodity_master) =>
-                val.product_type == response.data!.commodity
+                val.product_type == response.data!.commodity,
             );
             setCommodityMaster(filterdata);
           }
@@ -182,6 +182,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     useState<commodity_master | null>(null);
   const [vatamount, setVatAmount] = useState<string>("0");
   const [taxableValue, setTaxableValue] = useState<string>("0");
+  const [fuelTotalInvoiceValue, setFuelTotalInvoiceValue] =
+    useState<string>("");
 
   useEffect(() => {
     const init = async () => {
@@ -200,7 +202,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         if (recipient_vat_no.length >= 11) {
           toast.dismiss();
           toast.error(
-            "Local purchase will auto reflect after sale entry from the seller."
+            "Local purchase will auto reflect after sale entry from the seller.",
           );
         }
         setTinData(null);
@@ -234,6 +236,30 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
   const amount_unit = watch("amount_unit");
 
   useEffect(() => {
+    if (davtdata?.commodity !== "FUEL") {
+      if (fuelTotalInvoiceValue !== "") {
+        setFuelTotalInvoiceValue("");
+      }
+      return;
+    }
+
+    const totalInvoiceNumeric = Number(fuelTotalInvoiceValue);
+    const quantityNumeric = Number(quantity);
+
+    if (
+      !Number.isFinite(totalInvoiceNumeric) ||
+      totalInvoiceNumeric <= 0 ||
+      !Number.isFinite(quantityNumeric) ||
+      quantityNumeric <= 0
+    ) {
+      setValue("amount_unit", "0");
+      return;
+    }
+
+    setValue("amount_unit", (totalInvoiceNumeric / quantityNumeric).toFixed(2));
+  }, [davtdata?.commodity, fuelTotalInvoiceValue, quantity, setValue]);
+
+  useEffect(() => {
     if (description_of_goods == null || description_of_goods == undefined)
       return;
     const init = async () => {
@@ -246,7 +272,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         if (davtdata?.commodity == "OIDC") {
           setValue(
             "amount_unit",
-            commmaster.data.oidc_crate_purchase_price ?? "0"
+            commmaster.data.oidc_crate_purchase_price ?? "0",
           );
         }
       }
@@ -270,7 +296,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
 
     const calculatedVatAmount = calculatedTaxableValue - temp_amount;
     setVatAmount(
-      isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
+      isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2),
     );
   }, [quantity, amount_unit, commoditymaster, isAgainstCForm]);
 
@@ -324,7 +350,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         : data.amount_unit;
 
     const date = new Date(
-      new Date(data.invoice_date).toISOString().split("T")[0]
+      new Date(data.invoice_date).toISOString().split("T")[0],
     );
     date.setDate(date.getDate() + 1);
 
@@ -370,6 +396,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     setTinBox(false);
     setCommodityMaster([]);
     setDvatdata(null);
+    setFuelTotalInvoiceValue("");
     await props.init();
     await init();
     setIsAddMoreMode(true);
@@ -407,7 +434,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         : data.amount_unit;
 
     const date = new Date(
-      new Date(data.invoice_date).toISOString().split("T")[0]
+      new Date(data.invoice_date).toISOString().split("T")[0],
     );
     date.setDate(date.getDate() + 1);
     const stock_response = await CreateDailyPurchase({
@@ -441,7 +468,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
 
     sessionStorage.setItem(
       DAILY_PURCHASE_ADD_MORE_LOCK_KEY,
-      JSON.stringify(lockPayload)
+      JSON.stringify(lockPayload),
     );
 
     setIsAddMoreMode(true);
@@ -470,6 +497,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     setTinBox(false);
     setCommodityMaster([]);
     setDvatdata(null);
+    setFuelTotalInvoiceValue("");
 
     await props.init();
     await init();
@@ -512,11 +540,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     setQuantityCount(value);
   };
 
-  const formatAmount = (
-    value: string | number | null | undefined
-  ): string => {
-    const numericValue =
-      typeof value === "number" ? value : Number(value ?? 0);
+  const formatAmount = (value: string | number | null | undefined): string => {
+    const numericValue = typeof value === "number" ? value : Number(value ?? 0);
     return Number.isFinite(numericValue) ? numericValue.toFixed(2) : "0.00";
   };
 
@@ -643,7 +668,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
                 (val: commodity_master, index: number) => ({
                   value: val.id.toString(),
                   label: val.product_name,
-                })
+                }),
               )}
             />
           </div>
@@ -660,27 +685,43 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             onlynumber={true}
           />
         </div>
-        <div className="mt-2">
-          <TaxtInput<DailyPurchaseMasterForm>
-            placeholder={
-              davtdata?.commodity == "FUEL"
-                ? "Enter Amount/Litre (Purchase price including VAT)"
-                : quantityCount == "crate"
-                ? "Enter Crate amount (Purchase price including VAT)"
-                : "Enter Unit amount (Purchase price including VAT)"
-            }
-            name="amount_unit"
-            required={true}
-            title={
-              davtdata?.commodity == "FUEL"
-                ? "Enter Amount/Litre (Purchase price including VAT)"
-                : quantityCount == "crate"
-                ? "Enter Crate amount (Purchase price including VAT)"
-                : "Enter Unit amount (Purchase price including VAT)"
-            }
-            numdes={true}
-          />
-        </div>
+
+        {davtdata?.commodity == "FUEL" && (
+          <div className="mt-2 ">
+            <p className="text-sm font-normal">Total Invoice Value</p>
+            <Input
+              value={fuelTotalInvoiceValue}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                  setFuelTotalInvoiceValue(value);
+                }
+              }}
+              placeholder="Enter Total Invoice Value"
+              inputMode="decimal"
+            />
+          </div>
+        )}
+
+        {davtdata?.commodity != "FUEL" && (
+          <div className="mt-2">
+            <TaxtInput<DailyPurchaseMasterForm>
+              placeholder={
+                quantityCount == "crate"
+                  ? "Enter Crate amount (Purchase price including VAT)"
+                  : "Enter Unit amount (Purchase price including VAT)"
+              }
+              name="amount_unit"
+              required={true}
+              title={
+                quantityCount == "crate"
+                  ? "Enter Crate amount (Purchase price including VAT)"
+                  : "Enter Unit amount (Purchase price including VAT)"
+              }
+              numdes={true}
+            />
+          </div>
+        )}
         <div className="flex gap-1 items-center">
           <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
             <p className="text-xs font-normal">Taxable (%)</p>
@@ -688,20 +729,50 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
               {isAgainstCForm
                 ? "2"
                 : commoditymaster != null
-                ? commoditymaster.taxable_at + "%"
-                : "0%"}
+                  ? commoditymaster.taxable_at + "%"
+                  : "0%"}
             </p>
           </div>
-          <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
-            <p className="text-xs font-normal">Taxable Value</p>
-            <p className="text-sm font-semibold">{formatAmount(taxableValue)}</p>
-          </div>
-          <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
-            <p className="text-xs font-normal">Invoice Value</p>
-            <p className="text-sm font-semibold">
-              {formatAmount((Number(quantity) || 0) * (Number(amount_unit) || 0))}
-            </p>
-          </div>
+          {davtdata?.commodity == "FUEL" ? (
+            <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
+              <p className="text-xs font-normal">Net amount/unit</p>
+              <p className="text-sm font-semibold">
+                {amount_unit ? formatAmount(amount_unit) : "0.00"}
+              </p>
+              {/* <TaxtInput<DailyPurchaseMasterForm>
+                placeholder="Quantity and Total Invoice Value"
+                name="amount_unit"
+                required={true}
+                title="Net amount/unit"
+                disable={true}
+                numdes={true}
+              /> */}
+            </div>
+          ) : (
+            <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
+              <p className="text-xs font-normal">Taxable Value</p>
+              <p className="text-sm font-semibold">
+                {formatAmount(taxableValue)}
+              </p>
+            </div>
+          )}
+          {davtdata?.commodity == "FUEL" ? (
+            <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
+              <p className="text-xs font-normal">Taxable Value</p>
+              <p className="text-sm font-semibold">
+                {formatAmount(taxableValue)}
+              </p>
+            </div>
+          ) : (
+            <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
+              <p className="text-xs font-normal">Invoice Value</p>
+              <p className="text-sm font-semibold">
+                {formatAmount(
+                  (Number(quantity) || 0) * (Number(amount_unit) || 0),
+                )}
+              </p>
+            </div>
+          )}
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
             <p className="text-xs font-normal">VAT Amount</p>
             <p className="text-sm font-semibold">{formatAmount(vatamount)}</p>
@@ -735,6 +806,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
                 quantity: "",
                 recipient_vat_no: "",
               });
+              setFuelTotalInvoiceValue("");
               setIsAddMoreMode(false);
             }}
             value={"Reset"}

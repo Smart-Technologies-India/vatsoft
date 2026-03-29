@@ -65,7 +65,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
   const [InterestDiffDays, setInterestDiffDays] = useState<number>(0);
   const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
-    []
+    [],
   );
 
   const [user, setUser] = useState<user | null>(null);
@@ -95,7 +95,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
         getLateFees(
           returns_response.data.year,
           returns_response.data.month!,
-          returns_response.data.rr_number
+          returns_response.data.rr_number,
         );
       }
     };
@@ -134,13 +134,13 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
 
     const idiff_days = getDaysBetweenDates(
       new Date(newYear, monthIndex, 15),
-      currentDate
+      currentDate,
     );
 
     setInterestDiffDays(idiff_days);
     const pdiff_days = getDaysBetweenDates(
       new Date(newYear, monthIndex, 28),
-      currentDate
+      currentDate,
     );
 
     setPenaltyDiffDays(pdiff_days);
@@ -217,7 +217,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -240,7 +240,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -263,7 +263,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -286,7 +286,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -310,7 +310,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -334,7 +334,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -358,7 +358,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -382,7 +382,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -408,7 +408,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -433,7 +433,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -458,7 +458,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -499,7 +499,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
             parseFloat(getGoodsReturnsNote().decrease)))) *
         0.15) /
         365) *
-        InterestDiffDays
+        InterestDiffDays,
     )
       ? 0
       : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -635,7 +635,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
               parseFloat(getGoodsReturnsNote().decrease)))) *
           0.15) /
           365) *
-          InterestDiffDays
+          InterestDiffDays,
       )
         ? 0
         : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -706,7 +706,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
             <div className="p-1 bg-gray-50 grid grid-cols-4  gap-2  px-4">
               <div>
                 <p className="text-sm">Reason for challan</p>
-                <p className="text-sm font-medium">MONTHLYPAYMENT</p>
+                <p className="text-sm font-medium">VATPAYMENT</p>
               </div>
             </div>
 
@@ -715,7 +715,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
                 <TableHeader>
                   <TableRow className="bg-gray-100">
                     <TableHead className="whitespace-nowrap text-center px-2 border">
-                      Payment of account of
+                      Payment on account of
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center px-2 w-60 border">
                       Tax (&#x20b9;)
@@ -738,16 +738,18 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="text-left p-2 border">Late Fees</TableCell>
-                    <TableCell className="text-center p-2 border">0</TableCell>
+                    <TableCell className="text-left p-2 border">
+                      Late Penalty
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">
+                      {isNegative(lateFees) ? "0" : lateFees}
+                    </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="text-left p-2 border">
                       Penalty
                     </TableCell>
-                    <TableCell className="text-center p-2 border">
-                      {isNegative(lateFees) ? "0" : lateFees}
-                    </TableCell>
+                    <TableCell className="text-center p-2 border">0</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="text-left p-2 border">
@@ -780,8 +782,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
             <div className="p-1 bg-gray-50 grid grid-cols-4 gap-6 justify-between px-4">
               <div>
                 <p className="text-sm">Bank Name</p>
-                <p className="text-sm  font-medium h-20 border-b border-black">
-                </p>
+                <p className="text-sm  font-medium h-20 border-b border-black"></p>
               </div>
               <div>
                 <p className="text-sm">Paymode</p>
@@ -793,8 +794,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
               </div>
               <div>
                 <p className="text-sm">Bank Stamp</p>
-                <p className="text-sm  font-medium h-20 border-b border-black">
-                </p>
+                <p className="text-sm  font-medium h-20 border-b border-black"></p>
               </div>
             </div>
           </main>

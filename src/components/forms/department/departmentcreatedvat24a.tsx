@@ -256,7 +256,7 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
                 <TableHeader>
                   <TableRow className="bg-gray-100">
                     <TableHead className="whitespace-nowrap text-center px-2 border">
-                      Payment of account of
+                      Payment on account of
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center px-2 w-60 border">
                       Tax (&#x20b9;)

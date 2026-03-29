@@ -238,9 +238,51 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   const onSubmit = async (data: SubmitPaymentFormCopy) => {
     if (return01 == null) return toast.error("No return exist");
 
-    if (paymentMode == "ONLINE") {
-      const nanoid = customAlphabet("1234567890abcdef", 10);
+    const lastPayment = await CheckLastPayment({
+      id: return01.id ?? 0,
+    });
 
+    if (!lastPayment.status) {
+      toast.error(lastPayment.message);
+      reset();
+      return;
+    }
+
+    if (lastPayment.data == false) {
+      toast.error(lastPayment.message);
+      reset();
+      return;
+    }
+
+    const response = await AddPayment({
+      id: return01.id ?? 0,
+      bank_name: data.bank_name,
+      track_id: data.track_id,
+      transaction_id: data.transaction_id,
+      rr_number: get_rr_number(),
+      penalty: lateFees.toString(),
+      ...(isNegative(getValue()) && {
+        pending_payment: getValue().toFixed(),
+      }),
+      interestamount: getInterest().toFixed(0),
+      totaltaxamount: getTotalTaxAmount().toFixed(0),
+      vatamount: getVatAmount().toFixed(0),
+    });
+
+    if (!response.status) return toast.error(response.message);
+    toast.success(response.message);
+    router.push("/dashboard/returns/returns-dashboard");
+    reset();
+  };
+
+  const [isOnlineProcessing, setIsOnlineProcessing] = useState(false);
+
+  const onOnlinePayment = async () => {
+    if (return01 == null) return toast.error("No return exist");
+
+    setIsOnlineProcessing(true);
+    try {
+      const nanoid = customAlphabet("1234567890abcdef", 10);
       const uniqueid: string = nanoid();
 
       const response = await AddPaymentOnline({
@@ -255,50 +297,16 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         vatamount: getVatAmount().toFixed(0),
       });
 
-      if (!response.status) return toast.error(response.message);
+      if (!response.status) {
+        toast.error(response.message);
+        return;
+      }
 
       router.push(
-        `/payamount?xlmnx=${1}&ynboy=${uniqueid}&zgvfz=${response.data?.id}_${return01.dvat04Id}_${return01.id}_DEMAND`,
+        `/payamount?xlmnx=${getTotalTaxAmount().toFixed(0)}&ynboy=${uniqueid}&zgvfz=${response.data?.id}_${return01.dvat04Id}_${return01.id}_DEMAND`,
       );
-      // router.push(
-      //   `/payamount?xlmnx=${1}&ynboy=${uniqueid}&zgvfz=${1}_${1}_${1}_bid_${9586908178}&name=${"karan"}&email=${"karan@gmail.com"}&mobile=${9586908178}`,
-      // );
-    } else {
-      const lastPayment = await CheckLastPayment({
-        id: return01.id ?? 0,
-      });
-
-      if (!lastPayment.status) {
-        toast.error(lastPayment.message);
-        reset();
-        return;
-      }
-
-      if (lastPayment.data == false) {
-        toast.error(lastPayment.message);
-        reset();
-        return;
-      }
-
-      const response = await AddPayment({
-        id: return01.id ?? 0,
-        bank_name: data.bank_name,
-        track_id: data.track_id,
-        transaction_id: data.transaction_id,
-        rr_number: get_rr_number(),
-        penalty: lateFees.toString(),
-        ...(isNegative(getValue()) && {
-          pending_payment: getValue().toFixed(),
-        }),
-        interestamount: getInterest().toFixed(0),
-        totaltaxamount: getTotalTaxAmount().toFixed(0),
-        vatamount: getVatAmount().toFixed(0),
-      });
-
-      if (!response.status) return toast.error(response.message);
-      toast.success(response.message);
-      router.push("/dashboard/returns/returns-dashboard");
-      reset();
+    } finally {
+      setIsOnlineProcessing(false);
     }
   };
 
@@ -704,7 +712,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   //     0
   //   );
   // };
-   const getR6_1 = (): number =>
+  const getR6_1 = (): number =>
     parseFloat(getInvoicePercentage("0").decrease) +
     parseFloat(getInvoicePercentage("1").decrease) +
     parseFloat(getInvoicePercentage("4").decrease) +
@@ -758,7 +766,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   const getR7 = (): number =>
     getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a());
 
-   const getValue = () => isNegative(getR7()) ?  getR7() : 0;
+  const getValue = () => (isNegative(getR7()) ? getR7() : 0);
 
   const getTotalTaxAmount = (): number => {
     return (
@@ -876,7 +884,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         <div className="p-1 bg-gray-50 grid grid-cols-4  gap-2  px-4">
           <div>
             <p className="text-sm">Reason for challan</p>
-            <p className="text-sm font-medium">MONTHLYPAYMENT</p>
+            <p className="text-sm font-medium">VATPAYMENT</p>
           </div>
         </div>
 
@@ -885,7 +893,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
             <TableHeader>
               <TableRow className="bg-gray-100">
                 <TableHead className="whitespace-nowrap text-center px-2 border">
-                  Payment of account of
+                  Payment on account of
                 </TableHead>
                 <TableHead className="whitespace-nowrap text-center px-2 w-60 border">
                   Tax (&#x20b9;)
@@ -907,15 +915,15 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
               </TableRow>
               <TableRow>
                 <TableCell className="text-left p-2 border">
-                  Late Fees
+                  Late Penalty
                 </TableCell>
-                <TableCell className="text-center p-2 border">0</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">Penalty</TableCell>
                 <TableCell className="text-center p-2 border">
                   {isNegative(lateFees) ? "0" : lateFees}
                 </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="text-left p-2 border">Penalty</TableCell>
+                <TableCell className="text-center p-2 border">0</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="text-left p-2 border">Others</TableCell>
@@ -984,22 +992,86 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
               </>
             ) : (
               <>
-                <div className="mt-2">
+                <div className="mt-2 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+                  <p className="text-sm font-semibold">Payment Mode</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Choose online payment or submit offline payment details.
+                  </p>
+
                   <Radio.Group
                     block
                     options={options}
                     defaultValue="ONLINE"
                     optionType="button"
                     buttonStyle="solid"
+                    className="mt-2"
                     onChange={(e) => {
                       setPaymentMode(e.target.value);
+                      reset({
+                        bank_name: "",
+                        transaction_id: "",
+                        track_id: "",
+                      });
                     }}
                   />
-                </div>
-                {paymentMode == "ONLINE" ? (
-                  <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-                    <div className="mt-2">
-                      <p>Bank Name</p>
+
+                  {paymentMode == "ONLINE" ? (
+                    <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3">
+                      <p className="text-sm font-medium text-blue-900">
+                        Online Payment
+                      </p>
+                      <p className="text-xs text-blue-800 mt-1">
+                        You will be redirected to the payment gateway. No bank,
+                        transaction, or track details are required here.
+                      </p>
+
+                      <div className="mt-3 flex items-center justify-between rounded-md bg-white p-2 border border-blue-100">
+                        <span className="text-sm text-gray-600">
+                          Payable Amount
+                        </span>
+                        <span className="text-lg font-semibold text-gray-900">
+                          {getTotalTaxAmount().toFixed(0)}
+                        </span>
+                      </div>
+
+                      <div className="flex gap-2 mt-3 justify-end">
+                        <Button
+                          disabled={isOnlineProcessing}
+                          onClick={() => {
+                            reset({
+                              bank_name: "",
+                              transaction_id: "",
+                              track_id: "",
+                            });
+                          }}
+                        >
+                          Reset
+                        </Button>
+                        <Button
+                          type="primary"
+                          disabled={isOnlineProcessing}
+                          onClick={onOnlinePayment}
+                        >
+                          {isOnlineProcessing
+                            ? "Redirecting..."
+                            : "Pay Online"}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <form
+                      className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3"
+                      onSubmit={handleSubmit(onSubmit, onFormError)}
+                    >
+                      <p className="text-sm font-medium text-amber-900">
+                        Offline Payment Details
+                      </p>
+                      <p className="text-xs text-amber-800 mt-1">
+                        Fill in bank and transaction details, then submit.
+                      </p>
+
+                      <div className="mt-3">
+                        <p>Bank Name</p>
                       <input
                         className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
                           errors.bank_name
@@ -1050,122 +1122,18 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                         </p>
                       )}
                     </div>
-                    {/* <div className="mt-2">
-                      <p>OTP</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                          errors.track_id
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="OTP"
-                        {...register("otp")}
-                      />
-                      {errors.otp && (
-                        <p className="text-xs text-red-500">
-                          {errors.otp.message?.toString()}
-                        </p>
-                      )}
-                    </div> */}
-                    <div className="flex  gap-2 mt-2">
+                    <div className="flex gap-2 mt-3">
                       <div className="grow"></div>
 
                       <Button
                         disabled={isSubmitting}
                         onClick={(e) => {
                           e.preventDefault();
-                          reset({});
-                        }}
-                      >
-                        Reset
-                      </Button>
-                      <input
-                        type="submit"
-                        disabled={isSubmitting}
-                        value={isSubmitting ? "Processing..." : "Pay Challan"}
-                        className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
-                      />
-                    </div>
-                  </form>
-                ) : (
-                  <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-                    <div className="mt-2">
-                      <p>Bank Name</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                          errors.bank_name
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Bank Name"
-                        {...register("bank_name")}
-                        type="text"
-                      />
-                      {errors.bank_name && (
-                        <p className="text-xs text-red-500">
-                          {errors.bank_name.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-2">
-                      <p>Transaction Id</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500 ${
-                          errors.transaction_id
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Transaction id"
-                        {...register("transaction_id")}
-                      />
-                      {errors.transaction_id && (
-                        <p className="text-xs text-red-500">
-                          {errors.transaction_id.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-2">
-                      <p>Track Id</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                          errors.track_id
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Track Id"
-                        {...register("track_id")}
-                      />
-                      {errors.track_id && (
-                        <p className="text-xs text-red-500">
-                          {errors.track_id.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    {/* <div className="mt-2">
-                      <p>OTP</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                          errors.track_id
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="OTP"
-                        {...register("otp")}
-                      />
-                      {errors.otp && (
-                        <p className="text-xs text-red-500">
-                          {errors.otp.message?.toString()}
-                        </p>
-                      )}
-                    </div> */}
-                    <div className="flex  gap-2 mt-2">
-                      <div className="grow"></div>
-
-                      <Button
-                        disabled={isSubmitting}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          reset({});
+                          reset({
+                            bank_name: "",
+                            transaction_id: "",
+                            track_id: "",
+                          });
                         }}
                       >
                         Reset
@@ -1192,6 +1160,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                     </div>
                   </form>
                 )}
+                </div>
               </>
             )}
           </div>
