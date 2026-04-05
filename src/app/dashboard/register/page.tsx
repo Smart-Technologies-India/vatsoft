@@ -90,6 +90,11 @@ const Page = () => {
                 description="View and manage all product requests submitted by users. Update status, approve or reject requests."
                 link="/dashboard/register/product-requests"
               />
+              <DashboardCards
+                title="Registration Requests Management"
+                description="View and manage all registration requests submitted by users. Update status, approve or reject requests."
+                link="/dashboard/register/registration-requests"
+              />
             </>
           )}
           {["USER"].includes(user?.role!) && (
@@ -117,17 +122,17 @@ const Page = () => {
 
               {isProfileCompletd && (
                 <>
-                  <DashboardCards
+                  {/* <DashboardCards
                     title="Application For Filing Clarification"
                     description="Submit a request to provide or seek clarification regarding an existing VAT application or filing."
                     link="/dashboard/register/applicatin_for_filing_clarification"
-                  />
+                  /> 
                   <DashboardCards
                     title="DVAT-07 : Amendment of Registration"
                     description="Modify critical details in your VAT registration, including business name, type, or ownership changes."
                     link="/dashboard/new-registration/registeruser"
                   />
-                  {/* <DashboardCards
+                  <DashboardCards
                     title="Amendment of Registration Non-Core Fields"
                     description="Update non-essential information in your VAT registration, such as contact details or business address."
                     link="/dashboard/new-registration/registeruser"
@@ -142,11 +147,11 @@ const Page = () => {
                     description="Apply to discontinue participation in the composition scheme and return to standard VAT payment."
                     link="/dashboard/register/without-composition-levy"
                   />
-                  <DashboardCards
+                  {/* <DashboardCards
                     title="DVAT-09 : Application for Cancellation of Registration"
                     description="Request the cancellation of your VAT registration if your business is closing or no longer requires VAT registration."
                     link="/dashboard/new-registration/registeruser"
-                  />
+                  /> */}
                 </>
               )}
             </>

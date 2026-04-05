@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import GetDvatByOffice from "@/action/return/getdvatbyoffice";
 import { toast } from "react-toastify";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { encryptURLData } from "@/utils/methods";
 import {
   flexRender,
   getCoreRowModel,
@@ -37,14 +38,13 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-type RegistrationStatusRow = dvat04 & { first_stock: first_stock[] };
+type RegistrationRequestRow = dvat04 & { first_stock: first_stock[] };
 
-const RegistrationStatus = () => {
+const RegistrationRequests = () => {
   const [userid, setUserid] = useState<number>(0);
-
   const router = useRouter();
 
-  const [data, setData] = useState<RegistrationStatusRow[]>([]);
+  const [data, setData] = useState<RegistrationRequestRow[]>([]);
   const [, setUser] = useState<user>();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -71,31 +71,18 @@ const RegistrationStatus = () => {
         });
 
         if (response.data && response.status) {
-          // setData(response.data);
-
-          // short data according to this status order
-          // 1 - VERIFICATION
-          // 2 - PENDINGPROCESSING
-          // 3 - APPROVED
-
-          const verification = response.data.filter(
-            (val) => val.status == "VERIFICATION"
-          );
-          const pendingprocessing = response.data.filter(
-            (val) => val.status == "PENDINGPROCESSING"
-          );
           const approved = response.data.filter(
-            (val) => val.status == "APPROVED"
+            (val) => val.status == "APPROVED",
           );
 
-          setData([...verification, ...pendingprocessing, ...approved]);
+          setData(approved);
         }
       }
     };
     init();
   }, [userid]);
 
-  const columns = useMemo<ColumnDef<RegistrationStatusRow>[]>(
+  const columns = useMemo<ColumnDef<RegistrationRequestRow>[]>(
     () => [
       {
         accessorKey: "tinNumber",
@@ -121,48 +108,58 @@ const RegistrationStatus = () => {
         ),
       },
       {
-        id: "dvatStatus",
-        accessorFn: (row) =>
-          row.status === "PENDINGPROCESSING" || row.status === "APPROVED"
-            ? "SUBMITTED"
-            : "PENDING",
-        header: "DVAT Status",
+        id: "schemeType",
+        accessorFn: (row) => (row.compositionScheme ? "Composition" : "Regular"),
+        header: "Scheme Type",
         cell: ({ row }) => (
           <span
             className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-              row.original.status === "APPROVED"
-                ? "bg-emerald-100 text-emerald-700"
-                : row.original.status === "PENDINGPROCESSING"
-                  ? "bg-amber-100 text-amber-700"
-                  : "bg-rose-100 text-rose-700"
+              row.original.compositionScheme
+                ? "bg-purple-100 text-purple-700"
+                : "bg-blue-100 text-blue-700"
             }`}
           >
-            {row.original.status === "PENDINGPROCESSING" ||
-            row.original.status === "APPROVED"
-              ? "SUBMITTED"
-              : "PENDING"}
+            {row.original.compositionScheme ? "Composition" : "Regular"}
           </span>
         ),
       },
       {
-        id: "stockStatus",
-        accessorFn: (row) =>
-          row.first_stock.length > 0 ? "SUBMITTED" : "PENDING",
-        header: "Stock Status",
+        accessorKey: "frequencyFilings",
+        header: "Filing Frequency",
         cell: ({ row }) => (
           <span
             className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-              row.original.first_stock.length > 0
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-rose-100 text-rose-700"
+              row.original.frequencyFilings === "QUARTERLY"
+                ? "bg-amber-100 text-amber-700"
+                : "bg-emerald-100 text-emerald-700"
             }`}
           >
-            {row.original.first_stock.length > 0 ? "SUBMITTED" : "PENDING"}
+            {row.original.frequencyFilings === "QUARTERLY"
+              ? "Quarterly"
+              : "Monthly"}
           </span>
         ),
       },
+      {
+        id: "actions",
+        enableSorting: false,
+        enableColumnFilter: false,
+        header: "Actions",
+        cell: ({ row }) => (
+          <button
+            onClick={() =>
+              router.push(
+                `/dashboard/returns/department-pending-return/${encryptURLData(row.original.id.toString())}`,
+              )
+            }
+            className="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+          >
+            View
+          </button>
+        ),
+      },
     ],
-    [],
+    [router],
   );
 
   const table = useReactTable({
@@ -198,10 +195,10 @@ const RegistrationStatus = () => {
     },
   });
 
-  const dvatStatusFilterValue =
-    (table.getColumn("dvatStatus")?.getFilterValue() as string | undefined) ?? "";
-  const stockStatusFilterValue =
-    (table.getColumn("stockStatus")?.getFilterValue() as string | undefined) ?? "";
+  const schemeFilterValue =
+    (table.getColumn("schemeType")?.getFilterValue() as string | undefined) ?? "";
+  const frequencyFilterValue =
+    (table.getColumn("frequencyFilings")?.getFilterValue() as string | undefined) ?? "";
 
   const getRowStatusColor = (status: string) => {
     if (status === "APPROVED") return "bg-emerald-50";
@@ -218,10 +215,10 @@ const RegistrationStatus = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">
-                  Dealer Registration Status
+                  Registration Requests
                 </h1>
                 <p className="text-sm text-gray-500 mt-1">
-                  Track dealer registration and stock submission status
+                  Manage dealer registration requests and filing details
                 </p>
               </div>
               <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg font-medium">
@@ -251,7 +248,8 @@ const RegistrationStatus = () => {
                 </div>
                 <p className="text-gray-600 font-medium">No Records Found</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  There are no dealer registrations to display at this time.
+                  There are no dealer registration requests to display at this
+                  time.
                 </p>
               </div>
             ) : (
@@ -266,30 +264,30 @@ const RegistrationStatus = () => {
                         className="bg-white"
                       />
                       <select
-                        value={dvatStatusFilterValue}
+                        value={schemeFilterValue}
                         onChange={(event) =>
                           table
-                            .getColumn("dvatStatus")
+                            .getColumn("schemeType")
                             ?.setFilterValue(event.target.value || undefined)
                         }
                         className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
-                        <option value="">All DVAT Status</option>
-                        <option value="SUBMITTED">Submitted</option>
-                        <option value="PENDING">Pending</option>
+                        <option value="">All Scheme Types</option>
+                        <option value="Composition">Composition</option>
+                        <option value="Regular">Regular</option>
                       </select>
                       <select
-                        value={stockStatusFilterValue}
+                        value={frequencyFilterValue}
                         onChange={(event) =>
                           table
-                            .getColumn("stockStatus")
+                            .getColumn("frequencyFilings")
                             ?.setFilterValue(event.target.value || undefined)
                         }
                         className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
-                        <option value="">All Stock Status</option>
-                        <option value="SUBMITTED">Submitted</option>
-                        <option value="PENDING">Pending</option>
+                        <option value="">All Filing Frequencies</option>
+                        <option value="MONTHLY">Monthly</option>
+                        <option value="QUARTERLY">Quarterly</option>
                       </select>
                     </div>
                     <div className="text-sm text-gray-600">
@@ -348,7 +346,7 @@ const RegistrationStatus = () => {
                             {row.getVisibleCells().map((cell) => (
                               <TableCell
                                 key={cell.id}
-                                className={`p-3 ${cell.column.id === "contact_one" || cell.column.id === "dvatStatus" || cell.column.id === "stockStatus" ? "text-center" : ""}`}
+                                className={`p-3 ${cell.column.id === "contact_one" || cell.column.id === "schemeType" || cell.column.id === "frequencyFilings" || cell.column.id === "actions" ? "text-center" : ""}`}
                               >
                                 {flexRender(
                                   cell.column.columnDef.cell,
@@ -427,4 +425,4 @@ const RegistrationStatus = () => {
   );
 };
 
-export default RegistrationStatus;
+export default RegistrationRequests;

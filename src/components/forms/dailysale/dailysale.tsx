@@ -65,6 +65,7 @@ const DailySale = (props: DailySaleProviderProps) => {
 
   // against c form
   const [isAgainstCForm, setIsAgainstCForm] = useState(true);
+  const [isComp, setIsComp] = useState(false);
 
   const {
     reset,
@@ -202,6 +203,10 @@ const DailySale = (props: DailySaleProviderProps) => {
       ) {
         setIsAgainstCForm(false);
       }
+
+      if (davtdata?.compositionScheme) {
+        setIsComp(true);
+      }
       if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
       if (recipient_vat_no && (recipient_vat_no ?? "").length < 2) {
         if (recipient_vat_no.length >= 11) {
@@ -228,7 +233,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       }
     };
     init();
-  }, [recipient_vat_no, isAgainstCForm]);
+  }, [recipient_vat_no, isAgainstCForm, isComp]);
 
   const description_of_goods = watch("description_of_goods");
   const quantity = watch("quantity");
@@ -281,7 +286,7 @@ const DailySale = (props: DailySaleProviderProps) => {
       }
     };
     init();
-  }, [description_of_goods, isAgainstCForm]);
+  }, [description_of_goods, isAgainstCForm, isComp]);
 
   useEffect(() => {
     if (commoditymaster == null || quantity == null || amount_unit == null)
@@ -296,7 +301,11 @@ const DailySale = (props: DailySaleProviderProps) => {
         (((Number(quantity) || 0) * (Number(amount_unit) || 0)) /
           (100 +
             parseFloat(
-              isAgainstCForm ? "2" : (commoditymaster?.taxable_at ?? "0"),
+              isComp
+                ? "1"
+                : isAgainstCForm
+                  ? "2"
+                  : (commoditymaster?.taxable_at ?? "0"),
             ))) *
           100,
     );
@@ -317,13 +326,17 @@ const DailySale = (props: DailySaleProviderProps) => {
       (((Number(quantity) || 0) * (Number(amount_unit) || 0)) /
         (100 +
           parseFloat(
-            isAgainstCForm ? "2" : (commoditymaster?.taxable_at ?? "0"),
+            isComp
+              ? "1"
+              : isAgainstCForm
+                ? "2"
+                : (commoditymaster?.taxable_at ?? "0"),
           ))) *
         100,
     );
 
     setTaxableValue(temp_amount);
-  }, [quantity, amount_unit, commoditymaster, isAgainstCForm]);
+  }, [quantity, amount_unit, commoditymaster, isAgainstCForm, isComp]);
 
   const resolveSellerTin = async (): Promise<tin_number_master | null> => {
     const currentTin = (getValues("recipient_vat_no") ?? "").trim();
@@ -351,7 +364,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     const sellerTin = await resolveSellerTin();
 
     if (sellerTin == null || sellerTin == undefined)
-      return toast.error("Seller VAT Number not found.");
+      return toast.error("Seller TIN Number not found.");
 
     if (quantityCount == "pcs") {
       // pcs
@@ -364,7 +377,13 @@ const DailySale = (props: DailySaleProviderProps) => {
           isLiquore &&
           (parseFloat(data.amount_unit) *
             (100 +
-              parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at))) /
+              parseFloat(
+                isComp
+                  ? "1"
+                  : isAgainstCForm
+                    ? "2"
+                    : commoditymaster.taxable_at,
+              ))) /
             100 <
             liquoreOIDCAmount * 0.7
         ) {
@@ -375,7 +394,13 @@ const DailySale = (props: DailySaleProviderProps) => {
           isLiquore &&
           (parseFloat(data.amount_unit) *
             (100 +
-              parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at))) /
+              parseFloat(
+                isComp
+                  ? "1"
+                  : isAgainstCForm
+                    ? "2"
+                    : commoditymaster.taxable_at,
+              ))) /
             100 <
             liquoreDealerAmount * 0.7
         ) {
@@ -415,7 +440,11 @@ const DailySale = (props: DailySaleProviderProps) => {
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
-      tax_percent: isAgainstCForm ? "2" : commoditymaster.taxable_at,
+      tax_percent: isComp
+        ? "1"
+        : isAgainstCForm
+          ? "2"
+          : commoditymaster.taxable_at,
       seller_tin_id: sellerTin.id,
       amount: taxableValue,
       against_cfrom: isAgainstCForm,
@@ -475,7 +504,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     const sellerTin = await resolveSellerTin();
 
     if (sellerTin == null || sellerTin == undefined)
-      return toast.error("Seller VAT Number not found.");
+      return toast.error("Seller TIN Number not found.");
 
     if (quantityCount == "pcs") {
       // pcs
@@ -488,7 +517,13 @@ const DailySale = (props: DailySaleProviderProps) => {
           isLiquore &&
           (parseFloat(data.amount_unit) *
             (100 +
-              parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at))) /
+              parseFloat(
+                isComp
+                  ? "1"
+                  : isAgainstCForm
+                    ? "2"
+                    : commoditymaster.taxable_at,
+              ))) /
             100 <
             liquoreOIDCAmount
         ) {
@@ -499,7 +534,13 @@ const DailySale = (props: DailySaleProviderProps) => {
           isLiquore &&
           (parseFloat(data.amount_unit) *
             (100 +
-              parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at))) /
+              parseFloat(
+                isComp
+                  ? "1"
+                  : isAgainstCForm
+                    ? "2"
+                    : commoditymaster.taxable_at,
+              ))) /
             100 <
             liquoreDealerAmount
         ) {
@@ -559,7 +600,11 @@ const DailySale = (props: DailySaleProviderProps) => {
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
-      tax_percent: isAgainstCForm ? "2" : commoditymaster.taxable_at,
+      tax_percent: isComp
+        ? "1"
+        : isAgainstCForm
+          ? "2"
+          : commoditymaster.taxable_at,
       seller_tin_id: sellerTin.id,
       amount: taxableValue,
       against_cfrom: isAgainstCForm,
@@ -687,10 +732,10 @@ const DailySale = (props: DailySaleProviderProps) => {
       >
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
-            placeholder="Purchaser VAT Number. (26000000000 for B2C)"
+            placeholder="Purchaser TIN Number. (26000000000 for B2C)"
             name="recipient_vat_no"
             required={true}
-            title="Purchaser VAT Number"
+            title="Purchaser TIN Number"
             disable={isAddMoreMode}
           />
         </div>
@@ -845,16 +890,18 @@ const DailySale = (props: DailySaleProviderProps) => {
           <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
             <p className="text-xs font-normal">Taxable (%)</p>
             <p className="text-sm font-semibold">
-              {isAgainstCForm
-                ? "2%"
-                : commoditymaster != null
-                  ? commoditymaster.taxable_at + "%"
-                  : "0%"}
+              {isComp
+                ? "1%"
+                : isAgainstCForm
+                  ? "2%"
+                  : commoditymaster != null
+                    ? commoditymaster.taxable_at + "%"
+                    : "0%"}
             </p>
           </div>
           {davtdata?.commodity == "FUEL" ? (
             <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
-               <p className="text-xs font-normal">Net amount/unit</p>
+              <p className="text-xs font-normal">Net amount/unit</p>
               <p className="text-sm font-semibold">
                 {amount_unit ? formatAmount(amount_unit) : "0.00"}
               </p>
@@ -884,9 +931,11 @@ const DailySale = (props: DailySaleProviderProps) => {
                 (((Number(quantity) || 0) * (Number(amount_unit) || 0)) /
                   (100 +
                     parseFloat(
-                      isAgainstCForm
-                        ? "2"
-                        : (commoditymaster?.taxable_at ?? "0"),
+                      isComp
+                        ? "1"
+                        : isAgainstCForm
+                          ? "2"
+                          : (commoditymaster?.taxable_at ?? "0"),
                     ))) *
                   100,
               )}

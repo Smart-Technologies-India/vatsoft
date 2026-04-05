@@ -122,8 +122,8 @@ const Composition = (props: CompositionProviderProps) => {
           showIcon
           description={
             props.composition
-              ? "The provided VAT Number already registered under compostion scheme"
-              : "The provided VAT Number already registered under regular scheme"
+              ? "The provided TIN Number already registered under compostion scheme"
+              : "The provided TIN Number already registered under regular scheme"
           }
         />
       </div>

@@ -10,7 +10,7 @@ import prisma from "../../../prisma/database";
 import { getCurrentDvatId } from "@/lib/auth";
 
 const GetUserLastPandingReturn = async (
-  payload: GetUserLastPandingReturnPayload
+  payload: GetUserLastPandingReturnPayload,
 ): Promise<ApiResponseType<return_filing | null>> => {
   const functionname: string = GetUserLastPandingReturn.name;
 
@@ -80,7 +80,6 @@ const GetUserLastPandingReturn = async (
         data: response,
       });
     }
-
     return createResponse({
       message: "dvat04 data get successfully",
       functionname,

@@ -12,6 +12,7 @@ interface CreateCompositionPayload {
   compositionScheme: boolean;
   turnoverLastFinancialYear: string;
   turnoverCurrentFinancialYear: string;
+  taxLiability?: string;
   remark?: string;
 }
 
@@ -21,6 +22,21 @@ const CreateComposition = async (
   const functionname: string = CreateComposition.name;
 
   try {
+    const existingComposition = await prisma.composition.findFirst({
+      where: {
+        dvatid: payload.dvatid,
+        deletedAt: null,
+        deletedById: null,
+      },
+    });
+
+    if (existingComposition) {
+      return createResponse({
+        message: "Composition entry already exists for this dealer.",
+        functionname,
+      });
+    }
+
     const nanoid = customAlphabet("1234567890", 12);
     const arn: string = nanoid();
 
@@ -33,6 +49,7 @@ const CreateComposition = async (
         dept_user_id: 8,
         turnoverLastFinancialYear: payload.turnoverLastFinancialYear,
         turnoverCurrentFinancialYear: payload.turnoverCurrentFinancialYear,
+        ...(payload.taxLiability && { taxLiability: payload.taxLiability }),
         createdById: payload.createdby,
         ...(payload.remark && { remark: payload.remark }),
       },

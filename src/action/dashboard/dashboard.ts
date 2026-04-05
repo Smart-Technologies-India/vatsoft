@@ -16,7 +16,7 @@ interface ResponseDate {
 }
 
 const DashboardMonth = async (
-  payload: DashboardMonthPayload
+  payload: DashboardMonthPayload,
 ): Promise<ApiResponseType<ResponseDate[] | null>> => {
   const functionname: string = DashboardMonth.name;
   try {
@@ -48,7 +48,7 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
 
   if (!dvat) return [];
 
-  const iscomp: boolean = dvat.compositionScheme ?? false;
+  const iscomp: boolean = dvat.frequencyFilings == "QUARTERLY" ? true : false;
   const liableDate: Date = dvat.vatLiableDate!;
   const response_data: ResponseDate[] = [];
 
@@ -58,12 +58,13 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
 
   for (let i = 7, j = 0; i >= 0; i--, j++) {
     const date = new Date(
-      Date.UTC(startYear, startMonth - i - 1, 1, 0, 0, 0, 0)
+      Date.UTC(startYear, startMonth - i - 1, 1, 0, 0, 0, 0),
     );
 
     let fill_date = new Date(
-      Date.UTC(startYear, startMonth - i - 1, 1, 0, 0, 0, 0)
+      Date.UTC(startYear, startMonth - i - 1, 1, 0, 0, 0, 0),
     );
+
 
     // Stop counting if the date is before liableDate
     if (date < liableDate) continue;
@@ -87,6 +88,9 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
         return_type: "REVISED",
         month: date.toLocaleString("default", { month: "long" }),
       },
+      include: {
+        dvat04: true,
+      },
     });
     if (!formdata) {
       formdata = await prisma.returns_01.findFirst({
@@ -106,6 +110,9 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
           return_type: "ORIGINAL",
           month: date.toLocaleString("default", { month: "long" }),
         },
+        include: {
+          dvat04: true,
+        },
       });
     }
 
@@ -113,7 +120,7 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
     let filed_on: Date = new Date();
 
     if (formdata) {
-      if (formdata.compositionScheme) {
+      if (formdata.dvat04.frequencyFilings == "QUARTERLY") {
         if (formdata.rr_number && formdata.rr_number.trim() !== "") {
           completed = true;
           filed_on = formdata.filing_datetime;
@@ -127,27 +134,27 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
     } else if (iscomp) {
       if (
         ["October", "November", "December"].includes(
-          date.toLocaleString("default", { month: "long" })
+          date.toLocaleString("default", { month: "long" }),
         )
       ) {
-        fill_date = new Date(Date.UTC(year, 10, 31, 23, 59, 59, 999)); // December 31
+        fill_date = new Date(Date.UTC(year, 10, 31, 23, 59, 59, 999)); // October 31
         completed = false;
       } else if (
         ["July", "August", "September"].includes(
-          date.toLocaleString("default", { month: "long" })
+          date.toLocaleString("default", { month: "long" }),
         )
       ) {
-        fill_date = new Date(Date.UTC(year, 7, 30, 23, 59, 59, 999)); // September 30
+        fill_date = new Date(Date.UTC(year, 7, 31, 23, 59, 59, 999)); // July 31
         completed = false;
       } else if (
         ["April", "May", "June"].includes(
-          date.toLocaleString("default", { month: "long" })
+          date.toLocaleString("default", { month: "long" }),
         )
       ) {
-        fill_date = new Date(Date.UTC(year, 4, 30, 23, 59, 59, 999)); // June 30
+        fill_date = new Date(Date.UTC(year, 4, 30, 23, 59, 59, 999)); // April 30
         completed = false;
       } else {
-        fill_date = new Date(Date.UTC(year, 1, 31, 23, 59, 59, 999)); // March 31
+        fill_date = new Date(Date.UTC(year, 1, 31, 23, 59, 59, 999)); // January 31
         completed = false;
       }
 

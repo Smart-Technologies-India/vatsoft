@@ -13,7 +13,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formateDate } from "@/utils/methods";
-import { dvat04, DvatType, returns_01, returns_entry } from "@prisma/client";
+import {
+  dvat04,
+  DvatType,
+  Quarter,
+  returns_01,
+  returns_entry,
+} from "@prisma/client";
 import { Alert, Button } from "antd";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -31,6 +37,112 @@ const AddRecord = () => {
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
 
   const searchParams = useSearchParams();
+
+  const getQuarter = (): Quarter => {
+    switch (searchParams.get("quarter")!) {
+      case "QUARTER1":
+        return Quarter.QUARTER1;
+      case "QUARTER2":
+        return Quarter.QUARTER2;
+      case "QUARTER3":
+        return Quarter.QUARTER3;
+      case "QUARTER4":
+        return Quarter.QUARTER4;
+      default:
+        return Quarter.QUARTER1;
+    }
+  };
+
+  const getQuarterMonths = (selectedQuarter: Quarter): string[] => {
+    const quarterMonthsMap: Record<Quarter, string[]> = {
+      QUARTER1: ["April", "May", "June"],
+      QUARTER2: ["July", "August", "September"],
+      QUARTER3: ["October", "November", "December"],
+      QUARTER4: ["January", "February", "March"],
+    };
+
+    return quarterMonthsMap[selectedQuarter] ?? [];
+  };
+
+  const getQuarterForMonth = (month: string): Quarter | undefined => {
+    const monthToQuarterMap: { [key: string]: Quarter } = {
+      January: Quarter.QUARTER4,
+      February: Quarter.QUARTER4,
+      March: Quarter.QUARTER4,
+      April: Quarter.QUARTER1,
+      May: Quarter.QUARTER1,
+      June: Quarter.QUARTER1,
+      July: Quarter.QUARTER2,
+      August: Quarter.QUARTER2,
+      September: Quarter.QUARTER2,
+      October: Quarter.QUARTER3,
+      November: Quarter.QUARTER3,
+      December: Quarter.QUARTER3,
+    };
+
+    return monthToQuarterMap[month] || undefined;
+  };
+
+  const getNewYear = (year: string, month: string): string => {
+    if (["January", "February", "March"].includes(month)) {
+      return (parseInt(year) + 1).toString();
+    }
+    return year;
+  };
+
+  const fetchReturnEntries = async (
+    year: string,
+    month: string,
+    filingFrequency?: string,
+    effectiveUserId?: number,
+  ) => {
+    const currentUserId = effectiveUserId ?? userid;
+
+    const returnformsresponse = await getPdfReturn({
+      year,
+      month,
+      userid: currentUserId,
+    });
+
+    let mergedEntries: returns_entry[] = [];
+
+    if (returnformsresponse.status && returnformsresponse.data) {
+      setReturn01(returnformsresponse.data.returns_01);
+      mergedEntries = [...returnformsresponse.data.returns_entry];
+    } else {
+      setReturn01(null);
+    }
+
+    const isQuarterlyFiling =
+      filingFrequency === "QUARTERLY" ||
+      dvatdata?.frequencyFilings == "QUARTERLY";
+
+    if (isQuarterlyFiling) {
+      const effectiveQuarter = getQuarterForMonth(month) ?? getQuarter();
+      const quarterMonths = getQuarterMonths(effectiveQuarter).filter(
+        (quarterMonth) => quarterMonth !== month,
+      );
+
+      const quarterResponses = await Promise.all(
+        quarterMonths.map((quarterMonth) =>
+          getPdfReturn({
+            year: getNewYear(year, quarterMonth),
+            month: quarterMonth,
+            userid: currentUserId,
+          }),
+        ),
+      );
+
+      quarterResponses.forEach((response) => {
+        if (response.status && response.data) {
+          mergedEntries.push(...response.data.returns_entry);
+        }
+      });
+    }
+
+    serReturns_entryData(mergedEntries);
+  };
+
   useEffect(() => {
     const init = async () => {
       const authResponse = await getAuthenticatedUserId();
@@ -47,19 +159,12 @@ const AddRecord = () => {
       const year: string = searchParams.get("year") ?? "";
       const month: string = searchParams.get("month") ?? "";
 
-      const returnformsresponse = await getPdfReturn({
-        year: year,
-        month: month,
-        userid: authResponse.data,
-      });
-
-      if (returnformsresponse.status && returnformsresponse.data) {
-        setReturn01(returnformsresponse.data.returns_01);
-        serReturns_entryData(returnformsresponse.data.returns_entry);
-      } else {
-        setReturn01(null);
-        serReturns_entryData([]);
-      }
+      await fetchReturnEntries(
+        year,
+        month,
+        dvat_response.data?.frequencyFilings,
+        authResponse.data,
+      );
     };
     init();
   }, [searchParams, userid]);
@@ -249,8 +354,8 @@ const AddRecord = () => {
     return formateDate(new Date(year, monthNames.indexOf(month) + 1, day));
   };
 
-  const getTaxPerios = (): string => {
-    if (dvatdata?.compositionScheme) {
+  const getTaxPeriod = (): string => {
+    if (dvatdata?.frequencyFilings == "QUARTERLY") {
       switch (searchParams.get("month") ?? "") {
         case "June":
           return "April - June";
@@ -277,7 +382,7 @@ const AddRecord = () => {
         </div>
         <div>
           <p>Legal Name - {dvatdata?.name}</p>
-          <p>Tax Period - {getTaxPerios()}</p>
+          <p>Tax Period - {getTaxPeriod()}</p>
         </div>
         <div>
           <p>Trade Name - {dvatdata?.tradename}</p>

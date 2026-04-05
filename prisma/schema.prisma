@@ -18,6 +18,9 @@ model user {
   password                        String?
   temppass                        String?
   otp                             String?
+  otpExpiry                       DateTime?
+  otpAttempts                     Int                     @default(0)
+  otpLastSentAt                   DateTime?
   role                            Role                    @default(USER)
   designation                     String?
   isAuthorisedSignatory           Boolean                 @default(false)
@@ -758,6 +761,7 @@ model composition {
   remark                       String?           @db.MediumText
   dept_user_id                 Int
   arn                          String
+  taxLiability                 String?
   status                       CompositionStatus @default(PENDING)
   createdAt                    DateTime          @default(now())
   createdById                  Int

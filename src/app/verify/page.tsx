@@ -100,7 +100,7 @@ const Home = () => {
             onClick={showDrawer}
             className="text-[#0f2f67] bg-white rounded-none border border-[#c8d4e8] px-3 py-1 text-[11px] inline-block h-7"
           >
-            MEMBER LOGIN
+            Retailer Login
           </Button>
           <Drawer closeIcon={null} onClose={onClose} open={open}>
             <PasswordLoginComponent />

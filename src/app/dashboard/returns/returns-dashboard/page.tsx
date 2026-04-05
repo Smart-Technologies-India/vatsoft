@@ -60,7 +60,22 @@ const ReturnDashboard = () => {
     init();
   }, []);
 
-  const search = async (year: string, period: string) => {
+  const getQuarterMonths = (selectedQuarter: Quarter): string[] => {
+    const quarterMonthsMap: Record<Quarter, string[]> = {
+      QUARTER1: ["April", "May", "June"],
+      QUARTER2: ["July", "August", "September"],
+      QUARTER3: ["October", "November", "December"],
+      QUARTER4: ["January", "February", "March"],
+    };
+
+    return quarterMonthsMap[selectedQuarter] ?? [];
+  };
+
+  const search = async (
+    year: string,
+    period: string,
+    filingFrequency?: string,
+  ) => {
     setSearch(true);
     const monthNames = [
       "January",
@@ -87,39 +102,57 @@ const ReturnDashboard = () => {
       monthIndex += 1; // Otherwise, just increment the month
     }
 
+    let fetchYear = year;
     if ([0, 1, 2, 3].includes(monthIndex)) {
       setDueDate(new Date(parseInt(year) + 1, monthIndex, 10));
-
-      const returnformsresponse = await getPdfReturn({
-        year: (parseInt(year) + (monthIndex == 0 ? 0 : 1)).toString(),
-        month: period,
-        userid: userid,
-      });
-
-      if (returnformsresponse.status && returnformsresponse.data) {
-        setReturn01(returnformsresponse.data.returns_01);
-        setReturns_entryData(returnformsresponse.data.returns_entry);
-      } else {
-        setReturns_entryData([]);
-        setReturn01(null);
-      }
+      fetchYear = (parseInt(year) + (monthIndex == 0 ? 0 : 1)).toString();
     } else {
       setDueDate(new Date(parseInt(year), monthIndex, 10));
-
-      const returnformsresponse = await getPdfReturn({
-        year: year,
-        month: period,
-        userid: userid,
-      });
-
-      if (returnformsresponse.status && returnformsresponse.data) {
-        setReturn01(returnformsresponse.data.returns_01);
-        setReturns_entryData(returnformsresponse.data.returns_entry);
-      } else {
-        setReturns_entryData([]);
-        setReturn01(null);
-      }
     }
+
+    const returnformsresponse = await getPdfReturn({
+      year: fetchYear,
+      month: period,
+      userid: userid,
+    });
+
+    let mergedEntries: returns_entry[] = [];
+
+    if (returnformsresponse.status && returnformsresponse.data) {
+      setReturn01(returnformsresponse.data.returns_01);
+      mergedEntries = [...returnformsresponse.data.returns_entry];
+    } else {
+      setReturn01(null);
+    }
+
+    const isQuarterlyFiling =
+      filingFrequency === "QUARTERLY" ||
+      davtdata?.frequencyFilings == "QUARTERLY";
+
+    if (isQuarterlyFiling) {
+      const effectiveQuarter = getQuarterForMonth(period) ?? quarter;
+      const quarterMonths = getQuarterMonths(effectiveQuarter).filter(
+        (month) => month !== period,
+      );
+
+      const quarterResponses = await Promise.all(
+        quarterMonths.map((month) =>
+          getPdfReturn({
+            year: getNewYear(year, month),
+            month,
+            userid: userid,
+          }),
+        ),
+      );
+
+      quarterResponses.forEach((response) => {
+        if (response.status && response.data) {
+          mergedEntries.push(...response.data.returns_entry);
+        }
+      });
+    }
+
+    setReturns_entryData(mergedEntries);
   };
 
   interface DvatData {
@@ -211,6 +244,7 @@ const ReturnDashboard = () => {
         userid: userid,
       });
 
+
       if (lastPendingResponse.status && lastPendingResponse.data) {
         setLastPending(lastPendingResponse.data);
 
@@ -230,60 +264,58 @@ const ReturnDashboard = () => {
           response.data?.vatLiableDate ?? new Date(),
         );
 
-        const selectedQuarter = quarters.at(-1)?.value as Quarter;
-        setQuarter(selectedQuarter);
-
-        const quarterMonthsMap: Record<Quarter, [number, number]> = {
-          QUARTER1: [3, 5], // Apr (3) to Jun (5)
-          QUARTER2: [6, 8], // Jul (6) to Sep (8)
-          QUARTER3: [9, 11], // Oct (9) to Dec (11)
-          QUARTER4: [0, 2], // Jan (0) to Mar (2)
-        };
-
-        const [startMonthIndex, endMonthIndex] =
-          quarterMonthsMap[selectedQuarter];
-
+        // Derive quarter and period from last pending filing,
+        // mirroring the same logic used in the else block below.
+        let selectedQuarter: Quarter;
         let monthToSet: string;
+        if (lastPendingResponse.data?.month != null) {
+          const pendingIsfail =
+            lastPendingResponse.data.filing_date == null &&
+            lastPendingResponse.data.filing_status == false;
+          const pendingLastmonth = lastPendingResponse.data.month;
+          const pendingNextMonthIdx = pendingIsfail
+            ? monthNames.indexOf(pendingLastmonth)
+            : monthNames.indexOf(pendingLastmonth) + 1 === 12
+              ? 0
+              : monthNames.indexOf(pendingLastmonth) + 1;
+          selectedQuarter =
+            getQuarterForMonth(monthNames[pendingNextMonthIdx]) ??
+            Quarter.QUARTER1;
+          monthToSet = monthNames[pendingNextMonthIdx];
+        } else {
+          selectedQuarter =
+            (quarters.at(-1)?.value as Quarter) ?? Quarter.QUARTER1;
+          const quarterMonthsMap: Record<Quarter, [number, number]> = {
+            QUARTER1: [3, 5],
+            QUARTER2: [6, 8],
+            QUARTER3: [9, 11],
+            QUARTER4: [0, 2],
+          };
+          const [startMonthIndex] = quarterMonthsMap[selectedQuarter];
+          monthToSet = monthNames[startMonthIndex];
+        }
 
-        monthToSet = monthNames[startMonthIndex];
-
-        // if (response.data?.compositionScheme) {
-        //   // Pick last month of the quarter
-        //   monthToSet = monthNames[endMonthIndex];
-        // } else {
-        //   // Pick first month of quarter or vatLiableDate month if it's later
-        //   // const liableMonth =
-        //   //   response.data?.vatLiableDate?.getMonth() ?? startMonthIndex;
-        //   // const adjustedStartMonth = Math.max(startMonthIndex, liableMonth);
-        //   monthToSet = monthNames[startMonthIndex];
-        // }
-        // const periodsdata = getPeriodList(
-        //   new Date(),
-        //   currentMonth === fiscalYearStartMonth
-        //     ? (fiscalYear - 1).toString()
-        //     : fiscalYear.toString(),
-        //   selectedQuarter,
-        //   response.data?.vatLiableDate ?? new Date()
-        // );
+        setQuarter(selectedQuarter);
         setPeriod(monthToSet);
 
-        // await search(
-        //   currentDate.getFullYear().toString(),
-        //   monthNames[currentDate.getMonth()]
-        // );
+      
 
         const pathmonth = searchParams.get("month");
         const pathyear = searchParams.get("year");
 
         if (pathmonth != null && pathyear != null) {
           if (["January", "February", "March"].includes(pathmonth)) {
-            await search((parseInt(pathyear) - 1).toString(), pathmonth);
+            await search(
+              (parseInt(pathyear) - 1).toString(),
+              pathmonth,
+              response.data.frequencyFilings,
+            );
 
             setYear((parseInt(pathyear) - 1).toString());
             setQuarter(getQuarterForMonth(pathmonth) ?? Quarter.QUARTER1);
             setPeriod(pathmonth);
           } else {
-            await search(pathyear, pathmonth);
+            await search(pathyear, pathmonth, response.data.frequencyFilings);
 
             setYear(pathyear);
             setQuarter(getQuarterForMonth(pathmonth) ?? Quarter.QUARTER1);
@@ -323,7 +355,11 @@ const ReturnDashboard = () => {
               : (parseInt(lastyear) + 1).toString();
           }
 
-          await search(lastyear, monthNames[last_next_month]);
+          await search(
+            lastyear,
+            monthNames[last_next_month],
+            response.data.frequencyFilings,
+          );
 
           setYear(lastyear);
           setQuarter(
@@ -620,14 +656,26 @@ const ReturnDashboard = () => {
     if (!isAccept) {
       return toast.error("Kindly accept the terms and conditions.");
     }
-    router.push(
-      `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-        userid.toString(),
-      )}?form=30A&year=${getNewYear(
-        year!,
-        period!,
-      )}&quarter=${quarter}&month=${period}`,
-    );
+
+    if (davtdata?.compositionScheme) {
+      router.push(
+        `/dashboard/returns/returns-dashboard/previewcomposition/${encryptURLData(
+          userid.toString(),
+        )}?form=30A&year=${getNewYear(
+          year!,
+          period!,
+        )}&quarter=${quarter}&month=${period}`,
+      );
+    } else {
+      router.push(
+        `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+          userid.toString(),
+        )}?form=30A&year=${getNewYear(
+          year!,
+          period!,
+        )}&quarter=${quarter}&month=${period}`,
+      );
+    }
   };
 
   const returnRevised = async () => {
@@ -655,7 +703,7 @@ const ReturnDashboard = () => {
       April: Quarter.QUARTER1,
       May: Quarter.QUARTER1,
       June: Quarter.QUARTER1,
-      July: Quarter.QUARTER1,
+      July: Quarter.QUARTER2,
       August: Quarter.QUARTER2,
       September: Quarter.QUARTER2,
       October: Quarter.QUARTER3,
@@ -881,7 +929,7 @@ const ReturnDashboard = () => {
                     if (
                       davtdata?.vatLiableDate?.getFullYear().toString() == val
                     ) {
-                      if (davtdata?.compositionScheme) {
+                      if (davtdata?.frequencyFilings == "QUARTERLY") {
                         // Pick last month of the quarter
                         monthToSet = monthNames[endMonthIndex];
                       } else {
@@ -952,7 +1000,7 @@ const ReturnDashboard = () => {
 
                     let monthToSet: string;
 
-                    if (davtdata.compositionScheme) {
+                    if (davtdata.frequencyFilings == "QUARTERLY") {
                       // Use the last month of the quarter
                       monthToSet = monthNames[endMonthIndex];
                     } else {
@@ -974,7 +1022,7 @@ const ReturnDashboard = () => {
                   }}
                 />
               </div>
-              {davtdata?.compositionScheme == false && (
+              {davtdata?.frequencyFilings !== "QUARTERLY" && (
                 <div className="grid items-center gap-1.5 w-full">
                   <Label
                     htmlFor="duedate"
@@ -990,7 +1038,7 @@ const ReturnDashboard = () => {
                       new Date(),
                       year!,
                       quarter,
-                      davtdata.vatLiableDate ?? new Date(),
+                      davtdata?.vatLiableDate ?? new Date(),
                     )}
                     onChange={(val: string) => {
                       if (!val) return;
@@ -1241,25 +1289,48 @@ const ReturnDashboard = () => {
                         >
                           Purchase & Sale Report
                         </button>
-                        <button
-                          onClick={() => {
-                            if (isanynil()) {
-                              setNilBox(true);
-                            } else {
-                              router.push(
-                                `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                                  userid.toString(),
-                                )}?form=30A&year=${getNewYear(
-                                  year!,
-                                  period!,
-                                )}&quarter=${quarter}&month=${period}`,
-                              );
-                            }
-                          }}
-                          className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-                        >
-                          Preview for DVAT-16
-                        </button>
+
+                        {davtdata?.compositionScheme ? (
+                          <button
+                            onClick={() => {
+                              if (isanynil()) {
+                                setNilBox(true);
+                              } else {
+                                router.push(
+                                  `/dashboard/returns/returns-dashboard/previewcomposition/${encryptURLData(
+                                    userid.toString(),
+                                  )}?form=30A&year=${getNewYear(
+                                    year!,
+                                    period!,
+                                  )}&quarter=${quarter}&month=${period}`,
+                                );
+                              }
+                            }}
+                            className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                          >
+                            Preview for DVAT-17
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (isanynil()) {
+                                setNilBox(true);
+                              } else {
+                                router.push(
+                                  `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                                    userid.toString(),
+                                  )}?form=30A&year=${getNewYear(
+                                    year!,
+                                    period!,
+                                  )}&quarter=${quarter}&month=${period}`,
+                                );
+                              }
+                            }}
+                            className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                          >
+                            Preview for DVAT-16
+                          </button>
+                        )}
                       </>
                     )}
                   </>

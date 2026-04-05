@@ -653,13 +653,13 @@ const CommodityMaster = () => {
                     >
                       Add Stock
                     </Button>
-                    <Button
+                    {/* <Button
                       size="small"
                       type="primary"
                       onClick={() => setMaterialBox(true)}
                     >
                       Add Raw Material
-                    </Button>
+                    </Button> */}
                   </>
                 )}
 

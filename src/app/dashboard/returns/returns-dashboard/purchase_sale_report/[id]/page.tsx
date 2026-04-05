@@ -1,10 +1,13 @@
 "use client";
 
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import getPdfReturn from "@/action/return/getpdfreturn";
 import getReturnEntryReportById from "@/action/return/getreturnentryreportbyid";
 import { decryptURLData, formateDate, generatePDF } from "@/utils/methods";
 import {
   dvat04,
   DvatType,
+  Quarter,
   returns_01,
   returns_entry,
   state,
@@ -74,6 +77,36 @@ const PurchaseSaleReportByIdPage = () => {
     [nonNilEntries],
   );
 
+  const getQuarterForMonth = (month: string): Quarter | undefined => {
+    const monthToQuarterMap: { [key: string]: Quarter } = {
+      January: Quarter.QUARTER4,
+      February: Quarter.QUARTER4,
+      March: Quarter.QUARTER4,
+      April: Quarter.QUARTER1,
+      May: Quarter.QUARTER1,
+      June: Quarter.QUARTER1,
+      July: Quarter.QUARTER2,
+      August: Quarter.QUARTER2,
+      September: Quarter.QUARTER2,
+      October: Quarter.QUARTER3,
+      November: Quarter.QUARTER3,
+      December: Quarter.QUARTER3,
+    };
+
+    return monthToQuarterMap[month] || undefined;
+  };
+
+  const getQuarterMonths = (selectedQuarter: Quarter): string[] => {
+    const quarterMonthsMap: Record<Quarter, string[]> = {
+      QUARTER1: ["April", "May", "June"],
+      QUARTER2: ["July", "August", "September"],
+      QUARTER3: ["October", "November", "December"],
+      QUARTER4: ["January", "February", "March"],
+    };
+
+    return quarterMonthsMap[selectedQuarter] ?? [];
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       if (!returnId) {
@@ -84,6 +117,14 @@ const PurchaseSaleReportByIdPage = () => {
 
       try {
         setLoading(true);
+        const authResponse = await getAuthenticatedUserId();
+        if (!authResponse.status || !authResponse.data) {
+          toast.error(authResponse.message);
+          router.push("/");
+          return;
+        }
+        const authenticatedUserId = authResponse.data;
+
         const response = await getReturnEntryReportById({
           id: returnId,
         });
@@ -96,7 +137,51 @@ const PurchaseSaleReportByIdPage = () => {
         }
 
         setReturn01(response.data.returns_01);
-        setEntries(response.data.returns_entry ?? []);
+
+        const currentEntries = (response.data.returns_entry ??
+          []) as ReturnEntryWithRelations[];
+        const filingFrequency =
+          response.data.returns_01.dvat04?.frequencyFilings;
+        const baseMonth = response.data.returns_01.month;
+        const baseYear = response.data.returns_01.year;
+
+        if (filingFrequency === "QUARTERLY" && baseMonth && baseYear) {
+          const effectiveQuarter = getQuarterForMonth(baseMonth);
+          const quarterMonths = effectiveQuarter
+            ? getQuarterMonths(effectiveQuarter).filter(
+                (month) => month !== baseMonth,
+              )
+            : [];
+
+          const quarterResponses = await Promise.all(
+            quarterMonths.map((month) =>
+              getPdfReturn({
+                year: baseYear,
+                month,
+                userid: authenticatedUserId,
+              }),
+            ),
+          );
+
+          const mergedEntries = [...currentEntries];
+
+          quarterResponses.forEach((quarterResponse: any) => {
+            if (quarterResponse.status && quarterResponse.data) {
+              mergedEntries.push(
+                ...(quarterResponse.data
+                  .returns_entry as ReturnEntryWithRelations[]),
+              );
+            }
+          });
+
+          const uniqueEntries = Array.from(
+            new Map(mergedEntries.map((entry) => [entry.id, entry])).values(),
+          );
+
+          setEntries(uniqueEntries);
+        } else {
+          setEntries(currentEntries);
+        }
       } catch {
         toast.error("Unable to load return data");
         setReturn01(null);
@@ -108,6 +193,27 @@ const PurchaseSaleReportByIdPage = () => {
 
     fetchData();
   }, [returnId]);
+
+  const getTaxPeriod = (): string => {
+    if (!return01) return "";
+    const year: string = return01.year;
+    if (return01?.dvat04.frequencyFilings == "QUARTERLY") {
+      switch (return01.month) {
+        case "June":
+          return `April (${year}) - June (${year})`;
+        case "September":
+          return `July (${year}) - September (${year})`;
+        case "December":
+          return `October (${year}) - December (${year})`;
+        case "March":
+          return `January (${year}) - March (${year})`;
+        default:
+          return `April (${year}) - June (${year})`;
+      }
+    } else {
+      return `${return01.month} ${year}`;
+    }
+  };
 
   const renderSection = (
     title: string,
@@ -313,7 +419,7 @@ const PurchaseSaleReportByIdPage = () => {
             DEPARTMENT OF VALUE ADDED TAX
           </p>
           <p className="text-center font-semibold text-xs leading-4">
-            UT Administration of Dadra & Nagar Haveli
+            UT Administration of Dadra & Nagar Haveli and Daman & Diu
           </p>
           <p className="text-center font-semibold text-xs leading-4">
             Form DVAT 16 - Purchase/Sale Report
@@ -325,7 +431,7 @@ const PurchaseSaleReportByIdPage = () => {
           </h1>
           <p className="text-center text-xs leading-4">
             TIN Number : {return01?.dvat04?.tinNumber ?? "-"} Period (
-            {return01?.month ?? "-"} {return01?.year ?? "-"})
+            {getTaxPeriod()})
           </p>
         </div>
 

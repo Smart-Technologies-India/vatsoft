@@ -45,23 +45,98 @@ const InwardSupplies = () => {
   const [return01, setReturn01] = useState<returns_01 | null>();
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
 
+  const getQuarterMonths = (selectedQuarter: Quarter): string[] => {
+    const quarterMonthsMap: Record<Quarter, string[]> = {
+      QUARTER1: ["April", "May", "June"],
+      QUARTER2: ["July", "August", "September"],
+      QUARTER3: ["October", "November", "December"],
+      QUARTER4: ["January", "February", "March"],
+    };
+
+    return quarterMonthsMap[selectedQuarter] ?? [];
+  };
+
+  const getQuarterForMonth = (month: string): Quarter | undefined => {
+    const monthToQuarterMap: { [key: string]: Quarter } = {
+      January: Quarter.QUARTER4,
+      February: Quarter.QUARTER4,
+      March: Quarter.QUARTER4,
+      April: Quarter.QUARTER1,
+      May: Quarter.QUARTER1,
+      June: Quarter.QUARTER1,
+      July: Quarter.QUARTER2,
+      August: Quarter.QUARTER2,
+      September: Quarter.QUARTER2,
+      October: Quarter.QUARTER3,
+      November: Quarter.QUARTER3,
+      December: Quarter.QUARTER3,
+    };
+
+    return monthToQuarterMap[month] || undefined;
+  };
+
+  const getNewYear = (year: string, month: string): string => {
+    if (["January", "February", "March"].includes(month)) {
+      return (parseInt(year) + 1).toString();
+    }
+    return year;
+  };
+
+  const fetchReturnEntries = async (
+    year: string,
+    month: string,
+    filingFrequency?: string,
+  ) => {
+    const returnformsresponse = await getPdfReturn({
+      year,
+      month,
+      userid,
+    });
+
+    let mergedEntries: returns_entry[] = [];
+
+    if (returnformsresponse.status && returnformsresponse.data) {
+      setReturn01(returnformsresponse.data.returns_01);
+      mergedEntries = [...returnformsresponse.data.returns_entry];
+    } else {
+      setReturn01(null);
+    }
+
+    const isQuarterlyFiling =
+      filingFrequency === "QUARTERLY" ||
+      dvatdata?.frequencyFilings == "QUARTERLY";
+
+    if (isQuarterlyFiling) {
+      const effectiveQuarter = getQuarterForMonth(month) ?? getquarter();
+      const quarterMonths = getQuarterMonths(effectiveQuarter).filter(
+        (quarterMonth) => quarterMonth !== month,
+      );
+
+      const quarterResponses = await Promise.all(
+        quarterMonths.map((quarterMonth) =>
+          getPdfReturn({
+            year: getNewYear(year, quarterMonth),
+            month: quarterMonth,
+            userid,
+          }),
+        ),
+      );
+
+      quarterResponses.forEach((response) => {
+        if (response.status && response.data) {
+          mergedEntries.push(...response.data.returns_entry);
+        }
+      });
+    }
+
+    serReturns_entryData(mergedEntries);
+  };
+
   const init = async () => {
     const year: string = searchParams.get("year") ?? "";
     const month: string = searchParams.get("month") ?? "";
 
-    const returnformsresponse = await getPdfReturn({
-      year: year,
-      month: month,
-      userid: userid,
-    });
-
-    if (returnformsresponse.status && returnformsresponse.data) {
-      setReturn01(returnformsresponse.data.returns_01);
-      serReturns_entryData(returnformsresponse.data.returns_entry);
-    } else {
-      setReturn01(null);
-      serReturns_entryData([]);
-    }
+    await fetchReturnEntries(year, month);
   };
 
   const searchParams = useSearchParams();
@@ -83,19 +158,7 @@ const InwardSupplies = () => {
       const year: string = searchParams.get("year") ?? "";
       const month: string = searchParams.get("month") ?? "";
 
-      const returnformsresponse = await getPdfReturn({
-        year: year,
-        month: month,
-        userid: authResponse.data,
-      });
-
-      if (returnformsresponse.status && returnformsresponse.data) {
-        setReturn01(returnformsresponse.data.returns_01);
-        serReturns_entryData(returnformsresponse.data.returns_entry);
-      } else {
-        setReturn01(null);
-        serReturns_entryData([]);
-      }
+      await fetchReturnEntries(year, month, dvat_response.data?.frequencyFilings);
     };
     init();
   }, [searchParams, userid]);
@@ -228,8 +291,8 @@ const InwardSupplies = () => {
     );
   };
 
-  const getTaxPerios = (): string => {
-    if (dvatdata?.compositionScheme) {
+  const getTaxPeriod = (): string => {
+    if (dvatdata?.frequencyFilings == "QUARTERLY") {
       switch (searchParams.get("month") ?? "") {
         case "June":
           return "April - June";
@@ -296,7 +359,7 @@ const InwardSupplies = () => {
               <p className="text-gray-600">Legal Name</p>
               <p className="font-medium text-gray-900">{dvatdata?.name}</p>
               <p className="text-gray-600 mt-2">Tax Period</p>
-              <p className="font-medium text-gray-900">{getTaxPerios()}</p>
+              <p className="font-medium text-gray-900">{getTaxPeriod()}</p>
             </div>
             <div>
               <p className="text-gray-600">Trade Name</p>

@@ -15,6 +15,7 @@ import { formateDate } from "@/utils/methods";
 import {
   dvat04,
   DvatType,
+  Quarter,
   returns_01,
   returns_entry,
   tin_number_master,
@@ -56,6 +57,119 @@ const DocumentWiseDetails = () => {
 
   const [userid, setUserid] = useState<number>(0);
 
+  const getQuarter = (): Quarter => {
+    switch (searchParams.get("quarter")!) {
+      case "QUARTER1":
+        return Quarter.QUARTER1;
+      case "QUARTER2":
+        return Quarter.QUARTER2;
+      case "QUARTER3":
+        return Quarter.QUARTER3;
+      case "QUARTER4":
+        return Quarter.QUARTER4;
+      default:
+        return Quarter.QUARTER1;
+    }
+  };
+
+  const getQuarterMonths = (selectedQuarter: Quarter): string[] => {
+    const quarterMonthsMap: Record<Quarter, string[]> = {
+      QUARTER1: ["April", "May", "June"],
+      QUARTER2: ["July", "August", "September"],
+      QUARTER3: ["October", "November", "December"],
+      QUARTER4: ["January", "February", "March"],
+    };
+
+    return quarterMonthsMap[selectedQuarter] ?? [];
+  };
+
+  const getQuarterForMonth = (month: string): Quarter | undefined => {
+    const monthToQuarterMap: { [key: string]: Quarter } = {
+      January: Quarter.QUARTER4,
+      February: Quarter.QUARTER4,
+      March: Quarter.QUARTER4,
+      April: Quarter.QUARTER1,
+      May: Quarter.QUARTER1,
+      June: Quarter.QUARTER1,
+      July: Quarter.QUARTER2,
+      August: Quarter.QUARTER2,
+      September: Quarter.QUARTER2,
+      October: Quarter.QUARTER3,
+      November: Quarter.QUARTER3,
+      December: Quarter.QUARTER3,
+    };
+
+    return monthToQuarterMap[month] || undefined;
+  };
+
+  const getNewYear = (year: string, month: string): string => {
+    if (["January", "February", "March"].includes(month)) {
+      return (parseInt(year) + 1).toString();
+    }
+    return year;
+  };
+
+  const fetchReturnEntries = async (
+    year: string,
+    month: string,
+    filingFrequency?: string,
+    effectiveUserId?: number,
+  ) => {
+    const currentUserId = effectiveUserId ?? userid;
+
+    const returnformsresponse = await getPdfReturn({
+      year,
+      month,
+      userid: currentUserId,
+    });
+
+    let mergedEntries: Array<
+      returns_entry & { seller_tin_number: tin_number_master }
+    > = [];
+
+    if (returnformsresponse.status && returnformsresponse.data) {
+      setReturn01(returnformsresponse.data.returns_01);
+      mergedEntries = [...returnformsresponse.data.returns_entry];
+    } else {
+      setReturn01(null);
+    }
+
+    const isQuarterlyFiling =
+      filingFrequency === "QUARTERLY" ||
+      dvatdata?.frequencyFilings == "QUARTERLY";
+
+    if (isQuarterlyFiling) {
+      const effectiveQuarter = getQuarterForMonth(month) ?? getQuarter();
+      const quarterMonths = getQuarterMonths(effectiveQuarter).filter(
+        (quarterMonth) => quarterMonth !== month,
+      );
+
+      const quarterResponses = await Promise.all(
+        quarterMonths.map((quarterMonth) =>
+          getPdfReturn({
+            year: getNewYear(year, quarterMonth),
+            month: quarterMonth,
+            userid: currentUserId,
+          }),
+        ),
+      );
+
+      quarterResponses.forEach((response) => {
+        if (response.status && response.data) {
+          mergedEntries.push(...response.data.returns_entry);
+        }
+      });
+    }
+
+    serReturns_entryData(mergedEntries);
+
+    const sellerTin = searchParams.get("sellertin");
+    const sellerName = mergedEntries.find(
+      (val) => val.seller_tin_number.tin_number.toString() == sellerTin,
+    )?.seller_tin_number.name_of_dealer;
+    setName(sellerName ?? "");
+  };
+
   useEffect(() => {
     const init = async () => {
       const authResponse = await getAuthenticatedUserId();
@@ -73,30 +187,12 @@ const DocumentWiseDetails = () => {
       const year: string = searchParams.get("year") ?? "";
       const month: string = searchParams.get("month") ?? "";
 
-      const returnformsresponse = await getPdfReturn({
-        year: year,
-        month: month,
-        userid: userid,
-      });
-
-      if (returnformsresponse.status && returnformsresponse.data) {
-        setReturn01(returnformsresponse.data.returns_01);
-        serReturns_entryData(returnformsresponse.data.returns_entry);
-
-        returnformsresponse.data.returns_entry.map(
-          (val: returns_entry & { seller_tin_number: tin_number_master }) => {
-            if (
-              val.seller_tin_number.tin_number.toString() ==
-              searchParams.get("sellertin")
-            ) {
-              setName(val.seller_tin_number.name_of_dealer);
-            }
-          }
-        );
-      } else {
-        setReturn01(null);
-        serReturns_entryData([]);
-      }
+      await fetchReturnEntries(
+        year,
+        month,
+        dvat_response.data?.frequencyFilings,
+        authResponse.data,
+      );
     };
     init();
   }, [searchParams, userid]);

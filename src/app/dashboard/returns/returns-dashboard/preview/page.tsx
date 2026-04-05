@@ -297,17 +297,17 @@ const Dvat16ReturnPreview = () => {
               DEPARTMENT OF VALUE ADDED TAX
             </p>
             <p className="text-center font-semibold text-xs  leading-3">
-              UT Administration of Dadra & Nagar Haveli
+              UT Administration of Dadra & Nagar Haveli and Daman & Diu
             </p>
             <p className="text-center font-semibold text-xs  leading-3">
               Form DVAT 16
             </p>
             <p className="text-center font-semibold text-xs  leading-3">
-              (See Rule 28 and 29 of the Dadra & Nagar Haveli, Value Added Tax
+              (See Rule 28 and 29 of the Dadra & Nagar Haveli and Daman & Diu, Value Added Tax
               Rules, 2005)
             </p>
             <p className="text-center font-semibold text-xs  leading-3">
-              Dadra & Nagar Haveli Value Added Tax Return
+              Dadra & Nagar Haveli and Daman & Diu Value Added Tax Return
             </p>
           </div>
           {/* section 1 start here */}

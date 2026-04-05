@@ -243,7 +243,7 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
-      return toast.error("Seller VAT Number not found.");
+      return toast.error("Seller TIN Number not found.");
 
     const date = new Date(
       new Date(data.invoice_date).toISOString().split("T")[0]
@@ -280,7 +280,7 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
-      return toast.error("Seller VAT Number not found.");
+      return toast.error("Seller TIN Number not found.");
 
     const date = new Date(
       new Date(data.invoice_date).toISOString().split("T")[0]
@@ -341,10 +341,10 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
     >
       <div className="mt-2">
         <TaxtInput<DailyPurchaseMasterForm>
-          placeholder="Seller VAT Number"
+          placeholder="Seller TIN Number"
           name="recipient_vat_no"
           required={true}
-          title="Seller VAT Number"
+          title="Seller TIN Number"
         />
       </div>
       {tindata != null && (

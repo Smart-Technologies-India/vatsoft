@@ -316,7 +316,7 @@ export default function HomePage() {
               <div className="border border-[#c8d4e8] col-span-4 h-full flex flex-col">
                 <div className="bg-[#b8860b] px-2 py-2 flex items-center gap-2">
                   <span className="text-white font-bold text-sm uppercase tracking-wide">
-                    &#128274; Member Login
+                    &#128274; Retailer Login
                   </span>
                 </div>
                 <div className="bg-white p-3 flex-1">
@@ -832,7 +832,7 @@ const InlineLoginForm = () => {
           resetForgotPasswordModal();
         }}
         footer={null}
-        destroyOnClose
+        // destroyOnClose
       >
         <div className="space-y-3 mt-1">
           <div>

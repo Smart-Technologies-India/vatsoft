@@ -54,7 +54,6 @@ const CommodityMaster = () => {
           dvatid: dvatid,
         });
 
-        console.log("stock_response", dvatid);
 
         if (stock_response.status && stock_response.data.result) {
           setStocks(stock_response.data.result);

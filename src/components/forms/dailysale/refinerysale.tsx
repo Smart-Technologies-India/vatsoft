@@ -6,17 +6,17 @@ import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { MultiSelect } from "../inputfields/multiselect";
+import { OptionValue } from "@/models/main";
+import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
-import {
-  DailyPurchaseMasterForm,
-  DailyPurchaseMasterSchema,
-} from "@/schema/daily_purchase";
-import SearchTin from "@/action/tin_number/searchtin";
+import { DateSelect } from "../inputfields/dateselect";
 import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
-import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
-import CreateDailyPurchase from "@/action/stock/createdailypuchase";
+import { DailySaleForm, DailySaleSchema } from "@/schema/daily_sale";
+import CreateDailySale from "@/action/stock/createdailysale";
+import GetUserCommodity from "@/action/stock/usercommodity";
+import SearchTin from "@/action/tin_number/searchtin";
 import {
   Checkbox,
   Input,
@@ -26,30 +26,28 @@ import {
   RadioChangeEvent,
 } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
-import { DateSelect } from "../inputfields/dateselect";
-import { toast } from "react-toastify";
 import dayjs from "dayjs";
+import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import GetDvat04FromId from "@/action/dvat/getdvatfromid";
 
-const DAILY_PURCHASE_ADD_MORE_LOCK_KEY = "dailyPurchaseAddMoreLock";
+const DAILY_SALE_ADD_MORE_LOCK_KEY = "dailySaleAddMoreLock";
 
-type DailyPurchaseProviderProps = {
-  userid: number;
+type RefinerySaleProviderProps = {
+  // userid: number;
   setAddBox: Dispatch<SetStateAction<boolean>>;
   init: () => Promise<void>;
 };
-export const DailyPurchaseMasterProvider = (
-  props: DailyPurchaseProviderProps,
-) => {
-  const methods = useForm<DailyPurchaseMasterForm>({
-    resolver: valibotResolver(DailyPurchaseMasterSchema),
+
+export const RefinerySaleProvider = (props: RefinerySaleProviderProps) => {
+  const methods = useForm<DailySaleForm>({
+    resolver: valibotResolver(DailySaleSchema),
   });
 
   return (
     <FormProvider {...methods}>
-      <DailyPurchaseMaster
-        userid={props.userid}
+      <RefinerySale
         setAddBox={props.setAddBox}
         init={props.init}
       />
@@ -57,11 +55,17 @@ export const DailyPurchaseMasterProvider = (
   );
 };
 
-const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
-  const [userid, setUserid] = useState<number>(0);
+const RefinerySale = (props: RefinerySaleProviderProps) => {
   const router = useRouter();
+  const [userid, setUserid] = useState<number>(0);
 
+  const taxable_at: OptionValue[] = [
+    0, 1, 2, 4, 5, 6, 12.5, 12.75, 13.5, 15, 20,
+  ].map((val: number) => ({ value: `${val}`, label: `${val}%` }));
+
+  // against c form
   const [isAgainstCForm, setIsAgainstCForm] = useState(true);
+  const [isComp, setIsComp] = useState(false);
 
   const {
     reset,
@@ -70,42 +74,46 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     formState: { isSubmitting },
     getValues,
     setValue,
-  } = useFormContext<DailyPurchaseMasterForm>();
+  } = useFormContext<DailySaleForm>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [davtdata, setDvatdata] = useState<dvat04 | null>(null);
 
-  const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
-    [],
-  );
+  const [commodityMaster, setCommodityMaster] = useState<
+    Array<commodity_master & { quantity: number }>
+  >([]);
 
   const init = async () => {
-    const response = await GetUserDvat04();
+    const tin_response = await SearchTin({
+      tinumber: "26000000000",
+    });
+
+    // setValue("recipient_vat_no", "26000000000");
+
+    if (tin_response.status && tin_response.data) {
+      setTinData(tin_response.data);
+    }
+
+    const response = await GetDvat04FromId({
+      id: 1,
+    });
+
 
     if (response.status && response.data) {
       setDvatdata(response.data);
-
       setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
-      const commodity_resposen = await AllCommodityMaster({});
+
+      const commodity_resposen = await GetUserCommodity({
+        dvatid: response.data.id,
+      });
+
       if (commodity_resposen.status && commodity_resposen.data) {
-        if (response.data.commodity == "OIDC") {
-          const filterdata = commodity_resposen.data.filter(
-            (val: commodity_master) => val.product_type == "LIQUOR",
-          );
-          setCommodityMaster(filterdata);
-        } else {
-          const filterdata = commodity_resposen.data.filter(
-            (val: commodity_master) =>
-              val.product_type == response.data!.commodity,
-          );
-          setCommodityMaster(filterdata);
-        }
+        setCommodityMaster(commodity_resposen.data);
       }
     }
 
     setIsLoading(false);
   };
-
   useEffect(() => {
     reset({
       amount_unit: "",
@@ -113,40 +121,38 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       invoice_date: "",
       invoice_number: undefined,
       quantity: "",
-      recipient_vat_no: "",
     });
     const init = async () => {
-      const authResponse = await getAuthenticatedUserId();
-      if (!authResponse.status || !authResponse.data) {
-        toast.error(authResponse.message);
-        return router.push("/");
+     
+      setUserid(1);
+
+      const tin_response = await SearchTin({
+        tinumber: "26000000000",
+      });
+
+      // setValue("recipient_vat_no", "26000000000");
+
+      if (tin_response.status && tin_response.data) {
+        setTinData(tin_response.data);
       }
-      setUserid(authResponse.data);
 
-      const response = await GetUserDvat04();
-
+      const response = await GetDvat04FromId({
+        id: 1,
+      });
       if (response.status && response.data) {
         setDvatdata(response.data);
-
         setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
-        const commodity_resposen = await AllCommodityMaster({});
+
+        const commodity_resposen = await GetUserCommodity({
+          dvatid: response.data.id,
+        });
+
         if (commodity_resposen.status && commodity_resposen.data) {
-          if (response.data.commodity == "OIDC") {
-            const filterdata = commodity_resposen.data.filter(
-              (val: commodity_master) => val.product_type == "LIQUOR",
-            );
-            setCommodityMaster(filterdata);
-          } else {
-            const filterdata = commodity_resposen.data.filter(
-              (val: commodity_master) =>
-                val.product_type == response.data!.commodity,
-            );
-            setCommodityMaster(filterdata);
-          }
+          setCommodityMaster(commodity_resposen.data);
         }
       }
 
-      const lockData = sessionStorage.getItem(DAILY_PURCHASE_ADD_MORE_LOCK_KEY);
+      const lockData = sessionStorage.getItem(DAILY_SALE_ADD_MORE_LOCK_KEY);
       if (lockData) {
         try {
           const parsed = JSON.parse(lockData) as {
@@ -166,7 +172,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
 
           setIsAddMoreMode(true);
         } catch {
-          sessionStorage.removeItem(DAILY_PURCHASE_ADD_MORE_LOCK_KEY);
+          sessionStorage.removeItem(DAILY_SALE_ADD_MORE_LOCK_KEY);
         }
       }
 
@@ -174,8 +180,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     };
     init();
   }, []);
-
-  const recipient_vat_no: string = watch("recipient_vat_no");
 
   const [tindata, setTinData] = useState<tin_number_master | null>(null);
   const [commoditymaster, setCommoditymaster] =
@@ -185,6 +189,11 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
   const [fuelTotalInvoiceValue, setFuelTotalInvoiceValue] =
     useState<string>("");
 
+  const [isLiquore, setLiquore] = useState<boolean>(false);
+  const [liquoreOIDCAmount, setLiquoreOIDCAmount] = useState<number>(0);
+  const [liquoreDealerAmount, setLiquoreDealerAmount] = useState<number>(0);
+
+  const recipient_vat_no: string = watch("recipient_vat_no") ?? "";
   useEffect(() => {
     const init = async () => {
       if (
@@ -193,29 +202,20 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       ) {
         setIsAgainstCForm(false);
       }
-      if (
-        recipient_vat_no &&
-        (recipient_vat_no ?? "").length > 2 &&
-        (recipient_vat_no.startsWith("25") == true ||
-          recipient_vat_no.startsWith("26") == true)
-      ) {
+
+      if (davtdata?.compositionScheme) {
+        setIsComp(true);
+      }
+      if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
+      if (recipient_vat_no && (recipient_vat_no ?? "").length < 2) {
         if (recipient_vat_no.length >= 11) {
           toast.dismiss();
-          toast.error(
-            "Local purchase will auto reflect after sale entry from the seller.",
-          );
+          // toast.error("Invalid DVAT no.");
+          setTinBox(true);
         }
         setTinData(null);
         return;
       }
-
-      if (
-        recipient_vat_no == undefined ||
-        recipient_vat_no == null ||
-        recipient_vat_no == "" ||
-        recipient_vat_no.length < 11
-      )
-        return;
 
       const tinresponse = await SearchTin({
         tinumber: recipient_vat_no,
@@ -224,12 +224,15 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       if (tinresponse.status && tinresponse.data) {
         setTinData(tinresponse.data);
       } else {
-        setTinBox(true);
+        if ((recipient_vat_no ?? "").length >= 11) {
+          // toast.error("Invalid DVAT no.");
+          setTinBox(true);
+        }
         setTinData(null);
       }
     };
     init();
-  }, [recipient_vat_no, isAgainstCForm]);
+  }, [recipient_vat_no, isAgainstCForm, isComp]);
 
   const description_of_goods = watch("description_of_goods");
   const quantity = watch("quantity");
@@ -270,15 +273,19 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         setCommoditymaster(commmaster.data);
 
         if (davtdata?.commodity == "OIDC") {
-          setValue(
-            "amount_unit",
-            commmaster.data.oidc_crate_purchase_price ?? "0",
-          );
+          setValue("amount_unit", commmaster.data.oidc_crate_sale_price ?? "0");
+        }
+
+        if (commmaster.data.product_type == "LIQUOR") {
+          setLiquore(true);
+          setLiquoreDealerAmount(parseInt(commmaster.data.sale_price));
+          setLiquoreOIDCAmount(parseInt(commmaster.data.oidc_price));
+          // setValue("amount_unit", commmaster.data.sale_price);
         }
       }
     };
     init();
-  }, [description_of_goods, isAgainstCForm]);
+  }, [description_of_goods, isAgainstCForm, isComp]);
 
   useEffect(() => {
     if (commoditymaster == null || quantity == null || amount_unit == null)
@@ -288,17 +295,47 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     const calculatedTaxableValue =
       parseFloat(quantity) * parseFloat(amount_unit || "0");
 
-    const temp_amount =
-      (calculatedTaxableValue /
-        (100 + parseInt(isAgainstCForm ? "2" : commoditymaster.taxable_at))) *
-      100;
-    setTaxableValue(isNaN(temp_amount) ? "0" : temp_amount.toFixed(2));
-
-    const calculatedVatAmount = calculatedTaxableValue - temp_amount;
-    setVatAmount(
-      isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2),
+    const calculatedVatAmount = formatAmount(
+      calculatedTaxableValue -
+        (((Number(quantity) || 0) * (Number(amount_unit) || 0)) /
+          (100 +
+            parseFloat(
+              isComp
+                ? "1"
+                : isAgainstCForm
+                  ? "2"
+                  : (commoditymaster?.taxable_at ?? "0"),
+            ))) *
+          100,
     );
-  }, [quantity, amount_unit, commoditymaster, isAgainstCForm]);
+    setVatAmount(calculatedVatAmount);
+
+    // const calculatedVatAmount =
+    //   (calculatedTaxableValue *
+    //     parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at)) /
+    //   100;
+    // setVatAmount(
+    //   isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2),
+    // );
+
+    // const temp_amount = calculatedTaxableValue + calculatedVatAmount;
+    // const temp_amount = calculatedTaxableValue;
+
+    const temp_amount = formatAmount(
+      (((Number(quantity) || 0) * (Number(amount_unit) || 0)) /
+        (100 +
+          parseFloat(
+            isComp
+              ? "1"
+              : isAgainstCForm
+                ? "2"
+                : (commoditymaster?.taxable_at ?? "0"),
+          ))) *
+        100,
+    );
+
+    setTaxableValue(temp_amount);
+  }, [quantity, amount_unit, commoditymaster, isAgainstCForm, isComp]);
 
   const resolveSellerTin = async (): Promise<tin_number_master | null> => {
     const currentTin = (getValues("recipient_vat_no") ?? "").trim();
@@ -317,7 +354,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     return tindata;
   };
 
-  const onSubmit = async (data: DailyPurchaseMasterForm) => {
+  const onSubmit = async (data: DailySaleForm) => {
     if (davtdata == null || davtdata == undefined)
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
@@ -328,25 +365,64 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     if (sellerTin == null || sellerTin == undefined)
       return toast.error("Seller TIN Number not found.");
 
-    // const quantityamount =
-    //   davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
-    //     ? quantityCount == "crate"
-    //       ? parseInt(data.quantity) * commoditymaster.crate_size
-    //       : parseInt(data.quantity)
-    //     : parseInt(data.quantity);
+    if (quantityCount == "pcs") {
+      // pcs
+
+      if (
+        davtdata?.commodity == "OIDC" ||
+        davtdata?.commodity == "MANUFACTURER"
+      ) {
+        if (
+          isLiquore &&
+          (parseFloat(data.amount_unit) *
+            (100 +
+              parseFloat(
+                isComp
+                  ? "1"
+                  : isAgainstCForm
+                    ? "2"
+                    : commoditymaster.taxable_at,
+              ))) /
+            100 <
+            liquoreOIDCAmount * 0.7
+        ) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      } else {
+        if (
+          isLiquore &&
+          (parseFloat(data.amount_unit) *
+            (100 +
+              parseFloat(
+                isComp
+                  ? "1"
+                  : isAgainstCForm
+                    ? "2"
+                    : commoditymaster.taxable_at,
+              ))) /
+            100 <
+            liquoreDealerAmount * 0.7
+        ) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      }
+    } else {
+    }
+
     const quantityamount =
-      quantityCount == "crate"
-        ? parseInt(data.quantity) * commoditymaster.crate_size
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+        ? quantityCount == "crate"
+          ? parseInt(data.quantity) * commoditymaster.crate_size
+          : parseInt(data.quantity)
         : parseInt(data.quantity);
-    // const amount_unit: string =
-    //   davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
-    //     ? quantityCount == "crate"
-    //       ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
-    //       : data.amount_unit
-    //     : data.amount_unit;
+
     const amount_unit: string =
-      quantityCount == "crate"
-        ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+        ? quantityCount == "crate"
+          ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(
+              2,
+            )
+          : data.amount_unit
         : data.amount_unit;
 
     const date = new Date(
@@ -354,7 +430,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     );
     date.setDate(date.getDate() + 1);
 
-    const stock_response = await CreateDailyPurchase({
+    const stock_response = await CreateDailySale({
       amount_unit: amount_unit,
       invoice_date: date,
       invoice_number: data.invoice_number,
@@ -363,7 +439,11 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
-      tax_percent: isAgainstCForm ? "2" : commoditymaster.taxable_at,
+      tax_percent: isComp
+        ? "1"
+        : isAgainstCForm
+          ? "2"
+          : commoditymaster.taxable_at,
       seller_tin_id: sellerTin.id,
       amount: taxableValue,
       against_cfrom: isAgainstCForm,
@@ -375,11 +455,21 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       return toast.error(stock_response.message);
     }
 
+    sessionStorage.removeItem(DAILY_SALE_ADD_MORE_LOCK_KEY);
+    await props.init();
     props.setAddBox(false);
+    const currentValues = getValues();
 
-    sessionStorage.removeItem(DAILY_PURCHASE_ADD_MORE_LOCK_KEY);
+    // reset({
+    //   ...currentValues,
+    //   quantity: "",
+    //   amount_unit: "",
+    //   description_of_goods: undefined,
+    // });
+    // setVatAmount("0");
+    // setTaxableValue("0");
 
-    // clear form fields
+    // clear all from values
     reset({
       amount_unit: "",
       description_of_goods: undefined,
@@ -388,21 +478,23 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       quantity: "",
       recipient_vat_no: "",
     });
+
     setTinData(null);
+    setDvatdata(null);
     setVatAmount("0");
     setTaxableValue("0");
     setIsAgainstCForm(false);
     setIsAddMoreMode(false);
+    setLiquore(false);
+    setLiquoreOIDCAmount(0);
+    setLiquoreDealerAmount(0);
     setTinBox(false);
-    setCommodityMaster([]);
-    setDvatdata(null);
     setFuelTotalInvoiceValue("");
-    await props.init();
+
     await init();
-    setIsAddMoreMode(true);
   };
 
-  const addNew = async (data: DailyPurchaseMasterForm) => {
+  const addNew = async (data: DailySaleForm) => {
     if (davtdata == null || davtdata == undefined)
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
@@ -412,32 +504,93 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
 
     if (sellerTin == null || sellerTin == undefined)
       return toast.error("Seller TIN Number not found.");
-    // const quantityamount =
-    //   davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
-    //     ? quantityCount == "crate"
-    //       ? parseInt(data.quantity) * commoditymaster.crate_size
-    //       : parseInt(data.quantity)
-    //     : parseInt(data.quantity);
+
+    if (quantityCount == "pcs") {
+      // pcs
+
+      if (
+        davtdata?.commodity == "OIDC" ||
+        davtdata?.commodity == "MANUFACTURER"
+      ) {
+        if (
+          isLiquore &&
+          (parseFloat(data.amount_unit) *
+            (100 +
+              parseFloat(
+                isComp
+                  ? "1"
+                  : isAgainstCForm
+                    ? "2"
+                    : commoditymaster.taxable_at,
+              ))) /
+            100 <
+            liquoreOIDCAmount
+        ) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      } else {
+        if (
+          isLiquore &&
+          (parseFloat(data.amount_unit) *
+            (100 +
+              parseFloat(
+                isComp
+                  ? "1"
+                  : isAgainstCForm
+                    ? "2"
+                    : commoditymaster.taxable_at,
+              ))) /
+            100 <
+            liquoreDealerAmount
+        ) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      }
+    } else {
+      if (
+        davtdata?.commodity == "OIDC" ||
+        davtdata?.commodity == "MANUFACTURER"
+      ) {
+        if (
+          isLiquore &&
+          parseFloat(data.amount_unit) <
+            liquoreOIDCAmount * commoditymaster.crate_size
+        ) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      } else {
+        if (
+          isLiquore &&
+          parseFloat(data.amount_unit) <
+            liquoreDealerAmount * commoditymaster.crate_size
+        ) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      }
+    }
+
     const quantityamount =
-      quantityCount == "crate"
-        ? parseInt(data.quantity) * commoditymaster.crate_size
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+        ? quantityCount == "crate"
+          ? parseInt(data.quantity) * commoditymaster.crate_size
+          : parseInt(data.quantity)
         : parseInt(data.quantity);
-    // const amount_unit: string =
-    //   davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
-    //     ? quantityCount == "crate"
-    //       ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
-    //       : data.amount_unit
-    //     : data.amount_unit;
+
     const amount_unit: string =
-      quantityCount == "crate"
-        ? (parseInt(data.amount_unit) / commoditymaster.crate_size).toFixed(2)
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+        ? quantityCount == "crate"
+          ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(
+              2,
+            )
+          : data.amount_unit
         : data.amount_unit;
 
     const date = new Date(
       new Date(data.invoice_date).toISOString().split("T")[0],
     );
     date.setDate(date.getDate() + 1);
-    const stock_response = await CreateDailyPurchase({
+
+    const stock_response = await CreateDailySale({
       amount_unit: amount_unit,
       invoice_date: date,
       invoice_number: data.invoice_number,
@@ -446,7 +599,11 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
-      tax_percent: isAgainstCForm ? "2" : commoditymaster.taxable_at,
+      tax_percent: isComp
+        ? "1"
+        : isAgainstCForm
+          ? "2"
+          : commoditymaster.taxable_at,
       seller_tin_id: sellerTin.id,
       amount: taxableValue,
       against_cfrom: isAgainstCForm,
@@ -457,7 +614,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     } else {
       return toast.error(stock_response.message);
     }
-
     const currentValues = getValues();
 
     const lockPayload = {
@@ -467,11 +623,9 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     };
 
     sessionStorage.setItem(
-      DAILY_PURCHASE_ADD_MORE_LOCK_KEY,
+      DAILY_SALE_ADD_MORE_LOCK_KEY,
       JSON.stringify(lockPayload),
     );
-
-    setIsAddMoreMode(true);
 
     // reset({
     //   ...currentValues,
@@ -491,14 +645,17 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       quantity: "",
     });
 
-    // clear form fields
+    setDvatdata(null);
+
     setVatAmount("0");
     setTaxableValue("0");
+    setLiquore(false);
+    setLiquoreOIDCAmount(0);
+    setLiquoreDealerAmount(0);
     setTinBox(false);
     setCommodityMaster([]);
-    setDvatdata(null);
+    setIsAddMoreMode(true);
     setFuelTotalInvoiceValue("");
-
     await props.init();
     await init();
     setIsAddMoreMode(true);
@@ -573,11 +730,11 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         }, onFormError)}
       >
         <div className="mt-2">
-          <TaxtInput<DailyPurchaseMasterForm>
-            placeholder="Seller TIN Number"
+          <TaxtInput<DailySaleForm>
+            placeholder="Purchaser TIN Number. (26000000000 for B2C)"
             name="recipient_vat_no"
             required={true}
-            title="Seller TIN Number"
+            title="Purchaser TIN Number"
             disable={isAddMoreMode}
           />
         </div>
@@ -607,9 +764,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
               ))}
           </div>
         )}
-
         <div className="mt-2">
-          <TaxtInput<DailyPurchaseMasterForm>
+          <TaxtInput<DailySaleForm>
             name="invoice_number"
             required={true}
             title="Invoice no."
@@ -618,7 +774,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           />
         </div>
         <div className="mt-2">
-          <DateSelect<DailyPurchaseMasterForm>
+          <DateSelect<DailySaleForm>
             name="invoice_date"
             required={true}
             title="Invoice Date"
@@ -630,64 +786,45 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             disable={isAddMoreMode}
           />
         </div>
-        {
-          // (davtdata?.commodity == "OIDC" ||
-          //   davtdata?.commodity == "MANUFACTURER") &&
-          davtdata?.commodity == "FUEL"
-            ? null
-            : commoditymaster != null && (
-                <div className="flex mt-2 gap-2 items-center">
-                  <div className="p-1 rounded grow text-center bg-gray-100">
-                    {commoditymaster.crate_size} Pcs/Crate
-                  </div>
-                  <Radio.Group
-                    size="small"
-                    onChange={onChange}
-                    value={quantityCount}
-                    optionType="button"
-                  >
-                    <Radio.Button className="w-20 text-center" value="crate">
-                      Crate
-                    </Radio.Button>
-                    <Radio.Button className="w-20 text-center" value="pcs">
-                      Pcs
-                    </Radio.Button>
-                  </Radio.Group>
-                </div>
-              )
-        }
-
         <div className="mt-2">
           <div className="mt-2">
-            <MultiSelect<DailyPurchaseMasterForm>
+            <MultiSelect<DailySaleForm>
               placeholder="Select Items details"
               name="description_of_goods"
               required={true}
               title="Items details"
               options={commodityMaster.map(
-                (val: commodity_master, index: number) => ({
+                (
+                  val: commodity_master & { quantity: number },
+                  index: number,
+                ) => ({
                   value: val.id.toString(),
-                  label: val.product_name,
+                  // label: val.product_name,
+
+                  label:
+                    val.product_name +
+                    ` [${val.quantity} ${
+                      val.product_type == "FUEL" ? "Litre" : "PCS"
+                    }]`,
                 }),
               )}
             />
           </div>
         </div>
-
         <div className="mt-2">
-          <TaxtInput<DailyPurchaseMasterForm>
+          <TaxtInput<DailySaleForm>
             title={
               davtdata?.commodity == "FUEL" ? "Quantity (Litre)" : "Quantity"
             }
             required={true}
-            name={"quantity"}
+            name="quantity"
             placeholder="Enter Quantity"
             onlynumber={true}
           />
         </div>
 
         {davtdata?.commodity == "FUEL" && (
-          <div className="mt-2 ">
+          <div className="mt-2">
             <p className="text-sm font-normal">Total Invoice Value</p>
             <Input
               value={fuelTotalInvoiceValue}
@@ -703,20 +840,46 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           </div>
         )}
 
+        {(davtdata?.commodity == "OIDC" ||
+          davtdata?.commodity == "MANUFACTURER") &&
+          commoditymaster != null && (
+            <div className="flex mt-2 gap-2 items-center">
+              <div className="p-1 rounded grow text-center bg-gray-100">
+                {commoditymaster.crate_size} Pcs/Crate
+              </div>
+              <Radio.Group
+                size="small"
+                onChange={onChange}
+                value={quantityCount}
+                optionType="button"
+              >
+                <Radio.Button className="w-20 text-center" value="crate">
+                  Crate
+                </Radio.Button>
+                <Radio.Button className="w-20 text-center" value="pcs">
+                  Pcs
+                </Radio.Button>
+              </Radio.Group>
+            </div>
+          )}
         {davtdata?.commodity != "FUEL" && (
           <div className="mt-2">
-            <TaxtInput<DailyPurchaseMasterForm>
+            <TaxtInput<DailySaleForm>
               placeholder={
+                (davtdata?.commodity == "OIDC" ||
+                  davtdata?.commodity == "MANUFACTURER") &&
                 quantityCount == "crate"
-                  ? "Enter Crate amount (Purchase price including VAT)"
-                  : "Enter Unit amount (Purchase price including VAT)"
+                  ? "Enter Crate amount (Sale price including VAT)"
+                  : "Enter Net amount/unit (Sale price including VAT)"
               }
               name="amount_unit"
               required={true}
               title={
+                (davtdata?.commodity == "OIDC" ||
+                  davtdata?.commodity == "MANUFACTURER") &&
                 quantityCount == "crate"
-                  ? "Enter Crate amount (Purchase price including VAT)"
-                  : "Enter Unit amount (Purchase price including VAT)"
+                  ? "Enter Crate amount (Sale price including VAT)"
+                  : "Enter Net amount/unit (Sale price including VAT)"
               }
               numdes={true}
             />
@@ -726,11 +889,13 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
             <p className="text-xs font-normal">Taxable (%)</p>
             <p className="text-sm font-semibold">
-              {isAgainstCForm
-                ? "2"
-                : commoditymaster != null
-                  ? commoditymaster.taxable_at + "%"
-                  : "0%"}
+              {isComp
+                ? "1%"
+                : isAgainstCForm
+                  ? "2%"
+                  : commoditymaster != null
+                    ? commoditymaster.taxable_at + "%"
+                    : "0%"}
             </p>
           </div>
           {davtdata?.commodity == "FUEL" ? (
@@ -739,7 +904,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
               <p className="text-sm font-semibold">
                 {amount_unit ? formatAmount(amount_unit) : "0.00"}
               </p>
-              {/* <TaxtInput<DailyPurchaseMasterForm>
+              {/* <TaxtInput<DailySaleForm>
                 placeholder="Quantity and Total Invoice Value"
                 name="amount_unit"
                 required={true}
@@ -750,22 +915,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             </div>
           ) : (
             <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
-              <p className="text-xs font-normal">Taxable Value</p>
-              <p className="text-sm font-semibold">
-                {formatAmount(taxableValue)}
-              </p>
-            </div>
-          )}
-          {davtdata?.commodity == "FUEL" ? (
-            <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
-              <p className="text-xs font-normal">Taxable Value</p>
-              <p className="text-sm font-semibold">
-                {formatAmount(taxableValue)}
-              </p>
-            </div>
-          ) : (
-            <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
-              <p className="text-xs font-normal">Invoice Value</p>
+              <p className="text-xs font-normal">Total Invoice Value</p>
               <p className="text-sm font-semibold">
                 {formatAmount(
                   (Number(quantity) || 0) * (Number(amount_unit) || 0),
@@ -774,8 +924,25 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             </div>
           )}
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
+            <p className="text-xs font-normal">Total Taxable Value</p>
+            <p className="text-sm font-semibold">
+              {formatAmount(
+                (((Number(quantity) || 0) * (Number(amount_unit) || 0)) /
+                  (100 +
+                    parseFloat(
+                      isComp
+                        ? "1"
+                        : isAgainstCForm
+                          ? "2"
+                          : (commoditymaster?.taxable_at ?? "0"),
+                    ))) *
+                  100,
+              )}
+            </p>
+          </div>
+          <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
             <p className="text-xs font-normal">VAT Amount</p>
-            <p className="text-sm font-semibold">{formatAmount(vatamount)}</p>
+            <p className="text-sm font-semibold">{vatamount}</p>
           </div>
         </div>
 
@@ -784,7 +951,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             type="reset"
             onClick={(e) => {
               e.preventDefault();
-              sessionStorage.removeItem(DAILY_PURCHASE_ADD_MORE_LOCK_KEY);
+              sessionStorage.removeItem(DAILY_SALE_ADD_MORE_LOCK_KEY);
               setIsAddMoreMode(false);
               props.setAddBox(false);
               // props.setCommid(undefined);
@@ -797,7 +964,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             type="reset"
             onClick={(e) => {
               e.preventDefault();
-              sessionStorage.removeItem(DAILY_PURCHASE_ADD_MORE_LOCK_KEY);
+              sessionStorage.removeItem(DAILY_SALE_ADD_MORE_LOCK_KEY);
               reset({
                 amount_unit: "",
                 description_of_goods: undefined,

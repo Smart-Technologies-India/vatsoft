@@ -304,8 +304,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             name="vatLiableDate"
             required={true}
             format={"DD/MM/YYYY"}
-            title="7. Date from which liable for registration under Dadra and Nagar
-                Haveli Value Added Tax regulation, 2005 (DD/MM/YYYY)"
+            title="7. Date from which liable for registration under Dadra and Nagar Haveli and Daman and Diu Value Added Tax regulation, 2005 (DD/MM/YYYY)"
           />
         </div>
         <div className="flex-1"></div>

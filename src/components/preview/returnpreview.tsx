@@ -267,8 +267,7 @@ export const Dvat1Page = (props: Dvat1PageProps) => {
             />
 
             <CreateTable
-              key1="7. Date from which liable for registration under Dadra and Nagar
-                Haveli Value Added Tax regulation, 2005 (DD/MM/YYYY)"
+              key1="7. Date from which liable for registration under Dadra and Nagar Haveli and Daman and Diu Value Added Tax regulation, 2005 (DD/MM/YYYY)"
               value1={
                 dvatData?.vatLiableDate
                   ? format(dvatData?.vatLiableDate, "PPP")

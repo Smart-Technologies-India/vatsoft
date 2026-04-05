@@ -59,95 +59,109 @@ const AddPayment = async (
       if (!isExist) {
         throw new Error("Invalid Id, try again");
       }
-      const updateresponse = await prisma.returns_01.update({
+      const monthsToUpdate = getTargetMonths(
+        isExist.month ?? "",
+        isExist.dvat04.frequencyFilings === "QUARTERLY",
+      );
+      const isQuarterlyFiling =
+        isExist.dvat04.frequencyFilings === "QUARTERLY";
+
+      const returnIdsToUpdate = await prisma.returns_01.findMany({
         where: {
-          id: payload.id,
+          dvat04Id: isExist.dvat04Id,
+          year: isExist.year,
+          month: { in: monthsToUpdate },
           deletedAt: null,
           deletedById: null,
           status: "ACTIVE",
+          OR: [{ return_type: "REVISED" }, { return_type: "ORIGINAL" }],
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      const transactionDate = addPrismaDatabaseDate(new Date()).toISOString();
+      const filingDate = new Date();
+
+      if (returnIdsToUpdate.length === 0) {
+        throw new Error("Something went wrong! Unable to update");
+      }
+
+      await prisma.returns_01.updateMany({
+        where: {
+          id: { in: returnIdsToUpdate.map((record) => record.id) },
         },
         data: {
           bank_name: payload.bank_name,
           track_id: payload.track_id,
           transaction_id: payload.transaction_id,
-          transaction_date: addPrismaDatabaseDate(new Date()).toISOString(),
+          transaction_date: transactionDate,
           paymentmode: "ONLINE",
           rr_number: payload.rr_number,
-          penalty: payload.penalty,
-          filing_datetime: new Date(),
+          penalty: getQuarterlyDistributedAmount(
+            payload.penalty,
+            isQuarterlyFiling,
+          ),
+          filing_datetime: filingDate,
           challan_number: cpin,
           ...(payload.pending_payment && {
             pending_payment: payload.pending_payment,
           }),
-          interest: payload.interestamount,
-          vatamount: payload.vatamount,
-          total_tax_amount: payload.totaltaxamount,
+          interest: getQuarterlyDistributedAmount(
+            payload.interestamount,
+            isQuarterlyFiling,
+          ),
+          vatamount: getQuarterlyDistributedAmount(
+            payload.vatamount,
+            isQuarterlyFiling,
+          ),
+          total_tax_amount: getQuarterlyDistributedAmount(
+            payload.totaltaxamount,
+            isQuarterlyFiling,
+          ),
           status: "PAID",
+        },
+      });
+
+      const updateresponse = await prisma.returns_01.findFirst({
+        where: {
+          id: payload.id,
         },
         include: {
           dvat04: true,
         },
       });
+
       if (!updateresponse) {
         throw new Error("Something went wrong! Unable to update");
       }
 
-      if (updateresponse.dvat04.compositionScheme) {
-        const monthsToUpdate = getMonthGroup(updateresponse.month ?? "");
-        const filingDate = new Date();
-        
-        // Get all records to update to check due dates
-        const recordsToUpdate = await prisma.return_filing.findMany({
-          where: {
-            filing_status: false,
-            dvatid: updateresponse.dvat04Id,
-            filing_date: null,
-            year: updateresponse.year,
-            month: { in: monthsToUpdate },
-          },
-        });
-        
-        // Update each record with appropriate return_status
-        await Promise.all(
-          recordsToUpdate.map((record) =>
-            prisma.return_filing.update({
-              where: { id: record.id },
-              data: {
-                filing_date: filingDate,
-                filing_status: true,
-                return_status: record.due_date && record.due_date >= filingDate ? "FILED" : "LATEFILED",
-              },
-            })
-          )
-        );
-      } else {
-        const filingDate = new Date();
-        
-        // Get all records to update to check due dates
-        const recordsToUpdate = await prisma.return_filing.findMany({
-          where: {
-            filing_status: false,
-            dvatid: updateresponse.dvat04Id,
-            filing_date: null,
-            year: updateresponse.year,
-            month: updateresponse.month ?? "",
-          },
-        });
-        
-        // Update each record with appropriate return_status
-        await Promise.all(
-          recordsToUpdate.map((record) =>
-            prisma.return_filing.update({
-              where: { id: record.id },
-              data: {
-                filing_date: filingDate,
-                filing_status: true,
-                return_status: record.due_date && record.due_date >= filingDate ? "FILED" : "LATEFILED",
-              },
-            })
-          )
-        );
-      }
+      const recordsToUpdate = await prisma.return_filing.findMany({
+        where: {
+          filing_status: false,
+          dvatid: updateresponse.dvat04Id,
+          filing_date: null,
+          year: updateresponse.year,
+          month: { in: monthsToUpdate },
+        },
+      });
+
+      await Promise.all(
+        recordsToUpdate.map((record) =>
+          prisma.return_filing.update({
+            where: { id: record.id },
+            data: {
+              filing_date: filingDate,
+              filing_status: true,
+              return_status:
+                record.due_date && record.due_date >= filingDate
+                  ? "FILED"
+                  : "LATEFILED",
+            },
+          }),
+        ),
+      );
 
       if (
         ["March", "June", "September", "December"].includes(isExist.month ?? "")
@@ -429,6 +443,17 @@ const AddPayment = async (
 
 export default AddPayment;
 
+const getTargetMonths = (
+  currentMonth: string,
+  isCompositionScheme: boolean,
+): string[] => {
+  if (!currentMonth) {
+    return [];
+  }
+
+  return isCompositionScheme ? getMonthGroup(currentMonth) : [currentMonth];
+};
+
 const getMonthGroup = (currentMonth: string): string[] => {
   const monthGroups = [
     ["April", "May", "June"],
@@ -445,6 +470,23 @@ const getMonthGroup = (currentMonth: string): string[] => {
   }
 
   return [];
+};
+
+const getQuarterlyDistributedAmount = (
+  value: string,
+  isQuarterlyFiling: boolean,
+): string => {
+  if (!isQuarterlyFiling) {
+    return value;
+  }
+
+  const parsedValue = parseFloat(value || "0");
+
+  if (Number.isNaN(parsedValue)) {
+    return value;
+  }
+
+  return (parsedValue / 3).toFixed(2);
 };
 
 function getFromDateAndToDate(

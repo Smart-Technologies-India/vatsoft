@@ -210,7 +210,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
-      return toast.error("Seller VAT Number not found.");
+      return toast.error("Seller TIN Number not found.");
     if (parseInt(data.quantity) <= 0)
       return toast.error("Quantity must be greater than 0.");
 
@@ -289,10 +289,10 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
       <form onSubmit={handleSubmit(onSubmit, onFormError)}>
         <div className="mt-2">
           <TaxtInput<DailyPurchaseMasterForm>
-            placeholder="Seller VAT Number"
+            placeholder="Seller TIN Number"
             name="recipient_vat_no"
             required={true}
-            title="Seller VAT Number"
+            title="Seller TIN Number"
             disable={true}
           />
         </div>

@@ -15,7 +15,7 @@ const CreateChallan = () => {
     <>
       <div className="p-2">
         <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white">DVAT 16 Challan</div>
+          <div className="bg-blue-500 p-2 text-white">Form DVAT 20</div>
           <DvatChallanPayment returnid={returnid.toString()} />
         </div>
       </div>

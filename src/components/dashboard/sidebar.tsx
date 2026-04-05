@@ -204,6 +204,13 @@ const Sidebar = (props: SidebarProps) => {
               path={path}
               pathcheck={"/dashboard/stock"}
             />
+            {/* <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentBuildingBank48Regular className="w-5 h-5" />}
+              name="Refinery Purchase"
+              path={path}
+              pathcheck={"/dashboard/refinery_purchase"}
+            /> */}
           </>
         )}
 
@@ -231,6 +238,13 @@ const Sidebar = (props: SidebarProps) => {
               path={path}
               pathcheck={"/dashboard/reports"}
             />
+            {/* <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentAlignBottom24Regular className="w-5 h-5" />}
+              name="Refinery Sales"
+              path={path}
+              pathcheck={"/dashboard/refinery_sales"}
+            /> */}
           </>
         )}
 

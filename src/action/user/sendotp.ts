@@ -21,7 +21,20 @@ const SendOtp = async (
       where: { status: "ACTIVE", deletedAt: null, mobileOne: payload.mobile },
     });
 
+    // Resend cooldown: block if OTP was sent less than 60 seconds ago
+    if (usersresponse?.otpLastSentAt) {
+      const secondsSinceLastSend =
+        (Date.now() - new Date(usersresponse.otpLastSentAt).getTime()) / 1000;
+      if (secondsSinceLastSend < 60) {
+        return createResponse({
+          message: `Please wait ${Math.ceil(60 - secondsSinceLastSend)} seconds before requesting a new OTP.`,
+          functionname,
+        });
+      }
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000);
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
 
     // const response = await axios.post(
     //   `https://mobicomm.dove-sms.com//submitsms.jsp?user=SmartT&key=8b85ee3e9fXX&mobile=${payload.mobile}&message=OTP for Login is ${otp}. Please use this OTP to access your account. Thank you - DDD Gov.&senderid=DDDGOV&accusage=1&entityid=1401551570000053588&tempid=1407170486529658764`,
@@ -49,6 +62,9 @@ const SendOtp = async (
           where: { id: usersresponse.id },
           data: {
             otp: otp.toString(),
+                      otpExpiry,
+                      otpAttempts: 0,
+                      otpLastSentAt: new Date(),
           },
         });
 

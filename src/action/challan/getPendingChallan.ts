@@ -26,6 +26,9 @@ const GetPendingChallan = async (
           {
             paymentstatus: "PAID",
           },
+          {
+            reason: "MONTHLYPAYMENT",
+          },
         ],
         deletedAt: null,
         deletedById: null,

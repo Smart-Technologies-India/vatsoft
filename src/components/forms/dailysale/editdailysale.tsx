@@ -195,7 +195,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
-      return toast.error("Seller VAT Number not found.");
+      return toast.error("Seller TIN Number not found.");
 
     if (isLiquore && parseInt(data.amount_unit) < liquoreAmount) {
       return toast.error("Sale amount can not be less than MRP.");
@@ -279,10 +279,10 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
       <form onSubmit={handleSubmit(onSubmit, onFormError)}>
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
-            placeholder="Seller VAT Number"
+            placeholder="Seller TIN Number"
             name="recipient_vat_no"
             required={true}
-            title="Seller VAT Number"
+            title="Seller TIN Number"
             disable={true}
           />
         </div>

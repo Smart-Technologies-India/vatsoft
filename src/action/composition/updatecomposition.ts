@@ -12,10 +12,11 @@ interface UpdateCompositionPayload {
   status: CompositionStatus;
   userid: number;
   compositionScheme: boolean;
+  frequencyFilings: string;
 }
 
 const UpdateComposition = async (
-  payload: UpdateCompositionPayload
+  payload: UpdateCompositionPayload,
 ): Promise<ApiResponseType<composition | null>> => {
   const functionname: string = UpdateComposition.name;
 
@@ -61,7 +62,7 @@ const UpdateComposition = async (
         where: {
           deletedAt: null,
           deletedBy: null,
-          createdById: update_respone.createdBy.id,
+          id: composition_response.dvatid,
           status: "APPROVED",
         },
       });
@@ -72,7 +73,7 @@ const UpdateComposition = async (
           functionname,
         });
 
-      const dvat_update_response = await prisma.dvat04.update({
+      await prisma.dvat04.update({
         where: {
           deletedAt: null,
           deletedBy: null,

@@ -28,6 +28,8 @@ import GetPendingReturn from "@/action/dvat/getpendingreturn";
 import GetPendingChallan from "@/action/challan/getPendingChallan";
 import GetReturnMonth from "@/action/dvat/getreturnmonth";
 import getReturnByDate from "@/action/return/getreturnentrybydate";
+import getCurrentFyAnnualTurnover from "@/action/return/getcurrentfyannualturnover";
+import getCurrentFyTaxLiability from "@/action/return/getcurrentfytaxliability";
 
 enum Status {
   INACTIVE,
@@ -60,7 +62,7 @@ const ShopView = () => {
   const { id } = useParams<{ id: string | string[] }>();
   const router = useRouter();
   const dvat04id = parseInt(
-    decryptURLData(Array.isArray(id) ? id[0] : id, router)
+    decryptURLData(Array.isArray(id) ? id[0] : id, router),
   );
 
   const [isLoading, setIsLoading] = useState(true);
@@ -82,6 +84,8 @@ const ShopView = () => {
     count: 0,
     pending: 0,
   });
+  const [annualTurnover, setAnnualTurnover] = useState<number>(0);
+  const [taxLiability, setTaxLiability] = useState<number>(0);
 
   // const [returnMonth, setReturnMonth] = useState<return_filing[]>([]);
 
@@ -103,7 +107,7 @@ const ShopView = () => {
   ];
 
   const setRentMonthDetails = (
-    value: Array<return_filing & { dvat: dvat04 }>
+    value: Array<return_filing & { dvat: dvat04 }>,
   ) => {
     const years: number[] = value.map((item) => parseInt(item.year));
     const uniqueyears: number[] = years.filter((value, index, self) => {
@@ -124,7 +128,7 @@ const ShopView = () => {
           value.find(
             (item: return_filing & { dvat: dvat04 }) =>
               item.year == year.toString() &&
-              item.month == monthNames[adjustedMonth]
+              item.month == monthNames[adjustedMonth],
           );
         if (getdata) {
           ret_filing.push({
@@ -137,8 +141,8 @@ const ShopView = () => {
                 ? Status.PAID
                 : Status.LATE
               : getdata.due_date! < currentdate
-              ? Status.PENDING
-              : Status.DUE,
+                ? Status.PENDING
+                : Status.DUE,
             userid: getdata.dvat.createdById.toString(),
             year: year.toString(),
             returnid: getdata.id,
@@ -197,6 +201,23 @@ const ShopView = () => {
       if (returnmonth_response.status && returnmonth_response.data) {
         setRentMonthDetails(returnmonth_response.data);
       }
+
+      const annualTurnoverResponse = await getCurrentFyAnnualTurnover({
+        dvatid: dvat04id,
+      });
+      if (
+        annualTurnoverResponse.status &&
+        annualTurnoverResponse.data != null
+      ) {
+        setAnnualTurnover(annualTurnoverResponse.data);
+      }
+
+      const taxLiabilityResponse = await getCurrentFyTaxLiability({
+        dvatid: dvat04id,
+      });
+      if (taxLiabilityResponse.status && taxLiabilityResponse.data != null) {
+        setTaxLiability(taxLiabilityResponse.data);
+      }
       setIsLoading(false);
     };
     init();
@@ -214,7 +235,9 @@ const ShopView = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="flex gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-            <p className="text-base font-semibold text-gray-900">Dealer Details</p>
+            <p className="text-base font-semibold text-gray-900">
+              Dealer Details
+            </p>
             <div className="grow"></div>
             <Button
               size="small"
@@ -223,8 +246,8 @@ const ShopView = () => {
                 if (!dvatData) return;
                 router.push(
                   `/dashboard/returns/user-stock/${encryptURLData(
-                    dvatData?.id.toString()
-                  )}`
+                    dvatData?.id.toString(),
+                  )}`,
                 );
               }}
             >
@@ -266,11 +289,19 @@ const ShopView = () => {
               <br />
               <span className="text-sm text-gray-900 font-medium">Liquor</span>
             </p>
+            <p className="text-xs text-gray-500 leading-4">
+              Composition/Regular <br />
+              <span className="text-sm text-gray-900 font-medium">
+                {dvatData?.compositionScheme ? "COMP" : "REG"}
+              </span>
+            </p>
           </div>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="border-b border-gray-200 bg-gray-50 rounded-t-lg flex items-center px-4 py-3 gap-2">
-            <p className="text-base font-semibold text-gray-900">Return Details</p>
+            <p className="text-base font-semibold text-gray-900">
+              Return Details
+            </p>
             <div className="grow"></div>
             <Button
               size="small"
@@ -279,8 +310,8 @@ const ShopView = () => {
                 if (!dvatData) return;
                 router.push(
                   `/dashboard/returns/user-cform/${encryptURLData(
-                    dvatData?.id.toString()
-                  )}`
+                    dvatData?.id.toString(),
+                  )}`,
                 );
               }}
             >
@@ -288,18 +319,13 @@ const ShopView = () => {
             </Button>
           </div>
           <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <p className="text-xs text-gray-500 leading-4">
+            {/* <p className="text-xs text-gray-500 leading-4">
               VAT Liable Date <br />
               <span className="text-sm text-gray-900 font-medium">
                 {formateDate(dvatData?.vatLiableDate!)}
               </span>
-            </p>
-            <p className="text-xs text-gray-500 leading-4">
-              Composition/Regular <br />
-              <span className="text-sm text-gray-900 font-medium">
-                {dvatData?.compositionScheme ? "COMP" : "REG"}
-              </span>
-            </p>
+            </p> */}
+
             <p className="text-xs text-gray-500 leading-4">
               Last Filed Return Period <br />
               <span className="text-sm text-gray-900 font-medium">
@@ -321,7 +347,28 @@ const ShopView = () => {
             <p className="text-xs text-gray-500 leading-4">
               Demand Amount Pending <br />
               <span className="text-sm text-gray-900 font-medium">
-                {pendingchallan.pending}
+                {pendingchallan.pending.toLocaleString("en-IN", {
+                  maximumFractionDigits: 2,
+                  minimumFractionDigits: 0,
+                })}
+              </span>
+            </p>
+            <p className="text-xs text-gray-500 leading-4">
+              Annual turnover <br />
+              <span className="text-sm text-gray-900 font-medium">
+                {annualTurnover.toLocaleString("en-IN", {
+                  maximumFractionDigits: 2,
+                  minimumFractionDigits: 0,
+                })}
+              </span>
+            </p>
+            <p className="text-xs text-gray-500 leading-4">
+              Tax liability <br />
+              <span className="text-sm text-gray-900 font-medium">
+                {taxLiability.toLocaleString("en-IN", {
+                  maximumFractionDigits: 2,
+                  minimumFractionDigits: 0,
+                })}
               </span>
             </p>
           </div>
@@ -329,7 +376,10 @@ const ShopView = () => {
       </div>
 
       {returndetails.map((item, index) => (
-        <div key={index} className="w-full bg-white rounded-lg border border-gray-200 shadow-sm mt-4 overflow-hidden">
+        <div
+          key={index}
+          className="w-full bg-white rounded-lg border border-gray-200 shadow-sm mt-4 overflow-hidden"
+        >
           <div className="bg-white">
             <p className="text-base px-4 py-3 font-semibold text-gray-900 border-b border-gray-200 bg-gray-50">
               Return History - {item.displayyear}
@@ -456,9 +506,7 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
 
   if (props.status == Status.PAID || props.status == Status.LATE) {
     return (
-      <div
-        className="p-2 flex items-center justify-start min-w-40 bg-gray-50 border border-gray-200 rounded-lg gap-2"
-      >
+      <div className="p-2 flex items-center justify-start min-w-40 bg-gray-50 border border-gray-200 rounded-lg gap-2">
         <Component />
         <div>
           <p className="text-xs font-medium text-gray-900">{props.name}</p>
@@ -474,12 +522,12 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
                   onClick={() =>
                     router.push(
                       `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                        props.userid!.toString()
+                        props.userid!.toString(),
                       )}/${encryptURLData(
-                        props.dvat04id!.toString()
+                        props.dvat04id!.toString(),
                       )}?form=30A&year=${
                         props.year
-                      }&quarter=${getQuarter()}&month=${props.name}`
+                      }&quarter=${getQuarter()}&month=${props.name}`,
                     )
                   }
                 >
@@ -496,8 +544,8 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
                     if (response.status && response.data) {
                       router.push(
                         `/dashboard/returns/department-dvat24?returnid=${encryptURLData(
-                          response.data.id.toString()
-                        )}&tin=${encryptURLData(props.tinnumber)}`
+                          response.data.id.toString(),
+                        )}&tin=${encryptURLData(props.tinnumber)}`,
                       );
                     }
                   }}
@@ -515,8 +563,8 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
                     if (response.status && response.data) {
                       router.push(
                         `/dashboard/returns/department-dvat24a?returnid=${encryptURLData(
-                          response.data.id.toString()
-                        )}&tin=${encryptURLData(props.tinnumber)}`
+                          response.data.id.toString(),
+                        )}&tin=${encryptURLData(props.tinnumber)}`,
                       );
                     }
                   }}
@@ -535,9 +583,7 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
     );
   } else if (props.status == Status.PENDING) {
     return (
-      <div
-        className="p-2 flex items-center justify-start min-w-40 bg-gray-50 border border-gray-200 rounded-lg gap-2"
-      >
+      <div className="p-2 flex items-center justify-start min-w-40 bg-gray-50 border border-gray-200 rounded-lg gap-2">
         <Component />
         <div>
           <p className="text-xs font-medium text-gray-900">{props.name}</p>
@@ -567,8 +613,8 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
                   onClick={() =>
                     router.push(
                       `/dashboard/returns/department-dvat10?tin=${encryptURLData(
-                        props.tinnumber
-                      )}`
+                        props.tinnumber,
+                      )}`,
                     )
                   }
                 >
@@ -586,9 +632,7 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
     );
   } else {
     return (
-      <div
-        className="p-2 flex items-center justify-start min-w-40 bg-gray-50 border border-gray-200 rounded-lg gap-2"
-      >
+      <div className="p-2 flex items-center justify-start min-w-40 bg-gray-50 border border-gray-200 rounded-lg gap-2">
         <Component />
         <div>
           <p className="text-xs font-medium text-gray-900">{props.name}</p>

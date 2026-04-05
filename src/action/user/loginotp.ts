@@ -37,9 +37,34 @@ const LoginOtp = async (
       });
     }
 
-    if (usersresponse.otp !== payload.otp) {
+    // Rate limit: max 5 attempts
+    if (usersresponse.otpAttempts >= 5) {
       return createResponse({
-        message: "Invalid OTP. Please try again.",
+        message: "Too many failed attempts. Please request a new OTP.",
+        functionname,
+      });
+    }
+
+    // Expiry check
+    if (
+      !usersresponse.otpExpiry ||
+      new Date() > new Date(usersresponse.otpExpiry)
+    ) {
+      return createResponse({
+        message: "OTP has expired. Please request a new one.",
+        functionname,
+      });
+    }
+
+    if (usersresponse.otp !== payload.otp) {
+      // Increment attempt counter
+      await prisma.user.update({
+        where: { id: usersresponse.id },
+        data: { otpAttempts: { increment: 1 } },
+      });
+      const remaining = 4 - usersresponse.otpAttempts;
+      return createResponse({
+        message: `Invalid OTP. ${remaining > 0 ? `${remaining} attempt(s) remaining.` : "No attempts remaining. Request a new OTP."}`,
         functionname,
       });
     }
@@ -49,6 +74,9 @@ const LoginOtp = async (
       data: {
         firstName: payload.firstname,
         lastName: payload.lastname,
+        otp: null,
+        otpExpiry: null,
+        otpAttempts: 0,
       },
     });
 

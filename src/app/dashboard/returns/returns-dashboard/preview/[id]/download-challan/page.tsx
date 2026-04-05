@@ -133,13 +133,13 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     }
 
     const idiff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 15),
+      new Date(newYear, monthIndex, 16),
       currentDate,
     );
 
     setInterestDiffDays(idiff_days);
     const pdiff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 28),
+      new Date(newYear, monthIndex, 29),
       currentDate,
     );
 

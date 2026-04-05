@@ -101,7 +101,6 @@ const SearchReturnPayment = async (
         },
       }),
     ]);
-    console.log("return_01", totalCount);
 
     return createPaginationResponse({
       message: return_01

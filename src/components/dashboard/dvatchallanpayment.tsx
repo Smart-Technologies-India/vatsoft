@@ -28,6 +28,7 @@ import {
   InputTaxCredit,
   NaturePurchase,
   NaturePurchaseOption,
+  Quarter,
   registration,
   returns_01,
   returns_entry,
@@ -79,6 +80,43 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
   const [user, setUser] = useState<user | null>(null);
 
+  const getQuarterForMonth = (month: string): Quarter | undefined => {
+    const monthToQuarterMap: { [key: string]: Quarter } = {
+      January: Quarter.QUARTER4,
+      February: Quarter.QUARTER4,
+      March: Quarter.QUARTER4,
+      April: Quarter.QUARTER1,
+      May: Quarter.QUARTER1,
+      June: Quarter.QUARTER1,
+      July: Quarter.QUARTER2,
+      August: Quarter.QUARTER2,
+      September: Quarter.QUARTER2,
+      October: Quarter.QUARTER3,
+      November: Quarter.QUARTER3,
+      December: Quarter.QUARTER3,
+    };
+
+    return monthToQuarterMap[month] || undefined;
+  };
+
+  const getQuarterMonths = (selectedQuarter: Quarter): string[] => {
+    const quarterMonthsMap: Record<Quarter, string[]> = {
+      QUARTER1: ["April", "May", "June"],
+      QUARTER2: ["July", "August", "September"],
+      QUARTER3: ["October", "November", "December"],
+      QUARTER4: ["January", "February", "March"],
+    };
+
+    return quarterMonthsMap[selectedQuarter] ?? [];
+  };
+
+  const getNewYear = (year: string, month: string): string => {
+    if (["January", "February", "March"].includes(month)) {
+      return (parseInt(year) + 1).toString();
+    }
+    return year;
+  };
+
   useEffect(() => {
     const init = async () => {
       const returns_response = await GetReturn01({
@@ -92,27 +130,61 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         });
         if (user_response.status && user_response.data) {
           setUser(user_response.data);
-
-          // const otp_response = await SendOtp({
-          //   mobile: user_response.data.mobileOne,
-          // });
-
-          // if (otp_response.status) {
-          //   toast.success(otp_response.message);
-          // }
         }
 
         const entry_response = await getReturnEntry({
           returnid: returns_response.data.id,
         });
         if (entry_response.status && entry_response.data) {
-          serReturns_entryData(entry_response.data);
+          let mergedEntries: returns_entry[] = [...entry_response.data];
+
+          const isQuarterlyFiling =
+            returns_response.data.dvat04?.frequencyFilings === "QUARTERLY";
+
+          if (isQuarterlyFiling) {
+            const createdById = returns_response.data.dvat04.createdById;
+            const selectedYear =
+              searchparam.get("year") ?? returns_response.data.year;
+            const selectedMonth =
+              searchparam.get("month") ?? returns_response.data.month ?? "";
+
+            const effectiveQuarter = getQuarterForMonth(selectedMonth);
+            const quarterMonths = effectiveQuarter
+              ? getQuarterMonths(effectiveQuarter).filter(
+                  (month) => month !== selectedMonth,
+                )
+              : [];
+
+
+            const quarterResponses = await Promise.all(
+              quarterMonths.map((month) =>
+                getPdfReturn({
+                  year: getNewYear(selectedYear, month),
+                  month,
+                  userid: createdById,
+                }),
+              ),
+            );
+
+            quarterResponses.forEach((quarterResponse: any) => {
+              if (quarterResponse.status && quarterResponse.data) {
+                mergedEntries.push(...quarterResponse.data.returns_entry);
+              }
+            });
+
+            mergedEntries = Array.from(
+              new Map(mergedEntries.map((entry) => [entry.id, entry])).values(),
+            );
+          }
+
+          serReturns_entryData(mergedEntries);
         }
 
         getLateFees(
           returns_response.data.year,
           returns_response.data.month!,
           returns_response.data.rr_number,
+          returns_response.data.dvat04?.frequencyFilings === "QUARTERLY",
         );
       }
     };
@@ -169,7 +241,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     init();
   }, [searchparam]);
 
-  const getLateFees = (year: string, month: string, rr_number: string) => {
+  const getLateFees = (year: string, month: string, rr_number: string, isComp: boolean = false) => {
     const currentDate = new Date();
 
     const monthNames = [
@@ -189,31 +261,48 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
     // Get the month index from the month name
     let monthIndex = monthNames.indexOf(month);
-
-    // Check if it's December (index 11) and increment year if needed
     let newYear = parseInt(year);
-    if (monthIndex === 11) {
-      newYear += 1;
-      monthIndex = 0; // Set month to January
+
+    if (isComp) {
+      // Composition scheme: map to next quarter's first month
+      if (["January", "February", "March"].includes(month)) {
+        monthIndex = 3; // April
+      } else if (["April", "May", "June"].includes(month)) {
+        monthIndex = 6; // July
+      } else if (["July", "August", "September"].includes(month)) {
+        monthIndex = 9; // October
+      } else {
+        monthIndex = 0; // January
+        newYear += 1;
+      }
     } else {
-      monthIndex += 1; // Otherwise, just increment the month
+      // Check if it's December (index 11) and increment year if needed
+      if (monthIndex === 11) {
+        newYear += 1;
+        monthIndex = 0; // Set month to January
+      } else {
+        monthIndex += 1; // Otherwise, just increment the month
+      }
     }
 
     const idiff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 15),
+      new Date(newYear, monthIndex, 16),
       currentDate,
     );
-
     setInterestDiffDays(idiff_days);
+    
+    
+    
     const pdiff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 28),
+      new Date(newYear, monthIndex, 29),
       currentDate,
     );
 
     setPenaltyDiffDays(pdiff_days);
 
     if (rr_number == null || rr_number == undefined || rr_number == "") {
-      setLateFees(Math.min(100 * idiff_days, 10000));
+      setLateFees(Math.min(100 * pdiff_days, 10000));
+      // setLateFees(100 * idiff_days);
     }
   };
 
@@ -264,9 +353,13 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       ...(isNegative(getValue()) && {
         pending_payment: getValue().toFixed(),
       }),
-      interestamount: getInterest().toFixed(0),
+      interestamount: return01?.dvat04?.compositionScheme
+        ? getR6_2acomp().toFixed(0)
+        : getInterest().toFixed(0),
       totaltaxamount: getTotalTaxAmount().toFixed(0),
-      vatamount: getVatAmount().toFixed(0),
+      vatamount: return01?.dvat04?.compositionScheme
+        ? getVatAmountcomp().toFixed(0)
+        : getVatAmount().toFixed(0),
     });
 
     if (!response.status) return toast.error(response.message);
@@ -287,14 +380,18 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
       const response = await AddPaymentOnline({
         id: return01.id ?? 0,
-        rr_number: get_rr_number(),
+        // rr_number: get_rr_number(),
         penalty: lateFees.toString(),
         ...(isNegative(getValue()) && {
           pending_payment: getValue().toFixed(),
         }),
-        interestamount: getInterest().toFixed(0),
+        interestamount: return01?.dvat04?.compositionScheme
+          ? getR6_2acomp().toFixed(0)
+          : getInterest().toFixed(0),
         totaltaxamount: getTotalTaxAmount().toFixed(0),
-        vatamount: getVatAmount().toFixed(0),
+        vatamount: return01?.dvat04?.compositionScheme
+          ? getVatAmountcomp().toFixed(0)
+          : getVatAmount().toFixed(0),
       });
 
       if (!response.status) {
@@ -633,6 +730,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   };
 
   const getVatAmount = (): number => {
+   
     return (
       parseFloat(getInvoicePercentage("0").decrease) +
       parseFloat(getInvoicePercentage("1").decrease) +
@@ -659,59 +757,14 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     );
   };
 
-  // const getValue = () => {
-  //   return (
-  //     parseFloat(getInvoicePercentage("0").decrease) +
-  //     parseFloat(getInvoicePercentage("1").decrease) +
-  //     parseFloat(getInvoicePercentage("4").decrease) +
-  //     parseFloat(getInvoicePercentage("5").decrease) +
-  //     parseFloat(getInvoicePercentage("6").decrease) +
-  //     parseFloat(getInvoicePercentage("12.5").decrease) +
-  //     parseFloat(getInvoicePercentage("12.75").decrease) +
-  //     parseFloat(getInvoicePercentage("13.5").decrease) +
-  //     parseFloat(getInvoicePercentage("15").decrease) +
-  //     parseFloat(getInvoicePercentage("20").decrease) +
-  //     parseFloat(getSaleOfPercentage("4").decrease) +
-  //     parseFloat(getSaleOfPercentage("5").decrease) +
-  //     parseFloat(getSaleOfPercentage("12.5").decrease) +
-  //     parseFloat(get4_6().decrease) +
-  //     parseFloat(get4_7().decrease) -
-  //     parseFloat(get4_9().decrease) -
-  //     (parseFloat(get5_1().decrease) +
-  //       parseFloat(get5_2().decrease) +
-  //       (parseFloat(getCreditNote().decrease) -
-  //         parseFloat(getDebitNote().decrease) -
-  //         parseFloat(getGoodsReturnsNote().decrease))) +
-  //     (((parseFloat(getInvoicePercentage("0").decrease) +
-  //       parseFloat(getInvoicePercentage("1").decrease) +
-  //       parseFloat(getInvoicePercentage("4").decrease) +
-  //       parseFloat(getInvoicePercentage("5").decrease) +
-  //       parseFloat(getInvoicePercentage("6").decrease) +
-  //       parseFloat(getInvoicePercentage("12.5").decrease) +
-  //       parseFloat(getInvoicePercentage("12.75").decrease) +
-  //       parseFloat(getInvoicePercentage("13.5").decrease) +
-  //       parseFloat(getInvoicePercentage("15").decrease) +
-  //       parseFloat(getInvoicePercentage("20").decrease) +
-  //       parseFloat(getSaleOfPercentage("4").decrease) +
-  //       parseFloat(getSaleOfPercentage("5").decrease) +
-  //       parseFloat(getSaleOfPercentage("12.5").decrease) +
-  //       parseFloat(get4_6().decrease) +
-  //       parseFloat(get4_7().decrease) -
-  //       parseFloat(get4_9().decrease) -
-  //       (parseFloat(get5_1().decrease) +
-  //         parseFloat(get5_2().decrease) +
-  //         (parseFloat(getCreditNote().decrease) -
-  //           parseFloat(getDebitNote().decrease) -
-  //           parseFloat(getGoodsReturnsNote().decrease) -
-  //           parseFloat(lastmonthdue)))) *
-  //       0.15) /
-  //       365) *
-  //       PenaltyDiffDays +
-  //     lateFees +
-  //     0 -
-  //     0
-  //   );
-  // };
+  const getVatAmountcomp = (): number => {
+    return parseFloat(getInvoicePercentage("1").decrease);
+  };
+
+  const getR6_2acomp = (): number =>
+    ((parseFloat(getInvoicePercentage("1").decrease) * 0.15) / 365) *
+    InterestDiffDays;
+
   const getR6_1 = (): number =>
     parseFloat(getInvoicePercentage("0").decrease) +
     parseFloat(getInvoicePercentage("1").decrease) +
@@ -769,72 +822,18 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   const getValue = () => (isNegative(getR7()) ? getR7() : 0);
 
   const getTotalTaxAmount = (): number => {
+    const isComp = return01?.dvat04?.compositionScheme;
+    const vatAmount = isComp ? getVatAmountcomp() : getVatAmount();
+    const interest = isComp ? getR6_2acomp() : getInterest();
+
     return (
-      (isNegative(getVatAmount()) ? 0 : getVatAmount()) +
+      (isNegative(vatAmount) ? 0 : vatAmount) +
       lateFees +
-      (isNegative(
-        (((parseFloat(getInvoicePercentage("0").decrease) +
-          parseFloat(getInvoicePercentage("1").decrease) +
-          parseFloat(getInvoicePercentage("4").decrease) +
-          parseFloat(getInvoicePercentage("5").decrease) +
-          parseFloat(getInvoicePercentage("6").decrease) +
-          parseFloat(getInvoicePercentage("12.5").decrease) +
-          parseFloat(getInvoicePercentage("12.75").decrease) +
-          parseFloat(getInvoicePercentage("13.5").decrease) +
-          parseFloat(getInvoicePercentage("15").decrease) +
-          parseFloat(getInvoicePercentage("20").decrease) +
-          parseFloat(getSaleOfPercentage("4").decrease) +
-          parseFloat(getSaleOfPercentage("5").decrease) +
-          parseFloat(getSaleOfPercentage("12.5").decrease) +
-          parseFloat(get4_6().decrease) +
-          parseFloat(get4_7().decrease) -
-          parseFloat(get4_9().decrease) -
-          (parseFloat(get5_1().decrease) +
-            parseFloat(get5_2().decrease) +
-            (parseFloat(getCreditNote().decrease) -
-              parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease) -
-              parseFloat(lastmonthdue)))) *
-          0.15) /
-          365) *
-          InterestDiffDays,
-      )
-        ? 0
-        : (((parseFloat(getInvoicePercentage("0").decrease) +
-            parseFloat(getInvoicePercentage("1").decrease) +
-            parseFloat(getInvoicePercentage("4").decrease) +
-            parseFloat(getInvoicePercentage("5").decrease) +
-            parseFloat(getInvoicePercentage("6").decrease) +
-            parseFloat(getInvoicePercentage("12.5").decrease) +
-            parseFloat(getInvoicePercentage("12.75").decrease) +
-            parseFloat(getInvoicePercentage("13.5").decrease) +
-            parseFloat(getInvoicePercentage("15").decrease) +
-            parseFloat(getInvoicePercentage("20").decrease) +
-            parseFloat(getSaleOfPercentage("4").decrease) +
-            parseFloat(getSaleOfPercentage("5").decrease) +
-            parseFloat(getSaleOfPercentage("12.5").decrease) +
-            parseFloat(get4_6().decrease) +
-            parseFloat(get4_7().decrease) -
-            parseFloat(get4_9().decrease) -
-            (parseFloat(get5_1().decrease) +
-              parseFloat(get5_2().decrease) +
-              (parseFloat(getCreditNote().decrease) -
-                parseFloat(getDebitNote().decrease) -
-                parseFloat(getGoodsReturnsNote().decrease) -
-                parseFloat(lastmonthdue)))) *
-            0.15) /
-            365) *
-          InterestDiffDays)
+      (isNegative(interest) ? 0 : interest)
     );
   };
 
-  const isPayment = (): boolean => {
-    let res: boolean =
-      return01!.rr_number == null ||
-      return01!.rr_number == undefined ||
-      return01!.rr_number == "";
-    return res == false;
-  };
+
 
   // challan section start from here
   const options: CheckboxGroupProps<string>["options"] = [
@@ -904,13 +903,19 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
               <TableRow>
                 <TableCell className="text-left p-2 border">VAT</TableCell>
                 <TableCell className="text-center p-2 border ">
-                  {getVatAmount().toFixed(0)}
+                  {return01?.dvat04?.compositionScheme
+                    ? getVatAmountcomp().toFixed(0)
+                    : getVatAmount().toFixed(0)}
+                  {/* {getVatAmount().toFixed(0)}- {getVatAmountcomp().toFixed(0)}-{" "}
+                  {return01?.dvat04?.compositionScheme?"1":"0"} */}
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="text-left p-2 border">Interest</TableCell>
                 <TableCell className="text-center p-2 border">
-                  {getInterest().toFixed(0)}
+                  {return01?.dvat04.compositionScheme
+                    ? getR6_2acomp().toFixed(0)
+                    : getInterest().toFixed(0)}
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -1052,9 +1057,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                           disabled={isOnlineProcessing}
                           onClick={onOnlinePayment}
                         >
-                          {isOnlineProcessing
-                            ? "Redirecting..."
-                            : "Pay Online"}
+                          {isOnlineProcessing ? "Redirecting..." : "Pay Online"}
                         </Button>
                       </div>
                     </div>
@@ -1072,94 +1075,94 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
                       <div className="mt-3">
                         <p>Bank Name</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                          errors.bank_name
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Bank Name"
-                        {...register("bank_name")}
-                        type="text"
-                      />
-                      {errors.bank_name && (
-                        <p className="text-xs text-red-500">
-                          {errors.bank_name.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-2">
-                      <p>Transaction Id</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500 ${
-                          errors.transaction_id
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Transaction id"
-                        {...register("transaction_id")}
-                      />
-                      {errors.transaction_id && (
-                        <p className="text-xs text-red-500">
-                          {errors.transaction_id.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-2">
-                      <p>Track Id</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                          errors.track_id
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Track Id"
-                        {...register("track_id")}
-                      />
-                      {errors.track_id && (
-                        <p className="text-xs text-red-500">
-                          {errors.track_id.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex gap-2 mt-3">
-                      <div className="grow"></div>
+                        <input
+                          className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
+                            errors.bank_name
+                              ? "border-red-500"
+                              : "hover:border-blue-500"
+                          }`}
+                          placeholder="Bank Name"
+                          {...register("bank_name")}
+                          type="text"
+                        />
+                        {errors.bank_name && (
+                          <p className="text-xs text-red-500">
+                            {errors.bank_name.message?.toString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-2">
+                        <p>Transaction Id</p>
+                        <input
+                          className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500 ${
+                            errors.transaction_id
+                              ? "border-red-500"
+                              : "hover:border-blue-500"
+                          }`}
+                          placeholder="Transaction id"
+                          {...register("transaction_id")}
+                        />
+                        {errors.transaction_id && (
+                          <p className="text-xs text-red-500">
+                            {errors.transaction_id.message?.toString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-2">
+                        <p>Track Id</p>
+                        <input
+                          className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
+                            errors.track_id
+                              ? "border-red-500"
+                              : "hover:border-blue-500"
+                          }`}
+                          placeholder="Track Id"
+                          {...register("track_id")}
+                        />
+                        {errors.track_id && (
+                          <p className="text-xs text-red-500">
+                            {errors.track_id.message?.toString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <div className="grow"></div>
 
-                      <Button
-                        disabled={isSubmitting}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          reset({
-                            bank_name: "",
-                            transaction_id: "",
-                            track_id: "",
-                          });
-                        }}
-                      >
-                        Reset
-                      </Button>
+                        <Button
+                          disabled={isSubmitting}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            reset({
+                              bank_name: "",
+                              transaction_id: "",
+                              track_id: "",
+                            });
+                          }}
+                        >
+                          Reset
+                        </Button>
 
-                      <Button
-                        disabled={isSubmitting}
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          await generatePDF(
-                            `/dashboard/returns/returns-dashboard/preview/${props.returnid.toString()}/download-challan?sidebar=no`,
-                          );
-                        }}
-                      >
-                        Download Challan
-                      </Button>
+                        <Button
+                          disabled={isSubmitting}
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            await generatePDF(
+                              `/dashboard/returns/returns-dashboard/preview/${props.returnid.toString()}/download-challan?sidebar=no`,
+                            );
+                          }}
+                        >
+                          Download Challan
+                        </Button>
 
-                      <input
-                        type="submit"
-                        disabled={isSubmitting}
-                        value={isSubmitting ? "Processing..." : "Pay Challan"}
-                        className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
-                      />
-                    </div>
-                  </form>
-                )}
+                        <input
+                          type="submit"
+                          disabled={isSubmitting}
+                          value={isSubmitting ? "Processing..." : "Pay Challan"}
+                          className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
+                        />
+                      </div>
+                    </form>
+                  )}
                 </div>
               </>
             )}

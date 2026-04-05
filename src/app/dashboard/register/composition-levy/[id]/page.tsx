@@ -2,10 +2,17 @@
 
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetComposition from "@/action/composition/getcompositon";
+import GetDvat04FromId from "@/action/dvat/getdvatfromid";
 import GetUser from "@/action/user/getuser";
 import { CompositionDeptProvider } from "@/components/forms/composition/createdeptcomposition";
 import { formateDate } from "@/utils/methods";
-import { composition, CompositionStatus, Role, user } from "@prisma/client";
+import {
+  composition,
+  CompositionStatus,
+  dvat04,
+  Role,
+  user,
+} from "@prisma/client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -20,6 +27,7 @@ const RefundsData = () => {
   const [compostion, setComposition] = useState<composition | null>(null);
   const [user, setUser] = useState<user | null>(null);
   const [curretnuser, setCurrentUser] = useState<user | null>(null);
+  const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -36,6 +44,12 @@ const RefundsData = () => {
       if (composition_response.status && composition_response.data) {
         setComposition(composition_response.data);
         setUser(composition_response.data.createdBy);
+        const dvat_response = await GetDvat04FromId({
+          id: composition_response.data.dvatid,
+        });
+        if (dvat_response.status && dvat_response.data) {
+          setDvatData(dvat_response.data);
+        }
       }
 
       const current_user_respnse = await GetUser({
@@ -47,6 +61,17 @@ const RefundsData = () => {
     };
     init();
   }, [compositionid, userid]);
+
+  const formatCurrency = (value: string | number | null | undefined) => {
+    const parsedValue =
+      typeof value === "number" ? value : Number.parseFloat(value || "0");
+
+    const safeValue = Number.isFinite(parsedValue) ? parsedValue : 0;
+
+    return new Intl.NumberFormat("en-IN", {
+      maximumFractionDigits: 0,
+    }).format(safeValue);
+  };
   return (
     <>
       <main className="min-h-screen bg-[#f6f7fb] w-full py-2 px-4">
@@ -54,7 +79,7 @@ const RefundsData = () => {
           <div className="flex gap-2">
             <p className="text-lg font-nunito">
               {compostion?.compositionScheme
-                ? "Application to Opt for Composition scheme"
+                ? "Application to Opt for Composition/Quarterly scheme"
                 : " Application for Withdrawal from Composition scheme"}
             </p>
             <div className="grow"></div>
@@ -68,21 +93,19 @@ const RefundsData = () => {
           <div className="p-1 bg-gray-50 grid grid-cols-3 gap-6 justify-between px-4 mt-1 border">
             <div>
               <p className="text-sm">Name</p>
-              <p className="text-sm  font-medium">
-                {user?.firstName} - {user?.lastName}
-              </p>
+              <p className="text-sm  font-medium">{dvatdata?.tradename}</p>
             </div>
             <div>
               <p className="text-sm">Email</p>
-              <p className="text-sm  font-medium">{user?.email}</p>
+              <p className="text-sm  font-medium">{dvatdata?.email}</p>
             </div>
             <div>
               <p className="text-sm">Mobile</p>
-              <p className="text-sm  font-medium">{user?.mobileOne}</p>
+              <p className="text-sm  font-medium">{dvatdata?.contact_one}</p>
             </div>
             <div className="col-span-3">
               <p className="text-sm">Address</p>
-              <p className="text-sm  font-medium">{user?.address}</p>
+              <p className="text-sm  font-medium">{dvatdata?.address}</p>
             </div>
           </div>
 
@@ -90,17 +113,21 @@ const RefundsData = () => {
             Details Of Composition
           </div>
 
-          <div className="p-1 bg-gray-50 grid grid-cols-3 gap-4 justify-between px-4 border mt-1">
+          <div className="p-1 bg-gray-50 grid grid-cols-4 gap-4 justify-between px-4 border mt-1">
             <div>
               <p className="text-sm">Turnover Last Financial Year</p>
               <p className="text-sm  font-medium">
-                {compostion?.turnoverLastFinancialYear}
+                {formatCurrency(compostion?.turnoverLastFinancialYear ?? 0)}
               </p>
+            </div>
+            <div>
+              <p className="text-sm">Tax Liability</p>
+              <p className="text-sm  font-medium">{formatCurrency(compostion?.taxLiability ?? 0)}</p>
             </div>
             <div>
               <p className="text-sm">Turnover Current Financial Year</p>
               <p className="text-sm  font-medium">
-                {compostion?.turnoverCurrentFinancialYear}
+                {formatCurrency(compostion?.turnoverCurrentFinancialYear ?? 0)}
               </p>
             </div>
             <div>
@@ -114,7 +141,7 @@ const RefundsData = () => {
             compostion?.remark == "" ? (
               <></>
             ) : (
-              <div className="col-span-3">
+              <div className="col-span-1">
                 <p className="text-sm">Remark</p>
                 <p className="text-sm  font-medium">{compostion?.remark!}</p>
               </div>
@@ -137,7 +164,7 @@ const RefundsData = () => {
             ) : (
               <CompositionDeptProvider
                 userid={userid}
-                composition={true}
+                // composition={true}
                 compositonid={compostion?.id ?? 0}
               />
             )

@@ -208,8 +208,15 @@ const TrackAppliation = () => {
   const [data, setData] = useState<TableData[]>([]);
   const [showdata, setShowData] = useState<TableData[]>([]);
 
+  const statusSortPriority = (status: string) => {
+    if (status === "PENDING" || status === "PENDINGPROCESSING") return 0;
+    if (status === "COMPLETED" || status === "APPROVED") return 2;
+    return 1;
+  };
+
   const init = async () => {
     const data: TableData[] = [];
+    setSearch(false);
 
     const userresponse = await GetUser({
       id: userid,
@@ -254,8 +261,9 @@ const TrackAppliation = () => {
       });
     }
 
-    setData(data);
+    data.sort((a, b) => statusSortPriority(a.status) - statusSortPriority(b.status));
 
+    setData(data);
     setShowData(data.slice(0, pagination.take));
     setPaginatin({
       skip: 0,
@@ -324,6 +332,15 @@ const TrackAppliation = () => {
           });
         });
       }
+
+      data.sort((a, b) => {
+        const getPriority = (status: string) => {
+          if (status === "PENDING" || status === "PENDINGPROCESSING") return 0;
+          if (status === "COMPLETED" || status === "APPROVED") return 2;
+          return 1;
+        };
+        return getPriority(a.status) - getPriority(b.status);
+      });
 
       setData(data);
       setShowData(data.slice(0, pagination.take));
@@ -576,7 +593,17 @@ const TrackAppliation = () => {
                           {val.submissionDate}
                         </TableCell>
                         <TableCell className="text-center border">
-                          {val.status}
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              val.status === "PENDING" || val.status === "PENDINGPROCESSING"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : val.status === "COMPLETED" || val.status === "APPROVED"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {val.status}
+                          </span>
                         </TableCell>
                         <TableCell className="text-center border">
                           {val.assignedTo}
