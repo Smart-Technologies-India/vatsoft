@@ -1,10 +1,11 @@
 import next from "next";
 import express from "express";
-
+import cron from "node-cron";
 import { postReq } from "./payment/ccavrequest.js";
-import { postRes } from "./payment/ccavresponse.js";
+import { postRes, sendReturnFiledSms } from "./payment/ccavresponse.js";
 import { orderstatus } from "./payment/orderstatus.js";
 import { payamount } from "./payment/payamount.js";
+import { notification } from "./payment/notification.js";
 
 const port = parseInt(process.env.PORT || "3001", 10);
 const dev = process.env.NODE_ENV !== "production";
@@ -33,7 +34,10 @@ app.prepare().then(() => {
   server.post("/ccavResponseHandler", function (request, response) {
     postRes(request, response);
   });
- 
+
+  server.post("/sendReturnFiledSms", async function (request, response) {
+    await sendReturnFiledSms(request, response);
+  });
 
   server.all("/{*splat}", (req, res) => {
     return handle(req, res);
@@ -45,6 +49,27 @@ app.prepare().then(() => {
       throw err;
     }
     console.log(`------------> Ready on http://localhost:${port}`);
+
+    // Start cron job after server is listening
+    cron.schedule("* * * * * *", async () => {
+      console.log("Executing cron job...");
+      try {
+        const result = await notification();
+        console.log("Cron job executed successfully:", result);
+        // const response = await axios.post(
+        //   `http://localhost:${port}/api/notification`,
+        //   {},
+        //   {
+        //     headers: {
+        //       "Content-Type": "application/json",
+        //     },
+        //   },
+        // );
+        // console.log("Cron job executed successfully:", response.data);
+      } catch (error) {
+        console.error("Error executing cron job:", error);
+      }
+    });
   });
 
   // createServer((req, res) => {

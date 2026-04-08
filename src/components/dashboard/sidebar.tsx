@@ -29,6 +29,7 @@ interface SidebarProps {
   isOpen: boolean;
   setIsOpen: (arg: boolean) => void;
   role: Role;
+  onCollapse?: (collapsed: boolean) => void;
 }
 
 const Sidebar = (props: SidebarProps) => {
@@ -36,10 +37,14 @@ const Sidebar = (props: SidebarProps) => {
   const router = useRouter();
 
   const [userid, setUserid] = useState<number>(0);
-  // const id: number = parseInt(getCookie("id") ?? "0");
-  // const dvatid: number = parseInt(getCookie("dvat") ?? "0");
-  // const [user, setUser] = useState<user>();
   const [isProfileCompletd, setIsProfileCompleted] = useState<boolean>(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+
+  const toggleCollapse = () => {
+    const next = !isCollapsed;
+    setIsCollapsed(next);
+    props.onCollapse?.(next);
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -67,27 +72,22 @@ const Sidebar = (props: SidebarProps) => {
 
   return (
     <div
-      className={`hidden-print fixed top-6 left-0 z-20 w-64 h-[calc(100vh-1.5rem)] flex flex-col bg-white border-r border-gray-200 md:translate-x-0 ${
-        props.isOpen ? "translate-x-0" : "-translate-x-64"
-      } transition-transform duration-300 ease-in-out`}
+      className={`hidden-print fixed top-6 left-0 z-20 h-[calc(100vh-1.5rem)] flex flex-col bg-white border-r border-gray-200 md:translate-x-0 transition-all duration-300 ease-in-out ${
+        isCollapsed ? "w-16" : "w-64"
+      } ${props.isOpen ? "translate-x-0" : "-translate-x-64 md:translate-x-0"}`}
     >
       {/* Header */}
-      <div className="px-6 py-2 border-b border-gray-200">
+      <div className={`py-2 border-b border-gray-200 ${isCollapsed ? "px-3" : "px-6"}`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 relative bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-            {/* <Image
-              fill
-              src="/favicon.png"
-              alt="Logo"
-              className="object-contain"
-            /> */}
-
+          <div className="w-10 h-10 shrink-0 relative bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
             <span className="text-white font-bold text-lg">V</span>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">VATSMART</h1>
-            <p className="text-xs text-gray-500">VAT Management Portal</p>
-          </div>
+          {!isCollapsed && (
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">VATSMART</h1>
+              <p className="text-xs text-gray-500">VAT Management Portal</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -109,6 +109,7 @@ const Sidebar = (props: SidebarProps) => {
             name="Dashboard"
             path={path}
             pathcheck={"/dashboard"}
+            collapsed={isCollapsed}
           />
         )}
 
@@ -118,6 +119,7 @@ const Sidebar = (props: SidebarProps) => {
           name="Registration"
           path={path}
           pathcheck={"/dashboard/register"}
+          collapsed={isCollapsed}
         />
 
         {!["USER"].includes(props.role) && (
@@ -128,6 +130,7 @@ const Sidebar = (props: SidebarProps) => {
               name="Returns"
               path={path}
               pathcheck={"/dashboard/returns"}
+              collapsed={isCollapsed}
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -135,6 +138,7 @@ const Sidebar = (props: SidebarProps) => {
               name="Payments"
               path={path}
               pathcheck={"/dashboard/payments"}
+              collapsed={isCollapsed}
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -142,6 +146,7 @@ const Sidebar = (props: SidebarProps) => {
               name="Notice And Order"
               path={path}
               pathcheck={"/dashboard/user_service"}
+              collapsed={isCollapsed}
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -149,6 +154,7 @@ const Sidebar = (props: SidebarProps) => {
               name="Dealer Compliance"
               path={path}
               pathcheck={"/dashboard/dealer_compliance"}
+              collapsed={isCollapsed}
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -156,6 +162,7 @@ const Sidebar = (props: SidebarProps) => {
               name="Commodity"
               path={path}
               pathcheck={"/dashboard/commodity_master"}
+              collapsed={isCollapsed}
             />
           </>
         )}
@@ -168,6 +175,7 @@ const Sidebar = (props: SidebarProps) => {
               name="Returns"
               path={path}
               pathcheck={"/dashboard/returns"}
+              collapsed={isCollapsed}
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -175,6 +183,7 @@ const Sidebar = (props: SidebarProps) => {
               name="Payments"
               path={path}
               pathcheck={"/dashboard/payments"}
+              collapsed={isCollapsed}
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -182,6 +191,7 @@ const Sidebar = (props: SidebarProps) => {
               name="User Services"
               path={path}
               pathcheck={"/dashboard/user_service"}
+              collapsed={isCollapsed}
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -189,6 +199,7 @@ const Sidebar = (props: SidebarProps) => {
               name="Notifications"
               path={path}
               pathcheck={"/dashboard/notifications"}
+              collapsed={isCollapsed}
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -196,6 +207,7 @@ const Sidebar = (props: SidebarProps) => {
               name="Daily Sale"
               path={path}
               pathcheck={"/dashboard/stock/view_sale"}
+              collapsed={isCollapsed}
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -203,14 +215,8 @@ const Sidebar = (props: SidebarProps) => {
               name="Stock"
               path={path}
               pathcheck={"/dashboard/stock"}
+              collapsed={isCollapsed}
             />
-            {/* <MenuTab
-              click={() => props.setIsOpen(false)}
-              icon={<FluentBuildingBank48Regular className="w-5 h-5" />}
-              name="Refinery Purchase"
-              path={path}
-              pathcheck={"/dashboard/refinery_purchase"}
-            /> */}
           </>
         )}
 
@@ -230,6 +236,7 @@ const Sidebar = (props: SidebarProps) => {
               name="Registration Status"
               path={path}
               pathcheck={"/dashboard/registration_status"}
+              collapsed={isCollapsed}
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -237,14 +244,8 @@ const Sidebar = (props: SidebarProps) => {
               name="Reports"
               path={path}
               pathcheck={"/dashboard/reports"}
+              collapsed={isCollapsed}
             />
-            {/* <MenuTab
-              click={() => props.setIsOpen(false)}
-              icon={<FluentAlignBottom24Regular className="w-5 h-5" />}
-              name="Refinery Sales"
-              path={path}
-              pathcheck={"/dashboard/refinery_sales"}
-            /> */}
           </>
         )}
 
@@ -256,6 +257,7 @@ const Sidebar = (props: SidebarProps) => {
               name="First Stock"
               path={path}
               pathcheck={"/dashboard/test/first_stock"}
+              collapsed={isCollapsed}
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -263,6 +265,7 @@ const Sidebar = (props: SidebarProps) => {
               name="Add Sell"
               path={path}
               pathcheck={"/dashboard/test/add_sale"}
+              collapsed={isCollapsed}
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -270,6 +273,7 @@ const Sidebar = (props: SidebarProps) => {
               name="Add Purchase"
               path={path}
               pathcheck={"/dashboard/test/add_purchase"}
+              collapsed={isCollapsed}
             />
           </>
         )}
@@ -277,6 +281,18 @@ const Sidebar = (props: SidebarProps) => {
 
       {/* Footer */}
       <div className="border-t border-gray-200 p-3 space-y-1">
+        {/* Collapse toggle button — desktop only */}
+        <button
+          className="hidden md:flex w-full items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
+          onClick={toggleCollapse}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <MaterialSymbolsCloseSmall
+            className={`w-5 h-5 transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
+          />
+          {!isCollapsed && <span>Collapse</span>}
+        </button>
+
         <button
           className="md:hidden w-full flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
           onClick={() => props.setIsOpen(false)}
@@ -293,7 +309,7 @@ const Sidebar = (props: SidebarProps) => {
           className="w-full flex items-center justify-start gap-3 px-3 py-2.5 bg-transparent hover:bg-red-50 text-red-600 hover:text-red-700 rounded-lg transition-colors text-sm font-medium"
         >
           <SolarLogout2Bold className="w-5 h-5" />
-          <span>Logout</span>
+          {!isCollapsed && <span>Logout</span>}
         </Button>
       </div>
     </div>
@@ -308,6 +324,7 @@ interface MenuTabProps {
   path: string;
   pathcheck: string;
   icon: React.ReactNode;
+  collapsed?: boolean;
 }
 
 const MenuTab = (props: MenuTabProps) => {
@@ -317,7 +334,8 @@ const MenuTab = (props: MenuTabProps) => {
     <Link
       onClick={props.click}
       href={props.pathcheck}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+      title={props.collapsed ? props.name : undefined}
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${props.collapsed ? "justify-center" : ""} ${
         isActive
           ? "bg-blue-50 text-blue-700 font-medium shadow-sm"
           : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
@@ -326,8 +344,8 @@ const MenuTab = (props: MenuTabProps) => {
       <span className={isActive ? "text-blue-600" : "text-gray-500"}>
         {props.icon}
       </span>
-      <span className="text-sm">{props.name}</span>
-      {isActive && (
+      {!props.collapsed && <span className="text-sm">{props.name}</span>}
+      {isActive && !props.collapsed && (
         <div className="ml-auto w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
       )}
     </Link>

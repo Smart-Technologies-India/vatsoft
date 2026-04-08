@@ -126,7 +126,7 @@ const AddPaymentOnline = async (
         throw new Error("Something went wrong! Unable to update");
       }
 
-      const recordsToUpdate = await prisma.return_filing.findMany({
+       await prisma.return_filing.findMany({
         where: {
           filing_status: false,
           dvatid: updateresponse.dvat04Id,
@@ -136,21 +136,21 @@ const AddPaymentOnline = async (
         },
       });
 
-      await Promise.all(
-        recordsToUpdate.map((record) =>
-          prisma.return_filing.update({
-            where: { id: record.id },
-            data: {
-              filing_date: filingDate,
-              filing_status: true,
-              return_status:
-                record.due_date && record.due_date >= filingDate
-                  ? "FILED"
-                  : "LATEFILED",
-            },
-          }),
-        ),
-      );
+      // await Promise.all(
+      //   recordsToUpdate.map((record) =>
+      //     prisma.return_filing.update({
+      //       where: { id: record.id },
+      //       data: {
+      //         filing_date: filingDate,
+      //         filing_status: true,
+      //         return_status:
+      //           record.due_date && record.due_date >= filingDate
+      //             ? "FILED"
+      //             : "LATEFILED",
+      //       },
+      //     }),
+      //   ),
+      // );
 
       if (
         ["March", "June", "September", "December"].includes(isExist.month ?? "")

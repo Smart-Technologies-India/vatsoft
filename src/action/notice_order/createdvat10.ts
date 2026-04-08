@@ -79,6 +79,26 @@ const CreateDvat10 = async (
       order_notice.remark
     }</table><hr><p>(See Rule 36 of the Dadra and Nagar Haveli and Daman and Diu Value Added Tax Rules, 2021)<p>Notice to return defaulter u/s 32 for not filing return. Type of Return: DVAT-16</main>`;
 
+    try {
+      const contactDigits = (order_notice.dvat.contact_one ?? "").replace(/\D/g, "");
+      const mobile =
+        contactDigits.length > 10 ? contactDigits.slice(-10) : contactDigits;
+
+      if (mobile.length === 10) {
+        const dealerName =
+          order_notice.dvat.tradename || order_notice.dvat.name || "Dealer";
+        const noticePeriod = `${dayjs(payload.tax_period_from).format("DD/MM/YYYY")} to ${dayjs(payload.tax_period_to).format("DD/MM/YYYY")}`;
+        const smsMessage = encodeURIComponent(
+          `Dear ${dealerName}, Notice has been issued against your VAT account for ${noticePeriod}. Kindly check the VAT portal for details. -VAT DDD.`,
+        );
+        await fetch(
+          `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${mobile}&message=${smsMessage}&senderid=VATDNH&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`,
+        );
+      }
+    } catch (smsError) {
+      console.log("SMS send failed:", smsError);
+    }
+
     return createResponse({
       message: "DVAT10 create successfully",
       functionname: functionname,

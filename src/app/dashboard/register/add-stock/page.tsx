@@ -54,7 +54,7 @@ const AddStock = () => {
               item: item.commodity_master,
               quantity: item.quantity,
             };
-          })
+          }),
         );
       }
       setLoading(false);
@@ -91,7 +91,6 @@ const AddStock = () => {
 
   const [open, setOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
-
 
   const submit = async () => {
     setOpen(false);
@@ -155,21 +154,24 @@ const AddStock = () => {
             <p className="text-lg font-semibold items-center">Stock</p>
             <p></p>
             <div className="grow"></div>
-            <div className="flex gap-2 items-center">
-              <Radio.Group
-                size="small"
-                onChange={onChange}
-                value={quantityCount}
-                optionType="button"
-              >
-                <Radio.Button className="w-20 text-center" value="pcs">
-                  {dvatdata?.commodity == "FUEL" ? "Litre" : "Pcs"}
-                </Radio.Button>
-                <Radio.Button className="w-20 text-center" value="crate">
-                  Crate
-                </Radio.Button>
-              </Radio.Group>
-            </div>
+
+            {dvatdata?.commodity !== "FUEL" && (
+              <div className="flex gap-2 items-center">
+                <Radio.Group
+                  size="small"
+                  onChange={onChange}
+                  value={quantityCount}
+                  optionType="button"
+                >
+                  <Radio.Button className="w-20 text-center" value="pcs">
+                    {"Pcs"}
+                  </Radio.Button>
+                  <Radio.Button className="w-20 text-center" value="crate">
+                    Crate
+                  </Radio.Button>
+                </Radio.Group>
+              </div>
+            )}
 
             {dvatdata?.status == "PENDINGPROCESSING" &&
             stock.filter((val) => val.item.id == 1154).length <= 0 ? (
@@ -255,8 +257,8 @@ const AddStock = () => {
                           onClick={async () => {
                             setStock(
                               stock.filter(
-                                (item) => item.item.id != val.item.id
-                              )
+                                (item) => item.item.id != val.item.id,
+                              ),
                             );
                             if (val.id != null) {
                               await DeleteSaveStock({

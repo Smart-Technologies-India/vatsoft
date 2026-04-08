@@ -2,6 +2,8 @@ import "dotenv/config";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@prisma/client";
 
+const PRISMA_HOOK_KEY = "__prismaShutdownHookRegistered";
+
 const prismaClientSingleton = () => {
   const adapter = new PrismaMariaDb({
     host: process.env.DATABASE_HOST,
@@ -27,4 +29,31 @@ export default prisma;
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.prisma = prisma;
+}
+
+if (!globalThis[PRISMA_HOOK_KEY]) {
+  globalThis[PRISMA_HOOK_KEY] = true;
+
+  const closePrisma = async () => {
+    try {
+      await prisma.$disconnect();
+      console.log("Prisma disconnected cleanly");
+    } catch (error) {
+      console.error("Error while disconnecting Prisma:", error);
+    }
+  };
+
+  process.once("SIGINT", async () => {
+    await closePrisma();
+    process.exit(0);
+  });
+
+  process.once("SIGTERM", async () => {
+    await closePrisma();
+    process.exit(0);
+  });
+
+  process.once("beforeExit", async () => {
+    await closePrisma();
+  });
 }

@@ -43,7 +43,7 @@ const SendOtp = async (
     // );
 
     const response = await axios.get(
-      `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=8b85ee3e9fXX&mobile=+91${"9586908178"}&message=Your OTP for login is ${otp}. Do not share this code with anyone. -VAT DDD.&senderid=VATDNH&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`
+      `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${"9586908178"}&message=Your OTP for login is ${otp}. Do not share this code with anyone. -VAT DDD.&senderid=VATDNH&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`
     );
 
     // const response = await axios.get(

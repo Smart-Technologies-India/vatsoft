@@ -1,6 +1,7 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
+import dayjs from "dayjs";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { Dvat24Reason, order_notice } from "@prisma/client";
 import prisma from "../../../prisma/database";
@@ -88,6 +89,31 @@ const CreateDvat24A = async (
         message: "Unable to create DVAT24.",
         functionname: functionname,
       });
+    }
+
+    try {
+      const dvatRecord = await prisma.dvat04.findFirst({
+        where: { id: payload.dvatid, deletedAt: null },
+        select: { contact_one: true, name: true, tradename: true },
+      });
+
+      const contactDigits = (dvatRecord?.contact_one ?? "").replace(/\D/g, "");
+      const mobile =
+        contactDigits.length > 10 ? contactDigits.slice(-10) : contactDigits;
+
+      if (mobile.length === 10) {
+        const dealerName =
+          dvatRecord?.tradename || dvatRecord?.name || "Dealer";
+        const noticeDate = dayjs(payload.due_date).format("DD/MM/YYYY");
+        const smsMessage = encodeURIComponent(
+          `Dear ${dealerName}, Notice has been issued against your VAT account for ${noticeDate}. Kindly check the VAT portal for details. -VAT DDD.`,
+        );
+        await fetch(
+          `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${mobile}&message=${smsMessage}&senderid=VATDNH&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`,
+        );
+      }
+    } catch (smsError) {
+      console.log("SMS send failed:", smsError);
     }
 
     return createResponse({

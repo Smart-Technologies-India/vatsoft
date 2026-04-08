@@ -4,6 +4,80 @@ import { decrypt } from "./ccavutil.js";
 import qs from "querystring";
 import prisma from "../prisma/database.js";
 
+const sendReturnFiledSmsByIds = async ({ dvatId, returnId }) => {
+  const parsedDvatId = parseInt(dvatId?.toString() || "0", 10);
+  const parsedReturnId = parseInt(returnId?.toString() || "0", 10);
+
+  if (!parsedDvatId || !parsedReturnId) {
+    return { sent: false, message: "Invalid dvatId or returnId." };
+  }
+
+  const dvatRecord = await prisma.dvat04.findFirst({
+    where: {
+      id: parsedDvatId,
+      deletedAt: null,
+    },
+    select: {
+      name: true,
+      tradename: true,
+      contact_one: true,
+    },
+  });
+
+  const returnRecord = await prisma.returns_01.findFirst({
+    where: {
+      id: parsedReturnId,
+      dvat04Id: parsedDvatId,
+      deletedAt: null,
+    },
+    select: {
+      rr_number: true,
+      month: true,
+      year: true,
+      quarter: true,
+    },
+  });
+
+  if (!dvatRecord || !returnRecord) {
+    return { sent: false, message: "Return or dealer record not found." };
+  }
+
+  const contactDigits = (dvatRecord.contact_one ?? "").replace(/\D/g, "");
+  const mobile =
+    contactDigits.length > 10 ? contactDigits.slice(-10) : contactDigits;
+
+  if (mobile.length !== 10) {
+    return { sent: false, message: "Valid mobile not found for dealer." };
+  }
+
+  const dealerName = dvatRecord.tradename || "Dealer";
+  const returnPeriod = returnRecord.month
+    ? `${returnRecord.month} ${returnRecord.year}`
+    : `${returnRecord.quarter} ${returnRecord.year}`;
+  const ackNumber = returnRecord.rr_number || "NA";
+
+  const smsMessage = encodeURIComponent(
+    `Dear ${dealerName}, VAT return for ${returnPeriod} is successfully filed. Acknowledgment No: ${ackNumber}. Thank you! VAT DDD`,
+  );
+
+  await fetch(
+    `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${mobile}&message=${smsMessage}&senderid=VATDNH&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`,
+  );
+
+  return { sent: true, message: "SMS sent successfully." };
+};
+
+export const sendReturnFiledSms = async (request, response) => {
+  try {
+    const { dvatId, returnId } = request.body || {};
+    const smsResponse = await sendReturnFiledSmsByIds({ dvatId, returnId });
+    response.status(200).json(smsResponse);
+  } catch (error) {
+    console.log(error);
+    response.status(500).json({ sent: false, message: "Unable to send SMS." });
+  }
+};
+
 export const postRes = (request, response) => {
   var ccavEncResponse = "",
     ccavResponse = "",
@@ -79,6 +153,7 @@ export const postRes = (request, response) => {
       amount,
       showAmount = true,
       redirectId,
+      enableReturnSmsButton = false,
     }) => {
       const toneMap = {
         success: {
@@ -118,6 +193,7 @@ export const postRes = (request, response) => {
       );
       const encryptedRedirectId = encryptURLData(numericRedirectId.toString());
       const redirectUrl = `/dashboard/payments/saved-challan/${encryptedRedirectId}`;
+      const shouldAutoRedirect = !enableReturnSmsButton;
 
       return `<!DOCTYPE html>
 <html lang="en">
@@ -229,21 +305,57 @@ export const postRes = (request, response) => {
       </section>
 
       <section class="footer">
-        <p>Redirecting to challan page in <span id="countdown" class="countdown">10</span> seconds...</p>
+        ${shouldAutoRedirect ? `<p>Redirecting to challan page in <span id="countdown" class="countdown">10</span> seconds...</p>` : `<button id="returnAndSendSmsBtn" class="countdown" style="cursor:pointer;border:1px solid #d1d5db;">Return to Challan Page</button>`}
       </section>
     </main>
     <script>
       (function () {
-        var seconds = 10;
-        var el = document.getElementById("countdown");
-        var timer = setInterval(function () {
-          seconds -= 1;
-          if (el) el.textContent = String(seconds);
-          if (seconds <= 0) {
-            clearInterval(timer);
-            window.location.href = "${redirectUrl}";
+        var redirectUrl = "${redirectUrl}";
+        var shouldAutoRedirect = ${shouldAutoRedirect ? "true" : "false"};
+        var enableReturnSmsButton = ${enableReturnSmsButton ? "true" : "false"};
+        var dvatId = "${dvatid}";
+        var returnId = "${return_id}";
+
+        if (shouldAutoRedirect) {
+          var seconds = 10;
+          var el = document.getElementById("countdown");
+          var timer = setInterval(function () {
+            seconds -= 1;
+            if (el) el.textContent = String(seconds);
+            if (seconds <= 0) {
+              clearInterval(timer);
+              window.location.href = redirectUrl;
+            }
+          }, 1000);
+          return;
+        }
+
+        var btn = document.getElementById("returnAndSendSmsBtn");
+        if (!btn) return;
+
+        btn.addEventListener("click", async function () {
+          btn.setAttribute("disabled", "disabled");
+          btn.textContent = "Please wait...";
+
+          try {
+            if (enableReturnSmsButton) {
+              await fetch("/sendReturnFiledSms", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  dvatId: dvatId,
+                  returnId: returnId,
+                }),
+              });
+            }
+          } catch (e) {
+            console.log(e);
           }
-        }, 1000);
+
+          window.location.href = redirectUrl;
+        });
       })();
     </script>
   </body>
@@ -384,6 +496,7 @@ export const postRes = (request, response) => {
               status: "PAID",
             },
           });
+
         } catch (e) {
           console.log(e);
         }
@@ -623,6 +736,7 @@ export const postRes = (request, response) => {
         message: "Your payment has been received successfully.",
         amount: result.amount,
         redirectId: challanid ? parseInt(challanid) : 0,
+        enableReturnSmsButton: type == "RETURN",
       });
 
       response.writeHeader(200, { "Content-Type": "text/html" });

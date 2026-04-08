@@ -21,6 +21,7 @@ export default function DashboardLayout({
   const router = useRouter();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [userdata, setUser] = useState<user | null>(null);
   const [dvat, setDvat] = useState<dvat04 | null>(null);
   const [isLoading, setLoading] = useState<boolean>(true);
@@ -104,13 +105,14 @@ export default function DashboardLayout({
           isOpen={isOpen}
           setIsOpen={setIsOpen}
           role={userdata?.role as Role}
+          onCollapse={setSidebarCollapsed}
         />
       )}
 
       <div
         className={`relative p-0 ${
-          !isbluck ? "md:pl-64" : ""
-        }  min-h-screen flex flex-col`}
+          !isbluck ? (isSidebarCollapsed ? "md:pl-16" : "md:pl-64") : ""
+        }  min-h-screen flex flex-col transition-all duration-300 ease-in-out`}
       >
         {!isbluck && (
           <Navbar
