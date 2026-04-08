@@ -119,6 +119,7 @@ export default function DashboardLayout({
             role={userdata?.role as Role}
             isOpen={isOpen}
             setIsOpen={setIsOpen}
+            isSidebarCollapsed={isSidebarCollapsed}
             name={
               userdata?.role != Role.USER
                 ? (userdata?.firstName ?? "")

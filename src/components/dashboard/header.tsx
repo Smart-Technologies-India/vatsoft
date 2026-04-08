@@ -32,6 +32,7 @@ interface NavbarProps {
   name: string;
   role: string;
   isbluck: boolean;
+  isSidebarCollapsed?: boolean;
 }
 
 const Navbar = (props: NavbarProps) => {
@@ -103,8 +104,12 @@ const Navbar = (props: NavbarProps) => {
   return (
     <nav
       className={`h-16 px-3 w-full hidden-print ${
-        !props.isbluck ? "md:ml-64 md:w-[calc(100%-16rem)]" : ""
-      } bg-white border-b border-gray-200 flex items-center gap-2 fixed top-6 left-0 z-10`}
+        !props.isbluck
+          ? props.isSidebarCollapsed
+            ? "md:ml-16 md:w-[calc(100%-4rem)]"
+            : "md:ml-64 md:w-[calc(100%-16rem)]"
+          : ""
+      } bg-white border-b border-gray-200 flex items-center gap-2 fixed top-6 left-0 z-10 transition-all duration-300 ease-in-out`}
     >
       {/* Mobile Menu Toggle */}
       <button
