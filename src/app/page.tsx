@@ -16,6 +16,8 @@ import { addMonths, format } from "date-fns";
 import { FluentEye12Regular, FluentEyeOff16Regular } from "@/components/icons";
 import DvatPasswordLogin from "@/action/user/dvatpasswordlogin";
 import Image from "next/image";
+import TinSendOtp from "@/action/user/tinsendotp";
+import TinLoginOtp from "@/action/user/tinloginotp";
 import SendForgetPasswordOtp from "@/action/user/sendforgetpasswordotp";
 import VerifyForgetPasswordOtp from "@/action/user/verifyforgetpasswordotp";
 import ResetForgetPassword from "@/action/user/resetforgotpassword";
@@ -28,7 +30,7 @@ const navItems = [
     label: "Registration",
   },
   { href: "/verify", label: "Verify" },
-  { href: "/news", label: "Notifications" },
+  // { href: "/news", label: "Notifications" },
   { href: "/policy", label: "Disclaimer" },
 ];
 
@@ -433,7 +435,7 @@ export default function HomePage() {
                     { label: "Track Application Status", href: "/verify" },
                     { label: "Dealer Login", href: "/dashboard" },
                     { label: "Verify TIN", href: "/verify" },
-                    { label: "Download Forms", href: "/news" },
+                    // { label: "Download Forms", href: "/news" },
                   ].map((link) => (
                     <li key={link.label}>
                       <Link
@@ -616,6 +618,13 @@ const InlineLoginForm = () => {
   const router = useRouter();
   const [tin, setTin] = useState<string | undefined>(undefined);
   const [password, setPassword] = useState<string | undefined>(undefined);
+  const [loginMode, setLoginMode] = useState<"password" | "otp">("otp");
+  const [loginOtp, setLoginOtp] = useState("");
+  const [isTinOtpSent, setIsTinOtpSent] = useState(false);
+  const [tinMaskedMobile, setTinMaskedMobile] = useState("");
+  const [tinOtpResendInSeconds, setTinOtpResendInSeconds] = useState(0);
+  const [isSendingTinOtp, setIsSendingTinOtp] = useState(false);
+  const [isVerifyingTinOtp, setIsVerifyingTinOtp] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
   const [isForgotOpen, setIsForgotOpen] = useState(false);
   const [forgotTin, setForgotTin] = useState("");
@@ -637,6 +646,14 @@ const InlineLoginForm = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, [resendInSeconds]);
+
+  useEffect(() => {
+    if (tinOtpResendInSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setTinOtpResendInSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [tinOtpResendInSeconds]);
 
   const handleNumberChange = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -667,6 +684,77 @@ const InlineLoginForm = () => {
     toast.success(response.message);
     router.push("/dashboard");
     setTimeout(() => setIsLogin(false), 1000);
+  };
+
+  const resetTinOtpFlow = () => {
+    setLoginOtp("");
+    setIsTinOtpSent(false);
+    setTinMaskedMobile("");
+    setTinOtpResendInSeconds(0);
+  };
+
+  const sendTinOtp = async () => {
+    setIsSendingTinOtp(true);
+
+    if (!tin?.trim()) {
+      toast.error("Enter valid TIN number");
+      setIsSendingTinOtp(false);
+      return;
+    }
+
+    const response = await TinSendOtp({
+      tin_number: tin.trim(),
+    });
+
+    if (!response.status || !response.data) {
+      toast.error(response.message);
+      setIsSendingTinOtp(false);
+      return;
+    }
+
+    setTinMaskedMobile(response.data.maskedMobile);
+    setTinOtpResendInSeconds(response.data.resendInSeconds);
+
+    if (response.data.otpSent) {
+      setIsTinOtpSent(true);
+      setLoginOtp("");
+      toast.success(response.message);
+    } else {
+      toast.info(response.message);
+    }
+
+    setIsSendingTinOtp(false);
+  };
+
+  const loginWithOtp = async () => {
+    setIsVerifyingTinOtp(true);
+
+    if (!tin?.trim()) {
+      toast.error("Enter valid TIN number");
+      setIsVerifyingTinOtp(false);
+      return;
+    }
+
+    if (!loginOtp.trim()) {
+      toast.error("Enter OTP");
+      setIsVerifyingTinOtp(false);
+      return;
+    }
+
+    const response = await TinLoginOtp({
+      tin_number: tin.trim(),
+      otp: loginOtp.trim(),
+    });
+
+    if (!response.status) {
+      toast.error(response.message);
+      setIsVerifyingTinOtp(false);
+      return;
+    }
+
+    toast.success(response.message);
+    router.push("/dashboard");
+    setIsVerifyingTinOtp(false);
   };
 
   const resetForgotPasswordModal = () => {
@@ -789,40 +877,139 @@ const InlineLoginForm = () => {
           maxLength={12}
           placeholder="Enter TIN Number"
           value={tin ?? ""}
-          onChange={(e) => handleNumberChange(e, setTin)}
+          onChange={(e) => {
+            handleNumberChange(e, setTin);
+            resetTinOtpFlow();
+          }}
           className="text-sm"
         />
       </div>
-      <div>
-        <label className="text-sm text-gray-500 block mb-2">Password</label>
-        <Input.Password
-          size="small"
-          placeholder="Enter Password"
-          iconRender={(visible) =>
-            visible ? <FluentEye12Regular /> : <FluentEyeOff16Regular />
-          }
-          value={password ?? ""}
-          onChange={(e) => setPassword(e.target.value)}
-          className="text-sm"
-        />
+      {loginMode === "password" ? (
+        <>
+          <p className="text-sm text-gray-600 bg-[#f7f9fc] border border-[#e5ebf5] px-2 py-1.5">
+            Use your TIN and account password to login.
+          </p>
+          <div>
+            <label className="text-sm text-gray-500 block mb-2">Password</label>
+            <Input.Password
+              size="small"
+              placeholder="Enter Password"
+              iconRender={(visible) =>
+                visible ? <FluentEye12Regular /> : <FluentEyeOff16Regular />
+              }
+              value={password ?? ""}
+              onChange={(e) => setPassword(e.target.value)}
+              className="text-sm"
+            />
+          </div>
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={() => setIsForgotOpen(true)}
+              className="text-sm text-[#0f2f67] underline hover:text-[#16448b] cursor-pointer"
+            >
+              Forgot Password?
+            </button>
+          </div>
+          <div className="h-2"></div>
+          <Button
+            onClick={submit}
+            disabled={isLogin}
+            className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:white"
+          >
+            {isLogin ? "Verifying..." : "Login with Password"}
+          </Button>
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-gray-600 bg-[#f7f9fc] border border-[#e5ebf5] px-2 py-1.5">
+            OTP will be sent to your registered mobile number.
+          </p>
+
+          {!isTinOtpSent && (
+            <Button
+              onClick={sendTinOtp}
+              disabled={isSendingTinOtp}
+              className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:bg-[#16448b]!"
+            >
+              {isSendingTinOtp ? "Sending OTP..." : "Send OTP"}
+            </Button>
+          )}
+
+          {isTinOtpSent && (
+            <>
+              <p className="text-sm text-gray-600">
+                OTP sent to registered mobile ending with <b>{tinMaskedMobile}</b>
+              </p>
+
+              <div>
+                <label className="text-sm text-gray-500 block mb-2">OTP</label>
+                <Input
+                  size="small"
+                  maxLength={6}
+                  placeholder="Enter 6-digit OTP"
+                  value={loginOtp}
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    if (/^[0-9]*$/.test(value)) setLoginOtp(value);
+                  }}
+                  className="text-sm"
+                />
+              </div>
+
+              <Button
+                onClick={loginWithOtp}
+                disabled={isVerifyingTinOtp}
+                className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:bg-[#16448b]!"
+              >
+                {isVerifyingTinOtp ? "Verifying OTP..." : "Login with OTP"}
+              </Button>
+
+              <div className="text-right">
+                {tinOtpResendInSeconds > 0 ? (
+                  <span className="text-sm text-gray-500">
+                    Resend OTP in {tinOtpResendInSeconds}s
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={sendTinOtp}
+                    className="text-sm text-[#0f2f67] underline hover:text-[#16448b] cursor-pointer"
+                  >
+                    Resend OTP
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      <div className="text-center pt-1 text-sm text-gray-600">
+        {loginMode === "otp" ? (
+          <button
+            type="button"
+            onClick={() => {
+              setLoginMode("password");
+              resetTinOtpFlow();
+            }}
+            className="underline cursor-pointer text-gray-600 hover:text-[#0f2f67]"
+          >
+            Login with Password
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setLoginMode("otp");
+              setPassword(undefined);
+            }}
+            className="underline cursor-pointer text-gray-600 hover:text-[#0f2f67]"
+          >
+            Login with OTP
+          </button>
+        )}
       </div>
-      <div className="text-right">
-        <button
-          type="button"
-          onClick={() => setIsForgotOpen(true)}
-          className="text-sm text-[#0f2f67] underline hover:text-[#16448b] cursor-pointer"
-        >
-          Forgot Password?
-        </button>
-      </div>
-      <div className="h-2"></div>
-      <Button
-        onClick={submit}
-        disabled={isLogin}
-        className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:white"
-      >
-        {isLogin ? "Verifying..." : "Login"}
-      </Button>
 
       <Modal
         title="Forgot Password"

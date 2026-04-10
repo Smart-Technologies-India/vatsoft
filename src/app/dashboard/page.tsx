@@ -82,7 +82,6 @@ const Page = () => {
         setMonth(dashboard.data);
       }
 
-
       const profile_response = await GetUserStatus({
         id: authResponse.data,
       });
@@ -91,9 +90,7 @@ const Page = () => {
         setIsProfileCompleted(profile_response.data.registration);
       }
 
-      const dvatdata = await GetUserDvat04Anx({
-        userid: 1,
-      });
+      const dvatdata = await GetUserDvat04Anx({});
       if (dvatdata.status && dvatdata.data) {
         setDvat(dvatdata.data);
 
@@ -857,10 +854,9 @@ const OfficerDashboardPage = () => {
       }
       const userrespone = await GetUser({ id: authResponse.data });
 
-
       if (userrespone.status && userrespone.data) {
         setUser(userrespone.data);
-        
+
         // Set city based on user.selectOffice for specific roles
         if (
           userrespone.data.role === "VATOFFICER" ||
@@ -868,16 +864,23 @@ const OfficerDashboardPage = () => {
           userrespone.data.role === "JOINT_COMMISSIONER"
         ) {
           if (userrespone.data.selectOffice) {
-            setCity(userrespone.data.selectOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU");
+            setCity(
+              userrespone.data.selectOffice as
+                | "Dadra_Nagar_Haveli"
+                | "DAMAN"
+                | "DIU",
+            );
           }
         }
       }
 
       // Determine which office to use for filtering
-      const filterOffice = 
-        userrespone.status && 
-        userrespone.data && 
-        ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userrespone.data.role) && 
+      const filterOffice =
+        userrespone.status &&
+        userrespone.data &&
+        ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+          userrespone.data.role,
+        ) &&
         userrespone.data.selectOffice
           ? userrespone.data.selectOffice
           : city;
@@ -1236,8 +1239,8 @@ const OfficerDashboardPage = () => {
                       {city === "Dadra_Nagar_Haveli"
                         ? "DNH"
                         : city === "DAMAN"
-                        ? "DD"
-                        : "DIU"}
+                          ? "DD"
+                          : "DIU"}
                     </div>
                   </>
                 ) : (

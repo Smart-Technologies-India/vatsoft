@@ -23,7 +23,7 @@ const navItems = [
     label: "Registration",
   },
   { href: "/verify", label: "Verify" },
-  { href: "/news", label: "Notifications" },
+  // { href: "/news", label: "Notifications" },
   { href: "/policy", label: "Disclaimer" },
 ];
 
@@ -75,8 +75,8 @@ const Home = () => {
   return (
     <div className="min-h-screen flex flex-col bg-[#e8edf5] text-gray-800 text-xs">
       <header className="bg-white border-b border-[#b7c6de]">
-        <div className="max-w-300 mx-auto px-3 py-2 flex items-center gap-3">
-          <div className="relative w-14 h-14 shrink-0 flex items-center justify-center">
+        <div className="max-w-300 mx-auto px-4 py-3 flex items-center gap-3">
+          <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
             <Image
               src="/favicon.png"
               alt="DVAT Emblem"
@@ -85,20 +85,20 @@ const Home = () => {
             />
           </div>
           <div>
-            <p className="text-[10px] text-gray-500 uppercase tracking-wide">
+            <p className="text-sm text-gray-500 uppercase tracking-wide">
               Union Territory of Dadra &amp; Nagar Haveli and Daman &amp; Diu
             </p>
             <h1 className="text-base font-bold text-[#0f2f67] leading-tight">
               Department of Value Added Tax/GST Administration
             </h1>
-            <p className="text-[10px] text-gray-500">
+            <p className="text-sm text-gray-500">
               VAT-SMART Portal - CST Form Verification
             </p>
           </div>
           <div className="grow" />
           <Button
             onClick={showDrawer}
-            className="text-[#0f2f67] bg-white rounded-none border border-[#c8d4e8] px-3 py-1 text-[11px] inline-block h-7"
+            className="text-[#0f2f67] bg-white rounded-none border border-[#c8d4e8] px-3 py-1 text-sm inline-block h-7"
           >
             Retailer Login
           </Button>
@@ -113,7 +113,7 @@ const Home = () => {
               <Link
                 key={item.label}
                 href={item.href}
-                className="text-white text-[11px] font-medium inline-block py-2 px-3 hover:bg-[#0f2f67] border-r border-[#1e55a8] transition-colors"
+                className="text-white text-sm font-medium inline-block py-2 px-3 hover:bg-[#0f2f67] border-r border-[#1e55a8] transition-colors"
               >
                 {item.label}
               </Link>
@@ -263,7 +263,7 @@ const Home = () => {
       </main>
 
       <footer className="bg-[#0f2f67] text-white mt-2">
-        <div className="max-w-300 mx-auto px-3 py-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] border-b border-[#1e4a8f]">
+        <div className="max-w-300 mx-auto px-4 py-3 flex flex-wrap gap-x-4 gap-y-1 text-sm border-b border-[#1e4a8f]">
           {[
             { label: "Home", href: "/" },
             { label: "Contact Us", href: "/contact" },
@@ -275,7 +275,7 @@ const Home = () => {
             </Link>
           ))}
         </div>
-        <div className="max-w-300 mx-auto px-3 py-2 flex flex-wrap justify-between items-center gap-2 text-[10px]">
+        <div className="max-w-300 mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2 text-sm">
           <span>
             &copy; VAT Administration, Dadra &amp; Nagar Haveli and Daman &amp;
             Diu

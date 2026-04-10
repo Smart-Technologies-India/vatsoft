@@ -51,25 +51,16 @@ app.prepare().then(() => {
     console.log(`------------> Ready on http://localhost:${port}`);
 
     // Start cron job after server is listening
-    cron.schedule("* * * * * *", async () => {
-      console.log("Executing cron job...");
-      try {
-        const result = await notification();
-        console.log("Cron job executed successfully:", result);
-        // const response = await axios.post(
-        //   `http://localhost:${port}/api/notification`,
-        //   {},
-        //   {
-        //     headers: {
-        //       "Content-Type": "application/json",
-        //     },
-        //   },
-        // );
-        // console.log("Cron job executed successfully:", response.data);
-      } catch (error) {
-        console.error("Error executing cron job:", error);
-      }
-    });
+    // cron.schedule("* * * * * *", async () => {
+    //   console.log("Executing cron job...");
+    //   try {
+    //     const result = await notification();
+    //     console.log("Cron job executed successfully:", result);
+       
+    //   } catch (error) {
+    //     console.error("Error executing cron job:", error);
+    //   }
+    // });
   });
 
   // createServer((req, res) => {

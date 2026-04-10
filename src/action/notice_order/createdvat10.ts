@@ -92,7 +92,7 @@ const CreateDvat10 = async (
           `Dear ${dealerName}, Notice has been issued against your VAT account for ${noticePeriod}. Kindly check the VAT portal for details. -VAT DDD.`,
         );
         await fetch(
-          `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${mobile}&message=${smsMessage}&senderid=VATDNH&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`,
+          `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${mobile}&message=${smsMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`,
         );
       }
     } catch (smsError) {

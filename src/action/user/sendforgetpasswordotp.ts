@@ -84,7 +84,7 @@ const SendForgetPasswordOtp = async (
     );
 
     await axios.get(
-      `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${mobile}&message=${message}&senderid=VATDNH&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`,
+      `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${mobile}&message=${message}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`,
     );
 
     await prisma.user.update({

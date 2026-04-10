@@ -1,6 +1,5 @@
 "use server";
 interface GetUserDvat04AnxPayload {
-  userid: number;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -31,6 +30,7 @@ const GetUserDvat04Anx = async (
         id: dvatid,
       },
     });
+
 
     if (!dvat04response)
       return createResponse({

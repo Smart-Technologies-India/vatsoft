@@ -2,7 +2,6 @@
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { user } from "@prisma/client";
 
 import prisma from "../../../prisma/database";
 import axios from "axios";
@@ -11,17 +10,48 @@ interface TinSendOtpPayload {
   tin_number: string;
 }
 
+interface TinSendOtpResponse {
+  otpSent: boolean;
+  resendInSeconds: number;
+  maskedMobile: string;
+}
+
+const maskMobile = (mobile: string): string => {
+  if (mobile.length < 4) return "XXXX";
+  return `XXXXXX${mobile.slice(-4)}`;
+};
+
 const TinSendOtp = async (
   payload: TinSendOtpPayload
-): Promise<ApiResponseType<user | null>> => {
+): Promise<ApiResponseType<TinSendOtpResponse | null>> => {
   const functionname: string = TinSendOtp.name;
 
   try {
+    const tinNumber = payload.tin_number.trim();
+
+    if (!tinNumber) {
+      return createResponse({
+        message: "Enter valid TIN number.",
+        functionname,
+      });
+    }
+
     const dvat_response = await prisma.dvat04.findFirst({
       where: {
-        // status: "APPROVED",
+        OR: [
+          {
+            status: "APPROVED",
+          },
+          {
+            status: "VERIFICATION",
+          },
+          {
+            status: "PENDINGPROCESSING",
+          },
+        ],
         deletedAt: null,
-        tinNumber: payload.tin_number,
+        deletedBy: null,
+        tinNumber,
       },
       include: {
         createdBy: true,
@@ -35,38 +65,67 @@ const TinSendOtp = async (
       });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000);
+    const contactDigits = (dvat_response.contact_one ?? "").replace(/\D/g, "");
+    const mobile =
+      contactDigits.length > 10 ? contactDigits.slice(-10) : contactDigits;
 
-    // const response = await axios.get(
-    //   `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=The%20OTP%20for%20Planning%20and%20Development%20Authority%20Portal%20login%20is%20${otp}.%20The%20OTP%20is%20valid%20for%205%20mins.&MobileNumbers=919773356997&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`
-    // );
-    const response = await axios.get(
-      `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=The%20OTP%20for%20Planning%20and%20Development%20Authority%20Portal%20login%20is%20${otp}.%20The%20OTP%20is%20valid%20for%205%20mins.&MobileNumbers=919586908178&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`
-    );
-
-    if (response.data.Data[0].MessageErrorDescription == "Success") {
-      const user_resut = await prisma.user.update({
-        where: {
-          id: dvat_response.createdBy.id,
-          status: "ACTIVE",
-          deletedAt: null,
-        },
-        data: {
-          otp: otp.toString(),
-        },
-      });
-
+    if (mobile.length !== 10) {
       return createResponse({
-        message: user_resut
-          ? "OTP sent successfully"
-          : "Unable to send OTP. User not found.",
-        data: user_resut ?? null,
+        message: "Registered mobile number not available for this TIN.",
         functionname,
       });
     }
 
+    const maskedMobile = maskMobile(mobile);
+
+    if (dvat_response.createdBy.otpLastSentAt) {
+      const secondsSinceLastSend =
+        (Date.now() - new Date(dvat_response.createdBy.otpLastSentAt).getTime()) /
+        1000;
+
+      if (secondsSinceLastSend < 60) {
+        const resendInSeconds = Math.ceil(60 - secondsSinceLastSend);
+        return createResponse({
+          message: `Please wait ${resendInSeconds} second(s) before requesting a new OTP.`,
+          data: {
+            otpSent: false,
+            resendInSeconds,
+            maskedMobile,
+          },
+          functionname,
+        });
+      }
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+    const encodedMessage = encodeURIComponent(
+      `Your OTP for login is ${otp}. Do not share this code with anyone. -VAT DDD.`
+    );
+
+    await axios.get(
+      `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${mobile}&message=${encodedMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`
+    );
+
+    await prisma.user.update({
+      where: {
+        id: dvat_response.createdBy.id,
+      },
+      data: {
+        otp: otp.toString(),
+        otpExpiry,
+        otpAttempts: 0,
+        otpLastSentAt: new Date(),
+      },
+    });
+
     return createResponse({
-      message: "Unable to send OTP. Please try again.",
+      message: `OTP sent successfully to ${maskedMobile}.`,
+      data: {
+        otpSent: true,
+        resendInSeconds: 60,
+        maskedMobile,
+      },
       functionname,
     });
   } catch (e) {

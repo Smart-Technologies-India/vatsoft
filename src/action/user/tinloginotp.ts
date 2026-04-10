@@ -29,6 +29,7 @@ const TinLoginOtp = async (
           },
         ],
         deletedAt: null,
+        deletedBy: null,
         tinNumber: payload.tin_number,
       },
       include: {
@@ -38,17 +39,61 @@ const TinLoginOtp = async (
 
     if (!usersresponse) {
       return createResponse({
-        message: "Wrong Mobile Number. Please try again.",
+        message: "Wrong TIN Number. Please try again.",
+        functionname,
+      });
+    }
+
+    if (usersresponse.createdBy.otpAttempts >= 5) {
+      return createResponse({
+        message: "Too many failed attempts. Please request a new OTP.",
+        functionname,
+      });
+    }
+
+    if (
+      !usersresponse.createdBy.otpExpiry ||
+      new Date() > new Date(usersresponse.createdBy.otpExpiry)
+    ) {
+      return createResponse({
+        message: "OTP has expired. Please request a new one.",
         functionname,
       });
     }
 
     if (usersresponse.createdBy.otp !== payload.otp) {
+      await prisma.user.update({
+        where: {
+          id: usersresponse.createdBy.id,
+        },
+        data: {
+          otpAttempts: {
+            increment: 1,
+          },
+        },
+      });
+
+      const attemptsLeft = 4 - usersresponse.createdBy.otpAttempts;
+
       return createResponse({
-        message: "Invalid OTP. Please try again.",
+        message:
+          attemptsLeft > 0
+            ? `Invalid OTP. ${attemptsLeft} attempt(s) remaining.`
+            : "Invalid OTP. No attempts remaining. Request a new OTP.",
         functionname,
       });
     }
+
+    await prisma.user.update({
+      where: {
+        id: usersresponse.createdBy.id,
+      },
+      data: {
+        otp: null,
+        otpExpiry: null,
+        otpAttempts: 0,
+      },
+    });
 
     const cookieStore = await cookies();
     // Generate secure JWT token

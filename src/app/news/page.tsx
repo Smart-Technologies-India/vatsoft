@@ -17,7 +17,7 @@ const navItems = [
     label: "Registration",
   },
   { href: "/verify", label: "Verify" },
-  { href: "/news", label: "Notifications" },
+  // { href: "/news", label: "Notifications" },
   { href: "/policy", label: "Disclaimer" },
 ];
 
@@ -83,8 +83,8 @@ const Refund = () => {
   return (
     <div className="min-h-screen flex flex-col bg-[#e8edf5] text-gray-800 text-xs">
       <header className="bg-white border-b border-[#b7c6de]">
-        <div className="max-w-300 mx-auto px-3 py-2 flex items-center gap-3">
-          <div className="relative w-14 h-14 shrink-0 flex items-center justify-center">
+        <div className="max-w-300 mx-auto px-4 py-3 flex items-center gap-3">
+          <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
             <Image
               src="/favicon.png"
               alt="DVAT Emblem"
@@ -93,18 +93,18 @@ const Refund = () => {
             />
           </div>
           <div>
-            <p className="text-[10px] text-gray-500 uppercase tracking-wide">
+            <p className="text-sm text-gray-500 uppercase tracking-wide">
               Union Territory of Dadra &amp; Nagar Haveli and Daman &amp; Diu
             </p>
             <h1 className="text-base font-bold text-[#0f2f67] leading-tight">
               Department of Value Added Tax/GST Administration
             </h1>
-            <p className="text-[10px] text-gray-500">
+            <p className="text-sm text-gray-500">
               VAT-SMART Portal - News, Notifications &amp; Circulars
             </p>
           </div>
           <div className="grow" />
-          <div className="hidden md:flex flex-col items-end gap-1 text-[10px] text-gray-500">
+          <div className="hidden md:flex flex-col items-end gap-1 text-sm text-gray-500">
             <span>Best viewed in Chrome 49+ / Firefox 45+ / Edge</span>
             <span>Resolution: 1024 x 768</span>
           </div>
@@ -116,7 +116,7 @@ const Refund = () => {
               <Link
                 key={item.label}
                 href={item.href}
-                className="text-white text-[11px] font-medium inline-block py-2 px-3 hover:bg-[#0f2f67] border-r border-[#1e55a8] transition-colors"
+                className="text-white text-sm font-medium inline-block py-2 px-3 hover:bg-[#0f2f67] border-r border-[#1e55a8] transition-colors"
               >
                 {item.label}
               </Link>
@@ -140,7 +140,7 @@ const Refund = () => {
       </div>
 
       <main className="max-w-300 mx-auto py-3 px-2 flex-1 w-full">
-        <div className="mb-2 text-[10px] text-gray-500 border border-[#d5dde9] bg-white px-2 py-1">
+        <div className="mb-2 text-sm text-gray-500 border border-[#d5dde9] bg-white px-2 py-1">
           <span>You are here: </span>
           <Link href="/" className="text-[#0f2f67] hover:underline">
             Home
@@ -157,7 +157,7 @@ const Refund = () => {
           </div>
 
           <div className="p-3">
-            <h4 className="text-[11px] text-[#0f2f67] font-semibold mb-2">
+            <h4 className="text-lg text-[#0f2f67] font-semibold mb-2">
               Latest Notifications
             </h4>
 
@@ -221,7 +221,7 @@ const Refund = () => {
       </main>
 
       <footer className="bg-[#0f2f67] text-white mt-2">
-        <div className="max-w-300 mx-auto px-3 py-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] border-b border-[#1e4a8f]">
+        <div className="max-w-300 mx-auto px-4 py-3 flex flex-wrap gap-x-4 gap-y-1 text-sm border-b border-[#1e4a8f]">
           {[
             { label: "Home", href: "/" },
             { label: "Contact Us", href: "/contact" },
@@ -233,7 +233,7 @@ const Refund = () => {
             </Link>
           ))}
         </div>
-        <div className="max-w-300 mx-auto px-3 py-2 flex flex-wrap justify-between items-center gap-2 text-[10px]">
+        <div className="max-w-300 mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2 text-sm">
           <span>
             &copy; VAT Administration, Dadra &amp; Nagar Haveli and Daman &amp;
             Diu
