@@ -2,11 +2,12 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Marquee from "react-fast-marquee";
+import Lottie from "lottie-react";
 import { RowData } from "@tanstack/react-table";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Alert, Checkbox, Modal, Select } from "antd";
+import { Alert, Checkbox, Drawer, Modal, Select } from "antd";
 import {
   dvat04,
   DvatType,
@@ -31,6 +32,34 @@ declare module "@tanstack/react-table" {
   }
 }
 
+const returnsChatOptions = [
+  {
+    question: "How do I file return for a month?",
+    answer:
+      "Filing your monthly return in VAT Smart is very simple: No need to enter return details manually Just enter your daily Sales and Purchase details for the month in relevant page Click on the “Generate DVAT” button The system will automatically prepare your return You can preview the return to check everything Generate the challan and complete the payment Once payment is done, your return is filed automatically 👉 No technical knowledge is required — the system handles everything for you 👍",
+  },
+  {
+    question: "Why is preview button not visible?",
+    answer:
+      "Preview appears after all four return sections have either invoice entries or NIL filing. Ensure each card is completed before proceeding.",
+  },
+  {
+    question: "When should I use Declare Nil?",
+    answer:
+      "Use Declare Nil only when there are no transactions for that return type in the selected period. Nil filing is saved for that form and period.",
+  },
+  {
+    question: "How can I revise an already filed return?",
+    answer:
+      "If revision is allowed for your RR number, use the revised return flow from this dashboard and confirm terms before submitting the revised filing.",
+  },
+  {
+    question: "How do I download the final return PDF?",
+    answer:
+      "After successful payment and filing, use Download Return from the action panel at the bottom-right to generate the final return PDF.",
+  },
+];
+
 const ReturnDashboard = () => {
   const searchParams = useSearchParams();
   const [userid, setUserId] = useState<number>(0);
@@ -45,6 +74,23 @@ const ReturnDashboard = () => {
   const [returns_entryData, setReturns_entryData] = useState<returns_entry[]>(
     [],
   );
+  const [chatAnimationData, setChatAnimationData] = useState<any>(null);
+  const [isHelpDrawerOpen, setIsHelpDrawerOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<
+    Array<{ id: number; role: "bot" | "user"; text: string }>
+  >([
+    {
+      id: 1,
+      role: "bot",
+      text: "Welcome to Returns Help. Ask a question related to filing and return preparation on this page.",
+    },
+  ]);
+  const [isBotTyping, setIsBotTyping] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const messageIdRef = useRef(1);
+  const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const thinkingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chatListRef = useRef<HTMLDivElement | null>(null);
 
   const [duedate, setDueDate] = useState<Date>(new Date());
 
@@ -244,7 +290,6 @@ const ReturnDashboard = () => {
         userid: userid,
       });
 
-
       if (lastPendingResponse.status && lastPendingResponse.data) {
         setLastPending(lastPendingResponse.data);
 
@@ -297,8 +342,6 @@ const ReturnDashboard = () => {
 
         setQuarter(selectedQuarter);
         setPeriod(monthToSet);
-
-      
 
         const pathmonth = searchParams.get("month");
         const pathyear = searchParams.get("year");
@@ -715,6 +758,123 @@ const ReturnDashboard = () => {
   }
 
   const [isDownload, setDownload] = useState<boolean>(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadChatAnimation = async () => {
+      try {
+        const response = await fetch("/cs.json");
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (mounted) {
+          setChatAnimationData(data);
+        }
+      } catch {
+        // Keep fallback text if animation cannot be loaded.
+      }
+    };
+
+    loadChatAnimation();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimerRef.current) {
+        clearInterval(typingTimerRef.current);
+      }
+      if (thinkingTimerRef.current) {
+        clearTimeout(thinkingTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!chatListRef.current) return;
+    if (!shouldAutoScroll) return;
+    chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
+  }, [chatMessages, isBotTyping, shouldAutoScroll]);
+
+  const handleChatScroll = () => {
+    if (!chatListRef.current) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = chatListRef.current;
+    const isNearBottom = scrollHeight - (scrollTop + clientHeight) < 48;
+
+    setShouldAutoScroll(isNearBottom);
+  };
+
+  const appendTypedBotMessage = (answer: string) => {
+    if (typingTimerRef.current) {
+      clearInterval(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
+    if (thinkingTimerRef.current) {
+      clearTimeout(thinkingTimerRef.current);
+      thinkingTimerRef.current = null;
+    }
+
+    setIsBotTyping(true);
+    const botMessageId = messageIdRef.current + 1;
+    messageIdRef.current = botMessageId;
+
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: botMessageId,
+        role: "bot",
+        text: "",
+      },
+    ]);
+
+    const thinkingDelay = 900 + Math.floor(Math.random() * 600);
+    thinkingTimerRef.current = setTimeout(() => {
+      let index = 0;
+      typingTimerRef.current = setInterval(() => {
+        index += 1;
+        const nextText = answer.slice(0, index);
+
+        setChatMessages((prev) =>
+          prev.map((message) =>
+            message.id === botMessageId
+              ? {
+                  ...message,
+                  text: nextText,
+                }
+              : message,
+          ),
+        );
+
+        if (index >= answer.length) {
+          if (typingTimerRef.current) {
+            clearInterval(typingTimerRef.current);
+            typingTimerRef.current = null;
+          }
+          setIsBotTyping(false);
+        }
+      }, 16);
+    }, thinkingDelay);
+  };
+
+  const onSelectChatOption = (question: string, answer: string) => {
+    if (isBotTyping) return;
+
+    const userMessageId = messageIdRef.current + 1;
+    messageIdRef.current = userMessageId;
+
+    setChatMessages((prev) => [
+      ...prev,
+      { id: userMessageId, role: "user", text: question },
+    ]);
+
+    setShouldAutoScroll(true);
+    appendTypedBotMessage(answer);
+  };
 
   const getNilFormName = (form: "30" | "30A" | "31" | "31A"): string => {
     switch (form) {
@@ -1340,6 +1500,117 @@ const ReturnDashboard = () => {
           </div>
         </div>
       </main>
+
+      <button
+        type="button"
+        aria-label="Open help chat"
+        onClick={() => setIsHelpDrawerOpen(true)}
+        className="fixed right-5 bottom-20 z-60 flex flex-col items-center hover:scale-105 transition-transform"
+      >
+        <span className="h-32 w-32 overflow-hidden">
+          {chatAnimationData ? (
+            <Lottie
+              animationData={chatAnimationData}
+              loop
+              autoplay
+              className="h-full w-full"
+            />
+          ) : (
+            <span className="h-full w-full grid place-items-center text-[#0f2f67] text-xs font-semibold">
+              Help
+            </span>
+          )}
+        </span>
+        <span className="-translate-y-4 text-lg font-semibold text-[#0f2f67] bg-white/90 px-2 rounded-full border-blue-800 border-2">
+          Need Help
+        </span>
+      </button>
+
+      <Drawer
+        title={
+          <span className="text-slate-800 font-semibold">Returns Help</span>
+        }
+        placement="right"
+        width={380}
+        open={isHelpDrawerOpen}
+        onClose={() => setIsHelpDrawerOpen(false)}
+      >
+        <div className="h-full flex flex-col gap-3">
+          <div
+            ref={chatListRef}
+            onScroll={handleChatScroll}
+            className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 h-[62vh] overflow-y-auto flex flex-col gap-2"
+          >
+            <div className="grow" />
+            {chatMessages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex items-end gap-2 ${
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                {message.role === "bot" && (
+                  <span className="h-8 w-8 rounded-full bg-slate-700 text-white text-xs font-semibold flex items-center justify-center shrink-0">
+                    H
+                  </span>
+                )}
+
+                <div
+                  className={`w-fit max-w-[82%] px-2.5 py-1.5 text-sm ${
+                    message.role === "bot"
+                      ? "bg-white border border-slate-200 text-slate-700 rounded-br-lg rounded-tl-lg rounded-tr-lg"
+                      : "bg-slate-700 text-white rounded-bl-lg rounded-tl-lg rounded-tr-lg"
+                  }`}
+                >
+                  <p
+                    className={`text-[11px] font-semibold mb-1 ${
+                      message.role === "bot"
+                        ? "text-slate-700"
+                        : "text-slate-200"
+                    }`}
+                  >
+                    {message.role === "bot" ? "Maya" : "You"}
+                  </p>
+
+                  {message.text || (
+                    <span className="inline-flex items-center gap-1.5 text-slate-500">
+                      <span className="text-xs text-slate-500 mr-1">
+                        Thinking
+                      </span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:120ms]"></span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:240ms]"></span>
+                    </span>
+                  )}
+                </div>
+
+                {message.role === "user" && (
+                  <span className="h-8 w-8 rounded-full bg-amber-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">
+                    U
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {!isBotTyping && (
+            <div className="bg-white border border-slate-200 rounded-lg p-2 flex flex-wrap gap-2">
+              {returnsChatOptions.map((option) => (
+                <button
+                  key={option.question}
+                  type="button"
+                  onClick={() =>
+                    onSelectChatOption(option.question, option.answer)
+                  }
+                  className="text-left text-sm px-3 py-1.5 border border-slate-200 text-slate-700 rounded-full hover:bg-slate-50 transition-colors"
+                >
+                  {option.question}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </Drawer>
     </>
   );
 };

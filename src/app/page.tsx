@@ -1,8 +1,16 @@
 "use client";
 
-import { Button, Input, Modal } from "antd";
+import { Button, Drawer, Input, Modal } from "antd";
+import Lottie from "lottie-react";
 import Marquee from "react-fast-marquee";
-import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
+import {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
@@ -77,7 +85,7 @@ const whatsNew = [
 const videos = [
   {
     src: "https://www.youtube.com/embed/SKFZGmgS52o",
-    title: "How to Register on VAT-SMART",
+    title: "How to Register on VAT-Smart",
     description:
       "Step-by-step walkthrough for dealer onboarding and account creation.",
   },
@@ -94,6 +102,45 @@ const videos = [
       "Learn how sale data maps to return sections for faster filing.",
   },
 ];
+
+const homeChatOptions = [
+  {
+    question: "How do I login to the portal?",
+    answer:
+      "Use the Retailer Login box on this page. Enter your TIN number and either login with OTP or switch to password login.",
+  },
+  {
+    question: "When should I file my return?",
+    answer:
+      "You can check exact due dates in the Upcoming Due Dates section. Monthly and quarterly timelines are already shown on this homepage.",
+  },
+  {
+    question: "How can I register for VAT services?",
+    answer:
+      "Use the Registration link in the top menu or the e-Registration link in e-Services to submit your registration details.",
+  },
+  // {
+  //   question: "Where can I verify my application or TIN?",
+  //   answer:
+  //     "Use the Verify page. You can open it from the top navigation or from e-Services as Track Application Status / Verify TIN.",
+  // },
+  {
+    question: "Where can I find user help videos?",
+    answer:
+      "The User Guidance Videos section on this page includes step-by-step videos for registration, purchases, and return preparation.",
+  },
+  {
+    question: "How do I contact VAT support?",
+    answer:
+      "Check the Announcements box for helpline phone and email details, or open Contact Us for full contact information.",
+  },
+];
+
+interface ChatMessage {
+  id: number;
+  role: "bot" | "user";
+  text: string;
+}
 
 interface DateCardProps {
   title: string;
@@ -213,6 +260,139 @@ const QuarterCardSection = () => {
 };
 
 export default function HomePage() {
+  const [isHelpDrawerOpen, setIsHelpDrawerOpen] = useState(false);
+  const [chatAnimationData, setChatAnimationData] = useState<any>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      id: 1,
+      role: "bot",
+      text: "Welcome to VAT-Smart Help Desk. Select a question below and I will guide you.",
+    },
+  ]);
+  const [isBotTyping, setIsBotTyping] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const messageIdRef = useRef(1);
+  const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const thinkingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chatListRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadChatAnimation = async () => {
+      try {
+        const response = await fetch("/cs.json");
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (mounted) {
+          setChatAnimationData(data);
+        }
+      } catch {
+        // Keep fallback text if animation cannot be loaded.
+      }
+    };
+
+    loadChatAnimation();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimerRef.current) {
+        clearInterval(typingTimerRef.current);
+      }
+      if (thinkingTimerRef.current) {
+        clearTimeout(thinkingTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!chatListRef.current) return;
+    if (!shouldAutoScroll) return;
+    chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
+  }, [chatMessages, isBotTyping, shouldAutoScroll]);
+
+  const handleChatScroll = () => {
+    if (!chatListRef.current) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = chatListRef.current;
+    const isNearBottom = scrollHeight - (scrollTop + clientHeight) < 48;
+
+    setShouldAutoScroll(isNearBottom);
+  };
+
+  const appendTypedBotMessage = (answer: string) => {
+    if (typingTimerRef.current) {
+      clearInterval(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
+    if (thinkingTimerRef.current) {
+      clearTimeout(thinkingTimerRef.current);
+      thinkingTimerRef.current = null;
+    }
+
+    setIsBotTyping(true);
+    const botMessageId = messageIdRef.current + 1;
+    messageIdRef.current = botMessageId;
+
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: botMessageId,
+        role: "bot",
+        text: "",
+      },
+    ]);
+
+    const thinkingDelay = 2000 + Math.floor(Math.random() * 1000);
+    thinkingTimerRef.current = setTimeout(() => {
+      let index = 0;
+      typingTimerRef.current = setInterval(() => {
+        index += 1;
+        const nextText = answer.slice(0, index);
+
+        setChatMessages((prev) =>
+          prev.map((message) =>
+            message.id === botMessageId
+              ? {
+                  ...message,
+                  text: nextText,
+                }
+              : message,
+          ),
+        );
+
+        if (index >= answer.length) {
+          if (typingTimerRef.current) {
+            clearInterval(typingTimerRef.current);
+            typingTimerRef.current = null;
+          }
+          setIsBotTyping(false);
+        }
+      }, 20);
+    }, thinkingDelay);
+  };
+
+  const onSelectChatOption = (question: string, answer: string) => {
+    if (isBotTyping) return;
+
+    const userMessageId = messageIdRef.current + 1;
+    messageIdRef.current = userMessageId;
+
+    setChatMessages((prev) => [
+      ...prev,
+      { id: userMessageId, role: "user", text: question },
+    ]);
+
+     setShouldAutoScroll(true);
+    appendTypedBotMessage(answer);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#e8edf5] text-gray-800 text-sm">
       {/* GOI top utility bar */}
@@ -253,7 +433,7 @@ export default function HomePage() {
               Department of Value Added Tax/GST Administration
             </h1>
             <p className="text-sm text-gray-500">
-              VAT-SMART Portal — Unified portal for Registration, Return Filing
+              VAT-Smart Portal — Unified portal for Registration, Return Filing
               &amp; Challan Payment
             </p>
           </div>
@@ -610,6 +790,113 @@ export default function HomePage() {
           </Link>
         </div>
       </footer>
+
+      <button
+        type="button"
+        aria-label="Open help chat"
+        onClick={() => setIsHelpDrawerOpen(true)}
+        className="fixed right-5 bottom-5 z-50 flex flex-col items-center hover:scale-105 transition-transform"
+      >
+        <span className="h-32 w-32 overflow-hidden">
+          {chatAnimationData ? (
+            <Lottie
+              animationData={chatAnimationData}
+              loop
+              autoplay
+              className="h-full w-full"
+            />
+          ) : (
+            <span className="h-full w-full grid place-items-center text-[#0f2f67] text-xs font-semibold">
+              Help
+            </span>
+          )}
+        </span>
+        <span className="-translate-y-4 text-lg font-semibold text-[#0f2f67] bg-white/90 px-2 rounded-full border-blue-800 border-2">
+          Need Help
+        </span>
+      </button>
+
+      <Drawer
+        title={
+          <span className="text-[#0f2f67] font-semibold">VAT-Smart Chat Help</span>
+        }
+        placement="right"
+        width={380}
+        open={isHelpDrawerOpen}
+        onClose={() => setIsHelpDrawerOpen(false)}
+      >
+        <div className="h-full flex flex-col gap-3">
+          <div
+            ref={chatListRef}
+            onScroll={handleChatScroll}
+            className="bg-[#f0f4fb] border border-[#c8d4e8] rounded-lg p-2.5 h-[62vh] overflow-y-auto flex flex-col gap-2"
+          >
+            <div className="grow" />
+            {chatMessages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex items-end gap-2 ${
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                {message.role === "bot" && (
+                  <span className="h-8 w-8 rounded-full bg-[#0f2f67] text-white text-xs font-semibold flex items-center justify-center shrink-0">
+                    N
+                  </span>
+                )}
+
+                <div
+                  className={`w-fit max-w-[82%] px-2.5 py-1.5 text-sm ${
+                    message.role === "bot"
+                      ? "bg-white border border-[#d8e2f1] text-gray-700 rounded-br-lg rounded-tl-lg rounded-tr-lg"
+                      : "bg-[#0f2f67] text-white rounded-bl-lg rounded-tl-lg rounded-tr-lg"
+                  }`}
+                >
+                  <p
+                    className={`text-[11px] font-semibold mb-1 ${
+                      message.role === "bot" ? "text-[#0f2f67]" : "text-[#dbe8ff]"
+                    }`}
+                  >
+                    {message.role === "bot" ? "Maya" : "User"}
+                  </p>
+
+                  {message.text || (
+                    <span className="inline-flex items-center gap-1.5 text-gray-500">
+                      <span className="text-xs text-gray-500 mr-1">Thinking</span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-gray-400 animate-pulse"></span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-gray-400 animate-pulse [animation-delay:120ms]"></span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-gray-400 animate-pulse [animation-delay:240ms]"></span>
+                    </span>
+                  )}
+                </div>
+
+                {message.role === "user" && (
+                  <span className="h-8 w-8 rounded-full bg-[#b8860b] text-white text-xs font-semibold flex items-center justify-center shrink-0">
+                    U
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {!isBotTyping && (
+            <div className="bg-white border border-[#c8d4e8] rounded-lg p-2 flex flex-wrap gap-2">
+              {homeChatOptions.map((option) => (
+                <button
+                  key={option.question}
+                  type="button"
+                  onClick={() =>
+                    onSelectChatOption(option.question, option.answer)
+                  }
+                  className="text-left text-sm px-3 py-1.5 border border-[#d8e2f1] text-[#102a56] rounded-full hover:bg-[#f0f4fb] transition-colors"
+                >
+                  {option.question}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </Drawer>
     </div>
   );
 }

@@ -228,6 +228,9 @@ const Sidebar = (props: SidebarProps) => {
           "ASST_VAT_OFFICER",
           "DY_COMMISSIONER",
           "INSPECTOR",
+          "UDC",
+          "LDC",
+          "DATA_ENTRY_OPERATOR",
         ].includes(props.role) && (
           <>
             <MenuTab
@@ -238,6 +241,19 @@ const Sidebar = (props: SidebarProps) => {
               pathcheck={"/dashboard/registration_status"}
               collapsed={isCollapsed}
             />
+          
+          </>
+        )}
+        {[
+          "SYSTEM",
+          "ADMIN",
+          "VATOFFICER",
+          "VATOFFICER_DNH",
+          "DY_COMMISSIONER",
+          "COMMISSIONER",
+          "JOINT_COMMISSIONER",
+        ].includes(props.role) && (
+          <>
             <MenuTab
               click={() => props.setIsOpen(false)}
               icon={<FluentAlignBottom24Regular className="w-5 h-5" />}
