@@ -43,11 +43,11 @@ const SendOtp = async (
     // );
 
     const response = await axios.get(
-      `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${"9586908178"}&message=Your OTP for login is ${otp}. Do not share this code with anyone. -VAT DDD.&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`
+      `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${payload.mobile}&message=Your OTP for login is ${otp}. Do not share this code with anyone. -VAT DDD.&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`
     );
 
     // const response = await axios.get(
-    //   `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=The%20OTP%20for%20Planning%20and%20Development%20Authority%20Portal%20login%20is%20${otp}.%20The%20OTP%20is%20valid%20for%205%20mins.&MobileNumbers=919586908178&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`
+    //   `https://api.arihantsms.com/api/v2/SendSMS?SenderId=DNHPDA&Is_Unicode=false&Is_Flash=false&Message=The%20OTP%20for%20Planning%20and%20Development%20Authority%20Portal%20login%20is%20${otp}.%20The%20OTP%20is%20valid%20for%205%20mins.&MobileNumbers=91${payload.mobile}&ApiKey=rL56LBkGeOa1MKFm5SrSKtz%2Bq55zMVdxk5PNvQkg2nY%3D&ClientId=ebff4d6c-072b-4342-b71f-dcca677713f8`
     // );
 
     // const response = await axios.get(
@@ -56,7 +56,7 @@ const SendOtp = async (
     // if (response.data.Data[0].MessageErrorDescription == "Success") {
     // if (response.data.toString().split(",")[0].trim() == "sent") {
 
-    if (response.data.Data[0].MessageErrorDescription == "Success") {
+    if (response.data.split(",")[0].trim() == "sent") {
       if (usersresponse) {
         const user_resut = await prisma.user.update({
           where: { id: usersresponse.id },
