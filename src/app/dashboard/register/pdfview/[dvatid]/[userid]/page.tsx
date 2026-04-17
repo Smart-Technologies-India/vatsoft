@@ -13,7 +13,6 @@ import {
   Dvat1Page,
   Dvat2Page,
   Dvat3Page,
-  UserRegister,
 } from "@/components/preview/returnpreview";
 
 const PreviewPage = () => {
@@ -95,7 +94,6 @@ const PreviewPage = () => {
         </div>
 
         <div className="bg-white mx-auto shadow mt-4">
-          <UserRegister userid={user_id} />
           <Dvat1Page userid={user_id} dvatid={dvat_id} />
           <Dvat2Page userid={user_id} dvatid={dvat_id} />
           <Dvat3Page userid={user_id} dvatid={dvat_id} />

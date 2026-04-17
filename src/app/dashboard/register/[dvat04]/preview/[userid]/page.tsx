@@ -24,7 +24,7 @@ import {
   Dvat1Page,
   Dvat2Page,
   Dvat3Page,
-  UserRegister,
+  // UserRegister,
 } from "@/components/preview/returnpreview";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { set } from "date-fns";
@@ -126,7 +126,7 @@ const PreviewPage = () => {
         </div>
 
         <div className="bg-white mx-auto shadow mt-4">
-          <UserRegister userid={user_id} />
+          {/* <UserRegister userid={user_id} /> */}
           <Dvat1Page userid={user_id} dvatid={dvatid} />
           <Dvat2Page userid={user_id} dvatid={dvatid} />
           <Dvat3Page userid={user_id} dvatid={dvatid} />
