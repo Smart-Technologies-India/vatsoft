@@ -64,7 +64,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
   ].map((val: number) => ({ value: `${val}`, label: `${val}%` }));
 
   // against c form
-  const [isAgainstCForm, setIsAgainstCForm] = useState(true);
+  const [isAgainstCForm, setIsAgainstCForm] = useState(false);
   const [isComp, setIsComp] = useState(false);
 
   const {

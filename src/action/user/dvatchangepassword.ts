@@ -12,8 +12,8 @@ interface DvatChangePasswordPayload {
 }
 
 const DvatChangePassword = async (
-  payload: DvatChangePasswordPayload
-): Promise<ApiResponseType<dvat04 | null>> => {
+  payload: DvatChangePasswordPayload,
+): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = DvatChangePassword.name;
 
   try {
@@ -30,7 +30,7 @@ const DvatChangePassword = async (
 
     const ispasswordmatch = await compare(
       payload.password,
-      dvat.password ?? ""
+      dvat.password ?? "",
     );
 
     if (ispasswordmatch) {
@@ -53,13 +53,14 @@ const DvatChangePassword = async (
 
     if (!updatedDvat) {
       return createResponse({
-        message: "Dvat not created",
+        message: "Password update failed. Please try again.",
         functionname,
       });
     }
 
     return createResponse({
-      message: "Dvat password updated successfully",
+      data: true,
+      message: "Password updated successfully",
       functionname,
     });
   } catch (e) {

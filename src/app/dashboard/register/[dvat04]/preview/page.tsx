@@ -22,7 +22,7 @@ import {
   Dvat1Page,
   Dvat2Page,
   Dvat3Page,
-  UserRegister,
+  // UserRegister,
 } from "@/components/preview/returnpreview";
 import UpdateToPendingProcess from "@/action/register/udpatetopendingprocess";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
@@ -107,7 +107,7 @@ const PreviewPage = () => {
         </div>
 
         <div className="bg-white mx-auto shadow mt-4">
-          <UserRegister />
+          {/* <UserRegister /> */}
           <Dvat1Page dvatid={dvatid} />
           <Dvat2Page dvatid={dvatid} />
           <Dvat3Page dvatid={dvatid} />

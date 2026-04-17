@@ -110,6 +110,16 @@ const homeChatOptions = [
       "Use the Retailer Login box on this page. Enter your TIN number and either login with OTP or switch to password login.",
   },
   {
+    question: "How can I know my registered mobile number?",
+    answer:
+      "Please contact the department for verification and assistance with your registered mobile number.",
+  },
+  {
+    question: "How can I change my registered mobile number?",
+    answer:
+      "Please contact the department to request an update to your registered mobile number.",
+  },
+  {
     question: "When should I file my return?",
     answer:
       "You can check exact due dates in the Upcoming Due Dates section. Monthly and quarterly timelines are already shown on this homepage.",

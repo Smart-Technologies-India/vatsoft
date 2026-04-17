@@ -16,154 +16,154 @@ import GetDvatById from "@/action/user/register/getdvatbyid";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
 
-interface UserRegisterProps {
-  userid?: number;
-}
+// interface UserRegisterProps {
+//   userid?: number;
+// }
 
-export const UserRegister = (props: UserRegisterProps) => {
-  const router = useRouter();
-  const [id, setId] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [userdata, setUserData] = useState<user | null>(null);
+// export const UserRegister = (props: UserRegisterProps) => {
+//   const router = useRouter();
+//   const [id, setId] = useState<number>(0);
+//   const [isLoading, setIsLoading] = useState<boolean>(true);
+//   const [userdata, setUserData] = useState<user | null>(null);
 
-  useEffect(() => {
-    const init = async () => {
-      setIsLoading(true);
+//   useEffect(() => {
+//     const init = async () => {
+//       setIsLoading(true);
 
-      const authResponse = await getAuthenticatedUserId();
-      if (!authResponse.status || !authResponse.data) {
-        toast.error(authResponse.message);
-        return router.push("/");
-      }
+//       const authResponse = await getAuthenticatedUserId();
+//       if (!authResponse.status || !authResponse.data) {
+//         toast.error(authResponse.message);
+//         return router.push("/");
+//       }
 
-      const cookieId = props.userid ?? authResponse.data;
-      setId(cookieId);
+//       const cookieId = props.userid ?? authResponse.data;
+//       setId(cookieId);
 
-      const user = await GetUser({ id: cookieId });
+//       const user = await GetUser({ id: cookieId });
 
-      if (user.status && user.data) {
-        setUserData(user.data);
-      } else {
-        toast.error(user.message);
-      }
+//       if (user.status && user.data) {
+//         setUserData(user.data);
+//       } else {
+//         toast.error(user.message);
+//       }
 
-      setIsLoading(false);
-    };
-    init();
-  }, [id]);
+//       setIsLoading(false);
+//     };
+//     init();
+//   }, [id]);
 
-  if (isLoading) {
-    return (
-      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
-        Loading...
-      </div>
-    );
-  }
+//   if (isLoading) {
+//     return (
+//       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
+//         Loading...
+//       </div>
+//     );
+//   }
 
-  return (
-    <>
-      <div className="w-full p-4  mt-2">
-        <Table className="border mt-2">
-          <TableBody>
-            <TableRow>
-              <TableCell className="text-center p-2" colSpan={5}>
-                <p className="text-lg font-nunito">User Details</p>
-              </TableCell>
-            </TableRow>
-            <TableRow className="bg-gray-100">
-              <TableCell className="text-left w-[16%] p-2 border">
-                First Name
-              </TableCell>
-              <TableCell className="text-left p-2 border w-[36%]">
-                {userdata?.firstName ?? ""}
-              </TableCell>
-              <TableCell className="text-left w-[16%] p-2 border hidden lg:table-cell">
-                Last Name
-              </TableCell>
-              <TableCell className="text-left p-2 border w-[36%]  hidden lg:table-cell">
-                {userdata?.lastName ?? ""}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="text-left w-60 p-2 border lg:hidden">
-                Last Name
-              </TableCell>
-              <TableCell className="text-left p-2 border lg:hidden">
-                {userdata?.lastName ?? ""}
-              </TableCell>
-            </TableRow>
-            <TableRow className="bg-gray-100 lg:bg-transparent">
-              <TableCell className="text-left w-[16&] p-2 border">
-                Email
-              </TableCell>
-              <TableCell className="text-left p-2 border w-[36%]">
-                {userdata?.email ?? ""}
-              </TableCell>
-              <TableCell className="text-left w-[16%] p-2 border hidden lg:table-cell">
-                Mobile Number
-              </TableCell>
-              <TableCell className="text-left p-2 border w-[36%] hidden lg:table-cell">
-                {userdata?.mobileOne ?? ""}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="text-left w-60 p-2 border lg:hidden">
-                Mobile Number
-              </TableCell>
-              <TableCell className="text-left p-2 border lg:hidden">
-                {userdata?.mobileOne ?? ""}
-              </TableCell>
-            </TableRow>
-            <TableRow className="bg-gray-100">
-              <TableCell className="text-left w-[16%] p-2 border">
-                Alternate Number
-              </TableCell>
-              <TableCell className="text-left p-2 border w-[36%]">
-                {userdata?.mobileTwo ?? ""}
-              </TableCell>
-              <TableCell className="text-left p-2 border w-[16%] hidden lg:table-cell">
-                Pan Card
-              </TableCell>
-              <TableCell className="text-left p-2 border w-[36%] hidden lg:table-cell">
-                {userdata?.pan ?? ""}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="text-left w-60 p-2 border lg:hidden">
-                Pan Card
-              </TableCell>
-              <TableCell className="text-left p-2 border lg:hidden">
-                {userdata?.pan ?? ""}
-              </TableCell>
-            </TableRow>
-            <TableRow className="bg-gray-100 lg:bg-transparent">
-              <TableCell className="text-left w-[16%] p-2 border">
-                Aadhar Card
-              </TableCell>
-              <TableCell className="text-left p-2 border w-[36%]">
-                {userdata?.aadhar ?? ""}
-              </TableCell>
-              <TableCell className="text-left w-[16%] p-2 border hidden lg:table-cell">
-                Address
-              </TableCell>
-              <TableCell className="text-left p-2 border 2-[36%] hidden lg:table-cell">
-                {userdata?.address ?? ""}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="text-left w-60 p-2 border lg:hidden">
-                Address
-              </TableCell>
-              <TableCell className="text-left p-2 border lg:hidden">
-                {userdata?.address ?? ""}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
-    </>
-  );
-};
+//   return (
+//     <>
+//       <div className="w-full p-4  mt-2">
+//         <Table className="border mt-2">
+//           <TableBody>
+//             <TableRow>
+//               <TableCell className="text-center p-2" colSpan={5}>
+//                 <p className="text-lg font-nunito">User Details</p>
+//               </TableCell>
+//             </TableRow>
+//             <TableRow className="bg-gray-100">
+//               <TableCell className="text-left w-[16%] p-2 border">
+//                 First Name
+//               </TableCell>
+//               <TableCell className="text-left p-2 border w-[36%]">
+//                 {userdata?.firstName ?? ""}
+//               </TableCell>
+//               <TableCell className="text-left w-[16%] p-2 border hidden lg:table-cell">
+//                 Last Name
+//               </TableCell>
+//               <TableCell className="text-left p-2 border w-[36%]  hidden lg:table-cell">
+//                 {userdata?.lastName ?? ""}
+//               </TableCell>
+//             </TableRow>
+//             <TableRow>
+//               <TableCell className="text-left w-60 p-2 border lg:hidden">
+//                 Last Name
+//               </TableCell>
+//               <TableCell className="text-left p-2 border lg:hidden">
+//                 {userdata?.lastName ?? ""}
+//               </TableCell>
+//             </TableRow>
+//             <TableRow className="bg-gray-100 lg:bg-transparent">
+//               <TableCell className="text-left w-[16&] p-2 border">
+//                 Email
+//               </TableCell>
+//               <TableCell className="text-left p-2 border w-[36%]">
+//                 {userdata?.email ?? ""}
+//               </TableCell>
+//               <TableCell className="text-left w-[16%] p-2 border hidden lg:table-cell">
+//                 Mobile Number
+//               </TableCell>
+//               <TableCell className="text-left p-2 border w-[36%] hidden lg:table-cell">
+//                 {userdata?.mobileOne ?? ""}
+//               </TableCell>
+//             </TableRow>
+//             <TableRow>
+//               <TableCell className="text-left w-60 p-2 border lg:hidden">
+//                 Mobile Number
+//               </TableCell>
+//               <TableCell className="text-left p-2 border lg:hidden">
+//                 {userdata?.mobileOne ?? ""}
+//               </TableCell>
+//             </TableRow>
+//             <TableRow className="bg-gray-100">
+//               <TableCell className="text-left w-[16%] p-2 border">
+//                 Alternate Number
+//               </TableCell>
+//               <TableCell className="text-left p-2 border w-[36%]">
+//                 {userdata?.mobileTwo ?? ""}
+//               </TableCell>
+//               <TableCell className="text-left p-2 border w-[16%] hidden lg:table-cell">
+//                 Pan Card
+//               </TableCell>
+//               <TableCell className="text-left p-2 border w-[36%] hidden lg:table-cell">
+//                 {userdata?.pan ?? ""}
+//               </TableCell>
+//             </TableRow>
+//             <TableRow>
+//               <TableCell className="text-left w-60 p-2 border lg:hidden">
+//                 Pan Card
+//               </TableCell>
+//               <TableCell className="text-left p-2 border lg:hidden">
+//                 {userdata?.pan ?? ""}
+//               </TableCell>
+//             </TableRow>
+//             <TableRow className="bg-gray-100 lg:bg-transparent">
+//               <TableCell className="text-left w-[16%] p-2 border">
+//                 Aadhar Card
+//               </TableCell>
+//               <TableCell className="text-left p-2 border w-[36%]">
+//                 {userdata?.aadhar ?? ""}
+//               </TableCell>
+//               <TableCell className="text-left w-[16%] p-2 border hidden lg:table-cell">
+//                 Address
+//               </TableCell>
+//               <TableCell className="text-left p-2 border 2-[36%] hidden lg:table-cell">
+//                 {userdata?.address ?? ""}
+//               </TableCell>
+//             </TableRow>
+//             <TableRow>
+//               <TableCell className="text-left w-60 p-2 border lg:hidden">
+//                 Address
+//               </TableCell>
+//               <TableCell className="text-left p-2 border lg:hidden">
+//                 {userdata?.address ?? ""}
+//               </TableCell>
+//             </TableRow>
+//           </TableBody>
+//         </Table>
+//       </div>
+//     </>
+//   );
+// };
 
 interface Dvat1PageProps {
   userid?: number;
