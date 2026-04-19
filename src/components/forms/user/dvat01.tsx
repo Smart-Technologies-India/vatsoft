@@ -100,13 +100,13 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
     if (data.annualTurnoverCategory) {
       if (parseInt(data.turnoverLastFinancialYear) > 500000) {
         return toast.error(
-          "Last financial year annual turnover should be less then 5 Lacs"
+          "Last financial year annual turnover should be less then 5 Lacs",
         );
       }
     } else {
       if (parseInt(data.turnoverLastFinancialYear) < 499999) {
         return toast.error(
-          "Last financial year annual turnover should be 5 Lacs or above"
+          "Last financial year annual turnover should be 5 Lacs or above",
         );
       }
     }
@@ -140,8 +140,8 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
     if (userrespone.status) {
       router.push(
         `/dashboard/new-registration/${encryptURLData(
-          props.dvatid.toString()
-        )}/dvat2`
+          props.dvatid.toString(),
+        )}/dvat2`,
       );
     } else {
       toast.error(userrespone.message);
@@ -195,6 +195,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             placeholder="Select office"
             title="Select Office"
             required={true}
+            disable={true}
           />
         </div>
         <div className="flex-1"></div>
@@ -206,6 +207,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             name="name"
             required={true}
             title="1. Full Name of Applicant Dealer"
+            disable={true}
           />
         </div>
         <div className="flex-1">
@@ -214,6 +216,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             name="tradename"
             required={true}
             title="2. Trade Name (if any)"
+            disable={true}
           />
         </div>
       </div>
@@ -256,6 +259,7 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
               title="b) Opting for composition scheme under section 16(2) for the Regulation ? "
               required={true}
               name="compositionScheme"
+              disable={true}
             />
           </div>
         </div>

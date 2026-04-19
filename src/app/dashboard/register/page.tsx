@@ -95,11 +95,22 @@ const Page = () => {
                 description="View and manage all registration requests submitted by users. Update status, approve or reject requests."
                 link="/dashboard/register/registration-requests"
               />
+              {/* <DashboardCards
+                title="DVAT-04 : Application for Registration as a Dealer"
+                description="Initiate the process of registering a new taxpayer account for VAT compliance."
+                link="/dashboard/new-registration/registeruser"
+              /> */}
+              <DashboardCards
+                title="Register new user account"
+                description="Create new user account for DVAT system"
+                link="/dashboard/register/new-user"
+              />
             </>
           )}
           {["USER"].includes(user?.role!) && (
             <>
               {!isRegisterPending && !isProfileCompletd && (
+              
                 <DashboardCards
                   title="DVAT-04 : Application for Registration as a Dealer"
                   description="Initiate the process of registering a new taxpayer account for VAT compliance."
