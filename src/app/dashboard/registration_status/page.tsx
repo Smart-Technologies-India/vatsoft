@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import GetDvatByOffice from "@/action/return/getdvatbyoffice";
 import { toast } from "react-toastify";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import UpdateDvat04Mobile from "@/action/register/newuser/updatedvat04mobile";
 import {
   flexRender,
   getCoreRowModel,
@@ -49,6 +50,10 @@ const RegistrationStatus = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [editingMobileById, setEditingMobileById] = useState<
+    Record<number, string>
+  >({});
+  const [savingMobileId, setSavingMobileId] = useState<number | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -95,6 +100,51 @@ const RegistrationStatus = () => {
     init();
   }, [userid]);
 
+  const startMobileEdit = (row: RegistrationStatusRow) => {
+    setEditingMobileById((prev) => ({
+      ...prev,
+      [row.id]: row.contact_one ?? "",
+    }));
+  };
+
+  const cancelMobileEdit = (id: number) => {
+    setEditingMobileById((prev) => {
+      const clone = { ...prev };
+      delete clone[id];
+      return clone;
+    });
+  };
+
+  const saveMobileEdit = async (row: RegistrationStatusRow) => {
+    const editedMobile = (editingMobileById[row.id] ?? "").trim();
+
+    if (!/^\d{10}$/.test(editedMobile)) {
+      toast.error("Mobile number must be exactly 10 digits.");
+      return;
+    }
+
+    setSavingMobileId(row.id);
+    const response = await UpdateDvat04Mobile({
+      dvat04Id: row.id,
+      mobile: editedMobile,
+    });
+
+    if (!response.status) {
+      toast.error(response.message);
+      setSavingMobileId(null);
+      return;
+    }
+
+    toast.success(response.message);
+    setData((prev) =>
+      prev.map((item) =>
+        item.id === row.id ? { ...item, contact_one: editedMobile } : item
+      )
+    );
+    cancelMobileEdit(row.id);
+    setSavingMobileId(null);
+  };
+
   const columns = useMemo<ColumnDef<RegistrationStatusRow>[]>(
     () => [
       {
@@ -116,9 +166,49 @@ const RegistrationStatus = () => {
       {
         accessorKey: "contact_one",
         header: "Contact",
-        cell: ({ row }) => (
-          <span className="text-sm text-gray-700">{row.original.contact_one}</span>
-        ),
+        cell: ({ row }) =>
+          editingMobileById[row.original.id] !== undefined ? (
+            <div className="flex items-center justify-center gap-2">
+              <Input
+                value={editingMobileById[row.original.id]}
+                maxLength={10}
+                onChange={(event) =>
+                  setEditingMobileById((prev) => ({
+                    ...prev,
+                    [row.original.id]: event.target.value.replace(/[^0-9]/g, ""),
+                  }))
+                }
+                className="h-8 w-32"
+              />
+              <button
+                type="button"
+                className="rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => saveMobileEdit(row.original)}
+                disabled={savingMobileId === row.original.id}
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => cancelMobileEdit(row.original.id)}
+                disabled={savingMobileId === row.original.id}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-sm text-gray-700">{row.original.contact_one}</span>
+              <button
+                type="button"
+                className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                onClick={() => startMobileEdit(row.original)}
+              >
+                Edit
+              </button>
+            </div>
+          ),
       },
       {
         id: "dvatStatus",
@@ -162,7 +252,7 @@ const RegistrationStatus = () => {
         ),
       },
     ],
-    [],
+    [editingMobileById, savingMobileId],
   );
 
   const table = useReactTable({

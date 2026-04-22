@@ -32,6 +32,7 @@ const DvatTrackApplicationStatus = async (
       select: {
         id: true,
         tempregistrationnumber: true,
+        contact_one: true,
         status: true,
         compositionScheme: true,
         createdAt: true,

@@ -34,8 +34,13 @@ type CreateNewUserDvat04Response = {
   isExistingUser: boolean;
 };
 
+const ALLOWED_COMMODITIES: Dvat04Commodity[] = [
+  Dvat04Commodity.FUEL,
+  Dvat04Commodity.LIQUOR,
+];
+
 const CreateNewUserDvat04 = async (
-  payload: CreateNewUserDvat04Payload
+  payload: CreateNewUserDvat04Payload,
 ): Promise<ApiResponseType<CreateNewUserDvat04Response | null>> => {
   const functionname = CreateNewUserDvat04.name;
 
@@ -69,6 +74,13 @@ const CreateNewUserDvat04 = async (
       return createResponse({
         functionname,
         message: "All required fields must be filled.",
+      });
+    }
+
+    if (!/^\d{11}$/.test(tinNumber)) {
+      return createResponse({
+        functionname,
+        message: "TIN number must be exactly 11 digits.",
       });
     }
 
@@ -107,10 +119,10 @@ const CreateNewUserDvat04 = async (
       });
     }
 
-    if (!Object.values(Dvat04Commodity).includes(payload.commodity)) {
+    if (!ALLOWED_COMMODITIES.includes(payload.commodity)) {
       return createResponse({
         functionname,
-        message: "Invalid commodity selected.",
+        message: "Only FUEL or LIQUOR commodity is allowed.",
       });
     }
 
@@ -156,10 +168,19 @@ const CreateNewUserDvat04 = async (
           },
         }));
 
+      const tinMasterData = await tx.tin_number_master.create({
+        data: {
+          tin_number: tinNumber,
+          name_of_dealer: tradename,
+          status: "ACTIVE",
+        },
+      });
+
       const dvatData = await tx.dvat04.create({
         data: {
           createdById: userData.id,
           updatedById: userData.id,
+          tin_master_id: tinMasterData.id,
           name,
           tradename,
           tinNumber,
@@ -170,6 +191,14 @@ const CreateNewUserDvat04 = async (
           frequencyFilings: payload.frequencyFilings,
           status: DvatStatus.VERIFICATION,
           pan,
+        },
+      });
+
+      await tx.registration.create({
+        data: {
+          dvat04Id: dvatData.id,
+          dept_user_id: currentUserId,
+          createdById: currentUserId,
         },
       });
 

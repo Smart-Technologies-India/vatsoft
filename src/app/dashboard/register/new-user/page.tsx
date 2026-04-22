@@ -11,9 +11,29 @@ import {
   FrequencyFilings,
   SelectOffice,
 } from "@prisma/client";
+import { Modal } from "antd";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-toastify";
+
+const ALLOWED_COMMODITIES: Dvat04Commodity[] = [
+  Dvat04Commodity.FUEL,
+  Dvat04Commodity.LIQUOR,
+];
+
+interface CreateNewUserFormPayload {
+  firstName: string;
+  lastName: string;
+  mobile: string;
+  pan: string;
+  tinNumber: string;
+  name: string;
+  tradename: string;
+  selectOffice: SelectOffice;
+  compositionScheme: boolean;
+  commodity: Dvat04Commodity;
+  frequencyFilings: FrequencyFilings;
+}
 
 const NewUserRegisterPage = () => {
   const router = useRouter();
@@ -33,11 +53,14 @@ const NewUserRegisterPage = () => {
   );
   const [compositionScheme, setCompositionScheme] = useState<boolean>(false);
   const [commodity, setCommodity] = useState<Dvat04Commodity>(
-    Dvat04Commodity.OTHER
+    Dvat04Commodity.FUEL
   );
   const [frequencyFilings, setFrequencyFilings] = useState<FrequencyFilings>(
     FrequencyFilings.MONTHLY
   );
+  const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
+  const [pendingPayload, setPendingPayload] =
+    useState<CreateNewUserFormPayload | null>(null);
 
   const handleMobileBlur = async () => {
     if (mobile.trim().length !== 10) {
@@ -60,39 +83,38 @@ const NewUserRegisterPage = () => {
     setIsFetchingUser(false);
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!firstName.trim() || !lastName.trim() || !mobile.trim() || !pan.trim()) {
+  const getValidatedPayload = (): CreateNewUserFormPayload | null => {
+    if (
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !mobile.trim() ||
+      !pan.trim()
+    ) {
       toast.error("Please fill first name, last name, mobile and PAN.");
-      return;
+      return null;
     }
 
     if (!name.trim() || !tradename.trim()) {
       toast.error("Please fill DVAT-04 name and trade name.");
-      return;
+      return null;
     }
 
     if (!tinNumber.trim()) {
       toast.error("Please fill TIN number.");
-      return;
+      return null;
+    }
+
+    if (!/^\d{11}$/.test(tinNumber.trim())) {
+      toast.error("TIN number must be exactly 11 digits.");
+      return null;
     }
 
     if (mobile.trim().length !== 10) {
       toast.error("Mobile number must be 10 digits.");
-      return;
+      return null;
     }
 
-    setIsSubmitting(true);
-
-    const authResponse = await getAuthenticatedUserId();
-    if (!authResponse.status || !authResponse.data) {
-      toast.error(authResponse.message);
-      setIsSubmitting(false);
-      return router.push("/");
-    }
-
-    const response = await CreateNewUserDvat04({
+    return {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       mobile: mobile.trim(),
@@ -104,7 +126,20 @@ const NewUserRegisterPage = () => {
       compositionScheme,
       commodity,
       frequencyFilings,
-    });
+    };
+  };
+
+  const handleCreate = async (payload: CreateNewUserFormPayload) => {
+    setIsSubmitting(true);
+
+    const authResponse = await getAuthenticatedUserId();
+    if (!authResponse.status || !authResponse.data) {
+      toast.error(authResponse.message);
+      setIsSubmitting(false);
+      return router.push("/");
+    }
+
+    const response = await CreateNewUserDvat04(payload);
 
     if (!response.status || !response.data) {
       toast.error(response.message);
@@ -118,6 +153,33 @@ const NewUserRegisterPage = () => {
 
     setIsSubmitting(false);
     router.push("/dashboard/register/department-track-application-status");
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const payload = getValidatedPayload();
+    if (!payload) {
+      return;
+    }
+
+    setPendingPayload(payload);
+    setIsConfirmOpen(true);
+  };
+
+  const handleConfirmCreate = async () => {
+    if (!pendingPayload) {
+      return;
+    }
+
+    setIsConfirmOpen(false);
+    await handleCreate(pendingPayload);
+    setPendingPayload(null);
+  };
+
+  const handleCloseConfirm = () => {
+    setIsConfirmOpen(false);
+    setPendingPayload(null);
   };
 
   return (
@@ -218,8 +280,11 @@ const NewUserRegisterPage = () => {
               <Input
                 id="tinNumber"
                 value={tinNumber}
-                onChange={(e) => setTinNumber(e.target.value.replace(/[^0-9]/g, ""))}
-                placeholder="Enter TIN number"
+                onChange={(e) =>
+                  setTinNumber(e.target.value.replace(/[^0-9]/g, ""))
+                }
+                placeholder="Enter 11 digit TIN number"
+                minLength={11}
                 maxLength={11}
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -255,7 +320,7 @@ const NewUserRegisterPage = () => {
                 }
                 className="w-full border rounded-md px-3 h-10"
               >
-                {Object.values(Dvat04Commodity).map((item) => (
+                {ALLOWED_COMMODITIES.map((item) => (
                   <option key={item} value={item}>
                     {item}
                   </option>
@@ -303,6 +368,71 @@ const NewUserRegisterPage = () => {
           </div>
         </form>
       </div>
+
+      <Modal
+        title="Confirm New User Details"
+        open={isConfirmOpen && Boolean(pendingPayload)}
+        onOk={handleConfirmCreate}
+        onCancel={handleCloseConfirm}
+        okText="Confirm & Create"
+        confirmLoading={isSubmitting}
+        cancelButtonProps={{ disabled: isSubmitting }}
+        destroyOnHidden
+      >
+        {pendingPayload && (
+          <>
+            <p className="text-sm text-gray-600 mt-1">
+              Please verify all details before creating the entry.
+            </p>
+
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <p>
+                <span className="font-semibold">First Name:</span>{" "}
+                {pendingPayload.firstName}
+              </p>
+              <p>
+                <span className="font-semibold">Last Name:</span>{" "}
+                {pendingPayload.lastName}
+              </p>
+              <p>
+                <span className="font-semibold">Mobile:</span>{" "}
+                {pendingPayload.mobile}
+              </p>
+              <p>
+                <span className="font-semibold">PAN:</span> {pendingPayload.pan}
+              </p>
+              <p>
+                <span className="font-semibold">TIN Number:</span>{" "}
+                {pendingPayload.tinNumber}
+              </p>
+              <p>
+                <span className="font-semibold">DVAT-04 Name:</span>{" "}
+                {pendingPayload.name}
+              </p>
+              <p>
+                <span className="font-semibold">Trade Name:</span>{" "}
+                {pendingPayload.tradename}
+              </p>
+              <p>
+                <span className="font-semibold">Office:</span>{" "}
+                {pendingPayload.selectOffice}
+              </p>
+              <p>
+                <span className="font-semibold">Commodity:</span>{" "}
+                {pendingPayload.commodity}
+              </p>
+              <p>
+                <span className="font-semibold">Frequency Filing:</span>{" "}
+                {pendingPayload.frequencyFilings}
+              </p>
+              <p>
+                <span className="font-semibold">Composition:</span>{" "}
+                {pendingPayload.compositionScheme ? "YES" : "NO"}
+              </p>
+            </div>
+          </>
+        )}
+      </Modal>
     </main>
   );
 };

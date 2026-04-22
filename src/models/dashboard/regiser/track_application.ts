@@ -21,6 +21,7 @@ export type DvatTrackApplicationStatusType = {
   }[];
   id: number;
   tempregistrationnumber: string | null;
+  contact_one: string | null;
   compositionScheme: boolean | null;
   status: DvatStatus;
   createdAt: Date;
