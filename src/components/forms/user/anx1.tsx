@@ -82,6 +82,8 @@ const Anx1 = (props: Anx1ProviderProps) => {
   const [dvatData, setDvatData] = useState<dvat04 | null>(null);
 
   const onSubmit = async (data: Anx1Form) => {
+    console.log("test");
+
     const userrespone: ApiResponseType<annexure1 | null> = await Anx1Create({
       dvatId: props.dvatid,
       createdById: props.userid,
@@ -105,6 +107,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
       contact: data.contact,
       email: data.email,
     });
+
     if (userrespone.status) {
       toast.success("Annexure I added successfully");
       reset({});
@@ -349,9 +352,10 @@ const Anx1 = (props: Anx1ProviderProps) => {
             <Checkbox
               value={isSaveAddress}
               onChange={(value: CheckboxChangeEvent) => {
-                setIsSameAddress(value.target.checked);
+                const checked = value.target.checked;
+                setIsSameAddress(checked);
 
-                if (value) {
+                if (checked) {
                   const currentValues = getValues();
                   reset({
                     ...currentValues,
@@ -359,6 +363,15 @@ const Anx1 = (props: Anx1ProviderProps) => {
                     pareaName: getValues("rareaName"),
                     pvillageName: getValues("rvillageName"),
                     ppincode: getValues("rpincode"),
+                  });
+                } else {
+                  const currentValues = getValues();
+                  reset({
+                    ...currentValues,
+                    pbuildingName: "",
+                    pareaName: "",
+                    pvillageName: "",
+                    ppincode: "",
                   });
                 }
               }}
@@ -370,7 +383,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
             <div className="flex-1">
               <TaxtInput<Anx1Form>
                 placeholder="Building Name/ Number"
-                name={isSaveAddress ? "rbuildingName" : "pbuildingName"}
+                name="pbuildingName"
                 required={true}
                 title="Building Name/ Number"
                 disable={isSaveAddress}
@@ -379,7 +392,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
             <div className="flex-1">
               <TaxtInput<Anx1Form>
                 placeholder="Area/ Road/ Locality/ Market"
-                name={isSaveAddress ? "rareaName" : "pareaName"}
+                name="pareaName"
                 required={true}
                 title="Area/ Road/ Locality/ Market"
                 disable={isSaveAddress}
@@ -390,7 +403,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
             <div className="flex-1">
               <TaxtInput<Anx1Form>
                 placeholder="Village/ Town"
-                name={isSaveAddress ? "rvillageName" : "pvillageName"}
+                name="pvillageName"
                 required={true}
                 title="Village/ Town"
                 disable={isSaveAddress}
@@ -399,7 +412,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
             <div className="flex-1">
               <TaxtInput<Anx1Form>
                 placeholder="Pincode"
-                name={isSaveAddress ? "rpincode" : "ppincode"}
+                name="ppincode"
                 required={true}
                 title="Pincode"
                 onlynumber={true}

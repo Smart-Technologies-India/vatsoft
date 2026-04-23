@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Table, Tag, Button, Drawer } from "antd";
+import * as XLSX from "xlsx";
 import type { ColumnsType } from "antd/es/table";
 import { toast } from "react-toastify";
 import GetAllProductRequests from "@/action/product_request/getallproductrequests";
@@ -59,6 +60,25 @@ const ProductRequestsPage = () => {
     };
     init();
   }, []);
+
+  const downloadExcel = () => {
+    const rows = productRequests.map((r) => ({
+      ID: r.id,
+      "Product Name": r.product_name,
+      "Company Name": r.company_name,
+      "Pack Type": r.pack_type,
+      "Crate Size": r.crate_size,
+      "Requested By": `${r.requestedBy.firstName ?? ""} ${r.requestedBy.lastName ?? ""}`.trim(),
+      "Mobile": r.requestedBy.mobileOne,
+      "Email": r.requestedBy.email ?? "",
+      Status: r.status,
+      "Created At": new Date(r.createdAt).toLocaleString(),
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Product Requests");
+    XLSX.writeFile(workbook, "product_requests.xlsx");
+  };
 
   const handleProcess = (record: ProductRequestWithUser) => {
     setSelectedRequest(record);
@@ -168,7 +188,10 @@ const ProductRequestsPage = () => {
     <main className="bg-white py-6 px-6 rounded-md mt-4 w-full">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Product Requests Management</h1>
-        <Button onClick={() => router.back()}>Back</Button>
+        <div className="flex gap-2">
+          <Button onClick={downloadExcel} type="primary">Download Excel</Button>
+          <Button onClick={() => router.back()}>Back</Button>
+        </div>
       </div>
 
       <Table
