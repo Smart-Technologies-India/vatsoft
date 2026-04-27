@@ -16,6 +16,7 @@ import {
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx";
 
 type ReturnEntryWithRelations = returns_entry & {
   seller_tin_number: tin_number_master;
@@ -396,6 +397,138 @@ const PurchaseSaleReportByIdPage = () => {
     );
   };
 
+  const downloadExcel = () => {
+    if (loading) {
+      toast.info("Please wait until data is loaded");
+      return;
+    }
+
+    if (nonNilEntries.length === 0) {
+      toast.info("No data available to export");
+      return;
+    }
+
+    const toRows = (sectionTitle: string, sectionEntries: ReturnEntryWithRelations[]) =>
+      sectionEntries.map((item, index) => ({
+        "S.No": index + 1,
+        Section: sectionTitle,
+        "Invoice No": item.invoice_number || "-",
+        "Invoice Date": item.invoice_date ? formateDate(item.invoice_date) : "-",
+        "Seller TIN": item.seller_tin_number?.tin_number || "-",
+        State: item.state?.name || "-",
+        Quantity: item.quantity ?? 0,
+        "Tax %": item.tax_percent || "0",
+        Amount: Number(parseFloat(item.amount || "0") || 0),
+        "VAT Amount": Number(parseFloat(item.vatamount || "0") || 0),
+        Total: Number(parseFloat(item.total_invoice_number || "0") || 0),
+      }));
+
+    const workbook = XLSX.utils.book_new();
+
+    const localSalesRows = toRows("DVAT_31 - Sales Local", dvat31Entries);
+    const interSalesRows = toRows("DVAT_31_A - Sales Inter State", dvat31AEntries);
+    const localPurchaseRows = toRows("DVAT_30 - Purchase Local", dvat30Entries);
+    const interPurchaseRows = toRows(
+      "DVAT_30_A - Purchase Inter State",
+      dvat30AEntries,
+    );
+
+    const summaryRows = [
+      {
+        Section: "DVAT_31 - Sales Local",
+        Entries: dvat31Entries.length,
+        "Taxable Amount": dvat31Entries.reduce(
+          (sum, item) => sum + (parseFloat(item.amount || "0") || 0),
+          0,
+        ),
+        "VAT Amount": dvat31Entries.reduce(
+          (sum, item) => sum + (parseFloat(item.vatamount || "0") || 0),
+          0,
+        ),
+        "Invoice Total": dvat31Entries.reduce(
+          (sum, item) => sum + (parseFloat(item.total_invoice_number || "0") || 0),
+          0,
+        ),
+      },
+      {
+        Section: "DVAT_31_A - Sales Inter State",
+        Entries: dvat31AEntries.length,
+        "Taxable Amount": dvat31AEntries.reduce(
+          (sum, item) => sum + (parseFloat(item.amount || "0") || 0),
+          0,
+        ),
+        "VAT Amount": dvat31AEntries.reduce(
+          (sum, item) => sum + (parseFloat(item.vatamount || "0") || 0),
+          0,
+        ),
+        "Invoice Total": dvat31AEntries.reduce(
+          (sum, item) => sum + (parseFloat(item.total_invoice_number || "0") || 0),
+          0,
+        ),
+      },
+      {
+        Section: "DVAT_30 - Purchase Local",
+        Entries: dvat30Entries.length,
+        "Taxable Amount": dvat30Entries.reduce(
+          (sum, item) => sum + (parseFloat(item.amount || "0") || 0),
+          0,
+        ),
+        "VAT Amount": dvat30Entries.reduce(
+          (sum, item) => sum + (parseFloat(item.vatamount || "0") || 0),
+          0,
+        ),
+        "Invoice Total": dvat30Entries.reduce(
+          (sum, item) => sum + (parseFloat(item.total_invoice_number || "0") || 0),
+          0,
+        ),
+      },
+      {
+        Section: "DVAT_30_A - Purchase Inter State",
+        Entries: dvat30AEntries.length,
+        "Taxable Amount": dvat30AEntries.reduce(
+          (sum, item) => sum + (parseFloat(item.amount || "0") || 0),
+          0,
+        ),
+        "VAT Amount": dvat30AEntries.reduce(
+          (sum, item) => sum + (parseFloat(item.vatamount || "0") || 0),
+          0,
+        ),
+        "Invoice Total": dvat30AEntries.reduce(
+          (sum, item) => sum + (parseFloat(item.total_invoice_number || "0") || 0),
+          0,
+        ),
+      },
+    ];
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(localSalesRows),
+      "DVAT_31",
+    );
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(interSalesRows),
+      "DVAT_31_A",
+    );
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(localPurchaseRows),
+      "DVAT_30",
+    );
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(interPurchaseRows),
+      "DVAT_30_A",
+    );
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(summaryRows),
+      "Summary",
+    );
+
+    XLSX.writeFile(workbook, "purchase_sale_report.xlsx");
+  };
+
   return (
     <section className="px-5 py-4">
       <div className="w-full mx-auto flex items-center gap-3 mb-4 no-print">
@@ -410,6 +543,12 @@ const PurchaseSaleReportByIdPage = () => {
           className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
         >
           Download PDF
+        </button>
+        <button
+          onClick={downloadExcel}
+          className="py-1 px-4 border text-white text-xs rounded bg-emerald-700"
+        >
+          Download Excel
         </button>
       </div>
 

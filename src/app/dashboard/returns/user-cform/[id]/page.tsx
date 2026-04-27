@@ -15,11 +15,7 @@ import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
 import { cform, dvat04 } from "@prisma/client";
-import {
-  capitalcase,
-  decryptURLData,
-  encryptURLData,
-} from "@/utils/methods";
+import { capitalcase, decryptURLData, encryptURLData } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
@@ -30,7 +26,7 @@ const TrackAppliation = () => {
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
   const userid: number = parseInt(
-    decryptURLData(Array.isArray(id) ? id[0] : id, router)
+    decryptURLData(Array.isArray(id) ? id[0] : id, router),
   );
 
   const [isLoading, setLoading] = useState<boolean>(true);
@@ -51,7 +47,7 @@ const TrackAppliation = () => {
     TIN,
   }
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.TIN
+    SearchOption.TIN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -64,7 +60,7 @@ const TrackAppliation = () => {
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    dateStrings: [string, string],
   ) => {
     setSearchDate(dates);
   };
@@ -304,7 +300,7 @@ const TrackAppliation = () => {
     const startMonth = new Date(
       lastMonth.getFullYear(),
       lastMonth.getMonth() - 2,
-      1
+      1,
     );
 
     // Helper function to format month names and last two digits of year
@@ -376,77 +372,78 @@ const TrackAppliation = () => {
               {/* Search Section */}
               <div className="p-6 bg-linear-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
                 <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
-                <Radio.Group
-                  onChange={onChange}
-                  value={searchOption}
-                  disabled={isSearch}
-                >
-                  <Radio value={SearchOption.TIN}>TIN Number</Radio>
-                  <Radio value={SearchOption.NAME}>Purchaser Name</Radio>
-                </Radio.Group>
-                {(() => {
-                  switch (searchOption) {
-                    case SearchOption.TIN:
-                      return (
-                        <div className="flex gap-3">
-                          <Input
-                            className="w-60 border-gray-300 focus:border-blue-500"
-                            ref={tinRef}
-                            placeholder={"Enter Purchaser TIN Number"}
-                            disabled={isSearch}
-                          />
-                          {isSearch ? (
-                            <Button 
-                              onClick={init} 
-                              type="primary"
-                              className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
-                            >
-                              Reset
-                            </Button>
-                          ) : (
-                            <Button 
-                              onClick={tinsearch} 
-                              type="primary"
-                              className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
-                            >
-                              Search
-                            </Button>
-                          )}
-                        </div>
-                      );
+                  <Radio.Group
+                    onChange={onChange}
+                    value={searchOption}
+                    disabled={isSearch}
+                  >
+                    <Radio value={SearchOption.TIN}>TIN Number</Radio>
+                    <Radio value={SearchOption.NAME}>Purchaser Name</Radio>
+                  </Radio.Group>
+                  {(() => {
+                    switch (searchOption) {
+                      case SearchOption.TIN:
+                        return (
+                          <div className="flex gap-3">
+                            <Input
+                              className="w-60 border-gray-300 focus:border-blue-500"
+                              ref={tinRef}
+                              placeholder={"Enter Purchaser TIN Number"}
+                              disabled={isSearch}
+                              maxLength={11}
+                            />
+                            {isSearch ? (
+                              <Button
+                                onClick={init}
+                                type="primary"
+                                className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
+                              >
+                                Reset
+                              </Button>
+                            ) : (
+                              <Button
+                                onClick={tinsearch}
+                                type="primary"
+                                className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
+                              >
+                                Search
+                              </Button>
+                            )}
+                          </div>
+                        );
 
-                    case SearchOption.NAME:
-                      return (
-                        <div className="flex gap-3">
-                          <Input
-                            className="w-60 border-gray-300 focus:border-blue-500"
-                            ref={nameRef}
-                            placeholder={"Enter Purchaser Name"}
-                            disabled={isSearch}
-                          />
-                          {isSearch ? (
-                            <Button 
-                              onClick={init} 
-                              type="primary"
-                              className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
-                            >
-                              Reset
-                            </Button>
-                          ) : (
-                            <Button 
-                              onClick={namesearch} 
-                              type="primary"
-                              className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
-                            >
-                              Search
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    default:
-                      return null;
-                  }
-                })()}
+                      case SearchOption.NAME:
+                        return (
+                          <div className="flex gap-3">
+                            <Input
+                              className="w-60 border-gray-300 focus:border-blue-500"
+                              ref={nameRef}
+                              placeholder={"Enter Purchaser Name"}
+                              disabled={isSearch}
+                            />
+                            {isSearch ? (
+                              <Button
+                                onClick={init}
+                                type="primary"
+                                className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
+                              >
+                                Reset
+                              </Button>
+                            ) : (
+                              <Button
+                                onClick={namesearch}
+                                type="primary"
+                                className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
+                              >
+                                Search
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      default:
+                        return null;
+                    }
+                  })()}
                 </div>
               </div>
 
@@ -475,11 +472,14 @@ const TrackAppliation = () => {
                   <TableBody>
                     {cformData.map((val: cform, index: number) => {
                       return (
-                        <TableRow key={index} className="hover:bg-blue-50 transition-colors">
+                        <TableRow
+                          key={index}
+                          className="hover:bg-blue-50 transition-colors"
+                        >
                           <TableCell className="border text-center p-3">
                             <Link
                               href={`/dashboard/cform/${encryptURLData(
-                                val.id.toString()
+                                val.id.toString(),
                               )}`}
                               className="text-blue-600 hover:text-blue-800 font-medium hover:underline transition-colors"
                             >

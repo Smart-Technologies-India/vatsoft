@@ -27,6 +27,9 @@ const TinLoginOtp = async (
           {
             status: "VERIFICATION",
           },
+          {
+            status: "PENDINGPROCESSING",
+          }
         ],
         deletedAt: null,
         deletedBy: null,

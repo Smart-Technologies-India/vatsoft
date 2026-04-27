@@ -41,7 +41,8 @@ export function TaxtInput<T extends FieldValues>(props: TaxtInputProps<T>) {
           )}
 
           <Input
-            showCount={props.maxlength ? true : undefined}
+            // showCount={props.maxlength ? true : undefined}
+            showCount={false}
             maxLength={props.maxlength ?? undefined}
             status={error ? "error" : undefined}
             className="w-full"

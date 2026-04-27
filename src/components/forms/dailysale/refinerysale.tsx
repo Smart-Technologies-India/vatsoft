@@ -47,10 +47,7 @@ export const RefinerySaleProvider = (props: RefinerySaleProviderProps) => {
 
   return (
     <FormProvider {...methods}>
-      <RefinerySale
-        setAddBox={props.setAddBox}
-        init={props.init}
-      />
+      <RefinerySale setAddBox={props.setAddBox} init={props.init} />
     </FormProvider>
   );
 };
@@ -98,7 +95,6 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
       id: 1,
     });
 
-
     if (response.status && response.data) {
       setDvatdata(response.data);
       setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
@@ -123,7 +119,6 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
       quantity: "",
     });
     const init = async () => {
-     
       setUserid(1);
 
       const tin_response = await SearchTin({
@@ -384,7 +379,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
                     : commoditymaster.taxable_at,
               ))) /
             100 <
-            liquoreOIDCAmount * 0.7
+            liquoreOIDCAmount * 0.9
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -401,7 +396,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
                     : commoditymaster.taxable_at,
               ))) /
             100 <
-            liquoreDealerAmount * 0.7
+            (liquoreDealerAmount / commoditymaster.crate_size) * 0.9
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -524,7 +519,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
                     : commoditymaster.taxable_at,
               ))) /
             100 <
-            liquoreOIDCAmount
+            liquoreOIDCAmount * 0.9
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -541,7 +536,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
                     : commoditymaster.taxable_at,
               ))) /
             100 <
-            liquoreDealerAmount
+            (liquoreDealerAmount / commoditymaster.crate_size) * 0.9
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -553,8 +548,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
       ) {
         if (
           isLiquore &&
-          parseFloat(data.amount_unit) <
-            liquoreOIDCAmount * commoditymaster.crate_size
+          parseFloat(data.amount_unit) < liquoreOIDCAmount * 0.9
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -562,7 +556,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
         if (
           isLiquore &&
           parseFloat(data.amount_unit) <
-            liquoreDealerAmount * commoditymaster.crate_size
+            (liquoreDealerAmount / commoditymaster.crate_size) * 0.9
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -736,6 +730,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
             required={true}
             title="Purchaser TIN Number"
             disable={isAddMoreMode}
+            maxlength={11}
           />
         </div>
         {tindata != null && (

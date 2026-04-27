@@ -385,7 +385,7 @@ const DailySale = (props: DailySaleProviderProps) => {
                     : commoditymaster.taxable_at,
               ))) /
             100 <
-            liquoreOIDCAmount * 0.7
+            liquoreOIDCAmount * 0.9
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -402,7 +402,7 @@ const DailySale = (props: DailySaleProviderProps) => {
                     : commoditymaster.taxable_at,
               ))) /
             100 <
-            liquoreDealerAmount * 0.7
+            (liquoreDealerAmount / commoditymaster.crate_size) * 0.9
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -525,7 +525,7 @@ const DailySale = (props: DailySaleProviderProps) => {
                     : commoditymaster.taxable_at,
               ))) /
             100 <
-            liquoreOIDCAmount
+            liquoreOIDCAmount* 0.9 
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -542,7 +542,7 @@ const DailySale = (props: DailySaleProviderProps) => {
                     : commoditymaster.taxable_at,
               ))) /
             100 <
-            liquoreDealerAmount
+            (liquoreDealerAmount / commoditymaster.crate_size) * 0.9
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -555,7 +555,7 @@ const DailySale = (props: DailySaleProviderProps) => {
         if (
           isLiquore &&
           parseFloat(data.amount_unit) <
-            liquoreOIDCAmount * commoditymaster.crate_size
+            liquoreOIDCAmount
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -737,6 +737,7 @@ const DailySale = (props: DailySaleProviderProps) => {
             required={true}
             title="Purchaser TIN Number"
             disable={isAddMoreMode}
+            maxlength={11}
           />
         </div>
         {tindata != null && (

@@ -45,7 +45,7 @@ const TrackAppliation = () => {
     TIN,
   }
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.TIN
+    SearchOption.TIN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -58,7 +58,7 @@ const TrackAppliation = () => {
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    dateStrings: [string, string],
   ) => {
     setSearchDate(dates);
   };
@@ -304,7 +304,7 @@ const TrackAppliation = () => {
     const startMonth = new Date(
       lastMonth.getFullYear(),
       lastMonth.getMonth() - 2,
-      1
+      1,
     );
 
     // Helper function to format month names and last two digits of year
@@ -358,7 +358,7 @@ const TrackAppliation = () => {
               </p>
             </div>
           </div>
-      </div>
+        </div>
 
         {cformData.length == 0 && (
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
@@ -371,7 +371,7 @@ const TrackAppliation = () => {
               description="There is no C-Form."
             />
           </div>
-      )}
+        )}
 
         {cformData.length != 0 && (
           <>
@@ -379,7 +379,9 @@ const TrackAppliation = () => {
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
               <div className="flex flex-col md:flex-row gap-4 md:items-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">Search by:</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    Search by:
+                  </span>
                   <Radio.Group
                     onChange={onChange}
                     value={searchOption}
@@ -394,13 +396,14 @@ const TrackAppliation = () => {
                     </Radio>
                   </Radio.Group>
                 </div>
-                
+
                 {(() => {
                   switch (searchOption) {
                     case SearchOption.TIN:
                       return (
                         <div className="flex gap-2 flex-1">
                           <Input
+                            maxLength={11}
                             className="max-w-xs"
                             ref={tinRef}
                             placeholder="Enter Purchaser TIN Number"
@@ -408,11 +411,19 @@ const TrackAppliation = () => {
                           />
 
                           {isSearch ? (
-                            <Button onClick={init} type="primary" className="bg-blue-500 hover:bg-blue-600">
+                            <Button
+                              onClick={init}
+                              type="primary"
+                              className="bg-blue-500 hover:bg-blue-600"
+                            >
                               Reset
                             </Button>
                           ) : (
-                            <Button onClick={tinsearch} type="primary" className="bg-blue-500 hover:bg-blue-600">
+                            <Button
+                              onClick={tinsearch}
+                              type="primary"
+                              className="bg-blue-500 hover:bg-blue-600"
+                            >
                               Search
                             </Button>
                           )}
@@ -430,11 +441,19 @@ const TrackAppliation = () => {
                           />
 
                           {isSearch ? (
-                            <Button onClick={init} type="primary" className="bg-blue-500 hover:bg-blue-600">
+                            <Button
+                              onClick={init}
+                              type="primary"
+                              className="bg-blue-500 hover:bg-blue-600"
+                            >
                               Reset
                             </Button>
                           ) : (
-                            <Button onClick={namesearch} type="primary" className="bg-blue-500 hover:bg-blue-600">
+                            <Button
+                              onClick={namesearch}
+                              type="primary"
+                              className="bg-blue-500 hover:bg-blue-600"
+                            >
                               Search
                             </Button>
                           )}
@@ -445,7 +464,7 @@ const TrackAppliation = () => {
                   }
                 })()}
               </div>
-          </div>
+            </div>
 
             {/* Results Table Card */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
@@ -468,17 +487,20 @@ const TrackAppliation = () => {
 
                       <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
                         Purchaser Name
-                        </TableHead>
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {cformData.map((val: cform, index: number) => {
                       return (
-                        <TableRow key={index} className="hover:bg-blue-50 transition-colors">
+                        <TableRow
+                          key={index}
+                          className="hover:bg-blue-50 transition-colors"
+                        >
                           <TableCell className="border border-gray-200 text-center p-3">
                             <Link
                               href={`/dashboard/cform/${encryptURLData(
-                                val.id.toString()
+                                val.id.toString(),
                               )}`}
                               className="text-blue-500 hover:text-blue-700 font-medium hover:underline"
                             >
@@ -500,7 +522,7 @@ const TrackAppliation = () => {
                         </TableRow>
                       );
                     })}
-                    </TableBody>
+                  </TableBody>
                 </Table>
               </div>
 

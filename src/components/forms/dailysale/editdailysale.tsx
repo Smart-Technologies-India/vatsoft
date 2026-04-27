@@ -197,7 +197,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
     if (tindata == null || tindata == undefined)
       return toast.error("Seller TIN Number not found.");
 
-    if (isLiquore && parseInt(data.amount_unit) < liquoreAmount) {
+    if (isLiquore && parseInt(data.amount_unit) < (liquoreAmount / commoditymaster.crate_size) * 0.9) {
       return toast.error("Sale amount can not be less than MRP.");
     }
 
