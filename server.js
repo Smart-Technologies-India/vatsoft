@@ -17,7 +17,7 @@ const handle = app.getRequestHandler();
 app.prepare().then(() => {
   const server = express();
 
-  server.use(express.json());
+  const jsonParser = express.json();
 
   server.get("/orderstatus", async function (request, response) {
     await orderstatus(request, response);
@@ -27,15 +27,15 @@ app.prepare().then(() => {
     payamount(request, response);
   });
 
-  server.post("/ccavRequestHandler", function (request, response) {
+  server.post("/ccavRequestHandler", jsonParser, function (request, response) {
     postReq(request, response);
   });
 
-  server.post("/ccavResponseHandler", function (request, response) {
+  server.post("/ccavResponseHandler", jsonParser, function (request, response) {
     postRes(request, response);
   });
 
-  server.post("/sendReturnFiledSms", async function (request, response) {
+  server.post("/sendReturnFiledSms", jsonParser, async function (request, response) {
     await sendReturnFiledSms(request, response);
   });
 

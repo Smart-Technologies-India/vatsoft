@@ -1,0 +1,8 @@
+### Get Commodity List
+POST http://localhost:3001/api/getcommodity
+Content-Type: application/json
+
+{
+  "take": 10,
+  "skip": 0
+}

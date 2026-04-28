@@ -149,6 +149,10 @@ model user {
   product_request_deletedBy product_request[] @relation("product_request_deletedBy")
   product_request_updatedBy product_request[] @relation("product_request_updatedBy")
   product_request           product_request[] @relation("product_request_requestedBy")
+  missing_invoice_complaint_createdBy missing_invoice_complaint[] @relation("missing_invoice_complaint_createdBy")
+  missing_invoice_complaint_deletedBy missing_invoice_complaint[] @relation("missing_invoice_complaint_deletedBy")
+  missing_invoice_complaint_updatedBy missing_invoice_complaint[] @relation("missing_invoice_complaint_updatedBy")
+  missing_invoice_complaint_resolvedBy missing_invoice_complaint[] @relation("missing_invoice_complaint_resolvedBy")
 }
 
 model change {
@@ -310,6 +314,7 @@ model dvat04 {
   composition                     composition[]
   daily_purchase                  daily_purchase[]
   daily_sale                      daily_sale[]
+  missing_invoice_complaint       missing_invoice_complaint[]
   createdBy                       user                    @relation("dvat04_createdBy", fields: [createdById], references: [id])
   deletedBy                       user?                   @relation("dvat04_deletedBy", fields: [deletedById], references: [id])
   selectComFive                   commodity?              @relation("commodity_five", fields: [selectComFiveId], references: [id])
@@ -1475,6 +1480,40 @@ model product_request {
   @@index([updatedById], map: "product_request_updatedById_fkey")
 }
 
+model missing_invoice_complaint {
+  id                Int                  @id @default(autoincrement())
+  dvat04Id          Int
+  invoice_type      MissingInvoiceType
+  invoice_number    String
+  invoice_date      DateTime?
+  supplier_tin      String?
+  customer_tin_no   String?
+  customer_name     String?
+  complaint_message String               @db.Text
+  status            MissingInvoiceStatus @default(PENDING)
+  createdAt         DateTime             @default(now())
+  createdById       Int
+  updatedAt         DateTime             @updatedAt
+  updatedById       Int?
+  resolvedAt        DateTime?
+  resolvedById      Int?
+  deletedAt         DateTime?
+  deletedById       Int?
+  createdBy         user                 @relation("missing_invoice_complaint_createdBy", fields: [createdById], references: [id])
+  dvat04            dvat04               @relation(fields: [dvat04Id], references: [id])
+  deletedBy         user?                @relation("missing_invoice_complaint_deletedBy", fields: [deletedById], references: [id])
+  resolvedBy        user?                @relation("missing_invoice_complaint_resolvedBy", fields: [resolvedById], references: [id])
+  updatedBy         user?                @relation("missing_invoice_complaint_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([dvat04Id], map: "missing_invoice_complaint_dvat04Id_fkey")
+  @@index([createdById], map: "missing_invoice_complaint_createdById_fkey")
+  @@index([deletedById], map: "missing_invoice_complaint_deletedById_fkey")
+  @@index([resolvedById], map: "missing_invoice_complaint_resolvedById_fkey")
+  @@index([updatedById], map: "missing_invoice_complaint_updatedById_fkey")
+  @@index([invoice_type, invoice_number], map: "missing_invoice_complaint_invoice_lookup_idx")
+  @@index([status], map: "missing_invoice_complaint_status_idx")
+}
+
 model notification {
   id                   Int                  @id @default(autoincrement())
   title                String
@@ -1506,6 +1545,18 @@ enum NotificationDvatType {
 enum ProductRequest {
   PENDING
   APPROVED
+  REJECTED
+}
+
+enum MissingInvoiceType {
+  SALE
+  PURCHASE
+}
+
+enum MissingInvoiceStatus {
+  PENDING
+  IN_REVIEW
+  RESOLVED
   REJECTED
 }
 

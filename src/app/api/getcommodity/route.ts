@@ -3,6 +3,7 @@ import prisma from "../../../../prisma/database";
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("Received request to get commodities");
     // get the request body
     const body = await req.json();
 

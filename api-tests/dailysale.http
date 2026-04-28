@@ -1,0 +1,26 @@
+### Daily Sale Create
+POST http://localhost:3001/api/dailysale
+Content-Type: application/json
+
+{
+  "Data": [
+    {
+      "SupplierTIN": "2512345678901",
+      "VchNum": "SAL-001",
+      "VchDt": "2026-04-28",
+      "CustomerTINNo": "2598765432101",
+      "CustomerName": "Sample Customer",
+      "Items": [
+        {
+          "StockItem": "SAMPLE-ITEM",
+          "BatchName": "BATCH-01",
+          "Qty": 5,
+          "Rate": 150,
+          "MasterID": 1,
+          "Conversion": 1,
+          "Amount": 750
+        }
+      ]
+    }
+  ]
+}

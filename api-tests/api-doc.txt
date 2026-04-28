@@ -1,0 +1,50 @@
+VATSOFT API TEST NOTES
+
+Base URL
+- http://localhost:3001
+
+REST Client Files
+- getcommodity.http
+- dailypurchase.http
+- dailysale.http
+
+How to Run
+1. Start app server: pnpm dev
+2. Open any .http file in api-tests folder
+3. Click Send Request on the request line
+
+Daily Purchase Endpoint
+- Method: POST
+- URL: /api/dailypurchase
+- Required body key: Data (array)
+
+Daily Sale Endpoint
+- Method: POST
+- URL: /api/dailysale
+- Required body key: Data (array)
+
+Common Body Structure for Data[]
+- SupplierTIN: string
+- VchNum: string
+- VchDt: string (example: 2026-04-28)
+- CustomerTINNo: string
+- CustomerName: string
+- Items: array of
+  - StockItem: string
+  - BatchName: string
+  - Qty: number
+  - Rate: number
+  - MasterID: number
+  - Conversion: number
+  - Amount: number
+
+Validation Notes
+- CustomerTINNo must exist in tin_number_master and be ACTIVE.
+- SupplierTIN must exist in dvat04.
+- MasterID must exist in commodity_master.
+- Duplicate invoice+item+batch+qty entries are rejected.
+
+Expected Response Pattern
+- status: true/false
+- message or error text
+- HTTP status code is 200 in success and handled error cases.

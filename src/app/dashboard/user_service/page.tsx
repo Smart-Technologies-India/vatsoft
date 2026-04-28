@@ -63,6 +63,11 @@ const Page = () => {
                 description="Send notifications to all users, specific groups, or individual users."
                 link="/dashboard/send-notification"
               />
+              <DashboardCards
+                title="Missing Invoice"
+                description="Complain about missing invoice and upload supporting documents for the same."
+                link="/dashboard/admin_missing_invoice"
+              />
             </>
           )}
 
@@ -82,6 +87,11 @@ const Page = () => {
                 title="View Notice and Order"
                 description="Check any notices and orders issued by the VAT department."
                 link="/dashboard/user_service/notice_order"
+              />
+              <DashboardCards
+                title="Missing Invoice"
+                description="Complain about missing invoice and upload supporting documents for the same."
+                link="/dashboard/user_service/missing_invoice"
               />
               {/* <DashboardCards
                 title="My Profile"

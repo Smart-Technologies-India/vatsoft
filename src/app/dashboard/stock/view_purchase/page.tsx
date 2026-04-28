@@ -38,6 +38,7 @@ import Lottie from "lottie-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx";
 
 const DocumentWiseDetails = () => {
   const router = useRouter();
@@ -384,6 +385,34 @@ const DocumentWiseDetails = () => {
   };
 
   const [addBox, setAddBox] = useState<boolean>(false);
+  const [isAcceptAllLoading, setIsAcceptAllLoading] = useState(false);
+  const [isAcceptAllModalOpen, setIsAcceptAllModalOpen] = useState(false);
+
+  const downloadDailyPurchaseReport = () => {
+    if (dailyPurchase.length === 0) {
+      toast.info("No purchase records found to export.");
+      return;
+    }
+
+    const rows = dailyPurchase.map((group, index) => ({
+      "S. No.": index + 1,
+      Count: group.count,
+      "Invoice No.": group.invoice_number,
+      "Invoice Date": formateDate(group.invoice_date),
+      "Trade Name": group.seller_tin_number.name_of_dealer,
+      "TIN Number": group.seller_tin_number.tin_number,
+      "Invoice Value": Number(group.totalInvoiceValue.toFixed(2)),
+      "VAT Amount": Number(group.totalVatAmount.toFixed(2)),
+      "Taxable Value": Number(group.totalTaxableValue.toFixed(2)),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Daily Purchase");
+
+    const fileDate = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `dailyPurchase_report_${fileDate}.xlsx`);
+  };
 
   // 1 crate 2 pcs
   const showCrates = (quantity: number, crate_size: number): string => {
@@ -434,6 +463,90 @@ const DocumentWiseDetails = () => {
       }),
     );
   };
+
+  const handleAcceptAllRecords = () => {
+    if (!dvatdata) {
+      toast.error("DVAT not found.");
+      return;
+    }
+
+    const pendingRecords = dailyPurchase
+      .flatMap((group) => group.records)
+      .filter(
+        (record) =>
+          (record.seller_tin_number.tin_number.startsWith("25") ||
+            record.seller_tin_number.tin_number.startsWith("26")) &&
+          !record.is_accept,
+      );
+
+    if (pendingRecords.length === 0) {
+      toast.info("No pending acceptable purchase records found.");
+      return;
+    }
+
+    setIsAcceptAllModalOpen(true);
+  };
+
+  const confirmAcceptAllRecords = async () => {
+    if (!dvatdata) {
+      toast.error("DVAT not found.");
+      return;
+    }
+
+    const pendingRecords = dailyPurchase
+      .flatMap((group) => group.records)
+      .filter(
+        (record) =>
+          (record.seller_tin_number.tin_number.startsWith("25") ||
+            record.seller_tin_number.tin_number.startsWith("26")) &&
+          !record.is_accept,
+      );
+
+    if (pendingRecords.length === 0) {
+      setIsAcceptAllModalOpen(false);
+      toast.info("No pending acceptable purchase records found.");
+      return;
+    }
+
+    setIsAcceptAllLoading(true);
+
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (const record of pendingRecords) {
+      const response = await AcceptSale({
+        commodityid: record.commodity_master.id,
+        createdById: userid,
+        dvatid: dvatdata.id,
+        quantity: record.quantity,
+        puchaseid: record.id,
+        urn: record.urn_number ?? "",
+      });
+
+      if (response.status && response.data) {
+        successCount += 1;
+        markRecordAccepted(record.id);
+      } else {
+        failedCount += 1;
+      }
+    }
+
+    setIsAcceptAllLoading(false);
+    setIsAcceptAllModalOpen(false);
+
+    if (successCount > 0) {
+      toast.success(`${successCount} purchase record(s) accepted.`);
+      await init();
+    }
+
+    if (failedCount > 0) {
+      toast.error(`${failedCount} record(s) could not be accepted.`);
+    }
+  };
+
+  const hasPendingAcceptable = dailyPurchase.some(
+    (group) => group.hasPendingAcceptable,
+  );
 
   if (isLoading)
     return (
@@ -654,6 +767,21 @@ const DocumentWiseDetails = () => {
         </p>
       </Modal>
 
+      <Modal
+        title="Accept all pending purchase invoices"
+        open={isAcceptAllModalOpen}
+        onOk={confirmAcceptAllRecords}
+        onCancel={() => setIsAcceptAllModalOpen(false)}
+        confirmLoading={isAcceptAllLoading}
+        okText="Yes, Accept All"
+        cancelText="Cancel"
+      >
+        <p className="text-sm text-slate-600 py-2">
+          This is an important step. Once accepted, these changes cannot be
+          reversed.
+        </p>
+      </Modal>
+
       <main className="p-3 bg-gray-50">
         <div className=" mx-auto">
           {/* Header Card */}
@@ -696,6 +824,26 @@ const DocumentWiseDetails = () => {
                     Generate DVAT 30/30 A
                   </Button>
                 )}
+
+                {hasPendingAcceptable && (
+                  <Button
+                    size="small"
+                    type="default"
+                    danger
+                    loading={isAcceptAllLoading}
+                    onClick={handleAcceptAllRecords}
+                  >
+                    Accept All
+                  </Button>
+                )}
+
+                <Button
+                  size="small"
+                  type="default"
+                  onClick={downloadDailyPurchaseReport}
+                >
+                  Export Excel
+                </Button>
 
                 <Button
                   size="small"
@@ -750,9 +898,9 @@ const DocumentWiseDetails = () => {
             </div>
           </div>
 
-          {dailyPurchase.some((group) => group.hasPendingAcceptable) && (
+          {hasPendingAcceptable && (
             <Alert
-              message="Kindly accept pending purchase invoices."
+              title="Kindly accept pending purchase invoices."
               type="warning"
               className="mb-3"
               showIcon
