@@ -3,12 +3,34 @@ import prisma from "../../../../prisma/database";
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("Received request to get commodities");
     // get the request body
     const body = await req.json();
 
     const take = body["take"] || 10;
     const skip = body["skip"] || 0;
+    const all = body["all"] || false;
+
+    if (all) {
+      const data = await prisma.commodity_master.findMany({
+        where: {
+          deletedAt: null,
+          status: "ACTIVE",
+          product_type: "LIQUOR",
+        },
+        select: {
+          id: true,
+          product_name: true,
+          crate_size: true,
+          pack_type: true,
+        },
+      });
+
+      const result = { data: data, total: data.length };
+      return NextResponse.json(
+        { status: true, message: "Request processed successfully", data: result },
+        { status: 200 },
+      );
+    }
 
     const [data, count] = await Promise.all([
       prisma.commodity_master.findMany({
@@ -44,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { status: true, message: "Request processed successfully", data: result },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     return NextResponse.json(
@@ -52,7 +74,7 @@ export async function POST(req: NextRequest) {
         status: false,
         error: "Failed to process request. error: " + error.message,
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 }

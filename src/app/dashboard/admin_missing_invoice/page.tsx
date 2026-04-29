@@ -39,8 +39,8 @@ const STATUS_OPTIONS: { value: MissingInvoiceStatus | ""; label: string }[] = [
 
 const TYPE_OPTIONS: { value: MissingInvoiceType | ""; label: string }[] = [
   { value: "", label: "All Types" },
-  { value: "SALE", label: "Sale" },
-  { value: "PURCHASE", label: "Purchase" },
+  { value: "MISSING_SALE", label: "Missing Sale" },
+  { value: "WRONG_SALE", label: "Wrong Sale" },
 ];
 
 const STATUS_COLORS: Record<MissingInvoiceStatus, string> = {
@@ -261,6 +261,8 @@ const AdminMissingInvoicePage = () => {
                     <TableRow className="bg-gray-50 border-b">
                       <TableHead className="text-center p-2 text-xs">Type</TableHead>
                       <TableHead className="text-center p-2 text-xs">Invoice No.</TableHead>
+                      <TableHead className="text-center p-2 text-xs">Taxable Amount</TableHead>
+                      <TableHead className="text-center p-2 text-xs">VAT Amount</TableHead>
                       <TableHead className="text-center p-2 text-xs">Invoice Date</TableHead>
                       <TableHead className="text-center p-2 text-xs">Supplier TIN</TableHead>
                       <TableHead className="text-center p-2 text-xs">Customer TIN</TableHead>
@@ -275,12 +277,18 @@ const AdminMissingInvoicePage = () => {
                     {rows.map((row) => (
                       <TableRow key={row.id} className="border-b hover:bg-gray-50">
                         <TableCell className="text-center text-xs p-2">
-                          <Tag color={row.invoice_type === "SALE" ? "green" : "blue"}>
+                          <Tag color={row.invoice_type === "MISSING_SALE" ? "green" : "blue"}>
                             {row.invoice_type}
                           </Tag>
                         </TableCell>
                         <TableCell className="text-center text-xs p-2">
                           {row.invoice_number}
+                        </TableCell>
+                        <TableCell className="text-center text-xs p-2">
+                          {row.taxable_amount}
+                        </TableCell>
+                        <TableCell className="text-center text-xs p-2">
+                          {row.vat_amount}
                         </TableCell>
                         <TableCell className="text-center text-xs p-2">
                           {row.invoice_date ? formateDate(row.invoice_date) : "-"}
@@ -357,13 +365,21 @@ const AdminMissingInvoicePage = () => {
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
               <div>
                 <p className="text-gray-500">Invoice Type</p>
-                <Tag color={selectedRow.invoice_type === "SALE" ? "green" : "blue"} className="mt-1">
+                <Tag color={selectedRow.invoice_type === "MISSING_SALE" ? "green" : "blue"} className="mt-1">
                   {selectedRow.invoice_type}
                 </Tag>
               </div>
               <div>
                 <p className="text-gray-500">Invoice Number</p>
                 <p className="font-medium mt-1">{selectedRow.invoice_number}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Taxable Amount</p>
+                <p className="font-medium mt-1">{selectedRow.taxable_amount}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">VAT Amount</p>
+                <p className="font-medium mt-1">{selectedRow.vat_amount}</p>
               </div>
               <div>
                 <p className="text-gray-500">Invoice Date</p>
@@ -486,7 +502,7 @@ const AdminMissingInvoicePage = () => {
             <div className="border-t pt-3">
               <p className="text-gray-500 text-xs mb-1">Complaint Details</p>
               <p className="text-sm text-gray-800 bg-gray-50 rounded p-2 border">
-                {selectedRow.complaint_message}
+                {selectedRow.complaint_message || "-"}
               </p>
             </div>
 

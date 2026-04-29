@@ -42,6 +42,8 @@ const CreateMissingInvoiceComplaint = async (
         dvat04Id: parsed.output.dvat04Id,
         invoice_type: parsed.output.invoice_type,
         invoice_number: parsed.output.invoice_number,
+        taxable_amount: parsed.output.taxable_amount,
+        vat_amount: parsed.output.vat_amount,
         invoice_date: parsed.output.invoice_date,
         supplier_tin:
           parsed.output.supplier_tin && parsed.output.supplier_tin.length > 0
@@ -56,7 +58,7 @@ const CreateMissingInvoiceComplaint = async (
           parsed.output.customer_name && parsed.output.customer_name.length > 0
             ? parsed.output.customer_name
             : null,
-        complaint_message: parsed.output.complaint_message,
+        complaint_message: parsed.output.complaint_message ?? "",
         createdById: userId,
       },
     });

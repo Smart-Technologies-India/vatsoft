@@ -8,6 +8,7 @@ import {
   DatePicker,
   Drawer,
   Input,
+  Modal,
   Pagination,
   Select,
   Tag,
@@ -19,9 +20,10 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import SearchTinNumber from "@/action/dvat/searchtin";
 import CreateMissingInvoiceComplaint from "@/action/missing_invoice/createmissinginvoicecomplaint";
 import GetUserMissingInvoiceComplaints from "@/action/missing_invoice/getusermissinginvoicecomplaints";
+import UpdateMissingInvoiceStatus from "@/action/missing_invoice/updatemissinginvoicestatus";
 import type { MissingInvoiceComplaintWithCreator } from "@/models/missinginvoice";
 import { formateDate } from "@/utils/methods";
-import { dvat04, MissingInvoiceType } from "@prisma/client";
+import { dvat04, MissingInvoiceStatus, MissingInvoiceType } from "@prisma/client";
 import {
   Table,
   TableBody,
@@ -50,34 +52,35 @@ const MissingInvoicePage = () => {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+  const [selectedComplaintToClose, setSelectedComplaintToClose] =
+    useState<MissingInvoiceComplaintWithCreator | null>(null);
+  const [isClosingComplaint, setIsClosingComplaint] = useState(false);
 
-  const [invoiceType, setInvoiceType] = useState<MissingInvoiceType>("SALE");
+  const [invoiceType, setInvoiceType] =
+    useState<MissingInvoiceType>("MISSING_SALE");
   const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [taxableAmount, setTaxableAmount] = useState("");
+  const [vatAmount, setVatAmount] = useState("");
   const [invoiceDate, setInvoiceDate] = useState<Dayjs | null>(null);
   const [supplierTin, setSupplierTin] = useState("");
-  const [customerTin, setCustomerTin] = useState("");
   const [supplierTinName, setSupplierTinName] = useState("");
-  const [customerTinName, setCustomerTinName] = useState("");
   const [supplierTinError, setSupplierTinError] = useState("");
-  const [customerTinError, setCustomerTinError] = useState("");
   const [isSupplierTinLoading, setIsSupplierTinLoading] = useState(false);
-  const [isCustomerTinLoading, setIsCustomerTinLoading] = useState(false);
   const [complaintMessage, setComplaintMessage] = useState("");
 
   const sanitizeTin = (value: string) => value.replace(/\D/g, "").slice(0, 11);
 
   const resetForm = () => {
-    setInvoiceType("SALE");
+    setInvoiceType("MISSING_SALE");
     setInvoiceNumber("");
+    setTaxableAmount("");
+    setVatAmount("");
     setInvoiceDate(null);
     setSupplierTin("");
-    setCustomerTin("");
     setSupplierTinName("");
-    setCustomerTinName("");
     setSupplierTinError("");
-    setCustomerTinError("");
     setIsSupplierTinLoading(false);
-    setIsCustomerTinLoading(false);
     setComplaintMessage("");
   };
 
@@ -90,9 +93,9 @@ const MissingInvoicePage = () => {
         return;
       }
 
-      if (customerTin.length === 11 && supplierTin === customerTin) {
+      if (dvatData?.tinNumber && supplierTin === dvatData.tinNumber) {
         setSupplierTinName("");
-        setSupplierTinError("Supplier TIN and customer TIN cannot be the same.");
+        setSupplierTinError("Supplier TIN cannot be same as your DVAT TIN.");
         setIsSupplierTinLoading(false);
         return;
       }
@@ -112,41 +115,7 @@ const MissingInvoicePage = () => {
     };
 
     void fetchSupplierTinDetails();
-  }, [supplierTin]);
-
-  useEffect(() => {
-    const fetchCustomerTinDetails = async () => {
-      if (customerTin.length !== 11) {
-        setCustomerTinName("");
-        setCustomerTinError("");
-        setIsCustomerTinLoading(false);
-        return;
-      }
-
-      if (supplierTin.length === 11 && supplierTin === customerTin) {
-        setCustomerTinName("");
-        setCustomerTinError("Customer TIN and supplier TIN cannot be the same.");
-        setIsCustomerTinLoading(false);
-        return;
-      }
-
-      setIsCustomerTinLoading(true);
-      const response = await SearchTinNumber({ tinumber: customerTin });
-      setIsCustomerTinLoading(false);
-
-      if (response.status && response.data) {
-        const dealerName = response.data.tradename ?? response.data.name ?? "";
-        setCustomerTinName(dealerName);
-        setCustomerTinError("");
-        return;
-      }
-
-      setCustomerTinName("");
-      setCustomerTinError("Customer DVAT/TIN does not exist.");
-    };
-
-    void fetchCustomerTinDetails();
-  }, [customerTin]);
+  }, [supplierTin, dvatData?.tinNumber]);
 
   const loadComplaints = async (dvatid: number, take: number, skip: number) => {
     const response = await GetUserMissingInvoiceComplaints({
@@ -227,33 +196,33 @@ const MissingInvoicePage = () => {
       return;
     }
 
-    if (supplierTin && supplierTin.length !== 11) {
+    if (!taxableAmount.trim()) {
+      toast.error("Taxable amount is required.");
+      return;
+    }
+
+    if (!vatAmount.trim()) {
+      toast.error("VAT amount is required.");
+      return;
+    }
+
+    if (!supplierTin) {
+      toast.error("Supplier TIN is required.");
+      return;
+    }
+
+    if (supplierTin.length !== 11) {
       toast.error("Supplier TIN must be 11 digits.");
       return;
     }
 
-    if (customerTin && customerTin.length !== 11) {
-      toast.error("Customer TIN must be 11 digits.");
-      return;
-    }
-
-    if (supplierTin && customerTin && supplierTin === customerTin) {
-      toast.error("Supplier TIN and customer TIN cannot be the same.");
+    if (dvatData.tinNumber && supplierTin === dvatData.tinNumber) {
+      toast.error("Supplier TIN cannot be same as your DVAT TIN.");
       return;
     }
 
     if (supplierTin.length === 11 && !supplierTinName) {
       toast.error("Supplier DVAT/TIN does not exist.");
-      return;
-    }
-
-    if (customerTin.length === 11 && !customerTinName) {
-      toast.error("Customer DVAT/TIN does not exist.");
-      return;
-    }
-
-    if (!complaintMessage.trim()) {
-      toast.error("Complaint details are required.");
       return;
     }
 
@@ -263,10 +232,12 @@ const MissingInvoicePage = () => {
       dvat04Id: dvatData.id,
       invoice_type: invoiceType,
       invoice_number: invoiceNumber.trim(),
+      taxable_amount: taxableAmount.trim(),
+      vat_amount: vatAmount.trim(),
       invoice_date: invoiceDate ? invoiceDate.toDate() : undefined,
       supplier_tin: supplierTin.trim(),
-      customer_tin_no: customerTin.trim(),
-      customer_name: customerTinName.trim(),
+      customer_tin_no: dvatData.tinNumber?.trim() ?? "",
+      customer_name: (dvatData.tradename ?? dvatData.name ?? "").trim(),
       complaint_message: complaintMessage.trim(),
     });
 
@@ -281,6 +252,36 @@ const MissingInvoicePage = () => {
     setDrawerOpen(false);
     resetForm();
     await loadComplaints(dvatData.id, pagination.take, 0);
+  };
+
+  const openCloseComplaintModal = (row: MissingInvoiceComplaintWithCreator) => {
+    setSelectedComplaintToClose(row);
+    setIsCloseModalOpen(true);
+  };
+
+  const onConfirmCloseComplaint = async () => {
+    if (!selectedComplaintToClose || !dvatData) {
+      return;
+    }
+
+    setIsClosingComplaint(true);
+
+    const response = await UpdateMissingInvoiceStatus({
+      id: selectedComplaintToClose.id,
+      status: "RESOLVED" as MissingInvoiceStatus,
+    });
+
+    setIsClosingComplaint(false);
+
+    if (!response.status) {
+      toast.error(response.message);
+      return;
+    }
+
+    toast.success("Complaint closed successfully.");
+    setIsCloseModalOpen(false);
+    setSelectedComplaintToClose(null);
+    await loadComplaints(dvatData.id, pagination.take, pagination.skip);
   };
 
   if (isLoading) {
@@ -331,6 +332,12 @@ const MissingInvoicePage = () => {
                         Invoice No.
                       </TableHead>
                       <TableHead className="text-center p-2 text-xs">
+                        Taxable Amount
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        VAT Amount
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
                         Invoice Date
                       </TableHead>
                       <TableHead className="text-center p-2 text-xs">
@@ -348,6 +355,9 @@ const MissingInvoicePage = () => {
                       <TableHead className="text-center p-2 text-xs">
                         Created On
                       </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        Action
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -359,7 +369,9 @@ const MissingInvoicePage = () => {
                         <TableCell className="text-center text-xs p-2">
                           <Tag
                             color={
-                              row.invoice_type === "SALE" ? "green" : "blue"
+                              row.invoice_type === "MISSING_SALE"
+                                ? "green"
+                                : "blue"
                             }
                           >
                             {row.invoice_type}
@@ -367,6 +379,12 @@ const MissingInvoicePage = () => {
                         </TableCell>
                         <TableCell className="text-center text-xs p-2">
                           {row.invoice_number}
+                        </TableCell>
+                        <TableCell className="text-center text-xs p-2">
+                          {row.taxable_amount}
+                        </TableCell>
+                        <TableCell className="text-center text-xs p-2">
+                          {row.vat_amount}
                         </TableCell>
                         <TableCell className="text-center text-xs p-2">
                           {row.invoice_date
@@ -399,6 +417,19 @@ const MissingInvoicePage = () => {
                         </TableCell>
                         <TableCell className="text-center text-xs p-2">
                           {formateDate(row.createdAt)}
+                        </TableCell>
+                        <TableCell className="text-center text-xs p-2">
+                          {row.status === "IN_REVIEW" ? (
+                            <Button
+                              size="small"
+                              danger
+                              onClick={() => openCloseComplaintModal(row)}
+                            >
+                              Close Complaint
+                            </Button>
+                          ) : (
+                            "-"
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -446,11 +477,48 @@ const MissingInvoicePage = () => {
               value={invoiceType}
               onChange={(value) => setInvoiceType(value as MissingInvoiceType)}
               options={[
-                { value: "SALE", label: "Sale" },
-                { value: "PURCHASE", label: "Purchase" },
+                { value: "MISSING_SALE", label: "Missing Sale" },
+                { value: "WRONG_SALE", label: "Wrong Sale" },
               ]}
               className="w-full"
             />
+          </div>
+          <div>
+            <label className="text-xs text-gray-600 block mb-1">
+              Supplier TIN
+            </label>
+            <Input
+              value={supplierTin}
+              onChange={(e) => setSupplierTin(sanitizeTin(e.target.value))}
+              maxLength={11}
+              placeholder="Enter 11 digit supplier TIN"
+            />
+            <p
+              className={`text-[11px] mt-1 min-h-4 ${
+                supplierTinError ? "text-rose-500" : "text-gray-500"
+              }`}
+            >
+              {supplierTin.length === 0
+                ? "Supplier TIN is required"
+                : supplierTin.length < 11
+                  ? `${11 - supplierTin.length} digit(s) remaining`
+                  : isSupplierTinLoading
+                    ? "Verifying supplier TIN..."
+                    : supplierTinError
+                      ? supplierTinError
+                      : supplierTinName
+                        ? `Verified dealer: ${supplierTinName}`
+                        : "Supplier TIN not found"}
+            </p>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-600 block mb-1">
+              Supplier Name
+            </label>
+            <div className="min-h-10 rounded-md border bg-gray-50 px-3 py-2 text-sm text-gray-700">
+              {supplierTinName || "Will be auto-fetched from supplier TIN"}
+            </div>
           </div>
 
           <div>
@@ -476,92 +544,37 @@ const MissingInvoicePage = () => {
               maxDate={dayjs()}
             />
           </div>
-
           <div>
             <label className="text-xs text-gray-600 block mb-1">
-              Supplier TIN
+              Taxable Amount
             </label>
             <Input
-              value={supplierTin}
-              onChange={(e) => setSupplierTin(sanitizeTin(e.target.value))}
-              maxLength={11}
-              placeholder="Optional"
+              value={taxableAmount}
+              onChange={(e) => setTaxableAmount(e.target.value)}
+              placeholder="Enter taxable amount"
             />
-            <p
-              className={`text-[11px] mt-1 min-h-4 ${
-                supplierTinError ? "text-rose-500" : "text-gray-500"
-              }`}
-            >
-              {supplierTin.length === 0
-                ? "Enter 11 digit supplier TIN to verify dealer details"
-                : supplierTin.length < 11
-                  ? `${11 - supplierTin.length} digit(s) remaining`
-                  : isSupplierTinLoading
-                    ? "Verifying supplier TIN..."
-                    : supplierTinError
-                      ? supplierTinError
-                      : supplierTinName
-                      ? `Verified dealer: ${supplierTinName}`
-                      : "Supplier TIN not found"}
-            </p>
           </div>
 
           <div>
             <label className="text-xs text-gray-600 block mb-1">
-              Customer TIN
+              VAT Amount
             </label>
             <Input
-              value={customerTin}
-              onChange={(e) => setCustomerTin(sanitizeTin(e.target.value))}
-              maxLength={11}
-              placeholder="Optional"
+              value={vatAmount}
+              onChange={(e) => setVatAmount(e.target.value)}
+              placeholder="Enter VAT amount"
             />
-            <p
-              className={`text-[11px] mt-1 min-h-4 ${
-                customerTinError ? "text-rose-500" : "text-gray-500"
-              }`}
-            >
-              {customerTin.length === 0
-                ? "Enter 11 digit customer TIN to verify dealer details"
-                : customerTin.length < 11
-                  ? `${11 - customerTin.length} digit(s) remaining`
-                  : isCustomerTinLoading
-                    ? "Verifying customer TIN..."
-                    : customerTinError
-                      ? customerTinError
-                      : customerTinName
-                      ? `Verified dealer: ${customerTinName}`
-                      : "Customer TIN not found"}
-            </p>
           </div>
 
           <div>
             <label className="text-xs text-gray-600 block mb-1">
-              Customer Name
-            </label>
-            <div className="min-h-10 rounded-md border bg-gray-50 px-3 py-2 text-sm text-gray-700">
-              {customerTinName || "Will be auto-filled from customer TIN"}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs text-gray-600 block mb-1">
-              Supplier Name
-            </label>
-            <div className="min-h-10 rounded-md border bg-gray-50 px-3 py-2 text-sm text-gray-700">
-              {supplierTinName || "Will be auto-fetched from supplier TIN"}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs text-gray-600 block mb-1">
-              Complaint Details
+              Complaint Details (Optional)
             </label>
             <Input.TextArea
               value={complaintMessage}
               onChange={(e) => setComplaintMessage(e.target.value)}
               rows={5}
-              placeholder="Describe missing invoice issue with details"
+              placeholder="Describe missing invoice issue with details (optional)"
             />
           </div>
 
@@ -577,6 +590,31 @@ const MissingInvoicePage = () => {
           </div>
         </div>
       </Drawer>
+
+      <Modal
+        title="Close Complaint"
+        open={isCloseModalOpen}
+        onCancel={() => {
+          if (!isClosingComplaint) {
+            setIsCloseModalOpen(false);
+            setSelectedComplaintToClose(null);
+          }
+        }}
+        onOk={onConfirmCloseComplaint}
+        okText="Yes, Close"
+        cancelText="Cancel"
+        okButtonProps={{ danger: true, loading: isClosingComplaint }}
+        cancelButtonProps={{ disabled: isClosingComplaint }}
+      >
+        <p className="text-sm text-gray-700">
+          Are you sure you want to close this complaint?
+        </p>
+        {selectedComplaintToClose && (
+          <p className="text-xs text-gray-500 mt-2">
+            Invoice: {selectedComplaintToClose.invoice_number}
+          </p>
+        )}
+      </Modal>
     </main>
   );
 };

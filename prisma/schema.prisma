@@ -145,13 +145,13 @@ model user {
   user_commodity_master_updatedBy user_commodity_master[] @relation("user_commodity_master_updatedBy")
   user_commodity_master           user_commodity_master[]
 
-  product_request_createdBy product_request[] @relation("product_request_createdBy")
-  product_request_deletedBy product_request[] @relation("product_request_deletedBy")
-  product_request_updatedBy product_request[] @relation("product_request_updatedBy")
-  product_request           product_request[] @relation("product_request_requestedBy")
-  missing_invoice_complaint_createdBy missing_invoice_complaint[] @relation("missing_invoice_complaint_createdBy")
-  missing_invoice_complaint_deletedBy missing_invoice_complaint[] @relation("missing_invoice_complaint_deletedBy")
-  missing_invoice_complaint_updatedBy missing_invoice_complaint[] @relation("missing_invoice_complaint_updatedBy")
+  product_request_createdBy            product_request[]           @relation("product_request_createdBy")
+  product_request_deletedBy            product_request[]           @relation("product_request_deletedBy")
+  product_request_updatedBy            product_request[]           @relation("product_request_updatedBy")
+  product_request                      product_request[]           @relation("product_request_requestedBy")
+  missing_invoice_complaint_createdBy  missing_invoice_complaint[] @relation("missing_invoice_complaint_createdBy")
+  missing_invoice_complaint_deletedBy  missing_invoice_complaint[] @relation("missing_invoice_complaint_deletedBy")
+  missing_invoice_complaint_updatedBy  missing_invoice_complaint[] @relation("missing_invoice_complaint_updatedBy")
   missing_invoice_complaint_resolvedBy missing_invoice_complaint[] @relation("missing_invoice_complaint_resolvedBy")
 }
 
@@ -220,23 +220,23 @@ model document {
 }
 
 model dvat04 {
-  id                              Int                     @id @default(autoincrement())
+  id                              Int                         @id @default(autoincrement())
   password                        String?
   temppass                        String?
   tempregistrationnumber          String?
   tinNumber                       String?
   certificateNumber               String?
   certificateDate                 DateTime?
-  commodity                       Dvat04Commodity?        @default(OTHER)
-  tin_master_id                   Int                     @default(1)
+  commodity                       Dvat04Commodity?            @default(OTHER)
+  tin_master_id                   Int                         @default(1)
   name                            String?
   tradename                       String?
-  natureOfBusiness                NatureOfBusiness?       @default(OTHERS)
-  constitutionOfBusiness          ConstitutionOfBusiness? @default(OTHER)
-  selectOffice                    SelectOffice?           @default(Dadra_Nagar_Haveli)
-  typeOfRegistration              TypeOfRegistration?     @default(MANDATORY)
-  compositionScheme               Boolean?                @default(false)
-  annualTurnoverCategory          Boolean?                @default(false)
+  natureOfBusiness                NatureOfBusiness?           @default(OTHERS)
+  constitutionOfBusiness          ConstitutionOfBusiness?     @default(OTHER)
+  selectOffice                    SelectOffice?               @default(Dadra_Nagar_Haveli)
+  typeOfRegistration              TypeOfRegistration?         @default(MANDATORY)
+  compositionScheme               Boolean?                    @default(false)
+  annualTurnoverCategory          Boolean?                    @default(false)
   turnoverLastFinancialYear       String?
   turnoverCurrentFinancialYear    String?
   vatLiableDate                   DateTime?
@@ -261,11 +261,11 @@ model dvat04 {
   additionalShops                 String?
   otherPlaceOfBusiness            String?
   accountnumber                   String?
-  typeOfAccount                   TypeOfAccount           @default(CURRENT)
+  typeOfAccount                   TypeOfAccount               @default(CURRENT)
   bankName                        String?
   ifscCode                        String?
   addressOfBank                   String?
-  accountNumberVerificationStatus Boolean                 @default(false)
+  accountNumberVerificationStatus Boolean                     @default(false)
   ownCapital                      String?
   loanFromBank                    String?
   loanFromOther                   String?
@@ -273,24 +273,24 @@ model dvat04 {
   landAndBuilding                 String?
   otherAssetsInvestments          String?
   selectComOneId                  Int?
-  purposeOne                      CommidityPursose        @default(COMMODITY_TRADED)
+  purposeOne                      CommidityPursose            @default(COMMODITY_TRADED)
   descriptionOne                  String?
   selectComTwoId                  Int?
-  purposeTwo                      CommidityPursose        @default(COMMODITY_TRADED)
+  purposeTwo                      CommidityPursose            @default(COMMODITY_TRADED)
   descriptionTwo                  String?
   selectComThreeId                Int?
-  purposeThree                    CommidityPursose        @default(COMMODITY_TRADED)
+  purposeThree                    CommidityPursose            @default(COMMODITY_TRADED)
   descriptionThree                String?
   selectComFourId                 Int?
-  purposeFour                     CommidityPursose        @default(COMMODITY_TRADED)
+  purposeFour                     CommidityPursose            @default(COMMODITY_TRADED)
   descriptionFour                 String?
   selectComFiveId                 Int?
-  purposeFive                     CommidityPursose        @default(COMMODITY_TRADED)
+  purposeFive                     CommidityPursose            @default(COMMODITY_TRADED)
   descriptionFive                 String?
-  accountingBasis                 AccountingBasis         @default(CASH)
-  frequencyFilings                FrequencyFilings        @default(MONTHLY)
+  accountingBasis                 AccountingBasis             @default(CASH)
+  frequencyFilings                FrequencyFilings            @default(MONTHLY)
   securityDepositAmount           String?
-  depositType                     DepositType             @default(FIXED)
+  depositType                     DepositType                 @default(FIXED)
   dateOfExpiry                    DateTime?
   nameOfBank                      String?
   branchName                      String?
@@ -300,10 +300,10 @@ model dvat04 {
   numberOfSignatory               Int?
   nameOfManager                   String?
   nameOfSignatory                 String?
-  status                          DvatStatus              @default(NONE)
-  createdAt                       DateTime                @default(now())
+  status                          DvatStatus                  @default(NONE)
+  createdAt                       DateTime                    @default(now())
   createdById                     Int
-  updatedAt                       DateTime                @updatedAt
+  updatedAt                       DateTime                    @updatedAt
   updatedById                     Int?
   deletedAt                       DateTime?
   deletedById                     Int?
@@ -315,15 +315,15 @@ model dvat04 {
   daily_purchase                  daily_purchase[]
   daily_sale                      daily_sale[]
   missing_invoice_complaint       missing_invoice_complaint[]
-  createdBy                       user                    @relation("dvat04_createdBy", fields: [createdById], references: [id])
-  deletedBy                       user?                   @relation("dvat04_deletedBy", fields: [deletedById], references: [id])
-  selectComFive                   commodity?              @relation("commodity_five", fields: [selectComFiveId], references: [id])
-  selectComFour                   commodity?              @relation("commodity_four", fields: [selectComFourId], references: [id])
-  selectComOne                    commodity?              @relation("commodity_one", fields: [selectComOneId], references: [id])
-  selectComThree                  commodity?              @relation("commodity_three", fields: [selectComThreeId], references: [id])
-  selectComTwo                    commodity?              @relation("commodity_two", fields: [selectComTwoId], references: [id])
-  tin_master                      tin_number_master       @relation(fields: [tin_master_id], references: [id])
-  updatedBy                       user?                   @relation("dvat04_updatedBy", fields: [updatedById], references: [id])
+  createdBy                       user                        @relation("dvat04_createdBy", fields: [createdById], references: [id])
+  deletedBy                       user?                       @relation("dvat04_deletedBy", fields: [deletedById], references: [id])
+  selectComFive                   commodity?                  @relation("commodity_five", fields: [selectComFiveId], references: [id])
+  selectComFour                   commodity?                  @relation("commodity_four", fields: [selectComFourId], references: [id])
+  selectComOne                    commodity?                  @relation("commodity_one", fields: [selectComOneId], references: [id])
+  selectComThree                  commodity?                  @relation("commodity_three", fields: [selectComThreeId], references: [id])
+  selectComTwo                    commodity?                  @relation("commodity_two", fields: [selectComTwoId], references: [id])
+  tin_master                      tin_number_master           @relation(fields: [tin_master_id], references: [id])
+  updatedBy                       user?                       @relation("dvat04_updatedBy", fields: [updatedById], references: [id])
   edit_manufacturer               edit_manufacturer[]
   edit_purchase                   edit_purchase[]
   edit_sale                       edit_sale[]
@@ -1485,6 +1485,8 @@ model missing_invoice_complaint {
   dvat04Id          Int
   invoice_type      MissingInvoiceType
   invoice_number    String
+  taxable_amount    String
+  vat_amount        String
   invoice_date      DateTime?
   supplier_tin      String?
   customer_tin_no   String?
@@ -1549,8 +1551,8 @@ enum ProductRequest {
 }
 
 enum MissingInvoiceType {
-  SALE
-  PURCHASE
+  MISSING_SALE
+  WRONG_SALE
 }
 
 enum MissingInvoiceStatus {

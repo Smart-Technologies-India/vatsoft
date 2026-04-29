@@ -46,7 +46,7 @@ const GetAllMissingInvoiceComplaints = async (
       ];
     }
 
-    const [complaints, total] = await Promise.all([
+    const [allComplaints, total] = await Promise.all([
       prisma.missing_invoice_complaint.findMany({
         where,
         include: {
@@ -59,14 +59,27 @@ const GetAllMissingInvoiceComplaints = async (
             },
           },
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-        skip: payload.skip,
-        take: payload.take,
       }),
       prisma.missing_invoice_complaint.count({ where }),
     ]);
+
+    const statusPriority: Record<MissingInvoiceStatus, number> = {
+      PENDING: 0,
+      IN_REVIEW: 1,
+      REJECTED: 2,
+      RESOLVED: 3,
+    };
+
+    const complaints = allComplaints
+      .sort((a, b) => {
+        const statusDiff = statusPriority[a.status] - statusPriority[b.status];
+        if (statusDiff !== 0) {
+          return statusDiff;
+        }
+
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      })
+      .slice(payload.skip, payload.skip + payload.take);
 
     return createPaginationResponse({
       message: "Missing invoice complaints fetched successfully",

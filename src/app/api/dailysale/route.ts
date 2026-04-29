@@ -7,14 +7,14 @@ interface BodyData {
   VchNum: string;
   VchDt: string;
   CustomerTINNo: string;
-  CustomerName: string;
+  // CustomerName: string;
   Items: {
     StockItem: string;
     BatchName: string;
     Qty: number;
     Rate: number;
     MasterID: number;
-    Conversion: number;
+    // Conversion: number;
     Amount: number;
   }[];
 }
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
               quantity: items["Qty"] * commodity.crate_size,
               tax_percent: commodity.taxable_at,
               amount_unit: (items["Rate"] / commodity.crate_size).toFixed(2),
-              amount: (test_amount * 1.2).toFixed(2),
+              amount: (test_amount).toFixed(2),
               vatamount: (test_amount * 0.2).toFixed(2),
               batch_name: items["BatchName"],
               is_local:
