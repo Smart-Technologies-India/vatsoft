@@ -175,10 +175,23 @@ const ProcessProductRequestForm = (
 
   const productColumns: ColumnsType<commodity_master> = [
     {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+      width: 80,
+    },
+    {
       title: "Product Name",
       dataIndex: "product_name",
       key: "product_name",
       width: 250,
+    },
+    {
+      title: "Pack Type",
+      dataIndex: "pack_type",
+      key: "pack_type",
+      width: 120,
+      render: (packType: string | null) => packType || "-",
     },
     {
       title: "Type",
@@ -390,7 +403,7 @@ const ProcessProductRequestForm = (
           pageSize: 10,
           showTotal: (total) => `Total ${total} products`,
         }}
-        scroll={{ x: 700 }}
+        scroll={{ x: 900 }}
         locale={{
           emptyText: matchingProducts.length === 0 && !isSearching
             ? "No matching products found. You can proceed to create a new one."

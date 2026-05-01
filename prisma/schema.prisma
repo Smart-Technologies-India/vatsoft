@@ -1890,6 +1890,7 @@ enum PackType {
   CAN
   PET
   TETRAPACK
+  POUCH
 }
 
 enum DisplayGroup {
