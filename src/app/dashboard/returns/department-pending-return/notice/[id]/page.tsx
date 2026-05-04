@@ -58,7 +58,7 @@ const SupplierDetails = () => {
   }
 
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.TYPE
+    SearchOption.TYPE,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -71,7 +71,7 @@ const SupplierDetails = () => {
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    dateStrings: [string, string],
   ) => {
     setSearchDate(dates);
   };
@@ -355,22 +355,22 @@ const SupplierDetails = () => {
       case FormType.DVAT10:
         await generatePDF(
           `/dashboard/returns/dvat10?id=${encryptURLData(
-            id.toString()
-          )}&sidebar=no`
+            id.toString(),
+          )}&sidebar=no`,
         );
         break;
       case FormType.DVAT24:
         await generatePDF(
           `/dashboard/returns/dvat24?id=${encryptURLData(
-            id.toString()
-          )}&sidebar=no`
+            id.toString(),
+          )}&sidebar=no`,
         );
         break;
       case FormType.DVAT24A:
         await generatePDF(
           `/dashboard/returns/dvat24a?id=${encryptURLData(
-            id.toString()
-          )}&sidebar=no`
+            id.toString(),
+          )}&sidebar=no`,
         );
         break;
     }
@@ -532,7 +532,10 @@ const SupplierDetails = () => {
                       Type
                     </TableHead>
                     <TableHead className="text-center border p-2">
-                      Notice/ Order Description
+                      Notice Type
+                    </TableHead>
+                    <TableHead className="text-center border p-2">
+                      Period
                     </TableHead>
                     <TableHead className="text-center border p-2">
                       Date of Issuance
@@ -563,13 +566,20 @@ const SupplierDetails = () => {
                         </Link>
                       </TableCell>
                       <TableCell className="text-center whitespace-nowrap  border p-2">
-                        System Generated
+                        {val.createdById == 1
+                          ? "System Generated"
+                          : "Department Generated"}
                       </TableCell>
                       <TableCell className="text-center border p-2">
                         {capitalcase(val.notice_order_type)}
                       </TableCell>
                       <TableCell className="text-center border p-2">
                         {val.form_type}
+                      </TableCell>
+                      <TableCell className="text-center border p-2">
+                        {val.tax_period_from && val.tax_period_to
+                          ? `${formateDate(val.tax_period_from)} - ${formateDate(val.tax_period_to)}`
+                          : "N/A"}
                       </TableCell>
                       <TableCell className="text-center whitespace-nowrap border p-2">
                         {formateDate(val.issue_date)}

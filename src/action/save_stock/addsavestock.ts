@@ -17,12 +17,12 @@ interface CreateSaveStockPayload {
 }
 
 const CreateSaveStock = async (
-  payload: CreateSaveStockPayload
+  payload: CreateSaveStockPayload,
 ): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = CreateSaveStock.name;
 
   try {
-    const result = await prisma.$transaction(async (prisma) => {
+    await prisma.$transaction(async (prisma) => {
       const isexist = await prisma.dvat04.findFirst({
         where: {
           id: payload.dvatid,
@@ -33,33 +33,117 @@ const CreateSaveStock = async (
         throw new Error("DVAT04 not found.");
       }
 
-      const delte_stock = await prisma.save_stock.deleteMany({
+      const incomingStockByCommodity = new Map<number, number>();
+      for (const stock of payload.data) {
+        incomingStockByCommodity.set(stock.item.id, stock.quantity);
+      }
+
+      const existingStocks = await prisma.save_stock.findMany({
         where: {
           dvat04Id: payload.dvatid,
         },
+        select: {
+          id: true,
+          commodity_masterId: true,
+          quantity: true,
+        },
       });
 
-      if (!delte_stock) {
-        throw new Error("Unable to delete stock.");
+      const existingByCommodity = new Map<
+        number,
+        { id: number; quantity: number }
+      >();
+      const duplicateIdsToDelete: number[] = [];
+
+      for (const stock of existingStocks) {
+        if (!existingByCommodity.has(stock.commodity_masterId)) {
+          existingByCommodity.set(stock.commodity_masterId, {
+            id: stock.id,
+            quantity: stock.quantity,
+          });
+          continue;
+        }
+
+        // If duplicate rows already exist for the same commodity, keep one and clean extras.
+        duplicateIdsToDelete.push(stock.id);
       }
 
-      const first_stock = await prisma.save_stock.createMany({
-        data: payload.data.map((item) => {
-          return {
-            commodity_masterId: item.item.id,
-            quantity: item.quantity,
+      const commodityIdsFromPayload = Array.from(
+        incomingStockByCommodity.keys(),
+      );
+
+      const commoditiesToCreate = commodityIdsFromPayload.filter(
+        (commodityId) => !existingByCommodity.has(commodityId),
+      );
+
+      const stocksToUpdate = commodityIdsFromPayload.filter((commodityId) => {
+        const existingStock = existingByCommodity.get(commodityId);
+        if (!existingStock) {
+          return false;
+        }
+
+        return (
+          existingStock.quantity !== incomingStockByCommodity.get(commodityId)
+        );
+      });
+
+      const staleStockIdsToDelete = existingStocks
+        .filter(
+          (stock) =>
+            !incomingStockByCommodity.has(stock.commodity_masterId) &&
+            !duplicateIdsToDelete.includes(stock.id),
+        )
+        .map((stock) => stock.id);
+
+      if (commoditiesToCreate.length > 0) {
+        await prisma.save_stock.createMany({
+          data: commoditiesToCreate.map((commodityId) => ({
+            commodity_masterId: commodityId,
+            quantity: incomingStockByCommodity.get(commodityId) ?? 0,
             dvat04Id: payload.dvatid,
             createdById: payload.createdById,
-          };
-        }),
-      });
-
-      if (!first_stock) {
-        throw new Error("Unable to create First Stock entry.");
+          })),
+        });
       }
 
-      return first_stock;
+      if (stocksToUpdate.length > 0) {
+        await Promise.all(
+          stocksToUpdate.map((commodityId) => {
+            const existingStock = existingByCommodity.get(commodityId);
+
+            if (!existingStock) {
+              return Promise.resolve();
+            }
+
+            return prisma.save_stock.update({
+              where: {
+                id: existingStock.id,
+              },
+              data: {
+                quantity: incomingStockByCommodity.get(commodityId) ?? 0,
+                updatedById: payload.createdById,
+              },
+            });
+          }),
+        );
+      }
+
+      const idsToDelete = [...duplicateIdsToDelete, ...staleStockIdsToDelete];
+      if (idsToDelete.length > 0) {
+        await prisma.save_stock.updateMany({
+          where: {
+            id: {
+              in: idsToDelete,
+            },
+          },
+          data: {
+            deletedAt: new Date(),
+            updatedById: payload.createdById,
+          },
+        });
+      }
     });
+
     return createResponse({
       message: "Stock Saved successfully.",
       functionname,

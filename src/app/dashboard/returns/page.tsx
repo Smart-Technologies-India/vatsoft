@@ -63,6 +63,11 @@ const Page = () => {
                 description="Monitor submitted VAT returns in real-time."
                 link="/dashboard/returns/department-pending-return"
               />
+              <DashboardCards
+                title="Return Date"
+                description="Change return date."
+                link="/dashboard/returns/department-return-date"
+              />
             </>
           )}
           {["USER"].includes(user?.role!) && (

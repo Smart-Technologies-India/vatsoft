@@ -48,6 +48,8 @@ const Navbar = (props: NavbarProps) => {
         return "Registration";
       case "/dashboard/returns":
         return "Returns";
+      case "/dashboard/returns/department-return-date":
+        return "Return Date";
       case "/dashboard/payments":
         return "Payments";
       case "/dashboard/help_tax":
@@ -78,6 +80,8 @@ const Navbar = (props: NavbarProps) => {
       case "/dashboard/register":
         return false;
       case "/dashboard/returns":
+        return false;
+      case "/dashboard/returns/department-return-date":
         return false;
       case "/dashboard/payments":
         return false;

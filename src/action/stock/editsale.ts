@@ -20,7 +20,7 @@ import { daily_sale } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const EditSale = async (
-  payload: EditSalePayload
+  payload: EditSalePayload,
 ): Promise<ApiResponseType<daily_sale | null>> => {
   const functionname: string = EditSale.name;
 
@@ -106,7 +106,7 @@ const EditSale = async (
           quantity: payload.quantity,
           vatamount: payload.vatamount,
           amount_unit: payload.amount_unit,
-          amount: payload.amount,
+          amount: payload.amount
         },
       });
 

@@ -2,7 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 import { user } from "@prisma/client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,9 @@ import { handleNumberChange } from "@/utils/methods";
 
 export default function LoginPage() {
   const router = useRouter();
+  useEffect(() => {
+    router.push("/");
+  }, [router]);
 
   const [isLogin, setIsLogin] = useState<boolean>(false);
 

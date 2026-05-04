@@ -21,6 +21,8 @@ import dayjs from "dayjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ToWords } from "to-words";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import GetUser from "@/action/user/getuser";
 
 type ResponseType = {
   user: user;
@@ -34,8 +36,20 @@ const Dvat24Page = () => {
   const toWords = new ToWords();
 
   const [data, setData] = useState<ResponseType | null>(null);
+  const [isUserRole, setIsUserRole] = useState<boolean>(false);
+
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (authResponse.status && authResponse.data) {
+        const loggedInUserResponse = await GetUser({ id: authResponse.data });
+        if (loggedInUserResponse.status && loggedInUserResponse.data) {
+          setIsUserRole(
+            (loggedInUserResponse.data.role ?? "").toUpperCase() === "USER",
+          );
+        }
+      }
+
       const idParam = searchParam.get("id");
 
       if (!idParam) {
@@ -352,7 +366,11 @@ const Dvat24Page = () => {
                       );
                     }}
                   >
-                    {data?.notice.status == "PAID" ? "View Challan" : "Pay"}
+                    {data?.notice.status == "PAID"
+                      ? "View Challan"
+                      : isUserRole
+                        ? "Pay"
+                        : "View"}
                   </Button>
                 </div>
               </div>

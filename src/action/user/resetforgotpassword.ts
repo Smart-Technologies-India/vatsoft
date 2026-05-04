@@ -85,6 +85,15 @@ const ResetForgetPassword = async (
     });
   }
 
+  await prisma.dvat04.update({
+    where: {
+      id: dvat.id,
+    },
+    data: {
+      temppass: parsed.output.password,
+    },
+  });
+
   await prisma.user.update({
     where: {
       id: dvat.createdById,

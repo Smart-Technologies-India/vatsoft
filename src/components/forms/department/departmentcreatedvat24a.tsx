@@ -28,12 +28,15 @@ import CreateDvat24A from "@/action/notice_order/createdvat24a";
 import GetReturn01 from "@/action/return/getreturn";
 import dayjs from "dayjs";
 import { CreateDvat24AForm, CreateDvat24ASchema } from "@/schema/dvat24a";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
 
 type DepartmentCreateDvat24AProviderProps = {
   userid: number;
 };
 export const DepartmentCreateDvat24AProvider = (
-  props: DepartmentCreateDvat24AProviderProps
+  props: DepartmentCreateDvat24AProviderProps,
 ) => {
   const methods = useForm<CreateDvat24AForm>({
     resolver: valibotResolver(CreateDvat24ASchema),
@@ -98,11 +101,39 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
     (returns_01 & { dvat04: dvat04 }) | null
   >(null);
 
+  const fixDate = (value: Date | string): Date => {
+    if (!value) return new Date(NaN);
+
+    let parsed = dayjs(value);
+
+    if (typeof value === "string") {
+      parsed = dayjs(
+        value,
+        [
+          "YYYY-MM-DD",
+          "DD/MM/YYYY",
+          "YYYY-MM-DDTHH:mm:ss[Z]",
+          "YYYY-MM-DDTHH:mm:ss.SSS[Z]",
+          "YYYY-MM-DDTHH:mm:ssZ",
+          "YYYY-MM-DDTHH:mm:ss.SSSZ",
+        ],
+        true,
+      );
+      if (!parsed.isValid()) {
+        parsed = dayjs(value);
+      }
+    }
+
+    if (!parsed.isValid()) return new Date(NaN);
+
+    return dayjs.utc(parsed.format("YYYY-MM-DD")).toDate();
+  };
+
   const onSubmit = async (data: CreateDvat24AForm) => {
     if (!return01Data) return toast.error("Return 01 not found");
 
     const dvat24_response = await CreateDvat24A({
-      due_date: new Date(data.due_date),
+      due_date: fixDate(new Date(data.due_date)),
       dvat24_reason: data.dvat24_reason,
       remark: data.remark,
       interest: data.interest,
@@ -137,11 +168,11 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
   useEffect(() => {
     setLoading(true);
     const returnid: number = parseInt(
-      decryptURLData(searchParams.get("returnid") ?? "0", router)
+      decryptURLData(searchParams.get("returnid") ?? "0", router),
     );
     const tinNumber: string = decryptURLData(
       searchParams.get("tin") ?? "",
-      router
+      router,
     );
     const init = async () => {
       const return01_response = await GetReturn01({
@@ -165,7 +196,7 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
         reset({
           dvat24_reason: "NOTFURNISHED",
           due_date: dayjs(new Date().setDate(new Date().getDate() + 15)).format(
-            "DD/MM/YYYY"
+            "DD/MM/YYYY",
           ),
         });
       }

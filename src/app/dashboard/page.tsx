@@ -113,9 +113,9 @@ const Page = () => {
         ]
       : [
           {
-            question: "What does Under Verification mean on this page?",
+            question: "What does Add Stock mean on this page?",
             answer:
-              "Your registration has been submitted and is under department review. You can monitor progress from this dashboard screen.",
+              "Your registration has been submitted. You may add stock now.",
           },
           {
             question: "Why is Opening Stock step shown here?",
@@ -307,7 +307,7 @@ const Page = () => {
       { id: userMessageId, role: "user", text: question },
     ]);
 
-     setShouldAutoScroll(true);
+    setShouldAutoScroll(true);
     appendTypedBotMessage(answer);
   };
 
@@ -420,14 +420,14 @@ const Page = () => {
                       icon={
                         <FluentNotePin20Regular className="text-slate-600 text-xl" />
                       }
-                      link="/dashboard/notice-and-order"
+                      link="/dashboard/user_service/notice_order"
                     />
                     <ButtonCard
-                      title="Annual Return"
+                      title="Notifications"
                       icon={
                         <FluentChannelSubtract48Regular className="text-slate-600 text-xl" />
                       }
-                      link="/dashboard/returns/user-pending-return"
+                      link="/dashboard/notifications"
                     />
                   </div>
                 </div>
@@ -455,7 +455,7 @@ const Page = () => {
                         </div>
                         <h1 className="text-2xl font-bold text-white mb-2">
                           {dvat!.status == "PENDINGPROCESSING"
-                            ? "Under Verification"
+                            ? "Add Stock"
                             : "Action Required"}
                         </h1>
                         <p className="text-white/90 text-sm font-medium">
@@ -477,7 +477,7 @@ const Page = () => {
                       >
                         <p className="text-slate-700 text-sm leading-relaxed text-center">
                           {dvat!.status == "PENDINGPROCESSING"
-                            ? "Your registration is currently under review by our team. We'll notify you once it's approved."
+                            ? "Your registration has been submitted. You may add stock now."
                             : "Your profile is incomplete. Please complete your registration to access all portal features and services."}
                         </p>
                       </div>

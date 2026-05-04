@@ -153,6 +153,8 @@ model user {
   missing_invoice_complaint_deletedBy  missing_invoice_complaint[] @relation("missing_invoice_complaint_deletedBy")
   missing_invoice_complaint_updatedBy  missing_invoice_complaint[] @relation("missing_invoice_complaint_updatedBy")
   missing_invoice_complaint_resolvedBy missing_invoice_complaint[] @relation("missing_invoice_complaint_resolvedBy")
+  return_due_createdBy                 return_due[]                @relation("return_due_createdBy")
+  return_due_updatedBy                 return_due[]                @relation("return_due_updatedBy")
 }
 
 model change {
@@ -1514,6 +1516,22 @@ model missing_invoice_complaint {
   @@index([updatedById], map: "missing_invoice_complaint_updatedById_fkey")
   @@index([invoice_type, invoice_number], map: "missing_invoice_complaint_invoice_lookup_idx")
   @@index([status], map: "missing_invoice_complaint_status_idx")
+}
+
+model return_due {
+  id          Int      @id @default(autoincrement())
+  year        Int
+  quarter     Quarter  @default(QUARTER1)
+  month       Int
+  payment     Int
+  filing      Int
+  createdAt   DateTime @default(now())
+  createdById Int
+  updatedAt   DateTime @updatedAt
+  updatedById Int?
+
+  createdBy user  @relation("return_due_createdBy", fields: [createdById], references: [id])
+  updatedBy user? @relation("return_due_updatedBy", fields: [updatedById], references: [id])
 }
 
 model notification {

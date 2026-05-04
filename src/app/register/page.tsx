@@ -1,7 +1,13 @@
 "use client";
 
 import { CreateUserProvider } from "@/components/forms/user/createuser";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 export default function Home() {
+  const router = useRouter();
+  useEffect(() => {
+    router.push("/");
+  }, [router]);
   return (
     <>
       <div className="min-h-screen w-full grid place-items-center bg-[#f5f6f8]">

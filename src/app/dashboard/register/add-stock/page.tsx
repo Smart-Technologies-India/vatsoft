@@ -15,7 +15,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { commodity_master, dvat04 } from "@prisma/client";
-import { Alert, Button, Drawer, Modal, Radio, RadioChangeEvent } from "antd";
+import {
+  Alert,
+  Button,
+  Drawer,
+  Input,
+  Modal,
+  Radio,
+  RadioChangeEvent,
+} from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -88,9 +96,21 @@ const AddStock = () => {
   }
 
   const [stock, setStock] = useState<StockData[]>([]);
+  const [searchProductName, setSearchProductName] = useState("");
 
   const [open, setOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
+
+  const normalizedSearchProductName = searchProductName.trim().toLowerCase();
+  const filteredStock = stock.filter((item) => {
+    if (!normalizedSearchProductName) {
+      return true;
+    }
+
+    return item.item.product_name
+      .toLowerCase()
+      .includes(normalizedSearchProductName);
+  });
 
   const submit = async () => {
     setOpen(false);
@@ -195,6 +215,15 @@ const AddStock = () => {
             type="warning"
             showIcon
           />
+          <div className="mt-4">
+            <Input
+              allowClear
+              className="max-w-md"
+              placeholder="Search by product name"
+              value={searchProductName}
+              onChange={(event) => setSearchProductName(event.target.value)}
+            />
+          </div>
           {dvatdata?.status == "VERIFICATION" ? (
             <>
               <div className="mt-4"></div>
@@ -233,7 +262,7 @@ const AddStock = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {stock.map((val: StockData, index: number) => (
+                  {filteredStock.map((val: StockData, index: number) => (
                     <TableRow key={index}>
                       <TableCell className="p-2 border text-center">
                         {index + 1}
@@ -274,6 +303,18 @@ const AddStock = () => {
                   ))}
                 </TableBody>
               </Table>
+
+              {filteredStock.length === 0 ? (
+                <Alert
+                  style={{
+                    marginTop: "10px",
+                    padding: "8px",
+                  }}
+                  type="info"
+                  showIcon
+                  description="No stock matched the entered product name."
+                />
+              ) : null}
 
               <div className="flex mt-2 gap-2">
                 <div className="grow"></div>

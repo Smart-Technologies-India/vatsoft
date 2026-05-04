@@ -155,7 +155,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                 )
               : [];
 
-
             const quarterResponses = await Promise.all(
               quarterMonths.map((month) =>
                 getPdfReturn({
@@ -241,7 +240,12 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     init();
   }, [searchparam]);
 
-  const getLateFees = (year: string, month: string, rr_number: string, isComp: boolean = false) => {
+  const getLateFees = (
+    year: string,
+    month: string,
+    rr_number: string,
+    isComp: boolean = false,
+  ) => {
     const currentDate = new Date();
 
     const monthNames = [
@@ -290,9 +294,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       currentDate,
     );
     setInterestDiffDays(idiff_days);
-    
-    
-    
+
     const pdiff_days = getDaysBetweenDates(
       new Date(newYear, monthIndex, 29),
       currentDate,
@@ -730,7 +732,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   };
 
   const getVatAmount = (): number => {
-   
     return (
       parseFloat(getInvoicePercentage("0").decrease) +
       parseFloat(getInvoicePercentage("1").decrease) +
@@ -832,8 +833,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       (isNegative(interest) ? 0 : interest)
     );
   };
-
-
 
   // challan section start from here
   const options: CheckboxGroupProps<string>["options"] = [
@@ -1003,7 +1002,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                     Choose online payment or submit offline payment details.
                   </p>
 
-                  <Radio.Group
+                  {/* <Radio.Group
                     block
                     options={options}
                     defaultValue="ONLINE"
@@ -1018,7 +1017,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                         track_id: "",
                       });
                     }}
-                  />
+                  /> */}
 
                   {paymentMode == "ONLINE" ? (
                     <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3">
@@ -1040,18 +1039,21 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                       </div>
 
                       <div className="flex gap-2 mt-3 justify-end">
-                        <Button
+                        {/* <Button
                           disabled={isOnlineProcessing}
-                          onClick={() => {
-                            reset({
-                              bank_name: "",
-                              transaction_id: "",
-                              track_id: "",
-                            });
+                          onClick={async (e) => {
+                            e.preventDefault();
+
+                            router.push(
+                              `/dashboard/payments/saved-challan/${encryptURLData()} `,
+                            );
+                            // await generatePDF(
+                            //   `/dashboard/returns/returns-dashboard/preview/${props.returnid.toString()}/download-challan?sidebar=no`,
+                            // );
                           }}
                         >
-                          Reset
-                        </Button>
+                          Download Challan
+                        </Button> */}
                         <Button
                           type="primary"
                           disabled={isOnlineProcessing}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Table, Tag, Button, Drawer } from "antd";
+import { Table, Tag, Button, Drawer, Input, Select } from "antd";
 import * as XLSX from "xlsx";
 import type { ColumnsType } from "antd/es/table";
 import { toast } from "react-toastify";
@@ -33,16 +33,24 @@ const ProductRequestsPage = () => {
     ProductRequestWithUser[]
   >([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [searchProductName, setSearchProductName] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ProductRequest | undefined>();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] =
     useState<ProductRequestWithUser | null>(null);
 
-  const fetchProductRequests = async () => {
+  const fetchProductRequests = async (
+    filters?: {
+      productName?: string;
+      status?: ProductRequest;
+    }
+  ) => {
     setLoading(true);
-    const response = await GetAllProductRequests();
+    const response = await GetAllProductRequests(filters);
     if (response.status && response.data) {
       setProductRequests(response.data as ProductRequestWithUser[]);
     } else {
+      setProductRequests([]);
       toast.error(response.message);
     }
     setLoading(false);
@@ -56,10 +64,26 @@ const ProductRequestsPage = () => {
         return router.push("/");
       }
       setUserid(authResponse.data);
-      fetchProductRequests();
     };
     init();
   }, []);
+
+  useEffect(() => {
+    if (!userid) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      fetchProductRequests({
+        productName: searchProductName.trim() || undefined,
+        status: statusFilter,
+      });
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [userid, searchProductName, statusFilter]);
 
   const downloadExcel = () => {
     const rows = productRequests.map((r) => ({
@@ -192,6 +216,28 @@ const ProductRequestsPage = () => {
           <Button onClick={downloadExcel} type="primary">Download Excel</Button>
           <Button onClick={() => router.back()}>Back</Button>
         </div>
+      </div>
+
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center">
+        <Input
+          allowClear
+          className="md:max-w-sm"
+          placeholder="Search by product name"
+          value={searchProductName}
+          onChange={(event) => setSearchProductName(event.target.value)}
+        />
+        <Select<ProductRequest | undefined>
+          allowClear
+          className="md:w-48"
+          placeholder="Filter by status"
+          value={statusFilter}
+          onChange={(value) => setStatusFilter(value)}
+          options={[
+            { label: "Pending", value: "PENDING" },
+            { label: "Approved", value: "APPROVED" },
+            { label: "Rejected", value: "REJECTED" },
+          ]}
+        />
       </div>
 
       <Table

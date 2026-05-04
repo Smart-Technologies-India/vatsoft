@@ -39,7 +39,7 @@ interface Dvat1CreateUpdatePayload {
 }
 
 const DvatUpdate = async (
-  payload: Dvat1CreateUpdatePayload
+  payload: Dvat1CreateUpdatePayload,
 ): Promise<ApiResponseType<dvat04 | null>> => {
   const functionname: string = DvatUpdate.name;
 
@@ -71,7 +71,8 @@ const DvatUpdate = async (
         annualTurnoverCategory: payload.annualTurnoverCategory,
         turnoverLastFinancialYear: payload.turnoverLastFinancialYear,
         turnoverCurrentFinancialYear: payload.turnoverCurrentFinancialYear,
-        vatLiableDate: payload.vatLiableDate,
+        certificateDate: payload.vatLiableDate,
+        vatLiableDate: new Date(2026, 3, 1, 0, 0, 0), // Temporary fix for certificate date to be 1st April 2026
         pan: payload.pan,
         gst: payload.gst,
         buildingNumber: payload.buildingNumber,

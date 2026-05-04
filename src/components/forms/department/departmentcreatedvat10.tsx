@@ -19,12 +19,15 @@ import { CreateDvat10Schema, CreateDvat10Form } from "@/schema/dvat10";
 import dayjs from "dayjs";
 import CreateDvat10 from "@/action/notice_order/createdvat10";
 import { DateRangeSelect } from "../inputfields/daterangeselect";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
 
 type DepartmentCreateDvat10ProviderProps = {
   userid: number;
 };
 export const DepartmentCreateDvat10Provider = (
-  props: DepartmentCreateDvat10ProviderProps
+  props: DepartmentCreateDvat10ProviderProps,
 ) => {
   const methods = useForm<CreateDvat10Form>({
     resolver: valibotResolver(CreateDvat10Schema),
@@ -59,7 +62,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
   // >(null);
 
   const getPeriod = (
-    return_01data: returns_01 & { dvat04: dvat04 }
+    return_01data: returns_01 & { dvat04: dvat04 },
   ): {
     form: Date;
     to: Date;
@@ -118,7 +121,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
     const to_date: Date = new Date(
       parseInt(to_year),
       monthNames.indexOf(to_month),
-      0
+      0,
     );
     return {
       form: from_date,
@@ -144,7 +147,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
   const getPeriodNoReturnId = (
     year: string,
     month: string,
-    dvat04: dvat04
+    dvat04: dvat04,
   ): {
     form: Date;
     to: Date;
@@ -189,7 +192,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
     const to_date: Date = new Date(
       parseInt(to_year),
       monthNames.indexOf(to_month),
-      0
+      0,
     );
     return {
       form: from_date,
@@ -213,23 +216,43 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
     formState: { errors, isSubmitting },
   } = useFormContext<CreateDvat10Form>();
 
+  const fixDate = (value: Date | string): Date => {
+    if (!value) return new Date(NaN);
+
+    let parsed = dayjs(value);
+
+    if (typeof value === "string") {
+      parsed = dayjs(
+        value,
+        [
+          "YYYY-MM-DD",
+          "DD/MM/YYYY",
+          "YYYY-MM-DDTHH:mm:ss[Z]",
+          "YYYY-MM-DDTHH:mm:ss.SSS[Z]",
+          "YYYY-MM-DDTHH:mm:ssZ",
+          "YYYY-MM-DDTHH:mm:ss.SSSZ",
+        ],
+        true,
+      );
+      if (!parsed.isValid()) {
+        parsed = dayjs(value);
+      }
+    }
+
+    if (!parsed.isValid()) return new Date(NaN);
+
+    return dayjs.utc(parsed.format("YYYY-MM-DD")).toDate();
+  };
+
   const onSubmit = async (data: CreateDvat10Form) => {
     if (!dvatdata) return toast.error("User Dvat not found");
-
-    // const currentday = new Date();
-
-    // const period_response = getPeriodNoReturnId(
-    //   currentday.getFullYear().toString(),
-    //   monthNames[currentday.getMonth()],
-    //   dvatdata
-    // );
 
     const dvat24_response = await CreateDvat10({
       dvatid: dvatdata?.id,
       createdby: props.userid,
-      tax_period_from: new Date(data.tax_period[0]),
-      tax_period_to: new Date(data.tax_period[1]),
-      due_date: new Date(data.due_date),
+      tax_period_from: fixDate(new Date(data.tax_period[0])),
+      tax_period_to: fixDate(new Date(data.tax_period[1])),
+      due_date: fixDate(new Date(data.due_date)),
       issuedId: props.userid,
       officerId: props.userid,
       remark: data.remark,
@@ -249,7 +272,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
   useEffect(() => {
     const tinNumber: string = decryptURLData(
       searchParams.get("tin") ?? "",
-      router
+      router,
     );
     const init = async () => {
       setLoading(true);
@@ -258,7 +281,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
         reset({
           dvat24_reason: "NOTFURNISHED",
           due_date: dayjs(
-            new Date().setDate(new Date().getDate() + 15)
+            new Date().setDate(new Date().getDate() + 15),
           ).toISOString(),
         });
         const dvat_response = await SearchTinNumber({
@@ -269,7 +292,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
           const period_response = getPeriodNoReturnId(
             currentday.getFullYear().toString(),
             monthNames[currentday.getMonth()],
-            dvat_response.data
+            dvat_response.data,
           );
           setPeriodData({
             form: period_response.form.toDateString(),

@@ -28,12 +28,17 @@ import { CreateDvat24Form, CreateDvat24Schema } from "@/schema/dvat24";
 import CreateDvat24 from "@/action/notice_order/createdvat24";
 import GetReturn01 from "@/action/return/getreturn";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+
+dayjs.extend(utc);
+dayjs.extend(customParseFormat);
 
 type DepartmentCreateDvat24ProviderProps = {
   userid: number;
 };
 export const DepartmentCreateDvat24Provider = (
-  props: DepartmentCreateDvat24ProviderProps
+  props: DepartmentCreateDvat24ProviderProps,
 ) => {
   const methods = useForm<CreateDvat24Form>({
     resolver: valibotResolver(CreateDvat24Schema),
@@ -104,7 +109,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
   const [periodData, setPeriodData] = useState<Period | null>(null);
 
   const getPeriod = (
-    return_01data: returns_01 & { dvat04: dvat04 }
+    return_01data: returns_01 & { dvat04: dvat04 },
   ): {
     form: Date;
     to: Date;
@@ -163,12 +168,40 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
     const to_date: Date = new Date(
       parseInt(to_year),
       monthNames.indexOf(to_month),
-      0
+      0,
     );
     return {
       form: from_date,
       to: to_date,
     };
+  };
+
+  const fixDate = (value: Date | string): Date => {
+    if (!value) return new Date(NaN);
+
+    let parsed = dayjs(value);
+
+    if (typeof value === "string") {
+      parsed = dayjs(
+        value,
+        [
+          "YYYY-MM-DD",
+          "DD/MM/YYYY",
+          "YYYY-MM-DDTHH:mm:ss[Z]",
+          "YYYY-MM-DDTHH:mm:ss.SSS[Z]",
+          "YYYY-MM-DDTHH:mm:ssZ",
+          "YYYY-MM-DDTHH:mm:ss.SSSZ",
+        ],
+        true,
+      );
+      if (!parsed.isValid()) {
+        parsed = dayjs(value);
+      }
+    }
+
+    if (!parsed.isValid()) return new Date(NaN);
+
+    return dayjs.utc(parsed.format("YYYY-MM-DD")).toDate();
   };
 
   const onSubmit = async (data: CreateDvat24Form) => {
@@ -177,7 +210,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
     const period_respone = getPeriod(return01Data);
 
     const dvat24_response = await CreateDvat24({
-      due_date: new Date(data.due_date),
+      due_date: fixDate(data.due_date),
       dvat24_reason: data.dvat24_reason,
       remark: data.remark,
       interest: data.interest,
@@ -189,8 +222,8 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
       issuedId: props.userid,
       officerId: props.userid,
       dvatid: return01Data.dvat04.id,
-      tax_period_from: period_respone.form,
-      tax_period_to: period_respone.to,
+      tax_period_from: fixDate(period_respone.form),
+      tax_period_to: fixDate(period_respone.to),
       returns_01Id: return01Data.id,
     });
 
@@ -224,11 +257,11 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
 
   useEffect(() => {
     const returnid: number = parseInt(
-      decryptURLData(searchParams.get("returnid") ?? "0", router)
+      decryptURLData(searchParams.get("returnid") ?? "0", router),
     );
     const tinNumber: string = decryptURLData(
       searchParams.get("tin") ?? "",
-      router
+      router,
     );
 
     const init = async () => {
@@ -249,8 +282,8 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
         reset({
           dvat24_reason: "INCORRECTRETURN",
           due_date: dayjs(
-            new Date().setDate(new Date().getDate() + 15)
-          ).toString(),
+            new Date().setDate(new Date().getDate() + 15),
+          ).toISOString(),
         });
         const dvat_response = await SearchTinNumber({
           tinumber: tinNumber,
@@ -416,7 +449,9 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="text-left p-2 border">Others</TableCell>
+                    <TableCell className="text-left p-2 border">
+                      Others
+                    </TableCell>
                     <TableCell className="text-center p-2 border">
                       <TaxtInput<CreateDvat24Form>
                         name="others"

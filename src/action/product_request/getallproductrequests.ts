@@ -3,17 +3,59 @@
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
 import { ApiResponseType } from "@/models/response";
-import { product_request } from "@prisma/client";
+import { Prisma, ProductRequest } from "@prisma/client";
 
-const GetAllProductRequests = async (): Promise<
-  ApiResponseType<product_request[] | null>
+interface GetAllProductRequestsPayload {
+  productName?: string;
+  status?: ProductRequest;
+}
+
+const GetAllProductRequests = async (
+  payload?: GetAllProductRequestsPayload
+): Promise<
+  ApiResponseType<
+    Prisma.product_requestGetPayload<{
+      include: {
+        requestedBy: {
+          select: {
+            id: true;
+            firstName: true;
+            lastName: true;
+            mobileOne: true;
+            email: true;
+          };
+        };
+        createdBy: {
+          select: {
+            id: true;
+            firstName: true;
+            lastName: true;
+          };
+        };
+      };
+    }>[] | null
+  >
 > => {
   const functionname: string = GetAllProductRequests.name;
 
   try {
+    const normalizedProductName = payload?.productName?.trim();
+
     const product_requests = await prisma.product_request.findMany({
       where: {
         deletedAt: null,
+        ...(normalizedProductName
+          ? {
+              product_name: {
+                contains: normalizedProductName,
+              },
+            }
+          : {}),
+        ...(payload?.status
+          ? {
+              status: payload.status,
+            }
+          : {}),
       },
       include: {
         requestedBy: {

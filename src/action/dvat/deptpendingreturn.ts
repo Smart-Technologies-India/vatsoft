@@ -65,7 +65,7 @@ const DeptPendingReturn = async (
         deletedBy: null,
         status: "PENDING",
         notice_order_type: "NOTICE",
-        form_type: "DVAT10",
+        // form_type: "DVAT10",
       },
     });
 

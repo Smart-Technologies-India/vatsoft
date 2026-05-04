@@ -20,19 +20,12 @@ import {
   formatDateTime,
   formateDate,
   generatePDF,
-  onFormError,
 } from "@/utils/methods";
 import { Separator } from "@/components/ui/separator";
-import { useForm } from "react-hook-form";
-import {
-  SubmitPaymentForm,
-  SubmitPaymentSchema,
-} from "@/schema/subtmitpayment";
-import { valibotResolver } from "@hookform/resolvers/valibot";
 import { toast } from "react-toastify";
 import AddChallanPayment from "@/action/challan/addchallanpayment";
-import GetUser from "@/action/user/getuser";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import GetUser from "@/action/user/getuser";
 import { Button } from "antd";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { customAlphabet } from "nanoid";
@@ -51,8 +44,9 @@ const ChallanData = () => {
   //   10
   // );
   const [isLoading, setLoading] = useState<boolean>(true);
+  const [isUserRole, setIsUserRole] = useState<boolean>(false);
 
-  const [user, setUser] = useState<user | null>(null);
+  // const [user, setUser] = useState<user | null>(null);
   const [dvat, setDvat] = useState<dvat04 | null>(null);
 
   const toWords = new ToWords();
@@ -67,16 +61,25 @@ const ChallanData = () => {
       }
       setUserid(authResponse.data);
 
+      const loggedInUserResponse = await GetUser({
+        id: authResponse.data,
+      });
+      if (loggedInUserResponse.status && loggedInUserResponse.data) {
+        setIsUserRole((loggedInUserResponse.data.role ?? "").toUpperCase() === "USER");
+      } else {
+        setIsUserRole(false);
+      }
+
       const current_user_id = searchParams.get("userid")
         ? parseInt(searchParams.get("userid")!)
         : authResponse.data;
 
-      const user_response = await GetUser({
-        id: current_user_id,
-      });
-      if (user_response.data && user_response.status) {
-        setUser(user_response.data);
-      }
+      // const user_response = await GetUser({
+      //   id: current_user_id,
+      // });
+      // if (user_response.data && user_response.status) {
+      //   setUser(user_response.data);
+      // }
       const dvat_response = await GetUserDvat04();
       if (dvat_response.data && dvat_response.status) {
         setDvat(dvat_response.data);
@@ -96,35 +99,30 @@ const ChallanData = () => {
 
   const [challanData, setChallanData] = useState<challan | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-  } = useForm<SubmitPaymentForm>({
-    resolver: valibotResolver(SubmitPaymentSchema),
-  });
+  const [isOnlineProcessing, setIsOnlineProcessing] = useState(false);
 
-  const onSubmit = async (data: SubmitPaymentForm) => {
+  const onOnlinePayment = async () => {
     const nanoid = customAlphabet("1234567890abcdef", 10);
 
     const uniqueid: string = nanoid();
     if (!challanData || challanData == null) {
       return toast.error("There is no challan data.");
     }
-    const response = await AddChallanPayment({
-      id: challanData.id,
-      userid: userid,
-      // bank_name: data.bank_name,
-      // track_id: data.track_id,
-      // transaction_id: data.transaction_id,
-    });
+    setIsOnlineProcessing(true);
+    try {
+      const response = await AddChallanPayment({
+        id: challanData.id,
+        userid: userid,
+      });
 
-    if (!response.status) return toast.error(response.message);
+      if (!response.status) return toast.error(response.message);
 
-    router.push(
-      `/payamount?xlmnx=${challanData?.total_tax_amount}&ynboy=${uniqueid}&zgvfz=${response.data?.id}_${dvat?.id}_0_DEMAND`,
-    );
+      router.push(
+        `/payamount?xlmnx=${challanData?.total_tax_amount}&ynboy=${uniqueid}&zgvfz=${response.data?.id}_${dvat?.id}_0_DEMAND`,
+      );
+    } finally {
+      setIsOnlineProcessing(false);
+    }
 
     // toast.success(response.message);
     // router.back();
@@ -197,17 +195,19 @@ const ChallanData = () => {
                 <div>
                   <p className="text-xs text-gray-500">Name</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {user?.firstName} - {user?.lastName}
+                    {dvat?.tradename ?? "N/A"}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Email</p>
-                  <p className="text-sm font-medium text-gray-900">{user?.email}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {dvat?.email ?? "N/A"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Mobile</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {user?.mobileOne}
+                    {dvat?.contact_one ?? "N/A"}
                   </p>
                 </div>
                 <div>
@@ -218,7 +218,9 @@ const ChallanData = () => {
                 </div>
                 <div className="md:col-span-2 lg:col-span-2">
                   <p className="text-xs text-gray-500">Address</p>
-                  <p className="text-sm font-medium text-gray-900">{user?.address}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {dvat?.address ?? "N/A"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -245,73 +247,75 @@ const ChallanData = () => {
 
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
               <Table className="border border-gray-200">
-              <TableHeader>
-                <TableRow className="bg-gray-100">
-                  <TableHead className="whitespace-nowrap text-center px-2 border"></TableHead>
-                  <TableHead className="whitespace-nowrap text-center px-2 w-60 border">
-                    Tax (&#x20b9;)
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="text-left p-2 border">VAT</TableCell>
-                  <TableCell className="text-center p-2 border ">
-                    {challanData?.vat}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="text-left p-2 border">
-                    Interest
-                  </TableCell>
-                  <TableCell className="text-center p-2 border">
-                    {challanData?.interest}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="text-left p-2 border">
-                    Late Fees
-                  </TableCell>
-                  <TableCell className="text-center p-2 border">
-                    {challanData?.latefees}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="text-left p-2 border">
-                    Penalty
-                  </TableCell>
-                  <TableCell className="text-center p-2 border">
-                    {challanData?.penalty}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="text-left p-2 border">Others</TableCell>
-                  <TableCell className="text-center p-2 border">
-                    {challanData?.others}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="text-left p-2 border">
-                    Total Challan Amount:
-                  </TableCell>
-                  <TableCell className="text-center p-2 border">
-                    {challanData?.total_tax_amount}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="text-left p-2 border">
-                    Total Challan Amount (In Words):
-                  </TableCell>
-                  <TableCell className="text-center p-2 border">
-                    {capitalcase(
-                      toWords.convert(
-                        parseInt(challanData?.total_tax_amount ?? "0"),
-                      ),
-                    )}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="whitespace-nowrap text-center px-2 border"></TableHead>
+                    <TableHead className="whitespace-nowrap text-center px-2 w-60 border">
+                      Tax (&#x20b9;)
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">VAT</TableCell>
+                    <TableCell className="text-center p-2 border ">
+                      {challanData?.vat}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
+                      Interest
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">
+                      {challanData?.interest}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
+                      Late Fees
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">
+                      {challanData?.latefees}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
+                      Penalty
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">
+                      {challanData?.penalty}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
+                      Others
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">
+                      {challanData?.others}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
+                      Total Challan Amount:
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">
+                      {challanData?.total_tax_amount}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left p-2 border">
+                      Total Challan Amount (In Words):
+                    </TableCell>
+                    <TableCell className="text-center p-2 border">
+                      {capitalcase(
+                        toWords.convert(
+                          parseInt(challanData?.total_tax_amount ?? "0"),
+                        ),
+                      )}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
                 {challanData?.paymentstatus == "PAID" ? (
                   <>
@@ -333,9 +337,13 @@ const ChallanData = () => {
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Transaction Date</p>
+                          <p className="text-xs text-gray-500">
+                            Transaction Date
+                          </p>
                           <p className="text-sm font-medium text-gray-900">
-                            {formateDate(new Date(challanData?.transaction_date!))}
+                            {formateDate(
+                              new Date(challanData?.transaction_date!),
+                            )}
                           </p>
                         </div>
                       </div>
@@ -357,79 +365,46 @@ const ChallanData = () => {
                     </div>
                   </>
                 ) : (
-                  <form onSubmit={handleSubmit(onSubmit, onFormError)}>
-                    <p className="text-sm font-semibold text-gray-800">
-                      Complete Payment
+                  <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+                    <p className="text-sm font-medium text-blue-900">
+                      Online Payment
                     </p>
-                    <div className="mt-3">
-                      <p className="text-sm">Bank Name</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                          errors.bank_name
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Bank Name"
-                        {...register("bank_name")}
-                        type="text"
-                      />
-                      {errors.bank_name && (
-                        <p className="text-xs text-red-500">
-                          {errors.bank_name.message?.toString()}
-                        </p>
-                      )}
+                    <p className="text-xs text-blue-800 mt-1">
+                      You will be redirected to the payment gateway. Offline payment fields are removed.
+                    </p>
+
+                    <div className="mt-3 flex items-center justify-between rounded-md bg-white p-2 border border-blue-100">
+                      <span className="text-sm text-gray-600">Payable Amount</span>
+                      <span className="text-lg font-semibold text-gray-900">
+                        {challanData?.total_tax_amount ?? "0"}
+                      </span>
                     </div>
-                    <div className="mt-2">
-                      <p className="text-sm">Transaction Id</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500 ${
-                          errors.transaction_id
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Transaction id"
-                        {...register("transaction_id")}
-                      />
-                      {errors.transaction_id && (
-                        <p className="text-xs text-red-500">
-                          {errors.transaction_id.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-2">
-                      <p className="text-sm">Track Id</p>
-                      <input
-                        className={`w-full px-2 py-1 border rounded-md outline-none focus:outline-none focus:border-blue-500  ${
-                          errors.track_id
-                            ? "border-red-500"
-                            : "hover:border-blue-500"
-                        }`}
-                        placeholder="Track Id"
-                        {...register("track_id")}
-                      />
-                      {errors.track_id && (
-                        <p className="text-xs text-red-500">
-                          {errors.track_id.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-3 flex gap-2">
+
+                    <div className="mt-3 flex gap-2 justify-end">
                       <Button
-                        disabled={isSubmitting}
-                        onClick={(e) => {
+                        disabled={isOnlineProcessing}
+                        onClick={async (e) => {
                           e.preventDefault();
-                          reset({});
+                          await generatePDF(
+                            `/dashboard/payments/saved-challan/${encryptURLData(
+                              challanid.toString(),
+                            )}?sidebar=no&userid=${userid}`,
+                          );
                         }}
                       >
-                        Reset
+                        Download Challan
                       </Button>
-                      <input
-                        type="submit"
-                        value={"Pay Challan"}
-                        className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white cursor-pointer"
-                      />
+                      {isUserRole && (
+                        <Button
+                          type="primary"
+                          disabled={isOnlineProcessing}
+                          onClick={onOnlinePayment}
+                        >
+                          {isOnlineProcessing ? "Redirecting..." : "Pay Online"}
+                        </Button>
+                      )}
                     </div>
-                  </form>
+                  </div>
                 )}
               </div>
             </div>
@@ -443,7 +418,9 @@ const ChallanData = () => {
             <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
               <p className="text-sm font-medium text-gray-700">Remark</p>
               <Separator />
-              <p className="mt-2 text-sm text-gray-800">{challanData?.remark}</p>
+              <p className="mt-2 text-sm text-gray-800">
+                {challanData?.remark}
+              </p>
             </div>
           )}
 

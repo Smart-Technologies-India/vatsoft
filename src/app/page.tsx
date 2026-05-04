@@ -935,6 +935,8 @@ const InlineLoginForm = () => {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const normalizedTin = tin?.trim() ?? "";
+  const isTinValid = normalizedTin.length === 11;
 
   useEffect(() => {
     if (resendInSeconds <= 0) return;
@@ -962,8 +964,8 @@ const InlineLoginForm = () => {
 
   const submit = async () => {
     setIsLogin(true);
-    if (!tin) {
-      toast.error("Enter valid TIN number");
+    if (!isTinValid) {
+      toast.error("TIN number must be 11 digits");
       setIsLogin(false);
       return;
     }
@@ -972,7 +974,10 @@ const InlineLoginForm = () => {
       setIsLogin(false);
       return;
     }
-    const response = await DvatPasswordLogin({ tin_number: tin, password });
+    const response = await DvatPasswordLogin({
+      tin_number: normalizedTin,
+      password,
+    });
     if (!response.status) {
       toast.error(response.message);
       setIsLogin(false);
@@ -993,14 +998,14 @@ const InlineLoginForm = () => {
   const sendTinOtp = async () => {
     setIsSendingTinOtp(true);
 
-    if (!tin?.trim()) {
-      toast.error("Enter valid TIN number");
+    if (!isTinValid) {
+      toast.error("TIN number must be 11 digits");
       setIsSendingTinOtp(false);
       return;
     }
 
     const response = await TinSendOtp({
-      tin_number: tin.trim(),
+      tin_number: normalizedTin,
     });
 
     if (!response.status || !response.data) {
@@ -1026,8 +1031,8 @@ const InlineLoginForm = () => {
   const loginWithOtp = async () => {
     setIsVerifyingTinOtp(true);
 
-    if (!tin?.trim()) {
-      toast.error("Enter valid TIN number");
+    if (!isTinValid) {
+      toast.error("TIN number must be 11 digits");
       setIsVerifyingTinOtp(false);
       return;
     }
@@ -1039,7 +1044,7 @@ const InlineLoginForm = () => {
     }
 
     const response = await TinLoginOtp({
-      tin_number: tin.trim(),
+      tin_number: normalizedTin,
       otp: loginOtp.trim(),
     });
 
@@ -1171,7 +1176,7 @@ const InlineLoginForm = () => {
         </label>
         <Input
           size="small"
-          maxLength={12}
+          maxLength={11}
           placeholder="Enter TIN Number"
           value={tin ?? ""}
           onChange={(e) => {
@@ -1180,6 +1185,9 @@ const InlineLoginForm = () => {
           }}
           className="text-sm"
         />
+        {normalizedTin.length > 0 && !isTinValid ? (
+          <p className="mt-1 text-xs text-red-600">TIN number must be 11 digits.</p>
+        ) : null}
       </div>
       {loginMode === "password" ? (
         <>
@@ -1211,7 +1219,7 @@ const InlineLoginForm = () => {
           <div className="h-2"></div>
           <Button
             onClick={submit}
-            disabled={isLogin}
+            disabled={isLogin || !isTinValid}
             className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:white"
           >
             {isLogin ? "Verifying..." : "Login with Password"}
@@ -1226,7 +1234,7 @@ const InlineLoginForm = () => {
           {!isTinOtpSent && (
             <Button
               onClick={sendTinOtp}
-              disabled={isSendingTinOtp}
+              disabled={isSendingTinOtp || !isTinValid}
               className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:bg-[#16448b]!"
             >
               {isSendingTinOtp ? "Sending OTP..." : "Send OTP"}
@@ -1256,7 +1264,7 @@ const InlineLoginForm = () => {
 
               <Button
                 onClick={loginWithOtp}
-                disabled={isVerifyingTinOtp}
+                disabled={isVerifyingTinOtp || !isTinValid}
                 className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:bg-[#16448b]!"
               >
                 {isVerifyingTinOtp ? "Verifying OTP..." : "Login with OTP"}

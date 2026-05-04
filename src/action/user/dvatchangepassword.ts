@@ -48,6 +48,7 @@ const DvatChangePassword = async (
       },
       data: {
         password: newpassword,
+        temppass: payload.password,
       },
     });
 

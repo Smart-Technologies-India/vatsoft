@@ -309,6 +309,20 @@ const ShopView = () => {
               onClick={() => {
                 if (!dvatData) return;
                 router.push(
+                  `/dashboard/returns/department-pending-return/notice/${encryptURLData(
+                    dvatData?.id.toString(),
+                  )}`,
+                );
+              }}
+            >
+              Notice
+            </Button>
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => {
+                if (!dvatData) return;
+                router.push(
                   `/dashboard/returns/user-cform/${encryptURLData(
                     dvatData?.id.toString(),
                   )}`,

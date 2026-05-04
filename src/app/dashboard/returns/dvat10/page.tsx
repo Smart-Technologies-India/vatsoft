@@ -1,7 +1,11 @@
 "use client";
 import GetNotice from "@/action/notice_order/getnotice";
 
-import { capitalcase, decryptURLData } from "@/utils/methods";
+import {
+  capitalcase,
+  decryptURLData,
+  encryptURLData,
+} from "@/utils/methods";
 import {
   dvat04,
   Dvat24Reason,
@@ -9,10 +13,13 @@ import {
   returns_01,
   user,
 } from "@prisma/client";
+import { Button } from "antd";
 import dayjs from "dayjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ToWords } from "to-words";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import GetUser from "@/action/user/getuser";
 
 type ResponseType = {
   user: user;
@@ -25,10 +32,21 @@ const Dvat10Page = () => {
   const searchParam = useSearchParams();
   const toWords = new ToWords();
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isUserRole, setIsUserRole] = useState<boolean>(false);
 
   const [data, setData] = useState<ResponseType | null>(null);
   useEffect(() => {
     const init = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (authResponse.status && authResponse.data) {
+        const loggedInUserResponse = await GetUser({ id: authResponse.data });
+        if (loggedInUserResponse.status && loggedInUserResponse.data) {
+          setIsUserRole(
+            (loggedInUserResponse.data.role ?? "").toUpperCase() === "USER",
+          );
+        }
+      }
+
       const idParam = searchParam.get("id");
 
       if (!idParam) {
@@ -228,6 +246,27 @@ const Dvat10Page = () => {
                       </p>
                     </div>
                   )}
+
+                <div className="w-full flex justify-end pt-4 mt-4 border-t border-gray-200">
+                  <Button
+                    type="primary"
+                    size="large"
+                    className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 shadow-md"
+                    onClick={() => {
+                      router.push(
+                        `/dashboard/payments/saved-challan/${encryptURLData(
+                          data?.notice.challanId!.toString() ?? "",
+                        )}`,
+                      );
+                    }}
+                  >
+                    {data?.notice.status == "PAID"
+                      ? "View Challan"
+                      : isUserRole
+                        ? "Pay"
+                        : "View"}
+                  </Button>
+                </div>
               </div>
             </div>
             <div className="lg:col-span-2">
