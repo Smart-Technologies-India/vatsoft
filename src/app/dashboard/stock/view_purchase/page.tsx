@@ -8,6 +8,9 @@ import DeletePurchase from "@/action/stock/deletepurchase";
 import GetUserDailyPurchase, {
   GroupedDailyPurchase,
 } from "@/action/stock/getuserdailypurchase";
+import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
+import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
+import CreateMultiDailyPurchase from "@/action/stock/createmultidailypurchase";
 import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
 import {
   Table,
@@ -18,12 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { encryptURLData, formateDate } from "@/utils/methods";
-import {
-  commodity_master,
-  daily_purchase,
-  dvat04,
-  tin_number_master,
-} from "@prisma/client";
+import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
 import {
   Alert,
   Button,
@@ -105,7 +103,6 @@ const DocumentWiseDetails = () => {
 
   const normalizedStatus = (dvatdata?.status ?? "").toUpperCase();
 
-
   const purchaseChatOptions = [
     {
       question: "How do I add a purchase invoice?",
@@ -153,6 +150,17 @@ const DocumentWiseDetails = () => {
         setDailyPurchase(daily_purchase_response.data.result);
       }
     }
+
+    const commodity_response = await AllCommodityMaster({});
+    if (commodity_response.status && commodity_response.data) {
+      setCommodityMaster(commodity_response.data);
+    }
+
+    const tin_response = await getAllTinNumberMaster();
+    if (tin_response.status && tin_response.data) {
+      setTindata(tin_response.data);
+    }
+
     setLoading(false);
   };
 
@@ -190,6 +198,17 @@ const DocumentWiseDetails = () => {
           setDailyPurchase(daily_purchase_response.data.result);
         }
       }
+
+      const commodity_response = await AllCommodityMaster({});
+      if (commodity_response.status && commodity_response.data) {
+        setCommodityMaster(commodity_response.data);
+      }
+
+      const tin_response = await getAllTinNumberMaster();
+      if (tin_response.status && tin_response.data) {
+        setTindata(tin_response.data);
+      }
+
       setLoading(false);
     };
     init();
@@ -237,7 +256,6 @@ const DocumentWiseDetails = () => {
   }, [chatMessages, isBotTyping, shouldAutoScroll]);
 
   useEffect(() => {
-
     setChatMessages([
       {
         id: 1,
@@ -322,7 +340,7 @@ const DocumentWiseDetails = () => {
       { id: userMessageId, role: "user", text: question },
     ]);
 
-     setShouldAutoScroll(true);
+    setShouldAutoScroll(true);
     appendTypedBotMessage(answer);
   };
 
@@ -387,6 +405,488 @@ const DocumentWiseDetails = () => {
   const [addBox, setAddBox] = useState<boolean>(false);
   const [isAcceptAllLoading, setIsAcceptAllLoading] = useState(false);
   const [isAcceptAllModalOpen, setIsAcceptAllModalOpen] = useState(false);
+
+  const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
+    [],
+  );
+  const [tindata, setTindata] = useState<tin_number_master[]>([]);
+
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [sheetFileName, setSheetFileName] = useState<string>("");
+  const sheetRef = useRef<HTMLInputElement>(null);
+
+  interface BulkSheetData {
+    tin_number: string;
+    invoice_no: string;
+    invoice_date: Date;
+    invoice_date_display: string;
+    item_code: number;
+    quantity: number;
+    total_invoice_value: number;
+    against_cfrom: boolean;
+    seller_tin_id: number | null;
+    commodity_name: string | null;
+    tax_percent: string | null;
+    error: boolean;
+    errorname: string;
+  }
+
+  const [tabledata, setTableData] = useState<BulkSheetData[]>([]);
+
+  const readSheetField = (row: Record<string, unknown>, labels: string[]) => {
+    for (const label of labels) {
+      if (row[label] !== undefined) return row[label];
+    }
+
+    const normalizedLabels = labels.map((label) =>
+      label.trim().toLowerCase().replace(/\s+/g, " "),
+    );
+
+    for (const key of Object.keys(row)) {
+      const normalizedKey = key.trim().toLowerCase().replace(/\s+/g, " ");
+      if (normalizedLabels.includes(normalizedKey)) {
+        return row[key];
+      }
+    }
+
+    return undefined;
+  };
+
+  const normalizeText = (value: unknown): string =>
+    value == null ? "" : String(value).trim();
+
+  const parseExcelNumber = (value: unknown): number => {
+    if (typeof value === "number") return value;
+    const text = normalizeText(value).replace(/,/g, "");
+    if (text === "") return NaN;
+    return Number(text);
+  };
+
+  const parseDateDDMMYYYY = (value: unknown): Date | null => {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return value;
+    }
+
+    if (typeof value === "number") {
+      const parsed = XLSX.SSF.parse_date_code(value);
+      if (!parsed) return null;
+      return new Date(parsed.y, parsed.m - 1, parsed.d);
+    }
+
+    const raw = normalizeText(value);
+    const match = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+    const parsed = new Date(year, month - 1, day);
+
+    if (
+      parsed.getFullYear() !== year ||
+      parsed.getMonth() !== month - 1 ||
+      parsed.getDate() !== day
+    ) {
+      return null;
+    }
+
+    return parsed;
+  };
+
+  const formatDateDDMMYYYY = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const parseBooleanValue = (value: unknown): boolean | null => {
+    if (typeof value === "boolean") return value;
+
+    if (typeof value === "number") {
+      if (value === 1) return true;
+      if (value === 0) return false;
+      return null;
+    }
+
+    const normalized = normalizeText(value).toLowerCase();
+    if (["true", "yes", "y", "1"].includes(normalized)) return true;
+    if (["false", "no", "n", "0"].includes(normalized)) return false;
+    return null;
+  };
+
+  const downloadBulkTemplate = () => {
+    const rows = [
+      {
+        "TIN Number": "11000000001",
+        "Invoice No": "INV1001",
+        "Invoice Date": "04/05/2026",
+        "Item Code": 1,
+        Quantity: 100,
+        "Total Invoice Value": 12000,
+        "Is Against C From": "true",
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Upload");
+    XLSX.writeFile(workbook, "vatsoft_purchase_template.xlsx");
+  };
+
+  const handleSheetChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (event.target.files?.length == 0) {
+      event.target.value = "";
+      return;
+    }
+
+    const file = event.target.files![0];
+    setSheetFileName(file.name);
+    setLoading(true);
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const firstSheetName = workbook.SheetNames[0];
+
+      if (!firstSheetName) {
+        toast.error("No sheet found in uploaded file.");
+        return;
+      }
+
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+        worksheet,
+        {
+          defval: "",
+          raw: true,
+        },
+      );
+
+      if (rows.length === 0) {
+        toast.error("Uploaded sheet is empty.");
+        setTableData([]);
+        return;
+      }
+
+      const groupedData: { [key: string]: number } = {};
+
+      rows.forEach((row) => {
+        const key = [
+          normalizeText(
+            readSheetField(row, [
+              "TIN Number",
+              "tin number",
+              "tin_number",
+              "tin",
+            ]),
+          ),
+          normalizeText(
+            readSheetField(row, [
+              "Invoice No",
+              "invoice no",
+              "invoice_no",
+              "invoice number",
+            ]),
+          ),
+          normalizeText(
+            readSheetField(row, ["Item Code", "item code", "item_code"]),
+          ),
+          normalizeText(readSheetField(row, ["Quantity", "quantity"])),
+          normalizeText(
+            readSheetField(row, [
+              "Total Invoice Value",
+              "total invoice value",
+              "total_invoice_value",
+            ]),
+          ),
+        ].join("|");
+
+        groupedData[key] = (groupedData[key] ?? 0) + 1;
+      });
+
+      const parsedRows = rows
+        .map((row) => {
+          const tin_number = normalizeText(
+            readSheetField(row, [
+              "TIN Number",
+              "tin number",
+              "tin_number",
+              "tin",
+            ]),
+          );
+          const invoice_no = normalizeText(
+            readSheetField(row, [
+              "Invoice No",
+              "invoice no",
+              "invoice_no",
+              "invoice number",
+            ]),
+          );
+          const invoice_date_raw = readSheetField(row, [
+            "Invoice Date",
+            "invoice date",
+            "invoice_date",
+          ]);
+          const item_code_raw = readSheetField(row, [
+            "Item Code",
+            "item code",
+            "item_code",
+          ]);
+          const quantity_raw = readSheetField(row, ["Quantity", "quantity"]);
+          const total_invoice_value_raw = readSheetField(row, [
+            "Total Invoice Value",
+            "total invoice value",
+            "total_invoice_value",
+          ]);
+          const against_cfrom_raw = readSheetField(row, [
+            "Is Against C From",
+            "is against c from",
+            "is_against_c_from",
+            "is against c form",
+            "is_against_c_form",
+          ]);
+
+          const isAllNull =
+            tin_number === "" &&
+            invoice_no === "" &&
+            normalizeText(invoice_date_raw) === "" &&
+            normalizeText(item_code_raw) === "" &&
+            normalizeText(quantity_raw) === "" &&
+            normalizeText(total_invoice_value_raw) === "" &&
+            normalizeText(against_cfrom_raw) === "";
+
+          if (isAllNull) return null;
+
+          // const ALLOWED_ITEM_CODES = [1, 2, 3, 4, 748, 749, 1245, 1246, 1798];
+          const errors: string[] = [];
+
+          if (!/^\d{11}$/.test(tin_number)) {
+            errors.push("* TIN Number must be 11 digits");
+          } else if (
+            tin_number.startsWith("25") ||
+            tin_number.startsWith("26")
+          ) {
+            errors.push("* Local purchase not allowed");
+          } else if (dvatdata?.tinNumber && tin_number === dvatdata.tinNumber) {
+            errors.push("* TIN Number cannot be your own TIN");
+          }
+
+          const sellerTin = tindata.find(
+            (tin) => tin.tin_number === tin_number,
+          );
+          if (!sellerTin) {
+            errors.push("* TIN Number not found in TIN master");
+          }
+
+          if (!/^[A-Za-z0-9]+$/.test(invoice_no)) {
+            errors.push("* Invoice No must be alphanumeric");
+          }
+
+          const invoice_date = parseDateDDMMYYYY(invoice_date_raw);
+          if (!invoice_date) {
+            errors.push("* Invoice Date must be DD/MM/YYYY");
+          }
+
+          const item_code = Number(item_code_raw);
+          if (!Number.isInteger(item_code) || item_code <= 0) {
+            errors.push("* Item Code must be a valid number");
+          }
+
+          const userCommodityType = dvatdata?.commodity;
+
+          const selectedCommodity = commodityMaster.find(
+            (commodity) =>
+              commodity.id === item_code &&
+              commodity.product_type === userCommodityType,
+          );
+
+          if (!selectedCommodity) {
+            errors.push(
+              `* Item Code not found in ${(
+                userCommodityType ?? "selected"
+              ).toLowerCase()} commodity master`,
+            );
+          }
+
+          const quantity = parseExcelNumber(quantity_raw);
+          if (!Number.isFinite(quantity) || quantity <= 0) {
+            errors.push("* Quantity must be greater than 0");
+          }
+
+          const total_invoice_value = parseExcelNumber(total_invoice_value_raw);
+          if (
+            !Number.isFinite(total_invoice_value) ||
+            total_invoice_value <= 0
+          ) {
+            errors.push("* Total Invoice Value must be greater than 0");
+          }
+
+          // if (
+          //   selectedCommodity &&
+          //   Number.isFinite(quantity) &&
+          //   quantity > 0 &&
+          //   Number.isFinite(total_invoice_value) &&
+          //   total_invoice_value > 0
+          // ) {
+          //   const mrp = parseExcelNumber(selectedCommodity.mrp);
+          //   const pricePerUnit = total_invoice_value / quantity;
+
+          //   console.log("work");
+          //   console.log(mrp / selectedCommodity.crate_size);
+          //   console.log(pricePerUnit);
+          //   if (
+          //     Number.isFinite(mrp) &&
+          //     pricePerUnit < mrp / selectedCommodity.crate_size
+          //   ) {
+          //     errors.push(`* Given item price must not be less than MRP`);
+          //   }
+          // }
+
+          const parsedAgainstCFrom = parseBooleanValue(against_cfrom_raw);
+          if (parsedAgainstCFrom == null) {
+            errors.push("* Is Against C From must be true/false");
+          }
+
+          const duplicateKey = [
+            tin_number,
+            invoice_no,
+            normalizeText(item_code_raw),
+            normalizeText(quantity_raw),
+            normalizeText(total_invoice_value_raw),
+          ].join("|");
+
+          if ((groupedData[duplicateKey] ?? 0) > 1) {
+            errors.push("* Duplicate row in sheet");
+          }
+
+          const against_cfrom = parsedAgainstCFrom ?? false;
+
+          return {
+            tin_number,
+            invoice_no,
+            invoice_date: invoice_date ?? new Date(),
+            invoice_date_display: invoice_date
+              ? formatDateDDMMYYYY(invoice_date)
+              : "-",
+            item_code: Number.isFinite(item_code) ? item_code : 0,
+            quantity: Number.isFinite(quantity) ? quantity : 0,
+            total_invoice_value: Number.isFinite(total_invoice_value)
+              ? total_invoice_value
+              : 0,
+            against_cfrom,
+            seller_tin_id: sellerTin?.id ?? null,
+            commodity_name: selectedCommodity?.product_name ?? null,
+            tax_percent: selectedCommodity?.taxable_at ?? null,
+            error: errors.length > 0,
+            errorname: errors.join("\n"),
+          } as BulkSheetData;
+        })
+        .filter((val): val is BulkSheetData => val !== null);
+
+      // Cross-row check: all invoice dates must be in the same month
+      const validDates = parsedRows.filter((r) => !r.error || r.invoice_date);
+      if (validDates.length > 0) {
+        const firstMonth = parsedRows[0].invoice_date.getMonth();
+        const firstYear = parsedRows[0].invoice_date.getFullYear();
+        const mixedMonths = parsedRows.some(
+          (r) =>
+            r.invoice_date.getMonth() !== firstMonth ||
+            r.invoice_date.getFullYear() !== firstYear,
+        );
+        if (mixedMonths) {
+          parsedRows.forEach((r) => {
+            if (
+              !r.errorname.includes(
+                "* Invoice month of all entries must be the same",
+              )
+            ) {
+              r.error = true;
+              r.errorname = r.errorname
+                ? r.errorname +
+                  "\n* Invoice month of all entries must be the same"
+                : "* Invoice month of all entries must be the same";
+            }
+          });
+        }
+      }
+
+      if (parsedRows.length === 0) {
+        toast.error("No valid rows found in sheet.");
+        setTableData([]);
+        return;
+      }
+
+      setTableData(parsedRows);
+      setIsBulkModalOpen(true);
+    } catch {
+      toast.error("Unable to parse Excel file. Please use the template.");
+      setTableData([]);
+    } finally {
+      setLoading(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleBulkUpload = async () => {
+    if (!dvatdata) {
+      toast.error("DVAT not found.");
+      return;
+    }
+
+    if (!tabledata || tabledata.length === 0) {
+      toast.error("No data to upload.");
+      return;
+    }
+
+    if (tabledata.some((row) => row.error)) {
+      toast.error("Please fix all errors before uploading.");
+      return;
+    }
+
+    const entries = tabledata.map((row) => {
+      const taxPercent = row.against_cfrom ? "2" : (row.tax_percent ?? "0");
+      const totalInvoice = Number(row.total_invoice_value);
+      const taxableValue = (totalInvoice / (100 + Number(taxPercent))) * 100;
+      const vatValue = totalInvoice - taxableValue;
+      const amountUnit = totalInvoice / Number(row.quantity);
+
+      const invoiceDate = new Date(
+        new Date(row.invoice_date).toISOString().split("T")[0],
+      );
+      invoiceDate.setDate(invoiceDate.getDate() + 1);
+
+      return {
+        dvatid: dvatdata.id,
+        commodityid: row.item_code,
+        quantity: Number(row.quantity),
+        seller_tin_id: row.seller_tin_id!,
+        invoice_number: row.invoice_no,
+        invoice_date: invoiceDate,
+        tax_percent: taxPercent,
+        amount: taxableValue.toFixed(2),
+        vatamount: vatValue.toFixed(2),
+        amount_unit: amountUnit.toFixed(2),
+        createdById: userid,
+        against_cfrom: row.against_cfrom,
+      };
+    });
+
+    const response = await CreateMultiDailyPurchase({ entries });
+
+    if (response.status && response.data) {
+      toast.success("Bulk upload successful.");
+      setIsBulkModalOpen(false);
+      setSheetFileName("");
+      setTableData([]);
+      await init();
+      return;
+    }
+
+    toast.error(response.message);
+  };
 
   const downloadDailyPurchaseReport = () => {
     if (dailyPurchase.length === 0) {
@@ -782,10 +1282,142 @@ const DocumentWiseDetails = () => {
         </p>
       </Modal>
 
+      <Modal
+        title={
+          <div className="text-xl font-semibold text-gray-800">Bulk Upload</div>
+        }
+        open={isBulkModalOpen}
+        onOk={handleBulkUpload}
+        width={1100}
+        onCancel={() => {
+          setIsBulkModalOpen(false);
+          setSheetFileName("");
+          setTableData([]);
+        }}
+        okText="Upload"
+        cancelText="Cancel"
+        okButtonProps={{
+          className: "bg-blue-600 hover:bg-blue-700",
+        }}
+      >
+        <div className="overflow-x-auto rounded-lg shadow-sm">
+          <Table className="border border-gray-200 mt-4">
+            <TableHeader>
+              <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Sr. No.
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  TIN Number
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Trade Name
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Invoice No.
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Invoice Date
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Item Code
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Item Name
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Quantity
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Total Invoice Value
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Is Against C From
+                </TableHead>
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                  Error
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tabledata.map((val: BulkSheetData, index: number) => (
+                <TableRow
+                  key={index}
+                  className={`${
+                    val.error
+                      ? "bg-red-50 hover:bg-red-100"
+                      : "hover:bg-gray-50"
+                  } transition-colors`}
+                >
+                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                    {index + 1}
+                  </TableCell>
+                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                    {val.tin_number}
+                  </TableCell>
+                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                    {val.seller_tin_id
+                      ? (tindata.find((tin) => tin.id == val.seller_tin_id)
+                          ?.name_of_dealer ?? "-")
+                      : "-"}
+                  </TableCell>
+                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                    {val.invoice_no}
+                  </TableCell>
+                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                    {val.invoice_date_display}
+                  </TableCell>
+                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                    {val.item_code}
+                  </TableCell>
+                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                    {val.commodity_name ?? "-"}
+                  </TableCell>
+                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                    {val.quantity}
+                  </TableCell>
+                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                    {val.total_invoice_value}
+                  </TableCell>
+                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                    {val.against_cfrom ? "true" : "false"}
+                  </TableCell>
+                  <TableCell className="p-3 border border-gray-200 text-left text-sm text-red-600 whitespace-pre-line">
+                    {val.errorname || "-"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        {sheetFileName && (
+          <p className="mt-3 text-xs text-gray-600">
+            Uploaded file: {sheetFileName}
+          </p>
+        )}
+        {tabledata.some((val) => val.error) && (
+          <Alert
+            message={`${tabledata.filter((val) => val.error).length} row(s) have validation errors.`}
+            type="error"
+            showIcon
+            className="mt-4 rounded-lg"
+          />
+        )}
+      </Modal>
+
       <main className="p-3 bg-gray-50">
         <div className=" mx-auto">
           {/* Header Card */}
           <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+            <div className="hidden">
+              <input
+                type="file"
+                ref={sheetRef}
+                accept=".xlsx,.xls"
+                onChange={handleSheetChange}
+              />
+            </div>
+
             <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
               {/* Title Section */}
               <div>
@@ -836,13 +1468,27 @@ const DocumentWiseDetails = () => {
                     Accept All
                   </Button>
                 )}
+                <Button
+                  size="small"
+                  type="default"
+                  onClick={downloadBulkTemplate}
+                >
+                  Download Sample
+                </Button>
+                <Button
+                  size="small"
+                  type="primary"
+                  onClick={() => sheetRef.current?.click()}
+                >
+                  Bulk Upload
+                </Button>
 
                 <Button
                   size="small"
                   type="default"
                   onClick={downloadDailyPurchaseReport}
                 >
-                  Export Excel
+                  Purchase Report
                 </Button>
 
                 <Button
@@ -1159,118 +1805,118 @@ const DocumentWiseDetails = () => {
         </div>
       </main>
 
-        <>
-          <button
-            type="button"
-            aria-label="Open help chat"
-            onClick={() => setIsHelpDrawerOpen(true)}
-            className="fixed right-5 bottom-5 z-60 flex flex-col items-center hover:scale-105 transition-transform"
-          >
-            <span className="h-32 w-32 overflow-hidden">
-              {chatAnimationData ? (
-                <Lottie
-                  animationData={chatAnimationData}
-                  loop
-                  autoplay
-                  className="h-full w-full"
-                />
-              ) : (
-                <span className="h-full w-full grid place-items-center text-[#0f2f67] text-xs font-semibold">
-                  Help
-                </span>
-              )}
-            </span>
-            <span className="-translate-y-4 text-lg font-semibold text-[#0f2f67] bg-white/90 px-2 rounded-full border-blue-800 border-2">
-              Need Help
-            </span>
-          </button>
+      <>
+        <button
+          type="button"
+          aria-label="Open help chat"
+          onClick={() => setIsHelpDrawerOpen(true)}
+          className="fixed right-5 bottom-5 z-60 flex flex-col items-center hover:scale-105 transition-transform"
+        >
+          <span className="h-32 w-32 overflow-hidden">
+            {chatAnimationData ? (
+              <Lottie
+                animationData={chatAnimationData}
+                loop
+                autoplay
+                className="h-full w-full"
+              />
+            ) : (
+              <span className="h-full w-full grid place-items-center text-[#0f2f67] text-xs font-semibold">
+                Help
+              </span>
+            )}
+          </span>
+          <span className="-translate-y-4 text-lg font-semibold text-[#0f2f67] bg-white/90 px-2 rounded-full border-blue-800 border-2">
+            Need Help
+          </span>
+        </button>
 
-          <Drawer
-            title={
-              <span className="text-slate-800 font-semibold">Purchase Help</span>
-            }
-            placement="right"
-            width={380}
-            open={isHelpDrawerOpen}
-            onClose={() => setIsHelpDrawerOpen(false)}
-          >
-            <div className="h-full flex flex-col gap-3">
-              <div
-                ref={chatListRef}
-                onScroll={handleChatScroll}
-                className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 h-[62vh] overflow-y-auto flex flex-col gap-2"
-              >
-                <div className="grow" />
-                {chatMessages.map((message) => (
+        <Drawer
+          title={
+            <span className="text-slate-800 font-semibold">Purchase Help</span>
+          }
+          placement="right"
+          width={380}
+          open={isHelpDrawerOpen}
+          onClose={() => setIsHelpDrawerOpen(false)}
+        >
+          <div className="h-full flex flex-col gap-3">
+            <div
+              ref={chatListRef}
+              onScroll={handleChatScroll}
+              className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 h-[62vh] overflow-y-auto flex flex-col gap-2"
+            >
+              <div className="grow" />
+              {chatMessages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex items-end gap-2 ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {message.role === "bot" && (
+                    <span className="h-8 w-8 rounded-full bg-slate-700 text-white text-xs font-semibold flex items-center justify-center shrink-0">
+                      H
+                    </span>
+                  )}
+
                   <div
-                    key={message.id}
-                    className={`flex items-end gap-2 ${
-                      message.role === "user" ? "justify-end" : "justify-start"
+                    className={`w-fit max-w-[82%] px-2.5 py-1.5 text-sm ${
+                      message.role === "bot"
+                        ? "bg-white border border-slate-200 text-slate-700 rounded-br-lg rounded-tl-lg rounded-tr-lg"
+                        : "bg-slate-700 text-white rounded-bl-lg rounded-tl-lg rounded-tr-lg"
                     }`}
                   >
-                    {message.role === "bot" && (
-                      <span className="h-8 w-8 rounded-full bg-slate-700 text-white text-xs font-semibold flex items-center justify-center shrink-0">
-                        H
-                      </span>
-                    )}
-
-                    <div
-                      className={`w-fit max-w-[82%] px-2.5 py-1.5 text-sm ${
+                    <p
+                      className={`text-[11px] font-semibold mb-1 ${
                         message.role === "bot"
-                          ? "bg-white border border-slate-200 text-slate-700 rounded-br-lg rounded-tl-lg rounded-tr-lg"
-                          : "bg-slate-700 text-white rounded-bl-lg rounded-tl-lg rounded-tr-lg"
+                          ? "text-slate-700"
+                          : "text-slate-200"
                       }`}
                     >
-                      <p
-                        className={`text-[11px] font-semibold mb-1 ${
-                          message.role === "bot"
-                            ? "text-slate-700"
-                            : "text-slate-200"
-                        }`}
-                      >
-                        {message.role === "bot" ? "Maya" : "You"}
-                      </p>
+                      {message.role === "bot" ? "Maya" : "You"}
+                    </p>
 
-                      {message.text || (
-                        <span className="inline-flex items-center gap-1.5 text-slate-500">
-                          <span className="text-xs text-slate-500 mr-1">
-                            Thinking
-                          </span>
-                          <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></span>
-                          <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:120ms]"></span>
-                          <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:240ms]"></span>
+                    {message.text || (
+                      <span className="inline-flex items-center gap-1.5 text-slate-500">
+                        <span className="text-xs text-slate-500 mr-1">
+                          Thinking
                         </span>
-                      )}
-                    </div>
-
-                    {message.role === "user" && (
-                      <span className="h-8 w-8 rounded-full bg-amber-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">
-                        U
+                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></span>
+                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:120ms]"></span>
+                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:240ms]"></span>
                       </span>
                     )}
                   </div>
+
+                  {message.role === "user" && (
+                    <span className="h-8 w-8 rounded-full bg-amber-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">
+                      U
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {!isBotTyping && (
+              <div className="bg-white border border-slate-200 rounded-lg p-2 flex flex-wrap gap-2">
+                {purchaseChatOptions.map((option) => (
+                  <button
+                    key={option.question}
+                    type="button"
+                    onClick={() =>
+                      onSelectChatOption(option.question, option.answer)
+                    }
+                    className="text-left text-sm px-3 py-1.5 border border-slate-200 text-slate-700 rounded-full hover:bg-slate-50 transition-colors"
+                  >
+                    {option.question}
+                  </button>
                 ))}
               </div>
-
-              {!isBotTyping && (
-                <div className="bg-white border border-slate-200 rounded-lg p-2 flex flex-wrap gap-2">
-                  {purchaseChatOptions.map((option) => (
-                    <button
-                      key={option.question}
-                      type="button"
-                      onClick={() =>
-                        onSelectChatOption(option.question, option.answer)
-                      }
-                      className="text-left text-sm px-3 py-1.5 border border-slate-200 text-slate-700 rounded-full hover:bg-slate-50 transition-colors"
-                    >
-                      {option.question}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Drawer>
-        </>
+            )}
+          </div>
+        </Drawer>
+      </>
     </>
   );
 };

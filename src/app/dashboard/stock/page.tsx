@@ -616,7 +616,7 @@ const CommodityMaster = () => {
                 )}
 
                 {/* Fuel-specific Upload */}
-                {dvatdata?.commodity == "FUEL" && (
+                {/* {dvatdata?.commodity == "FUEL" && (
                   <div className="flex gap-2 items-center">
                     <Button
                       size="small"
@@ -641,7 +641,7 @@ const CommodityMaster = () => {
                       Download Sheet
                     </a>
                   </div>
-                )}
+                )} */}
 
                 {/* Manufacturer-specific Buttons */}
                 {dvatdata && dvatdata.commodity == "MANUFACTURER" && (
