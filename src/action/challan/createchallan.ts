@@ -8,6 +8,7 @@ import { customAlphabet } from "nanoid";
 
 interface CreateChallanPayload {
   dvatid: number;
+  returnid?: number;
   createdby: number;
   vat: string;
   interest: string;
@@ -34,6 +35,7 @@ const CreateChallan = async (
     const challan = await prisma.challan.create({
       data: {
         dvatid: payload.dvatid,
+        ...(payload.returnid != null && { returnid: payload.returnid }),
         cpin: cpin,
         vat: payload.vat,
         latefees: payload.latefees,

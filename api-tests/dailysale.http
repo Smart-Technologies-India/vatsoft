@@ -5,10 +5,10 @@ Content-Type: application/json
 {
   "Data": [
     {
-      "SupplierTIN": "2512345678901",
+      "SupplierTIN": "26000040001",
       "VchNum": "SAL-001",
       "VchDt": "2026-04-28",
-      "CustomerTINNo": "2598765432101",
+      "CustomerTINNo": "27000011111",
       "CustomerName": "Sample Customer",
       "Items": [
         {

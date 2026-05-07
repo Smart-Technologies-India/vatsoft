@@ -2,10 +2,13 @@
 // import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import ConvertDvat31 from "@/action/stock/convertdvat31";
 import DeleteSale from "@/action/stock/deletesale";
+import GetSaleDeleteImpact from "@/action/stock/getsaledeleteimpact";
 import GetUserDailySale, {
   GroupedDailySale,
 } from "@/action/stock/getuserdailysale";
 import { DailySaleProvider } from "@/components/forms/dailysale/dailysale";
+import { CreditNoteDrawer } from "@/components/forms/creditnote/creditnotedrawer";
+import { DebitNoteDrawer } from "@/components/forms/debitnote/debitnotedrawer";
 import {
   Table,
   TableBody,
@@ -831,18 +834,94 @@ const DocumentWiseDetails = () => {
   };
 
   const [deletebox, setDeleteBox] = useState<boolean>(false);
-  const delete_sale_entry = async (id: number) => {
-    const response = await DeleteSale({
-      id: id,
-      deletedById: userid,
-    });
-    if (response.data && response.status) {
-      toast.success(response.message);
-    } else {
-      toast.error(response.message);
+  const [deleteRecords, setDeleteRecords] = useState<number[]>([]);
+  const [deleteImpact, setDeleteImpact] = useState<{
+    creditNoteCount: number;
+    debitNoteCount: number;
+    totalLinkedCount: number;
+  }>({
+    creditNoteCount: 0,
+    debitNoteCount: 0,
+    totalLinkedCount: 0,
+  });
+  const [isDeleteImpactLoading, setIsDeleteImpactLoading] =
+    useState<boolean>(false);
+  const [creditNoteBox, setCreditNoteBox] = useState<boolean>(false);
+  const [creditNoteGroup, setCreditNoteGroup] =
+    useState<GroupedDailySale | null>(null);
+  const [debitNoteBox, setDebitNoteBox] = useState<boolean>(false);
+  const [debitNoteGroup, setDebitNoteGroup] = useState<GroupedDailySale | null>(
+    null,
+  );
+
+  const delete_sale_entry = async (ids: number[]) => {
+    if (ids.length === 0) {
+      toast.error("No sale record selected to delete.");
+      return;
     }
+
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (const id of ids) {
+      const response = await DeleteSale({
+        id,
+        deletedById: userid,
+      });
+      if (response.data && response.status) {
+        successCount += 1;
+      } else {
+        failedCount += 1;
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`${successCount} sale record(s) deleted successfully.`);
+    }
+    if (failedCount > 0) {
+      toast.error(`${failedCount} sale record(s) could not be deleted.`);
+    }
+
     await init();
     setDeleteBox(false);
+    setDeleteRecords([]);
+    setDeleteImpact({
+      creditNoteCount: 0,
+      debitNoteCount: 0,
+      totalLinkedCount: 0,
+    });
+  };
+
+  const loadDeleteImpact = async (saleIds: number[]) => {
+    if (saleIds.length === 0) {
+      setDeleteImpact({
+        creditNoteCount: 0,
+        debitNoteCount: 0,
+        totalLinkedCount: 0,
+      });
+      return;
+    }
+
+    setIsDeleteImpactLoading(true);
+
+    let creditNoteCount = 0;
+    let debitNoteCount = 0;
+
+    for (const id of saleIds) {
+      const impactResponse = await GetSaleDeleteImpact({ id });
+      if (impactResponse.status && impactResponse.data) {
+        creditNoteCount += impactResponse.data.creditNoteCount;
+        debitNoteCount += impactResponse.data.debitNoteCount;
+      }
+    }
+
+    setDeleteImpact({
+      creditNoteCount,
+      debitNoteCount,
+      totalLinkedCount: creditNoteCount + debitNoteCount,
+    });
+
+    setIsDeleteImpactLoading(false);
   };
 
   const [quantityCount, setQuantityCount] = useState("pcs");
@@ -909,6 +988,8 @@ const DocumentWiseDetails = () => {
         amount_unit: amountUnit.toFixed(2),
         createdById: userid,
         against_cfrom: false,
+        is_against_fform: false,
+        is_export: false,
       };
     });
 
@@ -1020,20 +1101,18 @@ const DocumentWiseDetails = () => {
                             )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {(
-                          parseFloat(record.amount_unit) * record.quantity
-                        ).toFixed(2)}
+                        {parseFloat(record.amount).toFixed(2)}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.tax_percent}%
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {record.vatamount}
+                        {parseFloat(record.vatamount).toFixed(2)}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {record.amount_unit
+                        {record.amount
                           ? (
-                              parseFloat(record.amount_unit) * record.quantity +
+                              parseFloat(record.amount) +
                               parseFloat(record.vatamount)
                             ).toFixed(2)
                           : "0.00"}
@@ -1194,6 +1273,54 @@ const DocumentWiseDetails = () => {
         </div>
         <DailySaleProvider userid={userid} setAddBox={setAddBox} init={init} />
       </Drawer>
+      <Drawer
+        placement="right"
+        closeIcon={null}
+        onClose={() => {
+          setCreditNoteBox(false);
+          setCreditNoteGroup(null);
+        }}
+        open={creditNoteBox}
+        size="large"
+      >
+        <div className="mb-3 pb-2 border-b">
+          <h2 className="text-sm font-medium text-gray-900">
+            Sale Credit Note
+          </h2>
+        </div>
+        {creditNoteGroup && dvatdata && (
+          <CreditNoteDrawer
+            group={creditNoteGroup}
+            dvat04Id={dvatdata.id}
+            userid={userid}
+            setOpen={setCreditNoteBox}
+            init={init}
+          />
+        )}
+      </Drawer>
+      <Drawer
+        placement="right"
+        closeIcon={null}
+        onClose={() => {
+          setDebitNoteBox(false);
+          setDebitNoteGroup(null);
+        }}
+        open={debitNoteBox}
+        size="large"
+      >
+        <div className="mb-3 pb-2 border-b">
+          <h2 className="text-sm font-medium text-gray-900">Sale Debit Note</h2>
+        </div>
+        {debitNoteGroup && dvatdata && (
+          <DebitNoteDrawer
+            group={debitNoteGroup}
+            dvat04Id={dvatdata.id}
+            userid={userid}
+            setOpen={setDebitNoteBox}
+            init={init}
+          />
+        )}
+      </Drawer>
       <main className="p-3 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
@@ -1228,6 +1355,18 @@ const DocumentWiseDetails = () => {
                     </Radio.Group>
                   </div>
                 )}
+                {dvatdata?.commodity === "OIDC" && (
+                  <Button
+                    size="small"
+                    type="default"
+                    onClick={() => {
+                      router.push("/dashboard/stock/tally_sale");
+                    }}
+                  >
+                    Tally Sale
+                  </Button>
+                )}
+
                 <Button
                   size="small"
                   type="default"
@@ -1386,46 +1525,79 @@ const DocumentWiseDetails = () => {
                           {group.totalInvoiceValue.toFixed(2)}
                         </TableCell>
                         <TableCell className="p-2 text-center text-xs">
-                          {group.records[0].is_accept ? (
-                            "NA"
-                          ) : (
-                            <>
-                              <Popover
-                                content={
-                                  <div className="flex flex-col gap-2">
-                                    <button
-                                      onClick={() => {
-                                        if (group.count === 1) {
-                                          route.push(
-                                            `/dashboard/stock/edit_sale/${encryptURLData(
-                                              group.records[0].id.toString(),
-                                            )}`,
-                                          );
-                                        } else {
-                                          toast.info(
-                                            "Please select a specific record from Show More",
-                                          );
-                                        }
-                                      }}
-                                      className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4"
-                                    >
-                                      Update
-                                    </button>
-                                  </div>
-                                }
-                                title="Actions"
-                                trigger="click"
-                                open={!!openPopovers[index]} // Open state for each row
-                                onOpenChange={(newOpen) =>
-                                  handleOpenChange(newOpen, index)
-                                }
-                              >
-                                <button className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4">
-                                  Actions
+                          <Popover
+                            content={
+                              <div className="flex flex-col gap-2">
+                                {!group.records[0].is_accept && (
+                                  <button
+                                    onClick={() => {
+                                      if (group.count === 1) {
+                                        route.push(
+                                          `/dashboard/stock/edit_sale/${encryptURLData(
+                                            group.records[0].id.toString(),
+                                          )}`,
+                                        );
+                                      } else {
+                                        toast.info(
+                                          "Please select a specific record from Show More",
+                                        );
+                                      }
+                                      handelClose(index);
+                                    }}
+                                    className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded"
+                                  >
+                                    Update
+                                  </button>
+                                )}
+                                {!group.records[0].is_accept && (
+                                  <button
+                                    onClick={() => {
+                                      const idsToDelete = group.records.map(
+                                        (record) => record.id,
+                                      );
+                                      setDeleteRecords(idsToDelete);
+                                      setDeleteBox(true);
+                                      loadDeleteImpact(idsToDelete);
+                                      handelClose(index);
+                                    }}
+                                    className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded"
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    setCreditNoteGroup(group);
+                                    setCreditNoteBox(true);
+                                    handelClose(index);
+                                  }}
+                                  className="text-sm bg-white border hover:border-green-500 hover:text-green-600 text-gray-700 py-1 px-3 rounded"
+                                >
+                                  Credit Note
                                 </button>
-                              </Popover>
-                            </>
-                          )}
+                                <button
+                                  onClick={() => {
+                                    setDebitNoteGroup(group);
+                                    setDebitNoteBox(true);
+                                    handelClose(index);
+                                  }}
+                                  className="text-sm bg-white border hover:border-amber-500 hover:text-amber-600 text-gray-700 py-1 px-3 rounded"
+                                >
+                                  Debit Note
+                                </button>
+                              </div>
+                            }
+                            title="Actions"
+                            trigger="click"
+                            open={!!openPopovers[index]}
+                            onOpenChange={(newOpen) =>
+                              handleOpenChange(newOpen, index)
+                            }
+                          >
+                            <button className="text-sm bg-white border hover:border-blue-500 hover:text-blue-500 text-[#172e57] py-1 px-4">
+                              Actions
+                            </button>
+                          </Popover>
 
                           <Modal
                             title="Confirmation"
@@ -1437,6 +1609,14 @@ const DocumentWiseDetails = () => {
                               <p>
                                 Are you sure you want to delete this Sale entry
                               </p>
+                              <p className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                                Warning: Linked credit/debit note entries in
+                                return entry will also be deleted.
+                                <br />
+                                {isDeleteImpactLoading
+                                  ? "Checking linked notes..."
+                                  : `Credit Notes: ${deleteImpact.creditNoteCount}, Debit Notes: ${deleteImpact.debitNoteCount}, Total linked entries: ${deleteImpact.totalLinkedCount}`}
+                              </p>
                             </div>
                             <div className="flex  gap-2 mt-2">
                               <div className="grow"></div>
@@ -1444,14 +1624,22 @@ const DocumentWiseDetails = () => {
                                 className="py-1 rounded-md border px-4 text-sm text-gray-600"
                                 onClick={() => {
                                   setDeleteBox(false);
+                                  setDeleteRecords([]);
+                                  setDeleteImpact({
+                                    creditNoteCount: 0,
+                                    debitNoteCount: 0,
+                                    totalLinkedCount: 0,
+                                  });
                                 }}
                               >
                                 Close
                               </button>
                               <button
-                                onClick={() =>
-                                  delete_sale_entry(group.records[0].id)
-                                }
+                                onClick={() => {
+                                  if (deleteRecords.length > 0) {
+                                    delete_sale_entry(deleteRecords);
+                                  }
+                                }}
                                 className="py-1 rounded-md bg-rose-500 px-4 text-sm text-white"
                               >
                                 Delete

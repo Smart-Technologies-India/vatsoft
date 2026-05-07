@@ -55,8 +55,26 @@ const DeletePurchase = async (
         },
       });
 
-      if (!is_exist) {
+      if (!create_response) {
         throw new Error("Unable to delete purchase Entry.");
+      }
+
+      // Also delete related debit/credit note rows in returns_entry,
+      // where description_of_goods stores this purchase URN.
+      if (is_exist.urn_number) {
+        await prisma.returns_entry.updateMany({
+          where: {
+            description_of_goods: is_exist.urn_number,
+            deletedAt: null,
+            status: "ACTIVE",
+          },
+          data: {
+            updatedById: payload.deletedById,
+            deletedById: payload.deletedById,
+            deletedAt: new Date(),
+            status: "INACTIVE",
+          },
+        });
       }
 
       const update_response = await prisma.daily_purchase.update({
@@ -69,7 +87,7 @@ const DeletePurchase = async (
         },
       });
 
-      if (!is_exist) {
+      if (!update_response) {
         throw new Error("Unable to delete purchase Entry.");
       }
 

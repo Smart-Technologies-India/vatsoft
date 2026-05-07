@@ -20,6 +20,8 @@ interface CreateMultiDailySalePayload {
     amount_unit: string;
     createdById: number;
     against_cfrom: boolean;
+    is_against_fform: boolean;
+    is_export: boolean;
   }>;
 }
 

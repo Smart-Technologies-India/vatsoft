@@ -124,6 +124,8 @@ const AddSale = () => {
       amount_unit: (sale.net_amount / sale.quantity).toFixed(2),
       createdById: userid,
       against_cfrom: false,
+      is_against_fform: false,
+      is_export: false,
     }));
 
     const created_data = await CreateMultiDailySale({
@@ -336,6 +338,8 @@ const AddSale = () => {
         )?.sale_price!,
         createdById: userid,
         against_cfrom: true,
+        is_against_fform: false,
+        is_export: false,
       }));
 
     const response = await CreateMultiDailySale({ entries });

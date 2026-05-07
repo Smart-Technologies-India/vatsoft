@@ -34,6 +34,7 @@ export type GroupedDailyPurchase = {
   totalVatAmount: number;
   totalInvoiceValue: number;
   hasPendingAcceptable: boolean;
+  urn_number: string;
 };
 
 const GetUserDailyPurchase = async (
@@ -77,7 +78,7 @@ const GetUserDailyPurchase = async (
         existing.totalTaxableValue += parseFloat(record.amount);
         existing.totalVatAmount += parseFloat(record.vatamount);
         existing.totalInvoiceValue +=
-          parseFloat(record.amount_unit) * record.quantity;
+          parseFloat(record.amount) + parseFloat(record.vatamount);
         // Check if any record in the group has pending acceptable
         if (
           (record.seller_tin_number.tin_number.startsWith("25") ||
@@ -96,11 +97,13 @@ const GetUserDailyPurchase = async (
           count: 1,
           totalTaxableValue: parseFloat(record.amount),
           totalVatAmount: parseFloat(record.vatamount),
-          totalInvoiceValue: parseFloat(record.amount_unit) * record.quantity,
+          totalInvoiceValue:
+            parseFloat(record.amount) + parseFloat(record.vatamount),
           hasPendingAcceptable:
             (record.seller_tin_number.tin_number.startsWith("25") ||
               record.seller_tin_number.tin_number.startsWith("26")) &&
             !record.is_accept,
+          urn_number: record.urn_number || "",
         });
       }
     });

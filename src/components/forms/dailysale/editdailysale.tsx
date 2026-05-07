@@ -20,7 +20,7 @@ import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import { DailySaleForm, DailySaleSchema } from "@/schema/daily_sale";
 import GetUserCommodity from "@/action/stock/usercommodity";
 import SearchTin from "@/action/tin_number/searchtin";
-import { Input, InputRef, Modal } from "antd";
+import { Input, InputRef, Modal, Select } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 import { useRouter } from "next/navigation";
 import EditSale from "@/action/stock/editsale";
@@ -35,6 +35,7 @@ type EditDailySaleProviderProps = {
     seller_tin_number: tin_number_master;
   };
 };
+type AgainstType = "NONE" | "CFORM" | "FFORM" | "EXPORT";
 export const EditDailySaleProvider = (props: EditDailySaleProviderProps) => {
   const methods = useForm<DailySaleForm>({
     resolver: valibotResolver(DailySaleSchema),
@@ -66,12 +67,23 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
   const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
     []
   );
+  const [againstType, setAgainstType] = useState<AgainstType>("NONE");
+  const [isComp, setIsComp] = useState(false);
+
+  const getSelectedTaxRate = () => {
+    if (isComp) return "1";
+    if (againstType === "CFORM") return "2";
+    if (againstType === "FFORM" || againstType === "EXPORT") return "0";
+    return commoditymaster?.taxable_at ?? "0";
+  };
 
   useEffect(() => {
     reset({
       recipient_vat_no: props.data.seller_tin_number.tin_number,
-      amount_unit: props.data.amount_unit,
-      description_of_goods: props.data.commodity_master.product_name,
+      amount_unit: (Number(props.data.amount) + Number(props.data.vatamount)).toFixed(
+        2
+      ),
+      description_of_goods: props.data.commodity_master.id.toString(),
       invoice_date: props.data.invoice_date.toISOString(),
       invoice_number: props.data.invoice_number,
       quantity: props.data.quantity.toString(),
@@ -110,12 +122,25 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
 
       if (response.status && response.data) {
         setDvatdata(response.data);
+        if (response.data.compositionScheme) {
+          setIsComp(true);
+        }
         const commodity_resposen = await GetUserCommodity({
           dvatid: response.data.id,
         });
         if (commodity_resposen.status && commodity_resposen.data) {
           setCommodityMaster(commodity_resposen.data);
         }
+      }
+
+      if (props.data.is_against_cform) {
+        setAgainstType("CFORM");
+      } else if (props.data.is_against_fform) {
+        setAgainstType("FFORM");
+      } else if (props.data.is_export) {
+        setAgainstType("EXPORT");
+      } else {
+        setAgainstType("NONE");
       }
 
       setIsLoading(false);
@@ -139,6 +164,13 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
     }
     const init = async () => {
       if (recipient_vat_no.length > 11) return toast.error("Invalid DVAT no.");
+
+      if (
+        recipient_vat_no &&
+        (recipient_vat_no.startsWith("25") || recipient_vat_no.startsWith("26"))
+      ) {
+        setAgainstType("NONE");
+      }
 
       if (recipient_vat_no && (recipient_vat_no ?? "").length < 2) {
         if (recipient_vat_no.length >= 11) {
@@ -174,20 +206,19 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
     if (commoditymaster == null || quantity == null || amount_unit == null)
       return;
 
-    // Calculate taxableValue
+    const totalInvoiceValue = Number(amount_unit) || 0;
+    const taxPercentage = parseFloat(getSelectedTaxRate()) || 0;
     const calculatedTaxableValue =
-      parseFloat(quantity) * parseFloat(amount_unit || "0");
+      totalInvoiceValue / (1 + taxPercentage / 100);
+    const calculatedVatAmount = totalInvoiceValue - calculatedTaxableValue;
+
     setTaxableValue(
       isNaN(calculatedTaxableValue) ? "0" : calculatedTaxableValue.toFixed(2)
     );
-
-    // Calculate VAT amount based on commodity master data
-    const taxPercentage: number = parseInt(commoditymaster.taxable_at) || 0; // Assuming `taxable_at` is a percentage
-    const calculatedVatAmount = (calculatedTaxableValue * taxPercentage) / 100;
     setVatAmount(
       isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
     );
-  }, [quantity, amount_unit, commoditymaster]);
+  }, [quantity, amount_unit, commoditymaster, againstType, isComp]);
 
   const onSubmit = async (data: DailySaleForm) => {
     if (davtdata == null || davtdata == undefined)
@@ -197,12 +228,19 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
     if (tindata == null || tindata == undefined)
       return toast.error("Seller TIN Number not found.");
 
-    if (isLiquore && parseInt(data.amount_unit) < (liquoreAmount / commoditymaster.crate_size) * 0.9) {
+    const quantityNum = parseInt(data.quantity);
+    if (quantityNum <= 0)
+      return toast.error("Quantity must be greater than 0.");
+
+    const totalInvoiceValue = parseFloat(data.amount_unit) || 0;
+    const invoicePerUnit = totalInvoiceValue / quantityNum;
+
+    if (
+      isLiquore &&
+      invoicePerUnit < (liquoreAmount / commoditymaster.crate_size) * 0.9
+    ) {
       return toast.error("Sale amount can not be less than MRP.");
     }
-
-    if (parseInt(data.quantity) <= 0)
-      return toast.error("Quantity must be greater than 0.");
 
     const date = new Date(
       new Date(data.invoice_date).toISOString().split("T")[0]
@@ -211,17 +249,20 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
 
     const stock_response = await EditSale({
       id: props.id,
-      amount_unit: data.amount_unit,
+      amount_unit: invoicePerUnit.toFixed(2),
       invoice_date: date,
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,
-      quantity: parseInt(data.quantity),
+      quantity: quantityNum,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
-      tax_percent: commoditymaster.taxable_at,
+      tax_percent: getSelectedTaxRate(),
       seller_tin_id: tindata.id,
-      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(2),
+      amount: taxableValue,
+      against_cfrom: againstType === "CFORM",
+      is_against_fform: againstType === "FFORM",
+      is_export: againstType === "EXPORT",
     });
 
     if (stock_response.status) {
@@ -287,11 +328,32 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
           />
         </div>
         {tindata != null && (
-          <div className="mt-2">
-            <p className="text-sm font-normal">Name as in Master</p>
-            <p className="font-semibold text-lg">
-              {tindata?.name_of_dealer ?? ""}
-            </p>
+          <div className="mt-2 flex gap-2 items-center">
+            <div>
+              <p className="text-sm font-normal">Name as in Master</p>
+              <p className="font-semibold text-lg">
+                {tindata?.name_of_dealer ?? ""}
+              </p>
+            </div>
+            <div className="grow"></div>
+
+            {!tindata?.tin_number.startsWith("25") &&
+              !tindata?.tin_number.startsWith("26") && (
+                <div className="min-w-55">
+                  <p className="text-xs text-gray-600 mb-1">Sale Type</p>
+                  <Select
+                    value={againstType}
+                    onChange={(value: AgainstType) => setAgainstType(value)}
+                    size="middle"
+                    options={[
+                      { value: "NONE", label: "Regular (Normal Tax)" },
+                      { value: "CFORM", label: "Against C Form (2%)" },
+                      { value: "FFORM", label: "Against F Form (0%)" },
+                      { value: "EXPORT", label: "Export (0%)" },
+                    ]}
+                  />
+                </div>
+              )}
           </div>
         )}
         <div className="mt-2">
@@ -342,24 +404,26 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
         </div>
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
-            placeholder="Enter amount"
+            placeholder="Enter Total Invoice Value"
             name="amount_unit"
             required={true}
-            title="Enter amount"
+            title="Total Invoice Value"
             onlynumber={true}
           />
         </div>
         <div className="flex gap-1 items-center">
           <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
             <p className="text-xs font-normal">Taxable (%)</p>
+            <p className="text-sm font-semibold">{getSelectedTaxRate()}%</p>
+          </div>
+          <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
+            <p className="text-xs font-normal">Total Invoice Value</p>
             <p className="text-sm font-semibold">
-              {commoditymaster != null
-                ? commoditymaster.taxable_at + "%"
-                : "0%"}
+              {(Number(amount_unit) || 0).toFixed(2)}
             </p>
           </div>
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
-            <p className="text-xs font-normal">Taxable Value</p>
+            <p className="text-xs font-normal">Total Taxable Value</p>
             <p className="text-sm font-semibold">{taxableValue}</p>
           </div>
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">

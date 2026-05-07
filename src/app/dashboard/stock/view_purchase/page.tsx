@@ -5,6 +5,7 @@ import GetUser from "@/action/user/getuser";
 import AcceptSale from "@/action/stock/acceptsell";
 import ConvertDvat30A from "@/action/stock/convertdvat30a";
 import DeletePurchase from "@/action/stock/deletepurchase";
+import GetPurchaseDeleteImpact from "@/action/stock/getpurchasedeleteimpact";
 import GetUserDailyPurchase, {
   GroupedDailyPurchase,
 } from "@/action/stock/getuserdailypurchase";
@@ -12,6 +13,8 @@ import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import CreateMultiDailyPurchase from "@/action/stock/createmultidailypurchase";
 import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
+import { PurchaseCreditNoteDrawer } from "@/components/forms/purchasecreditnote/purchasecreditnotedrawer";
+import { PurchaseDebitNoteDrawer } from "@/components/forms/purchasedebitnote/purchasedebitnotedrawer";
 import {
   Table,
   TableBody,
@@ -361,6 +364,12 @@ const DocumentWiseDetails = () => {
     }
   };
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [creditNoteBox, setCreditNoteBox] = useState<boolean>(false);
+  const [creditNoteGroup, setCreditNoteGroup] =
+    useState<GroupedDailyPurchase | null>(null);
+  const [debitNoteBox, setDebitNoteBox] = useState<boolean>(false);
+  const [debitNoteGroup, setDebitNoteGroup] =
+    useState<GroupedDailyPurchase | null>(null);
 
   const Convertto30a = async () => {
     if (!dvatdata) {
@@ -381,6 +390,36 @@ const DocumentWiseDetails = () => {
   };
 
   const [deletebox, setDeleteBox] = useState<boolean>(false);
+  const [deleteRecord, setDeleteRecord] = useState<number | null>(null);
+  const [deleteImpact, setDeleteImpact] = useState<{
+    creditNoteCount: number;
+    debitNoteCount: number;
+    totalLinkedCount: number;
+  }>({
+    creditNoteCount: 0,
+    debitNoteCount: 0,
+    totalLinkedCount: 0,
+  });
+  const [isDeleteImpactLoading, setIsDeleteImpactLoading] =
+    useState<boolean>(false);
+
+  const loadDeleteImpact = async (purchaseId: number) => {
+    setIsDeleteImpactLoading(true);
+    const impactResponse = await GetPurchaseDeleteImpact({ id: purchaseId });
+
+    if (impactResponse.status && impactResponse.data) {
+      setDeleteImpact(impactResponse.data);
+    } else {
+      setDeleteImpact({
+        creditNoteCount: 0,
+        debitNoteCount: 0,
+        totalLinkedCount: 0,
+      });
+    }
+
+    setIsDeleteImpactLoading(false);
+  };
+
   const delete_purchase_entry = async (id: number) => {
     const response = await DeletePurchase({
       id: id,
@@ -394,6 +433,12 @@ const DocumentWiseDetails = () => {
 
     await init();
     setDeleteBox(false);
+    setDeleteRecord(null);
+    setDeleteImpact({
+      creditNoteCount: 0,
+      debitNoteCount: 0,
+      totalLinkedCount: 0,
+    });
   };
 
   const [quantityCount, setQuantityCount] = useState("pcs");
@@ -405,6 +450,9 @@ const DocumentWiseDetails = () => {
   const [addBox, setAddBox] = useState<boolean>(false);
   const [isAcceptAllLoading, setIsAcceptAllLoading] = useState(false);
   const [isAcceptAllModalOpen, setIsAcceptAllModalOpen] = useState(false);
+  const [isGroupAcceptLoading, setIsGroupAcceptLoading] = useState(false);
+  const [isSingleAcceptLoading, setIsSingleAcceptLoading] =
+    useState<boolean>(false);
 
   const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
     [],
@@ -1044,6 +1092,81 @@ const DocumentWiseDetails = () => {
     }
   };
 
+  const handleAcceptGroupAll = async () => {
+    if (!selectedGroup || !dvatdata) return;
+
+    const pendingRecords = selectedGroup.records.filter(
+      (record) =>
+        (record.seller_tin_number.tin_number.startsWith("25") ||
+          record.seller_tin_number.tin_number.startsWith("26")) &&
+        !record.is_accept,
+    );
+
+    if (pendingRecords.length === 0) return;
+
+    setIsGroupAcceptLoading(true);
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (const record of pendingRecords) {
+      const response = await AcceptSale({
+        commodityid: record.commodity_master.id,
+        createdById: userid,
+        dvatid: dvatdata.id,
+        quantity: record.quantity,
+        puchaseid: record.id,
+        urn: record.urn_number ?? "",
+      });
+
+      if (response.status && response.data) {
+        successCount += 1;
+        markRecordAccepted(record.id);
+      } else {
+        failedCount += 1;
+      }
+    }
+
+    setIsGroupAcceptLoading(false);
+
+    if (successCount > 0) {
+      toast.success(`${successCount} record(s) accepted.`);
+      await init();
+    }
+    if (failedCount > 0) {
+      toast.error(`${failedCount} record(s) could not be accepted.`);
+    }
+  };
+
+  const handleAcceptSingleRecord = async (
+    record: GroupedDailyPurchase["records"][number],
+  ) => {
+    if (!dvatdata) {
+      toast.error("DVAT not found.");
+      return;
+    }
+
+    setIsSingleAcceptLoading(true);
+
+    const response = await AcceptSale({
+      commodityid: record.commodity_master.id,
+      createdById: userid,
+      dvatid: dvatdata.id,
+      quantity: record.quantity,
+      puchaseid: record.id,
+      urn: record.urn_number ?? "",
+    });
+
+    setIsSingleAcceptLoading(false);
+
+    if (response.status && response.data) {
+      markRecordAccepted(record.id);
+      toast.success("Purchase record accepted.");
+      await init();
+    } else {
+      toast.error(response.message);
+    }
+  };
+
   const hasPendingAcceptable = dailyPurchase.some(
     (group) => group.hasPendingAcceptable,
   );
@@ -1143,10 +1266,7 @@ const DocumentWiseDetails = () => {
                             )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        ₹
-                        {(
-                          parseFloat(record.amount_unit) * record.quantity
-                        ).toFixed(2)}
+                        ₹{parseFloat(record.amount).toFixed(2)}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.tax_percent}%
@@ -1165,29 +1285,9 @@ const DocumentWiseDetails = () => {
                               Accepted
                             </span>
                           ) : (
-                            <button
-                              onClick={async () => {
-                                if (!dvatdata)
-                                  return toast.error("DVAT not found.");
-                                const response = await AcceptSale({
-                                  commodityid: record.commodity_master.id,
-                                  createdById: userid,
-                                  dvatid: dvatdata.id,
-                                  quantity: record.quantity,
-                                  puchaseid: record.id,
-                                  urn: record.urn_number ?? "",
-                                });
-                                if (response.status && response.data) {
-                                  toast.success(response.message);
-                                  markRecordAccepted(record.id);
-                                } else {
-                                  toast.error(response.message);
-                                }
-                              }}
-                              className="text-xs bg-rose-500 hover:bg-rose-600 text-white py-1 px-3 rounded"
-                            >
-                              Accept
-                            </button>
+                            <span className="text-xs text-amber-500">
+                              Pending
+                            </span>
                           )
                         ) : (
                           <button
@@ -1231,6 +1331,22 @@ const DocumentWiseDetails = () => {
                 </div>
               </div>
             </div>
+            {selectedGroup.records.some(
+              (r) =>
+                (r.seller_tin_number.tin_number.startsWith("25") ||
+                  r.seller_tin_number.tin_number.startsWith("26")) &&
+                !r.is_accept,
+            ) && (
+              <div className="mt-4 flex justify-end">
+                <button
+                  disabled={isGroupAcceptLoading}
+                  onClick={handleAcceptGroupAll}
+                  className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+                >
+                  {isGroupAcceptLoading ? "Accepting..." : "Accept All"}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </Modal>
@@ -1251,6 +1367,56 @@ const DocumentWiseDetails = () => {
           setAddBox={setAddBox}
           init={init}
         />
+      </Drawer>
+      <Drawer
+        placement="right"
+        closeIcon={null}
+        onClose={() => {
+          setCreditNoteBox(false);
+          setCreditNoteGroup(null);
+        }}
+        open={creditNoteBox}
+        size="large"
+      >
+        <div className="mb-3 pb-2 border-b">
+          <h2 className="text-sm font-medium text-gray-900">
+            Purchase Credit Note
+          </h2>
+        </div>
+        {creditNoteGroup && dvatdata && (
+          <PurchaseCreditNoteDrawer
+            group={creditNoteGroup}
+            dvat04Id={dvatdata.id}
+            userid={userid}
+            setOpen={setCreditNoteBox}
+            init={init}
+          />
+        )}
+      </Drawer>
+      <Drawer
+        placement="right"
+        closeIcon={null}
+        onClose={() => {
+          setDebitNoteBox(false);
+          setDebitNoteGroup(null);
+        }}
+        open={debitNoteBox}
+        size="large"
+      >
+        <div className="mb-3 pb-2 border-b">
+          <h2 className="text-sm font-medium text-gray-900">
+            Purchase Debit Note
+          </h2>
+        </div>
+        {debitNoteGroup && dvatdata && (
+          <PurchaseDebitNoteDrawer
+            group={debitNoteGroup}
+            dvat04Id={dvatdata.id}
+            userid={userid}
+            setOpen={setDebitNoteBox}
+            init={init}
+          />
+        )}
       </Drawer>
       <Modal
         title="Generate DVAT 30/30 A"
@@ -1445,6 +1611,18 @@ const DocumentWiseDetails = () => {
                   </div>
                 )}
 
+                {dvatdata?.commodity === "OIDC" && (
+                  <Button
+                    size="small"
+                    type="default"
+                    onClick={() => {
+                      router.push("/dashboard/stock/tally_purchase");
+                    }}
+                  >
+                    Tally Purchase
+                  </Button>
+                )}
+
                 {dailyPurchase.length > 0 && (
                   <Button
                     size="small"
@@ -1632,103 +1810,115 @@ const DocumentWiseDetails = () => {
                             ₹{group.totalTaxableValue.toFixed(2)}
                           </TableCell>
                           <TableCell className="p-2 text-center">
-                            {group.count > 1 ? (
-                              <button
-                                onClick={() => {
-                                  setSelectedGroup(group);
-                                  setIsGroupModalOpen(true);
-                                }}
-                                className="text-sm bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded"
-                              >
-                                View
-                              </button>
-                            ) : group.seller_tin_number.tin_number.startsWith(
-                                "25",
-                              ) ||
-                              group.seller_tin_number.tin_number.startsWith(
-                                "26",
-                              ) ? (
-                              group.hasPendingAcceptable ? (
-                                <button
-                                  onClick={async () => {
-                                    if (!dvatdata)
-                                      return toast.error("DVAT not found.");
-                                    const record = group.records[0];
-                                    const response = await AcceptSale({
-                                      commodityid: record.commodity_master.id,
-                                      createdById: userid,
-                                      dvatid: dvatdata.id,
-                                      quantity: record.quantity,
-                                      puchaseid: record.id,
-                                      urn: record.urn_number ?? "",
-                                    });
-                                    if (response.status && response.data) {
-                                      toast.success(response.message);
-                                      await init();
-                                    } else {
-                                      toast.error(response.message);
-                                    }
-                                  }}
-                                  className="text-sm bg-rose-500 hover:bg-rose-600 text-white py-1 px-3 rounded"
-                                >
-                                  Accept
-                                </button>
-                              ) : (
-                                <span className="text-sm text-gray-400">
-                                  N/A
-                                </span>
-                              )
-                            ) : (
-                              <Popover
-                                content={
-                                  <div className="flex flex-col gap-2">
+                            <Popover
+                              content={
+                                <div className="flex flex-col gap-2">
+                                  {group.count > 1 && (
                                     <button
                                       onClick={() => {
-                                        setDeleteBox(true);
+                                        setSelectedGroup(group);
+                                        setIsGroupModalOpen(true);
                                         handelClose(index);
-                                      }}
-                                      className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded"
-                                    >
-                                      Delete
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        if (group.count === 1) {
-                                          router.push(
-                                            `/dashboard/stock/edit_purchase/${encryptURLData(
-                                              group.records[0].id.toString(),
-                                            )}`,
-                                          );
-                                        } else {
-                                          toast.info(
-                                            "Please select a specific record from Show More",
-                                          );
-                                        }
                                       }}
                                       className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded"
                                     >
-                                      Update
+                                      View
                                     </button>
-                                  </div>
-                                }
-                                title="Actions"
-                                trigger="click"
-                                // open={!!openPopovers[index]}
-                                // onOpenChange={(newOpen) =>
-                                //   handleOpenChange(newOpen, index)
-                                // }
-                              >
-                                <span className="text-sm text-gray-400">
-                                  N/A
-                                </span>
-                                {/* <button
-                                  disabled={true}
-                                  className="text-sm bg-gray-500 hover:bg-gray-600 text-white py-1 px-3 rounded"
-                                >
-                                  N/A
-                                </button> */}
-                              </Popover>
-                            )}
+                                  )}
+                                  {group.count === 1 &&
+                                    !(
+                                      group.seller_tin_number.tin_number.startsWith(
+                                        "25",
+                                      ) ||
+                                      group.seller_tin_number.tin_number.startsWith(
+                                        "26",
+                                      )
+                                    ) && (
+                                      <>
+                                        <button
+                                          onClick={() => {
+                                            setDeleteRecord(
+                                              group.records[0].id,
+                                            );
+                                            setDeleteBox(true);
+                                            loadDeleteImpact(group.records[0].id);
+                                            handelClose(index);
+                                          }}
+                                          className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded"
+                                        >
+                                          Delete
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            router.push(
+                                              `/dashboard/stock/edit_purchase/${encryptURLData(
+                                                group.records[0].id.toString(),
+                                              )}`,
+                                            );
+                                            handelClose(index);
+                                          }}
+                                          className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded"
+                                        >
+                                          Update
+                                        </button>
+                                      </>
+                                    )}
+                                  {group.count === 1 &&
+                                    (group.seller_tin_number.tin_number.startsWith(
+                                      "25",
+                                    ) ||
+                                      group.seller_tin_number.tin_number.startsWith(
+                                        "26",
+                                      )) &&
+                                    !group.records[0].is_accept && (
+                                      <button
+                                        onClick={async () => {
+                                          await handleAcceptSingleRecord(
+                                            group.records[0],
+                                          );
+                                          handelClose(index);
+                                        }}
+                                        disabled={isSingleAcceptLoading}
+                                        className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded disabled:opacity-60"
+                                      >
+                                        {isSingleAcceptLoading
+                                          ? "Accepting..."
+                                          : "Accept"}
+                                      </button>
+                                    )}
+                                  <button
+                                    onClick={() => {
+                                      setCreditNoteGroup(group);
+                                      setCreditNoteBox(true);
+                                      handelClose(index);
+                                    }}
+                                    className="text-sm bg-white border hover:border-green-500 hover:text-green-600 text-gray-700 py-1 px-3 rounded"
+                                  >
+                                    Credit Note
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setDebitNoteGroup(group);
+                                      setDebitNoteBox(true);
+                                      handelClose(index);
+                                    }}
+                                    className="text-sm bg-white border hover:border-amber-500 hover:text-amber-600 text-gray-700 py-1 px-3 rounded"
+                                  >
+                                    Debit Note
+                                  </button>
+                                </div>
+                              }
+                              title="Actions"
+                              trigger="click"
+                              open={!!openPopovers[index]}
+                              onOpenChange={(newOpen) =>
+                                handleOpenChange(newOpen, index)
+                              }
+                            >
+                              <button className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded">
+                                Actions
+                              </button>
+                            </Popover>
 
                             <Modal
                               title="Confirm Deletion"
@@ -1739,19 +1929,36 @@ const DocumentWiseDetails = () => {
                                 Are you sure you want to delete this purchase
                                 entry?
                               </p>
+                              <p className="mb-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                                Warning: Linked credit/debit note entries in
+                                return entry will also be deleted when
+                                description of goods matches this purchase URN.
+                                <br />
+                                {isDeleteImpactLoading
+                                  ? "Checking linked notes..."
+                                  : `Credit Notes: ${deleteImpact.creditNoteCount}, Debit Notes: ${deleteImpact.debitNoteCount}, Total linked entries: ${deleteImpact.totalLinkedCount}`}
+                              </p>
                               <div className="flex gap-2 justify-end">
                                 <button
                                   className="py-1 px-4 border rounded text-sm"
                                   onClick={() => {
                                     setDeleteBox(false);
+                                    setDeleteRecord(null);
+                                    setDeleteImpact({
+                                      creditNoteCount: 0,
+                                      debitNoteCount: 0,
+                                      totalLinkedCount: 0,
+                                    });
                                   }}
                                 >
                                   Cancel
                                 </button>
                                 <button
-                                  onClick={() =>
-                                    delete_purchase_entry(group.records[0].id)
-                                  }
+                                  onClick={() => {
+                                    if (deleteRecord != null) {
+                                      delete_purchase_entry(deleteRecord);
+                                    }
+                                  }}
                                   className="py-1 px-4 bg-rose-500 hover:bg-rose-600 text-white rounded text-sm"
                                 >
                                   Delete

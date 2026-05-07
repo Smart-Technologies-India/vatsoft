@@ -13,6 +13,7 @@ import {
 } from "@/utils/methods";
 import {
   CategoryOfEntry,
+  challan,
   dvat04,
   DvatType,
   InputTaxCredit,
@@ -36,6 +37,7 @@ import CheckLastPayment from "@/action/return/checklastpayment";
 import GetUser from "@/action/user/getuser";
 import AddPaymentSubmit from "@/action/return/addpaymentsubmit";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import GetPaidChallanByReturnId from "@/action/challan/getpaidchallanbyreturnid";
 
 interface PercentageOutput {
   increase: string;
@@ -58,6 +60,7 @@ const Dvat16ReturnPreview = () => {
   >();
 
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
+  const [paidChallans, setPaidChallans] = useState<challan[]>([]);
   const [payment, setPayment] = useState<boolean>(false);
   const [paymentSubmitBox, setPaymentSubmitBox] = useState<boolean>(false);
   const searchparam = useSearchParams();
@@ -212,6 +215,16 @@ const Dvat16ReturnPreview = () => {
           ...returnformsresponse.data.returns_entry,
         ];
 
+        const challanResponse = await GetPaidChallanByReturnId({
+          returnid: selectedReturn.id,
+        });
+
+        if (challanResponse.status && challanResponse.data) {
+          setPaidChallans(challanResponse.data);
+        } else {
+          setPaidChallans([]);
+        }
+
         const isQuarterlyFiling =
           selectedReturn.dvat04?.frequencyFilings === "QUARTERLY";
 
@@ -239,6 +252,8 @@ const Dvat16ReturnPreview = () => {
             }
           });
         }
+
+        console.log("Merged Entries:", mergedEntries);
 
         setReturn01(selectedReturn);
         serReturns_entryData(mergedEntries);
@@ -283,6 +298,7 @@ const Dvat16ReturnPreview = () => {
         setReturn01(null);
         serReturns_entryData([]);
         setAllNil(false);
+        setPaidChallans([]);
       }
 
       const currentMonthIndex = monthNames.indexOf(month);
@@ -1086,6 +1102,10 @@ const Dvat16ReturnPreview = () => {
               return01={return01}
               lastMonthDue={lastmonthdue}
               isComp={return01.dvat04.frequencyFilings === "QUARTERLY"}
+              challan_amount={paidChallans.reduce(
+                (acc, entry) => acc + parseFloat(entry.total_tax_amount ?? "0"),
+                0,
+              )}
             />
             {/* section 7 start here */}
             <THEBALANCE1
@@ -1123,6 +1143,10 @@ const Dvat16ReturnPreview = () => {
               return01={return01}
               lastMonthDue={lastmonthdue}
               isComp={return01.dvat04.frequencyFilings === "QUARTERLY"}
+              challan_amount={paidChallans.reduce(
+                (acc, entry) => acc + parseFloat(entry.total_tax_amount ?? "0"),
+                0,
+              )}
             />
 
             <table border={1} className="w-5/6 mx-auto mt-4">
@@ -1136,7 +1160,7 @@ const Dvat16ReturnPreview = () => {
               </tbody>
             </table>
             <FORM_DVAT_16 returnsentrys={returns_entryData ?? []} />
-            {payment && (
+            {paidChallans.length > 0 && (
               <>
                 <h1 className="text-center font-semibold text-sm mt-4">
                   Payment Details
@@ -1162,27 +1186,34 @@ const Dvat16ReturnPreview = () => {
                     </tr>
                   </thead>
                   <tbody className="w-full">
-                    <tr className="w-full">
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {return01?.paymentmode}
-                      </td>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {return01?.transaction_id}
-                      </td>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {formatDateTime(
-                          getPrismaDatabaseDate(
-                            new Date(return01?.transaction_date!),
-                          ),
-                        )}
-                      </td>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {return01?.bank_name}
-                      </td>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {return01?.total_tax_amount}
-                      </td>
-                    </tr>
+                    {paidChallans.map((entry: challan) => (
+                      <tr className="w-full" key={entry.id}>
+                        <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                          {entry.paymentmode ?? "-"}
+                        </td>
+                        <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                          {entry.track_id ??
+                            entry.order_id ??
+                            entry.cpin ??
+                            "-"}
+                        </td>
+                        <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                          {entry.transaction_date
+                            ? formatDateTime(
+                                getPrismaDatabaseDate(
+                                  new Date(entry.transaction_date),
+                                ),
+                              )
+                            : "-"}
+                        </td>
+                        <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                          {entry.bank_name ?? "-"}
+                        </td>
+                        <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                          {entry.total_tax_amount ?? "0"}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </>
@@ -3316,7 +3347,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_30 &&
+        // val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
@@ -3341,7 +3372,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_30 &&
+        // val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
@@ -3432,7 +3463,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
         </tr>
         <tr className="w-full">
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            Receipt of credit notes from the seller [Section 10(1)
+            Receipt of credit notes from the seller [Section 10(1)]
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
@@ -3441,7 +3472,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
         </tr>
         <tr className="w-full">
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            Goods purchased returned or rejected [Section 10(1)
+            Goods purchased returned or rejected [Section 10(1)]
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
@@ -3759,6 +3790,7 @@ interface NetTaxProps {
   return01: returns_01;
   lastMonthDue: string;
   isComp: boolean;
+  challan_amount: number;
 }
 
 const NetTax = (props: NetTaxProps) => {
@@ -4168,7 +4200,7 @@ const NetTax = (props: NetTaxProps) => {
         </tr>
         <tr className="w-full">
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            R6.2a :Interest - {DiffDays}
+            R6.2a :Interest
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
@@ -4192,7 +4224,7 @@ const NetTax = (props: NetTaxProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {/* {props.challan_amount.toFixed(2)  } */}0
           </td>
         </tr>
         <tr className="w-full">
@@ -4227,6 +4259,7 @@ interface CentralSalesProps {
   returnsentrys: returns_entry[];
   lastMonthDue: string;
   isComp: boolean;
+  challan_amount: number;
 }
 
 const CentralSales = (props: CentralSalesProps) => {
@@ -4258,7 +4291,7 @@ const CentralSales = (props: CentralSalesProps) => {
     // Get the month index from the month name
     let monthIndex = monthNames.indexOf(props.return01.month!);
 
- // Check if it's December (index 11) and increment year if needed
+    // Check if it's December (index 11) and increment year if needed
     let newYear = parseInt(year);
     if (props.isComp) {
       // Composition scheme: map to next quarter's first month
@@ -4266,7 +4299,9 @@ const CentralSales = (props: CentralSalesProps) => {
         monthIndex = 3; // April
       } else if (["April", "May", "June"].includes(props.return01.month!)) {
         monthIndex = 6; // July
-      } else if (["July", "August", "September"].includes(props.return01.month!)) {
+      } else if (
+        ["July", "August", "September"].includes(props.return01.month!)
+      ) {
         monthIndex = 9; // October
       } else {
         monthIndex = 0; // January
@@ -4291,7 +4326,6 @@ const CentralSales = (props: CentralSalesProps) => {
       new Date(parseInt(props.return01.year), monthIndex, 29),
       currentDate,
     );
-  
 
     if (
       props.return01.rr_number == null ||
@@ -5008,7 +5042,9 @@ const CentralSales = (props: CentralSalesProps) => {
     InterestDiffDays;
 
   const getR7 = (): number =>
-    getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a());
+    getR6_1() +
+    (isNegative(getR6_2a()) ? 0 : getR6_2a()) -
+    props.challan_amount;
 
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
@@ -5632,7 +5668,6 @@ const CentralSales = (props: CentralSalesProps) => {
                 ? 0
                 : lateFees.toFixed(2)
               : (getR7() + (isNegative(lateFees) ? 0 : lateFees)).toFixed(2)}
-           
           </td>
         </tr>
       </tbody>

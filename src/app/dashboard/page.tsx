@@ -52,6 +52,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { toast } from "react-toastify";
 import GetFromDvat from "@/action/registration/getfromdvat";
 import CheckFirstStock from "@/action/firststock/checkfirststock";
+import GetPendingAcceptCount from "@/action/stock/getpendingacceptcount";
 
 const Page = () => {
   const [userid, setUserid] = useState<number>(0);
@@ -62,6 +63,7 @@ const Page = () => {
   const [isProfileCompletd, setIsProfileCompleted] = useState<boolean>(false);
   const [dvat, setDvat] = useState<dvat04 | null>(null);
   const [hasFirstStock, setHasFirstStock] = useState<boolean>(false);
+  const [pendingAcceptCount, setPendingAcceptCount] = useState<number>(0);
   const [chatAnimationData, setChatAnimationData] = useState<any>(null);
   const [isHelpDrawerOpen, setIsHelpDrawerOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<
@@ -172,6 +174,13 @@ const Page = () => {
         });
         if (firstStockResponse.status && firstStockResponse.data !== null) {
           setHasFirstStock(firstStockResponse.data);
+        }
+
+        const pendingCountResponse = await GetPendingAcceptCount({
+          dvatid: dvatdata.data.id,
+        });
+        if (pendingCountResponse.status) {
+          setPendingAcceptCount(pendingCountResponse.data);
         }
       }
       setLoading(false);
@@ -392,15 +401,29 @@ const Page = () => {
 
                 {/* Quick Actions */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 lg:col-span-3">
-                  <div className="mb-3">
+                  <div className="mb-2">
                     <h2 className="text-sm font-medium text-gray-900">
                       Quick Actions
                     </h2>
-                    <p className="text-gray-500 text-xs mt-0.5">
-                      Access key portal features
-                    </p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-2">
+                    <ButtonCard
+                      title="Daily Purchase"
+                      icon={
+                        <IcOutlineReceiptLong className="text-slate-600 text-xl" />
+                      }
+                      link="/dashboard/stock/view_purchase"
+                      badge={
+                        pendingAcceptCount > 0 ? pendingAcceptCount : undefined
+                      }
+                    />
+                    <ButtonCard
+                      title="Daily Sale"
+                      icon={
+                        <IcOutlineReceiptLong className="text-slate-600 text-xl" />
+                      }
+                      link="/dashboard/stock/view_sale"
+                    />
                     <ButtonCard
                       title="Return Dashboard"
                       icon={
@@ -429,6 +452,14 @@ const Page = () => {
                       }
                       link="/dashboard/notifications"
                     />
+                    {pendingAcceptCount > 0 && (
+                      <div className="col-span-2 bg-red-400/50 rounded-lg border border-red-500 text-red-500 text-center text-sm font-medium px-3 py-2">
+                        {pendingAcceptCount} pending purchase(s) need your
+                        acceptance. Please review and accept them to ensure
+                        accurate records and compliance. You can find these in
+                        the Daily Purchase section.
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -844,33 +875,32 @@ interface ButtonCardProps {
   title: string;
   icon: React.ReactNode;
   link: string;
+  badge?: number;
 }
 
 const ButtonCard = (props: ButtonCardProps) => {
   return (
     <Link href={props.link} className="group">
-      <div className="bg-white hover:bg-gray-50 p-3 rounded border border-gray-200 hover:border-gray-300 transition-all">
-        <div className="flex items-center justify-between mb-2">
-          <div className="p-2 bg-gray-100 rounded group-hover:bg-gray-200 transition-colors">
-            {props.icon}
+      <div
+        className={` p-2 rounded border border-gray-200 hover:border-gray-300 transition-all h-full 
+        ${props.badge !== undefined ? "bg-red-500/40" : "bg-white"}
+        `}
+      >
+        <div className="flex flex-col items-center justify-center text-center gap-1.5">
+          <div className="relative p-1.5 bg-gray-100 rounded group-hover:bg-gray-200 transition-colors">
+            <div className="text-sm">{props.icon}</div>
+            {/* {props.badge !== undefined && (
+              <div className="absolute -top-1 -right-10 shrink-0 px-2 py-1 grid place-items-center bg-rose-500 text-white text-xs font-bold rounded-full">
+                {props.badge > 99 ? "99+" : props.badge}
+              </div>
+            )} */}
           </div>
-          <svg
-            className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 transition-colors"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
+          <h3 className="text-xs font-medium text-gray-700 group-hover:text-gray-900 transition-colors line-clamp-2">
+            {props.title}{" "}
+            {props.badge !== undefined &&
+              `(${props.badge > 99 ? "99+" : props.badge})`}
+          </h3>
         </div>
-        <h3 className="text-sm font-medium text-gray-800 group-hover:text-gray-900 transition-colors">
-          {props.title}
-        </h3>
       </div>
     </Link>
   );

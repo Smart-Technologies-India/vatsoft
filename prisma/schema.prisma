@@ -691,21 +691,20 @@ model challan {
   bene_bank        String?
   bene_branch      String?
   trans_fee        String?
-
-  reason        ChallanReason  @default(MONTHLYPAYMENT)
-  remark        String?        @db.MediumText
-  paymentstatus PaymentStatus  @default(PENDING)
-  expire_date   DateTime
-  createdAt     DateTime       @default(now())
-  createdById   Int
-  updatedAt     DateTime       @updatedAt
-  updatedById   Int?
-  deletedAt     DateTime?
-  deletedById   Int?
-  createdBy     user           @relation("challan_createdBy", fields: [createdById], references: [id])
-  deletedBy     user?          @relation("challan_deletedBy", fields: [deletedById], references: [id])
-  updatedBy     user?          @relation("challan_updatedBy", fields: [updatedById], references: [id])
-  order_notice  order_notice[]
+  reason           ChallanReason  @default(MONTHLYPAYMENT)
+  remark           String?        @db.MediumText
+  paymentstatus    PaymentStatus  @default(PENDING)
+  expire_date      DateTime
+  createdAt        DateTime       @default(now())
+  createdById      Int
+  updatedAt        DateTime       @updatedAt
+  updatedById      Int?
+  deletedAt        DateTime?
+  deletedById      Int?
+  createdBy        user           @relation("challan_createdBy", fields: [createdById], references: [id])
+  deletedBy        user?          @relation("challan_deletedBy", fields: [deletedById], references: [id])
+  updatedBy        user?          @relation("challan_updatedBy", fields: [updatedById], references: [id])
+  order_notice     order_notice[]
 
   @@index([createdById], map: "challan_createdById_fkey")
   @@index([deletedById], map: "challan_deletedById_fkey")
@@ -1055,6 +1054,8 @@ model daily_sale {
   urn_number          String?
   batch_name          String?
   is_against_cform    Boolean           @default(false)
+  is_against_fform    Boolean           @default(false)
+  is_export           Boolean           @default(false)
   createdAt           DateTime          @default(now())
   createdById         Int
   updatedAt           DateTime          @updatedAt
@@ -1096,6 +1097,7 @@ model tally_sale {
   urn_number          String?
   is_against_cform    Boolean           @default(false)
   batch_name          String?
+  is_converted        Boolean           @default(false)
   createdAt           DateTime          @default(now())
   createdById         Int
   commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
@@ -1128,6 +1130,8 @@ model daily_purchase {
   urn_number          String?
   batch_name          String?
   is_against_cform    Boolean           @default(false)
+  is_against_fform    Boolean           @default(false)
+  is_export           Boolean           @default(false)
   createdAt           DateTime          @default(now())
   createdById         Int
   updatedAt           DateTime          @updatedAt
@@ -1281,6 +1285,8 @@ model edit_sale {
   status              Status            @default(ACTIVE)
   urn_number          String?
   is_against_cform    Boolean           @default(false)
+  is_against_fform    Boolean           @default(false)
+  is_export           Boolean           @default(false)
   batch_name          String?
   createdAt           DateTime          @default(now())
   createdById         Int
@@ -1325,6 +1331,8 @@ model edit_purchase {
   status              Status            @default(ACTIVE)
   urn_number          String?
   is_against_cform    Boolean           @default(false)
+  is_against_fform    Boolean           @default(false)
+  is_export           Boolean           @default(false)
   batch_name          String?
   createdAt           DateTime          @default(now())
   createdById         Int

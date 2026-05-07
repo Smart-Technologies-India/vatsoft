@@ -12,6 +12,9 @@ interface EditSalePayload {
   vatamount: string;
   amount_unit: string;
   createdById: number;
+  against_cfrom?: boolean;
+  is_against_fform?: boolean;
+  is_export?: boolean;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -84,6 +87,9 @@ const EditSale = async (
           tax_percent: payload.tax_percent,
           amount: payload.amount,
           vatamount: payload.vatamount,
+          is_against_cform: payload.against_cfrom ?? false,
+          is_against_fform: payload.is_against_fform ?? false,
+          is_export: payload.is_export ?? false,
           is_dvat_31: false,
           createdById: payload.createdById,
           is_local:
@@ -96,22 +102,63 @@ const EditSale = async (
         throw new Error("Unable to update sale entry.");
       }
 
-      const purchase_update = await prisma.daily_purchase.updateMany({
-        where: {
-          urn_number: updatedSale.urn_number,
-        },
-        data: {
-          invoice_number: payload.invoice_number,
-          invoice_date: payload.invoice_date,
-          quantity: payload.quantity,
-          vatamount: payload.vatamount,
-          amount_unit: payload.amount_unit,
-          amount: payload.amount
-        },
-      });
+      // Keep mirrored purchase entry in sync using the shared URN number.
+      if (updatedSale.urn_number) {
+        const isLocalSale =
+          sellerTin.tin_number.startsWith("25") ||
+          sellerTin.tin_number.startsWith("26");
 
-      if (!purchase_update) {
-        throw new Error("Unable to update purchase entry.");
+        const linkedPurchases = await prisma.daily_purchase.findMany({
+          where: {
+            urn_number: updatedSale.urn_number,
+            deletedAt: null,
+            deletedBy: null,
+            status: "ACTIVE",
+          },
+        });
+
+        if (linkedPurchases.length > 0) {
+          const backupPurchases = linkedPurchases.map((purchase) => {
+            const { id, createdById, ...backupData } = purchase;
+            return {
+              purchaseId: purchase.id,
+              is_delete: false,
+              createdById: payload.createdById,
+              ...backupData,
+            };
+          });
+
+          await prisma.edit_purchase.createMany({
+            data: backupPurchases,
+          });
+        }
+
+        const purchaseUpdate = await prisma.daily_purchase.updateMany({
+          where: {
+            urn_number: updatedSale.urn_number,
+            deletedAt: null,
+            deletedBy: null,
+            status: "ACTIVE",
+          },
+          data: {
+            invoice_number: payload.invoice_number,
+            invoice_date: payload.invoice_date,
+            commodity_masterId: payload.commodityid,
+            quantity: payload.quantity,
+            tax_percent: payload.tax_percent,
+            amount: payload.amount,
+            amount_unit: payload.amount_unit,
+            vatamount: payload.vatamount,
+            is_against_cform: payload.against_cfrom ?? false,
+            is_against_fform: payload.is_against_fform ?? false,
+            is_export: payload.is_export ?? false,
+            updatedById: payload.createdById,
+          },
+        });
+
+        if (isLocalSale && purchaseUpdate.count === 0) {
+          throw new Error("Linked purchase entry not found for this sale URN.");
+        }
       }
 
       // Validate stock entry

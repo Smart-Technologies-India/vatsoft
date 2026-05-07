@@ -23,6 +23,7 @@ import {
 } from "@/utils/methods";
 import {
   CategoryOfEntry,
+  challan,
   dvat04,
   DvatType,
   InputTaxCredit,
@@ -51,6 +52,7 @@ import getPdfReturn from "@/action/return/getpdfreturn";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { customAlphabet } from "nanoid";
 import AddPaymentOnline from "@/action/return/addpaymentonline";
+import GetPaidChallanByReturnId from "@/action/challan/getpaidchallanbyreturnid";
 
 interface PercentageOutput {
   increase: string;
@@ -77,6 +79,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   );
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
   const searchparam = useSearchParams();
+  const [paidChallans, setPaidChallans] = useState<challan[]>([]);
 
   const [user, setUser] = useState<user | null>(null);
 
@@ -119,6 +122,13 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
   useEffect(() => {
     const init = async () => {
+      const challan_response = await GetPaidChallanByReturnId({
+        returnid: parseInt(props.returnid),
+      });
+      if (challan_response.status && challan_response.data) {
+        setPaidChallans(challan_response.data);
+      }
+
       const returns_response = await GetReturn01({
         id: parseInt(props.returnid),
       });
@@ -731,7 +741,18 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
           InterestDiffDays;
   };
 
+  const getfunction = (
+    totalamount: string,
+    challan: challan[],
+    due_date: Date,
+  ) => {
+    const currentDate = new Date();
+  };
+
   const getVatAmount = (): number => {
+    const challanAmount = paidChallans.reduce((total, challan) => {
+      return total + parseFloat(challan.total_tax_amount ?? "0");
+    }, 0);
     return (
       parseFloat(getInvoicePercentage("0").decrease) +
       parseFloat(getInvoicePercentage("1").decrease) +
@@ -754,12 +775,16 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         (parseFloat(getCreditNote().decrease) -
           parseFloat(getDebitNote().decrease) -
           parseFloat(getGoodsReturnsNote().decrease) -
-          parseFloat(lastmonthdue)))
+          parseFloat(lastmonthdue))) -
+      challanAmount
     );
   };
 
   const getVatAmountcomp = (): number => {
-    return parseFloat(getInvoicePercentage("1").decrease);
+    const challanAmount = paidChallans.reduce((total, challan) => {
+      return total + parseFloat(challan.total_tax_amount ?? "0");
+    }, 0);
+    return parseFloat(getInvoicePercentage("1").decrease) - challanAmount;
   };
 
   const getR6_2acomp = (): number =>

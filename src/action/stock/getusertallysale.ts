@@ -3,7 +3,7 @@
 import { errorToString } from "@/utils/methods";
 import {
   commodity_master,
-  daily_sale,
+  tally_sale,
   tin_number_master,
 } from "@prisma/client";
 import prisma from "../../../prisma/database";
@@ -12,19 +12,18 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
-interface GetUserDailySalePayload {
-  dvatid: number;
+interface GetUserTallySalePayload {
   take: number;
   skip: number;
 }
 
-export type GroupedDailySale = {
+export type GroupedTallySale = {
   invoice_number: string;
   invoice_date: Date;
   seller_tin_id: number;
   seller_tin_number: tin_number_master;
   records: Array<
-    daily_sale & {
+    tally_sale & {
       commodity_master: commodity_master;
       seller_tin_number: tin_number_master;
     }
@@ -33,22 +32,17 @@ export type GroupedDailySale = {
   totalTaxableValue: number;
   totalVatAmount: number;
   totalInvoiceValue: number;
-  urn_number: string;
 };
 
-const GetUserDailySale = async (
-  payload: GetUserDailySalePayload,
-): Promise<PaginationResponse<Array<GroupedDailySale> | null>> => {
-  const functionname: string = GetUserDailySale.name;
+const GetUserTallySale = async (
+  payload: GetUserTallySalePayload,
+): Promise<PaginationResponse<Array<GroupedTallySale> | null>> => {
+  const functionname: string = GetUserTallySale.name;
 
   try {
-    const daily_sale_response = await prisma.daily_sale.findMany({
+    const tally_sale_response = await prisma.tally_sale.findMany({
       where: {
-        deletedAt: null,
-        deletedById: null,
         status: "ACTIVE",
-        is_dvat_31: false,
-        dvat04Id: payload.dvatid,
       },
       include: {
         commodity_master: true,
@@ -57,24 +51,24 @@ const GetUserDailySale = async (
       orderBy: [{ invoice_date: "desc" }, { invoice_number: "desc" }],
     });
 
-    if (!daily_sale_response) {
+    if (!tally_sale_response) {
       return createPaginationResponse({
-        message: "No Daily sale found. Please try again.",
+        message: "No tally sale found. Please try again.",
         functionname,
       });
     }
 
-    // Group records by invoice_number, invoice_date, and seller_tin_id
-    const groupedMap = new Map<string, GroupedDailySale>();
+    const groupedMap = new Map<string, GroupedTallySale>();
 
-    daily_sale_response.forEach((record) => {
+    tally_sale_response.forEach((record) => {
       const key = `${record.invoice_number}_${record.invoice_date.toISOString()}_${record.seller_tin_numberId}`;
 
       if (groupedMap.has(key)) {
         const existing = groupedMap.get(key)!;
         existing.records.push(record);
         existing.count++;
-        existing.totalTaxableValue += parseFloat(record.amount);
+        existing.totalTaxableValue +=
+          parseFloat(record.amount);
         existing.totalVatAmount += parseFloat(record.vatamount);
         existing.totalInvoiceValue +=
           parseFloat(record.amount) + parseFloat(record.vatamount);
@@ -88,9 +82,7 @@ const GetUserDailySale = async (
           count: 1,
           totalTaxableValue: parseFloat(record.amount),
           totalVatAmount: parseFloat(record.vatamount),
-          totalInvoiceValue:
-            parseFloat(record.amount) + parseFloat(record.vatamount),
-          urn_number: record.urn_number || "",
+          totalInvoiceValue: parseFloat(record.amount) + parseFloat(record.vatamount),
         });
       }
     });
@@ -98,16 +90,15 @@ const GetUserDailySale = async (
     const groupedArray = Array.from(groupedMap.values());
     const totalCount = groupedArray.length;
 
-    // Apply pagination to grouped results
-    const paginatedGroups = groupedArray.slice(
+    const paginatedArray = groupedArray.slice(
       payload.skip,
       payload.skip + payload.take,
     );
 
     return createPaginationResponse({
-      message: "All Daily sale Data get successfully",
+      message: "Tally sale data retrieved successfully",
       functionname,
-      data: paginatedGroups,
+      data: paginatedArray,
       take: payload.take,
       skip: payload.skip,
       total: totalCount,
@@ -120,4 +111,4 @@ const GetUserDailySale = async (
   }
 };
 
-export default GetUserDailySale;
+export default GetUserTallySale;

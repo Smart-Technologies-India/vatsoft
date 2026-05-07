@@ -13,6 +13,8 @@ interface CreateDailySalePayload {
   amount_unit: string;
   createdById: number;
   against_cfrom: boolean;
+  is_against_fform: boolean;
+  is_export: boolean;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -39,15 +41,15 @@ const CreateDailySale = async (
       },
     });
 
-    if (isdata) {
-      if (isdata.invoice_date.getMonth() != payload.invoice_date.getMonth()) {
-        return createResponse({
-          message:
-            "Kindly convert pending invoice from daily purchase to DVAT 31 A",
-          functionname,
-        });
-      }
-    }
+    // if (isdata) {
+    //   if (isdata.invoice_date.getMonth() != payload.invoice_date.getMonth()) {
+    //     return createResponse({
+    //       message:
+    //         "Kindly convert pending invoice from daily purchase to DVAT 31 A",
+    //       functionname,
+    //     });
+    //   }
+    // }
 
     const result = await prisma.$transaction(async (prisma) => {
       const purchaser_response = await prisma.tin_number_master.findFirst({
@@ -97,6 +99,8 @@ const CreateDailySale = async (
           createdById: payload.createdById,
           urn_number: ref_no,
           is_against_cform: payload.against_cfrom,
+          is_against_fform: payload.is_against_fform,
+          is_export: payload.is_export,
           is_local:
             purchaser_response.tin_number.startsWith("25") ||
             purchaser_response.tin_number.startsWith("26"),
@@ -244,6 +248,7 @@ const CreateDailySale = async (
       data: result,
     });
   } catch (e) {
+    console.log(errorToString(e));
     return createResponse({
       message: errorToString(e),
       functionname,

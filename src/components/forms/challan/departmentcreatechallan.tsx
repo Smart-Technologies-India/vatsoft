@@ -11,15 +11,12 @@ import {
 } from "@/components/ui/table";
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
-import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MultiSelect } from "../inputfields/multiselect";
 import { OptionValue } from "@/models/main";
 import { toast } from "react-toastify";
-import { ApiResponseType } from "@/models/response";
-import { Button, Checkbox, Input, InputRef, Popover } from "antd";
-import dayjs from "dayjs";
-import { RabioInput } from "../inputfields/radioinput";
+import { Button, Input, InputRef } from "antd";
 import { CreateChallanForm, CreateChallanSchema } from "@/schema/challan";
 import { ToWords } from "to-words";
 import { capitalcase, onFormError } from "@/utils/methods";
@@ -33,7 +30,7 @@ type DepartmentCreateChallanProviderProps = {
   userid: number;
 };
 export const DepartmentCreateChallanProvider = (
-  props: DepartmentCreateChallanProviderProps
+  props: DepartmentCreateChallanProviderProps,
 ) => {
   const methods = useForm<CreateChallanForm>({
     resolver: valibotResolver(CreateChallanSchema),
@@ -52,7 +49,6 @@ const CreateChallanPage = (props: DepartmentCreateChallanProviderProps) => {
 
   const [isSearch, setSearch] = useState<boolean>(false);
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
-  const [user, setUser] = useState<user | null>(null);
   const tinnumberRef = useRef<InputRef>(null);
 
   const searchUser = async () => {
@@ -68,7 +64,6 @@ const CreateChallanPage = (props: DepartmentCreateChallanProviderProps) => {
       tinumber: tinnumberRef.current.input.value,
     });
     if (dvat_response.status && dvat_response.data) {
-      setUser(dvat_response.data.createdBy);
       setDvatData(dvat_response.data);
       setSearch(true);
     }
@@ -153,17 +148,15 @@ const CreateChallanPage = (props: DepartmentCreateChallanProviderProps) => {
             </div>
             <div>
               <p className="text-sm">Name</p>
-              <p className="text-sm  font-medium">
-                {user?.firstName} - {user?.lastName}
-              </p>
+              <p className="text-sm  font-medium">{dvatdata?.tradename}</p>
             </div>
             <div>
               <p className="text-sm">Email</p>
-              <p className="text-sm  font-medium">{user?.email}</p>
+              <p className="text-sm  font-medium">{dvatdata?.email}</p>
             </div>
             <div>
               <p className="text-sm">Mobile</p>
-              <p className="text-sm  font-medium">{user?.mobileOne}</p>
+              <p className="text-sm  font-medium">{dvatdata?.contact_one}</p>
             </div>
             <div>
               <p className="text-sm">Address</p>
@@ -197,9 +190,7 @@ const CreateChallanPage = (props: DepartmentCreateChallanProviderProps) => {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell className="text-left p-2 border">
-                      VAT
-                    </TableCell>
+                    <TableCell className="text-left p-2 border">VAT</TableCell>
                     <TableCell className="text-center p-2 border ">
                       <TaxtInput<CreateChallanForm>
                         name="vat"

@@ -18,12 +18,12 @@ import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import CreateDailyPurchase from "@/action/stock/createdailypuchase";
 import {
-  Checkbox,
   Input,
   InputRef,
   Modal,
   Radio,
   RadioChangeEvent,
+  Select,
 } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 import { DateSelect } from "../inputfields/dateselect";
@@ -33,6 +33,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
 
 const DAILY_PURCHASE_ADD_MORE_LOCK_KEY = "dailyPurchaseAddMoreLock";
+type PurchaseTaxType = "NONE" | "CFORM" | "FFORM" | "EXPORT";
 
 type DailyPurchaseProviderProps = {
   userid: number;
@@ -61,7 +62,16 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
   const [userid, setUserid] = useState<number>(0);
   const router = useRouter();
 
-  const [isAgainstCForm, setIsAgainstCForm] = useState(true);
+  const [purchaseTaxType, setPurchaseTaxType] =
+    useState<PurchaseTaxType>("NONE");
+
+  const getSelectedTaxRate = () => {
+    if (purchaseTaxType === "CFORM") return "2";
+    if (purchaseTaxType === "FFORM" || purchaseTaxType === "EXPORT") {
+      return "0";
+    }
+    return commoditymaster?.taxable_at ?? "0";
+  };
 
   const {
     reset,
@@ -191,7 +201,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         recipient_vat_no &&
         (recipient_vat_no.startsWith("25") || recipient_vat_no.startsWith("26"))
       ) {
-        setIsAgainstCForm(false);
+        setPurchaseTaxType("NONE");
       }
       if (
         recipient_vat_no &&
@@ -229,7 +239,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       }
     };
     init();
-  }, [recipient_vat_no, isAgainstCForm]);
+  }, [recipient_vat_no, purchaseTaxType]);
 
   const description_of_goods = watch("description_of_goods");
   const quantity = watch("quantity");
@@ -278,27 +288,31 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       }
     };
     init();
-  }, [description_of_goods, isAgainstCForm]);
+  }, [description_of_goods, purchaseTaxType]);
 
   useEffect(() => {
     if (commoditymaster == null || quantity == null || amount_unit == null)
       return;
 
     // Calculate taxableValue
-    const calculatedTaxableValue =
-      parseFloat(quantity) * parseFloat(amount_unit || "0");
+    // const calculatedTaxableValue =
+    //   parseFloat(quantity) * parseFloat(amount_unit || "0");
 
-    const temp_amount =
-      (calculatedTaxableValue /
-        (100 + parseInt(isAgainstCForm ? "2" : commoditymaster.taxable_at))) *
-      100;
+    const totalInvoiceNumeric = Number(fuelTotalInvoiceValue);
+
+
+    const taxRate = parseFloat(getSelectedTaxRate());
+
+    const temp_amount = totalInvoiceNumeric / (1 + taxRate / 100);
+
     setTaxableValue(isNaN(temp_amount) ? "0" : temp_amount.toFixed(2));
 
-    const calculatedVatAmount = calculatedTaxableValue - temp_amount;
+    const calculatedVatAmount = totalInvoiceNumeric - temp_amount;
+   
     setVatAmount(
       isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2),
     );
-  }, [quantity, amount_unit, commoditymaster, isAgainstCForm]);
+  }, [quantity, amount_unit, commoditymaster, purchaseTaxType]);
 
   const resolveSellerTin = async (): Promise<tin_number_master | null> => {
     const currentTin = (getValues("recipient_vat_no") ?? "").trim();
@@ -363,10 +377,12 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
-      tax_percent: isAgainstCForm ? "2" : commoditymaster.taxable_at,
+      tax_percent: getSelectedTaxRate(),
       seller_tin_id: sellerTin.id,
       amount: taxableValue,
-      against_cfrom: isAgainstCForm,
+      against_cfrom: purchaseTaxType === "CFORM",
+      is_against_fform: purchaseTaxType === "FFORM",
+      is_export: purchaseTaxType === "EXPORT",
     });
 
     if (stock_response.status) {
@@ -391,7 +407,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     setTinData(null);
     setVatAmount("0");
     setTaxableValue("0");
-    setIsAgainstCForm(false);
+    setPurchaseTaxType("NONE");
     setIsAddMoreMode(false);
     setTinBox(false);
     setCommodityMaster([]);
@@ -446,10 +462,12 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
-      tax_percent: isAgainstCForm ? "2" : commoditymaster.taxable_at,
+      tax_percent: getSelectedTaxRate(),
       seller_tin_id: sellerTin.id,
       amount: taxableValue,
-      against_cfrom: isAgainstCForm,
+      against_cfrom: purchaseTaxType === "CFORM",
+      is_against_fform: purchaseTaxType === "FFORM",
+      is_export: purchaseTaxType === "EXPORT",
     });
 
     if (stock_response.status) {
@@ -591,20 +609,25 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             </div>
             <div className="grow"></div>
 
-            {tindata?.tin_number.startsWith("25") ||
-              (tindata?.tin_number.startsWith("26") ? (
-                <></>
-              ) : (
-                <Checkbox
-                  checked={isAgainstCForm}
-                  onChange={(e) => {
-                    setIsAgainstCForm(e.target.checked);
-                  }}
-                  className="text-lg font-normal"
-                >
-                  Against C Form
-                </Checkbox>
-              ))}
+            {!tindata?.tin_number.startsWith("25") &&
+              !tindata?.tin_number.startsWith("26") && (
+                <div className="min-w-55">
+                  <p className="text-xs text-gray-600 mb-1">Purchase Type</p>
+                  <Select
+                    value={purchaseTaxType}
+                    onChange={(value: PurchaseTaxType) =>
+                      setPurchaseTaxType(value)
+                    }
+                    size="middle"
+                    options={[
+                      { value: "NONE", label: "Not Applicable (Normal Tax)" },
+                      { value: "CFORM", label: "Against C Form (2%)" },
+                      { value: "FFORM", label: "Against F Form (0%)" },
+                      { value: "EXPORT", label: "Export (0%)" },
+                    ]}
+                  />
+                </div>
+              )}
           </div>
         )}
 
@@ -726,11 +749,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
           <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
             <p className="text-xs font-normal">Taxable (%)</p>
             <p className="text-sm font-semibold">
-              {isAgainstCForm
-                ? "2"
-                : commoditymaster != null
-                  ? commoditymaster.taxable_at + "%"
-                  : "0%"}
+              {getSelectedTaxRate() + "%"}
             </p>
           </div>
           {davtdata?.commodity == "FUEL" ? (

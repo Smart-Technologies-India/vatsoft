@@ -12,6 +12,9 @@ interface EditPurchasePayload {
   vatamount: string;
   amount_unit: string;
   createdById: number;
+  against_cfrom?: boolean;
+  is_against_fform?: boolean;
+  is_export?: boolean;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -68,6 +71,9 @@ const EditPurchase = async (
           amount: payload.amount,
           amount_unit: payload.amount_unit,
           vatamount: payload.vatamount,
+          is_against_cform: payload.against_cfrom ?? false,
+          is_against_fform: payload.is_against_fform ?? false,
+          is_export: payload.is_export ?? false,
           is_dvat_30a: false,
           createdById: payload.createdById,
           is_local: false,

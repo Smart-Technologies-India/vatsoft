@@ -68,6 +68,7 @@ const Page = () => {
                 description="Change return date."
                 link="/dashboard/returns/department-return-date"
               />
+              
             </>
           )}
           {["USER"].includes(user?.role!) && (
@@ -92,6 +93,11 @@ const Page = () => {
                 title="CFORM"
                 description="Check your CFORM status and ensure all filings meet regulatory requirements."
                 link={`/dashboard/returns/cform-status`}
+              />
+              <DashboardCards
+                title="Commodity Master"
+                description="Download and view commodity master data."
+                link={`/dashboard/returns/commodity_master`}
               />
             </>
           )}

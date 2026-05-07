@@ -40,8 +40,8 @@ import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import CreateMultiDailySale from "@/action/stock/createmultidailysale";
 import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
-import GetDvat04FromId from "@/action/dvat/getdvatfromid";
 import { RefinerySaleProvider } from "@/components/forms/dailysale/refinerysale";
+import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 const DocumentWiseDetails = () => {
   const router = useRouter();
@@ -257,64 +257,46 @@ const DocumentWiseDetails = () => {
     shipmentTime: "",
   });
 
-
   const [userid, setUserid] = useState<number>(0);
 
-  const init = async () => {
-    const dvat_response = await GetDvat04FromId({
-      id: 1,
+  const init = async (dvatId?: number) => {
+    const id = dvatId ?? dvatdata?.id;
+    if (!id) return;
+
+    const daily_sale_response = await GetUserDailySale({
+      dvatid: id,
+      skip: 0,
+      take: 10,
     });
 
-    if (dvat_response.status && dvat_response.data) {
-      setDvatData(dvat_response.data);
-      const daily_sale_response = await GetUserDailySale({
-        dvatid: dvat_response.data.id,
-        skip: 0,
-        take: 10,
+    if (daily_sale_response.status && daily_sale_response.data.result) {
+      setPaginatin({
+        skip: daily_sale_response.data.skip,
+        take: daily_sale_response.data.take,
+        total: daily_sale_response.data.total,
       });
-
-      if (daily_sale_response.status && daily_sale_response.data.result) {
-        setPaginatin({
-          skip: daily_sale_response.data.skip,
-          take: daily_sale_response.data.take,
-          total: daily_sale_response.data.total,
-        });
-        setDailySale(daily_sale_response.data.result);
-      }
+      setDailySale(daily_sale_response.data.result);
     }
-    // setLoading(false);
   };
 
   useEffect(() => {
-    const init = async () => {
+    const load = async () => {
       setIsLoading(true);
-      // const authResponse = await getAuthenticatedUserId();
-      // if (!authResponse.status || !authResponse.data) {
-      //   toast.error(authResponse.message);
-      //   return router.push("/");
-      // }
-      setUserid(1);
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        setIsLoading(false);
+        return router.push("/");
+      }
+      setUserid(authResponse.data);
 
       const dvat_response = await GetUserDvat04Anx({
-        userid: userid,
+        userid: authResponse.data,
       });
 
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);
-        const daily_sale_response = await GetUserDailySale({
-          dvatid: dvat_response.data.id,
-          skip: 0,
-          take: 10,
-        });
-
-        if (daily_sale_response.status && daily_sale_response.data.result) {
-          setPaginatin({
-            skip: daily_sale_response.data.skip,
-            take: daily_sale_response.data.take,
-            total: daily_sale_response.data.total,
-          });
-          setDailySale(daily_sale_response.data.result);
-        }
+        await init(dvat_response.data.id);
       }
 
       const commodity_response = await AllCommodityMaster({});
@@ -330,8 +312,8 @@ const DocumentWiseDetails = () => {
       }
       setIsLoading(false);
     };
-    init();
-  }, [userid]);
+    load();
+  }, []);
 
   const onChangePageCount = async (page: number, pagesize: number) => {
     const daily_sale_response = await GetUserDailySale({
@@ -445,7 +427,10 @@ const DocumentWiseDetails = () => {
   const handleApproveAndRelease = () => {
     if (!workflowGroup) return;
 
-    if (!shipmentDetails.vehicleNo.trim() || !shipmentDetails.shipmentTime.trim()) {
+    if (
+      !shipmentDetails.vehicleNo.trim() ||
+      !shipmentDetails.shipmentTime.trim()
+    ) {
       toast.error("Please enter vehicle no and shipment time.");
       return;
     }
@@ -510,6 +495,8 @@ const DocumentWiseDetails = () => {
         )?.sale_price!,
         createdById: userid,
         against_cfrom: true,
+        is_against_fform: false,
+        is_export: false,
       }));
 
     const response = await CreateMultiDailySale({ entries });
@@ -618,9 +605,7 @@ const DocumentWiseDetails = () => {
                             )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {(
-                          parseFloat(record.amount_unit) * record.quantity
-                        ).toFixed(2)}
+                        {parseFloat(record.amount).toFixed(2)}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.tax_percent}%
@@ -629,9 +614,9 @@ const DocumentWiseDetails = () => {
                         {record.vatamount}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {record.amount_unit
+                        {record.amount
                           ? (
-                              parseFloat(record.amount_unit) * record.quantity +
+                              parseFloat(record.amount) +
                               parseFloat(record.vatamount)
                             ).toFixed(2)
                           : "0.00"}
@@ -782,11 +767,15 @@ const DocumentWiseDetails = () => {
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <p className="text-xs text-gray-600">Invoice Number</p>
-                  <p className="font-semibold">{workflowGroup.invoice_number}</p>
+                  <p className="font-semibold">
+                    {workflowGroup.invoice_number}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Invoice Date</p>
-                  <p className="font-semibold">{formateDate(workflowGroup.invoice_date)}</p>
+                  <p className="font-semibold">
+                    {formateDate(workflowGroup.invoice_date)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Purchaser</p>
@@ -801,8 +790,12 @@ const DocumentWiseDetails = () => {
               <Table className="border">
                 <TableHeader>
                   <TableRow className="bg-gray-100">
-                    <TableHead className="border text-center text-xs">Sr. No.</TableHead>
-                    <TableHead className="border text-center text-xs">Product Name</TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Sr. No.
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Product Name
+                    </TableHead>
                     <TableHead className="border text-center text-xs">
                       {quantityCount == "pcs"
                         ? dvatdata?.commodity == "FUEL"
@@ -810,16 +803,26 @@ const DocumentWiseDetails = () => {
                           : "Qty"
                         : "Crate"}
                     </TableHead>
-                    <TableHead className="border text-center text-xs">Taxable Value</TableHead>
-                    <TableHead className="border text-center text-xs">Rate of Tax</TableHead>
-                    <TableHead className="border text-center text-xs">VAT Amount</TableHead>
-                    <TableHead className="border text-center text-xs">Invoice Value</TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Taxable Value
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Rate of Tax
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      VAT Amount
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Invoice Value
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {workflowGroup.records.map((record, idx) => (
                     <TableRow key={record.id} className="hover:bg-gray-50">
-                      <TableCell className="p-2 border text-center text-xs">{idx + 1}</TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {idx + 1}
+                      </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.commodity_master.product_name}
                       </TableCell>
@@ -832,14 +835,18 @@ const DocumentWiseDetails = () => {
                             )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {(parseFloat(record.amount_unit) * record.quantity).toFixed(2)}
+                        {parseFloat(record.amount).toFixed(2)}
                       </TableCell>
-                      <TableCell className="p-2 border text-center text-xs">{record.tax_percent}%</TableCell>
-                      <TableCell className="p-2 border text-center text-xs">{record.vatamount}</TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {record.amount_unit
+                        {record.tax_percent}%
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {record.vatamount}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {record.amount
                           ? (
-                              parseFloat(record.amount_unit) * record.quantity +
+                              parseFloat(record.amount) +
                               parseFloat(record.vatamount)
                             ).toFixed(2)
                           : "0.00"}
@@ -852,7 +859,9 @@ const DocumentWiseDetails = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs text-gray-600">Vehicle No</label>
+                <label className="mb-1 block text-xs text-gray-600">
+                  Vehicle No
+                </label>
                 <Input
                   placeholder="Enter vehicle number"
                   value={shipmentDetails.vehicleNo}
@@ -866,7 +875,9 @@ const DocumentWiseDetails = () => {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-600">Shipment Time</label>
+                <label className="mb-1 block text-xs text-gray-600">
+                  Shipment Time
+                </label>
                 <Input
                   type="datetime-local"
                   value={shipmentDetails.shipmentTime}
@@ -910,7 +921,11 @@ const DocumentWiseDetails = () => {
                     >
                       {index + 1}
                     </span>
-                    <span className={step.done ? "text-emerald-700" : "text-gray-600"}>
+                    <span
+                      className={
+                        step.done ? "text-emerald-700" : "text-gray-600"
+                      }
+                    >
                       {step.label}
                     </span>
                   </div>
@@ -943,7 +958,7 @@ const DocumentWiseDetails = () => {
         <div className="mb-3 pb-2 border-b">
           <h2 className="text-sm font-medium text-gray-900">Sale Invoice</h2>
         </div>
-        <RefinerySaleProvider  setAddBox={setAddBox} init={init} />
+        <RefinerySaleProvider setAddBox={setAddBox} init={init} />
       </Drawer>
       <main className="p-3 bg-gray-50">
         <div className="max-w-7xl mx-auto">

@@ -1384,6 +1384,16 @@ const ReturnDashboard = () => {
               <>
                 {ispreview() && (
                   <>
+                    <button
+                      className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
+                      onClick={() => {
+                        router.push(
+                          `/dashboard/returns/returns-dashboard/pay_challan/${encryptURLData(return01!.id.toString())}`,
+                        );
+                      }}
+                    >
+                      Pay Challan
+                    </button>
                     {ispayment() && (
                       <>
                         <button

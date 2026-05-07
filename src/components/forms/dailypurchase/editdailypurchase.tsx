@@ -23,6 +23,7 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import { Input, InputRef, Modal } from "antd";
+import { Select } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 import EditPurchase from "@/action/stock/editpurchase";
 import { useRouter } from "next/navigation";
@@ -37,6 +38,8 @@ type EditDailyPurchaseProviderProps = {
     seller_tin_number: tin_number_master;
   };
 };
+
+type PurchaseTaxType = "NONE" | "CFORM" | "FFORM" | "EXPORT";
 export const EditDailyPurchaseMasterProvider = (
   props: EditDailyPurchaseProviderProps
 ) => {
@@ -74,11 +77,23 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
   const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
     []
   );
+  const [purchaseTaxType, setPurchaseTaxType] =
+    useState<PurchaseTaxType>("NONE");
+
+  const getSelectedTaxRate = () => {
+    if (purchaseTaxType === "CFORM") return "2";
+    if (purchaseTaxType === "FFORM" || purchaseTaxType === "EXPORT") {
+      return "0";
+    }
+    return commoditymaster?.taxable_at ?? "0";
+  };
 
   useEffect(() => {
     reset({
-      amount_unit: props.data.amount_unit,
-      description_of_goods: props.data.commodity_master.product_name,
+      amount_unit: (props.data.quantity * Number(props.data.amount_unit)).toFixed(
+        2
+      ),
+      description_of_goods: props.data.commodity_master.id.toString(),
       invoice_date: props.data.invoice_date.toISOString(),
       invoice_number: props.data.invoice_number,
       quantity: props.data.quantity.toString(),
@@ -119,6 +134,16 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
         }
       }
 
+      if (props.data.is_against_cform) {
+        setPurchaseTaxType("CFORM");
+      } else if (props.data.is_against_fform) {
+        setPurchaseTaxType("FFORM");
+      } else if (props.data.is_export) {
+        setPurchaseTaxType("EXPORT");
+      } else {
+        setPurchaseTaxType("NONE");
+      }
+
       setIsLoading(false);
     };
     init();
@@ -145,6 +170,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
         (recipient_vat_no.startsWith("25") == true ||
           recipient_vat_no.startsWith("26") == true)
       ) {
+        setPurchaseTaxType("NONE");
         if (recipient_vat_no.length >= 11) {
           toast.dismiss();
           toast.error("Invalid DVAT no.");
@@ -189,20 +215,17 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
     if (commoditymaster == null || quantity == null || amount_unit == null)
       return;
 
-    // Calculate taxableValue
-    const calculatedTaxableValue =
-      parseFloat(quantity) * parseFloat(amount_unit || "0");
+    const totalInvoiceValue = Number(amount_unit) || 0;
 
     const temp_amount =
-      (calculatedTaxableValue / (100 + parseInt(commoditymaster.taxable_at))) *
-      100;
+      totalInvoiceValue / (1 + parseFloat(getSelectedTaxRate()) / 100);
     setTaxableValue(isNaN(temp_amount) ? "0" : temp_amount.toFixed(2));
 
-    const calculatedVatAmount = calculatedTaxableValue - temp_amount;
+    const calculatedVatAmount = totalInvoiceValue - temp_amount;
     setVatAmount(
       isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
     );
-  }, [quantity, amount_unit, commoditymaster]);
+  }, [quantity, amount_unit, commoditymaster, purchaseTaxType]);
 
   const onSubmit = async (data: DailyPurchaseMasterForm) => {
     if (davtdata == null || davtdata == undefined)
@@ -211,8 +234,12 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
       return toast.error("Commodity Master not found.");
     if (tindata == null || tindata == undefined)
       return toast.error("Seller TIN Number not found.");
-    if (parseInt(data.quantity) <= 0)
+    const quantityNum = parseInt(data.quantity);
+    if (quantityNum <= 0)
       return toast.error("Quantity must be greater than 0.");
+
+    const totalInvoiceValue = parseFloat(data.amount_unit) || 0;
+    const amountPerUnit = totalInvoiceValue / quantityNum;
 
     const date = new Date(
       new Date(data.invoice_date).toISOString().split("T")[0]
@@ -221,17 +248,20 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
 
     const stock_response = await EditPurchase({
       id: props.id,
-      amount_unit: data.amount_unit,
+      amount_unit: amountPerUnit.toFixed(2),
       invoice_date: date,
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
       createdById: userid,
-      quantity: parseInt(data.quantity),
+      quantity: quantityNum,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
-      tax_percent: commoditymaster.taxable_at,
+      tax_percent: getSelectedTaxRate(),
       seller_tin_id: tindata.id,
-      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(2),
+      amount: taxableValue,
+      against_cfrom: purchaseTaxType === "CFORM",
+      is_against_fform: purchaseTaxType === "FFORM",
+      is_export: purchaseTaxType === "EXPORT",
     });
 
     if (stock_response.status) {
@@ -297,11 +327,33 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
           />
         </div>
         {tindata != null && (
-          <div className="mt-2">
-            <p className="text-sm font-normal">Name as in Master</p>
-            <p className="font-semibold text-lg">
-              {tindata?.name_of_dealer ?? ""}
-            </p>
+          <div className="mt-2 flex gap-2 items-center">
+            <div>
+              <p className="text-sm font-normal">Name as in Master</p>
+              <p className="font-semibold text-lg">
+                {tindata?.name_of_dealer ?? ""}
+              </p>
+            </div>
+            <div className="grow"></div>
+            {!tindata?.tin_number.startsWith("25") &&
+              !tindata?.tin_number.startsWith("26") && (
+                <div className="min-w-55">
+                  <p className="text-xs text-gray-600 mb-1">Purchase Type</p>
+                  <Select
+                    value={purchaseTaxType}
+                    onChange={(value: PurchaseTaxType) =>
+                      setPurchaseTaxType(value)
+                    }
+                    size="middle"
+                    options={[
+                      { value: "NONE", label: "Not Applicable (Normal Tax)" },
+                      { value: "CFORM", label: "Against C Form (2%)" },
+                      { value: "FFORM", label: "Against F Form (0%)" },
+                      { value: "EXPORT", label: "Export (0%)" },
+                    ]}
+                  />
+                </div>
+              )}
           </div>
         )}
 
@@ -353,25 +405,27 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
         </div>
         <div className="mt-2">
           <TaxtInput<DailyPurchaseMasterForm>
-            placeholder="Enter amount"
+            placeholder="Enter Total Invoice Value"
             name="amount_unit"
             required={true}
-            title="Enter amount"
+            title="Total Invoice Value"
             onlynumber={true}
           />
         </div>
         <div className="flex gap-1 items-center">
           <div className="mt-2 bg-gray-100 rounded p-2 flex-1">
             <p className="text-xs font-normal">Taxable (%)</p>
-            <p className="text-sm font-semibold">
-              {commoditymaster != null
-                ? commoditymaster.taxable_at + "%"
-                : "0%"}
-            </p>
+            <p className="text-sm font-semibold">{getSelectedTaxRate()}%</p>
           </div>
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
             <p className="text-xs font-normal">Taxable Value</p>
             <p className="text-sm font-semibold">{taxableValue}</p>
+          </div>
+          <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
+            <p className="text-xs font-normal">Invoice Value</p>
+            <p className="text-sm font-semibold">
+              {(Number(amount_unit) || 0).toFixed(2)}
+            </p>
           </div>
           <div className="mt-2 bg-gray-100 rounded p-2  flex-1">
             <p className="text-xs font-normal">VAT Amount</p>

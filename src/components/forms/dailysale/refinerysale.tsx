@@ -442,6 +442,8 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
       seller_tin_id: sellerTin.id,
       amount: taxableValue,
       against_cfrom: isAgainstCForm,
+      is_against_fform: false,
+      is_export: false,
     });
 
     if (stock_response.status) {
@@ -601,6 +603,8 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
       seller_tin_id: sellerTin.id,
       amount: taxableValue,
       against_cfrom: isAgainstCForm,
+      is_against_fform: false,
+      is_export: false,
     });
 
     if (stock_response.status) {
