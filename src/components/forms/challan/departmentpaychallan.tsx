@@ -16,21 +16,25 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { CreateChallanForm, CreateChallanSchema } from "@/schema/challan";
 import { ToWords } from "to-words";
-import {
-  capitalcase,
-  decryptURLData,
-  encryptURLData,
-  onFormError,
-} from "@/utils/methods";
+import { capitalcase, encryptURLData, onFormError } from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { Separator } from "@/components/ui/separator";
 import CreateChallan from "@/action/challan/createchallan";
-import { dvat04 } from "@prisma/client";
+import { dvat04, Quarter } from "@prisma/client";
 import GetReturn01 from "@/action/return/getreturn";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import EnsureReturnForChallan from "@/action/return/ensurereturnforchallan";
+
+// import EnsureReturnForChallan from "../../../action/return/ensurereturnforchallan";
 
 type DepartmentPayChallanProviderProps = {
   userid: number;
-  returnId: number;
+  returnId?: number;
+  returnContext: {
+    year: string;
+    quarter: Quarter;
+    month: string;
+  };
 };
 
 export const DepartmentPayChallanProvider = (
@@ -45,7 +49,11 @@ export const DepartmentPayChallanProvider = (
 
   return (
     <FormProvider {...methods}>
-      <PayChallanPage userid={props.userid} returnId={props.returnId} />
+      <PayChallanPage
+        userid={props.userid}
+        returnId={props.returnId}
+        returnContext={props.returnContext}
+      />
     </FormProvider>
   );
 };
@@ -56,6 +64,9 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
 
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
   const [returnPeriod, setReturnPeriod] = useState<string>("-");
+  const [resolvedReturnId, setResolvedReturnId] = useState<number | undefined>(
+    props.returnId,
+  );
 
   const {
     reset,
@@ -65,35 +76,83 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
   } = useFormContext<CreateChallanForm>();
 
   useEffect(() => {
-    const loadReturn = async () => {
-      const returnResponse = await GetReturn01({
-        id: props.returnId,
-      });
+    const loadData = async () => {
+      if (props.returnId) {
+        const returnResponse = await GetReturn01({
+          id: props.returnId,
+        });
 
-      if (!returnResponse.status || !returnResponse.data) {
-        toast.error(returnResponse.message);
+        if (!returnResponse.status || !returnResponse.data) {
+          toast.error(returnResponse.message);
+          return;
+        }
+
+        setDvatData(returnResponse.data.dvat04);
+
+        const period = returnResponse.data.month
+          ? `${returnResponse.data.month} ${returnResponse.data.year}`
+          : `${returnResponse.data.quarter} ${returnResponse.data.year}`;
+        setReturnPeriod(period);
         return;
       }
 
-      setDvatData(returnResponse.data.dvat04);
+      const dvatResponse = await GetUserDvat04();
+      if (!dvatResponse.status || !dvatResponse.data) {
+        toast.error(dvatResponse.message);
+        return;
+      }
 
-      const period = returnResponse.data.month
-        ? `${returnResponse.data.month} ${returnResponse.data.year}`
-        : `${returnResponse.data.quarter} ${returnResponse.data.year}`;
-      setReturnPeriod(period);
+      setDvatData(dvatResponse.data);
+      if (props.returnContext) {
+        setReturnPeriod(
+          `${props.returnContext.month} ${props.returnContext.year}`,
+        );
+      }
     };
 
-    loadReturn();
-  }, [props.returnId]);
+    loadData();
+  }, [props.returnId, props.returnContext]);
 
   const onSubmit = async (data: CreateChallanForm) => {
     if (dvatdata == null) {
       return toast.error("Return DVAT not found.");
     }
 
+    console.log("Data to submit", props.returnContext);
+
+    let returnIdToUse: number | undefined = resolvedReturnId;
+
+    if (!returnIdToUse) {
+      if (!props.returnContext) {
+        return toast.error(
+          "Return details not found. Please select period again.",
+        );
+      }
+
+      const ensureReturnResponse = await EnsureReturnForChallan({
+        createdById: props.userid,
+        year: props.returnContext.year,
+        quarter: props.returnContext.quarter,
+        month: props.returnContext.month,
+      });
+
+      if (!ensureReturnResponse.status || !ensureReturnResponse.data) {
+        return toast.error(ensureReturnResponse.message);
+      }
+
+      returnIdToUse = ensureReturnResponse.data.id;
+      setResolvedReturnId(returnIdToUse);
+    }
+
+    if (returnIdToUse === undefined) {
+      return toast.error(
+        "Unable to prepare return for challan. Please try again.",
+      );
+    }
+
     const challan_response = await CreateChallan({
       dvatid: dvatdata.id,
-      returnid: props.returnId,
+      returnid: returnIdToUse,
       createdby: props.userid,
       latefees: data.latefees.toString(),
       vat: data.vat.toString(),

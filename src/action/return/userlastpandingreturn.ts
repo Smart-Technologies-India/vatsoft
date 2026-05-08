@@ -1,7 +1,4 @@
 "use server";
-interface GetUserLastPandingReturnPayload {
-  userid: number;
-}
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -9,9 +6,9 @@ import { return_filing } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import { getCurrentDvatId } from "@/lib/auth";
 
-const GetUserLastPandingReturn = async (
-  payload: GetUserLastPandingReturnPayload,
-): Promise<ApiResponseType<return_filing | null>> => {
+const GetUserLastPandingReturn = async (): Promise<
+  ApiResponseType<return_filing | null>
+> => {
   const functionname: string = GetUserLastPandingReturn.name;
 
   try {

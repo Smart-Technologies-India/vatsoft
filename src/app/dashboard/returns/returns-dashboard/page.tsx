@@ -286,9 +286,7 @@ const ReturnDashboard = () => {
     }
 
     const init = async () => {
-      const lastPendingResponse = await GetUserLastPandingReturn({
-        userid: userid,
-      });
+      const lastPendingResponse = await GetUserLastPandingReturn();
 
       if (lastPendingResponse.status && lastPendingResponse.data) {
         setLastPending(lastPendingResponse.data);
@@ -373,12 +371,29 @@ const ReturnDashboard = () => {
 
           let lastmonth = lastPendingResponse.data?.month;
 
+          const vatliableDate = response.data.vatLiableDate;
+          console.log("vatliableDate", vatliableDate);
+
+          if (vatliableDate == null) {
+            return toast.error(
+              "VAT liable date not found in user profile. Please contact support.",
+            );
+          }
+
           if (lastmonth == null) {
-            return toast.error("No month found");
+            lastmonth = monthNames[vatliableDate.getMonth() - 1];
           }
+
           if (lastyear == null) {
-            return toast.error("No year found");
+            lastyear = vatliableDate.getFullYear().toString();
           }
+
+          // if (lastmonth == null) {
+          //   return toast.error("No month found");
+          // }
+          // if (lastyear == null) {
+          //   return toast.error("No year found");
+          // }
 
           // const last_next_month = monthNames.indexOf(lastmonth) + 1;
 
@@ -1382,18 +1397,23 @@ const ReturnDashboard = () => {
           <div className="fixed bottom-4 right-4 rounded shadow bg-white p-2 flex gap-2 z-10">
             {isSearch && (
               <>
+                <button
+                  className="py-1 px-4 border text-white text-xs rounded bg-[#162e57] cursor-pointer"
+                  onClick={() => {
+                    if (return01 == null) {
+                      router.push(
+                        `/dashboard/returns/returns-dashboard/pay_challan?form=30A&year=${getNewYear(year!, period!)}&quarter=${quarter}&month=${period}`,
+                      );
+                    }
+                    router.push(
+                      `/dashboard/returns/returns-dashboard/pay_challan/${encryptURLData(return01!.id.toString())}`,
+                    );
+                  }}
+                >
+                  Pay Challan
+                </button>
                 {ispreview() && (
                   <>
-                    <button
-                      className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-                      onClick={() => {
-                        router.push(
-                          `/dashboard/returns/returns-dashboard/pay_challan/${encryptURLData(return01!.id.toString())}`,
-                        );
-                      }}
-                    >
-                      Pay Challan
-                    </button>
                     {ispayment() && (
                       <>
                         <button
