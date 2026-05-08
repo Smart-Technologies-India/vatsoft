@@ -82,7 +82,6 @@ const Anx1 = (props: Anx1ProviderProps) => {
   const [dvatData, setDvatData] = useState<dvat04 | null>(null);
 
   const onSubmit = async (data: Anx1Form) => {
-    console.log("test");
 
     const userrespone: ApiResponseType<annexure1 | null> = await Anx1Create({
       dvatId: props.dvatid,

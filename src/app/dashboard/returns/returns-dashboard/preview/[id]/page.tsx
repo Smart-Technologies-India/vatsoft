@@ -253,7 +253,6 @@ const Dvat16ReturnPreview = () => {
           });
         }
 
-        console.log("Merged Entries:", mergedEntries);
 
         setReturn01(selectedReturn);
         serReturns_entryData(mergedEntries);

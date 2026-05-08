@@ -15,7 +15,6 @@ const CreateChallan = () => {
     decryptURLData(Array.isArray(id) ? id[0] : id, router),
   );
 
-  console.log("Decrypted Return ID:", id);
 
   useEffect(() => {
     const init = async () => {

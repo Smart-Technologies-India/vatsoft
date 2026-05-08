@@ -30,7 +30,7 @@ import EnsureReturnForChallan from "@/action/return/ensurereturnforchallan";
 type DepartmentPayChallanProviderProps = {
   userid: number;
   returnId?: number;
-  returnContext: {
+  returnContext?: {
     year: string;
     quarter: Quarter;
     month: string;
