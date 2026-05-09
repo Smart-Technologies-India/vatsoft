@@ -14,7 +14,7 @@ interface GetAllNewsPayload {
 }
 
 const GetAllNews = async (
-  payload: GetAllNewsPayload
+  payload: GetAllNewsPayload,
 ): Promise<PaginationResponse<news[] | null>> => {
   const functionname: string = GetAllNews.name;
 

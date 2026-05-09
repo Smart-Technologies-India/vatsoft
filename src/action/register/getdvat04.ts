@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetDvat04Payload {
   id: number;
 }
@@ -17,6 +18,17 @@ const GetDvat04 = async (
 > => {
   const functionname: string = GetDvat04.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetDvat04",
+      } as any;
+    }
+
     const dvat04response = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,

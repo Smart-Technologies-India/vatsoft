@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface IsRegisterPedningPayload {
   userid: number;
 }
@@ -12,6 +13,17 @@ const IsRegisterPedning = async (
 ): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = IsRegisterPedning.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "IsRegisterPedning",
+      } as any;
+    }
+
     const dvat04response = await prisma.dvat04.findMany({
       where: {
         deletedAt: null,

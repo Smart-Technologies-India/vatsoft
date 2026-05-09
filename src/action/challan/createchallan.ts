@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -32,6 +33,17 @@ const CreateChallan = async (
   const cpin: string = nanoid();
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "CreateChallan",
+      } as any;
+    }
+
     const challan = await prisma.challan.create({
       data: {
         dvatid: payload.dvatid,

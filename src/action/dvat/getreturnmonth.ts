@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetReturnMonthPayload {
   dvatid: number;
 }
@@ -13,6 +14,17 @@ const GetReturnMonth = async (
 ): Promise<ApiResponseType<Array<return_filing & { dvat: dvat04 }> | null>> => {
   const functionname: string = GetReturnMonth.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetReturnMonth",
+      } as any;
+    }
+
     const dvat04response = await prisma.return_filing.findMany({
       where: {
         deletedAt: null,

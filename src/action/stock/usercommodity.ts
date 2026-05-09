@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetUserCommodityPayload {
   dvatid: number;
 }
@@ -16,6 +17,17 @@ const GetUserCommodity = async (
   const functionname: string = GetUserCommodity.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetUserCommodity",
+      } as any;
+    }
+
     const stock_response: Array<
       stock & { commodity_master: commodity_master }
     > = await prisma.stock.findMany({

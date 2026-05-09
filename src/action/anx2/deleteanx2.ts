@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface DeleteAnx2Payload {
   id: number;
 }
@@ -12,6 +13,17 @@ const DeleteAnx2 = async (
   payload: DeleteAnx2Payload
 ): Promise<ApiResponseType<annexure2 | null>> => {
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "DeleteAnx2",
+      } as any;
+    }
+
     const anx2response = await prisma.annexure2.delete({
       where: {
         id: parseInt(payload.id.toString() ?? "0"),

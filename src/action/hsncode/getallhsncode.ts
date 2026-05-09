@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId } from "@/lib/auth";
 interface GetAllHSNCodePayload {
   skip: number;
   take: number;
@@ -19,6 +20,16 @@ const GetAllHSNCode = async (
   const functionname: string = GetAllHSNCode.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetAllHSNCode",
+      } as any;
+    }
+
     const [hsncode, totalCount] = await Promise.all([
       prisma.hsncode.findMany({
         where: {

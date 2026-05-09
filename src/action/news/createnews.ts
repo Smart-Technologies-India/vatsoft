@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -19,6 +20,16 @@ const CreateNews = async (
   const functionname: string = CreateNews.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "CreateNews",
+      } as any;
+    }
+
     const newsdata = await prisma.news.create({
       data: {
         createdById: payload.createdby,

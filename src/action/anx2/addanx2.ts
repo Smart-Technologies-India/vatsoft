@@ -9,6 +9,7 @@ import {
   annexure2,
 } from "@prisma/client";
 
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface Anx2CreatePayload {
   dvatId: number;
   createdById: number;
@@ -32,6 +33,17 @@ const Anx2Create = async (
   const functionname: string = Anx2Create.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "Anx2Create",
+      } as any;
+    }
+
     const annexure2response = await prisma.annexure2.create({
       data: {
         dvatId: payload.dvatId,

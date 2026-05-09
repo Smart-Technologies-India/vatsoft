@@ -11,6 +11,7 @@ import {
   tin_number_master,
 } from "@prisma/client";
 
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetReturnEntryReportByIdPayload {
   id: number;
 }
@@ -29,6 +30,17 @@ const getReturnEntryReportById = async (
   const functionname: string = getReturnEntryReportById.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "action",
+      } as any;
+    }
+
     const return01 = await prisma.returns_01.findFirst({
       where: {
         id: payload.id,

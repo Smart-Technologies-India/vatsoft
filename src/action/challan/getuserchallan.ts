@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetUserChallanPayload {
   dvatid: number;
   skip: number;
@@ -20,6 +21,17 @@ const GetUserChallan = async (
   const functionname: string = GetUserChallan.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetUserChallan",
+      } as any;
+    }
+
     const [challan, totalCount] = await Promise.all([
       prisma.challan.findMany({
         where: {

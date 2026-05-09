@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { ApiResponseType } from "@/models/response";
 import prisma from "../../../prisma/database";
@@ -15,6 +16,17 @@ export default async function GetTopLiquorDealers(data: {
   selectOffice?: "Dadra_Nagar_Haveli" | "DAMAN" | "DIU";
 }): Promise<ApiResponseType<TopDealerData[]>> {
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "action",
+      } as any;
+    }
+
     const { selectOffice } = data;
 
     // Build where clause based on office selection

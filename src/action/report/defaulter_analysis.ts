@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId } from "@/lib/auth";
 interface ResponseType {
   dvat04: dvat04;
   returnfiling: return_filing[];
@@ -30,6 +31,16 @@ const DefaulterAnalysis = async (
 ): Promise<PaginationResponse<Array<ResponseType> | null>> => {
   const functionname: string = DefaulterAnalysis.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "DefaulterAnalysis",
+      } as any;
+    }
+
     // Get all return filings with PENDINGFILING status
     const returnFilings = await prisma.return_filing.findMany({
       where: {

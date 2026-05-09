@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import prisma from "../../../prisma/database";
 
 import { errorToString } from "@/utils/methods";
@@ -12,6 +13,17 @@ dayjs.extend(utc);
 const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = ReturnFiling.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "ReturnFiling",
+      } as any;
+    }
+
     const due_date_of_month = 28;
 
     const currentdate = dayjs();

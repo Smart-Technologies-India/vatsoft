@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface CreateStockPayload {
   dvatid: number;
   commodityid: number;
@@ -21,6 +22,17 @@ const CreateStock = async (
   const functionname: string = CreateStock.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "CreateStock",
+      } as any;
+    }
+
     const result: stock = await prisma.$transaction(async (prisma) => {
       const manufacturer_response = await prisma.manufacturer_purchase.create({
         data: {

@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import prisma from "../../../prisma/database";
 interface DashboardMonthPayload {
@@ -20,6 +21,17 @@ const DashboardMonth = async (
 ): Promise<ApiResponseType<ResponseDate[] | null>> => {
   const functionname: string = DashboardMonth.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "DashboardMonth",
+      } as any;
+    }
+
     const data = await getLastSixMonths(payload.userid);
     return createResponse({
       message: "Success",

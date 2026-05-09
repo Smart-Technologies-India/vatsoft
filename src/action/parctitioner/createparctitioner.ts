@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -20,6 +21,16 @@ const CreateParctitioner = async (
   const functionname: string = CreateParctitioner.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "CreateParctitioner",
+      } as any;
+    }
+
     const parcitionerdata = await prisma.parctitioner.create({
       data: {
         createdById: payload.createdby,

@@ -6,6 +6,7 @@ import {
   manufacturer_purchase,
   tin_number_master,
 } from "@prisma/client";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import prisma from "../../../prisma/database";
 import { ApiResponseType, createResponse } from "@/models/response";
 
@@ -26,6 +27,17 @@ const GetByIdManufacturerPurchase = async (
   const functionname: string = GetByIdManufacturerPurchase.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetByIdManufacturerPurchase",
+      } as any;
+    }
+
     const response = await prisma.manufacturer_purchase.findFirst({
       where: {
         deletedAt: null,

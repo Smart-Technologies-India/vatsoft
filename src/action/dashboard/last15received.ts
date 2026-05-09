@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
@@ -19,6 +20,17 @@ const Last15Received = async (
 ): Promise<ApiResponseType<ResponseData[] | null>> => {
   const functionname: string = Last15Received.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "Last15Received",
+      } as any;
+    }
+
     const currentDate = new Date();
 
     // Create an array to store the result for the last 15 days including today

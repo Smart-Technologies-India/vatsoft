@@ -9,6 +9,7 @@ import {
   tin_number_master,
 } from "@prisma/client";
 
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetByIdDailyPurchasePayload {
   id: number;
 }
@@ -27,6 +28,17 @@ const GetByIdDailyPurchase = async (
   const functionname: string = GetByIdDailyPurchase.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetByIdDailyPurchase",
+      } as any;
+    }
+
     const response = await prisma.daily_purchase.findFirst({
       where: {
         deletedAt: null,

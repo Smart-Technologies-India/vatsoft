@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
@@ -34,6 +35,16 @@ const YearlyComparison = async (
   message?: string;
 }> => {
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "YearlyComparison",
+      } as any;
+    }
+
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth(); // 0-11

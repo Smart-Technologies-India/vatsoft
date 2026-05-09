@@ -13,6 +13,7 @@ import {
   user,
 } from "@prisma/client";
 
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface getPdfReturnDownloadPayload {
   userid: number;
   month: string;
@@ -34,6 +35,17 @@ const getPdfReturnDownload = async (
   } | null>
 > => {
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "action",
+      } as any;
+    }
+
     const dvat04resonse = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,

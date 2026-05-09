@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 interface CreateDailySalePayload {
   dvatid: number;
@@ -29,6 +30,17 @@ const CreateDailySale = async (
   const functionname: string = CreateDailySale.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "CreateDailySale",
+      } as any;
+    }
+
     const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstuvwyz", 12);
     const ref_no: string = nanoid();
     const isdata = await prisma.daily_sale.findFirst({

@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { createResponse } from "@/models/response";
@@ -12,6 +13,17 @@ const GetPendingAcceptCount = async (
   payload: GetPendingAcceptCountPayload,
 ): Promise<{ status: boolean; data: number; message: string }> => {
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetPendingAcceptCount",
+      } as any;
+    }
+
     const count = await prisma.daily_purchase.count({
       where: {
         deletedAt: null,

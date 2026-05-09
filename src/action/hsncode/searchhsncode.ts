@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -39,6 +40,16 @@ const SearchHSNCode = async (
   }
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "SearchHSNCode",
+      } as any;
+    }
+
     const hsncode_response = await prisma.hsncode.findFirst({
       where: {
         deletedAt: null,

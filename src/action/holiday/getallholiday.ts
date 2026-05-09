@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId } from "@/lib/auth";
 interface GetAllHolidayPayload {
   skip: number;
   take: number;
@@ -19,6 +20,16 @@ const GetAllHoliday = async (
   const functionname: string = GetAllHoliday.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetAllHoliday",
+      } as any;
+    }
+
     const [holidays, totalCount] = await Promise.all([
       prisma.holiday.findMany({
         where: {

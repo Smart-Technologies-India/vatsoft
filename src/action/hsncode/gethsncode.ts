@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { hsncode } from "@prisma/client";
@@ -15,6 +16,16 @@ const GetHSNCode = async (
   const functionname: string = GetHSNCode.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetHSNCode",
+      } as any;
+    }
+
     const hsncode_response = await prisma.hsncode.findFirst({
       where: {
         status: "ACTIVE",

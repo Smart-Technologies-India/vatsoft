@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
@@ -14,6 +15,17 @@ const DeleteSaveStock = async (
   const functionname: string = DeleteSaveStock.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "DeleteSaveStock",
+      } as any;
+    }
+
     const first_stock = await prisma.save_stock.findFirst({
       where: {
         deletedAt: null,

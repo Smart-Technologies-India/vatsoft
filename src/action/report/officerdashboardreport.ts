@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
@@ -33,6 +34,16 @@ const OfficerDashboardReport = async (
 ): Promise<ApiResponseType<ResponseData | null>> => {
   const functionname: string = OfficerDashboardReport.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "OfficerDashboardReport",
+      } as any;
+    }
+
     const whereClause: any = {
       deletedAt: null,
       deletedBy: null,

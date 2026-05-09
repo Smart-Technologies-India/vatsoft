@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetManufacturerPurchasePayload {
   dvatid: number;
   take: number;
@@ -26,6 +27,17 @@ const GetManufacturerPurchase = async (
   const functionname: string = GetManufacturerPurchase.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetManufacturerPurchase",
+      } as any;
+    }
+
     const [manufacturer_purchase_response, totalCount] = await Promise.all([
       prisma.manufacturer_purchase.findMany({
         where: {

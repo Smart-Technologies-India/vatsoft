@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface CreateCommodityFromRequestPayload {
   product_name: string;
   product_type: string;
@@ -26,6 +27,17 @@ const CreateCommodityFromRequest = async (
   const functionname: string = CreateCommodityFromRequest.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "CreateCommodityFromRequest",
+      } as any;
+    }
+
     const commodity_master = await prisma.commodity_master.create({
       data: {
         product_name: payload.product_name,

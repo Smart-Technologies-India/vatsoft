@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface AddTempRegNoPayload {
   id: number;
   tempregno: string;
@@ -16,6 +17,17 @@ const AddTempRegNo = async (
   const functionname: string = AddTempRegNo.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "AddTempRegNo",
+      } as any;
+    }
+
     const dvat04 = await prisma.dvat04.findFirst({
       where: {
         id: parseInt(payload.id.toString()),

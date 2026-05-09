@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -9,6 +10,16 @@ const getAllTinNumberMaster = async (): Promise<ApiResponseType<tin_number_maste
   const functionname: string = getAllTinNumberMaster.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "action",
+      } as any;
+    }
+
     const tinNumbers = await prisma.tin_number_master.findMany({
       where: {
         status: "ACTIVE",

@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { parctitioner } from "@prisma/client";
@@ -15,6 +16,16 @@ const GetParctitioner = async (
   const functionname: string = GetParctitioner.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetParctitioner",
+      } as any;
+    }
+
     const parctitioner = await prisma.parctitioner.findFirst({
       where: {
         status: "ACTIVE",

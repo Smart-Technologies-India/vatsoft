@@ -5,6 +5,7 @@ import {
   createPaginationResponse,
   PaginationResponse,
 } from "@/models/response";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import { order_notice } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
@@ -22,6 +23,17 @@ const GetUserNotice = async (
  
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetUserNotice",
+      } as any;
+    }
+
     const dvat = await prisma.dvat04.findFirst({
       where: {
         createdById: payload.userid,

@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
@@ -22,6 +23,17 @@ const getCurrentFyAnnualTurnover = async (
   const functionname = getCurrentFyAnnualTurnover.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "action",
+      } as any;
+    }
+
     const currentFinancialYear = getFiscalYearStart(new Date());
 
     const entries = await prisma.returns_entry.findMany({

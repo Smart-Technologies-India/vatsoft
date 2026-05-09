@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 interface CreateTinNumberPayload {
   tinumber: string;
   name: string;
@@ -15,6 +16,16 @@ const CreateTinNumber = async (
   const functionname: string = CreateTinNumber.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "CreateTinNumber",
+      } as any;
+    }
+
     const tin_response = await prisma.tin_number_master.create({
       data: {
         tin_number: payload.tinumber,

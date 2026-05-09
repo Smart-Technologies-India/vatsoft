@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetAllStockPayload {
   dvatid: number;
   take: number;
@@ -24,6 +25,17 @@ const GetAllStock = async (
   const functionname: string = GetAllStock.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetAllStock",
+      } as any;
+    }
+
     const [stock, totalCount] = await Promise.all([
       prisma.stock.findMany({
         where: {

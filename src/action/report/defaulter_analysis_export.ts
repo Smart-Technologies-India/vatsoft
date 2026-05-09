@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { dvat04, SelectOffice } from "@prisma/client";
@@ -24,6 +25,16 @@ const DefaulterAnalysisExport = async (
 ): Promise<ApiResponseType<Array<ResponseType> | null>> => {
   const functionname: string = DefaulterAnalysisExport.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "DefaulterAnalysisExport",
+      } as any;
+    }
+
     // Get all return filings with PENDINGFILING status
     const returnFilings = await prisma.return_filing.findMany({
       where: {

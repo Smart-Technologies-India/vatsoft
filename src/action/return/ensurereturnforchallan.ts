@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
@@ -18,6 +19,17 @@ const EnsureReturnForChallan = async (
   const functionname = EnsureReturnForChallan.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "EnsureReturnForChallan",
+      } as any;
+    }
+
     let returnInvoice = await prisma.returns_01.findFirst({
       where: {
         year: payload.year,

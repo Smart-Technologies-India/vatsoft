@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
@@ -15,6 +16,17 @@ const UpdateDvat04Mobile = async (
   const functionname = UpdateDvat04Mobile.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "UpdateDvat04Mobile",
+      } as any;
+    }
+
     const mobile = payload.mobile.trim();
 
     if (!payload.dvat04Id || payload.dvat04Id <= 0) {

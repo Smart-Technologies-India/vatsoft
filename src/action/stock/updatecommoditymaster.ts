@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface UpdateCommodityMasterPayload {
   id: number;
   updatedById: number;
@@ -25,6 +26,17 @@ const UpdateCommodityMaster = async (
   const functionname: string = UpdateCommodityMaster.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "UpdateCommodityMaster",
+      } as any;
+    }
+
     const isexist = await prisma.commodity_master.findFirst({
       where: {
         deletedAt: null,

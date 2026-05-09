@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -19,6 +20,17 @@ const AddRefundsPayment = async (
   const functionname: string = AddRefundsPayment.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "AddRefundsPayment",
+      } as any;
+    }
+
     const is_refunds = await prisma.refunds.findFirst({
       where: {
         status: "ACTIVE",

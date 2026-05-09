@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { holiday } from "@prisma/client";
@@ -15,6 +16,16 @@ const GetHoliday = async (
   const functionname: string = GetHoliday.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetHoliday",
+      } as any;
+    }
+
     const holiday_data = await prisma.holiday.findFirst({
       where: {
         status: "ACTIVE",

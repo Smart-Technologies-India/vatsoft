@@ -11,6 +11,7 @@ import {
   RegistrationStatus,
 } from "@prisma/client";
 
+import { getCurrentUserId } from "@/lib/auth";
 interface UpdateRegistrationPayload {
   id: number;
   updatedby: number;
@@ -65,6 +66,16 @@ const UpdateRegistration = async (
   const functionname: string = UpdateRegistration.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "UpdateRegistration",
+      } as any;
+    }
+
     const is_exist = await prisma.registration.findFirst({
       where: {
         id: payload.id,

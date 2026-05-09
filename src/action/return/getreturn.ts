@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetReturn01Payload {
   id: number;
 }
@@ -17,6 +18,17 @@ const GetReturn01 = async (
 > => {
   const functionname: string = GetReturn01.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetReturn01",
+      } as any;
+    }
+
     let return01response = await prisma.returns_01.findFirst({
       where: {
         deletedAt: null,

@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import dayjs from "dayjs";
@@ -32,6 +33,17 @@ const CreateDvat24A = async (
   const ref_no: string = nanoid();
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "CreateDvat24A",
+      } as any;
+    }
+
     const cpin: string = nanoid();
 
     const challan = await prisma.challan.create({

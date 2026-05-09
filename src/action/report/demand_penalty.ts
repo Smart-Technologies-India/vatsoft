@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId } from "@/lib/auth";
 interface ResponseType {
   dvat04: dvat04;
   penalty: number;
@@ -29,6 +30,16 @@ const DemandPenalty = async (
 ): Promise<PaginationResponse<Array<ResponseType> | null>> => {
   const functionname: string = DemandPenalty.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "DemandPenalty",
+      } as any;
+    }
+
     const dvat04response = await prisma.challan.findMany({
       where: {
         deletedAt: null,

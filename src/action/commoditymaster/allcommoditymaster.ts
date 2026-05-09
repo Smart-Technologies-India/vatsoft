@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { commodity_master } from "@prisma/client";
@@ -13,6 +14,16 @@ const AllCommodityMaster = async (
   const functionname: string = AllCommodityMaster.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "AllCommodityMaster",
+      } as any;
+    }
+
     const commodity_master = await prisma.commodity_master.findMany({
       where: {
         deletedAt: null,

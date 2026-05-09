@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { addPrismaDatabaseDate, errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -14,6 +15,16 @@ const GetFromDvat = async (
 ): Promise<ApiResponseType<(registration & { dvat04: dvat04 }) | null>> => {
   const functionname: string = GetFromDvat.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetFromDvat",
+      } as any;
+    }
+
     const is_exist = await prisma.registration.findFirst({
       where: {
         dvat04Id: parseInt(payload.id.toString() ?? "0"),

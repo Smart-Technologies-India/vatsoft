@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 interface CreateCommodityMasterPayload {
   product_name: string;
   product_type: Dvat04Commodity;
@@ -23,6 +24,16 @@ const CreateCommodityMaster = async (
   const functionname: string = CreateCommodityMaster.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "CreateCommodityMaster",
+      } as any;
+    }
+
     const commodity_master = await prisma.commodity_master.create({
       data: payload,
     });

@@ -102,10 +102,13 @@ function patchImport(src, needsDvat) {
       ? "getCurrentUserId, getCurrentDvatId"
       : "getCurrentUserId";
     const line = `import { ${funcs} } from "@/lib/auth";`;
-    // Insert after last top-level import
-    const lastImport = [...src.matchAll(/^import\s+.+$/gm)].pop();
-    if (lastImport) {
-      const pos = lastImport.index + lastImport[0].length;
+    // Find the END of the last import statement, including multi-line imports.
+    // We look for the last occurrence of `} from "..."` or `from "..."` which
+    // always appears on its own line as the closing of an import.
+    const fromLines = [...src.matchAll(/^(?:}\s*)?from\s+["'].*["'];?\s*$/gm)];
+    const lastFrom = fromLines.pop();
+    if (lastFrom) {
+      const pos = lastFrom.index + lastFrom[0].length;
       return src.slice(0, pos) + "\n" + line + src.slice(pos);
     }
     return src.replace('"use server";', '"use server";\n' + line);

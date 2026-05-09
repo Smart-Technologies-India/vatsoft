@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface EditSalePayload {
   id: number;
   dvatid: number;
@@ -28,6 +29,17 @@ const EditSale = async (
   const functionname: string = EditSale.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "EditSale",
+      } as any;
+    }
+
     const result: daily_sale = await prisma.$transaction(async (prisma) => {
       // Validate seller TIN number
       const sellerTin = await prisma.tin_number_master.findFirst({

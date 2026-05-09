@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
@@ -20,6 +21,17 @@ const GetSaleDeleteImpact = async (
   const functionname: string = GetSaleDeleteImpact.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetSaleDeleteImpact",
+      } as any;
+    }
+
     const sale = await prisma.daily_sale.findFirst({
       where: {
         id: payload.id,

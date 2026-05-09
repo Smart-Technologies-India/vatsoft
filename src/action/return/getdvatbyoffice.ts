@@ -9,6 +9,7 @@ import {
   SelectOffice,
   first_stock,
 } from "@prisma/client";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import prisma from "../../../prisma/database";
 
 interface GetDvatByOfficePayload {
@@ -22,6 +23,17 @@ const GetDvatByOffice = async (
 > => {
   const functionname: string = GetDvatByOffice.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetDvatByOffice",
+      } as any;
+    }
+
     let dvat_response = await prisma.dvat04.findMany({
       where: {
         deletedAt: null,

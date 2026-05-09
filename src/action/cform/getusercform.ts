@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetUserCformPayload {
   name?: string;
   tin?: string;
@@ -22,6 +23,17 @@ const GetUserCform = async (
   const functionname: string = GetUserCform.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetUserCform",
+      } as any;
+    }
+
     const [cform_data, totalCount] = await Promise.all([
       prisma.cform.findMany({
         where: {

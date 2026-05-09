@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -19,6 +20,16 @@ const UpdateHoliday = async (
   const functionname: string = UpdateHoliday.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "UpdateHoliday",
+      } as any;
+    }
+
     const isholiday = await prisma.holiday.findFirst({
       where: { id: payload.id, status: "ACTIVE" },
     });

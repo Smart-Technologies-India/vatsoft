@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface DeletePurchasePayload {
   id: number;
   deletedById: number;
@@ -15,6 +16,17 @@ const DeleteManufacture = async (
   const functionname: string = DeleteManufacture.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "DeleteManufacture",
+      } as any;
+    }
+
     const result: manufacturer_purchase = await prisma.$transaction(
       async (prisma) => {
         let is_exist = await prisma.manufacturer_purchase.findFirst({

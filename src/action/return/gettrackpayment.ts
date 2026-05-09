@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetTrackPaymentPayload {}
 
 import { errorToString } from "@/utils/methods";
@@ -11,6 +12,17 @@ const GetTrackPayment = async (
 ): Promise<ApiResponseType<returns_entry[] | null>> => {
   const functionname: string = GetTrackPayment.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetTrackPayment",
+      } as any;
+    }
+
     const dvat04response = await prisma.returns_entry.findMany({
       where: {
         deletedAt: null,

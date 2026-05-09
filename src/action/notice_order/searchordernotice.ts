@@ -5,6 +5,7 @@ import {
   createPaginationResponse,
   PaginationResponse,
 } from "@/models/response";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import { FormType, order_notice, SelectOffice } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
@@ -27,6 +28,17 @@ const SearchNoticeOrder = async (
   const functionname: string = SearchNoticeOrder.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "SearchNoticeOrder",
+      } as any;
+    }
+
     const [order_notice_response, totalCount] = await Promise.all([
       prisma.order_notice.findMany({
         where: {

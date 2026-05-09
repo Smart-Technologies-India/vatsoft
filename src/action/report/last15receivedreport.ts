@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
@@ -23,6 +24,16 @@ const Last15ReceivedReport = async (
 ): Promise<ApiResponseType<ResponseData[] | null>> => {
   const functionname: string = Last15ReceivedReport.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "Last15ReceivedReport",
+      } as any;
+    }
+
     const currentDate = new Date();
 
     // Determine the start and end dates based on filterType

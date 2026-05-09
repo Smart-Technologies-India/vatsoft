@@ -12,6 +12,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetUserDailyPurchasePayload {
   dvatid: number;
   take: number;
@@ -43,6 +44,17 @@ const GetUserDailyPurchase = async (
   const functionname: string = GetUserDailyPurchase.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetUserDailyPurchase",
+      } as any;
+    }
+
     const daily_purchase_response = await prisma.daily_purchase.findMany({
       where: {
         deletedAt: null,

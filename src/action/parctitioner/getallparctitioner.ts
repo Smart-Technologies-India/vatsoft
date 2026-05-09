@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId } from "@/lib/auth";
 interface GetAllParctitionerPayload {
   skip: number;
   take: number;
@@ -19,6 +20,16 @@ const GetAllParctitioner = async (
   const functionname: string = GetAllParctitioner.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetAllParctitioner",
+      } as any;
+    }
+
     const [parctitioner, totalCount] = await Promise.all([
       prisma.parctitioner.findMany({
         where: {

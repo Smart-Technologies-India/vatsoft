@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetAnx2Payload {
   dvatid: number;
 }
@@ -14,6 +15,17 @@ const GetAnx2 = async (
   const functionname: string = GetAnx2.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetAnx2",
+      } as any;
+    }
+
     const anx2response = await prisma.annexure2.findMany({
       where: {
         dvatId: payload.dvatid,

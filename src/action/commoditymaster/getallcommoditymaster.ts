@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId } from "@/lib/auth";
 interface GetAllCommodityMasterPayload {
   take: number;
   skip: number;
@@ -20,6 +21,16 @@ const GetAllCommodityMaster = async (
 
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetAllCommodityMaster",
+      } as any;
+    }
+
     const [commodity_master, totalCount] = await Promise.all([
       prisma.commodity_master.findMany({
         where: {

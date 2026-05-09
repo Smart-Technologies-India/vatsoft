@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface EditManufacturePayload {
   id: number;
   dvatid: number;
@@ -22,6 +23,17 @@ const EditManufacture = async (
   const functionname: string = EditManufacture.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "EditManufacture",
+      } as any;
+    }
+
     const result: manufacturer_purchase = await prisma.$transaction(
       async (prisma) => {
         const is_exist = await prisma.manufacturer_purchase.findFirst({

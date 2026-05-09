@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId } from "@/lib/auth";
 interface ResponseType {
   dvat04: dvat04;
   lastfiling: string;
@@ -28,6 +29,16 @@ const DealersConsistentlyCompliant = async (
 ): Promise<PaginationResponse<Array<ResponseType> | null>> => {
   const functionname: string = DealersConsistentlyCompliant.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "DealersConsistentlyCompliant",
+      } as any;
+    }
+
     const today = new Date();
 
     const months = [

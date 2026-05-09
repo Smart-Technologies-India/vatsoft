@@ -18,6 +18,7 @@ import {
   returns_entry,
 } from "@prisma/client";
 
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface AddReturnInvoicePayload {
   year: string;
   month: string;
@@ -52,6 +53,17 @@ const AddReturnInvoice = async (
   payload: AddReturnInvoicePayload
 ): Promise<ApiResponseType<returns_entry | null>> => {
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "AddReturnInvoice",
+      } as any;
+    }
+
     let returnInvoice = await prisma.returns_01.findFirst({
       where: {
         year: payload.year,

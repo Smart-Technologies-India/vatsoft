@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetAllDvatByDeptPayload {
   dept: SelectOffice;
 }
@@ -17,6 +18,17 @@ const GetAllDvatByDept = async (
 > => {
   const functionname: string = GetAllDvatByDept.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetAllDvatByDept",
+      } as any;
+    }
+
     const dvat04response = await prisma.dvat04.findMany({
       where: {
         selectOffice: payload.dept,

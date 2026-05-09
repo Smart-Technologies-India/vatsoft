@@ -13,6 +13,7 @@ import {
   returns_entry,
   Status,
 } from "@prisma/client";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import prisma from "../../../prisma/database";
 import { customAlphabet } from "nanoid";
 
@@ -71,6 +72,17 @@ const CreatePurchaseDebitNote = async (
 ): Promise<ApiResponseType<returns_entry | null>> => {
   const functionname = CreatePurchaseDebitNote.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "CreatePurchaseDebitNote",
+      } as any;
+    }
+
     const invoiceDate = new Date(payload.debit_invoice_date);
     const year = invoiceDate.getFullYear().toString();
     const monthName = monthNames[invoiceDate.getMonth()];

@@ -17,6 +17,7 @@ import {
   Status,
 } from "@prisma/client";
 
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface DvatDataType {
   invoice_number: string;
   total_invoice_number: string;
@@ -57,6 +58,17 @@ const AddMultiReturnInvoice = async (
   const functionname: string = AddMultiReturnInvoice.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "AddMultiReturnInvoice",
+      } as any;
+    }
+
     let returnInvoice = await prisma.returns_01.findFirst({
       where: {
         year: payload.year,

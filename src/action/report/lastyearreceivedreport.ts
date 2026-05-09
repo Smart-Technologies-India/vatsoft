@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString, isNegative } from "@/utils/methods";
@@ -21,6 +22,16 @@ const LastYearReceived = async (
 ): Promise<ApiResponseType<ResponseData[] | null>> => {
   const functionname: string = LastYearReceived.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "LastYearReceived",
+      } as any;
+    }
+
     const currentDate = new Date();
     const monthNames = [
       "Jan",

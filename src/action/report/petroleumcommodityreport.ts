@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
@@ -33,6 +34,16 @@ const PetroleumCommodityReport = async (
 > => {
   const functionname: string = PetroleumCommodityReport.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "PetroleumCommodityReport",
+      } as any;
+    }
+
     const currentDate = new Date();
     const targetMonth = month ?? currentDate.getMonth() + 1;
     const targetYear = year ?? currentDate.getFullYear();

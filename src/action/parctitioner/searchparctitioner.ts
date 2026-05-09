@@ -5,6 +5,7 @@ import {
   createPaginationResponse,
   PaginationResponse,
 } from "@/models/response";
+import { getCurrentUserId } from "@/lib/auth";
 import { parctitioner } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
@@ -24,6 +25,16 @@ const SearchParctitioner = async (
   const functionname: string = SearchParctitioner.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "SearchParctitioner",
+      } as any;
+    }
+
     const [parctitioner_response, totalCount] = await Promise.all([
       prisma.parctitioner.findMany({
         where: {

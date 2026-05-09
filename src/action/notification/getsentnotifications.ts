@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { ApiResponseType } from "@/models/response";
 import prisma from "../../../prisma/database";
@@ -18,6 +19,17 @@ export default async function GetSentNotifications(
   const skip = (page - 1) * limit;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "action",
+      } as any;
+    }
+
     const [notifications, total] = await Promise.all([
       prisma.notification.findMany({
         orderBy: {

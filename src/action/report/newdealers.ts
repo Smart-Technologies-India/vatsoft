@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId } from "@/lib/auth";
 interface ResponseType {
   dvat04: dvat04;
   lastfiling: string;
@@ -35,6 +36,16 @@ const GetNewDealers = async (
   );
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetNewDealers",
+      } as any;
+    }
+
     
     const dvat04response = await prisma.return_filing.findMany({
       where: {

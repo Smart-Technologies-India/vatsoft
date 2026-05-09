@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
@@ -11,6 +12,17 @@ const GetNilCommodity = async (): Promise<
   const functionname: string = GetNilCommodity.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetNilCommodity",
+      } as any;
+    }
+
     const commodity_data = await prisma.commodity_master.findFirst({
       where: {
         id: 1154,

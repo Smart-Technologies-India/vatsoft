@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -22,6 +23,16 @@ const CreateHSNCode = async (
   const functionname: string = CreateHSNCode.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "CreateHSNCode",
+      } as any;
+    }
+
     const hsncodedata = await prisma.hsncode.create({
       data: {
         createdById: payload.createdby,

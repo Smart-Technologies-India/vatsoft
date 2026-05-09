@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -24,6 +25,17 @@ const GetAllUsersWithDvat = async (): Promise<
   const functionname: string = GetAllUsersWithDvat.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetAllUsersWithDvat",
+      } as any;
+    }
+
     const users = await prisma.user.findMany({
       where: {
         deletedAt: null,

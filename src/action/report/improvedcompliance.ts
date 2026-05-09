@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
@@ -31,6 +32,16 @@ const ImprovedCompliance = async (
   message?: string;
 }> => {
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "ImprovedCompliance",
+      } as any;
+    }
+
     const improvementPeriod = payload.improvementPeriod || 6;
     const currentDate = new Date();
 

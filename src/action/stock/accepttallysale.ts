@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -17,6 +18,17 @@ const AcceptTallySale = async (
   const functionname: string = AcceptTallySale.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "AcceptTallySale",
+      } as any;
+    }
+
     const records = await prisma.tally_sale.findMany({
       where: {
         id: { in: payload.tallyIds },

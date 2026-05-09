@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
@@ -36,6 +37,16 @@ const DistrictWiseCommodityReport = async (
 > => {
   const functionname: string = DistrictWiseCommodityReport.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "DistrictWiseCommodityReport",
+      } as any;
+    }
+
     const currentDate = new Date();
     const targetMonth = props.month ?? currentDate.getMonth() + 1;
     const targetYear = props.year ?? currentDate.getFullYear();

@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import { errorToString } from "@/utils/methods";
 import { cform } from "@prisma/client";
 import prisma from "../../../prisma/database";
@@ -13,6 +14,17 @@ const GetCformById = async (
   const functionname: string = GetCformById.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetCformById",
+      } as any;
+    }
+
     const cform_response = await prisma.cform.findFirst({
       where: {
         deletedAt: null,

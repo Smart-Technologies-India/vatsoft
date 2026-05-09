@@ -8,6 +8,7 @@ import {
   PaginationResponse,
 } from "@/models/response";
 
+import { getCurrentUserId } from "@/lib/auth";
 interface ResponseType {
   dvat04: dvat04;
   late: number;
@@ -32,6 +33,16 @@ const TimeLineSummary = async (
 ): Promise<PaginationResponse<Array<ResponseType> | null>> => {
   const functionname: string = TimeLineSummary.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "TimeLineSummary",
+      } as any;
+    }
+
     const dvat04response = await prisma.return_filing.findMany({
       where: {
         deletedAt: null,

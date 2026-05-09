@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 interface SearchTinPayload {
   tinumber: string;
 }
@@ -12,6 +13,16 @@ const SearchTin = async (
   payload: SearchTinPayload
 ): Promise<ApiResponseType<tin_number_master | null>> => {
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "SearchTin",
+      } as any;
+    }
+
     const tinuser = await prisma.tin_number_master.findFirst({
       where: {
         tin_number: payload.tinumber.toString(),

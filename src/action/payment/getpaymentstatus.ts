@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -17,6 +18,17 @@ const GetPaymentStatus = async (
   const functionname: string = GetPaymentStatus.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetPaymentStatus",
+      } as any;
+    }
+
     let data = qs.stringify({
       queryRequest: `|1000605|${payload.applicant_id}|${payload.Amount}|`,
       aggregatorId: "SBIEPAY",

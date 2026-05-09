@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { addPrismaDatabaseDate, errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -14,6 +15,17 @@ const RemoveReturn = async (
 ): Promise<ApiResponseType<returns_entry | null>> => {
   const functionname: string = RemoveReturn.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "RemoveReturn",
+      } as any;
+    }
+
     let isExist = await prisma.returns_entry.findFirst({
       where: {
         id: payload.id,

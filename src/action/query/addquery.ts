@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 interface AddQueryPayload {}
 
 import { errorToString } from "@/utils/methods";
@@ -11,6 +12,16 @@ const AddQuery = async (
 ): Promise<ApiResponseType<department_doc_upload | null>> => {
   const functionname: string = AddQuery.name;
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "AddQuery",
+      } as any;
+    }
+
     const response = await prisma.department_doc_upload.create({
       data: {
         path: "test",

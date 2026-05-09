@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
@@ -39,6 +40,17 @@ const GetAllProductRequests = async (
   const functionname: string = GetAllProductRequests.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetAllProductRequests",
+      } as any;
+    }
+
     const normalizedProductName = payload?.productName?.trim();
 
     const product_requests = await prisma.product_request.findMany({

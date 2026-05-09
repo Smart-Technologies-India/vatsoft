@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
@@ -14,6 +15,17 @@ const Anx1Update = async (
   payload: Anx1UpdatePayload
 ): Promise<ApiResponseType<annexure1 | null>> => {
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "Anx1Update",
+      } as any;
+    }
+
     const isExist = await prisma.annexure1.findFirst({
       where: {
         id: parseInt(payload.id.toString() ?? "0"),

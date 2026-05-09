@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetUserPayload {
   id: number;
 }
@@ -12,6 +13,17 @@ const GetUser = async (
   payload: GetUserPayload
 ): Promise<ApiResponseType<user | null>> => {
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetUser",
+      } as any;
+    }
+
     const user = await prisma.user.findFirst({
       where: { id: parseInt(payload.id.toString() ?? "0"), status: "ACTIVE" },
     });

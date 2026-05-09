@@ -1,4 +1,5 @@
 "use server";
+import { getCurrentUserId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
@@ -32,6 +33,16 @@ const DistrictWiseRevenue = async (
   message?: string;
 }> => {
   try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "DistrictWiseRevenue",
+      } as any;
+    }
+
     const currentDate = new Date();
     
     // Build date filter based on filterType
