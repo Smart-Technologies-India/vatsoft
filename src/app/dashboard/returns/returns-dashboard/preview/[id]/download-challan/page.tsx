@@ -475,57 +475,42 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
   };
 
   const getInterest = (): number => {
-    return isNegative(
-      (((parseFloat(getInvoicePercentage("0").decrease) +
-        parseFloat(getInvoicePercentage("1").decrease) +
-        parseFloat(getInvoicePercentage("4").decrease) +
-        parseFloat(getInvoicePercentage("5").decrease) +
-        parseFloat(getInvoicePercentage("6").decrease) +
-        parseFloat(getInvoicePercentage("12.5").decrease) +
-        parseFloat(getInvoicePercentage("12.75").decrease) +
-        parseFloat(getInvoicePercentage("13.5").decrease) +
-        parseFloat(getInvoicePercentage("15").decrease) +
-        parseFloat(getInvoicePercentage("20").decrease) +
-        parseFloat(getSaleOfPercentage("4").decrease) +
-        parseFloat(getSaleOfPercentage("5").decrease) +
-        parseFloat(getSaleOfPercentage("12.5").decrease) +
-        parseFloat(get4_6().decrease) +
-        parseFloat(get4_7().decrease) -
-        parseFloat(get4_9().decrease) -
-        (parseFloat(get5_1().decrease) +
-          parseFloat(get5_2().decrease) +
-          (parseFloat(getCreditNote().decrease) -
-            parseFloat(getDebitNote().decrease) -
-            parseFloat(getGoodsReturnsNote().decrease)))) *
-        0.15) /
-        365) *
-        InterestDiffDays,
-    )
-      ? 0
-      : (((parseFloat(getInvoicePercentage("0").decrease) +
-          parseFloat(getInvoicePercentage("1").decrease) +
-          parseFloat(getInvoicePercentage("4").decrease) +
-          parseFloat(getInvoicePercentage("5").decrease) +
-          parseFloat(getInvoicePercentage("6").decrease) +
-          parseFloat(getInvoicePercentage("12.5").decrease) +
-          parseFloat(getInvoicePercentage("12.75").decrease) +
-          parseFloat(getInvoicePercentage("13.5").decrease) +
-          parseFloat(getInvoicePercentage("15").decrease) +
-          parseFloat(getInvoicePercentage("20").decrease) +
-          parseFloat(getSaleOfPercentage("4").decrease) +
-          parseFloat(getSaleOfPercentage("5").decrease) +
-          parseFloat(getSaleOfPercentage("12.5").decrease) +
-          parseFloat(get4_6().decrease) +
-          parseFloat(get4_7().decrease) -
-          parseFloat(get4_9().decrease) -
-          (parseFloat(get5_1().decrease) +
-            parseFloat(get5_2().decrease) +
-            (parseFloat(getCreditNote().decrease) -
-              parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease)))) *
-          0.15) /
-          365) *
-          InterestDiffDays;
+    const vatAmount =
+      parseFloat(getInvoicePercentage("0").decrease) +
+      parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("4").decrease) +
+      parseFloat(getInvoicePercentage("5").decrease) +
+      parseFloat(getInvoicePercentage("6").decrease) +
+      parseFloat(getInvoicePercentage("12.5").decrease) +
+      parseFloat(getInvoicePercentage("12.75").decrease) +
+      parseFloat(getInvoicePercentage("13.5").decrease) +
+      parseFloat(getInvoicePercentage("15").decrease) +
+      parseFloat(getInvoicePercentage("20").decrease) +
+      parseFloat(getSaleOfPercentage("4").decrease) +
+      parseFloat(getSaleOfPercentage("5").decrease) +
+      parseFloat(getSaleOfPercentage("12.5").decrease) +
+      parseFloat(get4_6().decrease) +
+      parseFloat(get4_7().decrease) -
+      parseFloat(get4_9().decrease) -
+      (parseFloat(get5_1().decrease) +
+        parseFloat(get5_2().decrease) +
+        (parseFloat(getCreditNote().decrease) -
+          parseFloat(getDebitNote().decrease) -
+          parseFloat(getGoodsReturnsNote().decrease)));
+
+    const interest =
+      (((vatAmount * 0.15) / 365) * InterestDiffDays);
+
+    console.log("=== INTEREST CALCULATION (PREVIEW) ===");
+    console.log(`VAT Amount: ${vatAmount.toFixed(2)}`);
+    console.log(`Annual Rate: 15%`);
+    console.log(`Days Outstanding: ${InterestDiffDays}`);
+    console.log(`Formula: (VAT × 15% ÷ 365) × Days`);
+    console.log(`Calculation: (${vatAmount.toFixed(2)} × 0.15 ÷ 365) × ${InterestDiffDays}`);
+    console.log(`Interest Due: ${interest.toFixed(2)}`);
+    console.log("=== CALCULATION END ===\n");
+
+    return isNegative(interest) ? 0 : interest;
   };
 
   const getVatAmount = (): number => {

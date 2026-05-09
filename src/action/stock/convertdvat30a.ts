@@ -189,6 +189,7 @@ const ConvertDvat30A = async (
             invoice_number: val.invoice_number,
             seller_tin_numberId: val.seller_tin_numberId,
             category_of_entry: CategoryOfEntry.INVOICE,
+
             // total_invoice_number: !val.is_local
             //   ? (parseFloat(val.amount) + parseFloat(val.vatamount)).toFixed(2)
             //   : val.amount ?? "0",
@@ -207,9 +208,19 @@ const ConvertDvat30A = async (
               val.is_against_cform && {
                 purchase_type: PurchaseType.FORMC_CONCESSION,
               }),
+            ...(!val.is_local &&
+              val.is_against_fform && {
+                purchase_type: PurchaseType.STOCK_TRANSFER,
+              }),
+            ...(!val.is_local &&
+              val.is_export && {
+                purchase_type: PurchaseType.OUTSIDE_INDIA,
+              }),
 
             ...(!val.is_local &&
-              !val.is_against_cform && {
+              !val.is_against_cform &&
+              !val.is_against_fform &&
+              !val.is_export && {
                 purchase_type: PurchaseType.TAXABLE_RATE,
               }),
 

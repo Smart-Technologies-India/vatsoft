@@ -843,7 +843,7 @@ export const Anx1Page = (props: Anx1PageProps) => {
   return (
     <>
       <Drawer
-        width={640}
+        size={640}
         placement="right"
         closeIcon={null}
         onClose={() => {
@@ -998,7 +998,7 @@ export const Anx2Page = (props: Anx2PageProps) => {
   return (
     <>
       <Drawer
-        width={640}
+        size={640}
         placement="right"
         closeIcon={null}
         onClose={() => {
@@ -1147,7 +1147,7 @@ export const Anx3Page = (props: Anx3PageProps) => {
   return (
     <>
       <Drawer
-        width={640}
+        size={640}
         placement="right"
         closeIcon={null}
         onClose={() => {

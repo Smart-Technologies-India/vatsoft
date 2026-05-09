@@ -21,165 +21,171 @@ interface BodyData {
 
 export async function POST(req: NextRequest) {
   try {
-    // get the request body
     const body = await req.json();
+    const bodydata: BodyData[] = Array.isArray(body?.Data) ? body.Data : [];
+    const datalength = bodydata.length;
 
-    const datalength = body["Data"].length;
+    if (datalength === 0) {
+      return NextResponse.json(
+        {
+          status: false,
+          error: "No data provided.",
+        },
+        { status: 400 }
+      );
+    }
 
-    const bodydata: BodyData[] = body["Data"];
+    const createUrn = customAlphabet("1234567890abcdefghijklmnopqrstunvxyz", 12);
+    const CHUNK_SIZE = 10;
+    const transactionOptions = { timeout: 30000, maxWait: 10000 } as const;
 
-    const result = await prisma.$transaction(async (prisma) => {
-      for (let data of bodydata) {
-        const isexist = await prisma.tin_number_master.findFirst({
-          where: {
-            tin_number: data["CustomerTINNo"],
-            deletedAt: null,
-            status: "ACTIVE",
-          },
-        });
+    const tinCache = new Map<string, { id: number }>();
+    const dvatCache = new Map<string, { id: number; createdById: number }>();
+    const commodityCache = new Map<number, { id: number; crate_size: number; taxable_at: string }>();
 
-        if (!isexist) {
-          throw new Error(
-            `TIN number not found for ${data["CustomerTINNo"]} for voucher no ${data["VchNum"]}.`
-          );
-        }
+    let createdCount = 0;
 
-        const isdvat = await prisma.dvat04.findFirst({
-          where: {
-            tinNumber: data["SupplierTIN"],
-          },
-        });
+    for (let index = 0; index < bodydata.length; index += CHUNK_SIZE) {
+      const chunk = bodydata.slice(index, index + CHUNK_SIZE);
 
-        if (!isdvat) {
-          throw new Error(
-            `DVAT 04 record not found for ${data["SupplierTIN"]} for voucher no ${data["VchNum"]}.`
-          );
-        }
-
-        for (let items of data["Items"]) {
-          const nanoid = customAlphabet(
-            "1234567890abcdefghijklmnopqrstunvxyz",
-            12
-          );
-
-          const commodity = await prisma.commodity_master.findFirst({
-            where: {
-              id: parseInt(items["MasterID"].toString()),
-              deletedAt: null,
-            },
-          });
-
-          if (!commodity) {
-            throw new Error(
-              `Commodity master not found for ${items["MasterID"]} for voucher no ${data["VchNum"]}. `
-            );
-          }
-          // let commodity;
-
-          // if (items["StockItem"].startsWith("DU_")) {
-          //   commodity = await prisma.commodity_master.findFirst({
-          //     where: {
-          //       du_oidc_code: items["MasterID"].toString(),
-          //       deletedAt: null,
-          //     },
-          //   });
-          //   if (!commodity) {
-          //     throw new Error(
-          //       `Commodity master not found for ${items["MasterID"]}.`
-          //     );
-          //   }
-          // } else if (items["StockItem"].startsWith("SL_")) {
-          //   commodity = await prisma.commodity_master.findFirst({
-          //     where: {
-          //       dn_oidc_code: items["MasterID"].toString(),
-          //       deletedAt: null,
-          //     },
-          //   });
-          //   if (!commodity) {
-          //     throw new Error(
-          //       `Commodity master not found for ${items["MasterID"]}.`
-          //     );
-          //   }
-          // } else {
-          //   commodity = await prisma.commodity_master.findFirst({
-          //     where: {
-          //       oidc_code: items["MasterID"].toString(),
-          //       deletedAt: null,
-          //     },
-          //   });
-          //   if (!commodity) {
-          //     throw new Error(
-          //       `Commodity master not found for ${items["MasterID"]}.`
-          //     );
-          //   }
-          // }
-
-          // if (commodity === null) {
-          //   throw new Error(
-          //     `Commodity master not found for ${items["MasterID"]}.`
-          //   );
-          // }
-
-          // Check if entry already exists
-          const existingEntry = await prisma.tally_sale.findFirst({
-            where: {
-              seller_tin_number: {
-                tin_number: data["CustomerTINNo"],
+      await prisma.$transaction(async (tx) => {
+        for (const data of chunk) {
+          let tin = tinCache.get(data.CustomerTINNo);
+          if (!tin) {
+            const tinResponse = await tx.tin_number_master.findFirst({
+              where: {
+                tin_number: data.CustomerTINNo,
+                deletedAt: null,
+                status: "ACTIVE",
               },
-              invoice_number: data["VchNum"],
-              commodity_masterId: commodity.id,
-              batch_name: items["BatchName"],
-              quantity: items["Qty"] * commodity.crate_size,
-            },
-          });
+              select: { id: true },
+            });
 
-          if (existingEntry) {
-            throw new Error(
-              `Entry already exists for ${data["CustomerTINNo"]} with invoice number ${data["VchNum"]} and batch ${items["BatchName"]}.`
-            );
+            if (!tinResponse) {
+              throw new Error(
+                `TIN number not found for ${data.CustomerTINNo} for voucher no ${data.VchNum}.`
+              );
+            }
+
+            tin = tinResponse;
+            tinCache.set(data.CustomerTINNo, tin);
           }
 
-          const test_amount = items["Rate"] * items["Qty"];
+          let dvat = dvatCache.get(data.SupplierTIN);
+          if (!dvat) {
+            const dvatResponse = await tx.dvat04.findFirst({
+              where: { tinNumber: data.SupplierTIN },
+              select: { id: true, createdById: true },
+            });
 
-          const response = await prisma.tally_sale.create({
-            data: {
-              dvat04Id: isdvat.id,
-              invoice_number: data["VchNum"],
-              invoice_date: new Date(Date.parse(data["VchDt"])),
-              commodity_masterId: commodity.id,
-              seller_tin_numberId: isexist.id,
-              quantity: items["Qty"] * commodity.crate_size,
-              tax_percent: commodity.taxable_at,
-              amount_unit: (items["Rate"] / commodity.crate_size).toFixed(2),
-              amount: (test_amount).toFixed(2),
-              vatamount: (test_amount * 0.2).toFixed(2),
-              batch_name: items["BatchName"],
-              is_local:
-                data["CustomerTINNo"].startsWith("25") ||
-                data["CustomerTINNo"].startsWith("26")
-                  ? true
-                  : false,
-              is_dvat_31:
-                data["CustomerTINNo"].startsWith("25") ||
-                data["CustomerTINNo"].startsWith("26")
-                  ? false
-                  : true,
-              is_accept: false,
-              urn_number: nanoid(),
-              is_against_cform: false,
-              createdById: isdvat.createdById,
-            },
-          });
+            if (!dvatResponse) {
+              throw new Error(
+                `DVAT 04 record not found for ${data.SupplierTIN} for voucher no ${data.VchNum}.`
+              );
+            }
 
-          if (!response) {
-            throw new Error("Failed to create tally sale record.");
+            dvat = dvatResponse;
+            dvatCache.set(data.SupplierTIN, dvat);
+          }
+
+          const invoiceDate = new Date(Date.parse(data.VchDt));
+
+          for (const item of data.Items) {
+            const masterId = parseInt(item.MasterID.toString());
+
+            let commodity = commodityCache.get(masterId);
+            if (!commodity) {
+              const commodityResponse = await tx.commodity_master.findFirst({
+                where: {
+                  id: masterId,
+                  deletedAt: null,
+                },
+                select: {
+                  id: true,
+                  crate_size: true,
+                  taxable_at: true,
+                },
+              });
+
+              if (!commodityResponse) {
+                throw new Error(
+                  `Commodity master not found for ${item.MasterID} for voucher no ${data.VchNum}.`
+                );
+              }
+
+              commodity = {
+                id: commodityResponse.id,
+                crate_size: commodityResponse.crate_size,
+                taxable_at: commodityResponse.taxable_at
+                  ? commodityResponse.taxable_at.toString()
+                  : "0",
+              };
+              commodityCache.set(masterId, commodity);
+            }
+
+            const quantity = item.Qty * commodity.crate_size;
+
+            const existingEntry = await tx.tally_sale.findFirst({
+              where: {
+                seller_tin_number: {
+                  tin_number: data.CustomerTINNo,
+                },
+                invoice_number: data.VchNum,
+                commodity_masterId: commodity.id,
+                batch_name: item.BatchName,
+                quantity,
+              },
+              select: { id: true },
+            });
+
+            if (existingEntry) {
+              throw new Error(
+                `Entry already exists for ${data.CustomerTINNo} with invoice number ${data.VchNum} and batch ${item.BatchName}.`
+              );
+            }
+
+            const testAmount = item.Rate * item.Qty;
+            await tx.tally_sale.create({
+              data: {
+                dvat04Id: dvat.id,
+                invoice_number: data.VchNum,
+                invoice_date: invoiceDate,
+                commodity_masterId: commodity.id,
+                seller_tin_numberId: tin.id,
+                quantity,
+                tax_percent: commodity.taxable_at,
+                amount_unit: (item.Rate / commodity.crate_size).toFixed(2),
+                amount: testAmount.toFixed(2),
+                vatamount: (testAmount * 0.2).toFixed(2),
+                batch_name: item.BatchName,
+                is_local:
+                  data.CustomerTINNo.startsWith("25") ||
+                  data.CustomerTINNo.startsWith("26"),
+                is_dvat_31:
+                  !data.CustomerTINNo.startsWith("25") &&
+                  !data.CustomerTINNo.startsWith("26"),
+                is_accept: false,
+                urn_number: createUrn(),
+                is_against_cform: false,
+                createdById: dvat.createdById,
+              },
+            });
+
+            createdCount += 1;
           }
         }
-      }
-    });
+      }, transactionOptions);
+    }
 
     return NextResponse.json(
-      { status: true, message: "Request processed successfully", data: result },
+      {
+        status: true,
+        message: "Request processed successfully",
+        data: {
+          received: datalength,
+          created: createdCount,
+        },
+      },
       { status: 200 }
     );
   } catch (error: any) {

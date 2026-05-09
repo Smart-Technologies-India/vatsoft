@@ -221,7 +221,7 @@ const FirstStock = () => {
               </div>
 
               <Alert
-                message='Note: Add all products with quantities. Once submitted, changes cannot be made.'
+                title='Note: Add all products with quantities. Once submitted, changes cannot be made.'
                 type="warning"
                 showIcon
               />

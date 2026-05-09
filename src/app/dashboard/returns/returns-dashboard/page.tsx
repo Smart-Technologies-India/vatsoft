@@ -1385,7 +1385,7 @@ const ReturnDashboard = () => {
               </div>
               <div className="mt-3">
                 <Alert
-                  message="To move forward, ensure all 4 forms are either filed or NIL filed."
+                  title="To move forward, ensure all 4 forms are either filed or NIL filed."
                   type="warning"
                   showIcon
                   closable
@@ -1561,7 +1561,7 @@ const ReturnDashboard = () => {
           <span className="text-slate-800 font-semibold">Returns Help</span>
         }
         placement="right"
-        width={380}
+        size={380}
         open={isHelpDrawerOpen}
         onClose={() => setIsHelpDrawerOpen(false)}
       >

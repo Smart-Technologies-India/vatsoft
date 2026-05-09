@@ -831,7 +831,7 @@ export default function HomePage() {
           <span className="text-[#0f2f67] font-semibold">VAT-Smart Chat Help</span>
         }
         placement="right"
-        width={380}
+        size={380}
         open={isHelpDrawerOpen}
         onClose={() => setIsHelpDrawerOpen(false)}
       >

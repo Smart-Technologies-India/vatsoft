@@ -224,7 +224,7 @@ const LiquorCommodityPage = () => {
             </Table>
           ) : (
             <div className="mt-2">
-              <Alert message="No data available" type="error" showIcon />
+              <Alert title="No data available" type="error" showIcon />
             </div>
           )}
         </div>

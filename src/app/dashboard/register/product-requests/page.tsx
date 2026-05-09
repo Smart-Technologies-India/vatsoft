@@ -257,7 +257,7 @@ const ProductRequestsPage = () => {
       <Drawer
         placement="right"
         closeIcon={null}
-        width={500}
+        size={500}
         onClose={() => {
           setDrawerOpen(false);
           setSelectedRequest(null);

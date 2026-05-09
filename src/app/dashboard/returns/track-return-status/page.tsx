@@ -330,7 +330,7 @@ const TrackAppliation = () => {
         <Drawer
           title={<span className="text-xl font-bold text-gray-900">Meaning of Status</span>}
           placement="right"
-          width={720}
+          size={720}
           onClose={() => setDrawerOpen(false)}
           open={drawerOpen}
         >

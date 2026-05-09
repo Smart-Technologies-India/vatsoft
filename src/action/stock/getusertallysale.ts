@@ -11,10 +11,12 @@ import {
   createPaginationResponse,
   PaginationResponse,
 } from "@/models/response";
+import { getCurrentDvatId } from "@/lib/auth";
 
 interface GetUserTallySalePayload {
   take: number;
   skip: number;
+  
 }
 
 export type GroupedTallySale = {
@@ -40,9 +42,18 @@ const GetUserTallySale = async (
   const functionname: string = GetUserTallySale.name;
 
   try {
+    const dvatId = await getCurrentDvatId();
+    if (!dvatId) {
+      return createPaginationResponse({
+        message: "Not authenticated. Please login.",
+        functionname,
+      });
+    }
+
     const tally_sale_response = await prisma.tally_sale.findMany({
       where: {
         status: "ACTIVE",
+        dvat04Id: dvatId,
       },
       include: {
         commodity_master: true,
@@ -99,6 +110,7 @@ const GetUserTallySale = async (
       message: "Tally sale data retrieved successfully",
       functionname,
       data: paginatedArray,
+      allData: groupedArray,
       take: payload.take,
       skip: payload.skip,
       total: totalCount,

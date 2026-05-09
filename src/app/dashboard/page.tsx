@@ -670,7 +670,7 @@ const Page = () => {
                   </span>
                 }
                 placement="right"
-                width={380}
+                size={380}
                 open={isHelpDrawerOpen}
                 onClose={() => setIsHelpDrawerOpen(false)}
               >

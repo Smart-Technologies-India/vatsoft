@@ -508,7 +508,7 @@ const AddSale = () => {
               </div>
 
               <Alert
-                message="Note: Add all sale invoices with products and quantities. Once submitted, changes cannot be made."
+                title="Note: Add all sale invoices with products and quantities. Once submitted, changes cannot be made."
                 type="warning"
                 showIcon
               />
@@ -697,7 +697,7 @@ const AddSale = () => {
       >
         {tabledata.filter((row) => row.error).length > 0 && (
           <Alert
-            message={`${tabledata.filter((row) => row.error).length} error(s) found. Please fix them before uploading.`}
+            title={`${tabledata.filter((row) => row.error).length} error(s) found. Please fix them before uploading.`}
             type="error"
             showIcon
             className="mb-3"

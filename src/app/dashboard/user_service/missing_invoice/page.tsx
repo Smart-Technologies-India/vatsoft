@@ -466,7 +466,7 @@ const MissingInvoicePage = () => {
         placement="right"
         onClose={() => setDrawerOpen(false)}
         open={drawerOpen}
-        width={500}
+        size={500}
       >
         <div className="flex flex-col gap-3">
           <div>

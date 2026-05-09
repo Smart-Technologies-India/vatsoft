@@ -72,7 +72,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   >();
 
   const [lateFees, setLateFees] = useState<number>(0);
-  const [InterestDiffDays, setInterestDiffDays] = useState<number>(0);
   const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
     [],
@@ -298,12 +297,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         monthIndex += 1; // Otherwise, just increment the month
       }
     }
-
-    const idiff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 16),
-      currentDate,
-    );
-    setInterestDiffDays(idiff_days);
 
     const pdiff_days = getDaysBetweenDates(
       new Date(newYear, monthIndex, 29),
@@ -686,67 +679,181 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   };
 
   const getInterest = (): number => {
-    return isNegative(
-      (((parseFloat(getInvoicePercentage("0").decrease) +
-        parseFloat(getInvoicePercentage("1").decrease) +
-        parseFloat(getInvoicePercentage("4").decrease) +
-        parseFloat(getInvoicePercentage("5").decrease) +
-        parseFloat(getInvoicePercentage("6").decrease) +
-        parseFloat(getInvoicePercentage("12.5").decrease) +
-        parseFloat(getInvoicePercentage("12.75").decrease) +
-        parseFloat(getInvoicePercentage("13.5").decrease) +
-        parseFloat(getInvoicePercentage("15").decrease) +
-        parseFloat(getInvoicePercentage("20").decrease) +
-        parseFloat(getSaleOfPercentage("4").decrease) +
-        parseFloat(getSaleOfPercentage("5").decrease) +
-        parseFloat(getSaleOfPercentage("12.5").decrease) +
-        parseFloat(get4_6().decrease) +
-        parseFloat(get4_7().decrease) -
-        parseFloat(get4_9().decrease) -
-        (parseFloat(get5_1().decrease) +
-          parseFloat(get5_2().decrease) +
-          (parseFloat(getCreditNote().decrease) -
-            parseFloat(getDebitNote().decrease) -
-            parseFloat(getGoodsReturnsNote().decrease) -
-            parseFloat(lastmonthdue)))) *
-        0.15) /
-        365) *
-        InterestDiffDays,
-    )
-      ? 0
-      : (((parseFloat(getInvoicePercentage("0").decrease) +
-          parseFloat(getInvoicePercentage("1").decrease) +
-          parseFloat(getInvoicePercentage("4").decrease) +
-          parseFloat(getInvoicePercentage("5").decrease) +
-          parseFloat(getInvoicePercentage("6").decrease) +
-          parseFloat(getInvoicePercentage("12.5").decrease) +
-          parseFloat(getInvoicePercentage("12.75").decrease) +
-          parseFloat(getInvoicePercentage("13.5").decrease) +
-          parseFloat(getInvoicePercentage("15").decrease) +
-          parseFloat(getInvoicePercentage("20").decrease) +
-          parseFloat(getSaleOfPercentage("4").decrease) +
-          parseFloat(getSaleOfPercentage("5").decrease) +
-          parseFloat(getSaleOfPercentage("12.5").decrease) +
-          parseFloat(get4_6().decrease) +
-          parseFloat(get4_7().decrease) -
-          parseFloat(get4_9().decrease) -
-          (parseFloat(get5_1().decrease) +
-            parseFloat(get5_2().decrease) +
-            (parseFloat(getCreditNote().decrease) -
-              parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease) -
-              parseFloat(lastmonthdue)))) *
-          0.15) /
-          365) *
-          InterestDiffDays;
+    if (!return01?.month) return 0;
+
+    const dueDate = getInterestDueDate(
+      return01.year,
+      return01.month,
+      return01.dvat04?.frequencyFilings === "QUARTERLY",
+    );
+
+    const interest = calculateInterest(getR6_1(), dueDate, paidChallans, 15);
+    return isNegative(interest) ? 0 : interest;
   };
 
-  const getfunction = (
-    totalamount: string,
-    challan: challan[],
-    due_date: Date,
-  ) => {
-    const currentDate = new Date();
+  const calculateInterest = (
+    totalDue: number,
+    dueDate: Date,
+    payments: challan[],
+    annualRate = 15,
+    asOfDate: Date = new Date(),
+  ): number => {
+    if (!Number.isFinite(totalDue) || totalDue <= 0) return 0;
+
+    console.log("=== INTEREST CALCULATION START ===");
+    console.log(`Total Due (Principal): ${totalDue.toFixed(2)}`);
+    console.log(`Due Date: ${dueDate.toLocaleDateString()}`);
+    console.log(`Annual Rate: ${annualRate}%`);
+    console.log(`Calculation As Of: ${asOfDate.toLocaleDateString()}`);
+    console.log(`Number of Payments Received: ${payments.length}`);
+
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const normalizeDate = (dateInput: Date | string): Date => {
+      const date = new Date(dateInput);
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    };
+
+    const getDaysDiff = (fromDate: Date, toDate: Date): number => {
+      const startUtc = Date.UTC(
+        fromDate.getFullYear(),
+        fromDate.getMonth(),
+        fromDate.getDate(),
+      );
+      const endUtc = Date.UTC(
+        toDate.getFullYear(),
+        toDate.getMonth(),
+        toDate.getDate(),
+      );
+      const diff = Math.floor((endUtc - startUtc) / dayMs);
+      return Math.max(0, diff);
+    };
+
+    const sortedPayments = payments
+      .map((payment) => {
+        const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
+        const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
+
+        if (!paymentDateRaw || !Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+          return null;
+        }
+
+        return {
+          amount: paymentAmount,
+          date: normalizeDate(paymentDateRaw),
+        };
+      })
+      .filter((payment): payment is { amount: number; date: Date } => payment !== null)
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    const effectiveAsOfDate = normalizeDate(asOfDate);
+    let outstanding = totalDue;
+    let anchorDate = normalizeDate(dueDate);
+    let interest = 0;
+
+    console.log("\n--- PROCESSING PAYMENTS ---");
+    for (let i = 0; i < sortedPayments.length; i++) {
+      const payment = sortedPayments[i];
+      if (payment.date > effectiveAsOfDate) {
+        console.log(`Payment ${i + 1}: Skipped (date ${payment.date.toLocaleDateString()} is after calculation date)`);
+        break;
+      }
+
+      const outstandingBefore = outstanding;
+      
+      if (payment.date > anchorDate && outstanding > 0) {
+        const days = getDaysDiff(anchorDate, payment.date);
+        const intervalInterest = (outstanding * annualRate * days) / (100 * 365);
+        interest += intervalInterest;
+        console.log(`  Payment ${i + 1}: ${payment.date.toLocaleDateString()}`);
+        console.log(`    Outstanding Amount: ${outstandingBefore.toFixed(2)}`);
+        console.log(`    Days Outstanding: ${days}`);
+        console.log(`    Interest Accrued: ${intervalInterest.toFixed(2)} (${outstandingBefore.toFixed(2)} × ${annualRate}% × ${days}/365)`);
+      } else {
+        console.log(`  Payment ${i + 1}: ${payment.date.toLocaleDateString()}`);
+        console.log(`    Outstanding Amount: ${outstandingBefore.toFixed(2)}`);
+        console.log(`    Days Outstanding: 0 (payment on or before due date)`);
+        console.log(`    Interest Accrued: 0`);
+      }
+
+      outstanding = Math.max(0, outstanding - payment.amount);
+      console.log(`    Payment Amount: ${payment.amount.toFixed(2)}`);
+      console.log(`    Outstanding After: ${outstanding.toFixed(2)}`);
+      
+      anchorDate = payment.date;
+
+      if (outstanding <= 0) {
+        console.log(`    Note: Full payment completed`);
+        break;
+      }
+    }
+
+    console.log("\n--- FINAL PERIOD (After Last Payment to Today) ---");
+    if (outstanding > 0 && effectiveAsOfDate > anchorDate) {
+      const days = getDaysDiff(anchorDate, effectiveAsOfDate);
+      const finalInterest = (outstanding * annualRate * days) / (100 * 365);
+      interest += finalInterest;
+      console.log(`Outstanding Amount: ${outstanding.toFixed(2)}`);
+      console.log(`Period: ${anchorDate.toLocaleDateString()} to ${effectiveAsOfDate.toLocaleDateString()}`);
+      console.log(`Days Outstanding: ${days}`);
+      console.log(`Interest Accrued: ${finalInterest.toFixed(2)} (${outstanding.toFixed(2)} × ${annualRate}% × ${days}/365)`);
+    } else if (outstanding <= 0) {
+      console.log(`No outstanding balance remaining`);
+    } else {
+      console.log(`No days remaining to calculate`);
+    }
+
+    console.log("\n=== INTEREST CALCULATION RESULT ===");
+    console.log(`Total Interest Due: ${interest.toFixed(2)}`);
+    console.log("=== CALCULATION END ===\n");
+
+    return interest;
+  };
+
+  const getInterestDueDate = (
+    year: string,
+    month: string,
+    isComp: boolean = false,
+  ): Date => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    let monthIndex = monthNames.indexOf(month);
+    let computedYear = parseInt(year);
+
+    if (isComp) {
+      if (["January", "February", "March"].includes(month)) {
+        monthIndex = 3;
+      } else if (["April", "May", "June"].includes(month)) {
+        monthIndex = 6;
+      } else if (["July", "August", "September"].includes(month)) {
+        monthIndex = 9;
+      } else {
+        monthIndex = 0;
+        computedYear += 1;
+      }
+    } else {
+      if (monthIndex === 11) {
+        computedYear += 1;
+        monthIndex = 0;
+      } else {
+        monthIndex += 1;
+      }
+    }
+
+    return new Date(computedYear, monthIndex, 15);
   };
 
   const getVatAmount = (): number => {
@@ -787,9 +894,22 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     return parseFloat(getInvoicePercentage("1").decrease) - challanAmount;
   };
 
-  const getR6_2acomp = (): number =>
-    ((parseFloat(getInvoicePercentage("1").decrease) * 0.15) / 365) *
-    InterestDiffDays;
+  const getR6_2acomp = (): number => {
+    if (!return01?.month) return 0;
+
+    const dueDate = getInterestDueDate(
+      return01.year,
+      return01.month,
+      return01.dvat04?.frequencyFilings === "QUARTERLY",
+    );
+
+    return calculateInterest(
+      parseFloat(getInvoicePercentage("1").decrease),
+      dueDate,
+      paidChallans,
+      15,
+    );
+  };
 
   const getR6_1 = (): number =>
     parseFloat(getInvoicePercentage("0").decrease) +

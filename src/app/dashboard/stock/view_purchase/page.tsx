@@ -1563,7 +1563,7 @@ const DocumentWiseDetails = () => {
         )}
         {tabledata.some((val) => val.error) && (
           <Alert
-            message={`${tabledata.filter((val) => val.error).length} row(s) have validation errors.`}
+            title={`${tabledata.filter((val) => val.error).length} row(s) have validation errors.`}
             type="error"
             showIcon
             className="mt-4 rounded-lg"
@@ -2043,7 +2043,7 @@ const DocumentWiseDetails = () => {
             <span className="text-slate-800 font-semibold">Purchase Help</span>
           }
           placement="right"
-          width={380}
+          size={380}
           open={isHelpDrawerOpen}
           onClose={() => setIsHelpDrawerOpen(false)}
         >

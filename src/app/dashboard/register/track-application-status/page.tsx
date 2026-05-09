@@ -113,7 +113,7 @@ const TrackAppliation = () => {
                   placement="right"
                   onClose={() => setDrawerOpen(false)}
                   open={drawerOpen}
-                  width={720}
+                  size={720}
                 >
                   <Table className="border">
                     <TableBody>

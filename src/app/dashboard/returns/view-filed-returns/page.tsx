@@ -187,7 +187,7 @@ const TrackAppliation = () => {
             </div>
           }
           placement="right"
-          width={720}
+          size={720}
           onClose={() => setDrawerOpen(false)}
           open={drawerOpen}
         >

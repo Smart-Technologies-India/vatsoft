@@ -358,7 +358,7 @@ const AdminMissingInvoicePage = () => {
         placement="right"
         onClose={() => setDrawerOpen(false)}
         open={drawerOpen}
-        width={480}
+        size={480}
       >
         {selectedRow && (
           <div className="flex flex-col gap-4">

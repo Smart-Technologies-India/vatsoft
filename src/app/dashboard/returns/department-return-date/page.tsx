@@ -467,7 +467,7 @@ const DepartmentReturnDatePage = () => {
         title="Add Return Due Date"
         placement="right"
         open={isAddOpen}
-        width={420}
+        size={420}
         onClose={() => setIsAddOpen(false)}
       >
         <div className="space-y-3">
@@ -539,7 +539,7 @@ const DepartmentReturnDatePage = () => {
         title="Edit Return Due Date"
         placement="right"
         open={isEditOpen}
-        width={420}
+        size={420}
         onClose={() => setIsEditOpen(false)}
       >
         <div className="space-y-3">

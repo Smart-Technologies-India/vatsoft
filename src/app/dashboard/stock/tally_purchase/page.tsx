@@ -18,7 +18,7 @@ import { formateDate } from "@/utils/methods";
 import { dvat04 } from "@prisma/client";
 import { Button, Modal, Pagination, Radio, RadioChangeEvent } from "antd";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 
@@ -31,22 +31,33 @@ const TallyPurchasePage = () => {
     skip: number;
     total: number;
   }>({ take: 10, skip: 0, total: 0 });
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [dvatdata, setDvatData] = useState<dvat04>();
-  const [tallyPurchase, setTallyPurchase] = useState<Array<GroupedTallyPurchase>>([]);
+  const [allTallyPurchase, setAllTallyPurchase] = useState<
+    Array<GroupedTallyPurchase>
+  >([]);
+  const [searchText, setSearchText] = useState("");
   const [selectedGroup, setSelectedGroup] = useState<GroupedTallyPurchase | null>(
     null,
   );
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [quantityCount, setQuantityCount] = useState("pcs");
   const [userid, setUserid] = useState<number>(0);
-  const [acceptingGroup, setAcceptingGroup] =
-    useState<GroupedTallyPurchase | null>(null);
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
     setQuantityCount(value);
+  };
+
+  const formatIndianCurrency = (value: number | string): string => {
+    const numericValue = typeof value === "number" ? value : parseFloat(value);
+    const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
+    return safeValue.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
   const showCrates = (quantity: number, crate_size: number): string => {
@@ -63,14 +74,67 @@ const TallyPurchasePage = () => {
 
     const response = await GetUserTallyPurchase({ skip, take });
     if (response.status && response.data?.result) {
-      setTallyPurchase(response.data.result);
+      setAllTallyPurchase(response.data.allData ?? response.data.result);
       setPagination({
         skip: response.data.skip ?? 0,
         take: response.data.take ?? 10,
         total: response.data.total ?? 0,
       });
+      setCurrentPage(1);
     }
   };
+
+  const filteredTallyPurchase = useMemo(() => {
+    const query = searchText.trim().toLowerCase();
+    if (!query) return allTallyPurchase;
+
+    return allTallyPurchase.filter((group) => {
+      const invoiceNo = group.invoice_number.toLowerCase();
+      const dealer = (group.seller_tin_number.name_of_dealer ?? "").toLowerCase();
+      const tin = (group.seller_tin_number.tin_number ?? "").toLowerCase();
+      const invoiceDate = formateDate(group.invoice_date).toLowerCase();
+      return (
+        invoiceNo.includes(query) ||
+        dealer.includes(query) ||
+        tin.includes(query) ||
+        invoiceDate.includes(query)
+      );
+    });
+  }, [allTallyPurchase, searchText]);
+
+  const paginatedTallyPurchase = useMemo(() => {
+    const start = (currentPage - 1) * pagination.take;
+    return filteredTallyPurchase.slice(start, start + pagination.take);
+  }, [filteredTallyPurchase, currentPage, pagination.take]);
+
+  const summary = useMemo(() => {
+    const totals = filteredTallyPurchase.reduce(
+      (acc, val) => {
+        acc.invoiceValue += val.totalInvoiceValue;
+        acc.totalTax += val.totalVatAmount;
+        acc.taxableValue += val.totalTaxableValue;
+        return acc;
+      },
+      { invoiceValue: 0, totalTax: 0, taxableValue: 0 },
+    );
+
+    return {
+      totalInvoices: filteredTallyPurchase.length,
+      invoiceValue: totals.invoiceValue,
+      totalTax: totals.totalTax,
+      taxableValue: totals.taxableValue,
+    };
+  }, [filteredTallyPurchase]);
+
+  const pendingRecords = useMemo(
+    () =>
+      filteredTallyPurchase.flatMap((group) =>
+        group.records.filter((record) => !record.is_accept),
+      ),
+    [filteredTallyPurchase],
+  );
+
+  const pendingRecordCount = pendingRecords.length;
 
   useEffect(() => {
     const load = async () => {
@@ -97,9 +161,14 @@ const TallyPurchasePage = () => {
   }, []);
 
   const handleAccept = async () => {
-    if (!acceptingGroup || !dvatdata) return;
+    if (!dvatdata) return;
+    if (pendingRecordCount === 0) {
+      setIsAcceptModalOpen(false);
+      return toast.info("No pending records to accept.");
+    }
+
     setIsAccepting(true);
-    const ids = acceptingGroup.records.map((r) => r.id);
+    const ids = pendingRecords.map((record) => record.id);
     const response = await AcceptTallyPurchase({
       tallyIds: ids,
       dvatid: dvatdata.id,
@@ -107,27 +176,30 @@ const TallyPurchasePage = () => {
     });
     setIsAccepting(false);
     setIsAcceptModalOpen(false);
-    setAcceptingGroup(null);
     if (response.status) {
       toast.success(response.message);
-      await init(dvatdata.id, pagination.skip, pagination.take);
+      await init(dvatdata.id, 0, pagination.take);
     } else {
       toast.error(response.message);
     }
   };
 
-  const onChangePageCount = async (page: number, pagesize: number) => {
-    if (!dvatdata) return;
-    await init(dvatdata.id, pagesize * (page - 1), pagesize);
+  const onChangePageCount = (page: number, pagesize: number) => {
+    setCurrentPage(page);
+    setPagination((prev) => ({
+      ...prev,
+      take: pagesize,
+      skip: pagesize * (page - 1),
+    }));
   };
 
   const downloadReport = () => {
-    if (tallyPurchase.length === 0) {
+    if (filteredTallyPurchase.length === 0) {
       toast.info("No tally purchase records found to export.");
       return;
     }
 
-    const rows = tallyPurchase.map((group, index) => ({
+    const rows = filteredTallyPurchase.map((group, index) => ({
       "S. No.": index + 1,
       Count: group.count,
       "Invoice No.": group.invoice_number,
@@ -161,14 +233,13 @@ const TallyPurchasePage = () => {
         onOk={handleAccept}
         onCancel={() => {
           setIsAcceptModalOpen(false);
-          setAcceptingGroup(null);
         }}
         confirmLoading={isAccepting}
-        okText="Yes, Accept"
+        okText="Yes, Accept All"
         cancelText="Cancel"
       >
         <p className="text-sm text-slate-600 py-2">
-          This will convert <strong>{acceptingGroup?.count ?? 0} record(s)</strong> from
+          This will convert <strong>{pendingRecordCount} record(s)</strong> from
           tally purchase to daily purchase. This action cannot be undone.
         </p>
       </Modal>
@@ -236,13 +307,20 @@ const TallyPurchasePage = () => {
                           : showCrates(record.quantity, record.commodity_master.crate_size)}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        ₹{(parseFloat(record.amount) + parseFloat(record.vatamount)).toFixed(2)}
+                        ₹
+                        {formatIndianCurrency(
+                          parseFloat(record.amount) + parseFloat(record.vatamount),
+                        )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.tax_percent}%
                       </TableCell>
-                      <TableCell className="p-2 border text-center text-xs">₹{record.vatamount}</TableCell>
-                      <TableCell className="p-2 border text-center text-xs">₹{record.amount}</TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        ₹{formatIndianCurrency(record.vatamount)}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        ₹{formatIndianCurrency(record.amount)}
+                      </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.urn_number ?? "-"}
                       </TableCell>
@@ -255,15 +333,15 @@ const TallyPurchasePage = () => {
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <p className="text-xs text-gray-600">Total Taxable Value</p>
-                  <p className="font-semibold">₹{selectedGroup.totalTaxableValue.toFixed(2)}</p>
+                  <p className="font-semibold">₹{formatIndianCurrency(selectedGroup.totalTaxableValue)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Total VAT Amount</p>
-                  <p className="font-semibold">₹{selectedGroup.totalVatAmount.toFixed(2)}</p>
+                  <p className="font-semibold">₹{formatIndianCurrency(selectedGroup.totalVatAmount)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Total Invoice Value</p>
-                  <p className="font-semibold">₹{selectedGroup.totalInvoiceValue.toFixed(2)}</p>
+                  <p className="font-semibold">₹{formatIndianCurrency(selectedGroup.totalInvoiceValue)}</p>
                 </div>
               </div>
             </div>
@@ -280,6 +358,15 @@ const TallyPurchasePage = () => {
               </div>
               <div className="grow" />
               <div className="flex flex-wrap gap-2 items-center">
+                <input
+                  value={searchText}
+                  onChange={(e) => {
+                    setSearchText(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Search invoice no, trade name, TIN or date"
+                  className="h-8 w-72 max-w-full rounded border border-gray-300 px-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
                 {dvatdata?.commodity !== "FUEL" && (
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-600">View:</span>
@@ -297,6 +384,14 @@ const TallyPurchasePage = () => {
                 <Button size="small" type="default" onClick={downloadReport}>
                   Download Report
                 </Button>
+                <Button
+                  size="small"
+                  type="primary"
+                  disabled={pendingRecordCount === 0}
+                  onClick={() => setIsAcceptModalOpen(true)}
+                >
+                  Accept All
+                </Button>
               </div>
             </div>
           </div>
@@ -304,29 +399,29 @@ const TallyPurchasePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
-              <p className="text-lg font-medium text-gray-900">{tallyPurchase.length}</p>
+              <p className="text-lg font-medium text-gray-900">{summary.totalInvoices}</p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Invoice Value</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹{tallyPurchase.reduce((acc, val) => acc + val.totalInvoiceValue, 0).toFixed(2)}
+                ₹{formatIndianCurrency(summary.invoiceValue)}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Tax</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹{tallyPurchase.reduce((acc, val) => acc + val.totalVatAmount, 0).toFixed(2)}
+                ₹{formatIndianCurrency(summary.totalTax)}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Taxable Value</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹{tallyPurchase.reduce((acc, val) => acc + val.totalTaxableValue, 0).toFixed(2)}
+                ₹{formatIndianCurrency(summary.taxableValue)}
               </p>
             </div>
           </div>
 
-          {tallyPurchase.length > 0 ? (
+          {filteredTallyPurchase.length > 0 ? (
             <div className="bg-white rounded shadow-sm border p-3">
               <div className="overflow-x-auto">
                 <Table>
@@ -345,7 +440,7 @@ const TallyPurchasePage = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tallyPurchase.map((group: GroupedTallyPurchase, index: number) => (
+                    {paginatedTallyPurchase.map((group: GroupedTallyPurchase, index: number) => (
                       <TableRow key={index} className="border-b hover:bg-gray-50">
                         <TableCell className="p-2 text-center text-xs">
                           {group.count > 1 ? (
@@ -370,9 +465,9 @@ const TallyPurchasePage = () => {
                         <TableCell className="p-2 text-center text-xs">
                           {group.seller_tin_number.tin_number}
                         </TableCell>
-                        <TableCell className="p-2 text-center text-xs">₹{group.totalInvoiceValue.toFixed(2)}</TableCell>
-                        <TableCell className="p-2 text-center text-xs">₹{group.totalVatAmount.toFixed(2)}</TableCell>
-                        <TableCell className="p-2 text-center text-xs">₹{group.totalTaxableValue.toFixed(2)}</TableCell>
+                        <TableCell className="p-2 text-center text-xs">₹{formatIndianCurrency(group.totalInvoiceValue)}</TableCell>
+                        <TableCell className="p-2 text-center text-xs">₹{formatIndianCurrency(group.totalVatAmount)}</TableCell>
+                        <TableCell className="p-2 text-center text-xs">₹{formatIndianCurrency(group.totalTaxableValue)}</TableCell>
                         <TableCell className="p-2 text-center text-xs">
                           {group.records.every((r) => r.is_accept) ? (
                             <span className="inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
@@ -395,17 +490,6 @@ const TallyPurchasePage = () => {
                             >
                               View
                             </button>
-                            {!group.records.every((r) => r.is_accept) && (
-                              <button
-                                onClick={() => {
-                                  setAcceptingGroup(group);
-                                  setIsAcceptModalOpen(true);
-                                }}
-                                className="text-sm bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded"
-                              >
-                                Accept
-                              </button>
-                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -418,10 +502,11 @@ const TallyPurchasePage = () => {
                 <div className="lg:hidden">
                   <Pagination
                     align="center"
-                    defaultCurrent={1}
+                    current={currentPage}
                     onChange={onChangePageCount}
                     showSizeChanger
-                    total={pagination.total}
+                    pageSize={pagination.take}
+                    total={filteredTallyPurchase.length}
                     showTotal={(total: number) => `Total ${total} items`}
                   />
                 </div>
@@ -429,11 +514,12 @@ const TallyPurchasePage = () => {
                   <Pagination
                     showQuickJumper
                     align="center"
-                    defaultCurrent={1}
+                    current={currentPage}
                     onChange={onChangePageCount}
                     showSizeChanger
+                    pageSize={pagination.take}
                     pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                    total={pagination.total}
+                    total={filteredTallyPurchase.length}
                     responsive
                     showTotal={(total: number, range: number[]) =>
                       `${range[0]}-${range[1]} of ${total} items`

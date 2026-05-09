@@ -374,7 +374,7 @@ const NewDealers = () => {
 
           {dvatData.length == 0 ? (
             <div className="mt-2">
-              <Alert message="No New Dealers Found" type="info" showIcon />
+              <Alert title="No New Dealers Found" type="info" showIcon />
             </div>
           ) : (
             <>

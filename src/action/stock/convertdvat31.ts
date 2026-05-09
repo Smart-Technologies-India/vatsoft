@@ -188,7 +188,9 @@ const ConvertDvat31 = async (
             invoice_number: val.invoice_number,
             seller_tin_numberId: val.seller_tin_numberId,
             category_of_entry: CategoryOfEntry.INVOICE,
-            total_invoice_number: (parseFloat(val.amount) + parseFloat(val.vatamount)).toFixed(2),
+            total_invoice_number: (
+              parseFloat(val.amount) + parseFloat(val.vatamount)
+            ).toFixed(2),
             commodity_masterId: val.commodity_masterId,
             ...(val.is_local && {
               sale_of: SaleOf.GOODS_TAXABLE,
@@ -197,7 +199,11 @@ const ConvertDvat31 = async (
             ...(!val.is_local && {
               sale_of_interstate: val.is_against_cform
                 ? SaleOfInterstate.FORMC
-                : SaleOfInterstate.TAXABLE_SALE,
+                : val.is_against_fform
+                  ? SaleOfInterstate.FORMF
+                  : val.is_export
+                    ? SaleOfInterstate.EXPORT_OUTOF_INDIA
+                    : SaleOfInterstate.TAXABLE_SALE,
               place_of_supply: parseInt(
                 val.seller_tin_number.tin_number.substring(0, 2),
               ),

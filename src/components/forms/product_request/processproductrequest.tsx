@@ -380,7 +380,7 @@ const ProcessProductRequestForm = (
     <Drawer
       title="Existing Products"
       placement="right"
-      width={800}
+      size={800}
       onClose={() => setIsSearchDrawerOpen(false)}
       open={isSearchDrawerOpen}
     >

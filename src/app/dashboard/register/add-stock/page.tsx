@@ -209,7 +209,7 @@ const AddStock = () => {
           </div>
           <div className="h-4"></div>
           <Alert
-            message=' Note: Ensure all stock entries are complete before clicking
+            title=' Note: Ensure all stock entries are complete before clicking
               "Submit." Once submitted, you will not be able to add or
               remove any products.'
             type="warning"
@@ -228,7 +228,7 @@ const AddStock = () => {
             <>
               <div className="mt-4"></div>
               <Alert
-                message="Kindly submit DVAT registration before adding stock."
+                title="Kindly submit DVAT registration before adding stock."
                 type="error"
                 showIcon
               />

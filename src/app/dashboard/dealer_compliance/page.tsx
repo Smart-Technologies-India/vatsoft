@@ -310,7 +310,7 @@ const TrackAppliation = () => {
         placement="right"
         onClose={() => setDrawerOpen(false)}
         open={drawerOpen}
-        width={720}
+        size={720}
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600 mb-4">

@@ -515,7 +515,7 @@ const CommodityMaster = () => {
         </div>
         {tabledata.some((val) => val.errorname) && (
           <Alert
-            message={tabledata.find((val) => val.errorname)?.errorname}
+            title={tabledata.find((val) => val.errorname)?.errorname}
             type="error"
             showIcon
             className="mt-4 rounded-lg"

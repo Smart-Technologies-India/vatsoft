@@ -4,14 +4,26 @@ interface DeleteAnx1Payload {
 }
 
 import { errorToString } from "@/utils/methods";
-import { ApiResponseType } from "@/models/response";
+import { ApiResponseType, createResponse } from "@/models/response";
 import { annexure1 } from "@prisma/client";
 import prisma from "../../../prisma/database";
+import { getCurrentDvatId, getCurrentUserId } from "@/lib/auth";
 
 const DeleteAnx1 = async (
-  payload: DeleteAnx1Payload
+  payload: DeleteAnx1Payload,
 ): Promise<ApiResponseType<annexure1 | null>> => {
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    const functionname = DeleteAnx1.name;
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "DeleteAnx1",
+      };
+    }
     const anx1response = await prisma.annexure1.delete({
       where: {
         id: parseInt(payload.id.toString() ?? "0"),

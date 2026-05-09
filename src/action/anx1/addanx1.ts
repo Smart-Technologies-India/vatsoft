@@ -4,6 +4,7 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { Gender, TitleParticulasOfperson, annexure1 } from "@prisma/client";
+import { getCurrentDvatId, getCurrentUserId } from "@/lib/auth";
 
 interface Anx1CreatePayload {
   dvatId: number;
@@ -35,11 +36,21 @@ const Anx1Create = async (
   const functionname: string = Anx1Create.name;
 
   try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+
+    if (!currentUserId || !currentDvatId) {
+      return createResponse({
+        message: "Not authenticated. Please login.",
+        functionname,
+      });
+    }
+
     const annexure1response = await prisma.annexure1.create({
       data: {
         dvatId: payload.dvatId,
-        createdById: payload.createdById,
-        updatedById: payload.createdById,
+        createdById: currentUserId,
+        updatedById: currentUserId,
         titleParticulasOfperson: payload.titleParticulasOfperson,
         nameOfPerson: payload.nameOfPerson,
         dateOfBirth: payload.dateOfBirth,

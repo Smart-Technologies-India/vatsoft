@@ -803,7 +803,7 @@ const DocumentWiseDetails = () => {
 
           {dailyPurchase.some((group) => group.hasPendingAcceptable) && (
             <Alert
-              message="Kindly accept pending purchase invoices."
+              title="Kindly accept pending purchase invoices."
               type="warning"
               className="mb-3"
               showIcon

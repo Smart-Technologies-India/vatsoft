@@ -1576,8 +1576,21 @@ const ReturnTable = (props: ReturnTableProps) => {
       0.15) /
       365) *
     InterestDiffDays;
-  const getR6_2acomp = (): number =>
-    ((parseFloat(getInvoicePercentage("1").decrease) * 0.15) / 365) * InterestDiffDays;
+  const getR6_2acomp = (): number => {
+    const salesAmount = parseFloat(getInvoicePercentage("1").decrease);
+    const interest = (salesAmount * 0.15 / 365) * InterestDiffDays;
+    
+    console.log("=== COMPOSITION INTEREST CALCULATION (PREVIEW) ===");
+    console.log(`Sales Amount (1% VAT): ${salesAmount.toFixed(2)}`);
+    console.log(`Annual Rate: 15%`);
+    console.log(`Days Outstanding: ${InterestDiffDays}`);
+    console.log(`Formula: (Sales × 15% ÷ 365) × Days`);
+    console.log(`Calculation: (${salesAmount.toFixed(2)} × 0.15 ÷ 365) × ${InterestDiffDays}`);
+    console.log(`Interest Due: ${interest.toFixed(2)}`);
+    console.log("=== CALCULATION END ===\n");
+    
+    return interest;
+  };
 
   const getR7 = (): number =>
     getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a());
