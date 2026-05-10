@@ -41,7 +41,7 @@ type EditDailyPurchaseProviderProps = {
 
 type PurchaseTaxType = "NONE" | "CFORM" | "FFORM" | "EXPORT";
 export const EditDailyPurchaseMasterProvider = (
-  props: EditDailyPurchaseProviderProps
+  props: EditDailyPurchaseProviderProps,
 ) => {
   const methods = useForm<DailyPurchaseMasterForm>({
     resolver: valibotResolver(DailyPurchaseMasterSchema),
@@ -75,7 +75,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
   const [davtdata, setDvatdata] = useState<dvat04 | null>(null);
 
   const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
-    []
+    [],
   );
   const [purchaseTaxType, setPurchaseTaxType] =
     useState<PurchaseTaxType>("NONE");
@@ -90,9 +90,9 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
 
   useEffect(() => {
     reset({
-      amount_unit: (props.data.quantity * Number(props.data.amount_unit)).toFixed(
-        2
-      ),
+      amount_unit: (
+        Number(props.data.amount) + Number(props.data.vatamount)
+      ).toFixed(2),
       description_of_goods: props.data.commodity_master.id.toString(),
       invoice_date: props.data.invoice_date.toISOString(),
       invoice_number: props.data.invoice_number,
@@ -121,13 +121,13 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
         if (commodity_resposen.status && commodity_resposen.data) {
           if (response.data.commodity == "OIDC") {
             const filterdata = commodity_resposen.data.filter(
-              (val: commodity_master) => val.product_type == "LIQUOR"
+              (val: commodity_master) => val.product_type == "LIQUOR",
             );
             setCommodityMaster(filterdata);
           } else {
             const filterdata = commodity_resposen.data.filter(
               (val: commodity_master) =>
-                val.product_type == response.data!.commodity
+                val.product_type == response.data!.commodity,
             );
             setCommodityMaster(filterdata);
           }
@@ -223,7 +223,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
 
     const calculatedVatAmount = totalInvoiceValue - temp_amount;
     setVatAmount(
-      isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
+      isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2),
     );
   }, [quantity, amount_unit, commoditymaster, purchaseTaxType]);
 
@@ -242,7 +242,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
     const amountPerUnit = totalInvoiceValue / quantityNum;
 
     const date = new Date(
-      new Date(data.invoice_date).toISOString().split("T")[0]
+      new Date(data.invoice_date).toISOString().split("T")[0],
     );
     date.setDate(date.getDate() + 1);
 
@@ -346,7 +346,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
                     }
                     size="middle"
                     options={[
-                      { value: "NONE", label: "Not Applicable (Normal Tax)" },
+                      { value: "NONE", label: "Regular (Normal Tax)" },
                       { value: "CFORM", label: "Against C Form (2%)" },
                       { value: "FFORM", label: "Against F Form (0%)" },
                       { value: "EXPORT", label: "Export (0%)" },
@@ -389,7 +389,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
                 (val: commodity_master, index: number) => ({
                   value: val.id.toString(),
                   label: val.product_name,
-                })
+                }),
               )}
             />
           </div>

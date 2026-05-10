@@ -56,13 +56,13 @@ const CreateDailyPurchase = async (
         },
       });
 
-      if (isdata) {
-        if (isdata.invoice_date.getMonth() != payload.invoice_date.getMonth()) {
-          throw new Error(
-            "Kindly convert pending invoice from daily sale to DVAT 30"
-          );
-        }
-      }
+      // if (isdata) {
+      //   if (isdata.invoice_date.getMonth() != payload.invoice_date.getMonth()) {
+      //     throw new Error(
+      //       "Kindly convert pending invoice from daily sale to DVAT 30"
+      //     );
+      //   }
+      // }
 
       const seller_tin_number = await prisma.tin_number_master.findFirst({
         where: {

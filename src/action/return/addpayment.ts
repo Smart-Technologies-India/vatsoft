@@ -149,30 +149,61 @@ const AddPayment = async (
         throw new Error("Something went wrong! Unable to update");
       }
 
-      const recordsToUpdate = await prisma.return_filing.findMany({
-        where: {
-          filing_status: false,
-          dvatid: updateresponse.dvat04Id,
-          filing_date: null,
-          year: updateresponse.year,
-          month: { in: monthsToUpdate },
-        },
-      });
+      const isComp = updateresponse.dvat04.compositionScheme ?? false;
+
+      const getFilingDueDate = (month: string, year: string): Date => {
+        const monthNames = [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December",
+        ];
+        const monthIndex = monthNames.indexOf(month);
+        const yearNum = parseInt(year, 10);
+
+        if (isComp) {
+          if (["January", "February", "March"].includes(month))
+            return new Date(yearNum, 3, 28); // April 28
+          if (["April", "May", "June"].includes(month))
+            return new Date(yearNum, 6, 28); // July 28
+          if (["July", "August", "September"].includes(month))
+            return new Date(yearNum, 9, 28); // October 28
+          return new Date(yearNum + 1, 0, 28); // January 28 next year
+        }
+
+        const nextMonth = monthIndex === 11 ? 0 : monthIndex + 1;
+        const nextYear = monthIndex === 11 ? yearNum + 1 : yearNum;
+        return new Date(nextYear, nextMonth, 28);
+      };
 
       await Promise.all(
-        recordsToUpdate.map((record) =>
-          prisma.return_filing.update({
-            where: { id: record.id },
-            data: {
+        monthsToUpdate.map((month) => {
+          const dueDate = getFilingDueDate(month, updateresponse.year);
+          const returnStatus = dueDate >= filingDate ? "FILED" : "LATEFILED";
+          return prisma.return_filing.upsert({
+            where: {
+              dvatid_year_month: {
+                dvatid: updateresponse.dvat04Id,
+                year: updateresponse.year,
+                month,
+              },
+            },
+            update: {
               filing_date: filingDate,
               filing_status: true,
-              return_status:
-                record.due_date && record.due_date >= filingDate
-                  ? "FILED"
-                  : "LATEFILED",
+              return_status: returnStatus,
             },
-          }),
-        ),
+            create: {
+              dvatid: updateresponse.dvat04Id,
+              year: updateresponse.year,
+              month,
+              filing_date: filingDate,
+              filing_status: true,
+              return_status: returnStatus,
+              due_date: dueDate,
+              status: "ACTIVE",
+              createdById: payload.id,
+            },
+          });
+        }),
       );
 
       if (

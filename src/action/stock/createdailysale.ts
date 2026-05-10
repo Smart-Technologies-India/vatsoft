@@ -41,6 +41,68 @@ const CreateDailySale = async (
       } as any;
     }
 
+    const invoiceDate = new Date(payload.invoice_date);
+    const april2026Start = new Date(2026, 3, 1);
+
+    if (invoiceDate < april2026Start) {
+      return createResponse({
+        message:
+          "The return upto March 2026 has to be filed on old portal.",
+        functionname,
+      });
+    }
+
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const invoiceMonthName = monthNames[invoiceDate.getMonth()];
+    const invoiceYear = invoiceDate.getFullYear().toString();
+
+    const filedReturnFiling = await prisma.return_filing.findFirst({
+      where: {
+        deletedAt: null,
+        deletedById: null,
+        dvatid: payload.dvatid,
+        year: invoiceYear,
+        month: invoiceMonthName,
+        filing_status: true,
+        OR: [{ return_status: "FILED" }, { return_status: "LATEFILED" }],
+      },
+    });
+
+    const paidReturn = await prisma.returns_01.findFirst({
+      where: {
+        deletedAt: null,
+        deletedById: null,
+        dvat04Id: payload.dvatid,
+        year: invoiceYear,
+        month: invoiceMonthName,
+        OR: [{ return_type: "REVISED" }, { return_type: "ORIGINAL" }],
+        rr_number: {
+          not: "",
+        },
+      },
+    });
+
+    if (filedReturnFiling || paidReturn) {
+      return createResponse({
+        message: `The return for ${invoiceMonthName} is already filed. Kindly file revise return.`,
+        functionname,
+      });
+    }
+
     const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstuvwyz", 12);
     const ref_no: string = nanoid();
     const isdata = await prisma.daily_sale.findFirst({

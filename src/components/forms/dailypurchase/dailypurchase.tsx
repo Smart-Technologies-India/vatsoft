@@ -17,14 +17,7 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import CreateDailyPurchase from "@/action/stock/createdailypuchase";
-import {
-  Input,
-  InputRef,
-  Modal,
-  Radio,
-  RadioChangeEvent,
-  Select,
-} from "antd";
+import { Input, InputRef, Modal, Radio, RadioChangeEvent, Select } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 import { DateSelect } from "../inputfields/dateselect";
 import { toast } from "react-toastify";
@@ -291,15 +284,22 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
   }, [description_of_goods, purchaseTaxType]);
 
   useEffect(() => {
-    if (commoditymaster == null || quantity == null || amount_unit == null)
+    if (commoditymaster == null) {
+      setTaxableValue("0");
+      setVatAmount("0");
       return;
+    }
 
-    // Calculate taxableValue
-    // const calculatedTaxableValue =
-    //   parseFloat(quantity) * parseFloat(amount_unit || "0");
+    const totalInvoiceNumeric =
+      davtdata?.commodity === "FUEL"
+        ? Number(fuelTotalInvoiceValue)
+        : Number(quantity) * Number(amount_unit);
 
-    const totalInvoiceNumeric = Number(fuelTotalInvoiceValue);
-
+    if (!Number.isFinite(totalInvoiceNumeric) || totalInvoiceNumeric <= 0) {
+      setTaxableValue("0");
+      setVatAmount("0");
+      return;
+    }
 
     const taxRate = parseFloat(getSelectedTaxRate());
 
@@ -308,11 +308,18 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     setTaxableValue(isNaN(temp_amount) ? "0" : temp_amount.toFixed(2));
 
     const calculatedVatAmount = totalInvoiceNumeric - temp_amount;
-   
+
     setVatAmount(
       isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2),
     );
-  }, [quantity, amount_unit, commoditymaster, purchaseTaxType]);
+  }, [
+    quantity,
+    amount_unit,
+    commoditymaster,
+    purchaseTaxType,
+    fuelTotalInvoiceValue,
+    davtdata?.commodity,
+  ]);
 
   const resolveSellerTin = async (): Promise<tin_number_master | null> => {
     const currentTin = (getValues("recipient_vat_no") ?? "").trim();
@@ -597,6 +604,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             required={true}
             title="Seller TIN Number"
             disable={isAddMoreMode}
+            maxlength={11}
           />
         </div>
         {tindata != null && (
@@ -620,7 +628,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
                     }
                     size="middle"
                     options={[
-                      { value: "NONE", label: "Not Applicable (Normal Tax)" },
+                      { value: "NONE", label: "Regular (Normal Tax)" },
                       { value: "CFORM", label: "Against C Form (2%)" },
                       { value: "FFORM", label: "Against F Form (0%)" },
                       { value: "EXPORT", label: "Export (0%)" },

@@ -3,7 +3,7 @@ import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { commodity_master, stock } from "@prisma/client";
+import { commodity_master } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 interface StockData {
@@ -16,6 +16,27 @@ interface CreateStockPayload {
   dvatid: number;
   createdById: number;
 }
+
+const mergeStockDataByCommodity = (data: StockData[]): StockData[] => {
+  const aggregated = new Map<number, StockData>();
+
+  for (const entry of data) {
+    const commodityId = entry.item.id;
+    const existingEntry = aggregated.get(commodityId);
+
+    if (existingEntry) {
+      existingEntry.quantity += entry.quantity;
+      continue;
+    }
+
+    aggregated.set(commodityId, {
+      item: entry.item,
+      quantity: entry.quantity,
+    });
+  }
+
+  return Array.from(aggregated.values());
+};
 
 const CreateFirstStock = async (
   payload: CreateStockPayload
@@ -33,6 +54,8 @@ const CreateFirstStock = async (
         functionname: "CreateFirstStock",
       } as any;
     }
+
+    const aggregatedStockData = mergeStockDataByCommodity(payload.data);
 
     const result = await prisma.$transaction(async (prisma) => {
       const isexist = await prisma.dvat04.findFirst({
@@ -58,7 +81,7 @@ const CreateFirstStock = async (
       }
 
       const first_stock = await prisma.first_stock.createMany({
-        data: payload.data.map((item) => {
+        data: aggregatedStockData.map((item) => {
           return {
             commodity_masterId: item.item.id,
             quantity: item.quantity,
@@ -73,7 +96,7 @@ const CreateFirstStock = async (
       }
 
       // Handle stock creation/update for each item
-      for (const item of payload.data) {
+      for (const item of aggregatedStockData) {
         const existingStock = await prisma.stock.findFirst({
           where: {
             commodity_masterId: item.item.id,

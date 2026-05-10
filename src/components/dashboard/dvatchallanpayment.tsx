@@ -131,6 +131,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       const returns_response = await GetReturn01({
         id: parseInt(props.returnid),
       });
+
       if (returns_response.status && returns_response.data) {
         setReturn01(returns_response.data);
 
@@ -144,6 +145,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         const entry_response = await getReturnEntry({
           returnid: returns_response.data.id,
         });
+
         if (entry_response.status && entry_response.data) {
           let mergedEntries: returns_entry[] = [...entry_response.data];
 
@@ -374,6 +376,42 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   };
 
   const [isOnlineProcessing, setIsOnlineProcessing] = useState(false);
+  const [isFileReturnProcessing, setIsFileReturnProcessing] = useState(false);
+
+  const onFileReturn = async () => {
+    if (return01 == null) return toast.error("No return exist");
+
+    setIsFileReturnProcessing(true);
+    try {
+      const lastPayment = await CheckLastPayment({ id: return01.id ?? 0 });
+      if (!lastPayment.status) {
+        toast.error(lastPayment.message);
+        return;
+      }
+      if (lastPayment.data == false) {
+        toast.error(lastPayment.message);
+        return;
+      }
+
+      const response = await AddPayment({
+        id: return01.id ?? 0,
+        bank_name: "NIL",
+        track_id: "NIL",
+        transaction_id: "NIL",
+        rr_number: get_rr_number(),
+        penalty: "0",
+        interestamount: "0",
+        totaltaxamount: "0",
+        vatamount: "0",
+      });
+
+      if (!response.status) return toast.error(response.message);
+      toast.success(response.message);
+      router.push("/dashboard/returns/returns-dashboard");
+    } finally {
+      setIsFileReturnProcessing(false);
+    }
+  };
 
   const onOnlinePayment = async () => {
     if (return01 == null) return toast.error("No return exist");
@@ -734,7 +772,11 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
         const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
 
-        if (!paymentDateRaw || !Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+        if (
+          !paymentDateRaw ||
+          !Number.isFinite(paymentAmount) ||
+          paymentAmount <= 0
+        ) {
           return null;
         }
 
@@ -743,7 +785,10 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
           date: normalizeDate(paymentDateRaw),
         };
       })
-      .filter((payment): payment is { amount: number; date: Date } => payment !== null)
+      .filter(
+        (payment): payment is { amount: number; date: Date } =>
+          payment !== null,
+      )
       .sort((a, b) => a.date.getTime() - b.date.getTime());
 
     const effectiveAsOfDate = normalizeDate(asOfDate);
@@ -755,20 +800,25 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     for (let i = 0; i < sortedPayments.length; i++) {
       const payment = sortedPayments[i];
       if (payment.date > effectiveAsOfDate) {
-        console.log(`Payment ${i + 1}: Skipped (date ${payment.date.toLocaleDateString()} is after calculation date)`);
+        console.log(
+          `Payment ${i + 1}: Skipped (date ${payment.date.toLocaleDateString()} is after calculation date)`,
+        );
         break;
       }
 
       const outstandingBefore = outstanding;
-      
+
       if (payment.date > anchorDate && outstanding > 0) {
         const days = getDaysDiff(anchorDate, payment.date);
-        const intervalInterest = (outstanding * annualRate * days) / (100 * 365);
+        const intervalInterest =
+          (outstanding * annualRate * days) / (100 * 365);
         interest += intervalInterest;
         console.log(`  Payment ${i + 1}: ${payment.date.toLocaleDateString()}`);
         console.log(`    Outstanding Amount: ${outstandingBefore.toFixed(2)}`);
         console.log(`    Days Outstanding: ${days}`);
-        console.log(`    Interest Accrued: ${intervalInterest.toFixed(2)} (${outstandingBefore.toFixed(2)} × ${annualRate}% × ${days}/365)`);
+        console.log(
+          `    Interest Accrued: ${intervalInterest.toFixed(2)} (${outstandingBefore.toFixed(2)} × ${annualRate}% × ${days}/365)`,
+        );
       } else {
         console.log(`  Payment ${i + 1}: ${payment.date.toLocaleDateString()}`);
         console.log(`    Outstanding Amount: ${outstandingBefore.toFixed(2)}`);
@@ -779,7 +829,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       outstanding = Math.max(0, outstanding - payment.amount);
       console.log(`    Payment Amount: ${payment.amount.toFixed(2)}`);
       console.log(`    Outstanding After: ${outstanding.toFixed(2)}`);
-      
+
       anchorDate = payment.date;
 
       if (outstanding <= 0) {
@@ -794,9 +844,13 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       const finalInterest = (outstanding * annualRate * days) / (100 * 365);
       interest += finalInterest;
       console.log(`Outstanding Amount: ${outstanding.toFixed(2)}`);
-      console.log(`Period: ${anchorDate.toLocaleDateString()} to ${effectiveAsOfDate.toLocaleDateString()}`);
+      console.log(
+        `Period: ${anchorDate.toLocaleDateString()} to ${effectiveAsOfDate.toLocaleDateString()}`,
+      );
       console.log(`Days Outstanding: ${days}`);
-      console.log(`Interest Accrued: ${finalInterest.toFixed(2)} (${outstanding.toFixed(2)} × ${annualRate}% × ${days}/365)`);
+      console.log(
+        `Interest Accrued: ${finalInterest.toFixed(2)} (${outstanding.toFixed(2)} × ${annualRate}% × ${days}/365)`,
+      );
     } else if (outstanding <= 0) {
       console.log(`No outstanding balance remaining`);
     } else {
@@ -974,7 +1028,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
     return (
       (isNegative(vatAmount) ? 0 : vatAmount) +
-      lateFees +
+      (isNegative(lateFees) ? 0 : lateFees) +
       (isNegative(interest) ? 0 : interest)
     );
   };
@@ -1184,28 +1238,23 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                       </div>
 
                       <div className="flex gap-2 mt-3 justify-end">
-                        {/* <Button
-                          disabled={isOnlineProcessing}
-                          onClick={async (e) => {
-                            e.preventDefault();
-
-                            router.push(
-                              `/dashboard/payments/saved-challan/${encryptURLData()} `,
-                            );
-                            // await generatePDF(
-                            //   `/dashboard/returns/returns-dashboard/preview/${props.returnid.toString()}/download-challan?sidebar=no`,
-                            // );
-                          }}
-                        >
-                          Download Challan
-                        </Button> */}
-                        <Button
-                          type="primary"
-                          disabled={isOnlineProcessing}
-                          onClick={onOnlinePayment}
-                        >
-                          {isOnlineProcessing ? "Redirecting..." : "Pay Online"}
-                        </Button>
+                        {getTotalTaxAmount() === 0 ? (
+                          <Button
+                            type="primary"
+                            disabled={isFileReturnProcessing}
+                            onClick={onFileReturn}
+                          >
+                            {isFileReturnProcessing ? "Filing..." : "File Return"}
+                          </Button>
+                        ) : (
+                          <Button
+                            type="primary"
+                            disabled={isOnlineProcessing}
+                            onClick={onOnlinePayment}
+                          >
+                            {isOnlineProcessing ? "Redirecting..." : "Pay Online"}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ) : (

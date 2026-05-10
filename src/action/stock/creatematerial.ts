@@ -46,14 +46,14 @@ const CreateMaterial = async (
       },
     });
 
-    if (isdata) {
-      if (isdata.invoice_date.getMonth() != payload.invoice_date.getMonth()) {
-        return createResponse({
-          message: "Kindly convert pending invoice from daily sale to DVAT 30",
-          functionname,
-        });
-      }
-    }
+    // if (isdata) {
+    //   if (isdata.invoice_date.getMonth() != payload.invoice_date.getMonth()) {
+    //     return createResponse({
+    //       message: "Kindly convert pending invoice from daily sale to DVAT 30",
+    //       functionname,
+    //     });
+    //   }
+    // }
 
     const daily_purchase_response = await prisma.daily_purchase.create({
       data: {
