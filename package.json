@@ -7,8 +7,10 @@
     "dev": "node server.js",
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
-    "lint": "next lint",
-    "prisma:run": "prisma db push && prisma generate"
+    "lint": "eslint . --ext .js,.mjs,.cjs,.ts,.tsx",
+    "prisma:run": "prisma db push && prisma generate",
+    "test": "node --test api-tests/**/*.test.mjs",
+    "test:payment": "node --test api-tests/payment-callback.integration.test.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",

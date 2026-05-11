@@ -749,13 +749,6 @@ const Dvat16ReturnPreview = () => {
   ): number => {
     if (!Number.isFinite(totalDue) || totalDue <= 0) return 0;
 
-    console.log("=== INTEREST CALCULATION START ===");
-    console.log(`Total Due (Principal): ${totalDue.toFixed(2)}`);
-    console.log(`Due Date: ${dueDate.toLocaleDateString()}`);
-    console.log(`Annual Rate: ${annualRate}%`);
-    console.log(`Calculation As Of: ${asOfDate.toLocaleDateString()}`);
-    console.log(`Number of Payments Received: ${payments.length}`);
-
     const dayMs = 24 * 60 * 60 * 1000;
 
     const normalizeDate = (dateInput: Date | string): Date => {
@@ -764,8 +757,16 @@ const Dvat16ReturnPreview = () => {
     };
 
     const getDaysDiff = (fromDate: Date, toDate: Date): number => {
-      const startUtc = Date.UTC(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
-      const endUtc = Date.UTC(toDate.getFullYear(), toDate.getMonth(), toDate.getDate());
+      const startUtc = Date.UTC(
+        fromDate.getFullYear(),
+        fromDate.getMonth(),
+        fromDate.getDate(),
+      );
+      const endUtc = Date.UTC(
+        toDate.getFullYear(),
+        toDate.getMonth(),
+        toDate.getDate(),
+      );
       return Math.max(0, Math.floor((endUtc - startUtc) / dayMs));
     };
 
@@ -773,7 +774,12 @@ const Dvat16ReturnPreview = () => {
       .map((payment) => {
         const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
         const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
-        if (!paymentDateRaw || !Number.isFinite(paymentAmount) || paymentAmount <= 0) return null;
+        if (
+          !paymentDateRaw ||
+          !Number.isFinite(paymentAmount) ||
+          paymentAmount <= 0
+        )
+          return null;
         return { amount: paymentAmount, date: normalizeDate(paymentDateRaw) };
       })
       .filter((p): p is { amount: number; date: Date } => p !== null)
@@ -784,11 +790,9 @@ const Dvat16ReturnPreview = () => {
     let anchorDate = normalizeDate(dueDate);
     let interest = 0;
 
-    console.log("\n--- PROCESSING PAYMENTS ---");
     for (let i = 0; i < sortedPayments.length; i++) {
       const payment = sortedPayments[i];
       if (payment.date > effectiveAsOfDate) {
-        console.log(`  Payment ${i + 1}: Skipped (date ${payment.date.toLocaleDateString()} is after calculation date)`);
         break;
       }
 
@@ -796,43 +800,46 @@ const Dvat16ReturnPreview = () => {
 
       if (payment.date > anchorDate && outstanding > 0) {
         const days = getDaysDiff(anchorDate, payment.date);
-        const intervalInterest = (outstanding * annualRate * days) / (100 * 365);
+        const intervalInterest =
+          (outstanding * annualRate * days) / (100 * 365);
         interest += intervalInterest;
-        console.log(`  Payment ${i + 1}: ${payment.date.toLocaleDateString()}`);
-        console.log(`    Outstanding: ${outstandingBefore.toFixed(2)}, Days: ${days}, Interest Accrued: ${intervalInterest.toFixed(2)}`);
       } else {
-        console.log(`  Payment ${i + 1}: ${payment.date.toLocaleDateString()} — 0 days (on/before due date)`);
       }
 
       outstanding = Math.max(0, outstanding - payment.amount);
-      console.log(`    Payment Amount: ${payment.amount.toFixed(2)}, Outstanding After: ${outstanding.toFixed(2)}`);
+
       anchorDate = payment.date;
 
       if (outstanding <= 0) {
-        console.log(`    Note: Full payment completed`);
         break;
       }
     }
 
-    console.log("\n--- FINAL PERIOD (After Last Payment to Today) ---");
     if (outstanding > 0 && effectiveAsOfDate > anchorDate) {
       const days = getDaysDiff(anchorDate, effectiveAsOfDate);
       const finalInterest = (outstanding * annualRate * days) / (100 * 365);
       interest += finalInterest;
-      console.log(`Outstanding: ${outstanding.toFixed(2)}, Days: ${days}, Interest: ${finalInterest.toFixed(2)}`);
     } else {
-      console.log(outstanding <= 0 ? "No outstanding balance remaining" : "No days remaining to calculate");
     }
 
-    console.log(`\n=== TOTAL INTEREST DUE: ${interest.toFixed(2)} ===\n`);
     return interest;
   };
 
   const getInterestDueDate = (): Date => {
     if (!return01) return new Date();
     const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December",
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
     const month = return01.month ?? "";
     const isComp = return01.dvat04?.frequencyFilings === "QUARTERLY";
@@ -840,13 +847,23 @@ const Dvat16ReturnPreview = () => {
     let computedYear = parseInt(return01.year);
 
     if (isComp) {
-      if (["January", "February", "March"].includes(month)) { monthIndex = 3; }
-      else if (["April", "May", "June"].includes(month)) { monthIndex = 6; }
-      else if (["July", "August", "September"].includes(month)) { monthIndex = 9; }
-      else { monthIndex = 0; computedYear += 1; }
+      if (["January", "February", "March"].includes(month)) {
+        monthIndex = 3;
+      } else if (["April", "May", "June"].includes(month)) {
+        monthIndex = 6;
+      } else if (["July", "August", "September"].includes(month)) {
+        monthIndex = 9;
+      } else {
+        monthIndex = 0;
+        computedYear += 1;
+      }
     } else {
-      if (monthIndex === 11) { computedYear += 1; monthIndex = 0; }
-      else { monthIndex += 1; }
+      if (monthIndex === 11) {
+        computedYear += 1;
+        monthIndex = 0;
+      } else {
+        monthIndex += 1;
+      }
     }
     return new Date(computedYear, monthIndex, 16);
   };

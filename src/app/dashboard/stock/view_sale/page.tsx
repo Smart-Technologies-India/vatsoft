@@ -31,7 +31,7 @@ import {
 } from "antd";
 import Lottie from "lottie-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import CreateMultiDailySale from "@/action/stock/createmultidailysale";
@@ -41,6 +41,7 @@ import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 import GetAllDvat04 from "@/action/dvat/getalldvat";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUser from "@/action/user/getuser";
+import GetReturnMonth from "@/action/dvat/getreturnmonth";
 import * as XLSX from "xlsx";
 
 const DocumentWiseDetails = () => {
@@ -67,6 +68,9 @@ const DocumentWiseDetails = () => {
     errorname: string;
   }
   const [tabledata, setTableData] = useState<BulkSheetData[]>([]);
+  const [filedReturnPeriods, setFiledReturnPeriods] = useState<Set<string>>(
+    new Set(),
+  );
 
   const readSheetField = (row: Record<string, unknown>, labels: string[]) => {
     for (const label of labels) {
@@ -145,6 +149,25 @@ const DocumentWiseDetails = () => {
 
     return dvatdata?.commodity;
   };
+
+  const getPeriodKey = (year: string | number, month: string) =>
+    `${year}-${month}`;
+
+  const loadFiledReturnPeriods = useCallback(async (dvatid: number) => {
+    const returnMonthResponse = await GetReturnMonth({ dvatid });
+    if (returnMonthResponse.status && returnMonthResponse.data) {
+      const periods = new Set<string>();
+      returnMonthResponse.data.forEach((entry) => {
+        if (entry.filing_status) {
+          periods.add(getPeriodKey(entry.year, entry.month));
+        }
+      });
+      setFiledReturnPeriods(periods);
+      return;
+    }
+
+    setFiledReturnPeriods(new Set());
+  }, []);
 
   const downloadBulkTemplate = () => {
     const rows = [
@@ -325,6 +348,18 @@ const DocumentWiseDetails = () => {
           const invoice_date = parseDateDDMMYYYY(invoice_date_raw);
           if (!invoice_date) {
             errors.push("* Invoice Date must be DD/MM/YYYY");
+          } else {
+            const invoiceMonth = invoice_date.toLocaleString("default", {
+              month: "long",
+            });
+            const invoiceYear = invoice_date.getFullYear().toString();
+            const periodKey = getPeriodKey(invoiceYear, invoiceMonth);
+
+            if (filedReturnPeriods.has(periodKey)) {
+              errors.push(
+                `* Return already filed for ${invoiceMonth} ${invoiceYear}`,
+              );
+            }
           }
 
           const item_code = parseExcelNumber(item_code_raw);
@@ -595,6 +630,7 @@ const DocumentWiseDetails = () => {
 
     if (dvat_response.status && dvat_response.data) {
       setDvatData(dvat_response.data);
+      await loadFiledReturnPeriods(dvat_response.data.id);
       const daily_sale_response = await GetUserDailySale({
         dvatid: dvat_response.data.id,
         skip: 0,
@@ -629,6 +665,7 @@ const DocumentWiseDetails = () => {
 
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);
+        await loadFiledReturnPeriods(dvat_response.data.id);
         const daily_sale_response = await GetUserDailySale({
           dvatid: dvat_response.data.id,
           skip: 0,
@@ -659,7 +696,7 @@ const DocumentWiseDetails = () => {
       setIsLoading(false);
     };
     init();
-  }, [userid]);
+  }, [userid, router, loadFiledReturnPeriods]);
 
   useEffect(() => {
     let mounted = true;

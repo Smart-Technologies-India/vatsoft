@@ -24,7 +24,12 @@ app.prepare().then(() => {
   });
 
   server.get("/payamount", async function (request, response) {
-    payamount(request, response);
+    try {
+      await payamount(request, response);
+    } catch (error) {
+      console.error("Unable to initialize payment session:", error);
+      response.status(500).send("Unable to initialize payment session.");
+    }
   });
 
   server.post("/ccavRequestHandler", jsonParser, function (request, response) {
@@ -52,10 +57,8 @@ app.prepare().then(() => {
 
     // Start cron job after server is listening
     // cron.schedule("* * * * * *", async () => {
-    //   console.log("Executing cron job...");
     //   try {
     //     const result = await notification();
-    //     console.log("Cron job executed successfully:", result);
        
     //   } catch (error) {
     //     console.error("Error executing cron job:", error);

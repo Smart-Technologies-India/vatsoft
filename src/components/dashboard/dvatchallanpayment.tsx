@@ -50,7 +50,6 @@ import GetUser from "@/action/user/getuser";
 import { CheckboxGroupProps } from "antd/es/checkbox";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import { customAlphabet } from "nanoid";
 import AddPaymentOnline from "@/action/return/addpaymentonline";
 import GetPaidChallanByReturnId from "@/action/challan/getpaidchallanbyreturnid";
 
@@ -418,9 +417,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
     setIsOnlineProcessing(true);
     try {
-      const nanoid = customAlphabet("1234567890abcdef", 10);
-      const uniqueid: string = nanoid();
-
       const response = await AddPaymentOnline({
         id: return01.id ?? 0,
         // rr_number: get_rr_number(),
@@ -441,9 +437,13 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         toast.error(response.message);
         return;
       }
+      if (!response.data?.order_id) {
+        toast.error("Unable to initialize payment session.");
+        return;
+      }
 
       router.push(
-        `/payamount?xlmnx=${getTotalTaxAmount().toFixed(0)}&ynboy=${uniqueid}&zgvfz=${response.data?.id}_${return01.dvat04Id}_${return01.id}_DEMAND`,
+        `/payamount?pi=${encodeURIComponent(response.data.order_id)}`,
       );
     } finally {
       setIsOnlineProcessing(false);
@@ -738,13 +738,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   ): number => {
     if (!Number.isFinite(totalDue) || totalDue <= 0) return 0;
 
-    console.log("=== INTEREST CALCULATION START ===");
-    console.log(`Total Due (Principal): ${totalDue.toFixed(2)}`);
-    console.log(`Due Date: ${dueDate.toLocaleDateString()}`);
-    console.log(`Annual Rate: ${annualRate}%`);
-    console.log(`Calculation As Of: ${asOfDate.toLocaleDateString()}`);
-    console.log(`Number of Payments Received: ${payments.length}`);
-
     const dayMs = 24 * 60 * 60 * 1000;
 
     const normalizeDate = (dateInput: Date | string): Date => {
@@ -796,13 +789,9 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     let anchorDate = normalizeDate(dueDate);
     let interest = 0;
 
-    console.log("\n--- PROCESSING PAYMENTS ---");
     for (let i = 0; i < sortedPayments.length; i++) {
       const payment = sortedPayments[i];
       if (payment.date > effectiveAsOfDate) {
-        console.log(
-          `Payment ${i + 1}: Skipped (date ${payment.date.toLocaleDateString()} is after calculation date)`,
-        );
         break;
       }
 
@@ -813,53 +802,25 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         const intervalInterest =
           (outstanding * annualRate * days) / (100 * 365);
         interest += intervalInterest;
-        console.log(`  Payment ${i + 1}: ${payment.date.toLocaleDateString()}`);
-        console.log(`    Outstanding Amount: ${outstandingBefore.toFixed(2)}`);
-        console.log(`    Days Outstanding: ${days}`);
-        console.log(
-          `    Interest Accrued: ${intervalInterest.toFixed(2)} (${outstandingBefore.toFixed(2)} × ${annualRate}% × ${days}/365)`,
-        );
       } else {
-        console.log(`  Payment ${i + 1}: ${payment.date.toLocaleDateString()}`);
-        console.log(`    Outstanding Amount: ${outstandingBefore.toFixed(2)}`);
-        console.log(`    Days Outstanding: 0 (payment on or before due date)`);
-        console.log(`    Interest Accrued: 0`);
       }
 
       outstanding = Math.max(0, outstanding - payment.amount);
-      console.log(`    Payment Amount: ${payment.amount.toFixed(2)}`);
-      console.log(`    Outstanding After: ${outstanding.toFixed(2)}`);
 
       anchorDate = payment.date;
 
       if (outstanding <= 0) {
-        console.log(`    Note: Full payment completed`);
         break;
       }
     }
 
-    console.log("\n--- FINAL PERIOD (After Last Payment to Today) ---");
     if (outstanding > 0 && effectiveAsOfDate > anchorDate) {
       const days = getDaysDiff(anchorDate, effectiveAsOfDate);
       const finalInterest = (outstanding * annualRate * days) / (100 * 365);
       interest += finalInterest;
-      console.log(`Outstanding Amount: ${outstanding.toFixed(2)}`);
-      console.log(
-        `Period: ${anchorDate.toLocaleDateString()} to ${effectiveAsOfDate.toLocaleDateString()}`,
-      );
-      console.log(`Days Outstanding: ${days}`);
-      console.log(
-        `Interest Accrued: ${finalInterest.toFixed(2)} (${outstanding.toFixed(2)} × ${annualRate}% × ${days}/365)`,
-      );
     } else if (outstanding <= 0) {
-      console.log(`No outstanding balance remaining`);
     } else {
-      console.log(`No days remaining to calculate`);
     }
-
-    console.log("\n=== INTEREST CALCULATION RESULT ===");
-    console.log(`Total Interest Due: ${interest.toFixed(2)}`);
-    console.log("=== CALCULATION END ===\n");
 
     return interest;
   };
@@ -1244,7 +1205,9 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                             disabled={isFileReturnProcessing}
                             onClick={onFileReturn}
                           >
-                            {isFileReturnProcessing ? "Filing..." : "File Return"}
+                            {isFileReturnProcessing
+                              ? "Filing..."
+                              : "File Return"}
                           </Button>
                         ) : (
                           <Button
@@ -1252,7 +1215,9 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                             disabled={isOnlineProcessing}
                             onClick={onOnlinePayment}
                           >
-                            {isOnlineProcessing ? "Redirecting..." : "Pay Online"}
+                            {isOnlineProcessing
+                              ? "Redirecting..."
+                              : "Pay Online"}
                           </Button>
                         )}
                       </div>

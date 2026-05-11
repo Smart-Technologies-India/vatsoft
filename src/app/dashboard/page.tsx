@@ -148,9 +148,7 @@ const Page = () => {
       const userresponse = await GetUser({ id: authResponse.data });
       if (userresponse.status) setUser(userresponse.data!);
 
-      const dashboard = await DashboardMonth({
-        userid: authResponse.data,
-      });
+      const dashboard = await DashboardMonth();
 
       if (dashboard.status && dashboard.data) {
         setMonth(dashboard.data);
@@ -408,7 +406,7 @@ const Page = () => {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-2">
                     <ButtonCard
-                      title="Daily Purchase"
+                      title="Purchase"
                       icon={
                         <IcOutlineReceiptLong className="text-slate-600 text-xl" />
                       }
@@ -418,7 +416,7 @@ const Page = () => {
                       }
                     />
                     <ButtonCard
-                      title="Daily Sale"
+                      title="Sale"
                       icon={
                         <IcOutlineReceiptLong className="text-slate-600 text-xl" />
                       }

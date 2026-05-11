@@ -208,6 +208,21 @@ const ProductRequestsPage = () => {
     },
   ];
 
+  const statusPriority: Record<ProductRequest, number> = {
+    PENDING: 0,
+    APPROVED: 1,
+    REJECTED: 2,
+  };
+
+  const sortedProductRequests = [...productRequests].sort((a, b) => {
+    const statusDifference = statusPriority[a.status] - statusPriority[b.status];
+    if (statusDifference !== 0) {
+      return statusDifference;
+    }
+
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
   return (
     <main className="bg-white py-6 px-6 rounded-md mt-4 w-full">
       <div className="flex justify-between items-center mb-4">
@@ -242,7 +257,7 @@ const ProductRequestsPage = () => {
 
       <Table
         columns={columns}
-        dataSource={productRequests}
+        dataSource={sortedProductRequests}
         rowKey="id"
         loading={loading}
         scroll={{ x: 1500 }}

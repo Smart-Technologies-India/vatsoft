@@ -28,7 +28,6 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUser from "@/action/user/getuser";
 import { Button } from "antd";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import { customAlphabet } from "nanoid";
 
 const ChallanData = () => {
   const searchParams = useSearchParams();
@@ -102,9 +101,6 @@ const ChallanData = () => {
   const [isOnlineProcessing, setIsOnlineProcessing] = useState(false);
 
   const onOnlinePayment = async () => {
-    const nanoid = customAlphabet("1234567890abcdef", 10);
-
-    const uniqueid: string = nanoid();
     if (!challanData || challanData == null) {
       return toast.error("There is no challan data.");
     }
@@ -116,10 +112,11 @@ const ChallanData = () => {
       });
 
       if (!response.status) return toast.error(response.message);
+      if (!response.data?.order_id) {
+        return toast.error("Unable to initialize payment session.");
+      }
 
-      router.push(
-        `/payamount?xlmnx=${challanData?.total_tax_amount}&ynboy=${uniqueid}&zgvfz=${response.data?.id}_${dvat?.id}_0_DEMAND`,
-      );
+      router.push(`/payamount?pi=${encodeURIComponent(response.data.order_id)}`);
     } finally {
       setIsOnlineProcessing(false);
     }

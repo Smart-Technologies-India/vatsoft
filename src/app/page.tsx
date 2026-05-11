@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 "use client";
 
 import { Button, Drawer, Input, Modal } from "antd";
@@ -359,9 +360,12 @@ export default function HomePage() {
       },
     ]);
 
-    const thinkingDelay = 2000 + Math.floor(Math.random() * 1000);
+    const value = Math.random();
+
+    const thinkingDelay = 2000 + Math.floor(value * 1000);
     thinkingTimerRef.current = setTimeout(() => {
       let index = 0;
+      const typingDelay = 20;
       typingTimerRef.current = setInterval(() => {
         index += 1;
         const nextText = answer.slice(0, index);
@@ -399,7 +403,7 @@ export default function HomePage() {
       { id: userMessageId, role: "user", text: question },
     ]);
 
-     setShouldAutoScroll(true);
+    setShouldAutoScroll(true);
     appendTypedBotMessage(answer);
   };
 
@@ -658,9 +662,7 @@ export default function HomePage() {
                       <span className="text-[#b8860b] font-bold shrink-0">
                         &#9658;
                       </span>
-                      <span className="text-sm text-gray-700">
-                        {feature}
-                      </span>
+                      <span className="text-sm text-gray-700">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -828,7 +830,9 @@ export default function HomePage() {
 
       <Drawer
         title={
-          <span className="text-[#0f2f67] font-semibold">VAT-Smart Chat Help</span>
+          <span className="text-[#0f2f67] font-semibold">
+            VAT-Smart Chat Help
+          </span>
         }
         placement="right"
         size={380}
@@ -864,7 +868,9 @@ export default function HomePage() {
                 >
                   <p
                     className={`text-[11px] font-semibold mb-1 ${
-                      message.role === "bot" ? "text-[#0f2f67]" : "text-[#dbe8ff]"
+                      message.role === "bot"
+                        ? "text-[#0f2f67]"
+                        : "text-[#dbe8ff]"
                     }`}
                   >
                     {message.role === "bot" ? "Maya" : "User"}
@@ -872,7 +878,9 @@ export default function HomePage() {
 
                   {message.text || (
                     <span className="inline-flex items-center gap-1.5 text-gray-500">
-                      <span className="text-xs text-gray-500 mr-1">Thinking</span>
+                      <span className="text-xs text-gray-500 mr-1">
+                        Thinking
+                      </span>
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400 animate-pulse"></span>
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400 animate-pulse [animation-delay:120ms]"></span>
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400 animate-pulse [animation-delay:240ms]"></span>
@@ -1186,7 +1194,9 @@ const InlineLoginForm = () => {
           className="text-sm"
         />
         {normalizedTin.length > 0 && !isTinValid ? (
-          <p className="mt-1 text-xs text-red-600">TIN number must be 11 digits.</p>
+          <p className="mt-1 text-xs text-red-600">
+            TIN number must be 11 digits.
+          </p>
         ) : null}
       </div>
       {loginMode === "password" ? (
@@ -1244,7 +1254,8 @@ const InlineLoginForm = () => {
           {isTinOtpSent && (
             <>
               <p className="text-sm text-gray-600">
-                OTP sent to registered mobile ending with <b>{tinMaskedMobile}</b>
+                OTP sent to registered mobile ending with{" "}
+                <b>{tinMaskedMobile}</b>
               </p>
 
               <div>
@@ -1328,7 +1339,9 @@ const InlineLoginForm = () => {
       >
         <div className="space-y-3 mt-1">
           <div>
-            <label className="text-sm text-gray-600 block mb-1.5">TIN Number</label>
+            <label className="text-sm text-gray-600 block mb-1.5">
+              TIN Number
+            </label>
             <Input
               maxLength={12}
               placeholder="Enter TIN Number"
@@ -1357,7 +1370,9 @@ const InlineLoginForm = () => {
                 OTP sent to registered mobile ending with <b>{maskedMobile}</b>
               </p>
               <div>
-                <label className="text-sm text-gray-600 block mb-1.5">OTP</label>
+                <label className="text-sm text-gray-600 block mb-1.5">
+                  OTP
+                </label>
                 <Input
                   maxLength={6}
                   placeholder="Enter 6-digit OTP"
@@ -1401,31 +1416,35 @@ const InlineLoginForm = () => {
 
           {isOtpVerified && (
             <>
-          <div>
-            <label className="text-sm text-gray-600 block mb-1.5">New Password</label>
-            <Input.Password
-              placeholder="Enter New Password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-sm text-gray-600 block mb-1.5">Re-Password</label>
-            <Input.Password
-              placeholder="Enter Re-Password"
-              value={rePassword}
-              onChange={(e) => setRePassword(e.target.value)}
-              className="text-sm"
-            />
-          </div>
-          <Button
-            onClick={submitForgotPassword}
-            disabled={isChangingPassword}
-            className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:bg-[#16448b]!"
-          >
-            {isChangingPassword ? "Updating..." : "Change Password"}
-          </Button>
+              <div>
+                <label className="text-sm text-gray-600 block mb-1.5">
+                  New Password
+                </label>
+                <Input.Password
+                  placeholder="Enter New Password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600 block mb-1.5">
+                  Re-Password
+                </label>
+                <Input.Password
+                  placeholder="Enter Re-Password"
+                  value={rePassword}
+                  onChange={(e) => setRePassword(e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+              <Button
+                onClick={submitForgotPassword}
+                disabled={isChangingPassword}
+                className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:bg-[#16448b]!"
+              >
+                {isChangingPassword ? "Updating..." : "Change Password"}
+              </Button>
             </>
           )}
         </div>
@@ -1433,4 +1452,3 @@ const InlineLoginForm = () => {
     </div>
   );
 };
-

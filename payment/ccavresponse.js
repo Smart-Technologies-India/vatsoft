@@ -3,6 +3,7 @@ import CryptoJS from "crypto-js";
 import { decrypt } from "./ccavutil.js";
 import qs from "querystring";
 import prisma from "../prisma/database.js";
+import { validateIntentCallbackSecurity } from "./payment-validation.js";
 
 const sendReturnFiledSmsByIds = async ({ dvatId, returnId }) => {
   const parsedDvatId = parseInt(dvatId?.toString() || "0", 10);
@@ -133,10 +134,40 @@ export const postRes = (request, response) => {
       }
     });
 
-    const challanid = result.merchant_param1.toString().split("_")[0];
-    const dvatid = result.merchant_param1.toString().split("_")[1];
-    const return_id = result.merchant_param1.toString().split("_")[2];
-    const type = result.merchant_param1.toString().split("_")[3];
+    const merchantParam = (result.merchant_param1 || "").toString();
+    const challanid = merchantParam.split("_")[0];
+    const dvatid = merchantParam.split("_")[1];
+    const return_id = merchantParam.split("_")[2];
+    const type = merchantParam.split("_")[3] || "DEMAND";
+
+    const parsedChallanId = parseInt(challanid?.toString() || "0", 10);
+    const parsedDvatId = parseInt(dvatid?.toString() || "0", 10);
+
+    const callbackOrderId = (result.order_id || "").toString();
+
+    const paymentIntent = await prisma.payment_intent.findFirst({
+      where: {
+        gateway_order_id: callbackOrderId,
+      },
+      include: {
+        challan: true,
+      },
+    });
+
+    const markIntent = async (status, reason = null) => {
+      if (!paymentIntent) return;
+
+      await prisma.payment_intent.update({
+        where: {
+          id: paymentIntent.id,
+        },
+        data: {
+          status,
+          completedAt: new Date().toISOString(),
+          failure_reason: reason,
+        },
+      });
+    };
 
     const secretKey = "knf92fg#G$%2Ij309pwkn4gf#WTF#WCc2@#$WTfwe4gFVD";
     const toBase64Url = (str) =>
@@ -363,6 +394,8 @@ export const postRes = (request, response) => {
     };
 
     if (result.order_status == "Aborted") {
+      await markIntent("CANCELED", "Payment aborted by user.");
+
       // Get original challan
       const originalChallan = await prisma.challan.findFirst({
         where: {
@@ -421,6 +454,52 @@ export const postRes = (request, response) => {
       response.write(htmlcode);
       response.end();
     } else if (result.order_status == "Success") {
+      const securityValidation = validateIntentCallbackSecurity({
+        intent: paymentIntent,
+        challan: paymentIntent?.challan,
+        callbackOrderId,
+        callbackAmount: result.amount,
+        callbackChallanId: parsedChallanId,
+        callbackDvatId: parsedDvatId,
+      });
+
+      if (!securityValidation.ok) {
+        await markIntent(
+          "FAILED",
+          `Payment validation failed: ${securityValidation.reason}`,
+        );
+
+        if (paymentIntent?.challan) {
+          await prisma.challan.update({
+            where: {
+              id: paymentIntent.challan.id,
+            },
+            data: {
+              paymentstatus: "FAILED",
+              order_status: "FAILED",
+              failure_message: `Payment validation failed: ${securityValidation.reason}`,
+              status_message: "Payment validation failed.",
+              transaction_date: new Date().toISOString(),
+            },
+          });
+        }
+
+        const htmlcode = renderReceiptHtml({
+          statusTitle: "Transaction Failed",
+          statusTone: "failed",
+          message: "Payment could not be validated. Please try again.",
+          amount: result.amount,
+          redirectId: paymentIntent?.challan?.id || parsedChallanId || 0,
+        });
+
+        response.writeHeader(200, { "Content-Type": "text/html" });
+        response.write(htmlcode);
+        response.end();
+        return;
+      }
+
+      await markIntent("SUCCESS", null);
+
       if (type == "NEWREGISTRATION") {
         try {
           await prisma.challan.update({
@@ -743,6 +822,8 @@ export const postRes = (request, response) => {
       response.write(htmlcode);
       response.end();
     } else {
+      await markIntent("FAILED", "Gateway returned non-success status.");
+
       // Get original challan
       const originalChallan = await prisma.challan.findFirst({
         where: {

@@ -29,6 +29,7 @@ const AddPaymentOnline = async (
 ): Promise<ApiResponseType<challan | null>> => {
   const functionname: string = AddPaymentOnline.name;
   const nanoid = customAlphabet("1234567890", 12);
+  const createOrderId = customAlphabet("1234567890abcdef", 24);
 
   const cpin: string = nanoid();
 
@@ -48,6 +49,7 @@ const AddPaymentOnline = async (
       const isExist = await prisma.returns_01.findFirst({
         where: {
           id: payload.id,
+          dvat04Id: currentDvatId,
           deletedAt: null,
           deletedById: null,
           status: "ACTIVE",
@@ -339,7 +341,48 @@ const AddPaymentOnline = async (
         throw new Error(`Challan was not created`);
       }
 
-      return challan_response;
+      const orderId = createOrderId();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+      await prisma.payment_intent.updateMany({
+        where: {
+          challanId: challan_response.id,
+          status: {
+            in: ["CREATED", "INITIATED"],
+          },
+          completedAt: null,
+        },
+        data: {
+          status: "EXPIRED",
+          completedAt: new Date(),
+          failure_reason: "Superseded by a newer payment session.",
+        },
+      });
+
+      const challanWithOrder = await prisma.challan.update({
+        where: {
+          id: challan_response.id,
+        },
+        data: {
+          order_id: orderId,
+        },
+      });
+
+      await prisma.payment_intent.create({
+        data: {
+          token: orderId,
+          gateway_order_id: orderId,
+          challanId: challanWithOrder.id,
+          dvatid: challanWithOrder.dvatid,
+          returnid: challanWithOrder.returnid,
+          type: "DEMAND",
+          expected_amount: challanWithOrder.total_tax_amount,
+          status: "CREATED",
+          expiresAt,
+        },
+      });
+
+      return challanWithOrder;
     });
 
     return createResponse({

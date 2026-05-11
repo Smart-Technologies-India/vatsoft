@@ -1219,9 +1219,7 @@ const ReturnTable = (props: ReturnTableProps) => {
     if (props.iscomp) {
       if (["January", "February", "March"].includes(props.return01.month!)) {
         monthIndex = 3; // April
-      } else if (
-        ["April", "May", "June"].includes(props.return01.month!)
-      ) {
+      } else if (["April", "May", "June"].includes(props.return01.month!)) {
         monthIndex = 6; // July
       } else if (
         ["July", "August", "September"].includes(props.return01.month!)
@@ -1578,17 +1576,8 @@ const ReturnTable = (props: ReturnTableProps) => {
     InterestDiffDays;
   const getR6_2acomp = (): number => {
     const salesAmount = parseFloat(getInvoicePercentage("1").decrease);
-    const interest = (salesAmount * 0.15 / 365) * InterestDiffDays;
-    
-    console.log("=== COMPOSITION INTEREST CALCULATION (PREVIEW) ===");
-    console.log(`Sales Amount (1% VAT): ${salesAmount.toFixed(2)}`);
-    console.log(`Annual Rate: 15%`);
-    console.log(`Days Outstanding: ${InterestDiffDays}`);
-    console.log(`Formula: (Sales × 15% ÷ 365) × Days`);
-    console.log(`Calculation: (${salesAmount.toFixed(2)} × 0.15 ÷ 365) × ${InterestDiffDays}`);
-    console.log(`Interest Due: ${interest.toFixed(2)}`);
-    console.log("=== CALCULATION END ===\n");
-    
+    const interest = ((salesAmount * 0.15) / 365) * InterestDiffDays;
+
     return interest;
   };
 
@@ -1651,7 +1640,6 @@ const ReturnTable = (props: ReturnTableProps) => {
             9. Add:Interest, penalty or other Govt. dues
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-           
             {(
               (isNegative(lateFees) ? 0 : lateFees) +
               (isNegative(getR6_2acomp()) ? 0 : getR6_2acomp())

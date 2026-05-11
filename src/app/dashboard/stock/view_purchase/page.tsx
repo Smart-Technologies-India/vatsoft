@@ -782,9 +782,6 @@ const DocumentWiseDetails = () => {
           //   const mrp = parseExcelNumber(selectedCommodity.mrp);
           //   const pricePerUnit = total_invoice_value / quantity;
 
-          //   console.log("work");
-          //   console.log(mrp / selectedCommodity.crate_size);
-          //   console.log(pricePerUnit);
           //   if (
           //     Number.isFinite(mrp) &&
           //     pricePerUnit < mrp / selectedCommodity.crate_size
@@ -1841,7 +1838,9 @@ const DocumentWiseDetails = () => {
                                               group.records[0].id,
                                             );
                                             setDeleteBox(true);
-                                            loadDeleteImpact(group.records[0].id);
+                                            loadDeleteImpact(
+                                              group.records[0].id,
+                                            );
                                             handelClose(index);
                                           }}
                                           className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded"

@@ -194,10 +194,5 @@ for (const fp of files) {
   }
 }
 
-console.log("\n=== Auth Guard Injection Complete ===");
-console.log(`Modified      : ${stats.modified}`);
-console.log(`Already OK    : ${stats.alreadyOk}`);
-console.log(`Skipped (pub) : ${stats.skipped}`);
-console.log(`No try block  : ${stats.noTry}`);
-console.log("\nModified files:");
+
 modifiedFiles.forEach((f) => console.log("  ✓", f));

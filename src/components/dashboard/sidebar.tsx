@@ -204,7 +204,7 @@ const Sidebar = (props: SidebarProps) => {
             <MenuTab
               click={() => props.setIsOpen(false)}
               icon={<FluentCalendar12Regular className="w-5 h-5" />}
-              name="Daily Sale"
+              name="Sale"
               path={path}
               pathcheck={"/dashboard/stock/view_sale"}
               collapsed={isCollapsed}

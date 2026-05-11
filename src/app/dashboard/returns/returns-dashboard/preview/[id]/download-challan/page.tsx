@@ -498,17 +498,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
           parseFloat(getDebitNote().decrease) -
           parseFloat(getGoodsReturnsNote().decrease)));
 
-    const interest =
-      (((vatAmount * 0.15) / 365) * InterestDiffDays);
-
-    console.log("=== INTEREST CALCULATION (PREVIEW) ===");
-    console.log(`VAT Amount: ${vatAmount.toFixed(2)}`);
-    console.log(`Annual Rate: 15%`);
-    console.log(`Days Outstanding: ${InterestDiffDays}`);
-    console.log(`Formula: (VAT × 15% ÷ 365) × Days`);
-    console.log(`Calculation: (${vatAmount.toFixed(2)} × 0.15 ÷ 365) × ${InterestDiffDays}`);
-    console.log(`Interest Due: ${interest.toFixed(2)}`);
-    console.log("=== CALCULATION END ===\n");
+    const interest = ((vatAmount * 0.15) / 365) * InterestDiffDays;
 
     return isNegative(interest) ? 0 : interest;
   };

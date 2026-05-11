@@ -137,23 +137,53 @@ const ReturnDashboard = () => {
       "November",
       "December",
     ];
-    let monthIndex = monthNames.indexOf(period);
-
-    // Check if it's December (index 11) and increment year if needed
-    let newYear = parseInt(year);
-    if (monthIndex === 11) {
-      newYear += 1;
-      monthIndex = 0; // Set month to January
-    } else {
-      monthIndex += 1; // Otherwise, just increment the month
-    }
 
     let fetchYear = year;
-    if ([0, 1, 2, 3].includes(monthIndex)) {
-      setDueDate(new Date(parseInt(year) + 1, monthIndex, 10));
-      fetchYear = (parseInt(year) + (monthIndex == 0 ? 0 : 1)).toString();
+    
+    // Determine if quarterly filing - check filingFrequency first
+    const isQuarterlyFiling =
+      filingFrequency?.toUpperCase() === "QUARTERLY" ||
+      davtdata?.frequencyFilings?.toUpperCase() === "QUARTERLY";
+
+    // Set due date based on filing frequency
+    if (isQuarterlyFiling) {
+      // For quarterly filing, set due date to 28th of month after quarter-end
+      const quarterForMonth = getQuarterForMonth(period);
+      const quarterEndDates: Record<Quarter, [number, number]> = {
+        QUARTER1: [6, 28], // July 28 (month after June)
+        QUARTER2: [9, 28], // October 28 (month after September)
+        QUARTER3: [0, 28], // January 28 (month after December)
+        QUARTER4: [3, 28], // April 28 (month after March)
+      };
+      
+      if (quarterForMonth) {
+        const [endMonth, endDay] = quarterEndDates[quarterForMonth];
+        // Q3 and Q4 move to next calendar year
+        const yearForQuarter = (quarterForMonth === Quarter.QUARTER3 || quarterForMonth === Quarter.QUARTER4)
+          ? parseInt(year) + 1 
+          : parseInt(year);
+        // Set to 28th at 23:59:59 IST (18:29:59 UTC)
+        setDueDate(new Date(yearForQuarter, endMonth, endDay, 23, 59, 59));
+      }
     } else {
-      setDueDate(new Date(parseInt(year), monthIndex, 10));
+      // For monthly filing - calculate next month
+      let monthIndex = monthNames.indexOf(period);
+
+      // Check if it's December (index 11) and increment year if needed
+      let newYear = parseInt(year);
+      if (monthIndex === 11) {
+        newYear += 1;
+        monthIndex = 0; // Set month to January
+      } else {
+        monthIndex += 1; // Otherwise, just increment the month
+      }
+
+      if ([0, 1, 2, 3].includes(monthIndex)) {
+        setDueDate(new Date(parseInt(year) + 1, monthIndex, 28));
+        fetchYear = (parseInt(year) + (monthIndex == 0 ? 0 : 1)).toString();
+      } else {
+        setDueDate(new Date(parseInt(year), monthIndex, 28));
+      }
     }
 
     const returnformsresponse = await getPdfReturn({
@@ -170,10 +200,6 @@ const ReturnDashboard = () => {
     } else {
       setReturn01(null);
     }
-
-    const isQuarterlyFiling =
-      filingFrequency === "QUARTERLY" ||
-      davtdata?.frequencyFilings == "QUARTERLY";
 
     if (isQuarterlyFiling) {
       const effectiveQuarter = getQuarterForMonth(period) ?? quarter;
@@ -373,7 +399,6 @@ const ReturnDashboard = () => {
           let lastmonth = lastPendingResponse.data?.month;
 
           const vatliableDate = response.data.vatLiableDate;
-          console.log("vatliableDate", vatliableDate);
 
           if (vatliableDate == null) {
             return toast.error(

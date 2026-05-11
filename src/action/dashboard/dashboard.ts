@@ -2,9 +2,6 @@
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import prisma from "../../../prisma/database";
-interface DashboardMonthPayload {
-  userid: number;
-}
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
@@ -16,9 +13,9 @@ interface ResponseDate {
   completed: boolean;
 }
 
-const DashboardMonth = async (
-  payload: DashboardMonthPayload,
-): Promise<ApiResponseType<ResponseDate[] | null>> => {
+const DashboardMonth = async (): Promise<
+  ApiResponseType<ResponseDate[] | null>
+> => {
   const functionname: string = DashboardMonth.name;
   try {
     const currentUserId = await getCurrentUserId();
@@ -32,7 +29,8 @@ const DashboardMonth = async (
       } as any;
     }
 
-    const data = await getLastSixMonths(payload.userid);
+    const data = await getLastSixMonths(currentDvatId);
+
     return createResponse({
       message: "Success",
       functionname,
@@ -48,10 +46,10 @@ const DashboardMonth = async (
 
 export default DashboardMonth;
 
-const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
+const getLastSixMonths = async (dvatid: number): Promise<ResponseDate[]> => {
   const dvat = await prisma.dvat04.findFirst({
     where: {
-      createdById: userid,
+      id: dvatid,
       status: "APPROVED",
       deletedAt: null,
       deletedById: null,
@@ -77,7 +75,6 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
       Date.UTC(startYear, startMonth - i - 1, 1, 0, 0, 0, 0),
     );
 
-
     // Stop counting if the date is before liableDate
     if (date < liableDate) continue;
 
@@ -95,7 +92,7 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
             status: "PAID",
           },
         ],
-        createdById: userid,
+        dvat04Id: dvatid,
         year: year.toString(),
         return_type: "REVISED",
         month: date.toLocaleString("default", { month: "long" }),
@@ -117,7 +114,7 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
               status: "PAID",
             },
           ],
-          createdById: userid,
+          dvat04Id: dvatid,
           year: year.toString(),
           return_type: "ORIGINAL",
           month: date.toLocaleString("default", { month: "long" }),
@@ -149,24 +146,24 @@ const getLastSixMonths = async (userid: number): Promise<ResponseDate[]> => {
           date.toLocaleString("default", { month: "long" }),
         )
       ) {
-        fill_date = new Date(Date.UTC(year, 10, 31, 23, 59, 59, 999)); // October 31
+        fill_date = new Date(Date.UTC(year, 11, 31, 18, 29, 59, 999)); // December 31 IST (18:29:59 UTC)
         completed = false;
       } else if (
         ["July", "August", "September"].includes(
           date.toLocaleString("default", { month: "long" }),
         )
       ) {
-        fill_date = new Date(Date.UTC(year, 7, 31, 23, 59, 59, 999)); // July 31
+        fill_date = new Date(Date.UTC(year, 8, 30, 18, 29, 59, 999)); // September 30 IST (18:29:59 UTC)
         completed = false;
       } else if (
         ["April", "May", "June"].includes(
           date.toLocaleString("default", { month: "long" }),
         )
       ) {
-        fill_date = new Date(Date.UTC(year, 4, 30, 23, 59, 59, 999)); // April 30
+        fill_date = new Date(Date.UTC(year, 5, 30, 18, 29, 59, 999)); // June 30 IST (18:29:59 UTC)
         completed = false;
       } else {
-        fill_date = new Date(Date.UTC(year, 1, 31, 23, 59, 59, 999)); // January 31
+        fill_date = new Date(Date.UTC(year, 2, 31, 18, 29, 59, 999)); // March 31 IST (18:29:59 UTC)
         completed = false;
       }
 

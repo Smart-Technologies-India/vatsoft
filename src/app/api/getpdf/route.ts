@@ -5,7 +5,6 @@ export async function POST(req: NextRequest) {
   try {
     const { url } = await req.json();
     // Launch a new browser instance
-    console.log(`Generating PDF for URL: http://localhost:3001/${url}`);
     const browser = await puppeteer.launch({
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });

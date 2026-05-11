@@ -80,7 +80,6 @@ if (!(globalThis as Record<string, unknown>)[PRISMA_HOOK_KEY]) {
   const closePrisma = async () => {
     try {
       await prisma.$disconnect();
-      console.log("Prisma disconnected cleanly");
     } catch (error) {
       console.error("Error while disconnecting Prisma:", error);
     }

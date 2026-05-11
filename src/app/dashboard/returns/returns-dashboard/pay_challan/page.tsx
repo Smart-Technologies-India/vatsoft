@@ -37,7 +37,6 @@ const CreateChallanWithoutReturn = () => {
       return null;
     }
 
-    console.log("Parsed search params", { year, month, quarter: quarterParam });
 
     return {
       year,

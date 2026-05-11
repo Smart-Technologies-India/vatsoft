@@ -118,7 +118,6 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
       return toast.error("Return DVAT not found.");
     }
 
-    console.log("Data to submit", props.returnContext);
 
     let returnIdToUse: number | undefined = resolvedReturnId;
 

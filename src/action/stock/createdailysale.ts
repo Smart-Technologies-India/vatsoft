@@ -322,7 +322,6 @@ const CreateDailySale = async (
       data: result,
     });
   } catch (e) {
-    console.log(errorToString(e));
     return createResponse({
       message: errorToString(e),
       functionname,

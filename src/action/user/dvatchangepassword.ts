@@ -4,7 +4,6 @@ import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { hash, compare } from "bcrypt";
-import { dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 interface DvatChangePasswordPayload {
@@ -18,16 +17,16 @@ const DvatChangePassword = async (
   const functionname: string = DvatChangePassword.name;
 
   try {
-    const currentUserId = await getCurrentUserId();
-    const currentDvatId = await getCurrentDvatId();
-    if (!currentUserId || !currentDvatId) {
-      return {
-        status: false,
-        data: null,
-        message: "Not authenticated. Please login.",
-        functionname: "DvatChangePassword",
-      } as any;
-    }
+    // const currentUserId = await getCurrentUserId();
+    // const currentDvatId = await getCurrentDvatId();
+    // if (!currentUserId || !currentDvatId) {
+    //   return {
+    //     status: false,
+    //     data: null,
+    //     message: "Not authenticated. Please login.",
+    //     functionname: "DvatChangePassword",
+    //   } as any;
+    // }
 
     const dvat = await prisma.dvat04.findFirst({
       where: { id: parseInt(payload.id.toString() ?? "0"), deletedAt: null },

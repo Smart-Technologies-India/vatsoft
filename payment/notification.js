@@ -7,7 +7,6 @@ const notification = async () => {
   //     deletedAt: null,
   //   },
   // });
-  // console.log("Fetched dvat record:", dvatRecord);
 
   // if (!dvatRecord) {
   //   console.error("No dvat record found with id 1");

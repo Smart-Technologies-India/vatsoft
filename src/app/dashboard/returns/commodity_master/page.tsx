@@ -29,9 +29,8 @@ const CommodityMasterPage = () => {
     dvat04["commodity"] | null
   >(null);
   const [pagination, setPagination] = useState({
+    currentPage: 1,
     take: 10,
-    skip: 0,
-    total: 0,
   });
 
   const init = async () => {
@@ -103,21 +102,20 @@ const CommodityMasterPage = () => {
   }, [searchText, visibleCommodity]);
 
   const paginatedCommodity = useMemo(() => {
+    const skip = (pagination.currentPage - 1) * pagination.take;
     return filteredCommodity.slice(
-      pagination.skip,
-      pagination.skip + pagination.take,
+      skip,
+      skip + pagination.take,
     );
-  }, [filteredCommodity, pagination.skip, pagination.take]);
+  }, [filteredCommodity, pagination.currentPage, pagination.take]);
 
-  useEffect(() => {
-    setPagination((prev) => ({
-      ...prev,
-      skip: 0,
-      total: filteredCommodity.length,
-    }));
-  }, [filteredCommodity]);
 
-  const isLiquorUser = userCommodityType === "LIQUOR";
+
+  const isLiquorUser =
+    userCommodityType === "LIQUOR" ||
+    userCommodityType === "OIDC" ||
+    userCommodityType === "MANUFACTURER" ||
+    userCommodityType === "OTHER";
   const isFuelUser = userCommodityType === "FUEL";
   const pageTitle = isLiquorUser
     ? "Liquor Commodity Master"
@@ -160,13 +158,7 @@ const CommodityMasterPage = () => {
     toast.success("Commodity master exported successfully!");
   };
 
-  const onChangePageCount = (page: number, pageSize: number) => {
-    setPagination({
-      take: pageSize,
-      skip: pageSize * (page - 1),
-      total: filteredCommodity.length,
-    });
-  };
+
 
   if (isLoading) {
     return (
@@ -194,7 +186,13 @@ const CommodityMasterPage = () => {
               <Input
                 placeholder="Search by ID, product name, or pack type"
                 value={searchText}
-                onChange={(event) => setSearchText(event.target.value)}
+                onChange={(event) => {
+                  setSearchText(event.target.value);
+                  setPagination((prev) => ({
+                    ...prev,
+                    currentPage: 1,
+                  }));
+                }}
                 allowClear
                 className="w-full sm:w-80"
               />
@@ -236,7 +234,10 @@ const CommodityMasterPage = () => {
               <TableBody>
                 {paginatedCommodity.length > 0 ? (
                   paginatedCommodity.map((item) => (
-                    <TableRow key={item.id} className="border-b hover:bg-gray-50">
+                    <TableRow
+                      key={item.id}
+                      className="border-b hover:bg-gray-50"
+                    >
                       <TableCell className="p-3 text-center text-sm">
                         {item.id}
                       </TableCell>
@@ -272,27 +273,39 @@ const CommodityMasterPage = () => {
             <div className="lg:hidden">
               <Pagination
                 align="center"
-                current={Math.floor(pagination.skip / pagination.take) + 1}
+                current={pagination.currentPage}
                 pageSize={pagination.take}
-                onChange={onChangePageCount}
+                onChange={(page, pageSize) => {
+                  setPagination({
+                    currentPage: page,
+                    take: pageSize,
+                  });
+                }}
                 showSizeChanger
                 pageSizeOptions={PAGE_SIZE_OPTIONS}
-                total={pagination.total}
+                total={filteredCommodity.length}
                 showTotal={(total) => `Total ${total} items`}
               />
             </div>
             <div className="hidden lg:block">
               <Pagination
                 align="center"
-                current={Math.floor(pagination.skip / pagination.take) + 1}
+                current={pagination.currentPage}
                 pageSize={pagination.take}
-                onChange={onChangePageCount}
+                onChange={(page, pageSize) => {
+                  setPagination({
+                    currentPage: page,
+                    take: pageSize,
+                  });
+                }}
                 showQuickJumper
                 showSizeChanger
                 pageSizeOptions={PAGE_SIZE_OPTIONS}
-                total={pagination.total}
+                total={filteredCommodity.length}
                 responsive
-                showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+                showTotal={(total, range) =>
+                  `${range[0]}-${range[1]} of ${total} items`
+                }
               />
             </div>
           </div>
