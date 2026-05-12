@@ -139,7 +139,7 @@ const ReturnDashboard = () => {
     ];
 
     let fetchYear = year;
-    
+
     // Determine if quarterly filing - check filingFrequency first
     const isQuarterlyFiling =
       filingFrequency?.toUpperCase() === "QUARTERLY" ||
@@ -155,13 +155,15 @@ const ReturnDashboard = () => {
         QUARTER3: [0, 28], // January 28 (month after December)
         QUARTER4: [3, 28], // April 28 (month after March)
       };
-      
+
       if (quarterForMonth) {
         const [endMonth, endDay] = quarterEndDates[quarterForMonth];
         // Q3 and Q4 move to next calendar year
-        const yearForQuarter = (quarterForMonth === Quarter.QUARTER3 || quarterForMonth === Quarter.QUARTER4)
-          ? parseInt(year) + 1 
-          : parseInt(year);
+        const yearForQuarter =
+          quarterForMonth === Quarter.QUARTER3 ||
+          quarterForMonth === Quarter.QUARTER4
+            ? parseInt(year) + 1
+            : parseInt(year);
         // Set to 28th at 23:59:59 IST (18:29:59 UTC)
         setDueDate(new Date(yearForQuarter, endMonth, endDay, 23, 59, 59));
       }
@@ -1063,7 +1065,29 @@ const ReturnDashboard = () => {
       <main className="p-3 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
-            <h1 className="text-lg font-medium text-gray-900">File Returns</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-medium text-gray-900">
+                File Returns
+              </h1>
+              <div className="grow"></div>
+              {isSearch && (
+                <button
+                  className="py-1 px-4 border text-white text-lg font-semibold bg-blue-500 rounded-lg cursor-pointer"
+                  onClick={() => {
+                    if (return01 == null) {
+                      router.push(
+                        `/dashboard/returns/returns-dashboard/pay_challan?form=30A&year=${getNewYear(year!, period!)}&quarter=${quarter}&month=${period}`,
+                      );
+                    }
+                    router.push(
+                      `/dashboard/returns/returns-dashboard/pay_challan/${encryptURLData(return01!.id.toString())}`,
+                    );
+                  }}
+                >
+                  Pay Challan
+                </button>
+              )}
+            </div>
             <Marquee className="bg-yellow-50 border border-yellow-200 mt-2 text-xs rounded px-2 py-1">
               This is a banner can be used for official updates and
               notifications.

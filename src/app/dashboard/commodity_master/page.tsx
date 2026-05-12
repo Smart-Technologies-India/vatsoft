@@ -15,7 +15,7 @@ import {
 import { commodity_master, Status } from "@prisma/client";
 import { Button, Drawer, Pagination, Popover } from "antd";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 
 const CommodityMaster = () => {
@@ -77,10 +77,50 @@ const CommodityMaster = () => {
       setLoading(false);
     };
     init();
-  }, []);
+  }, [router]);
 
   const [open, setOpen] = useState(false);
   const [comm, setComm] = useState<commodity_master | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedProductType, setSelectedProductType] = useState<string>("all");
+
+  const productTypeOptions = useMemo(() => {
+    const uniqueTypes = Array.from(
+      new Set(
+        commodty
+          .map((item) => item.product_type)
+          .filter(
+            (
+              type
+            ): type is NonNullable<commodity_master["product_type"]> =>
+              type !== null
+          )
+          .map((type) => type.toString())
+      )
+    );
+    return uniqueTypes.sort((a, b) => a.localeCompare(b));
+  }, [commodty]);
+
+  const filteredCommodities = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return commodty.filter((item) => {
+      const productName = item.product_name?.toLowerCase() ?? "";
+      const productType = item.product_type?.toString().toLowerCase() ?? "";
+
+      const matchesSearch =
+        normalizedSearch.length === 0 ||
+        productName.includes(normalizedSearch) ||
+        productType.includes(normalizedSearch);
+
+      const matchesProductType =
+        selectedProductType === "all" ||
+        item.product_type?.toString() === selectedProductType;
+
+      return matchesSearch && matchesProductType;
+    });
+  }, [commodty, searchTerm, selectedProductType]);
+
   const showDrawer = async (id: number) => {
     const data = await GetCommodityMaster({ id: id });
 
@@ -290,6 +330,29 @@ const CommodityMaster = () => {
 
           {/* Table Card */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-4 border-b bg-gray-50">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search by product name or type"
+                  className="md:col-span-2 h-10 rounded-md border border-gray-300 bg-white px-3 text-sm outline-none focus:border-blue-500"
+                />
+                <select
+                  value={selectedProductType}
+                  onChange={(e) => setSelectedProductType(e.target.value)}
+                  className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm outline-none focus:border-blue-500"
+                >
+                  <option value="all">All Product Types</option>
+                  {productTypeOptions.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <Table className="border-0">
                 <TableHeader>
@@ -315,7 +378,7 @@ const CommodityMaster = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {commodty.map((val: commodity_master, index: number) => (
+                  {filteredCommodities.map((val: commodity_master, index: number) => (
                     <TableRow key={index} className="hover:bg-gray-50 border-b">
                       <TableCell className="p-3 text-center text-sm">
                         {val.product_name}
@@ -417,6 +480,16 @@ const CommodityMaster = () => {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredCommodities.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="p-6 text-center text-sm text-gray-500"
+                      >
+                        No commodities found for the selected search and filter.
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
