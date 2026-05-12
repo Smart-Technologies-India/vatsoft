@@ -53,6 +53,7 @@ const CreateSaveStock = async (
       const existingStocks = await prisma.save_stock.findMany({
         where: {
           dvat04Id: payload.dvatid,
+          deletedAt: null,
         },
         select: {
           id: true,

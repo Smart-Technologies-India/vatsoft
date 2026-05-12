@@ -74,7 +74,12 @@ const CommodityMasterPage = () => {
   }, [router]);
 
   const visibleCommodity = useMemo(() => {
-    if (userCommodityType === "LIQUOR") {
+    if (
+      userCommodityType === "LIQUOR" ||
+      userCommodityType === "OIDC" ||
+      userCommodityType === "MANUFACTURER" ||
+      userCommodityType === "OTHER"
+    ) {
       return commodityList.filter((item) => item.product_type === "LIQUOR");
     }
 
@@ -103,13 +108,8 @@ const CommodityMasterPage = () => {
 
   const paginatedCommodity = useMemo(() => {
     const skip = (pagination.currentPage - 1) * pagination.take;
-    return filteredCommodity.slice(
-      skip,
-      skip + pagination.take,
-    );
+    return filteredCommodity.slice(skip, skip + pagination.take);
   }, [filteredCommodity, pagination.currentPage, pagination.take]);
-
-
 
   const isLiquorUser =
     userCommodityType === "LIQUOR" ||
@@ -157,8 +157,6 @@ const CommodityMasterPage = () => {
     );
     toast.success("Commodity master exported successfully!");
   };
-
-
 
   if (isLoading) {
     return (
