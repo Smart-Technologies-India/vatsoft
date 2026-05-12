@@ -729,9 +729,9 @@ const DocumentWiseDetails = () => {
             errors.push("* TIN Number not found in TIN master");
           }
 
-          if (!/^[A-Za-z0-9]+$/.test(invoice_no)) {
-            errors.push("* Invoice No must be alphanumeric");
-          }
+          // if (!/^[A-Za-z0-9]+$/.test(invoice_no)) {
+          //   errors.push("* Invoice No must be alphanumeric");
+          // }
 
           const invoice_date = parseDateDDMMYYYY(invoice_date_raw);
           if (!invoice_date) {

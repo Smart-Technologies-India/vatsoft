@@ -145,6 +145,16 @@ export default function PolicyPage() {
                 Privacy Policy
               </button>
               <button
+                onClick={() => scrollToSection("refund")}
+                className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeSection === "refund"
+                    ? "bg-[#16448b] text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Refund Policy
+              </button>
+              <button
                 onClick={() => scrollToSection("disclaimer")}
                 className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
                   activeSection === "disclaimer"
@@ -581,10 +591,94 @@ export default function PolicyPage() {
               </div>
             </section>
 
-            {/* Section 3: Disclaimer */}
+            {/* Section 3: Refund & Payment Cancellation */}
+            <section id="refund" className="bg-white rounded-lg shadow-md p-6 scroll-mt-32">
+              <h2 className="text-2xl font-bold text-[#0f2f67] mb-4 border-b-2 border-[#16448b] pb-2">
+                3. REFUND & PAYMENT CANCELLATION POLICY
+              </h2>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-[#16448b] mb-2">
+                    3.1 Scope
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    This section applies to online VAT payments made through the
+                    official portal for challans, return filing, and related
+                    statutory dues.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-semibold text-[#16448b] mb-2">
+                    3.2 Payment Cancellation
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed mb-2">
+                    Once a payment transaction is successfully authorized and
+                    processed by the payment gateway, cancellation of that
+                    payment is generally not permitted through the portal.
+                  </p>
+                  <p className="text-gray-700 leading-relaxed">
+                    If the transaction is incomplete, timed out, or marked
+                    failed by the gateway, no debit should be treated as a
+                    successful payment unless reflected as paid in the official
+                    challan/payment status.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-semibold text-[#16448b] mb-2">
+                    3.3 Refund Eligibility
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed mb-2">
+                    Refund requests may be considered only in exceptional cases,
+                    such as:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-gray-700 ml-4">
+                    <li>Duplicate payment for the same liability</li>
+                    <li>Payment debited but challan status not updated due to technical issues</li>
+                    <li>Excess payment verified by departmental records</li>
+                  </ul>
+                  <p className="text-gray-700 leading-relaxed mt-2">
+                    All refund decisions are subject to departmental scrutiny,
+                    statutory provisions, and verification of transaction logs.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-semibold text-[#16448b] mb-2">
+                    3.4 Refund Process
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed mb-2">
+                    To request a refund, users should submit a formal
+                    application with supporting details, including:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-gray-700 ml-4">
+                    <li>Challan number / Order ID / Transaction reference</li>
+                    <li>Payment date and amount</li>
+                    <li>Reason for refund claim</li>
+                    <li>Relevant proof of debit/payment</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-semibold text-[#16448b] mb-2">
+                    3.5 Timelines & Communication
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    The Department will process eligible claims within a
+                    reasonable administrative timeline. Users may be contacted
+                    for additional clarification or documentation during
+                    verification.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Section 4: Disclaimer */}
             <section id="disclaimer" className="bg-white rounded-lg shadow-md p-6 scroll-mt-32">
               <h2 className="text-2xl font-bold text-[#0f2f67] mb-4 border-b-2 border-[#16448b] pb-2">
-                3. DISCLAIMER
+                4. DISCLAIMER
               </h2>
               <p className="text-gray-700 leading-relaxed mb-3">
                 The information on this website is for general guidance only.
@@ -612,10 +706,10 @@ export default function PolicyPage() {
               </p>
             </section>
 
-            {/* Section 4: Website Usage Policy */}
+            {/* Section 5: Website Usage Policy */}
             <section id="usage" className="bg-white rounded-lg shadow-md p-6 scroll-mt-32">
               <h2 className="text-2xl font-bold text-[#0f2f67] mb-4 border-b-2 border-[#16448b] pb-2">
-                4. WEBSITE USAGE POLICY
+                5. WEBSITE USAGE POLICY
               </h2>
 
               <div className="space-y-4">
@@ -686,10 +780,10 @@ export default function PolicyPage() {
               </div>
             </section>
 
-            {/* Section 5: Copyright Policy */}
+            {/* Section 6: Copyright Policy */}
             <section id="copyright" className="bg-white rounded-lg shadow-md p-6 scroll-mt-32">
               <h2 className="text-2xl font-bold text-[#0f2f67] mb-4 border-b-2 border-[#16448b] pb-2">
-                5. COPYRIGHT POLICY
+                6. COPYRIGHT POLICY
               </h2>
 
               <div className="space-y-4">
@@ -766,10 +860,10 @@ export default function PolicyPage() {
               </div>
             </section>
 
-            {/* Section 6: Contact Information */}
+            {/* Section 7: Contact Information */}
             <section id="contact" className="bg-white rounded-lg shadow-md p-6 scroll-mt-32">
               <h2 className="text-2xl font-bold text-[#0f2f67] mb-4 border-b-2 border-[#16448b] pb-2">
-                6. CONTACT INFORMATION
+                7. CONTACT INFORMATION
               </h2>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -827,10 +921,10 @@ export default function PolicyPage() {
               </div>
             </section>
 
-            {/* Section 7: Acceptance */}
+            {/* Section 8: Acceptance */}
             <section id="acceptance" className="bg-linear-to-r from-[#16448b] to-[#0f2f67] rounded-lg shadow-md p-6 text-white scroll-mt-32">
               <h2 className="text-2xl font-bold mb-4 border-b-2 border-white pb-2">
-                7. ACCEPTANCE
+                8. ACCEPTANCE
               </h2>
               <p className="leading-relaxed mb-3">
                 By using this website, you confirm that you have read,

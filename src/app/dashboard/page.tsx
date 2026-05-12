@@ -341,7 +341,7 @@ const Page = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h1 className="text-lg font-medium text-gray-900">
-                        Welcome, {user?.firstName ?? ""} {user?.lastName ?? ""}
+                        Welcome, {dvat?.tradename }
                       </h1>
                       <p className="text-gray-500 text-sm mt-0.5">
                         VATSMART Portal Dashboard

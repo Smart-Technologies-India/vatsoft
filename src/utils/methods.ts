@@ -268,6 +268,7 @@ export { validateAadharCard, validatePanCard };
 const onFormError = <T extends FieldValues>(error: FieldErrors<T>) => {
   const firstErrorMessage = Object.values(error)[0]?.message;
 
+
   setTimeout(() => {
     if (firstErrorMessage) {
       const errorElement = Array.from(document.querySelectorAll("p")).find(

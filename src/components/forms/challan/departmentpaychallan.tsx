@@ -111,6 +111,13 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
     };
 
     loadData();
+
+    reset({
+      interest: "0",
+      latefees: "0",
+      penalty: "0",
+      others: "0",
+    });
   }, [props.returnId, props.returnContext]);
 
   const onSubmit = async (data: CreateChallanForm) => {
@@ -118,8 +125,8 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
       return toast.error("Return DVAT not found.");
     }
 
-
     let returnIdToUse: number | undefined = resolvedReturnId;
+
 
     if (!returnIdToUse) {
       if (!props.returnContext) {

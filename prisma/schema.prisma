@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 model user {
@@ -157,6 +156,7 @@ model user {
   return_due_createdBy                 return_due[]                @relation("return_due_createdBy")
   return_due_updatedBy                 return_due[]                @relation("return_due_updatedBy")
 
+  refinery_createdBy      refinery[]      @relation("refinery_createdBy")
   refinery_updatedBy      refinery[]      @relation("refinery_updatedBy")
   refinery_deletedBy      refinery[]      @relation("refinery_deletedBy")
   refinery_sale_createdBy refinery_sale[] @relation("refinery_sale_createdBy")
@@ -1605,6 +1605,7 @@ model refinery {
   temppass      String?
   tinNumber     String?
   tin_master_id Int               @default(1)
+  createdById   Int?
   name          String?
   tradename     String?
   pan           String?
@@ -1623,9 +1624,12 @@ model refinery {
   deletedAt     DateTime?
   deletedById   Int?
   tin_master    tin_number_master @relation(fields: [tin_master_id], references: [id])
+  createdBy     user?             @relation("refinery_createdBy", fields: [createdById], references: [id])
   updatedBy     user?             @relation("refinery_updatedBy", fields: [updatedById], references: [id])
   deletedBy     user?             @relation("refinery_deletedBy", fields: [deletedById], references: [id])
   refinerySales refinery_sale[]
+
+  @@index([createdById], map: "refinery_createdById_fkey")
 }
 
 enum RefineryStatus {

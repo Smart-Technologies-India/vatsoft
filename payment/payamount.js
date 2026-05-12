@@ -29,7 +29,7 @@ export const payamount = async (request, response) => {
     include: {
       challan: {
         include: {
-          dvat04: {
+          dvat: {
             select: {
               tradename: true,
               email: true,
@@ -66,9 +66,9 @@ export const payamount = async (request, response) => {
   const paymentType = activeIntent.type || "DEMAND";
 
   const purpose = `${challan.id}_${challan.dvatid}_${challan.returnid ?? 0}_${paymentType}`;
-  const billingName = challan.dvat04?.tradename || "VAT Dealer";
-  const billingEmail = challan.dvat04?.email || "support@dddnhvat.com";
-  const billingMobile = (challan.dvat04?.contact_one || "").replace(/\D/g, "").slice(-10) || "0000000000";
+  const billingName = challan.dvat?.tradename || "VAT Dealer";
+  const billingEmail = challan.dvat?.email || "support@dddnhvat.com";
+  const billingMobile = (challan.dvat?.contact_one || "").replace(/\D/g, "").slice(-10) || "0000000000";
 
   response.writeHead(200, { "Content-Type": "text/html" });
   response.write(
