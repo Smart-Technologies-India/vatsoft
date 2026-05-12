@@ -113,6 +113,7 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
     loadData();
 
     reset({
+      reason: "MONTHLYPAYMENT",
       interest: "0",
       latefees: "0",
       penalty: "0",

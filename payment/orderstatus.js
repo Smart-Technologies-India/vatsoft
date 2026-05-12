@@ -104,6 +104,10 @@ export const orderstatus = async (request, response) => {
       }
 
       const rawString = payload.toString().trim();
+      if (isHexCipher(rawString)) {
+        return JSON.parse(decrypt(rawString, keyBase64, ivBase64));
+      }
+
       const parsedForm = qs.parse(rawString);
 
       if (parsedForm.enc_response && isHexCipher(parsedForm.enc_response)) {

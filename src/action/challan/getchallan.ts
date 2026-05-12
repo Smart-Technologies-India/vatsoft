@@ -3,8 +3,10 @@ import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { challan } from "@prisma/client";
+import { challan, returns_01 } from "@prisma/client";
 import prisma from "../../../prisma/database";
+
+export type ChallanWithReturn = challan & { returns_01: returns_01 | null };
 
 interface GetChallanPayload {
   id: number;
@@ -12,7 +14,7 @@ interface GetChallanPayload {
 
 const GetChallan = async (
   payload: GetChallanPayload
-): Promise<ApiResponseType<challan | null>> => {
+): Promise<ApiResponseType<ChallanWithReturn | null>> => {
   const functionname: string = GetChallan.name;
 
   try {
@@ -32,6 +34,9 @@ const GetChallan = async (
         deletedAt: null,
         deletedById: null,
         id: payload.id,
+      },
+      include: {
+        returns_01: true,
       },
     });
 
