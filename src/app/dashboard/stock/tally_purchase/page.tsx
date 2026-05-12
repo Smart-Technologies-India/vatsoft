@@ -46,6 +46,9 @@ const TallyPurchasePage = () => {
   const [userid, setUserid] = useState<number>(0);
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [acceptingGroupIndex, setAcceptingGroupIndex] = useState<number | null>(
+    null,
+  );
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
     setQuantityCount(value);
@@ -86,19 +89,27 @@ const TallyPurchasePage = () => {
 
   const filteredTallyPurchase = useMemo(() => {
     const query = searchText.trim().toLowerCase();
-    if (!query) return allTallyPurchase;
+    let result = !query
+      ? allTallyPurchase
+      : allTallyPurchase.filter((group) => {
+          const invoiceNo = group.invoice_number.toLowerCase();
+          const dealer = (group.seller_tin_number.name_of_dealer ?? "").toLowerCase();
+          const tin = (group.seller_tin_number.tin_number ?? "").toLowerCase();
+          const invoiceDate = formateDate(group.invoice_date).toLowerCase();
+          return (
+            invoiceNo.includes(query) ||
+            dealer.includes(query) ||
+            tin.includes(query) ||
+            invoiceDate.includes(query)
+          );
+        });
 
-    return allTallyPurchase.filter((group) => {
-      const invoiceNo = group.invoice_number.toLowerCase();
-      const dealer = (group.seller_tin_number.name_of_dealer ?? "").toLowerCase();
-      const tin = (group.seller_tin_number.tin_number ?? "").toLowerCase();
-      const invoiceDate = formateDate(group.invoice_date).toLowerCase();
-      return (
-        invoiceNo.includes(query) ||
-        dealer.includes(query) ||
-        tin.includes(query) ||
-        invoiceDate.includes(query)
-      );
+    // Sort pending records to top
+    return result.sort((a, b) => {
+      const aPending = !a.records.every((r) => r.is_accept);
+      const bPending = !b.records.every((r) => r.is_accept);
+      if (aPending !== bPending) return aPending ? -1 : 1;
+      return 0;
     });
   }, [allTallyPurchase, searchText]);
 
@@ -179,6 +190,33 @@ const TallyPurchasePage = () => {
     if (response.status) {
       toast.success(response.message);
       await init(dvatdata.id, 0, pagination.take);
+    } else {
+      toast.error(response.message);
+    }
+  };
+
+  const handleAcceptGroup = async (group: GroupedTallyPurchase) => {
+    if (!dvatdata) return;
+
+    const pendingGroupRecords = group.records.filter(
+      (record) => !record.is_accept,
+    );
+    if (pendingGroupRecords.length === 0) {
+      return toast.info("No pending records to accept in this group.");
+    }
+
+    setAcceptingGroupIndex(paginatedTallyPurchase.indexOf(group));
+    const ids = pendingGroupRecords.map((record) => record.id);
+    const response = await AcceptTallyPurchase({
+      tallyIds: ids,
+      dvatid: dvatdata.id,
+      createdById: userid,
+    });
+    setAcceptingGroupIndex(null);
+
+    if (response.status) {
+      toast.success(response.message);
+      await init(dvatdata.id, pagination.skip, pagination.take);
     } else {
       toast.error(response.message);
     }
@@ -490,6 +528,17 @@ const TallyPurchasePage = () => {
                             >
                               View
                             </button>
+                            {!group.records.every((r) => r.is_accept) && (
+                              <button
+                                onClick={() => handleAcceptGroup(group)}
+                                disabled={acceptingGroupIndex !== null}
+                                className="text-sm bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white py-1 px-3 rounded"
+                              >
+                                {acceptingGroupIndex === index
+                                  ? "Accepting..."
+                                  : "Accept"}
+                              </button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

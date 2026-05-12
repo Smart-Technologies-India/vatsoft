@@ -20,7 +20,7 @@ interface ResponseData {
   amount: number; // Total amount for the day
 }
 const Last15ReceivedReport = async (
-  payload: Last15ReceivedPayload
+  payload: Last15ReceivedPayload,
 ): Promise<ApiResponseType<ResponseData[] | null>> => {
   const functionname: string = Last15ReceivedReport.name;
   try {
@@ -58,7 +58,9 @@ const Last15ReceivedReport = async (
     }
 
     // Calculate the number of days in the date range
-    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysDiff = Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
     const daysToShow = Math.min(daysDiff, 30); // Show max 30 days or all days in range
 
     // Create an array to store the result
@@ -73,12 +75,12 @@ const Last15ReceivedReport = async (
         0,
         0,
         0,
-        0
+        0,
       );
-      
+
       // Skip if day is before start date
       if (day < startDate) continue;
-      
+
       const nextDay = new Date(
         day.getFullYear(),
         day.getMonth(),
@@ -86,50 +88,51 @@ const Last15ReceivedReport = async (
         0,
         0,
         0,
-        0
+        0,
       );
 
       const dvat04Where: any = {};
-      
+
       if (payload.selectOffice) {
         dvat04Where.selectOffice = payload.selectOffice;
       }
-      
+
       if (payload.selectCommodity === "FUEL") {
         dvat04Where.commodity = "FUEL";
       } else if (payload.selectCommodity === "LIQUOR") {
         dvat04Where.commodity = { not: "FUEL" };
       }
 
-      const dayReceivedData = await prisma.returns_01.findMany({
-        where: {
-          dvat04: dvat04Where,
-          deletedAt: null,
-          deletedBy: null,
-          OR: [
-            {
-              status: "LATE",
-            },
-            {
-              status: "PAID",
-            },
-          ],
-          transaction_date: {
-            gte: day,
-            lt: nextDay,
-          },
+      const challanWhere: any = {
+        deletedAt: null,
+        deletedBy: null,
+        paymentstatus: "PAID",
+        transaction_date: {
+          gte: day,
+          lt: nextDay,
         },
+      };
+
+      if (Object.keys(dvat04Where).length > 0) {
+        challanWhere.dvat = dvat04Where;
+      }
+
+      const dayReceivedData = await prisma.challan.findMany({
+        where: challanWhere,
       });
 
       let totalAmountForDay = 0;
       for (let j = 0; j < dayReceivedData.length; j++) {
-        totalAmountForDay += Math.max(0, parseInt(
-          dayReceivedData[j].total_tax_amount == "" ||
-            dayReceivedData[j].total_tax_amount == null ||
-            dayReceivedData[j].total_tax_amount == undefined
-            ? "0"
-            : dayReceivedData[j].total_tax_amount ?? "0"
-        ));
+        totalAmountForDay += Math.max(
+          0,
+          parseInt(
+            dayReceivedData[j].total_tax_amount == "" ||
+              dayReceivedData[j].total_tax_amount == null ||
+              dayReceivedData[j].total_tax_amount == undefined
+              ? "0"
+              : (dayReceivedData[j].total_tax_amount ?? "0"),
+          ),
+        );
       }
 
       receivedDataArray.push({

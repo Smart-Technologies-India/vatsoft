@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserId } from "./action/auth/getuserid";
 import { getCurrentUserRole } from "./lib/auth";
-import { ConstitutionOfBusiness } from "@prisma/client";
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const authResponse = await getAuthenticatedUserId();
-
 
   const role = await getCurrentUserRole();
   if (authResponse.status && pathname.startsWith("/login")) {
@@ -37,6 +35,7 @@ export default async function proxy(request: NextRequest) {
       "DY_COMMISSIONER",
       "JOINT_COMMISSIONER",
       "USER",
+      "REFINERY_MANAGER",
     ].includes(role ?? "USER")
   ) {
     return NextResponse.redirect(new URL("/dashboard/register", request.url));

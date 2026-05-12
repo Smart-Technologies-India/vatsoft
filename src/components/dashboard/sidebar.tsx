@@ -77,7 +77,9 @@ const Sidebar = (props: SidebarProps) => {
       } ${props.isOpen ? "translate-x-0" : "-translate-x-64 md:translate-x-0"}`}
     >
       {/* Header */}
-      <div className={`py-2 border-b border-gray-200 ${isCollapsed ? "px-3" : "px-6"}`}>
+      <div
+        className={`py-2 border-b border-gray-200 ${isCollapsed ? "px-3" : "px-6"}`}
+      >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 shrink-0 relative bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
             <span className="text-white font-bold text-lg">V</span>
@@ -102,6 +104,7 @@ const Sidebar = (props: SidebarProps) => {
           "VATOFFICER",
           "DY_COMMISSIONER",
           "JOINT_COMMISSIONER",
+          "REFINERY_MANAGER",
         ].includes(props.role) && (
           <MenuTab
             click={() => props.setIsOpen(false)}
@@ -241,7 +244,6 @@ const Sidebar = (props: SidebarProps) => {
               pathcheck={"/dashboard/registration_status"}
               collapsed={isCollapsed}
             />
-          
           </>
         )}
         {[
@@ -289,6 +291,51 @@ const Sidebar = (props: SidebarProps) => {
               name="Add Purchase"
               path={path}
               pathcheck={"/dashboard/test/add_purchase"}
+              collapsed={isCollapsed}
+            />
+          </>
+        )}
+
+        {["REFINERY_MANAGER"].includes(props.role) && (
+          <>
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentBuildingBank48Regular className="w-5 h-5" />}
+              name="Sale"
+              path={path}
+              pathcheck={"/dashboard/refinery/sale"}
+              collapsed={isCollapsed}
+            />
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentCalendar12Regular className="w-5 h-5" />}
+              name="Dispatch"
+              path={path}
+              pathcheck={"/dashboard/refinery/dispatch"}
+              collapsed={isCollapsed}
+            />
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentCalendar12Regular className="w-5 h-5" />}
+              name="Product Master"
+              path={path}
+              pathcheck={"/dashboard/refinery/product_master"}
+              collapsed={isCollapsed}
+            />
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentCalendar12Regular className="w-5 h-5" />}
+              name="Dealer Master"
+              path={path}
+              pathcheck={"/dashboard/refinery/dealer_master"}
+              collapsed={isCollapsed}
+            />
+             <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentAlignBottom24Regular className="w-5 h-5" />}
+              name="Reports"
+              path={path}
+              pathcheck={"/dashboard/refinery/reports"}
               collapsed={isCollapsed}
             />
           </>

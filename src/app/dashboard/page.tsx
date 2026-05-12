@@ -1327,7 +1327,7 @@ const OfficerDashboardPage = () => {
       .reverse(),
     datasets: [
       {
-        label: "Receivable",
+        label: "Challan Collection",
         data: last15Day.map((val: Last15DayData) => val.amount).reverse(),
         backgroundColor: "#95acbe",
         borderWidth: 0,

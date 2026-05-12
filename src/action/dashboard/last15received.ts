@@ -57,14 +57,14 @@ const Last15Received = async (
         0,
       );
 
-      const dayReceivedData = await prisma.returns_01.findMany({
+      const dayReceivedData = await prisma.challan.findMany({
         where: {
-          dvat04: {
+          dvat: {
             selectOffice: payload.selectOffice,
           },
           deletedAt: null,
           deletedBy: null,
-          status: "PAID",
+          paymentstatus: "PAID",
           transaction_date: {
             gte: day,
             lt: nextDay,
@@ -91,7 +91,6 @@ const Last15Received = async (
         amount: Math.max(0, totalAmountForDay),
       });
     }
-
     return createResponse({
       functionname: functionname,
       message: "Officer Dashboard data.",

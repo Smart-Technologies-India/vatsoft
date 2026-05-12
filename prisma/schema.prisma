@@ -691,19 +691,19 @@ model challan {
   bene_bank        String?
   bene_branch      String?
   trans_fee        String?
-  reason           ChallanReason  @default(MONTHLYPAYMENT)
-  remark           String?        @db.MediumText
-  paymentstatus    PaymentStatus  @default(PENDING)
+  reason           ChallanReason    @default(MONTHLYPAYMENT)
+  remark           String?          @db.MediumText
+  paymentstatus    PaymentStatus    @default(PENDING)
   expire_date      DateTime
-  createdAt        DateTime       @default(now())
+  createdAt        DateTime         @default(now())
   createdById      Int
-  updatedAt        DateTime       @updatedAt
+  updatedAt        DateTime         @updatedAt
   updatedById      Int?
   deletedAt        DateTime?
   deletedById      Int?
-  createdBy        user           @relation("challan_createdBy", fields: [createdById], references: [id])
-  deletedBy        user?          @relation("challan_deletedBy", fields: [deletedById], references: [id])
-  updatedBy        user?          @relation("challan_updatedBy", fields: [updatedById], references: [id])
+  createdBy        user             @relation("challan_createdBy", fields: [createdById], references: [id])
+  deletedBy        user?            @relation("challan_deletedBy", fields: [deletedById], references: [id])
+  updatedBy        user?            @relation("challan_updatedBy", fields: [updatedById], references: [id])
   order_notice     order_notice[]
   payment_intents  payment_intent[]
 
@@ -1640,6 +1640,7 @@ enum Role {
   OIDC1
   EXCISE
   VATOFFICER_DNH
+  REFINERY_MANAGER
 }
 
 enum Gender {
