@@ -616,38 +616,43 @@ export const postRes = (request, response) => {
             },
           });
 
-          const get_rr_number = () => {
-            const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
+          const get_rr_number = (returnRecord) => {
+            const rr_no =
+              returnRecord?.dvat04?.tinNumber?.toString().slice(-4) || "0000";
             const today = new Date();
             const month = ("0" + (today.getMonth() + 1)).slice(-2);
             const day = ("0" + today.getDate()).slice(-2);
-            const return_id = parseInt(return01?.id.toString() ?? "0") + 4000;
+            const return_id = parseInt(returnRecord?.id?.toString() ?? "0") + 4000;
 
             return `${rr_no}${month}${day}${return_id}`;
           };
 
-          await prisma.returns_01.update({
-            where: {
-              id: challan.returnid,
-            },
-            data: {
-              rr_number: get_rr_number(),
-              paymentmode: result.payment_mode.toString().toUpperCase(),
-              transaction_date: new Date().toISOString(),
-              track_id: result.tracking_id,
-              bank_name: result.bank_ref_no,
-              transaction_id: result.order_id,
-              status: "PAID",
-            },
-          });
-
-          const returnToUpdate = await prisma.returns_01.findMany({
+          const returnToUpdate = await prisma.returns_01.findFirst({
             where: {
               id: challan.returnid,
             },
             include: {
               dvat04: true,
               challan: true,
+            },
+          });
+
+          if (!returnToUpdate) {
+            throw new Error("Return record not found for paid challan.");
+          }
+
+          await prisma.returns_01.update({
+            where: {
+              id: challan.returnid,
+            },
+            data: {
+              rr_number: get_rr_number(returnToUpdate),
+              paymentmode: result.payment_mode.toString().toUpperCase(),
+              transaction_date: new Date().toISOString(),
+              track_id: result.tracking_id,
+              bank_name: result.bank_ref_no,
+              transaction_id: result.order_id,
+              status: "PAID",
             },
           });
 
@@ -669,7 +674,7 @@ export const postRes = (request, response) => {
             return [];
           };
 
-          if (returnToUpdate?.dvat04?.frequencyFilings === "QUARTERLY") {
+          if (returnToUpdate.dvat04?.frequencyFilings === "QUARTERLY") {
             const groupedMonths = getMonthGroup(returnToUpdate.month ?? "");
             const monthsToUpdate =
               groupedMonths.length > 0 ? groupedMonths : [returnToUpdate.month ?? ""];

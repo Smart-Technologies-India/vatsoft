@@ -20,8 +20,10 @@ export const payamount = async (request, response) => {
   const activeIntent = await prisma.payment_intent.findFirst({
     where: {
       token: paymentIntentToken.toString(),
-      status: "CREATED",
-      consumedAt: null,
+      status: {
+        in: ["CREATED", "INITIATED"],
+      },
+      completedAt: null,
       expiresAt: {
         gt: new Date(),
       },
@@ -41,25 +43,31 @@ export const payamount = async (request, response) => {
     },
   });
 
+  console.log("Active Payment Intent:", activeIntent);
+
   if (!activeIntent || !activeIntent.challan) {
     return response.status(404).send("Payment session not found or expired.");
   }
 
-  const consumeResult = await prisma.payment_intent.updateMany({
-    where: {
-      id: activeIntent.id,
-      status: "CREATED",
-      consumedAt: null,
-    },
-    data: {
-      status: "INITIATED",
-      consumedAt: new Date(),
-      initiatedAt: new Date(),
-    },
-  });
+  if (activeIntent.status === "CREATED") {
+    const consumeResult = await prisma.payment_intent.updateMany({
+      where: {
+        id: activeIntent.id,
+        status: "CREATED",
+        consumedAt: null,
+      },
+      data: {
+        status: "INITIATED",
+        consumedAt: new Date(),
+        initiatedAt: new Date(),
+      },
+    });
 
-  if (consumeResult.count === 0) {
-    return response.status(409).send("Payment session already used.");
+    console.log("Consume Result:", consumeResult);
+
+    if (consumeResult.count === 0) {
+      return response.status(409).send("Payment session already used.");
+    }
   }
 
   const challan = activeIntent.challan;
