@@ -74,6 +74,8 @@ const PaymentStatusPage = () => {
   const [challanData, setChallanData] = useState<challan[]>([]);
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [dvatId, setDvatId] = useState<number | null>(null);
+  const [manualOrderId, setManualOrderId] = useState<string>("");
+  const [isManualChecking, setIsManualChecking] = useState<boolean>(false);
 
   const isOpenOrFailedPayment = (row: challan): boolean => {
     if (row.paymentstatus === "PAID") {
@@ -179,6 +181,45 @@ const PaymentStatusPage = () => {
     }
   };
 
+  const handleManualOrderStatusCheck = async () => {
+    const orderId = manualOrderId.trim();
+    if (!orderId) {
+      toast.error("Please enter an Order ID.");
+      return;
+    }
+
+    setIsManualChecking(true);
+    try {
+      const response = await fetch(
+        `/orderstatus?order_no=${encodeURIComponent(orderId)}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const data = await response.json();
+      if (!response.ok || !data?.success) {
+        toast.error(data?.message || "Unable to check payment status.");
+        return;
+      }
+
+      toast.success(
+        `Status checked: ${data?.data?.order_status || "Updated successfully"}`,
+      );
+
+      if (dvatId) {
+        await loadRecentChallans(dvatId);
+      }
+    } catch (error) {
+      toast.error("Something went wrong while checking order status.");
+    } finally {
+      setIsManualChecking(false);
+    }
+  };
+
   const initiatedRows = useMemo(
     () => challanData.filter((row) => isOpenOrFailedPayment(row)),
     [challanData],
@@ -220,6 +261,29 @@ const PaymentStatusPage = () => {
       <div className="bg-white shadow mt-4 p-3">
         <div className="bg-blue-600 p-3 text-white text-lg font-semibold">
           Initiated/Failed Payments (Not Completed)
+        </div>
+
+        <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3">
+          <p className="text-sm font-medium text-gray-700 mb-2">
+            Search Payment Status by Order ID
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              value={manualOrderId}
+              onChange={(e) => setManualOrderId(e.target.value)}
+              placeholder="Enter Order ID"
+              className="h-9 w-full rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
+            />
+            <Button
+              type="primary"
+              onClick={handleManualOrderStatusCheck}
+              loading={isManualChecking}
+              className="h-9"
+            >
+              Check Status
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">

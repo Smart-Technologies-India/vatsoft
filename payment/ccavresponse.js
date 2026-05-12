@@ -562,6 +562,10 @@ export const postRes = (request, response) => {
             },
           });
 
+          if (!challan.returnid) {
+            throw new Error("Return payment succeeded but challan has no returnid.");
+          }
+
           await prisma.returns_01.update({
             where: {
               id: challan.returnid,
@@ -615,6 +619,23 @@ export const postRes = (request, response) => {
               trans_fee: result.trans_fee,
             },
           });
+
+          if (!challan.returnid) {
+            const htmlcode = renderReceiptHtml({
+              statusTitle: "Transaction Successful",
+              statusTone: "success",
+              message:
+                "Payment was successful. Linked return record was not found, so return filing update was skipped.",
+              amount: result.amount,
+              redirectId: challan.id,
+              enableReturnSmsButton: false,
+            });
+
+            response.writeHeader(200, { "Content-Type": "text/html" });
+            response.write(htmlcode);
+            response.end();
+            return;
+          }
 
           const get_rr_number = (returnRecord) => {
             const rr_no =

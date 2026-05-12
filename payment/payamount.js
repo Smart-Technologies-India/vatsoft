@@ -43,7 +43,6 @@ export const payamount = async (request, response) => {
     },
   });
 
-  console.log("Active Payment Intent:", activeIntent);
 
   if (!activeIntent || !activeIntent.challan) {
     return response.status(404).send("Payment session not found or expired.");
@@ -63,7 +62,6 @@ export const payamount = async (request, response) => {
       },
     });
 
-    console.log("Consume Result:", consumeResult);
 
     if (consumeResult.count === 0) {
       return response.status(409).send("Payment session already used.");

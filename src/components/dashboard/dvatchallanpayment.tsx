@@ -307,10 +307,12 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     setPenaltyDiffDays(pdiff_days);
 
     if (rr_number == null || rr_number == undefined || rr_number == "") {
-      setLateFees(Math.min(100 * pdiff_days, 10000));
+      setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
       // setLateFees(100 * idiff_days);
     }
   };
+
+  const normalizedPenalty = Math.max(0, lateFees);
 
   const {
     register,
@@ -355,7 +357,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       track_id: data.track_id,
       transaction_id: data.transaction_id,
       rr_number: get_rr_number(),
-      penalty: lateFees.toString(),
+      penalty: normalizedPenalty.toString(),
       ...(isNegative(getValue()) && {
         pending_payment: getValue().toFixed(),
       }),
@@ -420,7 +422,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       const response = await AddPaymentOnline({
         id: return01.id ?? 0,
         // rr_number: get_rr_number(),
-        penalty: lateFees.toString(),
+        penalty: normalizedPenalty.toString(),
         ...(isNegative(getValue()) && {
           pending_payment: getValue().toFixed(),
         }),

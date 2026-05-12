@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import axios from "axios";
+import qs from "querystring";
 import { encrypt, decrypt } from "./ccavutil.js";
 import prisma from "../prisma/database.js";
 
@@ -47,14 +48,14 @@ const classifyOrderStatus = (status) => {
 };
 
 export const orderstatus = async (request, response) => {
-  var encRequest = "";
+  let encRequest = "";
 
   //Generate Md5 hash for the key and then convert in base64 string
-  var md5 = crypto.createHash("md5").update(process.env.WORKING_KEY).digest();
-  var keyBase64 = Buffer.from(md5).toString("base64");
+  const md5 = crypto.createHash("md5").update(process.env.WORKING_KEY).digest();
+  const keyBase64 = Buffer.from(md5).toString("base64");
 
   //Initializing Vector and then convert in base64 string
-  var ivBase64 = Buffer.from([
+  const ivBase64 = Buffer.from([
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
     0x0c, 0x0d, 0x0e, 0x0f,
   ]).toString("base64");
@@ -79,9 +80,56 @@ export const orderstatus = async (request, response) => {
       `https://api.ccavenue.com/apis/servlet/DoWebTrans?access_code=${process.env.ACCESS_CODE}&command=orderStatusTracker&request_type=JSON&response_type=JSON&version=1.2&enc_request=${encRequest}`,
     );
 
-    let enc_code = result.data.toString().split("=").pop();
-    let ccavResponse = decrypt(enc_code, keyBase64, ivBase64);
-    let obj = JSON.parse(ccavResponse);
+    const isHexCipher = (value) =>
+      typeof value === "string" &&
+      value.length > 0 &&
+      value.length % 2 === 0 &&
+      /^[0-9a-fA-F]+$/.test(value);
+
+    const parseGatewayPayload = (payload) => {
+      if (!payload) return null;
+
+      if (typeof payload === "object") {
+        if (payload.enc_response && isHexCipher(payload.enc_response)) {
+          return JSON.parse(
+            decrypt(payload.enc_response, keyBase64, ivBase64),
+          );
+        }
+
+        if (payload.encResp && isHexCipher(payload.encResp)) {
+          return JSON.parse(decrypt(payload.encResp, keyBase64, ivBase64));
+        }
+
+        return payload;
+      }
+
+      const rawString = payload.toString().trim();
+      const parsedForm = qs.parse(rawString);
+
+      if (parsedForm.enc_response && isHexCipher(parsedForm.enc_response)) {
+        return JSON.parse(
+          decrypt(parsedForm.enc_response, keyBase64, ivBase64),
+        );
+      }
+
+      if (parsedForm.encResp && isHexCipher(parsedForm.encResp)) {
+        return JSON.parse(decrypt(parsedForm.encResp, keyBase64, ivBase64));
+      }
+
+      try {
+        return JSON.parse(rawString);
+      } catch {
+        return null;
+      }
+    };
+
+    const obj = parseGatewayPayload(result?.data);
+
+    if (!obj) {
+      throw new Error(
+        "Unable to parse CCAvenue order status response. Expected encrypted form data or JSON.",
+      );
+    }
 
     if (obj?.status !== "0") {
       return response.status(400).json({
