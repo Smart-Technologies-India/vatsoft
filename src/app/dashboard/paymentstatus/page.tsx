@@ -29,6 +29,8 @@ type OrderStatusResult = {
   order_status?: string;
   status_group?: string;
   order_status_date_time?: string;
+  order_fee_flat?: string | number;
+  order_tax?: string | number;
   error_desc?: string;
   raw_response?: string;
 };
@@ -258,15 +260,18 @@ const PaymentStatusPage = () => {
         const updateResponse = await UpdateChallanStatus({
           challanId: row.id,
           orderStatus: data?.data?.order_status,
+          statusGroup: data?.data?.status_group,
           orderStatusDateTime: data?.data?.order_status_date_time,
           bankRefNo: data?.data?.order_bank_ref_no,
           cardName: data?.data?.order_card_name,
           paymentMode: data?.data?.order_option_type,
           statusCode: data?.data?.status_code,
-          statusMessage: data?.data?.status_message,
+          statusMessage: "Completed Successfully",
           responseCode: data?.data?.response_code,
           failureMessage: data?.data?.error_desc,
           tracking_id: data?.data?.reference_no,
+          orderFeeFlat: data?.data?.order_fee_flat,
+          orderTax: data?.data?.order_tax,
         });
 
         if (updateResponse.status) {
@@ -344,15 +349,18 @@ const PaymentStatusPage = () => {
           const updateResponse = await UpdateChallanStatus({
             challanId: matchingChallan.id,
             orderStatus: data?.data?.order_status,
+            statusGroup: data?.data?.status_group,
             orderStatusDateTime: data?.data?.order_status_date_time,
             bankRefNo: data?.data?.order_bank_ref_no,
             cardName: data?.data?.order_card_name,
             paymentMode: data?.data?.order_option_type,
             statusCode: data?.data?.status_code,
-            statusMessage: data?.data?.status_message,
+            statusMessage: "Completed Successfully",
             responseCode: data?.data?.response_code,
             failureMessage: data?.data?.error_desc,
             tracking_id: data?.data?.reference_no,
+            orderFeeFlat: data?.data?.order_fee_flat,
+            orderTax: data?.data?.order_tax,
           });
 
           if (updateResponse.status) {

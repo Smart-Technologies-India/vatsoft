@@ -46,7 +46,7 @@ const ChallanHistory = () => {
   }
 
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.CPIN
+    SearchOption.CPIN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -61,7 +61,7 @@ const ChallanHistory = () => {
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    dateStrings: [string, string],
   ) => {
     setSearchDate(dates);
   };
@@ -316,7 +316,6 @@ const ChallanHistory = () => {
             })()}
           </div>
 
-         
           {challanData.length == 0 && (
             <Alert
               style={{
@@ -367,7 +366,7 @@ const ChallanHistory = () => {
                         <Link
                           className="text-blue-500"
                           href={`/dashboard/payments/saved-challan/${encryptURLData(
-                            val.id.toString()
+                            val.id.toString(),
                           )}`}
                         >
                           {val.cpin}
@@ -394,7 +393,7 @@ const ChallanHistory = () => {
                           : "-"}
                       </TableCell>
                       <TableCell className="text-center p-2">
-                        {val.paymentmode}
+                        {val.paymentstatus}
                       </TableCell>
                     </TableRow>
                   ))}

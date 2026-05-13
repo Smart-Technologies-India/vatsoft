@@ -420,7 +420,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     setIsOnlineProcessing(true);
     try {
       const response = await AddPaymentOnline({
-        id: return01.id ?? 0,
+        id: return01.id,
         // rr_number: get_rr_number(),
         penalty: normalizedPenalty.toString(),
         ...(isNegative(getValue()) && {

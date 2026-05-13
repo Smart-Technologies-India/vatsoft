@@ -16,6 +16,26 @@ export type UpdateChallanStatusParams = {
   failureMessage?: string;
   transactionDate?: Date;
   tracking_id?: string;
+  orderFeeFlat?: string | number;
+  orderTax?: string | number;
+};
+
+const isSuccessfulGatewayStatus = (status?: string) => {
+  const normalizedStatus = status?.toString().trim().toLowerCase();
+  return (
+    normalizedStatus === "successful" ||
+    normalizedStatus === "success" ||
+    normalizedStatus === "shipped"
+  );
+};
+
+const toNumber = (value?: string | number) => {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const parsedValue = Number(value);
+  return Number.isFinite(parsedValue) ? parsedValue : null;
 };
 
 export default async function UpdateChallanStatus(
@@ -23,9 +43,14 @@ export default async function UpdateChallanStatus(
 ) {
   try {
     const updateData: Record<string, unknown> = {};
+    const isSuccessfulPayment =
+      params.statusGroup === "success" ||
+      isSuccessfulGatewayStatus(params.orderStatus);
 
     if (params.orderStatus !== undefined) {
-      updateData.order_status = params.orderStatus;
+      updateData.order_status = isSuccessfulPayment
+        ? "Successful"
+        : params.orderStatus;
     }
 
     if (params.orderStatusDateTime !== undefined) {
@@ -64,6 +89,17 @@ export default async function UpdateChallanStatus(
 
     if(params.tracking_id !== undefined) {
       updateData.track_id = params.tracking_id;
+    }
+
+    if (isSuccessfulPayment) {
+      updateData.paymentstatus = "PAID";
+
+      const orderFeeFlat = toNumber(params.orderFeeFlat);
+      const orderTax = toNumber(params.orderTax);
+
+      if (orderFeeFlat !== null && orderTax !== null) {
+        updateData.trans_fee = (orderFeeFlat + orderTax).toFixed(4);
+      }
     }
 
     if (Object.keys(updateData).length === 0) {
