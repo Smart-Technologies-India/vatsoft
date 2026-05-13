@@ -2,7 +2,6 @@ import crypto from "crypto";
 import axios from "axios";
 import qs from "querystring";
 import { encrypt, decrypt } from "./ccavutil.js";
-import prisma from "../prisma/database.js";
 
 const normalizeOrderStatus = (status) =>
   (status || "")
@@ -48,8 +47,6 @@ const classifyOrderStatus = (status) => {
 };
 
 export const orderstatus = async (request, response) => {
-  let encRequest = "";
-
   //Generate Md5 hash for the key and then convert in base64 string
   const md5 = crypto.createHash("md5").update(process.env.WORKING_KEY).digest();
   const keyBase64 = Buffer.from(md5).toString("base64");
@@ -65,16 +62,36 @@ export const orderstatus = async (request, response) => {
     request?.body?.orderNo ||
     request?.query?.order_no ||
     request?.query?.orderNo;
-  if (!orderNo) {
+  const referenceNo =
+    request?.body?.reference_no ||
+    request?.body?.referenceNo ||
+    request?.query?.reference_no ||
+    request?.query?.referenceNo;
+
+  if (!orderNo && !referenceNo) {
     return response.status(400).json({
       success: false,
-      message: "order_no is required",
+      message: "order_no or reference_no is required",
       data: null,
     });
   }
 
   try {
-    encRequest = encrypt(`{order_no:'${orderNo}'}`, keyBase64, ivBase64);
+    const requestPayload = {};
+
+    if (orderNo) {
+      requestPayload.order_no = orderNo.toString();
+    }
+
+    if (referenceNo) {
+      requestPayload.reference_no = referenceNo.toString();
+    }
+
+    const encRequest = encrypt(
+      JSON.stringify(requestPayload),
+      keyBase64,
+      ivBase64,
+    );
 
     const result = await axios.post(
       `https://api.ccavenue.com/apis/servlet/DoWebTrans?access_code=${process.env.ACCESS_CODE}&command=orderStatusTracker&request_type=JSON&response_type=JSON&version=1.2&enc_request=${encRequest}`,
@@ -86,176 +103,77 @@ export const orderstatus = async (request, response) => {
       value.length % 2 === 0 &&
       /^[0-9a-fA-F]+$/.test(value);
 
-    const parseGatewayPayload = (payload) => {
+    const toObjectEnvelope = (payload) => {
       if (!payload) return null;
-
-      if (typeof payload === "object") {
-        if (payload.enc_response && isHexCipher(payload.enc_response)) {
-          return JSON.parse(
-            decrypt(payload.enc_response, keyBase64, ivBase64),
-          );
-        }
-
-        if (payload.encResp && isHexCipher(payload.encResp)) {
-          return JSON.parse(decrypt(payload.encResp, keyBase64, ivBase64));
-        }
-
-        return payload;
-      }
+      if (typeof payload === "object") return payload;
 
       const rawString = payload.toString().trim();
-      if (isHexCipher(rawString)) {
-        return JSON.parse(decrypt(rawString, keyBase64, ivBase64));
-      }
-
-      const parsedForm = qs.parse(rawString);
-
-      if (parsedForm.enc_response && isHexCipher(parsedForm.enc_response)) {
-        return JSON.parse(
-          decrypt(parsedForm.enc_response, keyBase64, ivBase64),
-        );
-      }
-
-      if (parsedForm.encResp && isHexCipher(parsedForm.encResp)) {
-        return JSON.parse(decrypt(parsedForm.encResp, keyBase64, ivBase64));
-      }
+      if (!rawString) return null;
 
       try {
         return JSON.parse(rawString);
       } catch {
-        return null;
+        const parsedForm = qs.parse(rawString);
+        return parsedForm && Object.keys(parsedForm).length > 0 ? parsedForm : null;
       }
     };
 
-    const obj = parseGatewayPayload(result?.data);
-
-    if (!obj) {
+    const envelope = toObjectEnvelope(result?.data);
+    if (!envelope) {
       throw new Error(
         "Unable to parse CCAvenue order status response. Expected encrypted form data or JSON.",
       );
     }
 
-    if (obj?.status !== "0") {
+    const statusFromEnvelope = envelope.status?.toString();
+    const encryptedResponse = envelope.enc_response || envelope.encResp;
+
+    // As per CCAvenue docs, status=1 means API-level failure and enc_response is plain error text.
+    if (statusFromEnvelope === "1") {
       return response.status(400).json({
         success: false,
-        message: "Failed to fetch order status",
+        message: "Order status API call failed",
         data: null,
-        error: obj?.status_message || "Unknown error",
-      });
-    } else {
-
-      const status = obj.order_status || "Unknown";
-      const statusGroup = classifyOrderStatus(status);
-
-      const challan = await prisma.challan.findFirst({
-        where: {
-          order_id: orderNo.toString(),
-        },
-      });
-
-      let retryChallanId = null;
-
-      // Keep challan/payment state in sync when polling CCAvenue status.
-      if (challan) {
-        const commonUpdateFields = {
-          order_status: status,
-          failure_message:
-            obj.failure_message || obj.status_message || challan.failure_message,
-          status_code: obj.status_code || challan.status_code,
-          status_message: obj.status_message || challan.status_message,
-          response_code: obj.response_code || challan.response_code,
-          track_id: obj.tracking_id || challan.track_id,
-          order_id: obj.order_no || obj.order_id || challan.order_id,
-          paymentmode: obj.payment_mode
-            ? obj.payment_mode.toString().toUpperCase()
-            : challan.paymentmode,
-          bank_name: obj.bank_ref_no || challan.bank_name,
-          card_name: obj.card_name || challan.card_name,
-          bene_account: obj.bene_account || challan.bene_account,
-          bene_name: obj.bene_name || challan.bene_name,
-          bene_ifsc: obj.bene_ifsc || challan.bene_ifsc,
-          bene_bank: obj.bene_bank || challan.bene_bank,
-          bene_branch: obj.bene_branch || challan.bene_branch,
-          trans_fee: obj.trans_fee || challan.trans_fee,
-          transaction_date: new Date().toISOString(),
-        };
-
-        if (statusGroup === "success") {
-          await prisma.challan.update({
-            where: { id: challan.id },
-            data: {
-              ...commonUpdateFields,
-              paymentstatus: "PAID",
-            },
-          });
-        } else if (statusGroup === "pending") {
-          await prisma.challan.update({
-            where: { id: challan.id },
-            data: {
-              ...commonUpdateFields,
-              paymentstatus: "PENDING",
-            },
-          });
-        } else if (
-          statusGroup === "failed" ||
-          statusGroup === "cancelled" ||
-          statusGroup === "refunded"
-        ) {
-          let createdRetryChallanId = null;
-
-          // Prevent duplicate retry challan creation when endpoint is called multiple times.
-          if (!challan.deletedAt) {
-            const createdChallan = await prisma.challan.create({
-              data: {
-                dvatid: challan.dvatid,
-                cpin: challan.cpin,
-                returnid: challan.returnid,
-                vat: challan.vat,
-                latefees: challan.latefees,
-                interest: challan.interest,
-                others: challan.others,
-                penalty: challan.penalty,
-                createdById: challan.createdById,
-                expire_date: challan.expire_date,
-                total_tax_amount: challan.total_tax_amount,
-                reason: challan.reason,
-                paymentstatus: "CREATED",
-                transaction_date: new Date().toISOString(),
-                paymentmode: "ONLINE",
-                bank_name: challan.bank_name,
-                newregistration: challan.newregistration,
-                security_deposit: challan.security_deposit,
-              },
-            });
-            createdRetryChallanId = createdChallan.id;
-          }
-
-          await prisma.challan.update({
-            where: { id: challan.id },
-            data: {
-              ...commonUpdateFields,
-              paymentstatus: "FAILED",
-              deletedAt: challan.deletedAt || new Date().toISOString(),
-              deletedById: challan.deletedById || 1,
-            },
-          });
-
-          retryChallanId = createdRetryChallanId;
-        }
-      }
-
-      return response.json({
-        success: true,
-        message: "Order status fetched",
-        data: {
-          ...obj,
-          normalized_order_status: normalizeOrderStatus(status),
-          status_group: statusGroup,
-          challan_found: Boolean(challan),
-          retry_challan_id: retryChallanId,
-        },
+        error:
+          (typeof encryptedResponse === "string" && encryptedResponse.trim()) ||
+          envelope.error_desc ||
+          "Unknown error",
       });
     }
+
+    let parsedOrderStatus = null;
+
+    if (typeof encryptedResponse === "string" && isHexCipher(encryptedResponse)) {
+      const decryptedResponse = decrypt(encryptedResponse, keyBase64, ivBase64);
+
+      try {
+        parsedOrderStatus = JSON.parse(decryptedResponse);
+      } catch {
+        parsedOrderStatus = { raw_response: decryptedResponse };
+      }
+    } else if (statusFromEnvelope === "0") {
+      parsedOrderStatus = envelope;
+    }
+
+    if (!parsedOrderStatus) {
+      throw new Error("Unable to parse/decrypt order status response.");
+    }
+
+    const status = parsedOrderStatus.order_status || "Unknown";
+
+    return response.json({
+      success: true,
+      message: "Order status fetched",
+      data: {
+        ...parsedOrderStatus,
+        normalized_order_status: normalizeOrderStatus(status),
+        status_group: classifyOrderStatus(status),
+      },
+      request: {
+        order_no: orderNo || null,
+        reference_no: referenceNo || null,
+      },
+    });
   } catch (error) {
     return response.status(500).json({
       success: false,
