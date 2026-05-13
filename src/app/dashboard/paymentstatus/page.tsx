@@ -1,6 +1,7 @@
 "use client";
 
 import SearchChallan from "@/action/challan/searchchallan";
+import UpdateChallanStatus from "@/action/challan/updatechallanstatus";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import {
@@ -203,6 +204,38 @@ const PaymentStatusPage = () => {
 
       setLastStatusResult(data?.data || null);
 
+      // If API returns success status but challan doesn't have success status, update it
+      const apiStatusGroup = data?.data?.status_group;
+      const isApiSuccess = apiStatusGroup === "success";
+      const isAlreadySuccess =
+        row.order_status && successGatewayStatus.includes(row.order_status);
+
+      if (isApiSuccess && !isAlreadySuccess) {
+        const updateResponse = await UpdateChallanStatus({
+          challanId: row.id,
+          orderStatus: data?.data?.order_status,
+          orderStatusDateTime: data?.data?.order_status_date_time,
+          bankRefNo: data?.data?.order_bank_ref_no,
+          cardName: data?.data?.order_card_name,
+          paymentMode: data?.data?.order_option_type,
+          statusCode: data?.data?.status_code,
+          statusMessage: data?.data?.status_message,
+          responseCode: data?.data?.response_code,
+          failureMessage: data?.data?.error_desc,
+          tracking_id: data?.data?.reference_no,
+        });
+
+        if (updateResponse.status) {
+          toast.success("Challan updated with payment success status");
+          // Reload challans to show updated data
+          if (dvatId) {
+            await loadRecentChallans(dvatId);
+          }
+        } else {
+          toast.warning(updateResponse.message);
+        }
+      }
+
       toast.success(
         `Status checked: ${data?.data?.order_status || "Fetched successfully"}`,
       );
@@ -238,6 +271,43 @@ const PaymentStatusPage = () => {
       }
 
       setLastStatusResult(data?.data || null);
+
+      // If API returns success status, check if there's a matching challan to update
+      const apiStatusGroup = data?.data?.status_group;
+      const isApiSuccess = apiStatusGroup === "success";
+
+      if (isApiSuccess && dvatId) {
+        // Find matching challan by order_id
+        const matchingChallan = challanData.find(
+          (c) => c.order_id === (data?.data?.order_no || inputValue),
+        );
+
+        if (
+          matchingChallan &&
+          matchingChallan.order_status &&
+          !successGatewayStatus.includes(matchingChallan.order_status)
+        ) {
+          const updateResponse = await UpdateChallanStatus({
+            challanId: matchingChallan.id,
+            orderStatus: data?.data?.order_status,
+            orderStatusDateTime: data?.data?.order_status_date_time,
+            bankRefNo: data?.data?.order_bank_ref_no,
+            cardName: data?.data?.order_card_name,
+            paymentMode: data?.data?.order_option_type,
+            statusCode: data?.data?.status_code,
+            statusMessage: data?.data?.status_message,
+            responseCode: data?.data?.response_code,
+            failureMessage: data?.data?.error_desc,
+            tracking_id: data?.data?.reference_no,
+          });
+
+          if (updateResponse.status) {
+            toast.success("Challan updated with payment success status");
+            // Reload challans to show updated data
+            await loadRecentChallans(dvatId);
+          }
+        }
+      }
 
       toast.success(
         `Status checked: ${data?.data?.order_status || "Fetched successfully"}`,

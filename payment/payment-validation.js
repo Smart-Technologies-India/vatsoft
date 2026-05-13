@@ -3,8 +3,10 @@ export const getNumericAmount = (value) => {
   return Number.isFinite(parsedValue) ? parsedValue : 0;
 };
 
-export const isAmountMatched = (expected, paid) =>
-  Math.abs(getNumericAmount(expected) - getNumericAmount(paid)) < 0.01;
+export const isAmountMatched = (expected, paid) => {
+  // return Math.abs(getNumericAmount(expected) - getNumericAmount(paid)) < 0.01;
+  return getNumericAmount(expected) <= getNumericAmount(paid);
+};
 
 export const validateIntentCallbackSecurity = ({
   intent,
@@ -49,7 +51,9 @@ export const validateIntentCallbackSecurity = ({
     };
   }
 
-  if (intent.gateway_order_id?.toString() !== (callbackOrderId || "").toString()) {
+  if (
+    intent.gateway_order_id?.toString() !== (callbackOrderId || "").toString()
+  ) {
     return {
       ok: false,
       reason: "ORDER_ID_MISMATCH",
@@ -63,14 +67,20 @@ export const validateIntentCallbackSecurity = ({
     };
   }
 
-  if (parseInt(challan.id?.toString() || "0", 10) !== parseInt(callbackChallanId?.toString() || "0", 10)) {
+  if (
+    parseInt(challan.id?.toString() || "0", 10) !==
+    parseInt(callbackChallanId?.toString() || "0", 10)
+  ) {
     return {
       ok: false,
       reason: "CHALLAN_ID_MISMATCH",
     };
   }
 
-  if (parseInt(challan.dvatid?.toString() || "0", 10) !== parseInt(callbackDvatId?.toString() || "0", 10)) {
+  if (
+    parseInt(challan.dvatid?.toString() || "0", 10) !==
+    parseInt(callbackDvatId?.toString() || "0", 10)
+  ) {
     return {
       ok: false,
       reason: "DVAT_ID_MISMATCH",

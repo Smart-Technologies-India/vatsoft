@@ -4,11 +4,7 @@ import qs from "querystring";
 import { encrypt, decrypt } from "./ccavutil.js";
 
 const normalizeOrderStatus = (status) =>
-  (status || "")
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, " ");
+  (status || "").toString().trim().toLowerCase().replace(/\s+/g, " ");
 
 const classifyOrderStatus = (status) => {
   const normalizedStatus = normalizeOrderStatus(status);
@@ -92,7 +88,7 @@ export const orderstatus = async (request, response) => {
       keyBase64,
       ivBase64,
     );
-
+    console.log("Encrypted Request:", encRequest);
     const result = await axios.post(
       `https://api.ccavenue.com/apis/servlet/DoWebTrans?access_code=${process.env.ACCESS_CODE}&command=orderStatusTracker&request_type=JSON&response_type=JSON&version=1.2&enc_request=${encRequest}`,
     );
@@ -114,7 +110,9 @@ export const orderstatus = async (request, response) => {
         return JSON.parse(rawString);
       } catch {
         const parsedForm = qs.parse(rawString);
-        return parsedForm && Object.keys(parsedForm).length > 0 ? parsedForm : null;
+        return parsedForm && Object.keys(parsedForm).length > 0
+          ? parsedForm
+          : null;
       }
     };
 
@@ -143,7 +141,10 @@ export const orderstatus = async (request, response) => {
 
     let parsedOrderStatus = null;
 
-    if (typeof encryptedResponse === "string" && isHexCipher(encryptedResponse)) {
+    if (
+      typeof encryptedResponse === "string" &&
+      isHexCipher(encryptedResponse)
+    ) {
       const decryptedResponse = decrypt(encryptedResponse, keyBase64, ivBase64);
 
       try {
