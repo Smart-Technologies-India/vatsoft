@@ -116,16 +116,18 @@ const Sidebar = (props: SidebarProps) => {
           />
         )}
 
-        <MenuTab
-          click={() => props.setIsOpen(false)}
-          icon={<FluentNotepadPerson16Regular className="w-5 h-5" />}
-          name="Registration"
-          path={path}
-          pathcheck={"/dashboard/register"}
-          collapsed={isCollapsed}
-        />
+        {!["REFINERY_MANAGER"].includes(props.role) && (
+          <MenuTab
+            click={() => props.setIsOpen(false)}
+            icon={<FluentNotepadPerson16Regular className="w-5 h-5" />}
+            name="Registration"
+            path={path}
+            pathcheck={"/dashboard/register"}
+            collapsed={isCollapsed}
+          />
+        )}
 
-        {!["USER"].includes(props.role) && (
+        {!["USER", "REFINERY_MANAGER"].includes(props.role) && (
           <>
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -309,28 +311,22 @@ const Sidebar = (props: SidebarProps) => {
             <MenuTab
               click={() => props.setIsOpen(false)}
               icon={<FluentCalendar12Regular className="w-5 h-5" />}
+              name="Price Master"
+              path={path}
+              pathcheck={"/dashboard/refinery/price_master"}
+              collapsed={isCollapsed}
+            />
+
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentCalendar12Regular className="w-5 h-5" />}
               name="Dispatch"
               path={path}
               pathcheck={"/dashboard/refinery/dispatch"}
               collapsed={isCollapsed}
             />
+
             <MenuTab
-              click={() => props.setIsOpen(false)}
-              icon={<FluentCalendar12Regular className="w-5 h-5" />}
-              name="Product Master"
-              path={path}
-              pathcheck={"/dashboard/refinery/product_master"}
-              collapsed={isCollapsed}
-            />
-            <MenuTab
-              click={() => props.setIsOpen(false)}
-              icon={<FluentCalendar12Regular className="w-5 h-5" />}
-              name="Dealer Master"
-              path={path}
-              pathcheck={"/dashboard/refinery/dealer_master"}
-              collapsed={isCollapsed}
-            />
-             <MenuTab
               click={() => props.setIsOpen(false)}
               icon={<FluentAlignBottom24Regular className="w-5 h-5" />}
               name="Reports"

@@ -679,6 +679,13 @@ const CommodityMaster = () => {
                 >
                   View Purchase
                 </Button>
+                <Button
+                  size="small"
+                  type="default"
+                  onClick={() => router.push("/dashboard/refinery_sales")}
+                >
+                  Refinery Purchase
+                </Button>
 
                 {dvatdata && dvatdata.commodity == "MANUFACTURER" && (
                   <Button
