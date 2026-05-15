@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { toast } from "react-toastify";
 
-const CreateChallan = async () => {
+const CreateChallan = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
   useEffect(() => {

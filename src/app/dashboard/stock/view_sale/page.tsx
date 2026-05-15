@@ -327,15 +327,36 @@ const DocumentWiseDetails = () => {
           } else if (
             dvatdata?.commodity &&
             tinCommodityMap[tin_number] !== undefined &&
-            tinCommodityMap[tin_number] !== dvatdata.commodity
+            tinCommodityMap[tin_number] !== null
           ) {
-            errors.push(
-              `* Buyer TIN commodity (${tinCommodityMap[tin_number]?.toLowerCase()}) does not match your commodity (${dvatdata.commodity.toLowerCase()})`,
-            );
+            // Validate based on commodity selling rules
+            const buyerCommodity = tinCommodityMap[tin_number];
+            const sellerCommodity = dvatdata.commodity;
+            let isValidSale = false;
+
+            if (sellerCommodity === "FUEL") {
+              // FUEL can only sell to FUEL
+              isValidSale = buyerCommodity === "FUEL";
+            } else if (sellerCommodity === "OIDC") {
+              // OIDC can sell to LIQUOR and MANUFACTURER
+              isValidSale = ["LIQUOR", "MANUFACTURER"].includes(buyerCommodity);
+            } else if (sellerCommodity === "MANUFACTURER") {
+              // MANUFACTURER can sell to OIDC and LIQUOR
+              isValidSale = ["OIDC", "LIQUOR"].includes(buyerCommodity);
+            } else if (sellerCommodity === "LIQUOR") {
+              // LIQUOR can sell to LIQUOR
+              isValidSale = buyerCommodity === "LIQUOR";
+            }
+
+            if (!isValidSale) {
+              errors.push(
+                `* Buyer TIN commodity (${buyerCommodity.toLowerCase()}) cannot purchase from your commodity (${sellerCommodity.toLowerCase()})`,
+              );
+            }
           }
 
           const sellerTin = tindata.find(
-            (tin) => tin.tin_number === tin_number,
+            (tin) => tin.tin_number === tin_number, 
           );
           if (!sellerTin) {
             errors.push("* TIN Number not found in TIN master");

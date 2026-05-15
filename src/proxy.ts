@@ -30,7 +30,7 @@ export default async function proxy(request: NextRequest) {
       "ADMIN",
       "VATOFFICER",
       "VATOFFICER_DNH",
-      "ASST_VAT_OFFICER",
+      // "ASST_VAT_OFFICER",
       "COMMISSIONER",
       "DY_COMMISSIONER",
       "JOINT_COMMISSIONER",

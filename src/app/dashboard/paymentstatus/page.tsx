@@ -21,7 +21,7 @@ import { toast } from "react-toastify";
 
 type PaymentBucket = "success" | "pending" | "failed";
 type StatusLookupMode = "order_no" | "reference_no";
-type TableStatusFilter = "all" | PaymentBucket;
+type TableStatusFilter = "all" | "pending" | "failed";
 
 type OrderStatusResult = {
   order_no?: string;
@@ -98,6 +98,7 @@ const PaymentStatusPage = () => {
   const router = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [challanData, setChallanData] = useState<challan[]>([]);
+  const [serverTotal, setServerTotal] = useState<number>(0);
   const [processingId, setProcessingId] = useState<number | null>(null);
   // const [dvatId, setDvatId] = useState<number | null>(null);
   const [manualOrderId, setManualOrderId] = useState<string>("");
@@ -114,6 +115,7 @@ const PaymentStatusPage = () => {
   const [confirmDetails, setConfirmDetails] =
     useState<ChallanUpdateConfirmDetails | null>(null);
   const confirmResolveRef = useRef<((value: boolean) => void) | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const confirmChallanUpdate = (details: ChallanUpdateConfirmDetails) =>
     new Promise<boolean>((resolve) => {
@@ -131,26 +133,14 @@ const PaymentStatusPage = () => {
     }
   };
 
-  const isOpenOrFailedPayment = (row: challan): boolean => {
-    if (row.paymentstatus === "PAID") {
-      return false;
-    }
+  const isOpenOrFailedPayment = (_row: challan): boolean => true; // filtering is now done server-side via excludePaid
 
-    if (row.order_status && successGatewayStatus.includes(row.order_status)) {
-      return false;
-    }
-
-    return (
-      row.paymentstatus === "FAILED" ||
-      row.paymentstatus === "PENDING" ||
-      row.paymentstatus === "CREATED" ||
-      (row.order_status && pendingGatewayStatus.includes(row.order_status)) ||
-      (row.order_status && failedGatewayStatus.includes(row.order_status)) ||
-      Boolean(row.order_id)
-    );
-  };
-
-  const loadRecentChallans = async () => {
+  const loadRecentChallans = async (
+    page: number = 1,
+    size: number = pageSize,
+    search: string = "",
+    bucket: TableStatusFilter = "all",
+  ) => {
     const todate = new Date();
     const fromdate = new Date();
     fromdate.setDate(todate.getDate() - 3);
@@ -158,12 +148,17 @@ const PaymentStatusPage = () => {
     const searchResponse = await SearchChallan({
       fromdate,
       todate,
-      take: 200,
-      skip: 0,
+      take: size,
+      skip: (page - 1) * size,
+      excludePaid: true,
+      searchText: search.trim() || undefined,
+      bucketFilter: bucket === "all" ? undefined : bucket,
     });
+
 
     if (searchResponse.status && searchResponse.data.result) {
       setChallanData(searchResponse.data.result);
+      setServerTotal(searchResponse.data.total);
     } else if (!searchResponse.status) {
       toast.error(searchResponse.message || "Unable to fetch payment status.");
     }
@@ -188,7 +183,7 @@ const PaymentStatusPage = () => {
       // }
 
       // setDvatId(dvatResponse.data.id);
-      await loadRecentChallans();
+      await loadRecentChallans(1, 10, "", "all");
 
       setLoading(false);
     };
@@ -277,7 +272,7 @@ const PaymentStatusPage = () => {
         if (updateResponse.status) {
           toast.success("Challan updated with payment success status");
           // Reload challans to show updated data
-          await loadRecentChallans();
+          await loadRecentChallans(currentPage, pageSize, searchText, statusFilter);
         } else {
           toast.warning(updateResponse.message);
         }
@@ -366,7 +361,7 @@ const PaymentStatusPage = () => {
           if (updateResponse.status) {
             toast.success("Challan updated with payment success status");
             // Reload challans to show updated data
-            await loadRecentChallans();
+            await loadRecentChallans(currentPage, pageSize, searchText, statusFilter);
           }
         }
       }
@@ -381,48 +376,42 @@ const PaymentStatusPage = () => {
     }
   };
 
-  const initiatedRows = useMemo(
-    () => challanData.filter((row) => isOpenOrFailedPayment(row)),
-    [challanData],
-  );
+  const initiatedRows = challanData; // filtering is now server-side via excludePaid
 
-  const filteredRows = useMemo(() => {
-    const normalizedSearch = searchText.trim().toLowerCase();
+  const totalPages = Math.max(1, Math.ceil(serverTotal / pageSize));
 
-    return initiatedRows.filter((row) => {
-      const bucket = getPaymentBucket(row);
-      const matchesStatus = statusFilter === "all" || bucket === statusFilter;
-
-      const matchesSearch =
-        normalizedSearch.length === 0 ||
-        row.cpin?.toLowerCase().includes(normalizedSearch) ||
-        row.order_id?.toLowerCase().includes(normalizedSearch) ||
-        row.track_id?.toLowerCase().includes(normalizedSearch) ||
-        row.order_status?.toLowerCase().includes(normalizedSearch) ||
-        row.paymentstatus?.toLowerCase().includes(normalizedSearch) ||
-        row.failure_message?.toLowerCase().includes(normalizedSearch) ||
-        row.status_message?.toLowerCase().includes(normalizedSearch);
-
-      return matchesStatus && matchesSearch;
-    });
-  }, [initiatedRows, searchText, statusFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
-
+  // Reload when statusFilter changes — reset to page 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchText, statusFilter, pageSize]);
+    setLoading(true);
+    loadRecentChallans(1, pageSize, searchText, statusFilter).finally(() =>
+      setLoading(false),
+    );
+  }, [statusFilter]);
 
+  // Debounce search text — reset to page 1 after 500 ms
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setCurrentPage(1);
+      setLoading(true);
+      loadRecentChallans(1, pageSize, searchText, statusFilter).finally(() =>
+        setLoading(false),
+      );
+    }, 500);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchText]);
 
-  const paginatedRows = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredRows.slice(start, start + pageSize);
-  }, [filteredRows, currentPage, pageSize]);
+  const handlePageChange = async (page: number, size?: number) => {
+    const newSize = size ?? pageSize;
+    setCurrentPage(page);
+    setPageSize(newSize);
+    setLoading(true);
+    await loadRecentChallans(page, newSize, searchText, statusFilter);
+    setLoading(false);
+  };
 
   const summary = useMemo(() => {
     let pending = 0;
@@ -440,12 +429,12 @@ const PaymentStatusPage = () => {
     }
 
     return {
-      total: initiatedRows.length,
+      total: serverTotal,
       pending,
       created,
       failed,
     };
-  }, [initiatedRows]);
+  }, [initiatedRows, serverTotal]);
 
   if (isLoading) {
     return (
@@ -544,7 +533,7 @@ const PaymentStatusPage = () => {
           <p className="text-sm font-medium text-gray-700 mb-2">
             Table Search, Filter and Pagination
           </p>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
             <input
               type="text"
               value={searchText}
@@ -563,26 +552,15 @@ const PaymentStatusPage = () => {
               <option value="all">All Status</option>
               <option value="pending">In Process</option>
               <option value="failed">Failed</option>
-              <option value="success">Paid</option>
-            </select>
-
-            <select
-              value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
-              className="h-9 rounded border border-gray-300 px-2 text-sm outline-none focus:border-blue-500"
-            >
-              <option value={10}>10 / page</option>
-              <option value={20}>20 / page</option>
-              <option value={50}>50 / page</option>
             </select>
           </div>
 
           <p className="mt-2 text-xs text-gray-600">
-            Showing {filteredRows.length} result(s)
+            Showing {challanData.length} of {serverTotal} total record(s)
           </p>
         </div>
 
-        {filteredRows.length === 0 && (
+        {challanData.length === 0 && (
           <Alert
             style={{ marginTop: "12px" }}
             type="warning"
@@ -591,7 +569,7 @@ const PaymentStatusPage = () => {
           />
         )}
 
-        {filteredRows.length > 0 && (
+        {challanData.length > 0 && (
           <div className="mt-3 overflow-x-auto">
             <Table className="border min-w-245">
               <TableHeader>
@@ -607,7 +585,7 @@ const PaymentStatusPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedRows.map((row: challan) => {
+                {challanData.map((row: challan) => {
                   const bucket = getPaymentBucket(row);
                   const canRetry = bucket !== "success";
 
@@ -682,23 +660,28 @@ const PaymentStatusPage = () => {
 
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-gray-600">
-                Page {currentPage} of {totalPages}
+                Page {currentPage} of {totalPages} &mdash; {serverTotal} total record(s)
               </p>
               <div className="flex items-center gap-2">
+                <select
+                  value={pageSize}
+                  onChange={(e) => handlePageChange(1, Number(e.target.value))}
+                  className="h-7 rounded border border-gray-300 px-2 text-xs outline-none focus:border-blue-500"
+                >
+                  <option value={10}>10 / page</option>
+                  <option value={20}>20 / page</option>
+                  <option value={50}>50 / page</option>
+                </select>
                 <Button
                   size="small"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(1, prev - 1))
-                  }
+                  onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
                 >
                   Previous
                 </Button>
                 <Button
                   size="small"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                  }
+                  onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage >= totalPages}
                 >
                   Next

@@ -1,7 +1,13 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { challan, SelectOffice } from "@prisma/client";
+import {
+  challan,
+  dvat04,
+  returns_01,
+  SelectOffice,
+  PaymentStatus,
+} from "@prisma/client";
 import prisma from "../../../prisma/database";
 import {
   createPaginationResponse,
@@ -11,13 +17,19 @@ import {
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface GetDeptChallanPayload {
   dept: SelectOffice;
+  paymentstatus?: PaymentStatus;
   skip: number;
   take: number;
 }
 
+export type DepartmentChallanWithRelations = challan & {
+  dvat: dvat04;
+  returns_01: returns_01 | null;
+};
+
 const GetDeptChallan = async (
   payload: GetDeptChallanPayload
-): Promise<PaginationResponse<challan[] | null>> => {
+): Promise<PaginationResponse<DepartmentChallanWithRelations[] | null>> => {
   const functionname: string = GetDeptChallan.name;
 
   try {
@@ -40,6 +52,11 @@ const GetDeptChallan = async (
           dvat: {
             selectOffice: payload.dept,
           },
+          ...(payload.paymentstatus && { paymentstatus: payload.paymentstatus }),
+        },
+        include: {
+          dvat: true,
+          returns_01: true,
         },
         skip: payload.skip,
         take: payload.take,
@@ -51,6 +68,7 @@ const GetDeptChallan = async (
           dvat: {
             selectOffice: payload.dept,
           },
+          ...(payload.paymentstatus && { paymentstatus: payload.paymentstatus }),
         },
       }),
     ]);

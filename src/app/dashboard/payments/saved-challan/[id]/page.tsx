@@ -64,7 +64,9 @@ const ChallanData = () => {
         id: authResponse.data,
       });
       if (loggedInUserResponse.status && loggedInUserResponse.data) {
-        setIsUserRole((loggedInUserResponse.data.role ?? "").toUpperCase() === "USER");
+        setIsUserRole(
+          (loggedInUserResponse.data.role ?? "").toUpperCase() === "USER",
+        );
       } else {
         setIsUserRole(false);
       }
@@ -96,7 +98,9 @@ const ChallanData = () => {
     init();
   }, [challanid, userid]);
 
-  const [challanData, setChallanData] = useState<ChallanWithReturn | null>(null);
+  const [challanData, setChallanData] = useState<ChallanWithReturn | null>(
+    null,
+  );
 
   const [isOnlineProcessing, setIsOnlineProcessing] = useState(false);
 
@@ -116,7 +120,9 @@ const ChallanData = () => {
         return toast.error("Unable to initialize payment session.");
       }
 
-      router.push(`/payamount?pi=${encodeURIComponent(response.data.order_id)}`);
+      router.push(
+        `/payamount?pi=${encodeURIComponent(response.data.order_id)}`,
+      );
     } finally {
       setIsOnlineProcessing(false);
     }
@@ -151,57 +157,122 @@ const ChallanData = () => {
           body { font-family: Arial, sans-serif; }
         `}</style>
 
-        <div style={{ width: "100%", fontSize: "11px", color: "#111", fontFamily: "Arial, sans-serif" }}>
-
+        <div
+          style={{
+            width: "100%",
+            fontSize: "11px",
+            color: "#111",
+            fontFamily: "Arial, sans-serif",
+          }}
+        >
           {/* Header */}
-          <div style={{ borderBottom: "2px solid #000", paddingBottom: "6px", marginBottom: "6px", textAlign: "center" }}>
-            <div style={{ fontSize: "9px", letterSpacing: "1px", color: "#555" }}>GOVERNMENT OF INDIA</div>
-            <div style={{ fontSize: "14px", fontWeight: "bold", marginTop: "2px" }}>
+          <div
+            style={{
+              borderBottom: "2px solid #000",
+              paddingBottom: "6px",
+              marginBottom: "6px",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{ fontSize: "9px", letterSpacing: "1px", color: "#555" }}
+            >
+              GOVERNMENT OF INDIA
+            </div>
+            <div
+              style={{ fontSize: "14px", fontWeight: "bold", marginTop: "2px" }}
+            >
               Dadra &amp; Nagar Haveli and Daman &amp; Diu Value Added Tax
             </div>
-            <div style={{ fontSize: "12px", fontWeight: "bold" }}>FORM DVAT 20 — CHALLAN RECEIPT</div>
+            <div style={{ fontSize: "12px", fontWeight: "bold" }}>
+              FORM DVAT 20 — CHALLAN RECEIPT
+            </div>
             <div style={{ fontSize: "9px", color: "#555", marginTop: "2px" }}>
               (See Rule 28 of the DDDNH Value Added Tax Rules, 2021)
             </div>
           </div>
 
           {/* CPIN Row */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "4px", border: "1px solid #ccc", padding: "6px", marginBottom: "6px", borderRadius: "4px", backgroundColor: "#f9f9f9" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr 1fr",
+              gap: "4px",
+              border: "1px solid #ccc",
+              padding: "6px",
+              marginBottom: "6px",
+              borderRadius: "4px",
+              backgroundColor: "#f9f9f9",
+            }}
+          >
             <div>
               <div style={{ fontSize: "9px", color: "#666" }}>CPIN</div>
               <div style={{ fontWeight: "bold" }}>{challanData?.cpin}</div>
             </div>
             <div>
-              <div style={{ fontSize: "9px", color: "#666" }}>Payment Status</div>
-              <div style={{ fontWeight: "bold" }}>{challanData?.paymentstatus || "CREATED"}</div>
+              <div style={{ fontSize: "9px", color: "#666" }}>
+                Payment Status
+              </div>
+              <div style={{ fontWeight: "bold" }}>
+                {challanData?.paymentstatus || "CREATED"}
+              </div>
             </div>
             <div>
               <div style={{ fontSize: "9px", color: "#666" }}>Generated On</div>
-              <div style={{ fontWeight: "bold" }}>{formatDateTime(new Date(challanData?.createdAt!))}</div>
+              <div style={{ fontWeight: "bold" }}>
+                {formatDateTime(new Date(challanData?.createdAt!))}
+              </div>
             </div>
             <div>
               <div style={{ fontSize: "9px", color: "#666" }}>Expiry Date</div>
-              <div style={{ fontWeight: "bold" }}>{formatDateTime(new Date(challanData?.expire_date!))}</div>
+              <div style={{ fontWeight: "bold" }}>
+                {formatDateTime(new Date(challanData?.expire_date!))}
+              </div>
             </div>
           </div>
 
           {/* Taxpayer Details */}
-          <div style={{ border: "1px solid #ccc", borderRadius: "4px", marginBottom: "6px" }}>
-            <div style={{ backgroundColor: "#e8e8e8", padding: "4px 8px", fontWeight: "bold", fontSize: "10px", borderBottom: "1px solid #ccc" }}>
+          <div
+            style={{
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              marginBottom: "6px",
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "#e8e8e8",
+                padding: "4px 8px",
+                fontWeight: "bold",
+                fontSize: "10px",
+                borderBottom: "1px solid #ccc",
+              }}
+            >
               TAXPAYER DETAILS
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "4px", padding: "6px" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                gap: "4px",
+                padding: "6px",
+              }}
+            >
               <div>
                 <div style={{ fontSize: "9px", color: "#666" }}>TIN Number</div>
                 <div style={{ fontWeight: "600" }}>{dvat?.tinNumber}</div>
               </div>
               <div>
                 <div style={{ fontSize: "9px", color: "#666" }}>Name</div>
-                <div style={{ fontWeight: "600" }}>{dvat?.tradename ?? "N/A"}</div>
+                <div style={{ fontWeight: "600" }}>
+                  {dvat?.tradename ?? "N/A"}
+                </div>
               </div>
               <div>
                 <div style={{ fontSize: "9px", color: "#666" }}>Mobile</div>
-                <div style={{ fontWeight: "600" }}>{dvat?.contact_one ?? "N/A"}</div>
+                <div style={{ fontWeight: "600" }}>
+                  {dvat?.contact_one ?? "N/A"}
+                </div>
               </div>
               <div>
                 <div style={{ fontSize: "9px", color: "#666" }}>Email</div>
@@ -209,42 +280,105 @@ const ChallanData = () => {
               </div>
               <div style={{ gridColumn: "span 4" }}>
                 <div style={{ fontSize: "9px", color: "#666" }}>Address</div>
-                <div style={{ fontWeight: "600" }}>{dvat?.address ?? "N/A"}</div>
+                <div style={{ fontWeight: "600" }}>
+                  {dvat?.address ?? "N/A"}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Challan Info */}
-          <div style={{ border: "1px solid #ccc", borderRadius: "4px", marginBottom: "6px" }}>
-            <div style={{ backgroundColor: "#e8e8e8", padding: "4px 8px", fontWeight: "bold", fontSize: "10px", borderBottom: "1px solid #ccc" }}>
+          <div
+            style={{
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              marginBottom: "6px",
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "#e8e8e8",
+                padding: "4px 8px",
+                fontWeight: "bold",
+                fontSize: "10px",
+                borderBottom: "1px solid #ccc",
+              }}
+            >
               CHALLAN INFORMATION
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px", padding: "6px" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr",
+                gap: "4px",
+                padding: "6px",
+              }}
+            >
               <div>
-                <div style={{ fontSize: "9px", color: "#666" }}>Reason for Challan</div>
-                <div style={{ fontWeight: "600" }}>{capitalcase(challanData?.reason ?? "")}</div>
+                <div style={{ fontSize: "9px", color: "#666" }}>
+                  Reason for Challan
+                </div>
+                <div style={{ fontWeight: "600" }}>
+                  {capitalcase(challanData?.reason ?? "")}
+                </div>
               </div>
               <div>
-                <div style={{ fontSize: "9px", color: "#666" }}>Return Period</div>
+                <div style={{ fontSize: "9px", color: "#666" }}>
+                  Return Period
+                </div>
                 <div style={{ fontWeight: "600" }}>{returnPeriod}</div>
               </div>
               <div>
-                <div style={{ fontSize: "9px", color: "#666" }}>Payment Mode</div>
-                <div style={{ fontWeight: "600" }}>{challanData?.paymentmode || "ONLINE"}</div>
+                <div style={{ fontSize: "9px", color: "#666" }}>
+                  Payment Mode
+                </div>
+                <div style={{ fontWeight: "600" }}>
+                  {challanData?.paymentmode || "ONLINE"}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Tax Table + Bank Section side by side */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", gap: "8px", marginBottom: "6px" }}>
-
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 220px",
+              gap: "8px",
+              marginBottom: "6px",
+            }}
+          >
             {/* Tax table */}
             <div style={{ border: "1px solid #ccc", borderRadius: "4px" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: "11px",
+                }}
+              >
                 <thead>
                   <tr style={{ backgroundColor: "#e8e8e8" }}>
-                    <th style={{ textAlign: "left", padding: "4px 8px", borderBottom: "1px solid #ccc", borderRight: "1px solid #ccc" }}>Payment on account of</th>
-                    <th style={{ textAlign: "center", padding: "4px 8px", borderBottom: "1px solid #ccc", width: "120px" }}>Tax (&#x20b9;)</th>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "4px 8px",
+                        borderBottom: "1px solid #ccc",
+                        borderRight: "1px solid #ccc",
+                      }}
+                    >
+                      Payment on account of
+                    </th>
+                    <th
+                      style={{
+                        textAlign: "center",
+                        padding: "4px 8px",
+                        borderBottom: "1px solid #ccc",
+                        width: "120px",
+                      }}
+                    >
+                      Tax (&#x20b9;)
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -255,20 +389,62 @@ const ChallanData = () => {
                     ["Penalty", challanData?.penalty],
                     ["Others", challanData?.others],
                   ].map(([label, val]) => (
-                    <tr key={label as string} style={{ borderBottom: "1px solid #eee" }}>
-                      <td style={{ padding: "4px 8px", borderRight: "1px solid #ccc" }}>{label}</td>
-                      <td style={{ padding: "4px 8px", textAlign: "center" }}>{val}</td>
+                    <tr
+                      key={label as string}
+                      style={{ borderBottom: "1px solid #eee" }}
+                    >
+                      <td
+                        style={{
+                          padding: "4px 8px",
+                          borderRight: "1px solid #ccc",
+                        }}
+                      >
+                        {label}
+                      </td>
+                      <td style={{ padding: "4px 8px", textAlign: "center" }}>
+                        {val}
+                      </td>
                     </tr>
                   ))}
-                  <tr style={{ borderTop: "1px solid #999", fontWeight: "bold" }}>
-                    <td style={{ padding: "4px 8px", borderRight: "1px solid #ccc", borderTop: "1px solid #ccc" }}>Total Challan Amount</td>
-                    <td style={{ padding: "4px 8px", textAlign: "center", borderTop: "1px solid #ccc" }}>{challanData?.total_tax_amount}</td>
+                  <tr
+                    style={{ borderTop: "1px solid #999", fontWeight: "bold" }}
+                  >
+                    <td
+                      style={{
+                        padding: "4px 8px",
+                        borderRight: "1px solid #ccc",
+                        borderTop: "1px solid #ccc",
+                      }}
+                    >
+                      Total Challan Amount
+                    </td>
+                    <td
+                      style={{
+                        padding: "4px 8px",
+                        textAlign: "center",
+                        borderTop: "1px solid #ccc",
+                      }}
+                    >
+                      {challanData?.total_tax_amount}
+                    </td>
                   </tr>
                   <tr>
-                    <td colSpan={2} style={{ padding: "4px 8px", borderTop: "1px solid #eee", fontSize: "10px" }}>
+                    <td
+                      colSpan={2}
+                      style={{
+                        padding: "4px 8px",
+                        borderTop: "1px solid #eee",
+                        fontSize: "10px",
+                      }}
+                    >
                       <span style={{ color: "#555" }}>Amount in words: </span>
                       <strong>
-                        {capitalcase(toWords.convert(parseInt(challanData?.total_tax_amount ?? "0")))} Rupees Only
+                        {capitalcase(
+                          toWords.convert(
+                            parseInt(challanData?.total_tax_amount ?? "0"),
+                          ),
+                        )}{" "}
+                        Rupees Only
                       </strong>
                     </td>
                   </tr>
@@ -277,49 +453,176 @@ const ChallanData = () => {
             </div>
 
             {/* Bank Section */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              {/* Bank Deposit Details */}
-              <div style={{ border: "1px solid #ccc", borderRadius: "4px", padding: "6px" }}>
-                <div style={{ fontWeight: "bold", fontSize: "10px", marginBottom: "6px", borderBottom: "1px solid #ddd", paddingBottom: "4px" }}>
-                  BANK DEPOSIT DETAILS
-                </div>
-                {[
-                  "Bank Name",
-                  "Branch",
-                  "Account No.",
-                  "Date of Deposit",
-                  "Challan No.",
-                ].map((label) => (
-                  <div key={label} style={{ marginBottom: "6px" }}>
-                    <div style={{ fontSize: "9px", color: "#666" }}>{label}</div>
-                    <div style={{ borderBottom: "1px solid #999", height: "14px", marginTop: "2px" }}></div>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "6px" }}
+            >
+              {challanData?.paymentstatus === "PAID" ? (
+                // Payment Confirmation Details
+                <div
+                  style={{
+                    border: "1px solid #ccc",
+                    borderRadius: "4px",
+                    padding: "6px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: "bold",
+                      fontSize: "10px",
+                      marginBottom: "6px",
+                      borderBottom: "1px solid #ddd",
+                      paddingBottom: "4px",
+                    }}
+                  >
+                    PAYMENT CONFIRMATION
                   </div>
-                ))}
-              </div>
-
-              {/* Bank Seal */}
-              <div style={{ border: "1px dashed #999", borderRadius: "4px", height: "80px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", backgroundColor: "#fafafa" }}>
-                <div style={{ fontSize: "9px", color: "#888", textAlign: "center" }}>BANK SEAL &amp;</div>
-                <div style={{ fontSize: "9px", color: "#888", textAlign: "center" }}>SIGNATURE</div>
-              </div>
+                  {[
+                    {
+                      label: "Bank Name",
+                      value: challanData?.bank_name || "N/A",
+                    },
+                    {
+                      label: "Track ID",
+                      value: challanData?.track_id || "N/A",
+                    },
+                    {
+                      label: "Transaction Date",
+                      value: challanData?.transaction_date
+                        ? formateDate(new Date(challanData.transaction_date))
+                        : "N/A",
+                    },
+                  ].map((item) => (
+                    <div key={item.label} style={{ marginBottom: "6px" }}>
+                      <div style={{ fontSize: "9px", color: "#666" }}>
+                        {item.label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          fontWeight: "500",
+                          color: "#333",
+                          paddingTop: "2px",
+                        }}
+                      >
+                        {item.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // Bank Deposit Details
+                <div
+                  style={{
+                    border: "1px solid #ccc",
+                    borderRadius: "4px",
+                    padding: "6px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: "bold",
+                      fontSize: "10px",
+                      marginBottom: "6px",
+                      borderBottom: "1px solid #ddd",
+                      paddingBottom: "4px",
+                    }}
+                  >
+                    BANK DEPOSIT DETAILS
+                  </div>
+                  {[
+                    "Bank Name",
+                    "Branch",
+                    "Account No.",
+                    "Date of Deposit",
+                    "Challan No.",
+                  ].map((label) => (
+                    <div key={label} style={{ marginBottom: "6px" }}>
+                      <div style={{ fontSize: "9px", color: "#666" }}>
+                        {label}
+                      </div>
+                      <div
+                        style={{
+                          borderBottom: "1px solid #999",
+                          height: "14px",
+                          marginTop: "2px",
+                        }}
+                      ></div>
+                    </div>
+                  ))}
+                  {/* Bank Seal */}
+                  <div
+                    style={{
+                      border: "1px dashed #999",
+                      borderRadius: "4px",
+                      height: "80px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexDirection: "column",
+                      backgroundColor: "#fafafa",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "9px",
+                        color: "#888",
+                        textAlign: "center",
+                      }}
+                    >
+                      BANK SEAL &amp;
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "9px",
+                        color: "#888",
+                        textAlign: "center",
+                      }}
+                    >
+                      SIGNATURE
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Remark */}
           {challanData?.remark && (
-            <div style={{ border: "1px solid #ccc", borderRadius: "4px", padding: "6px", marginBottom: "6px" }}>
-              <span style={{ fontWeight: "bold", fontSize: "9px" }}>Remark: </span>
+            <div
+              style={{
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                padding: "6px",
+                marginBottom: "6px",
+              }}
+            >
+              <span style={{ fontWeight: "bold", fontSize: "9px" }}>
+                Remark:{" "}
+              </span>
               <span style={{ fontSize: "10px" }}>{challanData.remark}</span>
             </div>
           )}
 
           {/* Footer */}
-          <div style={{ borderTop: "1px solid #ccc", paddingTop: "6px", fontSize: "9px", color: "#444" }}>
-            <div>Challan for the Dadra and Nagar Haveli and Daman and Diu Value Added Tax Regulation, 2005</div>
-            <div style={{ marginTop: "2px" }}>Credited: Consolidated Fund of India</div>
-            <div style={{ marginTop: "2px" }}>Head: 0040, Value Added Tax Receipt — Value Added Tax Receipt</div>
+          <div
+            style={{
+              borderTop: "1px solid #ccc",
+              paddingTop: "6px",
+              fontSize: "9px",
+              color: "#444",
+            }}
+          >
+            <div>
+              Challan for the Dadra and Nagar Haveli and Daman and Diu Value
+              Added Tax Regulation, 2005
+            </div>
+            <div style={{ marginTop: "2px" }}>
+              Credited: Consolidated Fund of India
+            </div>
+            <div style={{ marginTop: "2px" }}>
+              Head: 0040, Value Added Tax Receipt — Value Added Tax Receipt
+            </div>
           </div>
-
         </div>
       </>
     );
@@ -441,7 +744,6 @@ const ChallanData = () => {
                       : "N/A"}
                   </p>
                 </div>
-
               </div>
             </div>
 
@@ -570,11 +872,14 @@ const ChallanData = () => {
                       Online Payment
                     </p>
                     <p className="text-xs text-blue-800 mt-1">
-                      You will be redirected to the payment gateway. Offline payment fields are removed.
+                      You will be redirected to the payment gateway. Offline
+                      payment fields are removed.
                     </p>
 
                     <div className="mt-3 flex items-center justify-between rounded-md bg-white p-2 border border-blue-100">
-                      <span className="text-sm text-gray-600">Payable Amount</span>
+                      <span className="text-sm text-gray-600">
+                        Payable Amount
+                      </span>
                       <span className="text-lg font-semibold text-gray-900">
                         {challanData?.total_tax_amount ?? "0"}
                       </span>
