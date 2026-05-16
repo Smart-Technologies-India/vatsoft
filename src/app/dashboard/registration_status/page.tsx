@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client";
 
 import {
@@ -17,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { dvat04, first_stock, user } from "@prisma/client";
 import GetUser from "@/action/user/getuser";
@@ -26,6 +27,7 @@ import GetDvatByOffice from "@/action/return/getdvatbyoffice";
 import { toast } from "react-toastify";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import UpdateDvat04Mobile from "@/action/register/newuser/updatedvat04mobile";
+import { encryptURLData } from "@/utils/methods";
 import {
   flexRender,
   getCoreRowModel,
@@ -84,13 +86,13 @@ const RegistrationStatus = () => {
           // 3 - APPROVED
 
           const verification = response.data.filter(
-            (val) => val.status == "VERIFICATION"
+            (val) => val.status == "VERIFICATION",
           );
           const pendingprocessing = response.data.filter(
-            (val) => val.status == "PENDINGPROCESSING"
+            (val) => val.status == "PENDINGPROCESSING",
           );
           const approved = response.data.filter(
-            (val) => val.status == "APPROVED"
+            (val) => val.status == "APPROVED",
           );
 
           setData([...verification, ...pendingprocessing, ...approved]);
@@ -98,52 +100,55 @@ const RegistrationStatus = () => {
       }
     };
     init();
-  }, [userid]);
+  }, [userid, router]);
 
-  const startMobileEdit = (row: RegistrationStatusRow) => {
+  const startMobileEdit = useCallback((row: RegistrationStatusRow) => {
     setEditingMobileById((prev) => ({
       ...prev,
       [row.id]: row.contact_one ?? "",
     }));
-  };
+  }, []);
 
-  const cancelMobileEdit = (id: number) => {
+  const cancelMobileEdit = useCallback((id: number) => {
     setEditingMobileById((prev) => {
       const clone = { ...prev };
       delete clone[id];
       return clone;
     });
-  };
+  }, []);
 
-  const saveMobileEdit = async (row: RegistrationStatusRow) => {
-    const editedMobile = (editingMobileById[row.id] ?? "").trim();
+  const saveMobileEdit = useCallback(
+    async (row: RegistrationStatusRow) => {
+      const editedMobile = (editingMobileById[row.id] ?? "").trim();
 
-    if (!/^\d{10}$/.test(editedMobile)) {
-      toast.error("Mobile number must be exactly 10 digits.");
-      return;
-    }
+      if (!/^\d{10}$/.test(editedMobile)) {
+        toast.error("Mobile number must be exactly 10 digits.");
+        return;
+      }
 
-    setSavingMobileId(row.id);
-    const response = await UpdateDvat04Mobile({
-      dvat04Id: row.id,
-      mobile: editedMobile,
-    });
+      setSavingMobileId(row.id);
+      const response = await UpdateDvat04Mobile({
+        dvat04Id: row.id,
+        mobile: editedMobile,
+      });
 
-    if (!response.status) {
-      toast.error(response.message);
+      if (!response.status) {
+        toast.error(response.message);
+        setSavingMobileId(null);
+        return;
+      }
+
+      toast.success(response.message);
+      setData((prev) =>
+        prev.map((item) =>
+          item.id === row.id ? { ...item, contact_one: editedMobile } : item,
+        ),
+      );
+      cancelMobileEdit(row.id);
       setSavingMobileId(null);
-      return;
-    }
-
-    toast.success(response.message);
-    setData((prev) =>
-      prev.map((item) =>
-        item.id === row.id ? { ...item, contact_one: editedMobile } : item
-      )
-    );
-    cancelMobileEdit(row.id);
-    setSavingMobileId(null);
-  };
+    },
+    [cancelMobileEdit, editingMobileById],
+  );
 
   const columns = useMemo<ColumnDef<RegistrationStatusRow>[]>(
     () => [
@@ -160,7 +165,9 @@ const RegistrationStatus = () => {
         accessorKey: "tradename",
         header: "Trade Name",
         cell: ({ row }) => (
-          <span className="text-sm text-gray-900">{row.original.tradename}</span>
+          <span className="text-sm text-gray-900">
+            {row.original.tradename}
+          </span>
         ),
       },
       {
@@ -175,7 +182,10 @@ const RegistrationStatus = () => {
                 onChange={(event) =>
                   setEditingMobileById((prev) => ({
                     ...prev,
-                    [row.original.id]: event.target.value.replace(/[^0-9]/g, ""),
+                    [row.original.id]: event.target.value.replace(
+                      /[^0-9]/g,
+                      "",
+                    ),
                   }))
                 }
                 className="h-8 w-32"
@@ -199,7 +209,9 @@ const RegistrationStatus = () => {
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2">
-              <span className="text-sm text-gray-700">{row.original.contact_one}</span>
+              <span className="text-sm text-gray-700">
+                {row.original.contact_one}
+              </span>
               <button
                 type="button"
                 className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
@@ -251,8 +263,38 @@ const RegistrationStatus = () => {
           </span>
         ),
       },
+      {
+        id: "action",
+        header: "Action",
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center">
+            {/* {row.original.first_stock.length > 0 ? ( */}
+            <button
+              type="button"
+              className="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+              onClick={() =>
+                router.push(
+                  `/dashboard/registration_status/first-stock/${encryptURLData(
+                    row.original.id.toString(),
+                  )}`,
+                )
+              }
+            >
+              View
+            </button>
+            {/* ) : null} */}
+          </div>
+        ),
+      },
     ],
-    [editingMobileById, savingMobileId],
+    [
+      cancelMobileEdit,
+      editingMobileById,
+      router,
+      saveMobileEdit,
+      savingMobileId,
+      startMobileEdit,
+    ],
   );
 
   const table = useReactTable({
@@ -273,7 +315,11 @@ const RegistrationStatus = () => {
         return true;
       }
 
-      return [row.original.tinNumber, row.original.tradename, row.original.contact_one]
+      return [
+        row.original.tinNumber,
+        row.original.tradename,
+        row.original.contact_one,
+      ]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(searchValue));
     },
@@ -289,9 +335,11 @@ const RegistrationStatus = () => {
   });
 
   const dvatStatusFilterValue =
-    (table.getColumn("dvatStatus")?.getFilterValue() as string | undefined) ?? "";
+    (table.getColumn("dvatStatus")?.getFilterValue() as string | undefined) ??
+    "";
   const stockStatusFilterValue =
-    (table.getColumn("stockStatus")?.getFilterValue() as string | undefined) ?? "";
+    (table.getColumn("stockStatus")?.getFilterValue() as string | undefined) ??
+    "";
 
   const getRowStatusColor = (status: string) => {
     if (status === "APPROVED") return "bg-emerald-50";
@@ -351,7 +399,9 @@ const RegistrationStatus = () => {
                     <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
                       <Input
                         value={globalFilter}
-                        onChange={(event) => setGlobalFilter(event.target.value)}
+                        onChange={(event) =>
+                          setGlobalFilter(event.target.value)
+                        }
                         placeholder="Search by TIN, trade name, or contact"
                         className="bg-white"
                       />
@@ -383,7 +433,8 @@ const RegistrationStatus = () => {
                       </select>
                     </div>
                     <div className="text-sm text-gray-600">
-                      Showing {table.getFilteredRowModel().rows.length} matching records
+                      Showing {table.getFilteredRowModel().rows.length} matching
+                      records
                     </div>
                   </div>
                 </div>
@@ -392,7 +443,10 @@ const RegistrationStatus = () => {
                   <Table className="border-0">
                     <TableHeader>
                       {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id} className="bg-gray-50 border-b">
+                        <TableRow
+                          key={headerGroup.id}
+                          className="bg-gray-50 border-b"
+                        >
                           {headerGroup.headers.map((header) => (
                             <TableHead
                               key={header.id}
@@ -400,27 +454,31 @@ const RegistrationStatus = () => {
                             >
                               {header.isPlaceholder ? null : (
                                 <div
-                                  className={header.column.getCanSort()
-                                    ? "flex cursor-pointer select-none items-center gap-1"
-                                    : "flex items-center gap-1"}
+                                  className={
+                                    header.column.getCanSort()
+                                      ? "flex cursor-pointer select-none items-center gap-1"
+                                      : "flex items-center gap-1"
+                                  }
                                   onClick={header.column.getToggleSortingHandler()}
                                 >
                                   {flexRender(
                                     header.column.columnDef.header,
                                     header.getContext(),
                                   )}
-                                  {header.column.getCanSort() ? (
-                                    {
-                                      asc: (
-                                        <MaterialSymbolsKeyboardArrowUpRounded className="h-4 w-4" />
-                                      ),
-                                      desc: (
-                                        <MaterialSymbolsKeyboardArrowDownRounded className="h-4 w-4" />
-                                      ),
-                                    }[header.column.getIsSorted() as string] ?? (
-                                      <MaterialSymbolsKeyboardArrowDownRounded className="h-4 w-4 opacity-30" />
-                                    )
-                                  ) : null}
+                                  {header.column.getCanSort()
+                                    ? ({
+                                        asc: (
+                                          <MaterialSymbolsKeyboardArrowUpRounded className="h-4 w-4" />
+                                        ),
+                                        desc: (
+                                          <MaterialSymbolsKeyboardArrowDownRounded className="h-4 w-4" />
+                                        ),
+                                      }[
+                                        header.column.getIsSorted() as string
+                                      ] ?? (
+                                        <MaterialSymbolsKeyboardArrowDownRounded className="h-4 w-4 opacity-30" />
+                                      ))
+                                    : null}
                                 </div>
                               )}
                             </TableHead>
@@ -438,7 +496,7 @@ const RegistrationStatus = () => {
                             {row.getVisibleCells().map((cell) => (
                               <TableCell
                                 key={cell.id}
-                                className={`p-3 ${cell.column.id === "contact_one" || cell.column.id === "dvatStatus" || cell.column.id === "stockStatus" ? "text-center" : ""}`}
+                                className={`p-3 ${cell.column.id === "contact_one" || cell.column.id === "dvatStatus" || cell.column.id === "stockStatus" || cell.column.id === "new" ? "text-center" : ""}`}
                               >
                                 {flexRender(
                                   cell.column.columnDef.cell,
@@ -464,12 +522,15 @@ const RegistrationStatus = () => {
 
                 <div className="flex flex-col gap-3 border-t border-gray-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm text-gray-600">
-                    Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+                    Page {table.getState().pagination.pageIndex + 1} of{" "}
+                    {table.getPageCount() || 1}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <select
                       value={table.getState().pagination.pageSize}
-                      onChange={(event) => table.setPageSize(Number(event.target.value))}
+                      onChange={(event) =>
+                        table.setPageSize(Number(event.target.value))
+                      }
                       className="flex h-9 rounded-md border border-input bg-white px-2 text-sm"
                     >
                       {[10, 20, 50].map((pageSize) => (

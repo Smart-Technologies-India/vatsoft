@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability */
 "use client";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUserDvat04FirstStock from "@/action/dvat/getuserdvatfirststock";
@@ -149,6 +150,7 @@ const AddStock = () => {
         Loading...
       </div>
     );
+
   return (
     <>
       <Drawer

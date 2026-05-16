@@ -27,6 +27,13 @@ interface ResponseType {
   pending: number;
 }
 
+interface SearchPayload {
+  arnnumber?: string;
+  tradename?: string;
+  fromdate?: Date;
+  todate?: Date;
+}
+
 const TrackAppliation = () => {
   const [userid, setUserid] = useState<number>(0);
   const router = useRouter();
@@ -67,6 +74,41 @@ const TrackAppliation = () => {
 
   const [user, setUpser] = useState<user | null>(null);
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
+
+  const applySearchResponse = (
+    result: ResponseType[],
+    skip: number,
+    take: number,
+    total: number,
+  ) => {
+    setDvatData(result);
+    setPaginatin({ skip, take, total });
+    setSearch(true);
+  };
+
+  const runSearch = async (
+    searchPayload: SearchPayload,
+    skip: number = 0,
+    take: number = pagination.take,
+  ) => {
+    const dept = user?.selectOffice ?? undefined;
+
+    const searchResponse = await SearchDeptPendingReturn({
+      ...searchPayload,
+      dept,
+      take,
+      skip,
+    });
+
+    if (searchResponse.status && searchResponse.data.result) {
+      applySearchResponse(
+        searchResponse.data.result,
+        searchResponse.data.skip,
+        searchResponse.data.take,
+        searchResponse.data.total,
+      );
+    }
+  };
 
   const init = async () => {
     const userrespone = await GetUser({ id: userid });
@@ -128,7 +170,7 @@ const TrackAppliation = () => {
       setLoading(false);
     };
     init();
-  }, [userid]);
+  }, [userid, router]);
   const get_years = (month: string, year: string): string => {
     const monthNames = [
       "January",
@@ -184,15 +226,9 @@ const TrackAppliation = () => {
     ) {
       return toast.error("Enter arn number");
     }
-    const search_response = await SearchDeptPendingReturn({
+    await runSearch({
       arnnumber: arnRef.current?.input?.value,
-      take: 10,
-      skip: 0,
     });
-    if (search_response.status && search_response.data.result) {
-      setDvatData(search_response.data.result);
-      setSearch(true);
-    }
   };
 
   const datesearch = async () => {
@@ -200,16 +236,10 @@ const TrackAppliation = () => {
       return toast.error("Select state date and end date");
     }
 
-    const search_response = await SearchDeptPendingReturn({
+    await runSearch({
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
-      take: 10,
-      skip: 0,
     });
-    if (search_response.status && search_response.data.result) {
-      setDvatData(search_response.data.result);
-      setSearch(true);
-    }
   };
 
   const namesearch = async () => {
@@ -220,15 +250,9 @@ const TrackAppliation = () => {
     ) {
       return toast.error("Enter TIN Number");
     }
-    const search_response = await SearchDeptPendingReturn({
+    await runSearch({
       tradename: nameRef.current?.input?.value,
-      take: 10,
-      skip: 0,
     });
-    if (search_response.status && search_response.data.result) {
-      setDvatData(search_response.data.result);
-      setSearch(true);
-    }
   };
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (isSearch) {
@@ -240,21 +264,13 @@ const TrackAppliation = () => {
         ) {
           return toast.error("Enter arn number");
         }
-        const search_response = await SearchDeptPendingReturn({
+        await runSearch(
+          {
           arnnumber: arnRef.current?.input?.value,
-          take: pagesize,
-          skip: pagesize * (page - 1),
-        });
-
-        if (search_response.status && search_response.data.result) {
-          setDvatData(search_response.data.result);
-          setPaginatin({
-            skip: search_response.data.skip,
-            take: search_response.data.take,
-            total: search_response.data.total,
-          });
-          setSearch(true);
-        }
+          },
+          pagesize * (page - 1),
+          pagesize,
+        );
       } else if (searchOption == SearchOption.NAME) {
         if (
           nameRef.current?.input?.value == undefined ||
@@ -263,21 +279,13 @@ const TrackAppliation = () => {
         ) {
           return toast.error("Enter TIN Number");
         }
-        const search_response = await SearchDeptPendingReturn({
+        await runSearch(
+          {
           tradename: nameRef.current?.input?.value,
-          take: pagesize,
-          skip: pagesize * (page - 1),
-        });
-
-        if (search_response.status && search_response.data.result) {
-          setDvatData(search_response.data.result);
-          setPaginatin({
-            skip: search_response.data.skip,
-            take: search_response.data.take,
-            total: search_response.data.total,
-          });
-          setSearch(true);
-        }
+          },
+          pagesize * (page - 1),
+          pagesize,
+        );
       }
     } else {
       const payment_data = await DeptPendingReturn({
@@ -567,7 +575,8 @@ const TrackAppliation = () => {
               <div className="lg:hidden">
                 <Pagination
                   align="center"
-                  defaultCurrent={1}
+                  current={Math.floor(pagination.skip / pagination.take) + 1}
+                  pageSize={pagination.take}
                   onChange={onChangePageCount}
                   showSizeChanger
                   total={pagination.total}
@@ -578,7 +587,8 @@ const TrackAppliation = () => {
                 <Pagination
                   showQuickJumper
                   align="center"
-                  defaultCurrent={1}
+                  current={Math.floor(pagination.skip / pagination.take) + 1}
+                  pageSize={pagination.take}
                   onChange={onChangePageCount}
                   showSizeChanger
                   pageSizeOptions={[10, 20, 25, 50, 100]}

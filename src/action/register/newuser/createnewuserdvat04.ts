@@ -163,7 +163,7 @@ const CreateNewUserDvat04 = async (
             firstName,
             lastName,
             mobileOne: mobile,
-            pan,
+            // pan,
             role: Role.USER,
           },
         }));

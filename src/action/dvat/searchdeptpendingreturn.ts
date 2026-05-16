@@ -55,24 +55,16 @@ const SearchDeptPendingReturn = async (
               { name: { contains: payload.tradename } },
             ],
           }),
+          deletedAt: null,
+          deletedBy: null,
         },
       },
 
       include: {
-        dvat: {},
+        dvat: true,
       },
       orderBy: {
         createdAt: "asc",
-      },
-    });
-
-    const notice = await prisma.order_notice.findMany({
-      where: {
-        deletedAt: null,
-        deletedBy: null,
-        status: "PENDING",
-        notice_order_type: "NOTICE",
-        form_type: "DVAT10",
       },
     });
 
@@ -120,42 +112,7 @@ const SearchDeptPendingReturn = async (
       }
     }
 
-    interface NoticeType {
-      dvat04id: number;
-      notice_count: number;
-    }
-
-    let noticeMap = new Map<number, NoticeType>(); // Track dvat04 by ID
-
-    for (let i = 0; i < notice.length; i++) {
-      if (noticeMap.has(notice[i].dvatid)) {
-        let existingData: NoticeType = noticeMap.get(
-          notice[i].dvatid,
-        ) as NoticeType;
-        existingData.notice_count += 1;
-      } else {
-        noticeMap.set(notice[i].dvatid, {
-          dvat04id: notice[i].dvatid,
-          notice_count: 1,
-        });
-      }
-    }
-
-    const notice_count = Array.from(noticeMap.values());
-
-    const res = Array.from(resMap.values()).filter(
-      (val: ResponseType) => val.pending != 0,
-    );
-
-    res.forEach((response) => {
-      const matchingNotice = notice_count.find(
-        (notice) => notice.dvat04id === response.dvat04.id,
-      );
-
-      if (matchingNotice) {
-        response.notice = matchingNotice.notice_count;
-      }
-    });
+    const res = Array.from(resMap.values());
 
     const paginatedData = res
       .sort((a, b) => b.pending - a.pending)

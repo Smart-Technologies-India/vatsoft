@@ -37,7 +37,6 @@ import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import CreateMultiDailyPurchase from "@/action/stock/createmultidailypurchase";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
-
 const CommodityMaster = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
@@ -207,7 +206,7 @@ const CommodityMaster = () => {
 
   const handleCSVChange = async (
     value: React.ChangeEvent<HTMLInputElement>,
-    setFun: (value: SetStateAction<File | null>) => void
+    setFun: (value: SetStateAction<File | null>) => void,
   ) => {
     if (value!.target.files?.length == 0) {
       value.target.value = ""; // Reset input so same file can be selected again
@@ -245,7 +244,7 @@ const CommodityMaster = () => {
             const invoiceWithMultipleTIN = new Set(
               Object.entries(invoiceTinMap)
                 .filter(([_, tins]) => tins.size > 1)
-                .map(([inv]) => inv)
+                .map(([inv]) => inv),
             );
 
             let recatoredata = results.data.map((value: any) => {
@@ -253,7 +252,7 @@ const CommodityMaster = () => {
               const isDuplicate = groupedData[key] > 1;
 
               const matchedCommodity = commodityMaster.find(
-                (commodity) => commodity.oidc_code === value["oidc_code"]
+                (commodity) => commodity.oidc_code === value["oidc_code"],
               );
 
               const isallnull =
@@ -300,10 +299,10 @@ const CommodityMaster = () => {
                 errorname: !matchedCommodity
                   ? "OIDC code not found in commodity master"
                   : isDuplicate
-                  ? "Duplicate entry"
-                  : tinError
-                  ? "Multiple TINs for same invoice no."
-                  : null,
+                    ? "Duplicate entry"
+                    : tinError
+                      ? "Multiple TINs for same invoice no."
+                      : null,
                 mrp: matchedCommodity ? matchedCommodity.mrp : null,
                 crate_size: matchedCommodity
                   ? matchedCommodity.crate_size
@@ -350,7 +349,7 @@ const CommodityMaster = () => {
     // If any row has error, prevent upload and show error
     if (tabledata.some((row) => row.error)) {
       toast.error(
-        "Please fix all errors in the uploaded data before proceeding."
+        "Please fix all errors in the uploaded data before proceeding.",
       );
       return;
     }
@@ -360,7 +359,7 @@ const CommodityMaster = () => {
       .map((row) => ({
         dvatid: dvatdata!.id,
         commodityid: commodityMaster.find(
-          (commodity) => commodity.oidc_code === row.oidc_code
+          (commodity) => commodity.oidc_code === row.oidc_code,
         )?.id!,
         quantity: parseInt(row.quantity),
         seller_tin_id: tindata.find((tin) => tin.tin_number === row.tin)?.id!,
@@ -374,22 +373,22 @@ const CommodityMaster = () => {
           parseFloat(row.quantity) *
           parseFloat(
             commodityMaster.find(
-              (commodity) => commodity.oidc_code === row.oidc_code
-            )?.sale_price!
+              (commodity) => commodity.oidc_code === row.oidc_code,
+            )?.sale_price!,
           )
         ).toFixed(2),
         vatamount: (
           (parseFloat(row.quantity) *
             parseFloat(
               commodityMaster.find(
-                (commodity) => commodity.oidc_code === row.oidc_code
-              )?.sale_price!
+                (commodity) => commodity.oidc_code === row.oidc_code,
+              )?.sale_price!,
             ) *
             2) /
           100
         ).toFixed(2),
         amount_unit: commodityMaster.find(
-          (commodity) => commodity.oidc_code === row.oidc_code
+          (commodity) => commodity.oidc_code === row.oidc_code,
         )?.sale_price!,
         createdById: userid,
         against_cfrom: false,
@@ -552,9 +551,7 @@ const CommodityMaster = () => {
         size="large"
       >
         <div className="mb-3 pb-2 border-b">
-          <h2 className="text-sm font-medium text-gray-900">
-            Add Purchase
-          </h2>
+          <h2 className="text-sm font-medium text-gray-900">Add Purchase</h2>
         </div>
         <DailyPurchaseMasterProvider
           userid={userid}
@@ -572,9 +569,7 @@ const CommodityMaster = () => {
         size="large"
       >
         <div className="mb-3 pb-2 border-b">
-          <h2 className="text-sm font-medium text-gray-900">
-            Add Stock
-          </h2>
+          <h2 className="text-sm font-medium text-gray-900">Add Stock</h2>
         </div>
         <CreateStockProvider
           userid={userid}
@@ -679,14 +674,16 @@ const CommodityMaster = () => {
                 >
                   View Purchase
                 </Button>
-                <Button
-                  size="small"
-                  type="default"
-                  onClick={() => router.push("/dashboard/refinery_sales")}
-                >
-                  Refinery Purchase
-                </Button>
 
+                {dvatdata?.commodity == "FUEL" && (
+                  <Button
+                    size="small"
+                    type="default"
+                    onClick={() => router.push("/dashboard/refinery_sales")}
+                  >
+                    Refinery Purchase
+                  </Button>
+                )}
                 {dvatdata && dvatdata.commodity == "MANUFACTURER" && (
                   <Button
                     size="small"
@@ -733,7 +730,7 @@ const CommodityMaster = () => {
                       .map(
                         (
                           val: stock & { commodity_master: commodity_master },
-                          index: number
+                          index: number,
                         ) => (
                           <TableRow
                             key={index}
@@ -750,14 +747,14 @@ const CommodityMaster = () => {
                                 ? val.quantity
                                 : showCrates(
                                     val.quantity,
-                                    val.commodity_master.crate_size
+                                    val.commodity_master.crate_size,
                                   )}
                             </TableCell>
                             <TableCell className="p-2 text-left text-xs text-gray-600">
                               {val.commodity_master.description || "-"}
                             </TableCell>
                           </TableRow>
-                        )
+                        ),
                       )}
                   </TableBody>
                 </Table>

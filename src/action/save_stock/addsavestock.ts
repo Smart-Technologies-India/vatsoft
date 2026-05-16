@@ -54,6 +54,7 @@ const CreateSaveStock = async (
         where: {
           dvat04Id: payload.dvatid,
           deletedAt: null,
+          deletedById: null,
         },
         select: {
           id: true,

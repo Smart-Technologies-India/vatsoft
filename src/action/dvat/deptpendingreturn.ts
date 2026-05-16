@@ -65,6 +65,7 @@ const DeptPendingReturn = async (
       },
     });
 
+
     if (!dvat04response)
       return createPaginationResponse({
         message: "There is no returns data",
@@ -80,6 +81,7 @@ const DeptPendingReturn = async (
         // form_type: "DVAT10",
       },
     });
+
 
     let resMap = new Map<number, ResponseType>(); // Track dvat04 by ID
     const currentDate = new Date();
@@ -121,6 +123,8 @@ const DeptPendingReturn = async (
       }
     }
 
+
+
     interface NoticeType {
       dvat04id: number;
       notice_count: number;
@@ -142,12 +146,17 @@ const DeptPendingReturn = async (
       }
     }
 
+
+
     const notice_count = Array.from(noticeMap.values());
 
     // Convert Map to an array
-    const res: ResponseType[] = Array.from(resMap.values()).filter(
-      (val: ResponseType) => val.pending != 0
-    );
+    const res: ResponseType[] = Array.from(resMap.values());
+    // .filter(
+    //   (val: ResponseType) => val.pending != 0
+    // );
+
+
 
     res.forEach((response) => {
       const matchingNotice = notice_count.find(

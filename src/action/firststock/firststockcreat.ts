@@ -80,25 +80,42 @@ const CreateFirstStock = async (
         throw new Error("Unable to update DVAT04.");
       }
 
-      const first_stock = await prisma.first_stock.createMany({
-        data: aggregatedStockData.map((item) => {
-          return {
-            commodity_masterId: item.item.id,
-            quantity: item.quantity,
-            dvat04Id: payload.dvatid,
-            createdById: payload.createdById,
-          };
-        }),
-      });
-
-      if (!first_stock) {
-        throw new Error("Unable to create First Stock entry.");
-      }
-
-      // Handle stock creation/update for each item
       for (const item of aggregatedStockData) {
+        const existingFirstStock = await prisma.first_stock.findFirst({
+          where: {
+            deletedAt: null,
+            deletedById: null,
+            commodity_masterId: item.item.id,
+            dvat04Id: payload.dvatid,
+          },
+        });
+
+        if (existingFirstStock) {
+          await prisma.first_stock.update({
+            where: {
+              id: existingFirstStock.id,
+            },
+            data: {
+              quantity: existingFirstStock.quantity + item.quantity,
+              updatedById: payload.createdById,
+            },
+          });
+        } else {
+          await prisma.first_stock.create({
+            data: {
+              commodity_masterId: item.item.id,
+              quantity: item.quantity,
+              dvat04Id: payload.dvatid,
+              createdById: payload.createdById,
+              status: "ACTIVE",
+            },
+          });
+        }
+
         const existingStock = await prisma.stock.findFirst({
           where: {
+            deletedAt: null,
+            deletedById: null,
             commodity_masterId: item.item.id,
             dvat04Id: payload.dvatid,
           },
@@ -112,6 +129,7 @@ const CreateFirstStock = async (
             },
             data: {
               quantity: existingStock.quantity + item.quantity,
+              updatedById: payload.createdById,
             },
           });
         } else {
