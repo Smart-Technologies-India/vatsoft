@@ -33,6 +33,11 @@ type OrderStatusResult = {
   order_tax?: string | number;
   error_desc?: string;
   raw_response?: string;
+  order_bank_ref_no?: string;
+  order_card_name?: string;
+  order_option_type?: string;
+  status_code?: string;
+  response_code?: string;
 };
 
 type ChallanUpdateConfirmDetails = {
@@ -95,6 +100,10 @@ const getBucketClass = (bucket: PaymentBucket): string => {
 };
 
 const PaymentStatusPage = () => {
+  const [isDirectUpdateModalOpen, setIsDirectUpdateModalOpen] = useState(false);
+  const [isDirectUpdateModalLoading, setIsDirectUpdateModalLoading] =
+    useState(false);
+
   const router = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [challanData, setChallanData] = useState<challan[]>([]);
@@ -154,7 +163,6 @@ const PaymentStatusPage = () => {
       searchText: search.trim() || undefined,
       bucketFilter: bucket === "all" ? undefined : bucket,
     });
-
 
     if (searchResponse.status && searchResponse.data.result) {
       setChallanData(searchResponse.data.result);
@@ -272,7 +280,12 @@ const PaymentStatusPage = () => {
         if (updateResponse.status) {
           toast.success("Challan updated with payment success status");
           // Reload challans to show updated data
-          await loadRecentChallans(currentPage, pageSize, searchText, statusFilter);
+          await loadRecentChallans(
+            currentPage,
+            pageSize,
+            searchText,
+            statusFilter,
+          );
         } else {
           toast.warning(updateResponse.message);
         }
@@ -361,7 +374,12 @@ const PaymentStatusPage = () => {
           if (updateResponse.status) {
             toast.success("Challan updated with payment success status");
             // Reload challans to show updated data
-            await loadRecentChallans(currentPage, pageSize, searchText, statusFilter);
+            await loadRecentChallans(
+              currentPage,
+              pageSize,
+              searchText,
+              statusFilter,
+            );
           }
         }
       }
@@ -504,6 +522,77 @@ const PaymentStatusPage = () => {
               {lastStatusResult.error_desc && (
                 <p>Error: {lastStatusResult.error_desc}</p>
               )}
+
+              {/* Check Status Button and Modal for direct update */}
+              <Button
+                type="primary"
+                className="mt-2"
+                onClick={() => setIsDirectUpdateModalOpen(true)}
+                disabled={
+                  !lastStatusResult ||
+                  !lastStatusResult.order_no ||
+                  !lastStatusResult.reference_no ||
+                  !lastStatusResult.order_status
+                }
+              >
+                Check Status
+              </Button>
+
+              <Modal
+                open={isDirectUpdateModalOpen}
+                title="Update Challan Status"
+                okText="Update"
+                cancelText="Cancel"
+                confirmLoading={isDirectUpdateModalLoading}
+                onOk={async () => {
+                  setIsDirectUpdateModalLoading(true);
+                  try {
+                    // Find the challanId from challanData by matching order_no or reference_no
+                    const matchingChallan = challanData.find(
+                      (row) => row.order_id === lastStatusResult.order_no,
+                    );
+                    const challanId = matchingChallan?.id;
+                    if (!challanId) {
+                      toast.error("Matching challan not found for update.");
+                      setIsDirectUpdateModalLoading(false);
+                      return;
+                    }
+                    const updateResponse = await UpdateChallanStatus({
+                      challanId,
+                      orderStatus: lastStatusResult.order_status,
+                      statusGroup: lastStatusResult.status_group,
+                      orderStatusDateTime:
+                        lastStatusResult.order_status_date_time,
+                      bankRefNo: lastStatusResult.order_bank_ref_no,
+                      cardName: lastStatusResult.order_card_name,
+                      paymentMode: lastStatusResult.order_option_type,
+                      statusCode: lastStatusResult.status_code,
+                      statusMessage: "Completed Successfully",
+                      responseCode: lastStatusResult.response_code,
+                      failureMessage: lastStatusResult.error_desc,
+                      tracking_id: lastStatusResult.reference_no,
+                      orderFeeFlat: lastStatusResult.order_fee_flat,
+                      orderTax: lastStatusResult.order_tax,
+                    });
+                    if (updateResponse.status) {
+                      toast.success("Challan updated with payment status");
+                      setIsDirectUpdateModalOpen(false);
+                    } else {
+                      toast.warning(updateResponse.message);
+                    }
+                  } catch (err) {
+                    toast.error("Failed to update challan status");
+                  } finally {
+                    setIsDirectUpdateModalLoading(false);
+                  }
+                }}
+                onCancel={() => setIsDirectUpdateModalOpen(false)}
+              >
+                <p>
+                  Are you sure you want to update the challan status with the
+                  latest result?
+                </p>
+              </Modal>
             </div>
           )}
         </div>
@@ -660,7 +749,8 @@ const PaymentStatusPage = () => {
 
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-gray-600">
-                Page {currentPage} of {totalPages} &mdash; {serverTotal} total record(s)
+                Page {currentPage} of {totalPages} &mdash; {serverTotal} total
+                record(s)
               </p>
               <div className="flex items-center gap-2">
                 <select
@@ -681,7 +771,9 @@ const PaymentStatusPage = () => {
                 </Button>
                 <Button
                   size="small"
-                  onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                  onClick={() =>
+                    handlePageChange(Math.min(totalPages, currentPage + 1))
+                  }
                   disabled={currentPage >= totalPages}
                 >
                   Next

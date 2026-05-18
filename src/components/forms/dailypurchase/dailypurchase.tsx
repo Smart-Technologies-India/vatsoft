@@ -188,6 +188,13 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
   const [fuelTotalInvoiceValue, setFuelTotalInvoiceValue] =
     useState<string>("");
 
+  const isLocalTinNumber = (tin: string): boolean => {
+    return (
+      (tin ?? "").length > 2 &&
+      ((tin ?? "").startsWith("25") || (tin ?? "").startsWith("26"))
+    );
+  };
+
   useEffect(() => {
     const init = async () => {
       if (
@@ -198,9 +205,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       }
       if (
         recipient_vat_no &&
-        (recipient_vat_no ?? "").length > 2 &&
-        (recipient_vat_no.startsWith("25") == true ||
-          recipient_vat_no.startsWith("26") == true)
+        isLocalTinNumber(recipient_vat_no)
       ) {
         if (recipient_vat_no.length >= 11) {
           toast.dismiss();
@@ -339,6 +344,14 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
   };
 
   const onSubmit = async (data: DailyPurchaseMasterForm) => {
+    if (isLocalTinNumber(data.recipient_vat_no ?? "")) {
+      toast.dismiss();
+      toast.error(
+        "Local purchase will auto reflect after sale entry from the seller.",
+      );
+      return;
+    }
+
     if (davtdata == null || davtdata == undefined)
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
@@ -426,6 +439,14 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
   };
 
   const addNew = async (data: DailyPurchaseMasterForm) => {
+    if (isLocalTinNumber(data.recipient_vat_no ?? "")) {
+      toast.dismiss();
+      toast.error(
+        "Local purchase will auto reflect after sale entry from the seller.",
+      );
+      return;
+    }
+
     if (davtdata == null || davtdata == undefined)
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)

@@ -30,7 +30,12 @@ const failedGatewayStatuses = [
   "Refunded",
   "Systemrefund",
 ];
-const paymentStatuses: PaymentStatus[] = ["CREATED", "PENDING", "PAID", "FAILED"];
+const paymentStatuses: PaymentStatus[] = [
+  "CREATED",
+  "PENDING",
+  "PAID",
+  "FAILED",
+];
 
 interface SearchChallanPayload {
   dvatid?: number;
@@ -59,7 +64,13 @@ const buildWhere = (payload: SearchChallanPayload) => {
     andConditions.push({
       OR: [
         { order_status: null },
-        { order_status: { notIn: successGatewayStatuses } },
+        {
+          NOT: {
+            order_status: {
+              in: successGatewayStatuses,
+            },
+          },
+        },
       ],
     });
   }
@@ -122,7 +133,7 @@ const buildWhere = (payload: SearchChallanPayload) => {
 };
 
 const SearchChallan = async (
-  payload: SearchChallanPayload
+  payload: SearchChallanPayload,
 ): Promise<PaginationResponse<SearchChallanWithRelations[] | null>> => {
   const functionname: string = SearchChallan.name;
 
@@ -139,7 +150,7 @@ const SearchChallan = async (
     }
 
     const where = buildWhere(payload);
-
+  
     const [challan, totalCount] = await Promise.all([
       prisma.challan.findMany({
         where,
@@ -152,6 +163,8 @@ const SearchChallan = async (
       }),
       prisma.challan.count({ where }),
     ]);
+
+
 
     return createPaginationResponse({
       message: challan ? "Challan Get successfully" : "Unable to get challan.",

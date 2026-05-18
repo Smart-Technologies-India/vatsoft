@@ -13,6 +13,7 @@ import {
 
 import {
   CategoryOfEntry,
+  challan,
   dvat04,
   DvatType,
   InputTaxCredit,
@@ -38,6 +39,7 @@ import GetUser from "@/action/user/getuser";
 import getDepartmentPdfReturn from "@/action/return/getdepartmentpdfreturn";
 import getPdfReturnDownload from "@/action/return/getpdfreturndownload";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import GetPaidChallanByReturnId from "@/action/challan/getpaidchallanbyreturnid";
 
 interface PercentageOutput {
   increase: string;
@@ -51,10 +53,10 @@ const Dvat16ReturnPreview = () => {
     dvatid: string | string[];
   }>();
   const userid: number = parseInt(
-    decryptURLData(Array.isArray(id) ? id[0] : id, router)
+    decryptURLData(Array.isArray(id) ? id[0] : id, router),
   );
   const dvat: number = parseInt(
-    decryptURLData(Array.isArray(dvatid) ? dvatid[0] : dvatid, router)
+    decryptURLData(Array.isArray(dvatid) ? dvatid[0] : dvatid, router),
   );
 
   const [isDownload, setDownload] = useState<boolean>(false);
@@ -65,6 +67,7 @@ const Dvat16ReturnPreview = () => {
   >();
 
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
+  const [paidChallans, setPaidChallans] = useState<challan[]>([]);
   const [payment, setPayment] = useState<boolean>(false);
   const [paymentSubmitBox, setPaymentSubmitBox] = useState<boolean>(false);
   const searchparam = useSearchParams();
@@ -116,27 +119,36 @@ const Dvat16ReturnPreview = () => {
       if (returnformsresponse.status && returnformsresponse.data) {
         setReturn01(returnformsresponse.data.returns_01);
         serReturns_entryData(returnformsresponse.data.returns_entry);
+
+        const challanResponse = await GetPaidChallanByReturnId({
+          returnid: returnformsresponse.data.returns_01.id,
+        });
+        if (challanResponse.status && challanResponse.data) {
+          setPaidChallans(challanResponse.data);
+        } else {
+          setPaidChallans([]);
+        }
         // setUser(returnformsresponse.data.returns_01.createdBy);
 
         const dvat_30: boolean =
           returnformsresponse.data.returns_entry.filter(
             (val: returns_entry) =>
-              val.dvat_type == DvatType.DVAT_30 && val.isnil == true
+              val.dvat_type == DvatType.DVAT_30 && val.isnil == true,
           ).length > 0;
         const dvat_30a: boolean =
           returnformsresponse.data.returns_entry.filter(
             (val: returns_entry) =>
-              val.dvat_type == DvatType.DVAT_30_A && val.isnil == true
+              val.dvat_type == DvatType.DVAT_30_A && val.isnil == true,
           ).length > 0;
         const dvat_31: boolean =
           returnformsresponse.data.returns_entry.filter(
             (val: returns_entry) =>
-              val.dvat_type == DvatType.DVAT_31 && val.isnil == true
+              val.dvat_type == DvatType.DVAT_31 && val.isnil == true,
           ).length > 0;
         const dvat_31a: boolean =
           returnformsresponse.data.returns_entry.filter(
             (val: returns_entry) =>
-              val.dvat_type == DvatType.DVAT_31_A && val.isnil == true
+              val.dvat_type == DvatType.DVAT_31_A && val.isnil == true,
           ).length > 0;
 
         if (dvat_30 && dvat_30a && dvat_31 && dvat_31a) {
@@ -147,7 +159,7 @@ const Dvat16ReturnPreview = () => {
 
         // Get the month index from the month name
         let monthIndex = monthNames.indexOf(
-          returnformsresponse.data.returns_01.month!
+          returnformsresponse.data.returns_01.month!,
         );
 
         // Check if it's December (index 11) and increment year if needed
@@ -163,9 +175,9 @@ const Dvat16ReturnPreview = () => {
           new Date(
             parseInt(returnformsresponse.data.returns_01.year),
             monthIndex,
-            11
+            11,
           ),
-          currentDate
+          currentDate,
         );
         // if (
         //   returnformsresponse.data.returns_01.rr_number == null ||
@@ -307,7 +319,7 @@ const Dvat16ReturnPreview = () => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -330,7 +342,7 @@ const Dvat16ReturnPreview = () => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -353,7 +365,7 @@ const Dvat16ReturnPreview = () => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -376,7 +388,7 @@ const Dvat16ReturnPreview = () => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -400,7 +412,7 @@ const Dvat16ReturnPreview = () => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -424,7 +436,7 @@ const Dvat16ReturnPreview = () => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -448,7 +460,7 @@ const Dvat16ReturnPreview = () => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -472,7 +484,7 @@ const Dvat16ReturnPreview = () => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -498,7 +510,7 @@ const Dvat16ReturnPreview = () => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -523,7 +535,7 @@ const Dvat16ReturnPreview = () => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -548,7 +560,7 @@ const Dvat16ReturnPreview = () => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -753,12 +765,20 @@ const Dvat16ReturnPreview = () => {
               returnsentrys={returns_entryData ?? []}
               return01={return01}
               lastMonthDue={lastmonthdue}
+              isComp={return01?.dvat04.frequencyFilings === "QUARTERLY"}
+              paidChallans={paidChallans}
+              challan_amount={paidChallans.reduce(
+                (acc, entry) => acc + parseFloat(entry.total_tax_amount ?? "0"),
+                0,
+              )}
             />
             {/* section 7 start here */}
             <THEBALANCE1
               returnsentrys={returns_entryData ?? []}
               return01={return01}
               lastMonthDue={lastmonthdue}
+              isComp={return01?.dvat04.frequencyFilings === "QUARTERLY"}
+              paidChallans={paidChallans}
             />
 
             {/* section 8 start here */}
@@ -766,6 +786,8 @@ const Dvat16ReturnPreview = () => {
               returnsentrys={returns_entryData ?? []}
               return01={return01}
               lastMonthDue={lastmonthdue}
+              isComp={return01?.dvat04.frequencyFilings === "QUARTERLY"}
+              paidChallans={paidChallans}
             />
 
             {/* section 9 start here */}
@@ -787,6 +809,12 @@ const Dvat16ReturnPreview = () => {
               returnsentrys={returns_entryData ?? []}
               return01={return01}
               lastMonthDue={lastmonthdue}
+              isComp={return01?.dvat04.frequencyFilings === "QUARTERLY"}
+              paidChallans={paidChallans}
+              challan_amount={paidChallans.reduce(
+                (acc, entry) => acc + parseFloat(entry.total_tax_amount ?? "0"),
+                0,
+              )}
             />
 
             <table border={1} className="w-5/6 mx-auto mt-4">
@@ -800,57 +828,85 @@ const Dvat16ReturnPreview = () => {
               </tbody>
             </table>
             <FORM_DVAT_16 returnsentrys={returns_entryData ?? []} />
-            {payment && (
-              <>
-                <h1 className="text-center font-semibold text-sm mt-4">
-                  Payment Details
-                </h1>
-                <table border={1} className="w-5/6 mx-auto mt-2">
-                  <thead className="w-full">
-                    <tr className="w-full">
-                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                        Payment Mode
-                      </th>
-                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                        Ref. No
-                      </th>
-                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                        Payment Date
-                      </th>
-                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                        Bank Name
-                      </th>
-                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                        Amount
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="w-full">
-                    <tr className="w-full">
+            <h1 className="text-center font-semibold text-sm mt-4">
+              Payment Details
+            </h1>
+            <table border={1} className="w-5/6 mx-auto mt-2">
+              <thead className="w-full">
+                <tr className="w-full">
+                  <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                    Payment Mode
+                  </th>
+                  <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                    Ref. No
+                  </th>
+                  <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                    Payment Date
+                  </th>
+                  <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                    Bank Name
+                  </th>
+                  <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                    Amount
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="w-full">
+                {(paidChallans.length > 0 ? paidChallans : []).map(
+                  (challan, index) => (
+                    <tr className="w-full" key={challan.id ?? index}>
                       <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {return01?.paymentmode}
+                        {challan.paymentmode ?? "-"}
                       </td>
                       <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {return01?.transaction_id}
+                        {challan.track_id ??
+                          challan.order_id ??
+                          challan.cpin ??
+                          "-"}
                       </td>
                       <td className="border border-black px-2 leading-4 text-[0.6rem]">
                         {formatDateTime(
                           getPrismaDatabaseDate(
-                            new Date(return01?.transaction_date!)
-                          )
+                            new Date(
+                              challan.transaction_date ?? challan.createdAt,
+                            ),
+                          ),
                         )}
                       </td>
                       <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {return01?.bank_name}
+                        {challan.bank_name ?? "-"}
                       </td>
                       <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {return01?.total_tax_amount}
+                        {challan.total_tax_amount}
                       </td>
                     </tr>
-                  </tbody>
-                </table>
-              </>
-            )}
+                  ),
+                )}
+                {paidChallans.length === 0 && (
+                  <tr className="w-full">
+                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                      {return01?.paymentmode}
+                    </td>
+                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                      {return01?.transaction_id}
+                    </td>
+                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                      {formatDateTime(
+                        getPrismaDatabaseDate(
+                          new Date(return01?.transaction_date!),
+                        ),
+                      )}
+                    </td>
+                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                      {return01?.bank_name}
+                    </td>
+                    <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                      {return01?.total_tax_amount}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </main>
           <div className="h-20"></div>
           <div className="p-2 shadow bg-white fixed bottom-0 right-0 flex gap-4 items-center hidden-print">
@@ -861,12 +917,12 @@ const Dvat16ReturnPreview = () => {
                   onClick={() =>
                     router.push(
                       `/dashboard/returns/department-dvat24?returnid=${encryptURLData(
-                        return01.id.toString()
+                        return01.id.toString(),
                       )}&tin=${encryptURLData(
                         return01.dvat04.tinNumber
                           ? return01.dvat04.tinNumber.toString()
-                          : ""
-                      )}`
+                          : "",
+                      )}`,
                     )
                   }
                 >
@@ -877,12 +933,12 @@ const Dvat16ReturnPreview = () => {
                   onClick={() =>
                     router.push(
                       `/dashboard/returns/department-dvat24a?returnid=${encryptURLData(
-                        return01.id.toString()
+                        return01.id.toString(),
                       )}&tin=${encryptURLData(
                         return01.dvat04.tinNumber
                           ? return01.dvat04.tinNumber.toString()
-                          : ""
-                      )}`
+                          : "",
+                      )}`,
                     )
                   }
                 >
@@ -950,6 +1006,8 @@ interface THEBALANCEProps {
   returnsentrys: returns_entry[];
   return01: returns_01;
   lastMonthDue: string;
+  isComp: boolean;
+  paidChallans: challan[];
 }
 
 const THEBALANCE1 = (props: THEBALANCEProps) => {
@@ -979,29 +1037,48 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
 
     // Get the month index from the month name
     let monthIndex = monthNames.indexOf(props.return01.month!);
-
     // Check if it's December (index 11) and increment year if needed
     let newYear = parseInt(year);
-    if (monthIndex === 11) {
-      newYear += 1;
-      monthIndex = 0; // Set month to January
+    if (props.isComp) {
+      // Composition scheme: map to next quarter's first month
+      if (["January", "February", "March"].includes(props.return01.month!)) {
+        monthIndex = 3; // April
+      } else if (["April", "May", "June"].includes(props.return01.month!)) {
+        monthIndex = 6; // July
+      } else if (
+        ["July", "August", "September"].includes(props.return01.month!)
+      ) {
+        monthIndex = 9; // October
+      } else {
+        monthIndex = 0; // January
+        newYear += 1;
+      }
     } else {
-      monthIndex += 1; // Otherwise, just increment the month
+      // Check if it's December (index 11) and increment year if needed
+      if (monthIndex === 11) {
+        newYear += 1;
+        monthIndex = 0; // Set month to January
+      } else {
+        monthIndex += 1; // Otherwise, just increment the month
+      }
     }
-
     const diff_days = getDaysBetweenDates(
       new Date(parseInt(props.return01.year), monthIndex, 16),
-      currentDate
+      currentDate,
     );
     setDiffDays(diff_days);
+    const pdiff_days = getDaysBetweenDates(
+      new Date(parseInt(props.return01.year), monthIndex, 29),
+      currentDate,
+    );
 
-    // if (
-    //   props.return01.rr_number == null ||
-    //   props.return01.rr_number == undefined ||
-    //   props.return01.rr_number == ""
-    // ) {
-    setLateFees(Math.min(100 * diff_days, 10000));
-    // }
+    if (
+      props.return01.rr_number == null ||
+      props.return01.rr_number == undefined ||
+      props.return01.rr_number == ""
+    ) {
+      setLateFees(Math.min(100 * pdiff_days, 10000));
+    }
   }, []);
 
   const getInvoicePercentage = (value: string): PercentageOutput => {
@@ -1012,7 +1089,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1035,7 +1112,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1058,7 +1135,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1081,7 +1158,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1105,7 +1182,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1129,7 +1206,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1153,7 +1230,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1179,7 +1256,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1204,7 +1281,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1229,7 +1306,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1298,168 +1375,6 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     );
   };
 
-  const getR7 = (): number => {
-    return isNegative(
-      parseFloat(getInvoicePercentage("0").decrease) +
-        parseFloat(getInvoicePercentage("1").decrease) +
-        parseFloat(getInvoicePercentage("4").decrease) +
-        parseFloat(getInvoicePercentage("5").decrease) +
-        parseFloat(getInvoicePercentage("6").decrease) +
-        parseFloat(getInvoicePercentage("12.5").decrease) +
-        parseFloat(getInvoicePercentage("12.75").decrease) +
-        parseFloat(getInvoicePercentage("13.5").decrease) +
-        parseFloat(getInvoicePercentage("15").decrease) +
-        parseFloat(getInvoicePercentage("20").decrease) +
-        parseFloat(getSaleOfPercentage("4").decrease) +
-        parseFloat(getSaleOfPercentage("5").decrease) +
-        parseFloat(getSaleOfPercentage("12.5").decrease) +
-        parseFloat(get4_6().decrease) +
-        parseFloat(get4_7().decrease) -
-        parseFloat(get4_9().decrease) -
-        (parseFloat(get5_1().decrease) +
-          parseFloat(get5_2().decrease) +
-          (parseFloat(getCreditNote().decrease) -
-            parseFloat(getDebitNote().decrease) -
-            parseFloat(getGoodsReturnsNote().decrease) -
-            parseFloat(props.lastMonthDue))) +
-        (isNegative(
-          (((parseFloat(getInvoicePercentage("0").decrease) +
-            parseFloat(getInvoicePercentage("1").decrease) +
-            parseFloat(getInvoicePercentage("4").decrease) +
-            parseFloat(getInvoicePercentage("5").decrease) +
-            parseFloat(getInvoicePercentage("6").decrease) +
-            parseFloat(getInvoicePercentage("12.5").decrease) +
-            parseFloat(getInvoicePercentage("12.75").decrease) +
-            parseFloat(getInvoicePercentage("13.5").decrease) +
-            parseFloat(getInvoicePercentage("15").decrease) +
-            parseFloat(getInvoicePercentage("20").decrease) +
-            parseFloat(getSaleOfPercentage("4").decrease) +
-            parseFloat(getSaleOfPercentage("5").decrease) +
-            parseFloat(getSaleOfPercentage("12.5").decrease) +
-            parseFloat(get4_6().decrease) +
-            parseFloat(get4_7().decrease) -
-            parseFloat(get4_9().decrease) -
-            (parseFloat(get5_1().decrease) +
-              parseFloat(get5_2().decrease) +
-              (parseFloat(getCreditNote().decrease) -
-                parseFloat(getDebitNote().decrease) -
-                parseFloat(getGoodsReturnsNote().decrease) -
-                parseFloat(props.lastMonthDue)))) *
-            0.15) /
-            365) *
-            DiffDays
-        )
-          ? 0
-          : (((parseFloat(getInvoicePercentage("0").decrease) +
-              parseFloat(getInvoicePercentage("1").decrease) +
-              parseFloat(getInvoicePercentage("4").decrease) +
-              parseFloat(getInvoicePercentage("5").decrease) +
-              parseFloat(getInvoicePercentage("6").decrease) +
-              parseFloat(getInvoicePercentage("12.5").decrease) +
-              parseFloat(getInvoicePercentage("12.75").decrease) +
-              parseFloat(getInvoicePercentage("13.5").decrease) +
-              parseFloat(getInvoicePercentage("15").decrease) +
-              parseFloat(getInvoicePercentage("20").decrease) +
-              parseFloat(getSaleOfPercentage("4").decrease) +
-              parseFloat(getSaleOfPercentage("5").decrease) +
-              parseFloat(getSaleOfPercentage("12.5").decrease) +
-              parseFloat(get4_6().decrease) +
-              parseFloat(get4_7().decrease) -
-              parseFloat(get4_9().decrease) -
-              (parseFloat(get5_1().decrease) +
-                parseFloat(get5_2().decrease) +
-                (parseFloat(getCreditNote().decrease) -
-                  parseFloat(getDebitNote().decrease) -
-                  parseFloat(getGoodsReturnsNote().decrease) -
-                  parseFloat(props.lastMonthDue)))) *
-              0.15) /
-              365) *
-            DiffDays) +
-        (isNegative(lateFees) ? 0 : lateFees) +
-        0 -
-        0
-    )
-      ? 0
-      : parseFloat(getInvoicePercentage("0").decrease) +
-          parseFloat(getInvoicePercentage("1").decrease) +
-          parseFloat(getInvoicePercentage("4").decrease) +
-          parseFloat(getInvoicePercentage("5").decrease) +
-          parseFloat(getInvoicePercentage("6").decrease) +
-          parseFloat(getInvoicePercentage("12.5").decrease) +
-          parseFloat(getInvoicePercentage("12.75").decrease) +
-          parseFloat(getInvoicePercentage("13.5").decrease) +
-          parseFloat(getInvoicePercentage("15").decrease) +
-          parseFloat(getInvoicePercentage("20").decrease) +
-          parseFloat(getSaleOfPercentage("4").decrease) +
-          parseFloat(getSaleOfPercentage("5").decrease) +
-          parseFloat(getSaleOfPercentage("12.5").decrease) +
-          parseFloat(get4_6().decrease) +
-          parseFloat(get4_7().decrease) -
-          parseFloat(get4_9().decrease) -
-          (parseFloat(get5_1().decrease) +
-            parseFloat(get5_2().decrease) +
-            (parseFloat(getCreditNote().decrease) -
-              parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease) -
-              parseFloat(props.lastMonthDue))) +
-          (isNegative(
-            (((parseFloat(getInvoicePercentage("0").decrease) +
-              parseFloat(getInvoicePercentage("1").decrease) +
-              parseFloat(getInvoicePercentage("4").decrease) +
-              parseFloat(getInvoicePercentage("5").decrease) +
-              parseFloat(getInvoicePercentage("6").decrease) +
-              parseFloat(getInvoicePercentage("12.5").decrease) +
-              parseFloat(getInvoicePercentage("12.75").decrease) +
-              parseFloat(getInvoicePercentage("13.5").decrease) +
-              parseFloat(getInvoicePercentage("15").decrease) +
-              parseFloat(getInvoicePercentage("20").decrease) +
-              parseFloat(getSaleOfPercentage("4").decrease) +
-              parseFloat(getSaleOfPercentage("5").decrease) +
-              parseFloat(getSaleOfPercentage("12.5").decrease) +
-              parseFloat(get4_6().decrease) +
-              parseFloat(get4_7().decrease) -
-              parseFloat(get4_9().decrease) -
-              (parseFloat(get5_1().decrease) +
-                parseFloat(get5_2().decrease) +
-                (parseFloat(getCreditNote().decrease) -
-                  parseFloat(getDebitNote().decrease) -
-                  parseFloat(getGoodsReturnsNote().decrease) -
-                  parseFloat(props.lastMonthDue)))) *
-              0.15) /
-              365) *
-              DiffDays
-          )
-            ? 0
-            : (((parseFloat(getInvoicePercentage("0").decrease) +
-                parseFloat(getInvoicePercentage("1").decrease) +
-                parseFloat(getInvoicePercentage("4").decrease) +
-                parseFloat(getInvoicePercentage("5").decrease) +
-                parseFloat(getInvoicePercentage("6").decrease) +
-                parseFloat(getInvoicePercentage("12.5").decrease) +
-                parseFloat(getInvoicePercentage("12.75").decrease) +
-                parseFloat(getInvoicePercentage("13.5").decrease) +
-                parseFloat(getInvoicePercentage("15").decrease) +
-                parseFloat(getInvoicePercentage("20").decrease) +
-                parseFloat(getSaleOfPercentage("4").decrease) +
-                parseFloat(getSaleOfPercentage("5").decrease) +
-                parseFloat(getSaleOfPercentage("12.5").decrease) +
-                parseFloat(get4_6().decrease) +
-                parseFloat(get4_7().decrease) -
-                parseFloat(get4_9().decrease) -
-                (parseFloat(get5_1().decrease) +
-                  parseFloat(get5_2().decrease) +
-                  (parseFloat(getCreditNote().decrease) -
-                    parseFloat(getDebitNote().decrease) -
-                    parseFloat(getGoodsReturnsNote().decrease) -
-                    parseFloat(props.lastMonthDue)))) *
-                0.15) /
-                365) *
-              DiffDays) +
-          (isNegative(lateFees) ? 0 : lateFees) +
-          0 -
-          0;
-  };
-
   const isPayment = (): boolean => {
     let res: boolean =
       props.return01.rr_number == null ||
@@ -1467,6 +1382,196 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       props.return01.rr_number == "";
     return res == false;
   };
+
+  const getR6_1 = (): number =>
+    parseFloat(getInvoicePercentage("0").decrease) +
+    parseFloat(getInvoicePercentage("1").decrease) +
+    parseFloat(getInvoicePercentage("4").decrease) +
+    parseFloat(getInvoicePercentage("5").decrease) +
+    parseFloat(getInvoicePercentage("6").decrease) +
+    parseFloat(getInvoicePercentage("12.5").decrease) +
+    parseFloat(getInvoicePercentage("12.75").decrease) +
+    parseFloat(getInvoicePercentage("13.5").decrease) +
+    parseFloat(getInvoicePercentage("15").decrease) +
+    parseFloat(getInvoicePercentage("20").decrease) +
+    parseFloat(getSaleOfPercentage("4").decrease) +
+    parseFloat(getSaleOfPercentage("5").decrease) +
+    parseFloat(getSaleOfPercentage("12.5").decrease) +
+    parseFloat(get4_6().decrease) +
+    parseFloat(get4_7().decrease) -
+    parseFloat(get4_9().decrease) -
+    (parseFloat(get5_1().decrease) +
+      parseFloat(get5_2().decrease) +
+      (parseFloat(getCreditNote().decrease) -
+        parseFloat(getDebitNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(props.lastMonthDue)));
+
+  const getInterestDueDate = (): Date => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const month = props.return01.month ?? "";
+    let monthIndex = monthNames.indexOf(month);
+    let computedYear = parseInt(props.return01.year);
+
+    if (props.isComp) {
+      if (["January", "February", "March"].includes(month)) {
+        monthIndex = 3;
+      } else if (["April", "May", "June"].includes(month)) {
+        monthIndex = 6;
+      } else if (["July", "August", "September"].includes(month)) {
+        monthIndex = 9;
+      } else {
+        monthIndex = 0;
+        computedYear += 1;
+      }
+    } else {
+      if (monthIndex === 11) {
+        computedYear += 1;
+        monthIndex = 0;
+      } else {
+        monthIndex += 1;
+      }
+    }
+
+    return new Date(computedYear, monthIndex, 16);
+  };
+
+  const calculateInterestForBalance = (
+    totalDue: number,
+    dueDate: Date,
+    payments: challan[],
+    annualRate = 15,
+    asOfDate: Date = new Date(),
+  ): number => {
+    if (!Number.isFinite(totalDue) || totalDue <= 0) return 0;
+
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const normalizeDate = (dateInput: Date | string): Date => {
+      const date = new Date(dateInput);
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    };
+
+    const getDaysDiff = (fromDate: Date, toDate: Date): number => {
+      const startUtc = Date.UTC(
+        fromDate.getFullYear(),
+        fromDate.getMonth(),
+        fromDate.getDate(),
+      );
+      const endUtc = Date.UTC(
+        toDate.getFullYear(),
+        toDate.getMonth(),
+        toDate.getDate(),
+      );
+      return Math.max(0, Math.floor((endUtc - startUtc) / dayMs));
+    };
+
+    const sortedPayments = payments
+      .map((payment) => {
+        const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
+        const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
+        if (
+          !paymentDateRaw ||
+          !Number.isFinite(paymentAmount) ||
+          paymentAmount <= 0
+        )
+          return null;
+        return { amount: paymentAmount, date: normalizeDate(paymentDateRaw) };
+      })
+      .filter((p): p is { amount: number; date: Date } => p !== null)
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    const effectiveAsOfDate = normalizeDate(asOfDate);
+    let outstanding = totalDue;
+    let anchorDate = normalizeDate(dueDate);
+    let interest = 0;
+
+    for (let i = 0; i < sortedPayments.length; i++) {
+      const payment = sortedPayments[i];
+      if (payment.date > effectiveAsOfDate) {
+        break;
+      }
+
+      if (payment.date <= anchorDate) {
+        outstanding = Math.max(0, outstanding - payment.amount);
+
+        if (outstanding <= 0) {
+          break;
+        }
+        continue;
+      }
+
+      if (payment.date > anchorDate && outstanding > 0) {
+        const days = getDaysDiff(anchorDate, payment.date);
+        const intervalInterest =
+          (outstanding * annualRate * days) / (100 * 365);
+        interest += intervalInterest;
+      }
+
+      outstanding = Math.max(0, outstanding - payment.amount);
+      anchorDate = payment.date;
+
+      if (outstanding <= 0) {
+        break;
+      }
+    }
+
+    if (outstanding > 0 && effectiveAsOfDate > anchorDate) {
+      const days = getDaysDiff(anchorDate, effectiveAsOfDate);
+      const finalInterest = (outstanding * annualRate * days) / (100 * 365);
+      interest += finalInterest;
+    }
+
+    return interest;
+  };
+
+  const getR6_2a = (): number => {
+    const totalDue = getR6_1();
+    const dueDate = getInterestDueDate();
+    const interest = calculateInterestForBalance(
+      totalDue,
+      dueDate,
+      props.paidChallans,
+      15,
+    );
+    return isNegative(interest) ? 0 : interest;
+  };
+
+  const getR7 = (): number =>
+    getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a());
+
+  // Find the latest challan payment date from paidChallans
+  let lastChallanDate = null;
+  if (props.paidChallans && props.paidChallans.length > 0) {
+    lastChallanDate = props.paidChallans
+      .map((c) => c.transaction_date || c.createdAt)
+      .filter(Boolean)
+      .map((d) => new Date(d))
+      .sort((a, b) => b.getTime() - a.getTime())[0];
+  }
+
+  // Prepare comma-separated list of paid challan cpin values
+  let paidChallanCpins = "-";
+  if (props.paidChallans && props.paidChallans.length > 0) {
+    paidChallanCpins = props.paidChallans
+      .map((c) => c.cpin)
+      .filter((cpin) => !!cpin)
+      .join(", ");
+    if (!paidChallanCpins) paidChallanCpins = "-";
+  }
 
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
@@ -1487,7 +1592,11 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
             Balance brought forward from line R7
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {getR7().toFixed(2)}
+            {isNegative(getR7())
+              ? isNegative(lateFees)
+                ? 0
+                : lateFees.toFixed(2)
+              : (getR7() + (isNegative(lateFees) ? 0 : lateFees)).toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -1495,7 +1604,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
             R8.1 Challan number by which payment made
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {getR7() == 0 ? "-" : props.return01.challan_number}
+            {getR7() == 0 ? "-" : paidChallanCpins}
           </td>
         </tr>
         <tr className="w-full">
@@ -1503,7 +1612,11 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
             R8.2 Date of payment
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {getR7() == 0 ? "-" : formateDate(props.return01.filing_datetime)}
+            {getR7() == 0
+              ? "-"
+              : lastChallanDate
+              ? formateDate(lastChallanDate)
+              : formateDate(props.return01.filing_datetime)}
           </td>
         </tr>
       </tbody>
@@ -1550,7 +1663,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
 
     const diff_days = getDaysBetweenDates(
       new Date(parseInt(props.return01.year), monthIndex, 16),
-      currentDate
+      currentDate,
     );
     setDiffDays(diff_days);
 
@@ -1571,7 +1684,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1594,7 +1707,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1617,7 +1730,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1640,7 +1753,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1664,7 +1777,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1688,7 +1801,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1712,7 +1825,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1736,7 +1849,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1762,7 +1875,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1787,7 +1900,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1812,7 +1925,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -1945,7 +2058,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
                         parseFloat(getGoodsReturnsNote().decrease)))) *
                     0.15) /
                     365) *
-                    DiffDays
+                    DiffDays,
                 )
                   ? 0
                   : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -1974,7 +2087,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
                     DiffDays) +
                 (isNegative(lateFees) ? 0 : lateFees) +
                 0 -
-                0
+                0,
             )
               ? (
                   parseFloat(getInvoicePercentage("0").decrease) +
@@ -2022,7 +2135,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
                           parseFloat(getGoodsReturnsNote().decrease)))) *
                       0.15) /
                       365) *
-                      DiffDays
+                      DiffDays,
                   )
                     ? 0
                     : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -2061,7 +2174,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
             R9.1 Adjusted against liability under Central Sales Tax
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            0
+            {/* 0 */}
           </td>
         </tr>
         <tr className="w-full">
@@ -2123,7 +2236,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
                         parseFloat(getGoodsReturnsNote().decrease)))) *
                     0.15) /
                     365) *
-                    DiffDays
+                    DiffDays,
                 )
                   ? 0
                   : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -2152,7 +2265,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
                     DiffDays) +
                 (isNegative(lateFees) ? 0 : lateFees) +
                 0 -
-                0
+                0,
             )
               ? (
                   parseFloat(getInvoicePercentage("0").decrease) +
@@ -2200,7 +2313,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
                           parseFloat(getGoodsReturnsNote().decrease)))) *
                       0.15) /
                       365) *
-                      DiffDays
+                      DiffDays,
                   )
                     ? 0
                     : (((parseFloat(getInvoicePercentage("0").decrease) +
@@ -2251,7 +2364,7 @@ const TurnOver = (props: TurnOverProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2274,7 +2387,7 @@ const TurnOver = (props: TurnOverProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2297,7 +2410,7 @@ const TurnOver = (props: TurnOverProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2320,7 +2433,7 @@ const TurnOver = (props: TurnOverProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2343,7 +2456,7 @@ const TurnOver = (props: TurnOverProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2659,7 +2772,7 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2681,7 +2794,7 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.SALE_CANCELLED &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2863,7 +2976,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2887,7 +3000,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2911,7 +3024,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2937,7 +3050,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2962,7 +3075,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -2987,7 +3100,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3133,7 +3246,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3158,7 +3271,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3183,7 +3296,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3424,7 +3537,7 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
 
     const grouped: Record<string, returns_entry> = {};
@@ -3569,16 +3682,17 @@ interface NetTaxProps {
   returnsentrys: returns_entry[];
   return01: returns_01;
   lastMonthDue: string;
+  isComp?: boolean;
+  paidChallans?: challan[];
+  challan_amount?: number;
 }
 
 const NetTax = (props: NetTaxProps) => {
   const [lateFees, setLateFees] = useState<number>(0);
-  const [DiffDays, setDiffDays] = useState<number>(0);
   const searchparam = useSearchParams();
 
   useEffect(() => {
     const year: string = searchparam.get("year") ?? "";
-
     const currentDate = new Date();
 
     const monthNames = [
@@ -3596,32 +3710,154 @@ const NetTax = (props: NetTaxProps) => {
       "December",
     ];
 
-    // Get the month index from the month name
     let monthIndex = monthNames.indexOf(props.return01.month!);
-
-    // Check if it's December (index 11) and increment year if needed
     let newYear = parseInt(year);
-    if (monthIndex === 11) {
-      newYear += 1;
-      monthIndex = 0; // Set month to January
+    const dueDate = getDueDateForMonth(
+      props.return01.month!,
+      props.return01.year,
+      props.isComp,
+    );
+    const pdiff_days = getDaysBetweenDates(dueDate, currentDate);
+    if (
+      props.return01.rr_number == null ||
+      props.return01.rr_number == undefined ||
+      props.return01.rr_number == ""
+    ) {
+      setLateFees(Math.min(100 * pdiff_days, 10000));
+    }
+  }, []);
+
+  const getDueDateForMonth = (
+    month: string,
+    year: string,
+    isComp: boolean = false,
+  ): Date => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    let monthIndex = monthNames.indexOf(month);
+    let computedYear = parseInt(year);
+
+    if (isComp) {
+      if (["January", "February", "March"].includes(month)) {
+        monthIndex = 3;
+      } else if (["April", "May", "June"].includes(month)) {
+        monthIndex = 6;
+      } else if (["July", "August", "September"].includes(month)) {
+        monthIndex = 9;
+      } else {
+        monthIndex = 0;
+        computedYear += 1;
+      }
     } else {
-      monthIndex += 1; // Otherwise, just increment the month
+      if (monthIndex === 11) {
+        computedYear += 1;
+        monthIndex = 0;
+      } else {
+        monthIndex += 1;
+      }
+    }
+    return new Date(computedYear, monthIndex, 16);
+  };
+
+  const calculateInterest = (
+    totalDue: number,
+    dueDate: Date,
+    payments: challan[] = [],
+    annualRate = 15,
+    asOfDate: Date = new Date(),
+  ): number => {
+    if (!Number.isFinite(totalDue) || totalDue <= 0) return 0;
+
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const normalizeDate = (dateInput: Date | string): Date => {
+      const date = new Date(dateInput);
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    };
+
+    const getDaysDiff = (fromDate: Date, toDate: Date): number => {
+      const startUtc = Date.UTC(
+        fromDate.getFullYear(),
+        fromDate.getMonth(),
+        fromDate.getDate(),
+      );
+      const endUtc = Date.UTC(
+        toDate.getFullYear(),
+        toDate.getMonth(),
+        toDate.getDate(),
+      );
+      return Math.max(0, Math.floor((endUtc - startUtc) / dayMs));
+    };
+
+    const sortedPayments = payments
+      .map((payment) => {
+        const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
+        const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
+        if (
+          !paymentDateRaw ||
+          !Number.isFinite(paymentAmount) ||
+          paymentAmount <= 0
+        )
+          return null;
+        return { amount: paymentAmount, date: normalizeDate(paymentDateRaw) };
+      })
+      .filter((p): p is { amount: number; date: Date } => p !== null)
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    const effectiveAsOfDate = normalizeDate(asOfDate);
+    let outstanding = totalDue;
+    let anchorDate = normalizeDate(dueDate);
+    let interest = 0;
+
+    for (let i = 0; i < sortedPayments.length; i++) {
+      const payment = sortedPayments[i];
+      if (payment.date > effectiveAsOfDate) {
+        break;
+      }
+
+      if (payment.date <= anchorDate) {
+        outstanding = Math.max(0, outstanding - payment.amount);
+        if (outstanding <= 0) {
+          break;
+        }
+        continue;
+      }
+
+      if (payment.date > anchorDate && outstanding > 0) {
+        const days = getDaysDiff(anchorDate, payment.date);
+        const intervalInterest =
+          (outstanding * annualRate * days) / (100 * 365);
+        interest += intervalInterest;
+      }
+
+      outstanding = Math.max(0, outstanding - payment.amount);
+      anchorDate = payment.date;
+
+      if (outstanding <= 0) {
+        break;
+      }
     }
 
-    const diff_days = getDaysBetweenDates(
-      new Date(parseInt(props.return01.year), monthIndex, 16),
-      currentDate
-    );
-    setDiffDays(diff_days);
+    if (outstanding > 0 && effectiveAsOfDate > anchorDate) {
+      const days = getDaysDiff(anchorDate, effectiveAsOfDate);
+      const finalInterest = (outstanding * annualRate * days) / (100 * 365);
+      interest += finalInterest;
+    }
 
-    // if (
-    //   props.return01.rr_number == null ||
-    //   props.return01.rr_number == undefined ||
-    //   props.return01.rr_number == ""
-    // ) {
-    setLateFees(Math.min(100 * diff_days, 10000));
-    // }
-  }, []);
+    return interest;
+  };
 
   const getInvoicePercentage = (value: string): PercentageOutput => {
     let increase: string = "0";
@@ -3631,7 +3867,7 @@ const NetTax = (props: NetTaxProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3654,7 +3890,7 @@ const NetTax = (props: NetTaxProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3677,7 +3913,7 @@ const NetTax = (props: NetTaxProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3700,7 +3936,7 @@ const NetTax = (props: NetTaxProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3724,7 +3960,7 @@ const NetTax = (props: NetTaxProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3748,7 +3984,7 @@ const NetTax = (props: NetTaxProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3772,7 +4008,7 @@ const NetTax = (props: NetTaxProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3796,7 +4032,7 @@ const NetTax = (props: NetTaxProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3822,7 +4058,7 @@ const NetTax = (props: NetTaxProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3847,7 +4083,7 @@ const NetTax = (props: NetTaxProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3872,7 +4108,7 @@ const NetTax = (props: NetTaxProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -3888,6 +4124,46 @@ const NetTax = (props: NetTaxProps) => {
     };
   };
 
+  const getR6_1 = (): number =>
+    parseFloat(getInvoicePercentage("0").decrease) +
+    parseFloat(getInvoicePercentage("1").decrease) +
+    parseFloat(getInvoicePercentage("4").decrease) +
+    parseFloat(getInvoicePercentage("5").decrease) +
+    parseFloat(getInvoicePercentage("6").decrease) +
+    parseFloat(getInvoicePercentage("12.5").decrease) +
+    parseFloat(getInvoicePercentage("12.75").decrease) +
+    parseFloat(getInvoicePercentage("13.5").decrease) +
+    parseFloat(getInvoicePercentage("15").decrease) +
+    parseFloat(getInvoicePercentage("20").decrease) +
+    parseFloat(getSaleOfPercentage("4").decrease) +
+    parseFloat(getSaleOfPercentage("5").decrease) +
+    parseFloat(getSaleOfPercentage("12.5").decrease) +
+    parseFloat(get4_6().decrease) +
+    parseFloat(get4_7().decrease) -
+    parseFloat(get4_9().decrease) -
+    (parseFloat(get5_1().decrease) +
+      parseFloat(get5_2().decrease) +
+      (parseFloat(getCreditNote().decrease) -
+        parseFloat(getDebitNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(props.lastMonthDue)));
+
+  const getR6_2a = (): number => {
+    const totalDue = getR6_1();
+    const dueDate = getDueDateForMonth(
+      props.return01.month!,
+      props.return01.year,
+      props.isComp,
+    );
+    const interest = calculateInterest(
+      totalDue,
+      dueDate,
+      props.paidChallans ?? [],
+      15,
+    );
+    return isNegative(interest) ? 0 : interest;
+  };
+
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
       <tbody className="w-full">
@@ -3895,93 +4171,16 @@ const NetTax = (props: NetTaxProps) => {
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[80%]">
             R6.1 Net Tax (R4.10)-(R5.6)
           </td>
-
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[20%]">
-            {(
-              parseFloat(getInvoicePercentage("0").decrease) +
-              parseFloat(getInvoicePercentage("1").decrease) +
-              parseFloat(getInvoicePercentage("4").decrease) +
-              parseFloat(getInvoicePercentage("5").decrease) +
-              parseFloat(getInvoicePercentage("6").decrease) +
-              parseFloat(getInvoicePercentage("12.5").decrease) +
-              parseFloat(getInvoicePercentage("12.75").decrease) +
-              parseFloat(getInvoicePercentage("13.5").decrease) +
-              parseFloat(getInvoicePercentage("15").decrease) +
-              parseFloat(getInvoicePercentage("20").decrease) +
-              parseFloat(getSaleOfPercentage("4").decrease) +
-              parseFloat(getSaleOfPercentage("5").decrease) +
-              parseFloat(getSaleOfPercentage("12.5").decrease) +
-              parseFloat(get4_6().decrease) +
-              parseFloat(get4_7().decrease) -
-              parseFloat(get4_9().decrease) -
-              (parseFloat(get5_1().decrease) +
-                parseFloat(get5_2().decrease) +
-                (parseFloat(getCreditNote().decrease) -
-                  parseFloat(getDebitNote().decrease) -
-                  parseFloat(getGoodsReturnsNote().decrease) -
-                  parseFloat(props.lastMonthDue)))
-            ).toFixed(2)}
+            {getR6_1().toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             R6.2a :Interest
           </td>
-
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {isNegative(
-              (((parseFloat(getInvoicePercentage("0").decrease) +
-                parseFloat(getInvoicePercentage("1").decrease) +
-                parseFloat(getInvoicePercentage("4").decrease) +
-                parseFloat(getInvoicePercentage("5").decrease) +
-                parseFloat(getInvoicePercentage("6").decrease) +
-                parseFloat(getInvoicePercentage("12.5").decrease) +
-                parseFloat(getInvoicePercentage("12.75").decrease) +
-                parseFloat(getInvoicePercentage("13.5").decrease) +
-                parseFloat(getInvoicePercentage("15").decrease) +
-                parseFloat(getInvoicePercentage("20").decrease) +
-                parseFloat(getSaleOfPercentage("4").decrease) +
-                parseFloat(getSaleOfPercentage("5").decrease) +
-                parseFloat(getSaleOfPercentage("12.5").decrease) +
-                parseFloat(get4_6().decrease) +
-                parseFloat(get4_7().decrease) -
-                parseFloat(get4_9().decrease) -
-                (parseFloat(get5_1().decrease) +
-                  parseFloat(get5_2().decrease) +
-                  (parseFloat(getCreditNote().decrease) -
-                    parseFloat(getDebitNote().decrease) -
-                    parseFloat(getGoodsReturnsNote().decrease)))) *
-                0.15) /
-                365) *
-                DiffDays
-            )
-              ? "0"
-              : (
-                  (((parseFloat(getInvoicePercentage("0").decrease) +
-                    parseFloat(getInvoicePercentage("1").decrease) +
-                    parseFloat(getInvoicePercentage("4").decrease) +
-                    parseFloat(getInvoicePercentage("5").decrease) +
-                    parseFloat(getInvoicePercentage("6").decrease) +
-                    parseFloat(getInvoicePercentage("12.5").decrease) +
-                    parseFloat(getInvoicePercentage("12.75").decrease) +
-                    parseFloat(getInvoicePercentage("13.5").decrease) +
-                    parseFloat(getInvoicePercentage("15").decrease) +
-                    parseFloat(getInvoicePercentage("20").decrease) +
-                    parseFloat(getSaleOfPercentage("4").decrease) +
-                    parseFloat(getSaleOfPercentage("5").decrease) +
-                    parseFloat(getSaleOfPercentage("12.5").decrease) +
-                    parseFloat(get4_6().decrease) +
-                    parseFloat(get4_7().decrease) -
-                    parseFloat(get4_9().decrease) -
-                    (parseFloat(get5_1().decrease) +
-                      parseFloat(get5_2().decrease) +
-                      (parseFloat(getCreditNote().decrease) -
-                        parseFloat(getDebitNote().decrease) -
-                        parseFloat(getGoodsReturnsNote().decrease)))) *
-                    0.15) /
-                    365) *
-                  DiffDays
-                ).toFixed(0)}
+            {getR6_2a().toFixed(2)}
           </td>
         </tr>
 
@@ -4019,84 +4218,9 @@ const NetTax = (props: NetTaxProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
-              parseFloat(getInvoicePercentage("0").decrease) +
-              parseFloat(getInvoicePercentage("1").decrease) +
-              parseFloat(getInvoicePercentage("4").decrease) +
-              parseFloat(getInvoicePercentage("5").decrease) +
-              parseFloat(getInvoicePercentage("6").decrease) +
-              parseFloat(getInvoicePercentage("12.5").decrease) +
-              parseFloat(getInvoicePercentage("12.75").decrease) +
-              parseFloat(getInvoicePercentage("13.5").decrease) +
-              parseFloat(getInvoicePercentage("15").decrease) +
-              parseFloat(getInvoicePercentage("20").decrease) +
-              parseFloat(getSaleOfPercentage("4").decrease) +
-              parseFloat(getSaleOfPercentage("5").decrease) +
-              parseFloat(getSaleOfPercentage("12.5").decrease) +
-              parseFloat(get4_6().decrease) +
-              parseFloat(get4_7().decrease) -
-              parseFloat(get4_9().decrease) -
-              (parseFloat(get5_1().decrease) +
-                parseFloat(get5_2().decrease) +
-                (parseFloat(getCreditNote().decrease) -
-                  parseFloat(getDebitNote().decrease) -
-                  parseFloat(getGoodsReturnsNote().decrease) -
-                  parseFloat(props.lastMonthDue))) +
-              (isNegative(
-                (((parseFloat(getInvoicePercentage("0").decrease) +
-                  parseFloat(getInvoicePercentage("1").decrease) +
-                  parseFloat(getInvoicePercentage("4").decrease) +
-                  parseFloat(getInvoicePercentage("5").decrease) +
-                  parseFloat(getInvoicePercentage("6").decrease) +
-                  parseFloat(getInvoicePercentage("12.5").decrease) +
-                  parseFloat(getInvoicePercentage("12.75").decrease) +
-                  parseFloat(getInvoicePercentage("13.5").decrease) +
-                  parseFloat(getInvoicePercentage("15").decrease) +
-                  parseFloat(getInvoicePercentage("20").decrease) +
-                  parseFloat(getSaleOfPercentage("4").decrease) +
-                  parseFloat(getSaleOfPercentage("5").decrease) +
-                  parseFloat(getSaleOfPercentage("12.5").decrease) +
-                  parseFloat(get4_6().decrease) +
-                  parseFloat(get4_7().decrease) -
-                  parseFloat(get4_9().decrease) -
-                  (parseFloat(get5_1().decrease) +
-                    parseFloat(get5_2().decrease) +
-                    (parseFloat(getCreditNote().decrease) -
-                      parseFloat(getDebitNote().decrease) -
-                      parseFloat(getGoodsReturnsNote().decrease) -
-                      parseFloat(props.lastMonthDue)))) *
-                  0.15) /
-                  365) *
-                  DiffDays
-              )
-                ? 0
-                : (((parseFloat(getInvoicePercentage("0").decrease) +
-                    parseFloat(getInvoicePercentage("1").decrease) +
-                    parseFloat(getInvoicePercentage("4").decrease) +
-                    parseFloat(getInvoicePercentage("5").decrease) +
-                    parseFloat(getInvoicePercentage("6").decrease) +
-                    parseFloat(getInvoicePercentage("12.5").decrease) +
-                    parseFloat(getInvoicePercentage("12.75").decrease) +
-                    parseFloat(getInvoicePercentage("13.5").decrease) +
-                    parseFloat(getInvoicePercentage("15").decrease) +
-                    parseFloat(getInvoicePercentage("20").decrease) +
-                    parseFloat(getSaleOfPercentage("4").decrease) +
-                    parseFloat(getSaleOfPercentage("5").decrease) +
-                    parseFloat(getSaleOfPercentage("12.5").decrease) +
-                    parseFloat(get4_6().decrease) +
-                    parseFloat(get4_7().decrease) -
-                    parseFloat(get4_9().decrease) -
-                    (parseFloat(get5_1().decrease) +
-                      parseFloat(get5_2().decrease) +
-                      (parseFloat(getCreditNote().decrease) -
-                        parseFloat(getDebitNote().decrease) -
-                        parseFloat(getGoodsReturnsNote().decrease) -
-                        parseFloat(props.lastMonthDue)))) *
-                    0.15) /
-                    365) *
-                  DiffDays) +
-              (isNegative(lateFees) ? 0 : lateFees) +
-              0 -
-              0
+              getR6_1() +
+              getR6_2a() +
+              (isNegative(lateFees) ? 0 : lateFees)
             ).toFixed(2)}
           </td>
         </tr>
@@ -4109,11 +4233,15 @@ interface CentralSalesProps {
   return01: returns_01;
   returnsentrys: returns_entry[];
   lastMonthDue: string;
+  isComp: boolean;
+  challan_amount: number;
+  paidChallans: challan[];
 }
 
 const CentralSales = (props: CentralSalesProps) => {
   const searchparam = useSearchParams();
-  const [DiffDays, setDiffDays] = useState<number>(0);
+
+  const [lateFees, setLateFees] = useState<number>(0);
 
   useEffect(() => {
     const year: string = searchparam.get("year") ?? "";
@@ -4140,25 +4268,41 @@ const CentralSales = (props: CentralSalesProps) => {
 
     // Check if it's December (index 11) and increment year if needed
     let newYear = parseInt(year);
-    if (monthIndex === 11) {
-      newYear += 1;
-      monthIndex = 0; // Set month to January
+    if (props.isComp) {
+      // Composition scheme: map to next quarter's first month
+      if (["January", "February", "March"].includes(props.return01.month!)) {
+        monthIndex = 3; // April
+      } else if (["April", "May", "June"].includes(props.return01.month!)) {
+        monthIndex = 6; // July
+      } else if (
+        ["July", "August", "September"].includes(props.return01.month!)
+      ) {
+        monthIndex = 9; // October
+      } else {
+        monthIndex = 0; // January
+        newYear += 1;
+      }
     } else {
-      monthIndex += 1; // Otherwise, just increment the month
+      // Check if it's December (index 11) and increment year if needed
+      if (monthIndex === 11) {
+        newYear += 1;
+        monthIndex = 0; // Set month to January
+      } else {
+        monthIndex += 1; // Otherwise, just increment the month
+      }
     }
-
-    const diff_days = getDaysBetweenDates(
-      new Date(parseInt(props.return01.year), monthIndex, 16),
-      currentDate
+    const pdiff_days = getDaysBetweenDates(
+      new Date(parseInt(props.return01.year), monthIndex, 29),
+      currentDate,
     );
-    setDiffDays(diff_days);
-    // if (
-    //   props.return01.rr_number == null ||
-    //   props.return01.rr_number == undefined ||
-    //   props.return01.rr_number == ""
-    // ) {
-    setLateFees(Math.min(100 * diff_days, 10000));
-    // }
+
+    if (
+      props.return01.rr_number == null ||
+      props.return01.rr_number == undefined ||
+      props.return01.rr_number == ""
+    ) {
+      setLateFees(Math.min(100 * pdiff_days, 10000));
+    }
   }, [props.return01, props.returnsentrys]);
 
   const getLabour = (): PercentageOutput => {
@@ -4168,7 +4312,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.LABOUR
+        val.sale_of == SaleOf.LABOUR,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4190,7 +4334,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.FORMF
+        val.sale_of_interstate == SaleOfInterstate.FORMF,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4213,7 +4357,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.EXPORT_OUTOF_INDIA
+        val.sale_of_interstate == SaleOfInterstate.EXPORT_OUTOF_INDIA,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4236,7 +4380,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE
+        val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4252,18 +4396,18 @@ const CentralSales = (props: CentralSalesProps) => {
     };
   };
 
-  const getStateSalesTaxable = (): PercentageOutput => {
+  const getStateSales = (): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+        parseFloat(increase) + parseFloat(output[i].total_invoice_number ?? "0")
       ).toFixed(2);
       decrease = (
         parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
@@ -4274,18 +4418,18 @@ const CentralSales = (props: CentralSalesProps) => {
       decrease,
     };
   };
-  const getStateSales = (): PercentageOutput => {
+  const getStateSalesTaxable = (): PercentageOutput => {
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
-        parseFloat(increase) + parseFloat(output[i].total_invoice_number ?? "0")
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       decrease = (
         parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
@@ -4302,7 +4446,7 @@ const CentralSales = (props: CentralSalesProps) => {
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
-        val.category_of_entry == CategoryOfEntry.FREIGHT_CHARGES
+        val.category_of_entry == CategoryOfEntry.FREIGHT_CHARGES,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4324,7 +4468,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
-          val.category_of_entry == CategoryOfEntry.SALE_CANCELLED)
+          val.category_of_entry == CategoryOfEntry.SALE_CANCELLED),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4347,7 +4491,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.EXEMPT_US6
+        val.sale_of_interstate == SaleOfInterstate.EXEMPT_US6,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4369,7 +4513,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.SCHI
+        val.sale_of_interstate == SaleOfInterstate.SCHI,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4392,7 +4536,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.FORMI
+        val.sale_of_interstate == SaleOfInterstate.FORMI,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4415,7 +4559,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.sale_of_interstate == SaleOfInterstate.FORMC ||
-          val.purchase_type == PurchaseType.FORMC_CONCESSION)
+          val.purchase_type == PurchaseType.FORMC_CONCESSION),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4438,7 +4582,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.sale_of_interstate == SaleOfInterstate.FORMC ||
-          val.purchase_type == PurchaseType.FORMC_CONCESSION)
+          val.purchase_type == PurchaseType.FORMC_CONCESSION),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4462,7 +4606,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4484,7 +4628,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31_A &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.PROCESSED_GOODS
+        val.sale_of_interstate == SaleOfInterstate.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4510,7 +4654,7 @@ const CentralSales = (props: CentralSalesProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4535,7 +4679,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.GOODS_TAXABLE &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4558,7 +4702,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of == SaleOf.WORKS_CONTRACT &&
-        val.tax_percent == value
+        val.tax_percent == value,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4581,7 +4725,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS)
+        (val.sale_of == SaleOf.LABOUR || val.sale_of == SaleOf.EXEMPTED_GOODS),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4604,7 +4748,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_31 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of == SaleOf.PROCESSED_GOODS
+        val.sale_of == SaleOf.PROCESSED_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4628,7 +4772,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.dvat_type == DvatType.DVAT_31 &&
         (val.category_of_entry == CategoryOfEntry.GOODS_RETURNED ||
           val.category_of_entry == CategoryOfEntry.SALE_CANCELLED) &&
-        val.sale_of == SaleOf.GOODS_TAXABLE
+        val.sale_of == SaleOf.GOODS_TAXABLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4652,7 +4796,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4676,7 +4820,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.nature_purchase == NaturePurchase.OTHER_GOODS &&
         val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4700,7 +4844,7 @@ const CentralSales = (props: CentralSalesProps) => {
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE
+        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4726,7 +4870,7 @@ const CentralSales = (props: CentralSalesProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4751,7 +4895,7 @@ const CentralSales = (props: CentralSalesProps) => {
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
         val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS
+        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4798,7 +4942,7 @@ const CentralSales = (props: CentralSalesProps) => {
       (val: returns_entry) =>
         val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.sale_of == SaleOf.GOODS_TAXABLE || val.sale_of == SaleOf.TAXABLE)
+        (val.sale_of == SaleOf.GOODS_TAXABLE || val.sale_of == SaleOf.TAXABLE),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -4813,7 +4957,193 @@ const CentralSales = (props: CentralSalesProps) => {
       decrease,
     };
   };
-  const [lateFees, setLateFees] = useState<number>(0);
+  // const [lateFees, setLateFees] = useState<number>(0);
+
+  const getR6_1 = (): number =>
+    parseFloat(getInvoicePercentage("0").decrease) +
+    parseFloat(getInvoicePercentage("1").decrease) +
+    parseFloat(getInvoicePercentage("4").decrease) +
+    parseFloat(getInvoicePercentage("5").decrease) +
+    parseFloat(getInvoicePercentage("6").decrease) +
+    parseFloat(getInvoicePercentage("12.5").decrease) +
+    parseFloat(getInvoicePercentage("12.75").decrease) +
+    parseFloat(getInvoicePercentage("13.5").decrease) +
+    parseFloat(getInvoicePercentage("15").decrease) +
+    parseFloat(getInvoicePercentage("20").decrease) +
+    parseFloat(getSaleOfPercentage("4").decrease) +
+    parseFloat(getSaleOfPercentage("5").decrease) +
+    parseFloat(getSaleOfPercentage("12.5").decrease) +
+    parseFloat(get4_6().decrease) +
+    parseFloat(get4_7().decrease) -
+    parseFloat(get4_9().decrease) -
+    (parseFloat(get5_1().decrease) +
+      parseFloat(get5_2().decrease) +
+      (parseFloat(getCreditNote().decrease) -
+        parseFloat(getDebitNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(props.lastMonthDue)));
+
+  const calculateInterest = (
+    totalDue: number,
+    dueDate: Date,
+    payments: challan[],
+    annualRate = 15,
+    asOfDate: Date = new Date(),
+  ): number => {
+    if (!Number.isFinite(totalDue) || totalDue <= 0) return 0;
+
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const normalizeDate = (dateInput: Date | string): Date => {
+      const date = new Date(dateInput);
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    };
+
+    const getDaysDiff = (fromDate: Date, toDate: Date): number => {
+      const startUtc = Date.UTC(
+        fromDate.getFullYear(),
+        fromDate.getMonth(),
+        fromDate.getDate(),
+      );
+      const endUtc = Date.UTC(
+        toDate.getFullYear(),
+        toDate.getMonth(),
+        toDate.getDate(),
+      );
+      const diff = Math.floor((endUtc - startUtc) / dayMs);
+      return Math.max(0, diff);
+    };
+
+    const sortedPayments = payments
+      .map((payment) => {
+        const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
+        const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
+
+        if (
+          !paymentDateRaw ||
+          !Number.isFinite(paymentAmount) ||
+          paymentAmount <= 0
+        ) {
+          return null;
+        }
+
+        return {
+          amount: paymentAmount,
+          date: normalizeDate(paymentDateRaw),
+        };
+      })
+      .filter(
+        (payment): payment is { amount: number; date: Date } =>
+          payment !== null,
+      )
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    const effectiveAsOfDate = normalizeDate(asOfDate);
+    let outstanding = totalDue;
+    let anchorDate = normalizeDate(dueDate);
+    let interest = 0;
+
+    for (let i = 0; i < sortedPayments.length; i++) {
+      const payment = sortedPayments[i];
+      if (payment.date > effectiveAsOfDate) {
+        break;
+      }
+
+      if (payment.date > anchorDate && outstanding > 0) {
+        const days = getDaysDiff(anchorDate, payment.date);
+        const intervalInterest =
+          (outstanding * annualRate * days) / (100 * 365);
+        interest += intervalInterest;
+      }
+
+      outstanding = Math.max(0, outstanding - payment.amount);
+      anchorDate = payment.date;
+
+      if (outstanding <= 0) {
+        break;
+      }
+    }
+
+    if (outstanding > 0 && effectiveAsOfDate > anchorDate) {
+      const days = getDaysDiff(anchorDate, effectiveAsOfDate);
+      const finalInterest = (outstanding * annualRate * days) / (100 * 365);
+      interest += finalInterest;
+    }
+
+    return interest;
+  };
+
+  const getInterestDueDate = (
+    year: string,
+    month: string,
+    isComp: boolean = false,
+  ): Date => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    let monthIndex = monthNames.indexOf(month);
+    let computedYear = parseInt(year);
+
+    if (isComp) {
+      if (["January", "February", "March"].includes(month)) {
+        monthIndex = 3;
+      } else if (["April", "May", "June"].includes(month)) {
+        monthIndex = 6;
+      } else if (["July", "August", "September"].includes(month)) {
+        monthIndex = 9;
+      } else {
+        monthIndex = 0;
+        computedYear += 1;
+      }
+    } else {
+      if (monthIndex === 11) {
+        computedYear += 1;
+        monthIndex = 0;
+      } else {
+        monthIndex += 1;
+      }
+    }
+
+    return new Date(computedYear, monthIndex, 15);
+  };
+
+  const getR6_2a = (): number => {
+    if (!props.return01?.month) return 0;
+
+    const dueDate = getInterestDueDate(
+      props.return01.year,
+      props.return01.month,
+      props.isComp,
+    );
+
+    const interest = calculateInterest(
+      getR6_1(),
+      dueDate,
+      props.paidChallans,
+      15,
+    );
+    return isNegative(interest) ? 0 : interest;
+  };
+
+  const getR7 = (): number => {
+    return Math.round(
+      getR6_1() +
+        (isNegative(getR6_2a()) ? 0 : getR6_2a()) -
+        props.challan_amount,
+    );
+  };
 
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
@@ -4901,15 +5231,13 @@ const CentralSales = (props: CentralSalesProps) => {
             Balance turnover of Inter State Sales and Sales within the State
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {(
-              parseFloat(getStateSalesTaxable().increase) +
+            {parseFloat(getStateSalesTaxable().increase) +
               parseFloat(getInterStateSales().increase) +
               parseFloat(get10_2_6_2().increase) -
               (parseFloat(getGoodsReturnsNote().increase) -
                 parseFloat(getLabour().increase) -
                 parseFloat(getFormF().increase) -
-                parseFloat(getExportIndia().increase))
-            ).toFixed(2)}
+                parseFloat(getExportIndia().increase))}
           </td>
         </tr>
         <tr className="w-full">
@@ -5009,23 +5337,6 @@ const CentralSales = (props: CentralSalesProps) => {
             Balance - Total turnover of Inter-State Sales
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {/* {(
-              parseFloat(getGoodsReturnsNoteTwo().increase) -
-              parseFloat(getLabour().increase) -
-              parseFloat(getFormF().increase) -
-              parseFloat(getExportIndia().increase) -
-              parseFloat(getFreightCharges().increase) -
-              parseFloat(getSaleCanceled().increase) -
-              parseFloat(getUS6().increase) -
-              parseFloat(getSch1().increase) -
-              parseFloat(get10_3().increase) +
-              (parseFloat(getStateSales().increase) +
-                parseFloat(getInterStateSales().increase) +
-                parseFloat(get10_2().increase) -
-                (parseFloat(getStateSales().increase) +
-                  parseFloat(getInterStateSales().increase) +
-                  parseFloat(get10_2().increase)))
-            ).toFixed(2)} */}
             {(
               parseFloat(getInterStateSales().increase) +
               parseFloat(get10_2_6_2().increase)
@@ -5095,6 +5406,23 @@ const CentralSales = (props: CentralSalesProps) => {
             Balance -Total Taxable turnover of Inter-State Sales
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            {/* {(
+              parseFloat(getGoodsReturnsNoteTwo().increase) -
+              parseFloat(getLabour().increase) -
+              parseFloat(getFormF().increase) -
+              parseFloat(getExportIndia().increase) -
+              parseFloat(getFreightCharges().increase) -
+              parseFloat(getSaleCanceled().increase) -
+              parseFloat(getUS6().increase) -
+              parseFloat(getSch1().increase) -
+              parseFloat(get10_3().increase) +
+              (parseFloat(getStateSales().increase) +
+                parseFloat(getInterStateSales().increase) +
+                parseFloat(get10_2().increase) -
+                (parseFloat(getStateSales().increase) +
+                  parseFloat(getInterStateSales().increase) +
+                  parseFloat(get10_2().increase)))
+            ).toFixed(2)} */}
             {(
               parseFloat(getInterStateSales().increase) +
               parseFloat(get10_2_6_2().increase)
@@ -5353,59 +5681,7 @@ const CentralSales = (props: CentralSalesProps) => {
             0
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {isNegative(
-              (((parseFloat(getInvoicePercentage("0").decrease) +
-                parseFloat(getInvoicePercentage("1").decrease) +
-                parseFloat(getInvoicePercentage("4").decrease) +
-                parseFloat(getInvoicePercentage("5").decrease) +
-                parseFloat(getInvoicePercentage("6").decrease) +
-                parseFloat(getInvoicePercentage("12.5").decrease) +
-                parseFloat(getInvoicePercentage("12.75").decrease) +
-                parseFloat(getInvoicePercentage("13.5").decrease) +
-                parseFloat(getInvoicePercentage("15").decrease) +
-                parseFloat(getInvoicePercentage("20").decrease) +
-                parseFloat(getSaleOfPercentage("4").decrease) +
-                parseFloat(getSaleOfPercentage("5").decrease) +
-                parseFloat(getSaleOfPercentage("12.5").decrease) +
-                parseFloat(get4_6().decrease) +
-                parseFloat(get4_7().decrease) -
-                parseFloat(get4_9().decrease) -
-                (parseFloat(get5_1().decrease) +
-                  parseFloat(get5_2().decrease) +
-                  (parseFloat(getCreditNote().decrease) -
-                    parseFloat(getDebitNote().decrease) -
-                    parseFloat(getGoodsReturnsNote().decrease)))) *
-                0.15) /
-                365) *
-                DiffDays
-            )
-              ? 0
-              : (
-                  (((parseFloat(getInvoicePercentage("0").decrease) +
-                    parseFloat(getInvoicePercentage("1").decrease) +
-                    parseFloat(getInvoicePercentage("4").decrease) +
-                    parseFloat(getInvoicePercentage("5").decrease) +
-                    parseFloat(getInvoicePercentage("6").decrease) +
-                    parseFloat(getInvoicePercentage("12.5").decrease) +
-                    parseFloat(getInvoicePercentage("12.75").decrease) +
-                    parseFloat(getInvoicePercentage("13.5").decrease) +
-                    parseFloat(getInvoicePercentage("15").decrease) +
-                    parseFloat(getInvoicePercentage("20").decrease) +
-                    parseFloat(getSaleOfPercentage("4").decrease) +
-                    parseFloat(getSaleOfPercentage("5").decrease) +
-                    parseFloat(getSaleOfPercentage("12.5").decrease) +
-                    parseFloat(get4_6().decrease) +
-                    parseFloat(get4_7().decrease) -
-                    parseFloat(get4_9().decrease) -
-                    (parseFloat(get5_1().decrease) +
-                      parseFloat(get5_2().decrease) +
-                      (parseFloat(getCreditNote().decrease) -
-                        parseFloat(getDebitNote().decrease) -
-                        parseFloat(getGoodsReturnsNote().decrease)))) *
-                    0.15) /
-                    365) *
-                  DiffDays
-                ).toFixed(0)}
+            0
           </td>
         </tr>
         <tr className="w-full">
@@ -5419,7 +5695,7 @@ const CentralSales = (props: CentralSalesProps) => {
             0
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {isNegative(lateFees) ? 0 : lateFees}
+            {/* {isNegative(lateFees) ? 0 : lateFees} */}0
           </td>
         </tr>
         <tr className="w-full">
@@ -5470,28 +5746,12 @@ const CentralSales = (props: CentralSalesProps) => {
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
-              parseFloat(getInvoicePercentage("0").decrease) +
-              parseFloat(getInvoicePercentage("1").decrease) +
-              parseFloat(getInvoicePercentage("4").decrease) +
-              parseFloat(getInvoicePercentage("5").decrease) +
-              parseFloat(getInvoicePercentage("6").decrease) +
-              parseFloat(getInvoicePercentage("12.5").decrease) +
-              parseFloat(getInvoicePercentage("12.75").decrease) +
-              parseFloat(getInvoicePercentage("13.5").decrease) +
-              parseFloat(getInvoicePercentage("15").decrease) +
-              parseFloat(getInvoicePercentage("20").decrease) +
-              parseFloat(getSaleOfPercentage("4").decrease) +
-              parseFloat(getSaleOfPercentage("5").decrease) +
-              parseFloat(getSaleOfPercentage("12.5").decrease) +
-              parseFloat(get4_6().decrease) +
-              parseFloat(get4_7().decrease) -
-              parseFloat(get4_9().decrease) -
-              (parseFloat(get5_1().decrease) +
-                parseFloat(get5_2().decrease) +
-                (parseFloat(getCreditNote().decrease) -
-                  parseFloat(getDebitNote().decrease) -
-                  parseFloat(getGoodsReturnsNote().decrease) -
-                  parseFloat(props.lastMonthDue)))
+              parseFloat(get5_1().decrease) +
+              parseFloat(get5_2().decrease) +
+              (parseFloat(getCreditNote().decrease) -
+                parseFloat(getDebitNote().decrease) -
+                parseFloat(getGoodsReturnsNote().decrease) -
+                parseFloat(props.lastMonthDue))
             ).toFixed(2)}
           </td>
         </tr>
@@ -5502,92 +5762,18 @@ const CentralSales = (props: CentralSalesProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {(
-              parseFloat(getInvoicePercentage("0").decrease) +
-              parseFloat(getInvoicePercentage("1").decrease) +
-              parseFloat(getInvoicePercentage("4").decrease) +
-              parseFloat(getInvoicePercentage("5").decrease) +
-              parseFloat(getInvoicePercentage("6").decrease) +
-              parseFloat(getInvoicePercentage("12.5").decrease) +
-              parseFloat(getInvoicePercentage("12.75").decrease) +
-              parseFloat(getInvoicePercentage("13.5").decrease) +
-              parseFloat(getInvoicePercentage("15").decrease) +
-              parseFloat(getInvoicePercentage("20").decrease) +
-              parseFloat(getSaleOfPercentage("4").decrease) +
-              parseFloat(getSaleOfPercentage("5").decrease) +
-              parseFloat(getSaleOfPercentage("12.5").decrease) +
-              parseFloat(get4_6().decrease) +
-              parseFloat(get4_7().decrease) -
-              parseFloat(get4_9().decrease) -
-              (parseFloat(get5_1().decrease) +
-                parseFloat(get5_2().decrease) +
-                (parseFloat(getCreditNote().decrease) -
-                  parseFloat(getDebitNote().decrease) -
-                  parseFloat(getGoodsReturnsNote().decrease) -
-                  parseFloat(props.lastMonthDue))) +
-              (isNegative(
-                (((parseFloat(getInvoicePercentage("0").decrease) +
-                  parseFloat(getInvoicePercentage("1").decrease) +
-                  parseFloat(getInvoicePercentage("4").decrease) +
-                  parseFloat(getInvoicePercentage("5").decrease) +
-                  parseFloat(getInvoicePercentage("6").decrease) +
-                  parseFloat(getInvoicePercentage("12.5").decrease) +
-                  parseFloat(getInvoicePercentage("12.75").decrease) +
-                  parseFloat(getInvoicePercentage("13.5").decrease) +
-                  parseFloat(getInvoicePercentage("15").decrease) +
-                  parseFloat(getInvoicePercentage("20").decrease) +
-                  parseFloat(getSaleOfPercentage("4").decrease) +
-                  parseFloat(getSaleOfPercentage("5").decrease) +
-                  parseFloat(getSaleOfPercentage("12.5").decrease) +
-                  parseFloat(get4_6().decrease) +
-                  parseFloat(get4_7().decrease) -
-                  parseFloat(get4_9().decrease) -
-                  (parseFloat(get5_1().decrease) +
-                    parseFloat(get5_2().decrease) +
-                    (parseFloat(getCreditNote().decrease) -
-                      parseFloat(getDebitNote().decrease) -
-                      parseFloat(getGoodsReturnsNote().decrease) -
-                      parseFloat(props.lastMonthDue)))) *
-                  0.15) /
-                  365) *
-                  DiffDays
-              )
+            {isNegative(getR7())
+              ? isNegative(lateFees)
                 ? 0
-                : (((parseFloat(getInvoicePercentage("0").decrease) +
-                    parseFloat(getInvoicePercentage("1").decrease) +
-                    parseFloat(getInvoicePercentage("4").decrease) +
-                    parseFloat(getInvoicePercentage("5").decrease) +
-                    parseFloat(getInvoicePercentage("6").decrease) +
-                    parseFloat(getInvoicePercentage("12.5").decrease) +
-                    parseFloat(getInvoicePercentage("12.75").decrease) +
-                    parseFloat(getInvoicePercentage("13.5").decrease) +
-                    parseFloat(getInvoicePercentage("15").decrease) +
-                    parseFloat(getInvoicePercentage("20").decrease) +
-                    parseFloat(getSaleOfPercentage("4").decrease) +
-                    parseFloat(getSaleOfPercentage("5").decrease) +
-                    parseFloat(getSaleOfPercentage("12.5").decrease) +
-                    parseFloat(get4_6().decrease) +
-                    parseFloat(get4_7().decrease) -
-                    parseFloat(get4_9().decrease) -
-                    (parseFloat(get5_1().decrease) +
-                      parseFloat(get5_2().decrease) +
-                      (parseFloat(getCreditNote().decrease) -
-                        parseFloat(getDebitNote().decrease) -
-                        parseFloat(getGoodsReturnsNote().decrease) -
-                        parseFloat(props.lastMonthDue)))) *
-                    0.15) /
-                    365) *
-                  DiffDays) +
-              (isNegative(lateFees) ? 0 : lateFees) +
-              0 -
-              0
-            ).toFixed(2)}
+                : lateFees.toFixed(2)
+              : (getR7() + (isNegative(lateFees) ? 0 : lateFees)).toFixed(2)}
           </td>
         </tr>
       </tbody>
     </table>
   );
 };
+
 
 interface InterStateTradeProps {
   returnsentrys: returns_entry[];
@@ -5601,7 +5787,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       (val: returns_entry) =>
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.FORMF
+        val.sale_of_interstate == SaleOfInterstate.FORMF,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5624,7 +5810,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.sale_of_interstate == SaleOfInterstate.FORMC ||
-          val.purchase_type == PurchaseType.FORMC_CONCESSION)
+          val.purchase_type == PurchaseType.FORMC_CONCESSION),
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5646,7 +5832,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       (val: returns_entry) =>
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.FORMI
+        val.sale_of_interstate == SaleOfInterstate.FORMI,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5668,7 +5854,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       (val: returns_entry) =>
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.FORMH
+        val.sale_of_interstate == SaleOfInterstate.FORMH,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5691,7 +5877,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.purchase_type == PurchaseType.TAXABLE_RATE &&
-        val.nature_purchase == NaturePurchase.OTHER_GOODS
+        val.nature_purchase == NaturePurchase.OTHER_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5714,7 +5900,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE &&
-        val.nature_purchase == NaturePurchase.CAPITAL_GOODS
+        val.nature_purchase == NaturePurchase.CAPITAL_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (
@@ -5736,7 +5922,7 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       (val: returns_entry) =>
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
-        val.sale_of_interstate == SaleOfInterstate.EXPORT_OUTOF_INDIA
+        val.sale_of_interstate == SaleOfInterstate.EXPORT_OUTOF_INDIA,
     );
     for (let i = 0; i < output.length; i++) {
       increase = (

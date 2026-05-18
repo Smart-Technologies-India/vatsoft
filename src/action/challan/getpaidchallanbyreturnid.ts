@@ -27,6 +27,7 @@ const GetPaidChallanByReturnId = async (
       } as any;
     }
 
+
     const challans = await prisma.challan.findMany({
       where: {
         deletedAt: null,
@@ -38,6 +39,7 @@ const GetPaidChallanByReturnId = async (
         transaction_date: "desc",
       },
     });
+
 
     return createResponse({
       message: challans ? "Challan entries fetched successfully" : "Unable to get challan entries",

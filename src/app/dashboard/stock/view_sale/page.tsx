@@ -68,6 +68,7 @@ const DocumentWiseDetails = () => {
     errorname: string;
   }
   const [tabledata, setTableData] = useState<BulkSheetData[]>([]);
+  const hasBulkUploadErrors = tabledata.some((row) => row.error);
   const [filedReturnPeriods, setFiledReturnPeriods] = useState<Set<string>>(
     new Set(),
   );
@@ -1231,6 +1232,11 @@ const DocumentWiseDetails = () => {
           setSheetFileName("");
           setTableData([]);
         }}
+        okText="Upload"
+        cancelText="Cancel"
+        okButtonProps={{
+          style: hasBulkUploadErrors ? { display: "none" } : undefined,
+        }}
       >
         <Table className="border mt-2">
           <TableHeader>
@@ -1295,7 +1301,7 @@ const DocumentWiseDetails = () => {
             Uploaded file: {sheetFileName}
           </p>
         )}
-        {tabledata.some((val) => val.error) && (
+        {hasBulkUploadErrors && (
           <Alert
             title={`${tabledata.filter((val) => val.error).length} row(s) have validation errors.`}
             type="error"

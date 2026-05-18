@@ -480,6 +480,7 @@ const DocumentWiseDetails = () => {
   }
 
   const [tabledata, setTableData] = useState<BulkSheetData[]>([]);
+  const hasBulkUploadErrors = tabledata.some((row) => row.error);
 
   const readSheetField = (row: Record<string, unknown>, labels: string[]) => {
     for (const label of labels) {
@@ -1461,6 +1462,7 @@ const DocumentWiseDetails = () => {
         cancelText="Cancel"
         okButtonProps={{
           className: "bg-blue-600 hover:bg-blue-700",
+          style: hasBulkUploadErrors ? { display: "none" } : undefined,
         }}
       >
         <div className="overflow-x-auto rounded-lg shadow-sm">
@@ -1558,7 +1560,7 @@ const DocumentWiseDetails = () => {
             Uploaded file: {sheetFileName}
           </p>
         )}
-        {tabledata.some((val) => val.error) && (
+        {hasBulkUploadErrors && (
           <Alert
             title={`${tabledata.filter((val) => val.error).length} row(s) have validation errors.`}
             type="error"
