@@ -10,7 +10,7 @@ interface CheckLastPaymentPayload {
 }
 
 const CheckLastPayment = async (
-  payload: CheckLastPaymentPayload
+  payload: CheckLastPaymentPayload,
 ): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = CheckLastPayment.name;
   try {
@@ -68,7 +68,7 @@ const CheckLastPayment = async (
     let monthIndex = monthNames.indexOf(isExist.month!);
 
     const current_payment_date = new Date(
-      Date.UTC(parseInt(isExist.year), monthIndex, 1)
+      Date.UTC(parseInt(isExist.year), monthIndex, 1),
     );
 
     const year: string = getPreviousMonth(current_payment_date)
@@ -77,13 +77,11 @@ const CheckLastPayment = async (
     const month: string = capitalcase(
       getPreviousMonth(current_payment_date).toLocaleString("default", {
         month: "long",
-      })
+      }),
     );
 
     const lastmonthindex = monthNames.indexOf(month);
     const lastmonthdate = new Date(Date.UTC(parseInt(year), lastmonthindex, 1));
-
-    const userid = isExist.createdById;
 
     if (isExist.dvat04.vatLiableDate! > current_payment_date) {
       return createResponse({
@@ -98,7 +96,7 @@ const CheckLastPayment = async (
       where: {
         deletedAt: null,
         deletedById: null,
-        createdById: userid,
+        dvat04Id: currentDvatId,
         year: year,
         month: month,
         OR: [

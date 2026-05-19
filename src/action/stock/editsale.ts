@@ -202,6 +202,7 @@ const EditSale = async (
             status: "INACTIVE",
             updatedById: payload.createdById,
             deletedAt: new Date(),
+            quantity: 0,
             deletedById: payload.createdById,
           },
         });

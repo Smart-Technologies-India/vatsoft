@@ -31,6 +31,8 @@ const DeletePurchase = async (
       let is_exist = await prisma.daily_purchase.findFirst({
         where: {
           id: payload.id,
+          deletedAt: null,
+          deletedById: null,
         },
       });
 
@@ -54,6 +56,20 @@ const DeletePurchase = async (
         throw new Error(
           "Unable to delete purchase Entry. Stock quantity is less than purchase quantity."
         );
+      }
+
+      const stock_update = await prisma.stock.update({
+        where: {
+          id: find_stock.id,
+        },
+        data: {
+          quantity: find_stock.quantity - is_exist.quantity,
+          updatedById: payload.deletedById,
+        },
+      });
+
+      if (!stock_update) {
+        throw new Error("Unable to update stock Entry.");
       }
 
       const { id, createdById, ...filteredData } = is_exist;

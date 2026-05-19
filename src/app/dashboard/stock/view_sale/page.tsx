@@ -1034,6 +1034,28 @@ const DocumentWiseDetails = () => {
 
   const [deletebox, setDeleteBox] = useState<boolean>(false);
   const [deleteRecords, setDeleteRecords] = useState<number[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] =
+    useState<boolean>(false);
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] =
+    useState<boolean>(false);
+  const [isBulkDeleteLoading, setIsBulkDeleteLoading] =
+    useState<boolean>(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState<boolean>(false);
+  const [bulkDeleteRows, setBulkDeleteRows] = useState<
+    Array<{
+      id: number;
+      invoice_number: string;
+      invoice_date: Date;
+      trade_name: string;
+      tin_number: string;
+      product_name: string;
+      quantity: number;
+      invoice_value: number;
+    }>
+  >([]);
+  const [selectedBulkDeleteIds, setSelectedBulkDeleteIds] = useState<
+    number[]
+  >([]);
   const [deleteImpact, setDeleteImpact] = useState<{
     creditNoteCount: number;
     debitNoteCount: number;
@@ -1121,6 +1143,90 @@ const DocumentWiseDetails = () => {
     });
 
     setIsDeleteImpactLoading(false);
+  };
+
+  const openBulkDeleteModal = async () => {
+    if (!dvatdata) {
+      toast.error("DVAT not found.");
+      return;
+    }
+
+    setIsBulkDeleteLoading(true);
+    setSelectedBulkDeleteIds([]);
+    try {
+      const dailySaleResponse = await GetUserDailySale({
+        dvatid: dvatdata.id,
+        skip: 0,
+        take: Math.max(pagination.total, 10000),
+      });
+
+      if (!dailySaleResponse.status || !dailySaleResponse.data.result) {
+        toast.error("Unable to load sale entries for bulk delete.");
+        return;
+      }
+
+      const rows = dailySaleResponse.data.result.flatMap((group) =>
+        group.records
+          .filter((record) => !record.is_accept)
+          .map((record) => ({
+            id: record.id,
+            invoice_number: group.invoice_number,
+            invoice_date: group.invoice_date,
+            trade_name: group.seller_tin_number.name_of_dealer,
+            tin_number: group.seller_tin_number.tin_number,
+            product_name: record.commodity_master.product_name,
+            quantity: record.quantity,
+            invoice_value:
+              parseFloat(record.amount) + parseFloat(record.vatamount),
+          })),
+      );
+
+      setBulkDeleteRows(rows);
+      setIsBulkDeleteModalOpen(true);
+
+      if (rows.length === 0) {
+        toast.info("No non-accepted sale items found.");
+      }
+    } catch {
+      toast.error("Unable to load sale entries for bulk delete.");
+    } finally {
+      setIsBulkDeleteLoading(false);
+    }
+  };
+
+  const toggleBulkDeleteSelection = (id: number, checked: boolean) => {
+    setSelectedBulkDeleteIds((prev) => {
+      if (checked) {
+        if (prev.includes(id)) return prev;
+        return [...prev, id];
+      }
+
+      return prev.filter((val) => val !== id);
+    });
+  };
+
+  const toggleBulkDeleteSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedBulkDeleteIds(bulkDeleteRows.map((row) => row.id));
+      return;
+    }
+
+    setSelectedBulkDeleteIds([]);
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    if (selectedBulkDeleteIds.length === 0) {
+      toast.error("Select at least one sale item to delete.");
+      return;
+    }
+
+    setIsBulkDeleting(true);
+    await delete_sale_entry(selectedBulkDeleteIds);
+    setIsBulkDeleting(false);
+    setIsBulkDeleteConfirmOpen(false);
+    setIsBulkDeleteModalOpen(false);
+    setSelectedBulkDeleteIds([]);
+    setBulkDeleteRows([]);
   };
 
   const [quantityCount, setQuantityCount] = useState("pcs");
@@ -1469,6 +1575,137 @@ const DocumentWiseDetails = () => {
       >
         <p>Are you sure you want to generate DVAT 31/31 A Return?</p>
       </Modal>
+
+      <Modal
+        title="Bulk Delete Sale Items"
+        open={isBulkDeleteModalOpen}
+        width={1200}
+        onCancel={() => {
+          setIsBulkDeleteModalOpen(false);
+          setSelectedBulkDeleteIds([]);
+          setBulkDeleteRows([]);
+        }}
+        footer={null}
+      >
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={
+                bulkDeleteRows.length > 0 &&
+                selectedBulkDeleteIds.length === bulkDeleteRows.length
+              }
+              onChange={(event) =>
+                toggleBulkDeleteSelectAll(event.target.checked)
+              }
+              disabled={bulkDeleteRows.length === 0}
+            />
+            Select All
+          </label>
+          <span className="text-xs text-gray-600">
+            Selected: {selectedBulkDeleteIds.length} / {bulkDeleteRows.length}
+          </span>
+        </div>
+
+        <div className="max-h-[60vh] overflow-auto border rounded">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-100">
+                <TableHead className="border text-center text-xs">Pick</TableHead>
+                <TableHead className="border text-center text-xs">Invoice No.</TableHead>
+                <TableHead className="border text-center text-xs">Invoice Date</TableHead>
+                <TableHead className="border text-center text-xs">Trade Name</TableHead>
+                <TableHead className="border text-center text-xs">TIN Number</TableHead>
+                <TableHead className="border text-center text-xs">Product</TableHead>
+                <TableHead className="border text-center text-xs">Quantity</TableHead>
+                <TableHead className="border text-center text-xs">Invoice Value</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {bulkDeleteRows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-sm py-4">
+                    No non-accepted sale items available.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                bulkDeleteRows.map((row) => (
+                  <TableRow key={row.id} className="hover:bg-gray-50">
+                    <TableCell className="border text-center text-xs">
+                      <input
+                        type="checkbox"
+                        checked={selectedBulkDeleteIds.includes(row.id)}
+                        onChange={(event) =>
+                          toggleBulkDeleteSelection(row.id, event.target.checked)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell className="border text-center text-xs">
+                      {row.invoice_number}
+                    </TableCell>
+                    <TableCell className="border text-center text-xs">
+                      {formateDate(row.invoice_date)}
+                    </TableCell>
+                    <TableCell className="border text-center text-xs">
+                      {row.trade_name}
+                    </TableCell>
+                    <TableCell className="border text-center text-xs">
+                      {row.tin_number}
+                    </TableCell>
+                    <TableCell className="border text-center text-xs">
+                      {row.product_name}
+                    </TableCell>
+                    <TableCell className="border text-center text-xs">
+                      {row.quantity}
+                    </TableCell>
+                    <TableCell className="border text-center text-xs">
+                      {row.invoice_value.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="mt-3 flex gap-2">
+          <div className="grow"></div>
+          <Button
+            onClick={() => {
+              setIsBulkDeleteModalOpen(false);
+              setSelectedBulkDeleteIds([]);
+              setBulkDeleteRows([]);
+            }}
+          >
+            Close
+          </Button>
+          <Button
+            danger
+            type="primary"
+            disabled={selectedBulkDeleteIds.length === 0}
+            onClick={() => setIsBulkDeleteConfirmOpen(true)}
+          >
+            Delete Selected
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        title="Confirm Bulk Delete"
+        open={isBulkDeleteConfirmOpen}
+        onCancel={() => setIsBulkDeleteConfirmOpen(false)}
+        onOk={handleConfirmBulkDelete}
+        okText="Delete Permanently"
+        okButtonProps={{ danger: true, loading: isBulkDeleting }}
+      >
+        <p className="text-sm text-gray-700">
+          You are about to delete {selectedBulkDeleteIds.length} sale item(s).
+        </p>
+        <p className="mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+          Warning: This action cannot be reversed. Deleted items cannot be
+          restored.
+        </p>
+      </Modal>
       <Drawer
         placement="right"
         closeIcon={null}
@@ -1591,6 +1828,15 @@ const DocumentWiseDetails = () => {
                   onClick={() => sheetRef.current?.click()}
                 >
                   Bulk Upload
+                </Button>
+
+                <Button
+                  size="small"
+                  type="default"
+                  loading={isBulkDeleteLoading}
+                  onClick={openBulkDeleteModal}
+                >
+                  Bulk Delete
                 </Button>
 
                 <Button

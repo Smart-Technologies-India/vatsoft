@@ -144,6 +144,7 @@ const EditPurchase = async (
             id: find_stock.id,
           },
           data: {
+            quantity: find_stock.quantity - is_exist.quantity,
             deletedAt: new Date(),
             deletedById: payload.createdById,
           },

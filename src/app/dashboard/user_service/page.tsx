@@ -93,6 +93,11 @@ const Page = () => {
                 description="Complain about missing invoice and upload supporting documents for the same."
                 link="/dashboard/user_service/missing_invoice"
               />
+              <DashboardCards
+                title="Reverse Invoice"
+                description="Complain about reverse invoice and upload supporting documents for the same."
+                link="/dashboard/user_service/reverse_invoice"
+              />
               {/* <DashboardCards
                 title="My Profile"
                 description="Update and manage your personal and business profile information."

@@ -12,13 +12,14 @@ import { getCurrentUserId } from "@/lib/auth";
 interface GetAllCommodityMasterPayload {
   take: number;
   skip: number;
+  searchTerm?: string;
+  productType?: string;
 }
 
 const GetAllCommodityMaster = async (
   payload: GetAllCommodityMasterPayload
 ): Promise<PaginationResponse<commodity_master[] | null>> => {
   const functionname: string = GetAllCommodityMaster.name;
-
 
   try {
     const currentUserId = await getCurrentUserId();
@@ -31,25 +32,56 @@ const GetAllCommodityMaster = async (
       } as any;
     }
 
-    const [commodity_master, totalCount] = await Promise.all([
-      prisma.commodity_master.findMany({
-        where: {
-          deletedAt: null,
-          deletedById: null,
+    // Build the where clause with filters
+    const whereClause: any = {
+      deletedAt: null,
+      deletedById: null,
+    };
+
+    // Add search filter if provided - search only in text fields
+    if (payload.searchTerm && payload.searchTerm.trim().length > 0) {
+      const searchTerm = payload.searchTerm.trim();
+      whereClause.OR = [
+        {
+          product_name: {
+            contains: searchTerm,
+          },
         },
+        {
+          description: {
+            contains: searchTerm,
+          },
+        },
+      ];
+    }
+
+    // Add product type filter if provided - but only if not searching
+    // If searching, the OR clause will handle product type matching
+    if (
+      payload.productType &&
+      payload.productType !== "all" &&
+      (!payload.searchTerm || payload.searchTerm.trim().length === 0)
+    ) {
+      whereClause.product_type = {
+        equals: payload.productType,
+      };
+    }
+
+    const [results, totalCount] = await Promise.all([
+      prisma.commodity_master.findMany({
+        where: whereClause,
         take: payload.take,
         skip: payload.skip,
+        orderBy: {
+          product_name: "asc",
+        },
       }),
       prisma.commodity_master.count({
-        where: {
-          deletedAt: null,
-          deletedById: null,
-        },
+        where: whereClause,
       }),
     ]);
 
-
-    if (!commodity_master) {
+    if (!results) {
       return createPaginationResponse({
         message: "Invalid id. Please try again.",
         functionname,
@@ -59,7 +91,7 @@ const GetAllCommodityMaster = async (
     return createPaginationResponse({
       message: "All Commodity Data get successfully",
       functionname,
-      data: commodity_master,
+      data: results,
       take: payload.take,
       skip: payload.skip,
       total: totalCount ?? 0,

@@ -4,7 +4,14 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import CreateFirstStock from "@/action/firststock/firststockcreat";
 import GetDepartmentFirstStockByDvatId from "@/action/firststock/getdepartmentfirststockbydvatid";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { commodity_master, dvat04, first_stock } from "@prisma/client";
 import { Alert, Input, Modal, Radio, Select } from "antd";
 import type { RadioChangeEvent } from "antd";
@@ -35,9 +42,9 @@ const RegistrationStatusFirstStockPage = () => {
   const [selectedCommodityId, setSelectedCommodityId] = useState<
     number | undefined
   >(undefined);
-  const [selectedPackType, setSelectedPackType] = useState<string | undefined>(
-    undefined,
-  );
+  // const [selectedPackType, setSelectedPackType] = useState<string | undefined>(
+  //   undefined,
+  // );
   const [noOfPieces, setNoOfPieces] = useState<string>("");
 
   const fetchFirstStockData = useCallback(async () => {
@@ -103,7 +110,6 @@ const RegistrationStatusFirstStockPage = () => {
     }
 
     setCommodityOptions(commodityResponse.data);
-    setSelectedPackType(undefined);
     setSelectedCommodityId(undefined);
     setNoOfPieces("");
     setIsAddStockModalOpen(true);
@@ -111,7 +117,6 @@ const RegistrationStatusFirstStockPage = () => {
 
   const closeAddStockModal = useCallback(() => {
     setIsAddStockModalOpen(false);
-    setSelectedPackType(undefined);
     setSelectedCommodityId(undefined);
     setNoOfPieces("");
     setIsAddingStock(false);
@@ -132,14 +137,8 @@ const RegistrationStatusFirstStockPage = () => {
   );
 
   const modalCommodityOptions = useMemo(() => {
-    if (!selectedPackType) {
-      return filteredCommodityOptions;
-    }
-
-    return filteredCommodityOptions.filter(
-      (item) => item.pack_type === selectedPackType,
-    );
-  }, [filteredCommodityOptions, selectedPackType]);
+    return filteredCommodityOptions;
+  }, [filteredCommodityOptions]);
 
   const selectedCommodity = useMemo(
     () => commodityOptions.find((item) => item.id === selectedCommodityId),
@@ -245,9 +244,12 @@ const RegistrationStatusFirstStockPage = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">First Stock Details</h1>
+              <h1 className="text-xl font-semibold text-gray-900">
+                First Stock Details
+              </h1>
               <p className="text-sm text-gray-500 mt-1">
-                {dvatData?.tradename} {dvatData?.tinNumber ? `(${dvatData.tinNumber})` : ""}
+                {dvatData?.tradename}{" "}
+                {dvatData?.tinNumber ? `(${dvatData.tinNumber})` : ""}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -324,7 +326,10 @@ const RegistrationStatusFirstStockPage = () => {
                     <TableCell className="p-2 border text-center">
                       {quantityCount === "pcs"
                         ? item.quantity
-                        : showCrates(item.quantity, item.commodity_master.crate_size)}
+                        : showCrates(
+                            item.quantity,
+                            item.commodity_master.crate_size,
+                          )}
                     </TableCell>
                     <TableCell className="p-2 border text-left">
                       {item.commodity_master.description}
@@ -356,7 +361,7 @@ const RegistrationStatusFirstStockPage = () => {
         confirmLoading={isAddingStock}
       >
         <div className="space-y-3">
-          <div>
+          {/* <div>
             <p className="mb-1 text-sm font-medium text-gray-700">PET Type</p>
             <Select
               allowClear
@@ -372,7 +377,7 @@ const RegistrationStatusFirstStockPage = () => {
                 label: item,
               }))}
             />
-          </div>
+          </div> */}
 
           <div>
             <p className="mb-1 text-sm font-medium text-gray-700">Commodity</p>
@@ -392,10 +397,20 @@ const RegistrationStatusFirstStockPage = () => {
                   .includes(input.toLowerCase())
               }
             />
+            {selectedCommodity ? (
+              <div className="mt-2 p-2 bg-gray-50 border rounded text-xs text-gray-700 space-y-1">
+                <div><span className="font-medium">PET Type:</span> {selectedCommodity.pack_type || 'N/A'}</div>
+                <div><span className="font-medium">Description:</span> {selectedCommodity.description || 'N/A'}</div>
+                <div><span className="font-medium">Crate Size:</span> {selectedCommodity.crate_size ? `${selectedCommodity.crate_size} pcs` : 'N/A'}</div>
+                <div><span className="font-medium">Product Type:</span> {selectedCommodity.product_type || 'N/A'}</div>
+              </div>
+            ) : null}
           </div>
 
           <div>
-            <p className="mb-1 text-sm font-medium text-gray-700">No of Pieces</p>
+            <p className="mb-1 text-sm font-medium text-gray-700">
+              No of Pieces
+            </p>
             <Input
               value={noOfPieces}
               onChange={(event) =>
@@ -404,9 +419,10 @@ const RegistrationStatusFirstStockPage = () => {
               maxLength={10}
               placeholder={isFuelDealer ? "Enter litres" : "Enter no of pieces"}
             />
-            {selectedCommodity && !isFuelDealer ? (
+            {selectedCommodity ? (
               <p className="mt-1 text-xs text-gray-500">
-                Crate size for selected commodity: {selectedCommodity.crate_size} pcs
+                Crate size for selected commodity:{" "}
+                {selectedCommodity.crate_size} pcs
               </p>
             ) : null}
           </div>
