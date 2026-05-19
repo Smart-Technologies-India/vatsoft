@@ -7,6 +7,7 @@ import ConvertDvat30A from "@/action/stock/convertdvat30a";
 import DeletePurchase from "@/action/stock/deletepurchase";
 import GetPurchaseDeleteImpact from "@/action/stock/getpurchasedeleteimpact";
 import GetUserDailyPurchase, {
+  DailyPurchaseSummary,
   GroupedDailyPurchase,
 } from "@/action/stock/getuserdailypurchase";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
@@ -77,6 +78,12 @@ const DocumentWiseDetails = () => {
   const [dailyPurchase, setDailyPurchase] = useState<
     Array<GroupedDailyPurchase>
   >([]);
+  const [purchaseSummary, setPurchaseSummary] = useState<DailyPurchaseSummary>({
+    totalInvoices: 0,
+    totalTaxableValue: 0,
+    totalVatAmount: 0,
+    totalInvoiceValue: 0,
+  });
 
   const [selectedGroup, setSelectedGroup] =
     useState<GroupedDailyPurchase | null>(null);
@@ -151,6 +158,16 @@ const DocumentWiseDetails = () => {
           total: daily_purchase_response.data.total,
         });
         setDailyPurchase(daily_purchase_response.data.result);
+        setPurchaseSummary(
+          (daily_purchase_response.data.summary as
+            | DailyPurchaseSummary
+            | undefined) ?? {
+            totalInvoices: 0,
+            totalTaxableValue: 0,
+            totalVatAmount: 0,
+            totalInvoiceValue: 0,
+          },
+        );
       }
     }
 
@@ -199,6 +216,16 @@ const DocumentWiseDetails = () => {
             total: daily_purchase_response.data.total,
           });
           setDailyPurchase(daily_purchase_response.data.result);
+          setPurchaseSummary(
+            (daily_purchase_response.data.summary as
+              | DailyPurchaseSummary
+              | undefined) ?? {
+              totalInvoices: 0,
+              totalTaxableValue: 0,
+              totalVatAmount: 0,
+              totalInvoiceValue: 0,
+            },
+          );
         }
       }
 
@@ -215,7 +242,7 @@ const DocumentWiseDetails = () => {
       setLoading(false);
     };
     init();
-  }, [userid]);
+  }, [userid, router]);
 
   useEffect(() => {
     let mounted = true;
@@ -361,6 +388,16 @@ const DocumentWiseDetails = () => {
         take: daily_purchase_response.data.take,
         total: daily_purchase_response.data.total,
       });
+      setPurchaseSummary(
+        (daily_purchase_response.data.summary as
+          | DailyPurchaseSummary
+          | undefined) ?? {
+          totalInvoices: 0,
+          totalTaxableValue: 0,
+          totalVatAmount: 0,
+          totalInvoiceValue: 0,
+        },
+      );
     }
   };
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -559,6 +596,7 @@ const DocumentWiseDetails = () => {
     }
 
     const normalized = normalizeText(value).toLowerCase();
+    if (["na", "n/a", "nil", ""].includes(normalized)) return null;
     if (["true", "yes", "y", "1"].includes(normalized)) return true;
     if (["false", "no", "n", "0"].includes(normalized)) return false;
     return null;
@@ -567,19 +605,87 @@ const DocumentWiseDetails = () => {
   const downloadBulkTemplate = () => {
     const rows = [
       {
+        "Entry Note": "Same invoice with multiple items -> repeat TIN/Invoice No/Invoice Date",
         "TIN Number": "11000000001",
-        "Invoice No": "INV1001",
+        "Invoice No": "INV1001-A",
         "Invoice Date": "04/05/2026",
         "Item Code": 1,
-        Quantity: 100,
+        Quantity: 24,
         "Total Invoice Value": 12000,
-        "Is Against C From": "true",
+        "Is Against C Form": "false",
+      },
+      {
+        "Entry Note": "Second item of same invoice (keep TIN/Invoice No/Invoice Date same)",
+        "TIN Number": "11000000001",
+        "Invoice No": "INV1001-A",
+        "Invoice Date": "04/05/2026",
+        "Item Code": 2,
+        Quantity: 12,
+        "Total Invoice Value": 8600,
+        "Is Against C Form": "false",
+      },
+      {
+        "Entry Note": "Different invoice example",
+        "TIN Number": "12000000002",
+        "Invoice No": "INV1002-B",
+        "Invoice Date": "05/05/2026",
+        "Item Code": 3,
+        Quantity: 30,
+        "Total Invoice Value": 15000,
+        "Is Against C Form": "true",
+      },
+    ];
+
+    const instructionsRows = [
+      {
+        Field: "TIN Number",
+        "What to fill": "Seller TIN (11 digits)",
+        Rules:
+          "Do not enter your own TIN. Must exist in TIN master. Repeat same TIN for all items of same invoice.",
+      },
+      {
+        Field: "Invoice No",
+        "What to fill": "Invoice number",
+        Rules:
+          "If one invoice has multiple items, keep same Invoice No for all those rows.",
+      },
+      {
+        Field: "Invoice Date",
+        "What to fill": "Date in DD/MM/YYYY",
+        Rules:
+          "If one invoice has multiple items, keep same date for all those rows.",
+      },
+      {
+        Field: "Item Code",
+        "What to fill": "Commodity Item Code",
+        Rules:
+          "Use valid item code from commodity master.",
+      },
+      {
+        Field: "Quantity",
+        "What to fill": "Numeric quantity in pieces",
+        Rules:
+          "Enter pieces only (not crate, not words like twenty four).",
+      },
+      {
+        Field: "Total Invoice Value",
+        "What to fill": "Item-wise amount inclusive of VAT",
+        Rules:
+          "If multiple items in same invoice, enter value separately for each item row. Must be inclusive of VAT.",
+      },
+      {
+        Field: "Is Against C Form",
+        "What to fill": "true or false",
+        Rules:
+          "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
       },
     ];
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
+    const instructionsSheet = XLSX.utils.json_to_sheet(instructionsRows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Upload");
+    XLSX.utils.book_append_sheet(workbook, instructionsSheet, "Instructions");
     XLSX.writeFile(workbook, "vatsoft_purchase_template.xlsx");
   };
 
@@ -691,11 +797,14 @@ const DocumentWiseDetails = () => {
             "total_invoice_value",
           ]);
           const against_cfrom_raw = readSheetField(row, [
+            "Is Against C Form",
+            "is against c form",
+            "is_against_c_form",
             "Is Against C From",
             "is against c from",
             "is_against_c_from",
-            "is against c form",
-            "is_against_c_form",
+            "Against C Form",
+            "against c form",
           ]);
 
           const isAllNull =
@@ -762,7 +871,11 @@ const DocumentWiseDetails = () => {
 
           const quantity = parseExcelNumber(quantity_raw);
           if (!Number.isFinite(quantity) || quantity <= 0) {
-            errors.push("* Quantity must be greater than 0");
+            errors.push(
+              "* Quantity must be a number in pieces and greater than 0",
+            );
+          } else if (!Number.isInteger(quantity)) {
+            errors.push("* Quantity must be a whole number in pieces");
           }
 
           const total_invoice_value = parseExcelNumber(total_invoice_value_raw);
@@ -793,7 +906,9 @@ const DocumentWiseDetails = () => {
 
           const parsedAgainstCFrom = parseBooleanValue(against_cfrom_raw);
           if (parsedAgainstCFrom == null) {
-            errors.push("* Is Against C From must be true/false");
+            errors.push(
+              "* Is Against C Form must be true/false (yes/no/1/0 also accepted)",
+            );
           }
 
           const duplicateKey = [
@@ -1686,37 +1801,28 @@ const DocumentWiseDetails = () => {
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
               <p className="text-lg font-medium text-gray-900">
-                {dailyPurchase.length}
+                {purchaseSummary.totalInvoices}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Invoice Value</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹
-                {dailyPurchase
-                  .reduce((acc, val) => acc + val.totalInvoiceValue, 0)
-                  .toFixed(2)}
+                ₹{purchaseSummary.totalInvoiceValue.toFixed(2)}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Tax</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹
-                {dailyPurchase
-                  .reduce((acc, val) => acc + val.totalVatAmount, 0)
-                  .toFixed(2)}
+                ₹{purchaseSummary.totalVatAmount.toFixed(2)}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Taxable Value</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹
-                {dailyPurchase
-                  .reduce((acc, val) => acc + val.totalTaxableValue, 0)
-                  .toFixed(2)}
+                ₹{purchaseSummary.totalTaxableValue.toFixed(2)}
               </p>
             </div>
           </div>
@@ -1773,19 +1879,16 @@ const DocumentWiseDetails = () => {
                           className="border-b hover:bg-gray-50"
                         >
                           <TableCell className="p-2 text-center text-xs">
-                            {group.count > 1 ? (
-                              <button
-                                onClick={() => {
-                                  setSelectedGroup(group);
-                                  setIsGroupModalOpen(true);
-                                }}
-                                className="text-blue-600 hover:text-blue-800 underline"
-                              >
-                                {group.count} items
-                              </button>
-                            ) : (
-                              <span>{group.count}</span>
-                            )}
+                            <button
+                              onClick={() => {
+                                setSelectedGroup(group);
+                                setIsGroupModalOpen(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 underline"
+                            >
+                              {group.count} items
+                            </button>
+                            {/* {group.count > 1 ? () : (<span>{group.count}</span>)} */}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
                             {group.invoice_number}

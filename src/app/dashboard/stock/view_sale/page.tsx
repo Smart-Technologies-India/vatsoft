@@ -4,6 +4,7 @@ import ConvertDvat31 from "@/action/stock/convertdvat31";
 import DeleteSale from "@/action/stock/deletesale";
 import GetSaleDeleteImpact from "@/action/stock/getsaledeleteimpact";
 import GetUserDailySale, {
+  DailySaleSummary,
   GroupedDailySale,
 } from "@/action/stock/getuserdailysale";
 import { DailySaleProvider } from "@/components/forms/dailysale/dailysale";
@@ -59,6 +60,7 @@ const DocumentWiseDetails = () => {
     item_code: number;
     quantity: number;
     total_invoice_value: number;
+    against_cfrom: boolean;
     seller_tin_id: number | null;
     commodity_name: string | null;
     tax_percent: string | null;
@@ -140,6 +142,22 @@ const DocumentWiseDetails = () => {
     return `${day}/${month}/${year}`;
   };
 
+  const parseBooleanValue = (value: unknown): boolean | null => {
+    if (typeof value === "boolean") return value;
+
+    if (typeof value === "number") {
+      if (value === 1) return true;
+      if (value === 0) return false;
+      return null;
+    }
+
+    const normalized = normalizeText(value).toLowerCase();
+    if (["na", "n/a", "nil", ""].includes(normalized)) return null;
+    if (["true", "yes", "y", "1"].includes(normalized)) return true;
+    if (["false", "no", "n", "0"].includes(normalized)) return false;
+    return null;
+  };
+
   const getExpectedProductType = () => {
     if (
       dvatdata?.commodity === "OIDC" ||
@@ -173,18 +191,87 @@ const DocumentWiseDetails = () => {
   const downloadBulkTemplate = () => {
     const rows = [
       {
+        "Entry Note": "Same invoice with multiple items -> repeat TIN/Invoice No/Invoice Date",
         "TIN Number": "11000000001",
-        "Invoice No": "INV1001",
+        "Invoice No": "INV1001-A",
         "Invoice Date": "05/05/2026",
         "Item Code": 1,
-        Quantity: 100,
+        Quantity: 24,
         "Total Invoice Value": 12000,
+        "Is Against C Form": "false",
+      },
+      {
+        "Entry Note": "Second item of same invoice (keep TIN/Invoice No/Invoice Date same)",
+        "TIN Number": "11000000001",
+        "Invoice No": "INV1001-A",
+        "Invoice Date": "05/05/2026",
+        "Item Code": 2,
+        Quantity: 12,
+        "Total Invoice Value": 8600,
+        "Is Against C Form": "false",
+      },
+      {
+        "Entry Note": "Different invoice example",
+        "TIN Number": "12000000002",
+        "Invoice No": "INV1002-B",
+        "Invoice Date": "06/05/2026",
+        "Item Code": 3,
+        Quantity: 30,
+        "Total Invoice Value": 15000,
+        "Is Against C Form": "true",
+      },
+    ];
+
+    const instructionsRows = [
+      {
+        Field: "TIN Number",
+        "What to fill": "Buyer TIN (11 digits)",
+        Rules:
+          "Do not enter your own TIN. Must exist in TIN master. Repeat same TIN for all items of same invoice.",
+      },
+      {
+        Field: "Invoice No",
+        "What to fill": "Invoice number",
+        Rules:
+          "If one invoice has multiple items, keep same Invoice No for all those rows.",
+      },
+      {
+        Field: "Invoice Date",
+        "What to fill": "Date in DD/MM/YYYY",
+        Rules:
+          "If one invoice has multiple items, keep same date for all those rows.",
+      },
+      {
+        Field: "Item Code",
+        "What to fill": "Commodity Item Code",
+        Rules:
+          "Use valid item code from commodity master.",
+      },
+      {
+        Field: "Quantity",
+        "What to fill": "Numeric quantity in pieces",
+        Rules:
+          "Enter pieces only (not crate, not words like twenty four).",
+      },
+      {
+        Field: "Total Invoice Value",
+        "What to fill": "Item-wise amount inclusive of VAT",
+        Rules:
+          "If multiple items in same invoice, enter value separately for each item row. Must be inclusive of VAT.",
+      },
+      {
+        Field: "Is Against C Form",
+        "What to fill": "true or false",
+        Rules:
+          "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
       },
     ];
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
+    const instructionsSheet = XLSX.utils.json_to_sheet(instructionsRows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sale Upload");
+    XLSX.utils.book_append_sheet(workbook, instructionsSheet, "Instructions");
     XLSX.writeFile(workbook, "vatsoft_sale_template.xlsx");
   };
 
@@ -308,6 +395,16 @@ const DocumentWiseDetails = () => {
             "total invoice value",
             "total_invoice_value",
           ]);
+          const against_cfrom_raw = readSheetField(row, [
+            "Is Against C Form",
+            "is against c form",
+            "is_against_c_form",
+            "Is Against C From",
+            "is against c from",
+            "is_against_c_from",
+            "Against C Form",
+            "against c form",
+          ]);
 
           const isAllNull =
             tin_number === "" &&
@@ -315,7 +412,8 @@ const DocumentWiseDetails = () => {
             normalizeText(invoice_date_raw) === "" &&
             normalizeText(item_code_raw) === "" &&
             normalizeText(quantity_raw) === "" &&
-            normalizeText(total_invoice_value_raw) === "";
+            normalizeText(total_invoice_value_raw) === "" &&
+            normalizeText(against_cfrom_raw) === "";
 
           if (isAllNull) return null;
 
@@ -357,7 +455,7 @@ const DocumentWiseDetails = () => {
           }
 
           const sellerTin = tindata.find(
-            (tin) => tin.tin_number === tin_number, 
+            (tin) => tin.tin_number === tin_number,
           );
           if (!sellerTin) {
             errors.push("* TIN Number not found in TIN master");
@@ -405,7 +503,11 @@ const DocumentWiseDetails = () => {
 
           const quantity = parseExcelNumber(quantity_raw);
           if (!Number.isFinite(quantity) || quantity <= 0) {
-            errors.push("* Quantity must be greater than 0");
+            errors.push(
+              "* Quantity must be a number in pieces and greater than 0",
+            );
+          } else if (!Number.isInteger(quantity)) {
+            errors.push("* Quantity must be a whole number in pieces");
           }
 
           const total_invoice_value = parseExcelNumber(total_invoice_value_raw);
@@ -414,6 +516,13 @@ const DocumentWiseDetails = () => {
             total_invoice_value <= 0
           ) {
             errors.push("* Total Invoice Value must be greater than 0");
+          }
+
+          const parsedAgainstCFrom = parseBooleanValue(against_cfrom_raw);
+          if (parsedAgainstCFrom == null) {
+            errors.push(
+              "* Is Against C Form must be true/false (yes/no/1/0 also accepted)",
+            );
           }
 
           if (
@@ -452,6 +561,8 @@ const DocumentWiseDetails = () => {
             errors.push("* Duplicate row in sheet");
           }
 
+          const against_cfrom = parsedAgainstCFrom ?? false;
+
           return {
             tin_number,
             invoice_date: invoice_date ?? new Date(),
@@ -464,6 +575,7 @@ const DocumentWiseDetails = () => {
             total_invoice_value: Number.isFinite(total_invoice_value)
               ? total_invoice_value
               : 0,
+            against_cfrom,
             seller_tin_id: sellerTin?.id ?? null,
             commodity_name: selectedCommodity?.product_name ?? null,
             tax_percent: selectedCommodity?.taxable_at ?? null,
@@ -590,6 +702,12 @@ const DocumentWiseDetails = () => {
   const [dvatdata, setDvatData] = useState<dvat04>();
 
   const [dailySale, setDailySale] = useState<Array<GroupedDailySale>>([]);
+  const [saleSummary, setSaleSummary] = useState<DailySaleSummary>({
+    totalInvoices: 0,
+    totalTaxableValue: 0,
+    totalVatAmount: 0,
+    totalInvoiceValue: 0,
+  });
 
   const [selectedGroup, setSelectedGroup] = useState<GroupedDailySale | null>(
     null,
@@ -666,6 +784,14 @@ const DocumentWiseDetails = () => {
           total: daily_sale_response.data.total,
         });
         setDailySale(daily_sale_response.data.result);
+        setSaleSummary(
+          (daily_sale_response.data.summary as DailySaleSummary | undefined) ?? {
+            totalInvoices: 0,
+            totalTaxableValue: 0,
+            totalVatAmount: 0,
+            totalInvoiceValue: 0,
+          },
+        );
       }
     }
     // setLoading(false);
@@ -701,6 +827,14 @@ const DocumentWiseDetails = () => {
             total: daily_sale_response.data.total,
           });
           setDailySale(daily_sale_response.data.result);
+          setSaleSummary(
+            (daily_sale_response.data.summary as DailySaleSummary | undefined) ?? {
+              totalInvoices: 0,
+              totalTaxableValue: 0,
+              totalVatAmount: 0,
+              totalInvoiceValue: 0,
+            },
+          );
         }
       }
 
@@ -864,6 +998,14 @@ const DocumentWiseDetails = () => {
         take: daily_sale_response.data.take,
         total: daily_sale_response.data.total,
       });
+      setSaleSummary(
+        (daily_sale_response.data.summary as DailySaleSummary | undefined) ?? {
+          totalInvoices: 0,
+          totalTaxableValue: 0,
+          totalVatAmount: 0,
+          totalInvoiceValue: 0,
+        },
+      );
     }
   };
   const [addBox, setAddBox] = useState<boolean>(false);
@@ -1021,7 +1163,7 @@ const DocumentWiseDetails = () => {
     }
 
     const entries = tabledata.map((row) => {
-      const taxPercent = row.tax_percent ?? "0";
+      const taxPercent = row.against_cfrom ? "2" : (row.tax_percent ?? "0");
       const totalInvoice = Number(row.total_invoice_value);
       const taxableValue = (totalInvoice / (100 + Number(taxPercent))) * 100;
       const vatValue = totalInvoice - taxableValue;
@@ -1044,7 +1186,7 @@ const DocumentWiseDetails = () => {
         vatamount: vatValue.toFixed(2),
         amount_unit: amountUnit.toFixed(2),
         createdById: userid,
-        against_cfrom: false,
+        against_cfrom: row.against_cfrom,
         is_against_fform: false,
         is_export: false,
       };
@@ -1252,6 +1394,9 @@ const DocumentWiseDetails = () => {
               <TableHead className="border text-center">
                 Total Invoice Value
               </TableHead>
+              <TableHead className="border text-center">
+                Is Against C Form
+              </TableHead>
               <TableHead className="border text-center">Error</TableHead>
             </TableRow>
           </TableHeader>
@@ -1288,6 +1433,9 @@ const DocumentWiseDetails = () => {
                 </TableCell>
                 <TableCell className="p-2 border text-center">
                   {val.total_invoice_value}
+                </TableCell>
+                <TableCell className="p-2 border text-center">
+                  {val.against_cfrom ? "true" : "false"}
                 </TableCell>
                 <TableCell className="p-2 border text-left whitespace-pre-line text-red-600">
                   {val.errorname || "-"}
@@ -1474,37 +1622,25 @@ const DocumentWiseDetails = () => {
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
               <p className="text-lg font-medium text-gray-900">
-                {dailySale.length}
+                {saleSummary.totalInvoices}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Taxable Value</p>
               <p className="text-lg font-medium text-gray-900">
-                {formatAmount(
-                  dailySale.reduce(
-                    (acc, val) => acc + (Number(val.totalTaxableValue) || 0),
-                    0,
-                  ),
-                )}
+                {formatAmount(saleSummary.totalTaxableValue)}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Tax</p>
               <p className="text-lg font-medium text-gray-900">
-                {dailySale
-                  .reduce((acc, val) => acc + val.totalVatAmount, 0)
-                  .toFixed(2)}
+                {saleSummary.totalVatAmount.toFixed(2)}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Sale Price</p>
               <p className="text-lg font-medium text-gray-900">
-                {formatAmount(
-                  dailySale.reduce(
-                    (acc, val) => acc + (Number(val.totalInvoiceValue) || 0),
-                    0,
-                  ),
-                )}
+                {formatAmount(saleSummary.totalInvoiceValue)}
               </p>
             </div>
           </div>
@@ -1551,19 +1687,16 @@ const DocumentWiseDetails = () => {
                         className="border-b hover:bg-gray-50"
                       >
                         <TableCell className="p-2 text-center text-xs">
-                          {group.count > 1 ? (
-                            <button
-                              onClick={() => {
-                                setSelectedGroup(group);
-                                setIsGroupModalOpen(true);
-                              }}
-                              className="text-blue-600 hover:text-blue-800 underline"
-                            >
-                              {group.count} items
-                            </button>
-                          ) : (
-                            <span>{group.count}</span>
-                          )}
+                          <button
+                            onClick={() => {
+                              setSelectedGroup(group);
+                              setIsGroupModalOpen(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 underline"
+                          >
+                            {group.count} items
+                          </button>
+                          {/* {group.count > 1 ? <></> : <span>{group.count}</span>} */}
                         </TableCell>
                         <TableCell className="p-2 text-center text-xs">
                           {group.invoice_number}

@@ -37,6 +37,13 @@ export type GroupedDailySale = {
   urn_number: string;
 };
 
+export type DailySaleSummary = {
+  totalInvoices: number;
+  totalTaxableValue: number;
+  totalVatAmount: number;
+  totalInvoiceValue: number;
+};
+
 const GetUserDailySale = async (
   payload: GetUserDailySalePayload,
 ): Promise<PaginationResponse<Array<GroupedDailySale> | null>> => {
@@ -109,6 +116,21 @@ const GetUserDailySale = async (
 
     const groupedArray = Array.from(groupedMap.values());
     const totalCount = groupedArray.length;
+    const summary: DailySaleSummary = groupedArray.reduce(
+      (acc, group) => {
+        acc.totalInvoices += 1;
+        acc.totalTaxableValue += Number(group.totalTaxableValue) || 0;
+        acc.totalVatAmount += Number(group.totalVatAmount) || 0;
+        acc.totalInvoiceValue += Number(group.totalInvoiceValue) || 0;
+        return acc;
+      },
+      {
+        totalInvoices: 0,
+        totalTaxableValue: 0,
+        totalVatAmount: 0,
+        totalInvoiceValue: 0,
+      },
+    );
 
     // Apply pagination to grouped results
     const paginatedGroups = groupedArray.slice(
@@ -123,6 +145,7 @@ const GetUserDailySale = async (
       take: payload.take,
       skip: payload.skip,
       total: totalCount,
+      summary,
     });
   } catch (e) {
     return createPaginationResponse({

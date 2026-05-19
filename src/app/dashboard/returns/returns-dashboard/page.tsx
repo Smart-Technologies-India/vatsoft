@@ -1585,9 +1585,9 @@ const ReturnDashboard = () => {
         type="button"
         aria-label="Open help chat"
         onClick={() => setIsHelpDrawerOpen(true)}
-        className="fixed right-5 bottom-20 z-60 flex flex-col items-center hover:scale-105 transition-transform"
+        className="fixed right-5 bottom-10 z-60 flex flex-col items-center hover:scale-105 transition-transform"
       >
-        <span className="h-32 w-32 overflow-hidden">
+        <span className="h-16 w-16 overflow-hidden">
           {chatAnimationData ? (
             <Lottie
               animationData={chatAnimationData}
