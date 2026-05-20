@@ -25,7 +25,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
 
 const DAILY_SALE_ADD_MORE_LOCK_KEY = "dailySaleAddMoreLock";
-type AgainstType = "NONE" | "CFORM" | "FFORM" | "EXPORT";
+type AgainstType = "NONE" | "CFORM" | "FFORM" | "EXEMPT" | "IFORM" | "H_EXPORT" | "E1" | "EXPORT";
 
 type DailySaleProviderProps = {
   userid: number;
@@ -63,7 +63,15 @@ const DailySale = (props: DailySaleProviderProps) => {
   const getSelectedTaxRate = () => {
     if (isComp) return "1";
     if (againstType === "CFORM") return "2";
-    if (againstType === "FFORM" || againstType === "EXPORT") return "0";
+    if (
+      againstType === "FFORM" ||
+      againstType === "EXEMPT" ||
+      againstType === "IFORM" ||
+      againstType === "H_EXPORT" ||
+      againstType === "E1" ||
+      againstType === "EXPORT"
+    )
+      return "0";
 
     if (commoditymaster == null || commoditymaster == undefined) return "0";
     return commoditymaster.taxable_at;
@@ -419,6 +427,10 @@ const DailySale = (props: DailySaleProviderProps) => {
       against_cfrom: againstType === "CFORM",
       is_against_fform: againstType === "FFORM",
       is_export: againstType === "EXPORT",
+      is_exempt: againstType === "EXEMPT",
+      is_against_iform: againstType === "IFORM",
+      is_h_export: againstType === "H_EXPORT",
+      is_against_e1: againstType === "E1",
     });
 
     if (stock_response.status) {
@@ -559,6 +571,10 @@ const DailySale = (props: DailySaleProviderProps) => {
       against_cfrom: againstType === "CFORM",
       is_against_fform: againstType === "FFORM",
       is_export: againstType === "EXPORT",
+      is_exempt: againstType === "EXEMPT",
+      is_against_iform: againstType === "IFORM",
+      is_h_export: againstType === "H_EXPORT",
+      is_against_e1: againstType === "E1",
     });
 
     if (stock_response.status) {
@@ -703,17 +719,22 @@ const DailySale = (props: DailySaleProviderProps) => {
 
             {!tindata?.tin_number.startsWith("25") &&
               !tindata?.tin_number.startsWith("26") && (
-                <div className="min-w-55">
+                <div className="min-w-80">
                   <p className="text-xs text-gray-600 mb-1">Sale Type</p>
                   <Select
+                    style={{ width: "100%" }}
                     value={againstType}
                     onChange={(value: AgainstType) => setAgainstType(value)}
                     size="middle"
                     options={[
-                      { value: "NONE", label: "Regular (Normal Tax)" },
-                      { value: "CFORM", label: "Against C Form (2%)" },
-                      { value: "FFORM", label: "Against F Form (0%)" },
-                      { value: "EXPORT", label: "Export (0%)" },
+                      { value: "NONE", label: "Regular" },
+                      { value: "CFORM", label: "Against C Form" },
+                      { value: "FFORM", label: "Against F Form" },
+                      { value: "EXEMPT", label: "Exempt against notification" },
+                      { value: "IFORM", label: "Against I Form" },
+                      { value: "H_EXPORT", label: "H Form Export" },
+                      { value: "E1", label: "Against E1 Form" },
+                      { value: "EXPORT", label: "Direct Export" },
                     ]}
                   />
                 </div>

@@ -1091,7 +1091,11 @@ model daily_sale {
   batch_name          String?
   is_against_cform    Boolean           @default(false)
   is_against_fform    Boolean           @default(false)
+  is_against_iform    Boolean           @default(false)
   is_export           Boolean           @default(false)
+  is_h_export         Boolean           @default(false)
+  is_against_e1       Boolean           @default(false)
+  is_exempt           Boolean           @default(false)
   createdAt           DateTime          @default(now())
   createdById         Int
   updatedAt           DateTime          @updatedAt
@@ -1168,6 +1172,9 @@ model daily_purchase {
   is_against_cform    Boolean           @default(false)
   is_against_fform    Boolean           @default(false)
   is_export           Boolean           @default(false)
+  is_against_hform    Boolean           @default(false)
+  is_against_iform    Boolean           @default(false)
+  is_against_e1form   Boolean           @default(false)
   createdAt           DateTime          @default(now())
   createdById         Int
   updatedAt           DateTime          @updatedAt
@@ -1322,7 +1329,11 @@ model edit_sale {
   urn_number          String?
   is_against_cform    Boolean           @default(false)
   is_against_fform    Boolean           @default(false)
+  is_against_iform    Boolean           @default(false)
   is_export           Boolean           @default(false)
+  is_h_export         Boolean           @default(false)
+  is_against_e1       Boolean           @default(false)
+  is_exempt           Boolean           @default(false)
   batch_name          String?
   createdAt           DateTime          @default(now())
   createdById         Int
@@ -1369,6 +1380,9 @@ model edit_purchase {
   is_against_cform    Boolean           @default(false)
   is_against_fform    Boolean           @default(false)
   is_export           Boolean           @default(false)
+  is_against_hform    Boolean           @default(false)
+  is_against_iform    Boolean           @default(false)
+  is_against_e1form   Boolean           @default(false)
   batch_name          String?
   createdAt           DateTime          @default(now())
   createdById         Int
@@ -1676,6 +1690,7 @@ model refinery_sale {
   seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
   updatedBy           user?             @relation("refinery_sale_updatedBy", fields: [updatedById], references: [id])
 }
+
 // model refinery_price{
 
 // }

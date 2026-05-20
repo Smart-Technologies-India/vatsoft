@@ -15,7 +15,11 @@ interface EditSalePayload {
   createdById: number;
   against_cfrom?: boolean;
   is_against_fform?: boolean;
+  is_against_iform?: boolean;
   is_export?: boolean;
+  is_h_export?: boolean;
+  is_against_e1?: boolean;
+  is_exempt?: boolean;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -101,6 +105,10 @@ const EditSale = async (
           vatamount: payload.vatamount,
           is_against_cform: payload.against_cfrom ?? false,
           is_against_fform: payload.is_against_fform ?? false,
+          is_exempt: payload.is_exempt ?? false,
+          is_against_iform: payload.is_against_iform ?? false,
+          is_h_export: payload.is_h_export ?? false,
+          is_against_e1: payload.is_against_e1 ?? false,
           is_export: payload.is_export ?? false,
           is_dvat_31: false,
           createdById: payload.createdById,
@@ -163,7 +171,9 @@ const EditSale = async (
             vatamount: payload.vatamount,
             is_against_cform: payload.against_cfrom ?? false,
             is_against_fform: payload.is_against_fform ?? false,
+            is_against_iform: payload.is_against_iform ?? false,
             is_export: payload.is_export ?? false,
+            is_against_e1form: payload.is_against_e1 ?? false,
             updatedById: payload.createdById,
           },
         });

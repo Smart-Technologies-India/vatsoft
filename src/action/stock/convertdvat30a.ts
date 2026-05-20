@@ -270,12 +270,16 @@ const ConvertDvat30A = async (
                 purchase_type: PurchaseType.OUTSIDE_INDIA,
               }),
 
+              
+
             ...(!val.is_local &&
               !val.is_against_cform &&
               !val.is_against_fform &&
               !val.is_export && {
                 purchase_type: PurchaseType.TAXABLE_RATE,
               }),
+
+
 
             // ...(!val.is_local && {
             //   nature_purchase: NaturePurchase.CAPITAL_GOODS,

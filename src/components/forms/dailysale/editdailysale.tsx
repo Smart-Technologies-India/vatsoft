@@ -30,12 +30,17 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 type EditDailySaleProviderProps = {
   id: number;
   userid: number;
-  data: daily_sale & {
+  data: (daily_sale & {
     commodity_master: commodity_master;
     seller_tin_number: tin_number_master;
+  }) & {
+    is_exempt?: boolean;
+    is_against_iform?: boolean;
+    is_h_export?: boolean;
+    is_against_e1?: boolean;
   };
 };
-type AgainstType = "NONE" | "CFORM" | "FFORM" | "EXPORT";
+type AgainstType = "NONE" | "CFORM" | "FFORM" | "EXEMPT" | "IFORM" | "H_EXPORT" | "E1" | "EXPORT";
 export const EditDailySaleProvider = (props: EditDailySaleProviderProps) => {
   const methods = useForm<DailySaleForm>({
     resolver: valibotResolver(DailySaleSchema),
@@ -65,7 +70,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
   const [davtdata, setDvatdata] = useState<dvat04 | null>(null);
 
   const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
-    []
+    [],
   );
   const [againstType, setAgainstType] = useState<AgainstType>("NONE");
   const [isComp, setIsComp] = useState(false);
@@ -73,16 +78,24 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
   const getSelectedTaxRate = () => {
     if (isComp) return "1";
     if (againstType === "CFORM") return "2";
-    if (againstType === "FFORM" || againstType === "EXPORT") return "0";
+    if (
+      againstType === "FFORM" ||
+      againstType === "EXEMPT" ||
+      againstType === "IFORM" ||
+      againstType === "H_EXPORT" ||
+      againstType === "E1" ||
+      againstType === "EXPORT"
+    )
+      return "0";
     return commoditymaster?.taxable_at ?? "0";
   };
 
   useEffect(() => {
     reset({
       recipient_vat_no: props.data.seller_tin_number.tin_number,
-      amount_unit: (Number(props.data.amount) + Number(props.data.vatamount)).toFixed(
-        2
-      ),
+      amount_unit: (
+        Number(props.data.amount) + Number(props.data.vatamount)
+      ).toFixed(2),
       description_of_goods: props.data.commodity_master.id.toString(),
       invoice_date: props.data.invoice_date.toISOString(),
       invoice_number: props.data.invoice_number,
@@ -137,6 +150,14 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
         setAgainstType("CFORM");
       } else if (props.data.is_against_fform) {
         setAgainstType("FFORM");
+      } else if (props.data.is_exempt) {
+        setAgainstType("EXEMPT");
+      } else if (props.data.is_against_iform) {
+        setAgainstType("IFORM");
+      } else if (props.data.is_h_export) {
+        setAgainstType("H_EXPORT");
+      } else if (props.data.is_against_e1) {
+        setAgainstType("E1");
       } else if (props.data.is_export) {
         setAgainstType("EXPORT");
       } else {
@@ -213,10 +234,10 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
     const calculatedVatAmount = totalInvoiceValue - calculatedTaxableValue;
 
     setTaxableValue(
-      isNaN(calculatedTaxableValue) ? "0" : calculatedTaxableValue.toFixed(2)
+      isNaN(calculatedTaxableValue) ? "0" : calculatedTaxableValue.toFixed(2),
     );
     setVatAmount(
-      isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
+      isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2),
     );
   }, [quantity, amount_unit, commoditymaster, againstType, isComp]);
 
@@ -243,7 +264,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
     }
 
     const date = new Date(
-      new Date(data.invoice_date).toISOString().split("T")[0]
+      new Date(data.invoice_date).toISOString().split("T")[0],
     );
     date.setDate(date.getDate() + 1);
 
@@ -263,6 +284,10 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
       against_cfrom: againstType === "CFORM",
       is_against_fform: againstType === "FFORM",
       is_export: againstType === "EXPORT",
+      is_exempt: againstType === "EXEMPT",
+      is_against_iform: againstType === "IFORM",
+      is_h_export: againstType === "H_EXPORT",
+      is_against_e1: againstType === "E1",
     });
 
     if (stock_response.status) {
@@ -339,17 +364,22 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
 
             {!tindata?.tin_number.startsWith("25") &&
               !tindata?.tin_number.startsWith("26") && (
-                <div className="min-w-55">
+                <div className="min-w-80">
                   <p className="text-xs text-gray-600 mb-1">Sale Type</p>
                   <Select
+                    style={{ width: "100%" }}
                     value={againstType}
                     onChange={(value: AgainstType) => setAgainstType(value)}
                     size="middle"
                     options={[
-                      { value: "NONE", label: "Regular (Normal Tax)" },
-                      { value: "CFORM", label: "Against C Form (2%)" },
-                      { value: "FFORM", label: "Against F Form (0%)" },
-                      { value: "EXPORT", label: "Export (0%)" },
+                      { value: "NONE", label: "Regular" },
+                      { value: "CFORM", label: "Against C Form" },
+                      { value: "FFORM", label: "Against F Form" },
+                      { value: "EXEMPT", label: "Exempt against notification" },
+                      { value: "IFORM", label: "Against I Form" },
+                      { value: "H_EXPORT", label: "H Form Export" },
+                      { value: "E1", label: "Against E1 Form" },
+                      { value: "EXPORT", label: "Direct Export" },
                     ]}
                   />
                 </div>
@@ -388,7 +418,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
                 (val: commodity_master, index: number) => ({
                   value: val.id.toString(),
                   label: val.product_name,
-                })
+                }),
               )}
             />
           </div>

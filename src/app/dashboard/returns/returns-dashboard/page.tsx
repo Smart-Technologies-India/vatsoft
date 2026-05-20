@@ -1070,7 +1070,7 @@ const ReturnDashboard = () => {
                 File Returns
               </h1>
               <div className="grow"></div>
-              {isSearch && (
+              {isSearch && !ispayment() && (
                 <button
                   className="py-1 px-4 border text-white text-lg font-semibold bg-blue-500 rounded-lg cursor-pointer"
                   onClick={() => {
@@ -1089,7 +1089,7 @@ const ReturnDashboard = () => {
               )}
             </div>
             <Marquee className="bg-yellow-50 border border-yellow-200 mt-2 text-xs rounded px-2 py-1">
-              This is a banner can be used for official updates and
+              This banner would be used for official updates and
               notifications.
             </Marquee>
 
@@ -1445,7 +1445,7 @@ const ReturnDashboard = () => {
           )}
 
           <div className="fixed bottom-4 right-4 rounded shadow bg-white p-2 flex gap-2 z-10">
-            {isSearch && (
+            {isSearch && !ispayment() && (
               <>
                 <button
                   className="py-1 px-4 border text-white text-xs rounded bg-[#162e57] cursor-pointer"
@@ -1760,14 +1760,23 @@ const Card = (props: CardProps) => {
             )
           : !props.isnil && (
               <button
-                onClick={() => {
-                  route.push(props.link);
-                }}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center"
+                onClick={props.onDeclareNil}
+                disabled={!props.onDeclareNil}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {props.buttontwo}
+                Declare Nil
               </button>
-            )}
+              // <button
+              //   onClick={() => {
+              //     route.push(props.link);
+              //   }}
+              //   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center"
+              // >
+              //   {props.buttontwo}
+              // </button>
+            )
+            
+            }
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { postRes, sendReturnFiledSms } from "./payment/ccavresponse.js";
 import { orderstatus } from "./payment/orderstatus.js";
 import { payamount } from "./payment/payamount.js";
 import { notification } from "./payment/notification.js";
+import { webhookOrderReconciliationStatus } from "./payment/webhookorderreconciliationstatus.js";
 
 const port = parseInt(process.env.PORT || "3001", 10);
 const dev = process.env.NODE_ENV !== "production";
@@ -18,7 +19,24 @@ app.prepare().then(() => {
   const server = express();
 
   const jsonParser = express.json();
+  const urlEncodedParser = express.urlencoded({ extended: false });
 
+  server.post(
+    "/webhookorderreconciliationstatus",
+    urlEncodedParser,
+    async function (request, response) {
+      await webhookOrderReconciliationStatus(request, response);
+    },
+  );
+
+  server.get("/webhookorderreconciliationstatus", async function (_request, response) {
+    response.status(405).json({
+      success: false,
+      message: "Method not allowed. Use POST with encResp.",
+    });
+  });
+
+  
   server.get("/orderstatus", async function (request, response) {
     await orderstatus(request, response);
   });

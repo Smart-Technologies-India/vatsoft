@@ -15,6 +15,10 @@ interface CreateDailySalePayload {
   createdById: number;
   against_cfrom: boolean;
   is_against_fform: boolean;
+  is_exempt?: boolean;
+  is_against_iform?: boolean;
+  is_h_export?: boolean;
+  is_against_e1?: boolean;
   is_export: boolean;
 }
 
@@ -174,6 +178,10 @@ const CreateDailySale = async (
           urn_number: ref_no,
           is_against_cform: payload.against_cfrom,
           is_against_fform: payload.is_against_fform,
+          is_exempt: payload.is_exempt ?? false,
+          is_against_iform: payload.is_against_iform ?? false,
+          is_h_export: payload.is_h_export ?? false,
+          is_against_e1: payload.is_against_e1 ?? false,
           is_export: payload.is_export,
           is_local:
             purchaser_response.tin_number.startsWith("25") ||

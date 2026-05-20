@@ -32,7 +32,7 @@ import {
 } from "antd";
 import Lottie from "lottie-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import CreateMultiDailySale from "@/action/stock/createmultidailysale";
@@ -1056,6 +1056,38 @@ const DocumentWiseDetails = () => {
   const [selectedBulkDeleteIds, setSelectedBulkDeleteIds] = useState<
     number[]
   >([]);
+  const groupedBulkDeleteRows = useMemo(() => {
+    const groups: Record<
+      string,
+      {
+        groupKey: string;
+        groupLabel: string;
+        rows: typeof bulkDeleteRows;
+      }
+    > = {};
+
+    for (const row of bulkDeleteRows) {
+      const groupKey = [
+        row.tin_number,
+        formateDate(row.invoice_date),
+        row.invoice_number,
+      ].join("|");
+
+      if (!groups[groupKey]) {
+        groups[groupKey] = {
+          groupKey,
+          groupLabel: `TIN: ${row.tin_number} | Date: ${formateDate(
+            row.invoice_date,
+          )} | Invoice: ${row.invoice_number}`,
+          rows: [],
+        };
+      }
+
+      groups[groupKey].rows.push(row);
+    }
+
+    return Object.values(groups);
+  }, [bulkDeleteRows]);
   const [deleteImpact, setDeleteImpact] = useState<{
     creditNoteCount: number;
     debitNoteCount: number;
@@ -1083,6 +1115,7 @@ const DocumentWiseDetails = () => {
 
     let successCount = 0;
     let failedCount = 0;
+    let error = "";
 
     for (const id of ids) {
       const response = await DeleteSale({
@@ -1093,6 +1126,7 @@ const DocumentWiseDetails = () => {
         successCount += 1;
       } else {
         failedCount += 1;
+        error = response.message || "Unknown error";
       }
     }
 
@@ -1100,7 +1134,7 @@ const DocumentWiseDetails = () => {
       toast.success(`${successCount} sale record(s) deleted successfully.`);
     }
     if (failedCount > 0) {
-      toast.error(`${failedCount} sale record(s) could not be deleted.`);
+      toast.error(`${failedCount} sale record(s) could not be deleted. Error: ${error}`);
     }
 
     await init();
@@ -1629,40 +1663,82 @@ const DocumentWiseDetails = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                bulkDeleteRows.map((row) => (
-                  <TableRow key={row.id} className="hover:bg-gray-50">
-                    <TableCell className="border text-center text-xs">
-                      <input
-                        type="checkbox"
-                        checked={selectedBulkDeleteIds.includes(row.id)}
-                        onChange={(event) =>
-                          toggleBulkDeleteSelection(row.id, event.target.checked)
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {row.invoice_number}
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {formateDate(row.invoice_date)}
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {row.trade_name}
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {row.tin_number}
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {row.product_name}
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {row.quantity}
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {row.invoice_value.toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                ))
+                groupedBulkDeleteRows.flatMap((group) => {
+                  const allSelected = group.rows.every((row) =>
+                    selectedBulkDeleteIds.includes(row.id),
+                  );
+                  const someSelected = group.rows.some((row) =>
+                    selectedBulkDeleteIds.includes(row.id),
+                  );
+
+                  return [
+                    <TableRow key={`group-${group.groupKey}`} className="bg-blue-50">
+                      <TableCell className="border text-center text-xs">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          ref={(el) => {
+                            if (el) el.indeterminate = !allSelected && someSelected;
+                          }}
+                          onChange={(event) => {
+                            const checked = event.target.checked;
+                            if (checked) {
+                              setSelectedBulkDeleteIds((prev) => [
+                                ...prev,
+                                ...group.rows
+                                  .map((row) => row.id)
+                                  .filter((id) => !prev.includes(id)),
+                              ]);
+                            } else {
+                              setSelectedBulkDeleteIds((prev) =>
+                                prev.filter(
+                                  (id) => !group.rows.some((row) => row.id === id),
+                                ),
+                              );
+                            }
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell colSpan={7} className="border text-xs font-semibold">
+                        {group.groupLabel}
+                      </TableCell>
+                    </TableRow>,
+                    ...group.rows.map((row) => (
+                      <TableRow key={row.id} className="hover:bg-gray-50">
+                        <TableCell className="border text-center text-xs">
+                          <input
+                            type="checkbox"
+                            checked={selectedBulkDeleteIds.includes(row.id)}
+                            onChange={(event) =>
+                              toggleBulkDeleteSelection(row.id, event.target.checked)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {row.invoice_number}
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {formateDate(row.invoice_date)}
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {row.trade_name}
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {row.tin_number}
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {row.product_name}
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {row.quantity}
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {row.invoice_value.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    )),
+                  ];
+                })
               )}
             </TableBody>
           </Table>

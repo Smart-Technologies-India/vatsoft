@@ -24,6 +24,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getGroupedRowModel,
+  getExpandedRowModel,
+  getSortedRowModel,
+  flexRender,
+} from "@tanstack/react-table";
+import { useMemo } from "react";
 import { encryptURLData, formateDate } from "@/utils/methods";
 import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
 import {
@@ -445,9 +454,34 @@ const DocumentWiseDetails = () => {
       invoice_value: number;
     }>
   >([]);
-  const [selectedBulkDeleteIds, setSelectedBulkDeleteIds] = useState<
-    number[]
-  >([]);
+
+  // Grouped data for TanStack Table
+  const groupedBulkDeleteRows = useMemo(() => {
+    // Group by tin_number, invoice_date, invoice_number
+    const groups: Record<
+      string,
+      { groupKey: string; groupLabel: string; rows: typeof bulkDeleteRows }
+    > = {};
+    for (const row of bulkDeleteRows) {
+      const groupKey = [
+        row.tin_number,
+        row.invoice_date.toString(),
+        row.invoice_number,
+      ].join("|");
+      if (!groups[groupKey]) {
+        groups[groupKey] = {
+          groupKey,
+          groupLabel: `TIN: ${row.tin_number} | Date: ${formateDate(row.invoice_date)} | Invoice: ${row.invoice_number}`,
+          rows: [],
+        };
+      }
+      groups[groupKey].rows.push(row);
+    }
+    return Object.values(groups);
+  }, [bulkDeleteRows]);
+  const [selectedBulkDeleteIds, setSelectedBulkDeleteIds] = useState<number[]>(
+    [],
+  );
   const [deleteImpact, setDeleteImpact] = useState<{
     creditNoteCount: number;
     debitNoteCount: number;
@@ -507,6 +541,7 @@ const DocumentWiseDetails = () => {
 
     let successCount = 0;
     let failedCount = 0;
+    let error = "";
 
     for (const id of ids) {
       const response = await DeletePurchase({
@@ -518,6 +553,7 @@ const DocumentWiseDetails = () => {
         successCount += 1;
       } else {
         failedCount += 1;
+        error = response.message || "Unknown error";
       }
     }
 
@@ -525,7 +561,9 @@ const DocumentWiseDetails = () => {
       toast.success(`${successCount} purchase record(s) deleted successfully.`);
     }
     if (failedCount > 0) {
-      toast.error(`${failedCount} purchase record(s) could not be deleted.`);
+      toast.error(
+        `${failedCount} purchase record(s) could not be deleted. Error: ${error}`,
+      );
     }
 
     await init();
@@ -750,7 +788,8 @@ const DocumentWiseDetails = () => {
   const downloadBulkTemplate = () => {
     const rows = [
       {
-        "Entry Note": "Same invoice with multiple items -> repeat TIN/Invoice No/Invoice Date",
+        "Entry Note":
+          "Same invoice with multiple items -> repeat TIN/Invoice No/Invoice Date",
         "TIN Number": "11000000001",
         "Invoice No": "INV1001-A",
         "Invoice Date": "04/05/2026",
@@ -760,7 +799,8 @@ const DocumentWiseDetails = () => {
         "Is Against C Form": "false",
       },
       {
-        "Entry Note": "Second item of same invoice (keep TIN/Invoice No/Invoice Date same)",
+        "Entry Note":
+          "Second item of same invoice (keep TIN/Invoice No/Invoice Date same)",
         "TIN Number": "11000000001",
         "Invoice No": "INV1001-A",
         "Invoice Date": "04/05/2026",
@@ -803,14 +843,12 @@ const DocumentWiseDetails = () => {
       {
         Field: "Item Code",
         "What to fill": "Commodity Item Code",
-        Rules:
-          "Use valid item code from commodity master.",
+        Rules: "Use valid item code from commodity master.",
       },
       {
         Field: "Quantity",
         "What to fill": "Numeric quantity in pieces",
-        Rules:
-          "Enter pieces only (not crate, not words like twenty four).",
+        Rules: "Enter pieces only (not crate, not words like twenty four).",
       },
       {
         Field: "Total Invoice Value",
@@ -1862,64 +1900,132 @@ const DocumentWiseDetails = () => {
         </div>
 
         <div className="max-h-[60vh] overflow-auto border rounded">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="border text-center text-xs">Pick</TableHead>
-                <TableHead className="border text-center text-xs">Invoice No.</TableHead>
-                <TableHead className="border text-center text-xs">Invoice Date</TableHead>
-                <TableHead className="border text-center text-xs">Trade Name</TableHead>
-                <TableHead className="border text-center text-xs">TIN Number</TableHead>
-                <TableHead className="border text-center text-xs">Product</TableHead>
-                <TableHead className="border text-center text-xs">Quantity</TableHead>
-                <TableHead className="border text-center text-xs">Invoice Value</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {bulkDeleteRows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-sm py-4">
-                    No non-accepted purchase items available.
-                  </TableCell>
+          {/* TanStack Table for grouped selection */}
+          {groupedBulkDeleteRows.length === 0 ? (
+            <div className="text-center text-sm py-4">
+              No non-accepted purchase items available.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-100">
+                  <TableHead className="border text-center text-xs">
+                    Pick
+                  </TableHead>
+                  <TableHead className="border text-center text-xs">
+                    Invoice No.
+                  </TableHead>
+                  <TableHead className="border text-center text-xs">
+                    Invoice Date
+                  </TableHead>
+                  <TableHead className="border text-center text-xs">
+                    Trade Name
+                  </TableHead>
+                  <TableHead className="border text-center text-xs">
+                    TIN Number
+                  </TableHead>
+                  <TableHead className="border text-center text-xs">
+                    Product
+                  </TableHead>
+                  <TableHead className="border text-center text-xs">
+                    Quantity
+                  </TableHead>
+                  <TableHead className="border text-center text-xs">
+                    Invoice Value
+                  </TableHead>
                 </TableRow>
-              ) : (
-                bulkDeleteRows.map((row) => (
-                  <TableRow key={row.id} className="hover:bg-gray-50">
-                    <TableCell className="border text-center text-xs">
-                      <input
-                        type="checkbox"
-                        checked={selectedBulkDeleteIds.includes(row.id)}
-                        onChange={(event) =>
-                          toggleBulkDeleteSelection(row.id, event.target.checked)
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {row.invoice_number}
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {formateDate(row.invoice_date)}
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {row.trade_name}
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {row.tin_number}
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {row.product_name}
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {row.quantity}
-                    </TableCell>
-                    <TableCell className="border text-center text-xs">
-                      {row.invoice_value.toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {groupedBulkDeleteRows.map((group) => {
+                  const allSelected = group.rows.every((row) =>
+                    selectedBulkDeleteIds.includes(row.id),
+                  );
+                  const someSelected = group.rows.some((row) =>
+                    selectedBulkDeleteIds.includes(row.id),
+                  );
+                  return [
+                    <TableRow
+                      key={`group-${group.groupKey}`}
+                      className="bg-blue-50"
+                    >
+                      <TableCell className="border text-center text-xs">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          ref={(el) => {
+                            if (el)
+                              el.indeterminate = !allSelected && someSelected;
+                          }}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            if (checked) {
+                              // Add all group row ids
+                              setSelectedBulkDeleteIds((prev) => [
+                                ...prev,
+                                ...group.rows
+                                  .map((r) => r.id)
+                                  .filter((id) => !prev.includes(id)),
+                              ]);
+                            } else {
+                              // Remove all group row ids
+                              setSelectedBulkDeleteIds((prev) =>
+                                prev.filter(
+                                  (id) => !group.rows.some((r) => r.id === id),
+                                ),
+                              );
+                            }
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell
+                        colSpan={7}
+                        className="border text-xs font-semibold"
+                      >
+                        {group.groupLabel}
+                      </TableCell>
+                    </TableRow>,
+                    ...group.rows.map((row) => (
+                      <TableRow key={row.id} className="hover:bg-gray-50">
+                        <TableCell className="border text-center text-xs">
+                          <input
+                            type="checkbox"
+                            checked={selectedBulkDeleteIds.includes(row.id)}
+                            onChange={(event) =>
+                              toggleBulkDeleteSelection(
+                                row.id,
+                                event.target.checked,
+                              )
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {row.invoice_number}
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {formateDate(row.invoice_date)}
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {row.trade_name}
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {row.tin_number}
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {row.product_name}
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {row.quantity}
+                        </TableCell>
+                        <TableCell className="border text-center text-xs">
+                          {row.invoice_value.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    )),
+                  ];
+                })}
+              </TableBody>
+            </Table>
+          )}
         </div>
 
         <div className="mt-3 flex gap-2">

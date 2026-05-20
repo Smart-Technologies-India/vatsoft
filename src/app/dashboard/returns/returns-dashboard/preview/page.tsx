@@ -303,8 +303,8 @@ const Dvat16ReturnPreview = () => {
               Form DVAT 16
             </p>
             <p className="text-center font-semibold text-xs  leading-3">
-              (See Rule 28 and 29 of the Dadra & Nagar Haveli and Daman & Diu, Value Added Tax
-              Rules, 2005)
+              (See Rule 28 and 29 of the Dadra & Nagar Haveli and Daman & Diu,
+              Value Added Tax Rules, 2005)
             </p>
             <p className="text-center font-semibold text-xs  leading-3">
               Dadra & Nagar Haveli and Daman & Diu Value Added Tax Return
@@ -328,7 +328,7 @@ const Dvat16ReturnPreview = () => {
                 </td>
                 <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
                   R1.4 Return Date:
-                  {formateDate(new Date(return01?.createdAt!))}
+                  {formateDate(new Date(return01?.filing_datetime!))}
                 </td>
               </tr>
             </tbody>
@@ -4956,7 +4956,7 @@ const CentralSales = (props: CentralSalesProps) => {
                   parseFloat(getGoodsReturnsNote().decrease) -
                   parseFloat(props.lastMonthDue)))
             ).toFixed(2)} */}
-             {(
+            {(
               parseFloat(get5_1().decrease) +
               parseFloat(get5_2().decrease) +
               (parseFloat(getCreditNote().decrease) -

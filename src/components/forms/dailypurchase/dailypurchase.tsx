@@ -26,7 +26,14 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
 
 const DAILY_PURCHASE_ADD_MORE_LOCK_KEY = "dailyPurchaseAddMoreLock";
-type PurchaseTaxType = "NONE" | "CFORM" | "FFORM" | "EXPORT";
+type PurchaseTaxType =
+  | "NONE"
+  | "CFORM"
+  | "FFORM"
+  | "HFORM"
+  | "IFORM"
+  | "E1FORM"
+  | "EXPORT";
 
 type DailyPurchaseProviderProps = {
   userid: number;
@@ -59,8 +66,15 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     useState<PurchaseTaxType>("NONE");
 
   const getSelectedTaxRate = () => {
-    if (purchaseTaxType === "CFORM") return "2";
-    if (purchaseTaxType === "FFORM" || purchaseTaxType === "EXPORT") {
+    // if (purchaseTaxType === "CFORM") return "2";
+    if (
+      purchaseTaxType === "CFORM" ||
+      purchaseTaxType === "FFORM" ||
+      purchaseTaxType === "HFORM" ||
+      purchaseTaxType === "IFORM" ||
+      purchaseTaxType === "E1FORM" ||
+      purchaseTaxType === "EXPORT"
+    ) {
       return "0";
     }
     return commoditymaster?.taxable_at ?? "0";
@@ -203,10 +217,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       ) {
         setPurchaseTaxType("NONE");
       }
-      if (
-        recipient_vat_no &&
-        isLocalTinNumber(recipient_vat_no)
-      ) {
+      if (recipient_vat_no && isLocalTinNumber(recipient_vat_no)) {
         if (recipient_vat_no.length >= 11) {
           toast.dismiss();
           toast.error(
@@ -402,6 +413,9 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       amount: taxableValue,
       against_cfrom: purchaseTaxType === "CFORM",
       is_against_fform: purchaseTaxType === "FFORM",
+      is_against_hform: purchaseTaxType === "HFORM",
+      is_against_iform: purchaseTaxType === "IFORM",
+      is_against_e1form: purchaseTaxType === "E1FORM",
       is_export: purchaseTaxType === "EXPORT",
     });
 
@@ -495,6 +509,9 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       amount: taxableValue,
       against_cfrom: purchaseTaxType === "CFORM",
       is_against_fform: purchaseTaxType === "FFORM",
+      is_against_hform: purchaseTaxType === "HFORM",
+      is_against_iform: purchaseTaxType === "IFORM",
+      is_against_e1form: purchaseTaxType === "E1FORM",
       is_export: purchaseTaxType === "EXPORT",
     });
 
@@ -640,19 +657,23 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
 
             {!tindata?.tin_number.startsWith("25") &&
               !tindata?.tin_number.startsWith("26") && (
-                <div className="min-w-55">
+                <div className="min-w-80">
                   <p className="text-xs text-gray-600 mb-1">Purchase Type</p>
                   <Select
+                    style={{ width: "100%" }}
                     value={purchaseTaxType}
                     onChange={(value: PurchaseTaxType) =>
                       setPurchaseTaxType(value)
                     }
                     size="middle"
                     options={[
-                      { value: "NONE", label: "Regular (Normal Tax)" },
-                      { value: "CFORM", label: "Against C Form (2%)" },
-                      { value: "FFORM", label: "Against F Form (0%)" },
-                      { value: "EXPORT", label: "Export (0%)" },
+                      { value: "NONE", label: "Regular" },
+                      { value: "CFORM", label: "Against C Form" },
+                      { value: "FFORM", label: "Against F Form" },
+                      { value: "HFORM", label: "Against H Form" },
+                      { value: "IFORM", label: "Against I Form" },
+                      { value: "E1FORM", label: "Against E1 Form" },
+                      { value: "EXPORT", label: "Import" },
                     ]}
                   />
                 </div>

@@ -215,7 +215,13 @@ const ConvertDvat31 = async (
                   ? SaleOfInterstate.FORMF
                   : val.is_export
                     ? SaleOfInterstate.EXPORT_OUTOF_INDIA
-                    : SaleOfInterstate.TAXABLE_SALE,
+                    : val.is_h_export
+                      ? SaleOfInterstate.FORMH
+                      : val.is_against_iform
+                        ? SaleOfInterstate.FORMI
+                        : val.is_against_e1
+                          ? SaleOfInterstate.EXEMPT_US6
+                          : SaleOfInterstate.TAXABLE_SALE,
               place_of_supply: parseInt(
                 val.seller_tin_number.tin_number.substring(0, 2),
               ),

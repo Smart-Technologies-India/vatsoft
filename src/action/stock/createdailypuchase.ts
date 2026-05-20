@@ -14,6 +14,9 @@ interface CreateDailyPurchasePayload {
   createdById: number;
   against_cfrom: boolean;
   is_against_fform?: boolean;
+  is_against_hform?: boolean;
+  is_against_iform?: boolean;
+  is_against_e1form?: boolean;
   is_export?: boolean;
 }
 
@@ -93,6 +96,9 @@ const CreateDailyPurchase = async (
             seller_tin_number.tin_number.startsWith("26"),
           is_against_cform: payload.against_cfrom,
           is_against_fform: payload.is_against_fform ?? false,
+          is_against_hform: payload.is_against_hform ?? false,
+          is_against_iform: payload.is_against_iform ?? false,
+          is_against_e1form: payload.is_against_e1form ?? false,
           is_export: payload.is_export ?? false,
           urn_number: ref_no,
         },

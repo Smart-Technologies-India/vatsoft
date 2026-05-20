@@ -681,7 +681,7 @@ const Dvat16ReturnPreview = () => {
                   </td>
                   <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
                     R1.4 Return Date:{" "}
-                    {formateDate(new Date(return01?.createdAt!))}
+                    {formateDate(new Date(return01?.filing_datetime!))}
                   </td>
                 </tr>
               </tbody>
@@ -1615,8 +1615,8 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
             {getR7() == 0
               ? "-"
               : lastChallanDate
-              ? formateDate(lastChallanDate)
-              : formateDate(props.return01.filing_datetime)}
+                ? formateDate(lastChallanDate)
+                : formateDate(props.return01.filing_datetime)}
           </td>
         </tr>
       </tbody>
@@ -5774,7 +5774,6 @@ const CentralSales = (props: CentralSalesProps) => {
   );
 };
 
-
 interface InterStateTradeProps {
   returnsentrys: returns_entry[];
 }
@@ -5937,6 +5936,28 @@ const InterStateTrade = (props: InterStateTradeProps) => {
       decrease,
     };
   };
+  const get10_8 = (dvattype: DvatType): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == dvattype &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of_interstate == SaleOfInterstate.EXEMPT_US6,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].total_invoice_number ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
       <tbody className="w-full">
@@ -6030,6 +6051,17 @@ const InterStateTrade = (props: InterStateTradeProps) => {
         </tr>
         <tr className="w-full">
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            R10.8 Export to/Import from outside India
+          </td>
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            {get10_8(DvatType.DVAT_31_A).increase}
+          </td>
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            {get10_8(DvatType.DVAT_30_A).increase}
+          </td>
+        </tr>{" "}
+        <tr className="w-full">
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
             Others, Please specify
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
@@ -6072,7 +6104,8 @@ const InterStateTrade = (props: InterStateTradeProps) => {
               parseFloat(get10_3(DvatType.DVAT_31_A).increase) +
               parseFloat(get10_4(DvatType.DVAT_31_A).increase) +
               parseFloat(get10_6(DvatType.DVAT_31_A).increase) +
-              parseFloat(get10_7(DvatType.DVAT_31_A).increase)
+              parseFloat(get10_7(DvatType.DVAT_31_A).increase) +
+              parseFloat(get10_8(DvatType.DVAT_31_A).increase)
             ).toFixed(2)}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
@@ -6082,7 +6115,8 @@ const InterStateTrade = (props: InterStateTradeProps) => {
               parseFloat(get10_3(DvatType.DVAT_30_A).increase) +
               parseFloat(get10_4(DvatType.DVAT_30_A).increase) +
               parseFloat(get10_6(DvatType.DVAT_30_A).increase) +
-              parseFloat(get10_7(DvatType.DVAT_30_A).increase)
+              parseFloat(get10_7(DvatType.DVAT_30_A).increase) +
+              parseFloat(get10_8(DvatType.DVAT_30_A).increase)
             ).toFixed(2)}
           </td>
         </tr>
