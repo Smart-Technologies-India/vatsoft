@@ -1444,23 +1444,39 @@ const ReturnDashboard = () => {
           )}
 
           <div className="fixed bottom-4 right-4 rounded shadow bg-white p-2 flex gap-2 z-10">
-            {isSearch && !ispayment() && (
+            {isSearch && (
               <>
-                <button
-                  className="py-1 px-4 border text-white text-xs rounded bg-[#162e57] cursor-pointer"
-                  onClick={() => {
-                    if (return01 == null) {
+                {!ispayment() && (
+                  <button
+                    className="py-1 px-4 border text-white text-xs rounded bg-[#162e57] cursor-pointer"
+                    onClick={() => {
+                      if (return01 == null) {
+                        router.push(
+                          `/dashboard/returns/returns-dashboard/pay_challan?form=30A&year=${getNewYear(year!, period!)}&quarter=${quarter}&month=${period}`,
+                        );
+                      }
                       router.push(
-                        `/dashboard/returns/returns-dashboard/pay_challan?form=30A&year=${getNewYear(year!, period!)}&quarter=${quarter}&month=${period}`,
+                        `/dashboard/returns/returns-dashboard/pay_challan/${encryptURLData(return01!.id.toString())}`,
                       );
-                    }
+                    }}
+                  >
+                    Pay Challan
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    if (return01 == null) return;
                     router.push(
-                      `/dashboard/returns/returns-dashboard/pay_challan/${encryptURLData(return01!.id.toString())}`,
+                      `/dashboard/returns/returns-dashboard/purchase_sale_report/${encryptURLData(
+                        return01.id.toString(),
+                      )}`,
                     );
                   }}
+                  className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
                 >
-                  Pay Challan
+                  Purchase & Sale Report
                 </button>
+
                 {ispreview() && (
                   <>
                     {ispayment() && (
@@ -1515,20 +1531,6 @@ const ReturnDashboard = () => {
                     )}
                     {!ispayment() && (
                       <>
-                        <button
-                          onClick={() => {
-                            if (return01 == null) return;
-                            router.push(
-                              `/dashboard/returns/returns-dashboard/purchase_sale_report/${encryptURLData(
-                                return01.id.toString(),
-                              )}`,
-                            );
-                          }}
-                          className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
-                        >
-                          Purchase & Sale Report
-                        </button>
-
                         {davtdata?.compositionScheme ? (
                           <button
                             onClick={() => {
@@ -1600,7 +1602,7 @@ const ReturnDashboard = () => {
             </span>
           )}
         </span>
-        <span className="-translate-y-4 text-lg font-semibold text-[#0f2f67] bg-white/90 px-2 rounded-full border-blue-800 border-2">
+        <span className="-translate-y-4 text-sm font-semibold text-[#0f2f67] bg-white/90 px-2 rounded-full border-blue-800 border-2">
           Need Help
         </span>
       </button>

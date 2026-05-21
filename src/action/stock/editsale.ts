@@ -183,47 +183,48 @@ const EditSale = async (
         }
       }
 
-      // Validate stock entry
-      const stockEntry = await prisma.stock.findFirst({
-        where: {
-          commodity_masterId: payload.commodityid,
-          status: "ACTIVE",
-          dvat04Id: payload.dvatid,
-        },
-      });
-
-      if (!stockEntry) {
-        throw new Error("Stock not found.");
-      }
-
-      // Calculate the new stock quantity
-      const stockAdjustment = payload.quantity - existingSale.quantity;
-      const newStockQuantity = stockEntry.quantity - stockAdjustment;
-
-      if (newStockQuantity < 0) {
-        throw new Error("Stock not available.");
-      }
-
-      // Update or delete the stock entry based on the new quantity
-      if (newStockQuantity === 0) {
-        await prisma.stock.update({
-          where: { id: stockEntry.id },
-          data: {
-            status: "INACTIVE",
-            updatedById: payload.createdById,
-            deletedAt: new Date(),
-            quantity: 0,
-            deletedById: payload.createdById,
+      // Recalculate stock only when quantity has actually changed.
+      if (payload.quantity !== existingSale.quantity) {
+        const stockEntry = await prisma.stock.findFirst({
+          where: {
+            commodity_masterId: payload.commodityid,
+            status: "ACTIVE",
+            dvat04Id: payload.dvatid,
           },
         });
-      } else {
-        await prisma.stock.update({
-          where: { id: stockEntry.id },
-          data: {
-            quantity: newStockQuantity,
-            updatedById: payload.createdById,
-          },
-        });
+
+        if (!stockEntry) {
+          throw new Error("Stock not found.");
+        }
+
+        // For sale edit, increasing sale quantity reduces stock and vice versa.
+        const stockAdjustment = payload.quantity - existingSale.quantity;
+        const newStockQuantity = stockEntry.quantity - stockAdjustment;
+
+        if (newStockQuantity < 0) {
+          throw new Error("Stock not available.");
+        }
+
+        if (newStockQuantity === 0) {
+          await prisma.stock.update({
+            where: { id: stockEntry.id },
+            data: {
+              status: "INACTIVE",
+              updatedById: payload.createdById,
+              deletedAt: new Date(),
+              quantity: 0,
+              deletedById: payload.createdById,
+            },
+          });
+        } else {
+          await prisma.stock.update({
+            where: { id: stockEntry.id },
+            data: {
+              quantity: newStockQuantity,
+              updatedById: payload.createdById,
+            },
+          });
+        }
       }
 
       return updatedSale;

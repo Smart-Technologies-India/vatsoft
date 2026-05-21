@@ -30,7 +30,7 @@ const CheckPayment = async (
         id: payload.id,
         deletedAt: null,
         deletedById: null,
-        status: "ACTIVE",
+        status: "PAID",
         // return_type: "REVISED",
         OR: [
           {

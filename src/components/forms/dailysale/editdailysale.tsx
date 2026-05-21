@@ -263,7 +263,19 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
       return toast.error("Sale amount can not be less than MRP.");
     }
 
-    const date = dayjs(data.invoice_date).startOf("day").toDate();
+    const isIsoDateString =
+      typeof data.invoice_date === "string" &&
+      /^\d{4}-\d{2}-\d{2}T/.test(data.invoice_date);
+
+    const normalizedDate = isIsoDateString
+      ? data.invoice_date.slice(0, 10)
+      : dayjs(data.invoice_date).format("YYYY-MM-DD");
+
+    if (normalizedDate === "Invalid Date") {
+      return toast.error("Invalid invoice date.");
+    }
+
+    const date = new Date(`${normalizedDate}T00:00:00.000Z`);
 
     const stock_response = await EditSale({
       id: props.id,

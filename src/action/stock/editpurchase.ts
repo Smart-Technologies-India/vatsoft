@@ -27,7 +27,7 @@ import { daily_purchase } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const EditPurchase = async (
-  payload: EditPurchasePayload
+  payload: EditPurchasePayload,
 ): Promise<ApiResponseType<daily_purchase | null>> => {
   const functionname: string = EditPurchase.name;
 
@@ -133,40 +133,47 @@ const EditPurchase = async (
         throw new Error("Stock not found.");
       }
 
-      if (is_exist.quantity - find_stock.quantity > payload.quantity) {
-        throw new Error("Stock not available.");
-      }
+      // Only recalculate stock when quantity is actually changed.
 
-      const value: number =
-        is_exist.quantity - payload.quantity == 0
-          ? 0
-          : payload.quantity > is_exist.quantity - find_stock.quantity
-          ? payload.quantity - (is_exist.quantity - find_stock.quantity)
-          : 0;
+      console.log(
+        "Existing Quantity:",
+        is_exist.quantity,
+        "payload Quantity:",
+        payload.quantity,
+      );
 
-      if (value == 0) {
-        const stock_response = await prisma.stock.update({
-          where: {
-            id: find_stock.id,
-          },
-          data: {
-            quantity: find_stock.quantity - is_exist.quantity,
-            deletedAt: new Date(),
-            deletedById: payload.createdById,
-          },
-        });
 
-        if (!stock_response) {
-          throw new Error("Unable to update stock.");
+      if (payload.quantity !== is_exist.quantity) {
+        
+        const stockAdjustment = payload.quantity - is_exist.quantity;
+        const newStockQuantity = find_stock.quantity + stockAdjustment;
+        console.log(
+          "Stock Adjustment:",
+          stockAdjustment,
+          "New Stock Quantity:",
+          newStockQuantity,
+        );
+        if (newStockQuantity < 0) {
+          throw new Error("Stock not available.");
         }
-      } else {
+
         const stock_response = await prisma.stock.update({
           where: {
             id: find_stock.id,
           },
-          data: {
-            quantity: value,
-          },
+          data:
+            newStockQuantity === 0
+              ? {
+                  quantity: 0,
+                  status: "INACTIVE",
+                  deletedAt: new Date(),
+                  deletedById: payload.createdById,
+                  updatedById: payload.createdById,
+                }
+              : {
+                  quantity: newStockQuantity,
+                  updatedById: payload.createdById,
+                },
         });
 
         if (!stock_response) {

@@ -651,7 +651,6 @@ const DocumentWiseDetails = () => {
       toast.error("Select at least one purchase item to delete.");
       return;
     }
-
     setIsBulkDeleting(true);
     await delete_purchase_entries(selectedBulkDeleteIds);
     setIsBulkDeleting(false);

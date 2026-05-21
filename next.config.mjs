@@ -60,7 +60,7 @@ const nextConfig = {
   },
 
   reactStrictMode: false,
-  allowedDevOrigins: ["192.168.1.9"],
+  allowedDevOrigins: ["192.168.1.9", "192.168.1.16"],
   env: {
     DATABASE_KEY: process.env.DATABASE_KEY,
     DATABASE_IV: process.env.DATABASE_IV,
