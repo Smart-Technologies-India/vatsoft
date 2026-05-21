@@ -569,7 +569,7 @@ const CommodityMaster = () => {
         size="large"
       >
         <div className="mb-3 pb-2 border-b">
-          <h2 className="text-sm font-medium text-gray-900">Add Stock</h2>
+          <h2 className="text-sm font-medium text-gray-900">Add Production Stock</h2>
         </div>
         <CreateStockProvider
           userid={userid}

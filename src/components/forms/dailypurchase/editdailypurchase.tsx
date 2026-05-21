@@ -112,7 +112,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
         Number(props.data.amount) + Number(props.data.vatamount)
       ).toFixed(2),
       description_of_goods: props.data.commodity_master.id.toString(),
-      invoice_date: props.data.invoice_date.toISOString(),
+      invoice_date: props.data.invoice_date.toString(),
       invoice_number: props.data.invoice_number,
       quantity: props.data.quantity.toString(),
       recipient_vat_no: props.data.seller_tin_number.tin_number,
@@ -265,10 +265,7 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
     const totalInvoiceValue = parseFloat(data.amount_unit) || 0;
     const amountPerUnit = totalInvoiceValue / quantityNum;
 
-    const date = new Date(
-      new Date(data.invoice_date).toISOString().split("T")[0],
-    );
-    date.setDate(date.getDate() + 1);
+    const date = dayjs(data.invoice_date).startOf("day").toDate();
 
     const stock_response = await EditPurchase({
       id: props.id,

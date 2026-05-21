@@ -5168,6 +5168,17 @@ const CentralSales = (props: CentralSalesProps) => {
         break;
       }
 
+      // Payments on/before due date should reduce principal, but must not
+      // move anchorDate backward; interest starts from due date.
+      if (payment.date <= anchorDate) {
+        outstanding = Math.max(0, outstanding - payment.amount);
+
+        if (outstanding <= 0) {
+          break;
+        }
+        continue;
+      }
+
       if (payment.date > anchorDate && outstanding > 0) {
         const days = getDaysDiff(anchorDate, payment.date);
         const intervalInterest =
@@ -5292,7 +5303,7 @@ const CentralSales = (props: CentralSalesProps) => {
             {/* {getGoodsReturnsNote().increase} */}
             {parseFloat(getStateSalesTaxable().increase) +
               parseFloat(getInterStateSales().increase) +
-              parseFloat(get10_2_6_2().increase)}
+              parseFloat(get10_2_6_2().increase) }
           </th>
         </tr>
       </thead>

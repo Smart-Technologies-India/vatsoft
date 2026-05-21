@@ -81,6 +81,20 @@ const InwardSupplies = () => {
     }
     return year;
   };
+  const getquarter = (): Quarter => {
+    switch (searchParams.get("quarter")!) {
+      case "QUARTER1":
+        return Quarter.QUARTER1;
+      case "QUARTER2":
+        return Quarter.QUARTER2;
+      case "QUARTER3":
+        return Quarter.QUARTER3;
+      case "QUARTER4":
+        return Quarter.QUARTER4;
+      default:
+        return Quarter.QUARTER1;
+    }
+  };
 
   const fetchReturnEntries = async (
     year: string,
@@ -158,7 +172,11 @@ const InwardSupplies = () => {
       const year: string = searchParams.get("year") ?? "";
       const month: string = searchParams.get("month") ?? "";
 
-      await fetchReturnEntries(year, month, dvat_response.data?.frequencyFilings);
+      await fetchReturnEntries(
+        year,
+        month,
+        dvat_response.data?.frequencyFilings,
+      );
     };
     init();
   }, [searchParams, userid]);
@@ -176,7 +194,7 @@ const InwardSupplies = () => {
 
     const output: returns_entry[] = (returns_entryData ?? []).filter(
       (val: returns_entry) =>
-        val.dvat_type == dvatType && val.tax_percent == percent
+        val.dvat_type == dvatType && val.tax_percent == percent,
     );
 
     for (let i = 0; i < output.length; i++) {
@@ -185,7 +203,7 @@ const InwardSupplies = () => {
         parseFloat(amount) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       tax = (parseFloat(tax) + parseFloat(output[i].vatamount ?? "0")).toFixed(
-        2
+        2,
       );
     }
 
@@ -201,7 +219,7 @@ const InwardSupplies = () => {
     let tax: string = "0";
 
     const output: returns_entry[] = (returns_entryData ?? []).filter(
-      (val: returns_entry) => val.dvat_type == dvatType && val.isnil == false
+      (val: returns_entry) => val.dvat_type == dvatType && val.isnil == false,
     );
 
     for (let i = 0; i < output.length; i++) {
@@ -210,7 +228,7 @@ const InwardSupplies = () => {
         parseFloat(amount) + parseFloat(output[i].amount ?? "0")
       ).toFixed(2);
       tax = (parseFloat(tax) + parseFloat(output[i].vatamount ?? "0")).toFixed(
-        2
+        2,
       );
     }
 
@@ -250,26 +268,11 @@ const InwardSupplies = () => {
     }
   };
 
-  const getquarter = (): Quarter => {
-    switch (searchParams.get("quarter")!) {
-      case "QUARTER1":
-        return Quarter.QUARTER1;
-      case "QUARTER2":
-        return Quarter.QUARTER2;
-      case "QUARTER3":
-        return Quarter.QUARTER3;
-      case "QUARTER4":
-        return Quarter.QUARTER4;
-      default:
-        return Quarter.QUARTER1;
-    }
-  };
-
   const is_empty = (): boolean => {
     const dvattype =
       searchParams.get("form") == "30" ? DvatType.DVAT_30 : DvatType.DVAT_30_A;
     const output: returns_entry[] = (returns_entryData ?? []).filter(
-      (val: returns_entry) => val.dvat_type == dvattype
+      (val: returns_entry) => val.dvat_type == dvattype,
     );
     return output.length <= 0;
   };
@@ -278,7 +281,7 @@ const InwardSupplies = () => {
       searchParams.get("form") == "30" ? DvatType.DVAT_30 : DvatType.DVAT_30_A;
 
     const output: returns_entry[] = (returns_entryData ?? []).filter(
-      (val: returns_entry) => val.dvat_type == dvattype && val.isnil == true
+      (val: returns_entry) => val.dvat_type == dvattype && val.isnil == true,
     );
     return output.length > 0;
   };
@@ -347,13 +350,15 @@ const InwardSupplies = () => {
               </button>
             </div>
           </div>
-          
+
           <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
             <div>
               <p className="text-gray-600">VAT No.</p>
               <p className="font-medium text-gray-900">{dvatdata?.tinNumber}</p>
               <p className="text-gray-600 mt-2">FY</p>
-              <p className="font-medium text-gray-900">{searchParams.get("year")}</p>
+              <p className="font-medium text-gray-900">
+                {searchParams.get("year")}
+              </p>
             </div>
             <div>
               <p className="text-gray-600">Legal Name</p>
@@ -365,7 +370,9 @@ const InwardSupplies = () => {
               <p className="text-gray-600">Trade Name</p>
               <p className="font-medium text-gray-900">{dvatdata?.tradename}</p>
               <p className="text-gray-600 mt-2">Status</p>
-              <p className="font-medium text-gray-900">{payment_complted() ? "Filed" : "Not Filed"}</p>
+              <p className="font-medium text-gray-900">
+                {payment_complted() ? "Filed" : "Not Filed"}
+              </p>
             </div>
             <div>
               <p className="text-gray-600">Mandatory Fields</p>
@@ -404,125 +411,130 @@ const InwardSupplies = () => {
                     </TableHead>
                   </TableRow>
                 </TableHeader>
-            <TableBody>
-              {[
-                "0",
-                "1",
-                "2",
-                "4",
-                "5",
-                "6",
-                "12.5",
-                "12.75",
-                "13.5",
-                "15",
-                "20",
-              ].map((val: string, index: number) => {
-                return (
-                  <TableRow key={index} className="border-b hover:bg-gray-50">
+                <TableBody>
+                  {[
+                    "0",
+                    "1",
+                    "2",
+                    "4",
+                    "5",
+                    "6",
+                    "12.5",
+                    "12.75",
+                    "13.5",
+                    "15",
+                    "20",
+                  ].map((val: string, index: number) => {
+                    return (
+                      <TableRow
+                        key={index}
+                        className="border-b hover:bg-gray-50"
+                      >
+                        <TableCell className="p-2 text-center text-xs">
+                          {val}% Tax Rate
+                        </TableCell>
+                        <TableCell className="p-2 text-center text-xs">
+                          {
+                            getDvatData(
+                              searchParams.get("form") == "30"
+                                ? DvatType.DVAT_30
+                                : DvatType.DVAT_30_A,
+                              val,
+                            ).entry
+                          }
+                        </TableCell>
+                        <TableCell className="p-2 text-center text-xs">
+                          {
+                            getDvatData(
+                              searchParams.get("form") == "30"
+                                ? DvatType.DVAT_30
+                                : DvatType.DVAT_30_A,
+                              val,
+                            ).amount
+                          }
+                        </TableCell>
+                        <TableCell className="p-2 text-center text-xs">
+                          {
+                            getDvatData(
+                              searchParams.get("form") == "30"
+                                ? DvatType.DVAT_30
+                                : DvatType.DVAT_30_A,
+                              val,
+                            ).tax
+                          }
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+
+                  <TableRow className="bg-gray-50 border-b font-medium">
                     <TableCell className="p-2 text-center text-xs">
-                      {val}% Tax Rate
+                      Total
                     </TableCell>
                     <TableCell className="p-2 text-center text-xs">
                       {
-                        getDvatData(
+                        getAllDvatData(
                           searchParams.get("form") == "30"
                             ? DvatType.DVAT_30
                             : DvatType.DVAT_30_A,
-                          val
                         ).entry
                       }
                     </TableCell>
                     <TableCell className="p-2 text-center text-xs">
                       {
-                        getDvatData(
+                        getAllDvatData(
                           searchParams.get("form") == "30"
                             ? DvatType.DVAT_30
                             : DvatType.DVAT_30_A,
-                          val
                         ).amount
                       }
                     </TableCell>
                     <TableCell className="p-2 text-center text-xs">
                       {
-                        getDvatData(
+                        getAllDvatData(
                           searchParams.get("form") == "30"
                             ? DvatType.DVAT_30
                             : DvatType.DVAT_30_A,
-                          val
                         ).tax
                       }
                     </TableCell>
                   </TableRow>
-                );
-              })}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="flex mt-3 gap-2">
+              <div className="grow"></div>
+              {is_empty() && payment_complted() == false ? (
+                <Button
+                  type="primary"
+                  onClick={() => setOpen(true)}
+                  size="small"
+                >
+                  Declare Nil Invoice
+                </Button>
+              ) : null}
 
-              <TableRow className="bg-gray-50 border-b font-medium">
-                <TableCell className="p-2 text-center text-xs">Total</TableCell>
-                <TableCell className="p-2 text-center text-xs">
-                  {
-                    getAllDvatData(
-                      searchParams.get("form") == "30"
-                        ? DvatType.DVAT_30
-                        : DvatType.DVAT_30_A
-                    ).entry
-                  }
-                </TableCell>
-                <TableCell className="p-2 text-center text-xs">
-                  {
-                    getAllDvatData(
-                      searchParams.get("form") == "30"
-                        ? DvatType.DVAT_30
-                        : DvatType.DVAT_30_A
-                    ).amount
-                  }
-                </TableCell>
-                <TableCell className="p-2 text-center text-xs">
-                  {
-                    getAllDvatData(
-                      searchParams.get("form") == "30"
-                        ? DvatType.DVAT_30
-                        : DvatType.DVAT_30_A
-                    ).tax
-                  }
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+              {!isnil() && (
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => {
+                    router.push(
+                      `/dashboard/returns/returns-dashboard/invoices?form=${searchParams.get(
+                        "form",
+                      )}&year=${searchParams.get(
+                        "year",
+                      )}&quarter=${searchParams.get(
+                        "quarter",
+                      )}&month=${searchParams.get("month")}`,
+                    );
+                  }}
+                >
+                  View All
+                </Button>
+              )}
+            </div>
           </div>
-          <div className="flex mt-3 gap-2">
-            <div className="grow"></div>
-            {is_empty() && payment_complted() == false ? (
-              <Button
-                type="primary"
-                onClick={() => setOpen(true)}
-                size="small"
-              >
-                Declare Nil Invoice
-              </Button>
-            ) : null}
-
-            {!isnil() && (
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => {
-                  router.push(
-                    `/dashboard/returns/returns-dashboard/invoices?form=${searchParams.get(
-                      "form"
-                    )}&year=${searchParams.get(
-                      "year"
-                    )}&quarter=${searchParams.get(
-                      "quarter"
-                    )}&month=${searchParams.get("month")}`
-                  );
-                }}
-              >
-                View All
-              </Button>
-            )}
-          </div>
-        </div>
         </div>
       </main>
 

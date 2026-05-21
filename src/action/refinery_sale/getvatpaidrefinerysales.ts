@@ -4,7 +4,6 @@ import { getCurrentUserId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import {
   commodity_master,
-  refinery_sale,
   tin_number_master,
 } from "@prisma/client";
 import prisma from "../../../prisma/database";

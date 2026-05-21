@@ -97,7 +97,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
         Number(props.data.amount) + Number(props.data.vatamount)
       ).toFixed(2),
       description_of_goods: props.data.commodity_master.id.toString(),
-      invoice_date: props.data.invoice_date.toISOString(),
+      invoice_date: props.data.invoice_date.toString(),
       invoice_number: props.data.invoice_number,
       quantity: props.data.quantity.toString(),
     });
@@ -263,10 +263,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
       return toast.error("Sale amount can not be less than MRP.");
     }
 
-    const date = new Date(
-      new Date(data.invoice_date).toISOString().split("T")[0],
-    );
-    date.setDate(date.getDate() + 1);
+    const date = dayjs(data.invoice_date).startOf("day").toDate();
 
     const stock_response = await EditSale({
       id: props.id,

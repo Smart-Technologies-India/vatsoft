@@ -1089,8 +1089,7 @@ const ReturnDashboard = () => {
               )}
             </div>
             <Marquee className="bg-yellow-50 border border-yellow-200 mt-2 text-xs rounded px-2 py-1">
-              This banner would be used for official updates and
-              notifications.
+              This banner would be used for official updates and notifications.
             </Marquee>
 
             <div className="flex flex-col sm:flex-row w-full gap-2 items-end mt-3">
@@ -1748,35 +1747,15 @@ const Card = (props: CardProps) => {
           {props.buttonone}
         </button>
 
-        {showDeclareNil
-          ? !props.isnil && (
-              <button
-                onClick={props.onDeclareNil}
-                disabled={!props.onDeclareNil}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                Declare Nil
-              </button>
-            )
-          : !props.isnil && (
-              <button
-                onClick={props.onDeclareNil}
-                disabled={!props.onDeclareNil}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                Declare Nil
-              </button>
-              // <button
-              //   onClick={() => {
-              //     route.push(props.link);
-              //   }}
-              //   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center"
-              // >
-              //   {props.buttontwo}
-              // </button>
-            )
-            
-            }
+        {showDeclareNil && !props.isnil && (
+          <button
+            onClick={props.onDeclareNil}
+            disabled={!props.onDeclareNil}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs py-1.5 text-center disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            Declare Nil
+          </button>
+        )}
       </div>
     </div>
   );
