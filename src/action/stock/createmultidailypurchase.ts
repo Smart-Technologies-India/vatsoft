@@ -41,44 +41,42 @@ const CreateMultiDailyPurchase = async (
       } as any;
     }
 
-    const results = await prisma.$transaction(async (prisma) => {
-      const createdEntries = [];
+    let createdCount = 0;
 
-      for (const entry of payload.entries) {
-        const isexist = await prisma.daily_purchase.findFirst({
-          where: {
-            deletedAt: null,
-            deletedBy: null,
-            status: "ACTIVE",
-            invoice_number: entry.invoice_number,
-            quantity: entry.quantity,
-            invoice_date: entry.invoice_date,
-            commodity_masterId: entry.commodityid,
-          },
-        });
+    for (const entry of payload.entries) {
+      const isexist = await prisma.daily_purchase.findFirst({
+        where: {
+          deletedAt: null,
+          deletedBy: null,
+          status: "ACTIVE",
+          invoice_number: entry.invoice_number,
+          quantity: entry.quantity,
+          invoice_date: entry.invoice_date,
+          commodity_masterId: entry.commodityid,
+        },
+      });
 
-        if (isexist) {
-          throw new Error(
-            `Entry with invoice number ${entry.invoice_number} already exists.`
-          );
-        }
-        const response = await CreateDailyPurchase(entry);
-
-        if (!response.status || !response.data) {
-          throw new Error(
-            `Failed to create entry for invoice: ${entry.invoice_number}, error: ${response.message}`
-          );
-        }
-        createdEntries.push(response.data);
+      if (isexist) {
+        throw new Error(
+          `Entry with invoice number ${entry.invoice_number} already exists.`
+        );
       }
 
-      return createdEntries;
-    });
+      const response = await CreateDailyPurchase(entry);
+
+      if (!response.status || !response.data) {
+        throw new Error(
+          `Failed to create entry for invoice: ${entry.invoice_number}, error: ${response.message}`
+        );
+      }
+
+      createdCount += 1;
+    }
 
     return createResponse({
-      message: "All entries created successfully.",
+      message: `${createdCount} entr${createdCount === 1 ? "y" : "ies"} created successfully.`,
       functionname,
-      data: results,
+      data: null,
     });
   } catch (e) {
     return createResponse({

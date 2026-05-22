@@ -4,6 +4,7 @@ import GetAllStock from "@/action/stock/getallstock";
 import { AddMaterialProvider } from "@/components/forms/addmaterial/addmaterial";
 import { CreateStockProvider } from "@/components/forms/createstock/createstock";
 import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -12,6 +13,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  type ColumnDef,
+  type SortingState,
+  useReactTable,
+} from "@tanstack/react-table";
 import {
   commodity_master,
   dvat04,
@@ -28,7 +39,7 @@ import {
   RadioChangeEvent,
 } from "antd";
 import { useRouter } from "next/navigation";
-import { SetStateAction, useEffect, useRef, useState } from "react";
+import { SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import Papa from "papaparse";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
@@ -36,6 +47,8 @@ import { formateDate } from "@/utils/methods";
 import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import CreateMultiDailyPurchase from "@/action/stock/createmultidailypurchase";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+
+type StockRow = stock & { commodity_master: commodity_master };
 
 const CommodityMaster = () => {
   const router = useRouter();
@@ -53,9 +66,7 @@ const CommodityMaster = () => {
 
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 
-  const [stocks, setStocks] = useState<
-    Array<stock & { commodity_master: commodity_master }>
-  >([]);
+  const [stocks, setStocks] = useState<StockRow[]>([]);
   const [isLoading, setLoading] = useState<boolean>(true);
 
   const [commodityMaster, setCommodityMaster] = useState<
@@ -63,27 +74,71 @@ const CommodityMaster = () => {
   >([]);
 
   const [tindata, setTindata] = useState<Array<tin_number_master>>([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [stockFilter, setStockFilter] = useState<
+    "available" | "all" | "zero"
+  >("available");
+
+  const loadAllStocks = async (dvatId: number) => {
+    const initialStockResponse = await GetAllStock({
+      take: 1,
+      skip: 0,
+      dvatid: dvatId,
+    });
+
+    if (!initialStockResponse.status || !initialStockResponse.data) {
+      setStocks([]);
+      setPaginatin({
+        skip: 0,
+        take: 10,
+        total: 0,
+      });
+      return;
+    }
+
+    const totalStocks = initialStockResponse.data.total ?? 0;
+
+    if (totalStocks <= 1) {
+      setStocks(initialStockResponse.data.result ?? []);
+      setPaginatin({
+        skip: 0,
+        take: 10,
+        total: totalStocks,
+      });
+      return;
+    }
+
+    const fullStockResponse = await GetAllStock({
+      take: totalStocks,
+      skip: 0,
+      dvatid: dvatId,
+    });
+
+    if (fullStockResponse.status && fullStockResponse.data) {
+      setStocks(fullStockResponse.data.result ?? []);
+      setPaginatin({
+        skip: 0,
+        take: 10,
+        total: fullStockResponse.data.total,
+      });
+      return;
+    }
+
+    setStocks(initialStockResponse.data.result ?? []);
+    setPaginatin({
+      skip: 0,
+      take: 10,
+      total: totalStocks,
+    });
+  };
 
   const init = async () => {
     // setLoading(true);
     const dvat = await GetUserDvat04();
     if (dvat.status && dvat.data) {
       setDvatData(dvat.data);
-
-      const stock_response = await GetAllStock({
-        take: 10,
-        skip: 0,
-        dvatid: dvat.data.id,
-      });
-
-      if (stock_response.status && stock_response.data.result) {
-        setStocks(stock_response.data.result);
-        setPaginatin({
-          skip: stock_response.data.skip,
-          take: stock_response.data.take,
-          total: stock_response.data.total,
-        });
-      }
+      await loadAllStocks(dvat.data.id);
     }
     const commodity_response = await AllCommodityMaster({});
 
@@ -112,21 +167,7 @@ const CommodityMaster = () => {
       const dvat = await GetUserDvat04();
       if (dvat.status && dvat.data) {
         setDvatData(dvat.data);
-
-        const stock_response = await GetAllStock({
-          take: 10,
-          skip: 0,
-          dvatid: dvat.data.id,
-        });
-
-        if (stock_response.status && stock_response.data.result) {
-          setStocks(stock_response.data.result);
-          setPaginatin({
-            skip: stock_response.data.skip,
-            take: stock_response.data.take,
-            total: stock_response.data.total,
-          });
-        }
+        await loadAllStocks(dvat.data.id);
       }
       const commodity_response = await AllCommodityMaster({});
 
@@ -149,24 +190,6 @@ const CommodityMaster = () => {
   const [materialBox, setMaterialBox] = useState<boolean>(false);
   // const [commid, setCommid] = useState<number>();
 
-  const onChangePageCount = async (page: number, pagesize: number) => {
-    if (!dvatdata) return toast.error("Dvat not found.");
-    const stock_resonse = await GetAllStock({
-      take: pagesize,
-      skip: pagesize * (page - 1),
-      dvatid: dvatdata.id,
-    });
-
-    if (stock_resonse.status && stock_resonse.data.result) {
-      setStocks(stock_resonse.data.result);
-      setPaginatin({
-        skip: stock_resonse.data.skip,
-        take: stock_resonse.data.take,
-        total: stock_resonse.data.total,
-      });
-    }
-  };
-
   const [quantityCount, setQuantityCount] = useState("pcs");
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
@@ -183,6 +206,115 @@ const CommodityMaster = () => {
     if (pcs == 0) return `${crates} Crate`;
     return `${crates} Crate ${pcs} Pcs`;
   };
+
+  const filteredStocks = useMemo(() => {
+    if (stockFilter === "all") {
+      return stocks;
+    }
+
+    if (stockFilter === "zero") {
+      return stocks.filter((val) => val.quantity === 0);
+    }
+
+    return stocks.filter((val) => val.quantity !== 0);
+  }, [stockFilter, stocks]);
+
+  const columns = useMemo<ColumnDef<StockRow>[]>(
+    () => [
+      {
+        id: "serial",
+        header: "Sr. No.",
+        enableSorting: false,
+        cell: ({ row, table }) =>
+          table.getState().pagination.pageIndex *
+            table.getState().pagination.pageSize +
+          row.index +
+          1,
+      },
+      {
+        id: "itemId",
+        accessorFn: (row) => row.commodity_master.id,
+        header: "Item ID",
+        cell: ({ row }) => row.original.commodity_master.id,
+      },
+      {
+        id: "productName",
+        accessorFn: (row) => row.commodity_master.product_name,
+        header: "Product Name",
+        cell: ({ row }) => row.original.commodity_master.product_name,
+      },
+      {
+        id: "quantity",
+        accessorFn: (row) => row.quantity,
+        header:
+          quantityCount == "pcs"
+            ? dvatdata?.commodity == "FUEL"
+              ? "Litres"
+              : "Quantity"
+            : "Crate",
+        cell: ({ row }) =>
+          quantityCount == "pcs"
+            ? row.original.quantity
+            : showCrates(
+                row.original.quantity,
+                row.original.commodity_master.crate_size,
+              ),
+      },
+      {
+        id: "description",
+        accessorFn: (row) => row.commodity_master.description || "-",
+        header: "Description",
+        cell: ({ row }) => row.original.commodity_master.description || "-",
+      },
+    ],
+    [dvatdata?.commodity, quantityCount],
+  );
+
+  const table = useReactTable({
+    data: filteredStocks,
+    columns,
+    state: {
+      sorting,
+      globalFilter,
+    },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const searchValue = String(filterValue).toLowerCase().trim();
+
+      if (!searchValue) {
+        return true;
+      }
+
+      return [
+        row.original.commodity_master.id,
+        row.original.commodity_master.product_name,
+        row.original.commodity_master.description,
+      ]
+        .filter(Boolean)
+        .some((value) =>
+          String(value).toLowerCase().includes(searchValue),
+        );
+    },
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
+  });
+
+  const onChangePageCount = (page: number, pagesize: number) => {
+    table.setPageSize(pagesize);
+    table.setPageIndex(page - 1);
+  };
+
+  useEffect(() => {
+    table.setPageIndex(0);
+  }, [globalFilter, stockFilter, table]);
 
   // csv section start from here
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -702,60 +834,125 @@ const CommodityMaster = () => {
           {/* Stock Table Card */}
           {stocks.length != 0 ? (
             <div className="bg-white rounded shadow-sm border p-3">
+              <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="w-full lg:max-w-sm">
+                  <Input
+                    value={globalFilter}
+                    onChange={(event) => setGlobalFilter(event.target.value)}
+                    placeholder="Search by item ID, product name, or description"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">Filter:</span>
+                  <select
+                    value={stockFilter}
+                    onChange={(event) =>
+                      setStockFilter(
+                        event.target.value as "available" | "all" | "zero",
+                      )
+                    }
+                    className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700"
+                  >
+                    <option value="available">Available Stock</option>
+                    <option value="all">All Stock</option>
+                    <option value="zero">Zero Quantity</option>
+                  </select>
+                </div>
+                <div className="text-xs text-gray-500 lg:ml-auto">
+                  Showing {table.getFilteredRowModel().rows.length} of {pagination.total} items
+                </div>
+              </div>
+
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gray-50 border-b">
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Sr. No.
-                      </TableHead>
-                      <TableHead className="text-left p-2 font-medium text-gray-700 text-xs">
-                        Product Name
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        {quantityCount == "pcs"
-                          ? dvatdata?.commodity == "FUEL"
-                            ? "Litres"
-                            : "Quantity"
-                          : "Crate"}
-                      </TableHead>
-                      <TableHead className="text-left p-2 font-medium text-gray-700 text-xs">
-                        Description
-                      </TableHead>
-                    </TableRow>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id} className="bg-gray-50 border-b">
+                        {headerGroup.headers.map((header) => {
+                          const canSort = header.column.getCanSort();
+                          const sortState = header.column.getIsSorted();
+                          const alignClass =
+                            header.column.id === "productName" ||
+                            header.column.id === "description"
+                              ? "text-left"
+                              : "text-center";
+
+                          return (
+                            <TableHead
+                              key={header.id}
+                              className={`p-2 font-medium text-gray-700 text-xs ${alignClass}`}
+                            >
+                              {header.isPlaceholder ? null : canSort ? (
+                                <button
+                                  type="button"
+                                  onClick={header.column.getToggleSortingHandler()}
+                                  className={`inline-flex items-center gap-1 ${alignClass === "text-left" ? "justify-start" : "justify-center"} w-full`}
+                                >
+                                  <span>
+                                    {flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext(),
+                                    )}
+                                  </span>
+                                  <span className="text-[10px] text-gray-500">
+                                    {sortState === "asc"
+                                      ? "▲"
+                                      : sortState === "desc"
+                                        ? "▼"
+                                        : "↕"}
+                                  </span>
+                                </button>
+                              ) : (
+                                flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext(),
+                                )
+                              )}
+                            </TableHead>
+                          );
+                        })}
+                      </TableRow>
+                    ))}
                   </TableHeader>
                   <TableBody>
-                    {stocks
-                      .filter((val) => val.quantity != 0)
-                      .map(
-                        (
-                          val: stock & { commodity_master: commodity_master },
-                          index: number,
-                        ) => (
-                          <TableRow
-                            key={index}
-                            className="border-b hover:bg-gray-50"
-                          >
-                            <TableCell className="p-2 text-center text-xs">
-                              {index + 1 + pagination.skip}
-                            </TableCell>
-                            <TableCell className="p-2 text-left text-xs">
-                              {val.commodity_master.product_name}
-                            </TableCell>
-                            <TableCell className="p-2 text-center text-xs">
-                              {quantityCount == "pcs"
-                                ? val.quantity
-                                : showCrates(
-                                    val.quantity,
-                                    val.commodity_master.crate_size,
-                                  )}
-                            </TableCell>
-                            <TableCell className="p-2 text-left text-xs text-gray-600">
-                              {val.commodity_master.description || "-"}
-                            </TableCell>
-                          </TableRow>
-                        ),
-                      )}
+                    {table.getRowModel().rows.length > 0 ? (
+                      table.getRowModel().rows.map((row) => (
+                        <TableRow key={row.id} className="border-b hover:bg-gray-50">
+                          {row.getVisibleCells().map((cell) => {
+                            const alignClass =
+                              cell.column.id === "productName" ||
+                              cell.column.id === "description"
+                                ? "text-left"
+                                : "text-center";
+
+                            return (
+                              <TableCell
+                                key={cell.id}
+                                className={`p-2 text-xs ${alignClass}${
+                                  cell.column.id === "description"
+                                    ? " text-gray-600"
+                                    : ""
+                                }`}
+                              >
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext(),
+                                )}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={columns.length}
+                          className="p-4 text-center text-sm text-gray-500"
+                        >
+                          No matching stock records found.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -765,10 +962,11 @@ const CommodityMaster = () => {
                 <div className="lg:hidden">
                   <Pagination
                     align="center"
-                    defaultCurrent={1}
+                    current={table.getState().pagination.pageIndex + 1}
+                    pageSize={table.getState().pagination.pageSize}
                     onChange={onChangePageCount}
                     showSizeChanger
-                    total={pagination.total}
+                    total={table.getFilteredRowModel().rows.length}
                     showTotal={(total: number) => `Total ${total} items`}
                   />
                 </div>
@@ -776,11 +974,12 @@ const CommodityMaster = () => {
                   <Pagination
                     showQuickJumper
                     align="center"
-                    defaultCurrent={1}
+                    current={table.getState().pagination.pageIndex + 1}
+                    pageSize={table.getState().pagination.pageSize}
                     onChange={onChangePageCount}
                     showSizeChanger
                     pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                    total={pagination.total}
+                    total={table.getFilteredRowModel().rows.length}
                     responsive={true}
                     showTotal={(total: number, range: number[]) =>
                       `${range[0]}-${range[1]} of ${total} items`

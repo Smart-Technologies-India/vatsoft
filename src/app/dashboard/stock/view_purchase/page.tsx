@@ -24,14 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  useReactTable,
-  getCoreRowModel,
-  getGroupedRowModel,
-  getExpandedRowModel,
-  getSortedRowModel,
-  flexRender,
-} from "@tanstack/react-table";
+
 import { useMemo } from "react";
 import { encryptURLData, formateDate } from "@/utils/methods";
 import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
@@ -672,6 +665,8 @@ const DocumentWiseDetails = () => {
   const [isGroupAcceptLoading, setIsGroupAcceptLoading] = useState(false);
   const [isSingleAcceptLoading, setIsSingleAcceptLoading] =
     useState<boolean>(false);
+  const [isPurchaseReportLoading, setIsPurchaseReportLoading] =
+    useState<boolean>(false);
 
   const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
     [],
@@ -679,6 +674,18 @@ const DocumentWiseDetails = () => {
   const [tindata, setTindata] = useState<tin_number_master[]>([]);
 
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [bulkUploadProgress, setBulkUploadProgress] = useState<{
+    currentChunk: number;
+    totalChunks: number;
+    uploadedRows: number;
+    totalRows: number;
+  }>({
+    currentChunk: 0,
+    totalChunks: 0,
+    uploadedRows: 0,
+    totalRows: 0,
+  });
   const [sheetFileName, setSheetFileName] = useState<string>("");
   const sheetRef = useRef<HTMLInputElement>(null);
 
@@ -698,8 +705,29 @@ const DocumentWiseDetails = () => {
     errorname: string;
   }
 
+  type BulkUploadSortKey =
+    | "sr_no"
+    | "tin_number"
+    | "trade_name"
+    | "invoice_no"
+    | "invoice_date"
+    | "item_code"
+    | "product_name"
+    | "quantity"
+    | "total_invoice_value"
+    | "against_cform";
+
+  type BulkUploadSortOrder = "asc" | "desc";
+
   const [tabledata, setTableData] = useState<BulkSheetData[]>([]);
   const hasBulkUploadErrors = tabledata.some((row) => row.error);
+  const [bulkSearchTerm, setBulkSearchTerm] = useState<string>("");
+  const [bulkSortKey, setBulkSortKey] =
+    useState<BulkUploadSortKey>("sr_no");
+  const [bulkSortOrder, setBulkSortOrder] =
+    useState<BulkUploadSortOrder>("asc");
+  const [bulkCurrentPage, setBulkCurrentPage] = useState<number>(1);
+  const [bulkPageSize, setBulkPageSize] = useState<number>(10);
 
   const readSheetField = (row: Record<string, unknown>, labels: string[]) => {
     for (const label of labels) {
@@ -787,8 +815,6 @@ const DocumentWiseDetails = () => {
   const downloadBulkTemplate = () => {
     const rows = [
       {
-        "Entry Note":
-          "Same invoice with multiple items -> repeat TIN/Invoice No/Invoice Date",
         "TIN Number": "11000000001",
         "Invoice No": "INV1001-A",
         "Invoice Date": "04/05/2026",
@@ -798,8 +824,6 @@ const DocumentWiseDetails = () => {
         "Is Against C Form": "false",
       },
       {
-        "Entry Note":
-          "Second item of same invoice (keep TIN/Invoice No/Invoice Date same)",
         "TIN Number": "11000000001",
         "Invoice No": "INV1001-A",
         "Invoice Date": "04/05/2026",
@@ -809,7 +833,6 @@ const DocumentWiseDetails = () => {
         "Is Against C Form": "false",
       },
       {
-        "Entry Note": "Different invoice example",
         "TIN Number": "12000000002",
         "Invoice No": "INV1002-B",
         "Invoice Date": "05/05/2026",
@@ -866,8 +889,8 @@ const DocumentWiseDetails = () => {
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const instructionsSheet = XLSX.utils.json_to_sheet(instructionsRows);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Upload");
     XLSX.utils.book_append_sheet(workbook, instructionsSheet, "Instructions");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Upload");
     XLSX.writeFile(workbook, "vatsoft_purchase_template.xlsx");
   };
 
@@ -886,14 +909,21 @@ const DocumentWiseDetails = () => {
     try {
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: "array" });
-      const firstSheetName = workbook.SheetNames[0];
+      const purchaseSheetName =
+        workbook.SheetNames.find(
+          (name) => name.trim().toLowerCase() === "purchase upload",
+        ) ??
+        workbook.SheetNames.find(
+          (name) => name.trim().toLowerCase() !== "instructions",
+        ) ??
+        workbook.SheetNames[0];
 
-      if (!firstSheetName) {
+      if (!purchaseSheetName) {
         toast.error("No sheet found in uploaded file.");
         return;
       }
 
-      const worksheet = workbook.Sheets[firstSheetName];
+      const worksheet = workbook.Sheets[purchaseSheetName];
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
         worksheet,
         {
@@ -1163,6 +1193,11 @@ const DocumentWiseDetails = () => {
       }
 
       setTableData(parsedRows);
+      setBulkSearchTerm("");
+      setBulkSortKey("sr_no");
+      setBulkSortOrder("asc");
+      setBulkCurrentPage(1);
+      setBulkPageSize(10);
       setIsBulkModalOpen(true);
     } catch {
       toast.error("Unable to parse Excel file. Please use the template.");
@@ -1217,44 +1252,213 @@ const DocumentWiseDetails = () => {
       };
     });
 
-    const response = await CreateMultiDailyPurchase({ entries });
+    setIsBulkUploading(true);
+    const CHUNK_SIZE = 300;
+    const totalChunks = Math.ceil(entries.length / CHUNK_SIZE);
+    setBulkUploadProgress({
+      currentChunk: 0,
+      totalChunks,
+      uploadedRows: 0,
+      totalRows: entries.length,
+    });
 
-    if (response.status && response.data) {
-      toast.success("Bulk upload successful.");
+    try {
+      for (let index = 0; index < entries.length; index += CHUNK_SIZE) {
+        const chunk = entries.slice(index, index + CHUNK_SIZE);
+        const currentChunk = Math.floor(index / CHUNK_SIZE) + 1;
+
+        setBulkUploadProgress((prev) => ({
+          ...prev,
+          currentChunk,
+        }));
+
+        const response = await CreateMultiDailyPurchase({ entries: chunk });
+
+        if (!response.status) {
+          toast.error(response.message);
+          return;
+        }
+
+        setBulkUploadProgress((prev) => ({
+          ...prev,
+          uploadedRows: Math.min(prev.uploadedRows + chunk.length, prev.totalRows),
+        }));
+      }
+
+      toast.success(`Bulk upload successful. ${entries.length} row(s) uploaded.`);
       setIsBulkModalOpen(false);
       setSheetFileName("");
       setTableData([]);
+      setBulkSearchTerm("");
+      setBulkSortKey("sr_no");
+      setBulkSortOrder("asc");
+      setBulkCurrentPage(1);
+      setBulkPageSize(10);
       await init();
-      return;
+    } finally {
+      setIsBulkUploading(false);
+      setBulkUploadProgress({
+        currentChunk: 0,
+        totalChunks: 0,
+        uploadedRows: 0,
+        totalRows: 0,
+      });
     }
-
-    toast.error(response.message);
   };
 
-  const downloadDailyPurchaseReport = () => {
-    if (dailyPurchase.length === 0) {
-      toast.info("No purchase records found to export.");
+  const sellerTinNameMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    for (const tin of tindata) {
+      map[tin.id] = tin.name_of_dealer ?? "-";
+    }
+    return map;
+  }, [tindata]);
+
+  const filteredSortedBulkRows = useMemo(() => {
+    const normalizedSearch = bulkSearchTerm.trim().toLowerCase();
+
+    const rows = tabledata
+      .map((row, originalIndex) => ({
+        row,
+        originalIndex,
+        tradeName: row.seller_tin_id
+          ? (sellerTinNameMap[row.seller_tin_id] ?? "-")
+          : "-",
+      }))
+      .filter((item) => {
+        if (!normalizedSearch) return true;
+
+        const searchableValue = [
+          item.row.tin_number,
+          item.tradeName,
+          item.row.invoice_no,
+          item.row.invoice_date_display,
+          item.row.item_code.toString(),
+          item.row.commodity_name ?? "",
+          item.row.quantity.toString(),
+          item.row.total_invoice_value.toString(),
+          item.row.against_cfrom ? "true" : "false",
+          item.row.errorname ?? "",
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        return searchableValue.includes(normalizedSearch);
+      });
+
+    const getSortValue = (item: {
+      row: BulkSheetData;
+      originalIndex: number;
+      tradeName: string;
+    }): string | number => {
+      switch (bulkSortKey) {
+        case "sr_no":
+          return item.originalIndex;
+        case "tin_number":
+          return item.row.tin_number;
+        case "trade_name":
+          return item.tradeName;
+        case "invoice_no":
+          return item.row.invoice_no;
+        case "invoice_date":
+          return item.row.invoice_date_display;
+        case "item_code":
+          return item.row.item_code;
+        case "product_name":
+          return item.row.commodity_name ?? "";
+        case "quantity":
+          return item.row.quantity;
+        case "total_invoice_value":
+          return item.row.total_invoice_value;
+        case "against_cform":
+          return item.row.against_cfrom ? 1 : 0;
+        default:
+          return item.originalIndex;
+      }
+    };
+
+    rows.sort((a, b) => {
+      if (a.row.error !== b.row.error) {
+        return a.row.error ? -1 : 1;
+      }
+
+      const aValue = getSortValue(a);
+      const bValue = getSortValue(b);
+
+      let compareResult = 0;
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        compareResult = aValue - bValue;
+      } else {
+        compareResult = String(aValue).localeCompare(String(bValue), undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
+      }
+
+      if (compareResult === 0) {
+        compareResult = a.originalIndex - b.originalIndex;
+      }
+
+      return bulkSortOrder === "asc" ? compareResult : -compareResult;
+    });
+
+    return rows;
+  }, [tabledata, sellerTinNameMap, bulkSearchTerm, bulkSortKey, bulkSortOrder]);
+
+  const totalBulkRowsAfterFilter = filteredSortedBulkRows.length;
+  const paginatedBulkRows = useMemo(() => {
+    const start = (bulkCurrentPage - 1) * bulkPageSize;
+    return filteredSortedBulkRows.slice(start, start + bulkPageSize);
+  }, [filteredSortedBulkRows, bulkCurrentPage, bulkPageSize]);
+
+  useEffect(() => {
+    setBulkCurrentPage(1);
+  }, [bulkSearchTerm, bulkSortKey, bulkSortOrder, tabledata]);
+
+  const downloadDailyPurchaseReport = async () => {
+    if (!dvatdata) {
+      toast.error("DVAT not found.");
       return;
     }
 
-    const rows = dailyPurchase.map((group, index) => ({
-      "S. No.": index + 1,
-      Count: group.count,
-      "Invoice No.": group.invoice_number,
-      "Invoice Date": formateDate(group.invoice_date),
-      "Trade Name": group.seller_tin_number.name_of_dealer,
-      "TIN Number": group.seller_tin_number.tin_number,
-      "Invoice Value": Number(group.totalInvoiceValue.toFixed(2)),
-      "VAT Amount": Number(group.totalVatAmount.toFixed(2)),
-      "Taxable Value": Number(group.totalTaxableValue.toFixed(2)),
-    }));
+    setIsPurchaseReportLoading(true);
+    try {
+      const reportResponse = await GetUserDailyPurchase({
+        dvatid: dvatdata.id,
+        skip: 0,
+        take: pagination.total > 0 ? pagination.total : 10000,
+      });
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Daily Purchase");
+      const reportData = reportResponse.status
+        ? (reportResponse.data.result ?? [])
+        : [];
 
-    const fileDate = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(workbook, `dailyPurchase_report_${fileDate}.xlsx`);
+      if (reportData.length === 0) {
+        toast.info("No purchase records found to export.");
+        return;
+      }
+
+      const rows = reportData.map((group, index) => ({
+        "S. No.": index + 1,
+        Count: group.count,
+        "Invoice No.": group.invoice_number,
+        "Invoice Date": formateDate(group.invoice_date),
+        "Trade Name": group.seller_tin_number.name_of_dealer,
+        "TIN Number": group.seller_tin_number.tin_number,
+        "Invoice Value": Number(group.totalInvoiceValue.toFixed(2)),
+        "VAT Amount": Number(group.totalVatAmount.toFixed(2)),
+        "Taxable Value": Number(group.totalTaxableValue.toFixed(2)),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Daily Purchase");
+
+      const fileDate = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(workbook, `dailyPurchase_report_${fileDate}.xlsx`);
+    } finally {
+      setIsPurchaseReportLoading(false);
+    }
   };
 
   // 1 crate 2 pcs
@@ -1307,27 +1511,43 @@ const DocumentWiseDetails = () => {
     );
   };
 
-  const handleAcceptAllRecords = () => {
+  const handleAcceptAllRecords = async () => {
     if (!dvatdata) {
       toast.error("DVAT not found.");
       return;
     }
 
-    const pendingRecords = dailyPurchase
-      .flatMap((group) => group.records)
-      .filter(
-        (record) =>
-          (record.seller_tin_number.tin_number.startsWith("25") ||
-            record.seller_tin_number.tin_number.startsWith("26")) &&
-          !record.is_accept,
-      );
+    setIsAcceptAllLoading(true);
+    try {
+      const allPurchaseResponse = await GetUserDailyPurchase({
+        dvatid: dvatdata.id,
+        skip: 0,
+        take: pagination.total > 0 ? pagination.total : 10000,
+      });
 
-    if (pendingRecords.length === 0) {
-      toast.info("No pending acceptable purchase records found.");
-      return;
+      if (!allPurchaseResponse.status) {
+        toast.error(allPurchaseResponse.message);
+        return;
+      }
+
+      const pendingRecords = (allPurchaseResponse.data?.result ?? [])
+        .flatMap((group) => group.records)
+        .filter(
+          (record) =>
+            (record.seller_tin_number.tin_number.startsWith("25") ||
+              record.seller_tin_number.tin_number.startsWith("26")) &&
+            !record.is_accept,
+        );
+
+      if (pendingRecords.length === 0) {
+        toast.info("No pending acceptable purchase records found.");
+        return;
+      }
+
+      setIsAcceptAllModalOpen(true);
+    } finally {
+      setIsAcceptAllLoading(false);
     }
-
-    setIsAcceptAllModalOpen(true);
   };
 
   const confirmAcceptAllRecords = async () => {
@@ -1336,7 +1556,19 @@ const DocumentWiseDetails = () => {
       return;
     }
 
-    const pendingRecords = dailyPurchase
+    const allPurchaseResponse = await GetUserDailyPurchase({
+      dvatid: dvatdata.id,
+      skip: 0,
+      take: pagination.total > 0 ? pagination.total : 10000,
+    });
+
+    if (!allPurchaseResponse.status) {
+      setIsAcceptAllModalOpen(false);
+      toast.error(allPurchaseResponse.message);
+      return;
+    }
+
+    const pendingRecords = (allPurchaseResponse.data?.result ?? [])
       .flatMap((group) => group.records)
       .filter(
         (record) =>
@@ -1749,11 +1981,17 @@ const DocumentWiseDetails = () => {
         }
         open={isBulkModalOpen}
         onOk={handleBulkUpload}
-        width={1100}
+        confirmLoading={isBulkUploading}
+        width={1400}
         onCancel={() => {
           setIsBulkModalOpen(false);
           setSheetFileName("");
           setTableData([]);
+          setBulkSearchTerm("");
+          setBulkSortKey("sr_no");
+          setBulkSortOrder("asc");
+          setBulkCurrentPage(1);
+          setBulkPageSize(10);
         }}
         okText="Upload"
         cancelText="Cancel"
@@ -1762,6 +2000,60 @@ const DocumentWiseDetails = () => {
           style: hasBulkUploadErrors ? { display: "none" } : undefined,
         }}
       >
+        {isBulkUploading && bulkUploadProgress.totalRows > 0 && (
+          <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+            <p>
+              Uploading chunk {bulkUploadProgress.currentChunk} of {bulkUploadProgress.totalChunks}
+            </p>
+            <p>
+              Uploaded {bulkUploadProgress.uploadedRows} / {bulkUploadProgress.totalRows} rows
+              ({Math.floor((bulkUploadProgress.uploadedRows / bulkUploadProgress.totalRows) * 100)}%)
+            </p>
+          </div>
+        )}
+
+        <div className="mb-3 mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
+          <input
+            type="text"
+            value={bulkSearchTerm}
+            onChange={(event) => setBulkSearchTerm(event.target.value)}
+            placeholder="Search by TIN, trade name, invoice, item, product, error"
+            className="h-9 rounded border border-gray-300 px-2 text-sm outline-none focus:border-blue-500"
+          />
+          <select
+            value={bulkSortKey}
+            onChange={(event) =>
+              setBulkSortKey(event.target.value as BulkUploadSortKey)
+            }
+            className="h-9 rounded border border-gray-300 px-2 text-sm outline-none focus:border-blue-500"
+          >
+            <option value="sr_no">Sort by Row Number</option>
+            <option value="tin_number">Sort by TIN Number</option>
+            <option value="trade_name">Sort by Trade Name</option>
+            <option value="invoice_no">Sort by Invoice No</option>
+            <option value="invoice_date">Sort by Invoice Date</option>
+            <option value="item_code">Sort by Item Code</option>
+            <option value="product_name">Sort by Item Name</option>
+            <option value="quantity">Sort by Quantity</option>
+            <option value="total_invoice_value">Sort by Invoice Value</option>
+            <option value="against_cform">Sort by C Form</option>
+          </select>
+          <select
+            value={bulkSortOrder}
+            onChange={(event) =>
+              setBulkSortOrder(event.target.value as BulkUploadSortOrder)
+            }
+            className="h-9 rounded border border-gray-300 px-2 text-sm outline-none focus:border-blue-500"
+          >
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+        </div>
+
+        <p className="mb-2 text-xs text-gray-600">
+          Showing {paginatedBulkRows.length} of {totalBulkRowsAfterFilter} filtered row(s). Error rows are pinned on top.
+        </p>
+
         <div className="overflow-x-auto rounded-lg shadow-sm">
           <Table className="border border-gray-200 mt-4">
             <TableHeader>
@@ -1772,7 +2064,7 @@ const DocumentWiseDetails = () => {
                 <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
                   TIN Number
                 </TableHead>
-                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3  min-w-40 w-60">
                   Trade Name
                 </TableHead>
                 <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
@@ -1784,7 +2076,7 @@ const DocumentWiseDetails = () => {
                 <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
                   Item Code
                 </TableHead>
-                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3 min-w-60 w-80">
                   Item Name
                 </TableHead>
                 <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
@@ -1796,62 +2088,91 @@ const DocumentWiseDetails = () => {
                 <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
                   Is Against C From
                 </TableHead>
-                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3 min-w-40 w-60">
                   Error
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tabledata.map((val: BulkSheetData, index: number) => (
-                <TableRow
-                  key={index}
-                  className={`${
-                    val.error
-                      ? "bg-red-50 hover:bg-red-100"
-                      : "hover:bg-gray-50"
-                  } transition-colors`}
-                >
-                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                    {index + 1}
-                  </TableCell>
-                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                    {val.tin_number}
-                  </TableCell>
-                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                    {val.seller_tin_id
-                      ? (tindata.find((tin) => tin.id == val.seller_tin_id)
-                          ?.name_of_dealer ?? "-")
-                      : "-"}
-                  </TableCell>
-                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                    {val.invoice_no}
-                  </TableCell>
-                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                    {val.invoice_date_display}
-                  </TableCell>
-                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                    {val.item_code}
-                  </TableCell>
-                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                    {val.commodity_name ?? "-"}
-                  </TableCell>
-                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                    {val.quantity}
-                  </TableCell>
-                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                    {val.total_invoice_value}
-                  </TableCell>
-                  <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                    {val.against_cfrom ? "true" : "false"}
-                  </TableCell>
-                  <TableCell className="p-3 border border-gray-200 text-left text-sm text-red-600 whitespace-pre-line">
-                    {val.errorname || "-"}
+              {paginatedBulkRows.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={11}
+                    className="p-4 border border-gray-200 text-center text-sm text-gray-600"
+                  >
+                    No rows found for current search/filter.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                paginatedBulkRows.map(({ row: val, originalIndex, tradeName }) => (
+                  <TableRow
+                    key={`${val.invoice_no}-${val.item_code}-${originalIndex}`}
+                    className={`${
+                      val.error
+                        ? "bg-red-50 hover:bg-red-100"
+                        : "hover:bg-gray-50"
+                    } transition-colors`}
+                  >
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {originalIndex + 1}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.tin_number}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {tradeName}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.invoice_no}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.invoice_date_display}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.item_code}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.commodity_name ?? "-"}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.quantity}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.total_invoice_value}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                      {val.against_cfrom ? "true" : "false"}
+                    </TableCell>
+                    <TableCell className="p-3 border border-gray-200 text-left text-sm text-red-600 whitespace-pre-line">
+                      {val.errorname || "-"}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
+        {totalBulkRowsAfterFilter > 0 && (
+          <div className="mt-3 flex justify-end">
+            <Pagination
+              current={bulkCurrentPage}
+              pageSize={bulkPageSize}
+              total={totalBulkRowsAfterFilter}
+              showSizeChanger
+              pageSizeOptions={["10", "20", "50", "100"]}
+              onChange={(page, size) => {
+                setBulkCurrentPage(page);
+                if (size !== bulkPageSize) {
+                  setBulkPageSize(size);
+                }
+              }}
+              onShowSizeChange={(_, size) => {
+                setBulkPageSize(size);
+                setBulkCurrentPage(1);
+              }}
+            />
+          </div>
+        )}
         {sheetFileName && (
           <p className="mt-3 text-xs text-gray-600">
             Uploaded file: {sheetFileName}
@@ -2169,6 +2490,7 @@ const DocumentWiseDetails = () => {
                 <Button
                   size="small"
                   type="default"
+                  loading={isPurchaseReportLoading}
                   onClick={downloadDailyPurchaseReport}
                 >
                   Purchase Report

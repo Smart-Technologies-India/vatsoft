@@ -27,7 +27,6 @@ import {
 } from "antd";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
 import GetNilCommodity from "@/action/save_stock/getnilcomodity";
-import { ExclamationCircleOutlined } from "@ant-design/icons";
 import CreateProductRequest from "@/action/product_request/createproductrequest";
 import { ProductRequestForm } from "@/schema/productrequest";
 
@@ -151,51 +150,17 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
     );
 
     if (existingProductIndex !== -1) {
-      // Product exists, show Ant Design confirmation modal
       const newQuantity =
         quantityCount == "pcs"
           ? parseInt(data.quantity)
           : parseInt(data.quantity) * commoditymaster.crate_size;
 
-      Modal.confirm({
-        title: "Product Already Exists",
-        icon: <ExclamationCircleOutlined />,
-        content: (
-          <div>
-            <p>
-              <strong>{commoditymaster.product_name}</strong> already exists in
-              the stock list.
-            </p>
-            <p>Do you want to update the quantity?</p>
-            <div className="mt-3 p-3 bg-slate-50 rounded">
-              <p className="text-sm">
-                <strong>Current Quantity:</strong>{" "}
-                {props.stock[existingProductIndex].quantity}
-              </p>
-              <p className="text-sm">
-                <strong>New Quantity:</strong> {newQuantity}
-              </p>
-            </div>
-          </div>
-        ),
-        okText: "Yes, Update",
-        cancelText: "No, Cancel",
-        onOk() {
-          // Update existing product quantity
-          const updatedStock = [...props.stock];
-          updatedStock[existingProductIndex] = {
-            id: updatedStock[existingProductIndex].id,
-            item: commoditymaster,
-            quantity: newQuantity,
-          };
-          props.setStock(updatedStock);
-          toast.success("Stock quantity updated successfully!");
-          props.setAddBox(false);
-        },
-        onCancel() {
-          // Don't close the drawer so user can modify
-        },
+      setDuplicateProductInfo({
+        existingProductIndex,
+        newQuantity,
+        commodity: commoditymaster,
       });
+      setIsDuplicateModalOpen(true);
       return; // Important: prevent further execution
     }
 
@@ -248,6 +213,12 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
   const [quantityCount, setQuantityCount] = useState("pcs");
   const [isAccept, setIsAccept] = useState<boolean>(false);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [duplicateProductInfo, setDuplicateProductInfo] = useState<{
+    existingProductIndex: number;
+    newQuantity: number;
+    commodity: commodity_master;
+  } | null>(null);
   const [productForm] = Form.useForm();
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
@@ -267,6 +238,30 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
     } catch (error) {
       toast.error("Failed to submit product request");
     }
+  };
+
+  const handleDuplicateUpdate = () => {
+    if (!duplicateProductInfo) return;
+
+    const { existingProductIndex, newQuantity, commodity } = duplicateProductInfo;
+    const updatedStock = [...props.stock];
+
+    updatedStock[existingProductIndex] = {
+      id: updatedStock[existingProductIndex].id,
+      item: commodity,
+      quantity: newQuantity,
+    };
+
+    props.setStock(updatedStock);
+    setIsDuplicateModalOpen(false);
+    setDuplicateProductInfo(null);
+    toast.success("Stock quantity updated successfully!");
+    props.setAddBox(false);
+  };
+
+  const handleDuplicateCancel = () => {
+    setIsDuplicateModalOpen(false);
+    setDuplicateProductInfo(null);
   };
 
   if (isLoading)
@@ -423,6 +418,34 @@ const CreateStockData = (props: CreateFirstStockProviderProps) => {
           {isSubmitting ? "Loading...." : "Add More"}
         </button>
       </div>
+
+      <Modal
+        title="Product Already Exists"
+        open={isDuplicateModalOpen}
+        onOk={handleDuplicateUpdate}
+        onCancel={handleDuplicateCancel}
+        okText="Yes, Update"
+        cancelText="No, Cancel"
+      >
+        <div>
+          <p>
+            <strong>{duplicateProductInfo?.commodity.product_name}</strong> already
+            exists in the stock list.
+          </p>
+          <p>Do you want to update the quantity?</p>
+          <div className="mt-3 p-3 bg-slate-50 rounded">
+            <p className="text-sm">
+              <strong>Current Quantity:</strong>{" "}
+              {duplicateProductInfo
+                ? props.stock[duplicateProductInfo.existingProductIndex]?.quantity
+                : "-"}
+            </p>
+            <p className="text-sm">
+              <strong>New Quantity:</strong> {duplicateProductInfo?.newQuantity}
+            </p>
+          </div>
+        </div>
+      </Modal>
 
       {/* Product Request Modal */}
       <Modal

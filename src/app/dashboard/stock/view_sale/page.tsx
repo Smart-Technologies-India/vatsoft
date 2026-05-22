@@ -69,8 +69,30 @@ const DocumentWiseDetails = () => {
     error: boolean;
     errorname: string;
   }
+
+  type BulkUploadSortKey =
+    | "sr_no"
+    | "tin_number"
+    | "trade_name"
+    | "invoice_no"
+    | "invoice_date"
+    | "item_code"
+    | "product_name"
+    | "quantity"
+    | "total_invoice_value"
+    | "against_cform";
+
+  type BulkUploadSortOrder = "asc" | "desc";
+
   const [tabledata, setTableData] = useState<BulkSheetData[]>([]);
   const hasBulkUploadErrors = tabledata.some((row) => row.error);
+  const [bulkSearchTerm, setBulkSearchTerm] = useState<string>("");
+  const [bulkSortKey, setBulkSortKey] =
+    useState<BulkUploadSortKey>("sr_no");
+  const [bulkSortOrder, setBulkSortOrder] =
+    useState<BulkUploadSortOrder>("asc");
+  const [bulkCurrentPage, setBulkCurrentPage] = useState<number>(1);
+  const [bulkPageSize, setBulkPageSize] = useState<number>(10);
   const [filedReturnPeriods, setFiledReturnPeriods] = useState<Set<string>>(
     new Set(),
   );
@@ -191,7 +213,6 @@ const DocumentWiseDetails = () => {
   const downloadBulkTemplate = () => {
     const rows = [
       {
-        "Entry Note": "Same invoice with multiple items -> repeat TIN/Invoice No/Invoice Date",
         "TIN Number": "11000000001",
         "Invoice No": "INV1001-A",
         "Invoice Date": "05/05/2026",
@@ -201,7 +222,6 @@ const DocumentWiseDetails = () => {
         "Is Against C Form": "false",
       },
       {
-        "Entry Note": "Second item of same invoice (keep TIN/Invoice No/Invoice Date same)",
         "TIN Number": "11000000001",
         "Invoice No": "INV1001-A",
         "Invoice Date": "05/05/2026",
@@ -211,7 +231,6 @@ const DocumentWiseDetails = () => {
         "Is Against C Form": "false",
       },
       {
-        "Entry Note": "Different invoice example",
         "TIN Number": "12000000002",
         "Invoice No": "INV1002-B",
         "Invoice Date": "06/05/2026",
@@ -244,14 +263,12 @@ const DocumentWiseDetails = () => {
       {
         Field: "Item Code",
         "What to fill": "Commodity Item Code",
-        Rules:
-          "Use valid item code from commodity master.",
+        Rules: "Use valid item code from commodity master.",
       },
       {
         Field: "Quantity",
         "What to fill": "Numeric quantity in pieces",
-        Rules:
-          "Enter pieces only (not crate, not words like twenty four).",
+        Rules: "Enter pieces only (not crate, not words like twenty four).",
       },
       {
         Field: "Total Invoice Value",
@@ -270,8 +287,8 @@ const DocumentWiseDetails = () => {
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const instructionsSheet = XLSX.utils.json_to_sheet(instructionsRows);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sale Upload");
     XLSX.utils.book_append_sheet(workbook, instructionsSheet, "Instructions");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sale Upload");
     XLSX.writeFile(workbook, "vatsoft_sale_template.xlsx");
   };
 
@@ -290,14 +307,21 @@ const DocumentWiseDetails = () => {
     try {
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: "array" });
-      const firstSheetName = workbook.SheetNames[0];
+      const saleSheetName =
+        workbook.SheetNames.find(
+          (name) => name.trim().toLowerCase() === "sale upload",
+        ) ??
+        workbook.SheetNames.find(
+          (name) => name.trim().toLowerCase() !== "instructions",
+        ) ??
+        workbook.SheetNames[0];
 
-      if (!firstSheetName) {
+      if (!saleSheetName) {
         toast.error("No sheet found in uploaded file.");
         return;
       }
 
-      const worksheet = workbook.Sheets[firstSheetName];
+      const worksheet = workbook.Sheets[saleSheetName];
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
         worksheet,
         {
@@ -435,7 +459,9 @@ const DocumentWiseDetails = () => {
 
             if (sellerCommodity === "FUEL") {
               // FUEL can only sell to FUEL
-              isValidSale = buyerCommodity === "FUEL";
+              isValidSale = ["LIQUOR", "FUEL", "OIDC", "MANUFACTURER"].includes(
+                buyerCommodity,
+              );
             } else if (sellerCommodity === "OIDC") {
               // OIDC can sell to LIQUOR and MANUFACTURER
               isValidSale = ["LIQUOR", "MANUFACTURER"].includes(buyerCommodity);
@@ -443,8 +469,10 @@ const DocumentWiseDetails = () => {
               // MANUFACTURER can sell to OIDC and LIQUOR
               isValidSale = ["OIDC", "LIQUOR"].includes(buyerCommodity);
             } else if (sellerCommodity === "LIQUOR") {
-              // LIQUOR can sell to LIQUOR
-              isValidSale = buyerCommodity === "LIQUOR";
+              // LIQUOR can sell to LIQUOR, MANUFACTURER, and OIDC
+              isValidSale = ["LIQUOR", "MANUFACTURER", "OIDC"].includes(
+                buyerCommodity,
+              );
             }
 
             if (!isValidSale) {
@@ -655,6 +683,11 @@ const DocumentWiseDetails = () => {
       }
 
       setTableData(parsedRows);
+      setBulkSearchTerm("");
+      setBulkSortKey("sr_no");
+      setBulkSortOrder("asc");
+      setBulkCurrentPage(1);
+      setBulkPageSize(10);
       setIsBulkModalOpen(true);
     } catch {
       toast.error("Unable to parse Excel file. Please use the template.");
@@ -670,6 +703,113 @@ const DocumentWiseDetails = () => {
   >([]);
 
   const [tindata, setTindata] = useState<Array<tin_number_master>>([]);
+
+  const tinNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const tin of tindata) {
+      map[tin.tin_number] = tin.name_of_dealer ?? "-";
+    }
+    return map;
+  }, [tindata]);
+
+  const filteredSortedBulkRows = useMemo(() => {
+    const normalizedSearch = bulkSearchTerm.trim().toLowerCase();
+
+    const rows = tabledata
+      .map((row, originalIndex) => ({
+        row,
+        originalIndex,
+        tradeName: tinNameMap[row.tin_number] ?? "-",
+      }))
+      .filter((item) => {
+        if (!normalizedSearch) return true;
+
+        const searchableValue = [
+          item.row.tin_number,
+          item.tradeName,
+          item.row.invoice_no,
+          item.row.invoice_date_display,
+          item.row.item_code?.toString(),
+          item.row.commodity_name ?? "",
+          item.row.quantity?.toString(),
+          item.row.total_invoice_value?.toString(),
+          item.row.against_cfrom ? "true" : "false",
+          item.row.errorname ?? "",
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        return searchableValue.includes(normalizedSearch);
+      });
+
+    const getSortValue = (item: {
+      row: BulkSheetData;
+      originalIndex: number;
+      tradeName: string;
+    }): string | number => {
+      switch (bulkSortKey) {
+        case "sr_no":
+          return item.originalIndex;
+        case "tin_number":
+          return item.row.tin_number;
+        case "trade_name":
+          return item.tradeName;
+        case "invoice_no":
+          return item.row.invoice_no;
+        case "invoice_date":
+          return item.row.invoice_date_display;
+        case "item_code":
+          return item.row.item_code ?? 0;
+        case "product_name":
+          return item.row.commodity_name ?? "";
+        case "quantity":
+          return item.row.quantity ?? 0;
+        case "total_invoice_value":
+          return item.row.total_invoice_value ?? 0;
+        case "against_cform":
+          return item.row.against_cfrom ? 1 : 0;
+        default:
+          return item.originalIndex;
+      }
+    };
+
+    rows.sort((a, b) => {
+      if (a.row.error !== b.row.error) {
+        return a.row.error ? -1 : 1;
+      }
+
+      const aValue = getSortValue(a);
+      const bValue = getSortValue(b);
+
+      let compareResult = 0;
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        compareResult = aValue - bValue;
+      } else {
+        compareResult = String(aValue).localeCompare(String(bValue), undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
+      }
+
+      if (compareResult === 0) {
+        compareResult = a.originalIndex - b.originalIndex;
+      }
+
+      return bulkSortOrder === "asc" ? compareResult : -compareResult;
+    });
+
+    return rows;
+  }, [tabledata, tinNameMap, bulkSearchTerm, bulkSortKey, bulkSortOrder]);
+
+  const totalBulkRowsAfterFilter = filteredSortedBulkRows.length;
+  const paginatedBulkRows = useMemo(() => {
+    const start = (bulkCurrentPage - 1) * bulkPageSize;
+    return filteredSortedBulkRows.slice(start, start + bulkPageSize);
+  }, [filteredSortedBulkRows, bulkCurrentPage, bulkPageSize]);
+
+  useEffect(() => {
+    setBulkCurrentPage(1);
+  }, [bulkSearchTerm, bulkSortKey, bulkSortOrder, tabledata]);
 
   const route = useRouter();
   const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
@@ -785,7 +925,9 @@ const DocumentWiseDetails = () => {
         });
         setDailySale(daily_sale_response.data.result);
         setSaleSummary(
-          (daily_sale_response.data.summary as DailySaleSummary | undefined) ?? {
+          (daily_sale_response.data.summary as
+            | DailySaleSummary
+            | undefined) ?? {
             totalInvoices: 0,
             totalTaxableValue: 0,
             totalVatAmount: 0,
@@ -828,7 +970,9 @@ const DocumentWiseDetails = () => {
           });
           setDailySale(daily_sale_response.data.result);
           setSaleSummary(
-            (daily_sale_response.data.summary as DailySaleSummary | undefined) ?? {
+            (daily_sale_response.data.summary as
+              | DailySaleSummary
+              | undefined) ?? {
               totalInvoices: 0,
               totalTaxableValue: 0,
               totalVatAmount: 0,
@@ -1012,6 +1156,18 @@ const DocumentWiseDetails = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [bulkUploadProgress, setBulkUploadProgress] = useState<{
+    currentChunk: number;
+    totalChunks: number;
+    uploadedRows: number;
+    totalRows: number;
+  }>({
+    currentChunk: 0,
+    totalChunks: 0,
+    uploadedRows: 0,
+    totalRows: 0,
+  });
 
   const Convertto31 = async () => {
     if (!dvatdata) {
@@ -1053,9 +1209,9 @@ const DocumentWiseDetails = () => {
       invoice_value: number;
     }>
   >([]);
-  const [selectedBulkDeleteIds, setSelectedBulkDeleteIds] = useState<
-    number[]
-  >([]);
+  const [selectedBulkDeleteIds, setSelectedBulkDeleteIds] = useState<number[]>(
+    [],
+  );
   const groupedBulkDeleteRows = useMemo(() => {
     const groups: Record<
       string,
@@ -1134,7 +1290,9 @@ const DocumentWiseDetails = () => {
       toast.success(`${successCount} sale record(s) deleted successfully.`);
     }
     if (failedCount > 0) {
-      toast.error(`${failedCount} sale record(s) could not be deleted. Error: ${error}`);
+      toast.error(
+        `${failedCount} sale record(s) could not be deleted. Error: ${error}`,
+      );
     }
 
     await init();
@@ -1332,16 +1490,57 @@ const DocumentWiseDetails = () => {
       };
     });
 
-    const response = await CreateMultiDailySale({ entries });
+    setIsBulkUploading(true);
+    const CHUNK_SIZE = 300;
+    const totalChunks = Math.ceil(entries.length / CHUNK_SIZE);
+    setBulkUploadProgress({
+      currentChunk: 0,
+      totalChunks,
+      uploadedRows: 0,
+      totalRows: entries.length,
+    });
 
-    if (response.status && response.data) {
-      toast.success("Bulk upload successful.");
+    try {
+      for (let index = 0; index < entries.length; index += CHUNK_SIZE) {
+        const chunk = entries.slice(index, index + CHUNK_SIZE);
+        const currentChunk = Math.floor(index / CHUNK_SIZE) + 1;
+
+        setBulkUploadProgress((prev) => ({
+          ...prev,
+          currentChunk,
+        }));
+
+        const response = await CreateMultiDailySale({ entries: chunk });
+
+        if (!response.status) {
+          toast.error(response.message);
+          return;
+        }
+
+        setBulkUploadProgress((prev) => ({
+          ...prev,
+          uploadedRows: Math.min(
+            prev.uploadedRows + chunk.length,
+            prev.totalRows,
+          ),
+        }));
+      }
+
+      toast.success(
+        `Bulk upload successful. ${entries.length} row(s) uploaded.`,
+      );
       setIsBulkModalOpen(false);
       setSheetFileName("");
       setTableData([]);
       await init();
-    } else {
-      toast.error(response.message);
+    } finally {
+      setIsBulkUploading(false);
+      setBulkUploadProgress({
+        currentChunk: 0,
+        totalChunks: 0,
+        uploadedRows: 0,
+        totalRows: 0,
+      });
     }
   };
 
@@ -1508,11 +1707,17 @@ const DocumentWiseDetails = () => {
         title="Bulk Upload"
         open={isBulkModalOpen}
         onOk={handleBulkUpload}
-        width={1000}
+        confirmLoading={isBulkUploading}
+        width={1400}
         onCancel={() => {
           setIsBulkModalOpen(false);
           setSheetFileName("");
           setTableData([]);
+          setBulkSearchTerm("");
+          setBulkSortKey("sr_no");
+          setBulkSortOrder("asc");
+          setBulkCurrentPage(1);
+          setBulkPageSize(10);
         }}
         okText="Upload"
         cancelText="Cancel"
@@ -1520,16 +1725,79 @@ const DocumentWiseDetails = () => {
           style: hasBulkUploadErrors ? { display: "none" } : undefined,
         }}
       >
+        {isBulkUploading && bulkUploadProgress.totalRows > 0 && (
+          <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+            <p>
+              Uploading chunk {bulkUploadProgress.currentChunk} of{" "}
+              {bulkUploadProgress.totalChunks}
+            </p>
+            <p>
+              Uploaded {bulkUploadProgress.uploadedRows} /{" "}
+              {bulkUploadProgress.totalRows} rows (
+              {Math.floor(
+                (bulkUploadProgress.uploadedRows /
+                  bulkUploadProgress.totalRows) *
+                  100,
+              )}
+              %)
+            </p>
+          </div>
+        )}
+
+        <div className="mb-3 mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
+          <input
+            type="text"
+            value={bulkSearchTerm}
+            onChange={(event) => setBulkSearchTerm(event.target.value)}
+            placeholder="Search by TIN, trade name, invoice, item, product, error"
+            className="h-9 rounded border border-gray-300 px-2 text-sm outline-none focus:border-blue-500"
+          />
+          <select
+            value={bulkSortKey}
+            onChange={(event) =>
+              setBulkSortKey(event.target.value as BulkUploadSortKey)
+            }
+            className="h-9 rounded border border-gray-300 px-2 text-sm outline-none focus:border-blue-500"
+          >
+            <option value="sr_no">Sort by Row Number</option>
+            <option value="tin_number">Sort by TIN Number</option>
+            <option value="trade_name">Sort by Trade Name</option>
+            <option value="invoice_no">Sort by Invoice No</option>
+            <option value="invoice_date">Sort by Invoice Date</option>
+            <option value="item_code">Sort by Item Code</option>
+            <option value="product_name">Sort by Product Name</option>
+            <option value="quantity">Sort by Quantity</option>
+            <option value="total_invoice_value">Sort by Invoice Value</option>
+            <option value="against_cform">Sort by C Form</option>
+          </select>
+          <select
+            value={bulkSortOrder}
+            onChange={(event) =>
+              setBulkSortOrder(event.target.value as BulkUploadSortOrder)
+            }
+            className="h-9 rounded border border-gray-300 px-2 text-sm outline-none focus:border-blue-500"
+          >
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+        </div>
+
+        <p className="mb-2 text-xs text-gray-600">
+          Showing {paginatedBulkRows.length} of {totalBulkRowsAfterFilter} filtered row(s). Error rows are pinned on top.
+        </p>
+
         <Table className="border mt-2">
           <TableHeader>
             <TableRow className="bg-gray-100">
               <TableHead className="border text-center">Sr. No.</TableHead>
               <TableHead className="border text-center">TIN Number</TableHead>
-              <TableHead className="border text-center">Trade Name</TableHead>
+              <TableHead className="border text-center  min-w-40 w-60">Trade Name</TableHead>
               <TableHead className="border text-center">Invoice No.</TableHead>
               <TableHead className="border text-center">Invoice Date</TableHead>
               <TableHead className="border text-center">Item Code</TableHead>
-              <TableHead className="border text-center">Product Name</TableHead>
+              <TableHead className="border text-center min-w-80 w-80">
+                Product Name
+              </TableHead>
               <TableHead className="border text-center">Quantity</TableHead>
               <TableHead className="border text-center">
                 Total Invoice Value
@@ -1537,53 +1805,84 @@ const DocumentWiseDetails = () => {
               <TableHead className="border text-center">
                 Is Against C Form
               </TableHead>
-              <TableHead className="border text-center">Error</TableHead>
+              <TableHead className="border text-center min-w-40 w-80">Error</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tabledata.map((val: BulkSheetData, index: number) => (
-              <TableRow
-                key={index}
-                className={`${val.error ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50"}`}
-              >
-                <TableCell className="p-2 border text-center">
-                  {index + 1}
-                </TableCell>
-                <TableCell className="p-2 border text-center">
-                  {val.tin_number}
-                </TableCell>
-                <TableCell className="p-2 border text-center">
-                  {tindata.find((tin) => tin.tin_number == val.tin_number)
-                    ?.name_of_dealer ?? "-"}
-                </TableCell>
-                <TableCell className="p-2 border text-center">
-                  {val.invoice_no}
-                </TableCell>
-                <TableCell className="p-2 border text-center">
-                  {val.invoice_date_display}
-                </TableCell>
-                <TableCell className="p-2 border text-center">
-                  {val.item_code}
-                </TableCell>
-                <TableCell className="p-2 border text-center">
-                  {val.commodity_name ?? "-"}
-                </TableCell>
-                <TableCell className="p-2 border text-center">
-                  {val.quantity}
-                </TableCell>
-                <TableCell className="p-2 border text-center">
-                  {val.total_invoice_value}
-                </TableCell>
-                <TableCell className="p-2 border text-center">
-                  {val.against_cfrom ? "true" : "false"}
-                </TableCell>
-                <TableCell className="p-2 border text-left whitespace-pre-line text-red-600">
-                  {val.errorname || "-"}
+            {paginatedBulkRows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={11}
+                  className="p-4 border text-center text-sm text-gray-600"
+                >
+                  No rows found for current search/filter.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              paginatedBulkRows.map(({ row: val, originalIndex, tradeName }) => (
+                <TableRow
+                  key={`${val.invoice_no}-${val.item_code}-${originalIndex}`}
+                  className={`${val.error ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50"}`}
+                >
+                  <TableCell className="p-2 border text-center">
+                    {originalIndex + 1}
+                  </TableCell>
+                  <TableCell className="p-2 border text-center">
+                    {val.tin_number}
+                  </TableCell>
+                  <TableCell className="p-2 border text-center">
+                    {tradeName}
+                  </TableCell>
+                  <TableCell className="p-2 border text-center">
+                    {val.invoice_no}
+                  </TableCell>
+                  <TableCell className="p-2 border text-center">
+                    {val.invoice_date_display}
+                  </TableCell>
+                  <TableCell className="p-2 border text-center">
+                    {val.item_code}
+                  </TableCell>
+                  <TableCell className="p-2 border text-left min-w-[240px] w-[280px] whitespace-normal break-words">
+                    {val.commodity_name ?? "-"}
+                  </TableCell>
+                  <TableCell className="p-2 border text-center">
+                    {val.quantity}
+                  </TableCell>
+                  <TableCell className="p-2 border text-center">
+                    {val.total_invoice_value}
+                  </TableCell>
+                  <TableCell className="p-2 border text-center">
+                    {val.against_cfrom ? "true" : "false"}
+                  </TableCell>
+                  <TableCell className="p-2 border text-left whitespace-pre-line text-red-600">
+                    {val.errorname || "-"}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
+        {totalBulkRowsAfterFilter > 0 && (
+          <div className="mt-3 flex justify-end">
+            <Pagination
+              current={bulkCurrentPage}
+              pageSize={bulkPageSize}
+              total={totalBulkRowsAfterFilter}
+              showSizeChanger
+              pageSizeOptions={["10", "20", "50", "100"]}
+              onChange={(page, size) => {
+                setBulkCurrentPage(page);
+                if (size !== bulkPageSize) {
+                  setBulkPageSize(size);
+                }
+              }}
+              onShowSizeChange={(_, size) => {
+                setBulkPageSize(size);
+                setBulkCurrentPage(1);
+              }}
+            />
+          </div>
+        )}
         {sheetFileName && (
           <p className="mt-3 text-xs text-gray-600">
             Uploaded file: {sheetFileName}
@@ -1645,14 +1944,30 @@ const DocumentWiseDetails = () => {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-100">
-                <TableHead className="border text-center text-xs">Pick</TableHead>
-                <TableHead className="border text-center text-xs">Invoice No.</TableHead>
-                <TableHead className="border text-center text-xs">Invoice Date</TableHead>
-                <TableHead className="border text-center text-xs">Trade Name</TableHead>
-                <TableHead className="border text-center text-xs">TIN Number</TableHead>
-                <TableHead className="border text-center text-xs">Product</TableHead>
-                <TableHead className="border text-center text-xs">Quantity</TableHead>
-                <TableHead className="border text-center text-xs">Invoice Value</TableHead>
+                <TableHead className="border text-center text-xs">
+                  Pick
+                </TableHead>
+                <TableHead className="border text-center text-xs">
+                  Invoice No.
+                </TableHead>
+                <TableHead className="border text-center text-xs">
+                  Invoice Date
+                </TableHead>
+                <TableHead className="border text-center text-xs">
+                  Trade Name
+                </TableHead>
+                <TableHead className="border text-center text-xs">
+                  TIN Number
+                </TableHead>
+                <TableHead className="border text-center text-xs">
+                  Product
+                </TableHead>
+                <TableHead className="border text-center text-xs">
+                  Quantity
+                </TableHead>
+                <TableHead className="border text-center text-xs">
+                  Invoice Value
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1672,13 +1987,17 @@ const DocumentWiseDetails = () => {
                   );
 
                   return [
-                    <TableRow key={`group-${group.groupKey}`} className="bg-blue-50">
+                    <TableRow
+                      key={`group-${group.groupKey}`}
+                      className="bg-blue-50"
+                    >
                       <TableCell className="border text-center text-xs">
                         <input
                           type="checkbox"
                           checked={allSelected}
                           ref={(el) => {
-                            if (el) el.indeterminate = !allSelected && someSelected;
+                            if (el)
+                              el.indeterminate = !allSelected && someSelected;
                           }}
                           onChange={(event) => {
                             const checked = event.target.checked;
@@ -1692,14 +2011,18 @@ const DocumentWiseDetails = () => {
                             } else {
                               setSelectedBulkDeleteIds((prev) =>
                                 prev.filter(
-                                  (id) => !group.rows.some((row) => row.id === id),
+                                  (id) =>
+                                    !group.rows.some((row) => row.id === id),
                                 ),
                               );
                             }
                           }}
                         />
                       </TableCell>
-                      <TableCell colSpan={7} className="border text-xs font-semibold">
+                      <TableCell
+                        colSpan={7}
+                        className="border text-xs font-semibold"
+                      >
                         {group.groupLabel}
                       </TableCell>
                     </TableRow>,
@@ -1710,7 +2033,10 @@ const DocumentWiseDetails = () => {
                             type="checkbox"
                             checked={selectedBulkDeleteIds.includes(row.id)}
                             onChange={(event) =>
-                              toggleBulkDeleteSelection(row.id, event.target.checked)
+                              toggleBulkDeleteSelection(
+                                row.id,
+                                event.target.checked,
+                              )
                             }
                           />
                         </TableCell>
