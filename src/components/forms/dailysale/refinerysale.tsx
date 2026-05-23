@@ -379,7 +379,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
                     : commoditymaster.taxable_at,
               ))) /
             100 <
-            liquoreOIDCAmount * 0.9
+            liquoreOIDCAmount * 0.5
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -521,7 +521,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
                     : commoditymaster.taxable_at,
               ))) /
             100 <
-            liquoreOIDCAmount * 0.9
+            liquoreOIDCAmount * 0.5
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -550,7 +550,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
       ) {
         if (
           isLiquore &&
-          parseFloat(data.amount_unit) < liquoreOIDCAmount * 0.9
+          parseFloat(data.amount_unit) < liquoreOIDCAmount * 0.5
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }

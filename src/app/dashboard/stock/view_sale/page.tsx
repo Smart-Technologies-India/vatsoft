@@ -571,7 +571,7 @@ const DocumentWiseDetails = () => {
               Number.isFinite(minUnitPrice) &&
               pricePerUnit <
                 (dvatdata?.commodity == "MANUFACTURER"
-                  ? minUnitPrice
+                  ? minUnitPrice * 0.25
                   : minUnitPrice * 0.75)
             ) {
               errors.push("* Given item price must not be less than MRP");

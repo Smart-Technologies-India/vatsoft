@@ -373,7 +373,7 @@ const DailySale = (props: DailySaleProviderProps) => {
           (parseFloat(data.amount_unit) *
             (100 + parseFloat(isComp ? "1" : getSelectedTaxRate()))) /
             100 <
-            liquoreOIDCAmount * 0.9
+            liquoreOIDCAmount * 0.5
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -501,7 +501,7 @@ const DailySale = (props: DailySaleProviderProps) => {
           (parseFloat(data.amount_unit) *
             (100 + parseFloat(isComp ? "1" : getSelectedTaxRate()))) /
             100 <
-            liquoreOIDCAmount * 0.9
+            liquoreOIDCAmount * 0.5
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
@@ -521,7 +521,7 @@ const DailySale = (props: DailySaleProviderProps) => {
         davtdata?.commodity == "OIDC" ||
         davtdata?.commodity == "MANUFACTURER"
       ) {
-        if (isLiquore && parseFloat(data.amount_unit) < liquoreOIDCAmount) {
+        if (isLiquore && parseFloat(data.amount_unit) < liquoreOIDCAmount * 0.5) {
           return toast.error("Sale amount can not be less than MRP.");
         }
       } else {
