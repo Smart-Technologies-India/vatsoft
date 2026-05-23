@@ -48,6 +48,7 @@ const CreateMultiDailySale = async (
     for (const entry of payload.entries) {
       const isexist = await prisma.daily_sale.findFirst({
         where: {
+          dvat04Id: currentDvatId,
           deletedAt: null,
           deletedBy: null,
           status: "ACTIVE",

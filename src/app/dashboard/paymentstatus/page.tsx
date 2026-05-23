@@ -3,14 +3,6 @@
 import SearchChallan from "@/action/challan/searchchallan";
 import UpdateChallanStatus from "@/action/challan/updatechallanstatus";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { encryptURLData, formateDate } from "@/utils/methods";
 import { challan } from "@prisma/client";
 import { Alert, Button, Modal } from "antd";
@@ -18,6 +10,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import {
+  type ColumnDef,
+  type ColumnFiltersState,
+  type PaginationState,
+  type SortingState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
 type PaymentBucket = "success" | "pending" | "failed";
 type StatusLookupMode = "order_no" | "reference_no";
@@ -107,7 +111,6 @@ const PaymentStatusPage = () => {
   const router = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [challanData, setChallanData] = useState<challan[]>([]);
-  const [serverTotal, setServerTotal] = useState<number>(0);
   const [processingId, setProcessingId] = useState<number | null>(null);
   // const [dvatId, setDvatId] = useState<number | null>(null);
   const [manualOrderId, setManualOrderId] = useState<string>("");
@@ -117,14 +120,17 @@ const PaymentStatusPage = () => {
     useState<OrderStatusResult | null>(null);
   const [searchText, setSearchText] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<TableStatusFilter>("all");
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
   const [isUpdateConfirmOpen, setIsUpdateConfirmOpen] =
     useState<boolean>(false);
   const [confirmDetails, setConfirmDetails] =
     useState<ChallanUpdateConfirmDetails | null>(null);
   const confirmResolveRef = useRef<((value: boolean) => void) | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const confirmChallanUpdate = (details: ChallanUpdateConfirmDetails) =>
     new Promise<boolean>((resolve) => {
@@ -142,31 +148,15 @@ const PaymentStatusPage = () => {
     }
   };
 
-  const isOpenOrFailedPayment = (_row: challan): boolean => true; // filtering is now done server-side via excludePaid
-
-  const loadRecentChallans = async (
-    page: number = 1,
-    size: number = pageSize,
-    search: string = "",
-    bucket: TableStatusFilter = "all",
-  ) => {
-    const todate = new Date();
-    const fromdate = new Date();
-    fromdate.setDate(todate.getDate() - 3);
-
+  const loadRecentChallans = async () => {
     const searchResponse = await SearchChallan({
-      fromdate,
-      todate,
-      take: size,
-      skip: (page - 1) * size,
-      excludePaid: true,
-      searchText: search.trim() || undefined,
-      bucketFilter: bucket === "all" ? undefined : bucket,
+      take: 100000,
+      skip: 0,
+      excludePaid: false,
     });
 
     if (searchResponse.status && searchResponse.data.result) {
       setChallanData(searchResponse.data.result);
-      setServerTotal(searchResponse.data.total);
     } else if (!searchResponse.status) {
       toast.error(searchResponse.message || "Unable to fetch payment status.");
     }
@@ -191,7 +181,7 @@ const PaymentStatusPage = () => {
       // }
 
       // setDvatId(dvatResponse.data.id);
-      await loadRecentChallans(1, 10, "", "all");
+      await loadRecentChallans();
 
       setLoading(false);
     };
@@ -279,13 +269,7 @@ const PaymentStatusPage = () => {
 
         if (updateResponse.status) {
           toast.success("Challan updated with payment success status");
-          // Reload challans to show updated data
-          await loadRecentChallans(
-            currentPage,
-            pageSize,
-            searchText,
-            statusFilter,
-          );
+          await loadRecentChallans();
         } else {
           toast.warning(updateResponse.message);
         }
@@ -373,13 +357,7 @@ const PaymentStatusPage = () => {
 
           if (updateResponse.status) {
             toast.success("Challan updated with payment success status");
-            // Reload challans to show updated data
-            await loadRecentChallans(
-              currentPage,
-              pageSize,
-              searchText,
-              statusFilter,
-            );
+            await loadRecentChallans();
           }
         }
       }
@@ -394,65 +372,169 @@ const PaymentStatusPage = () => {
     }
   };
 
-  const initiatedRows = challanData; // filtering is now server-side via excludePaid
+  const columns = useMemo<ColumnDef<challan>[]>(
+    () => [
+      {
+        accessorKey: "cpin",
+        header: "CPIN",
+        cell: ({ row }) => (
+          <Link
+            className="text-blue-600"
+            href={`/dashboard/payments/saved-challan/${encryptURLData(
+              row.original.id.toString(),
+            )}`}
+          >
+            {row.original.cpin}
+          </Link>
+        ),
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created On",
+        sortingFn: "datetime",
+        cell: ({ row }) => formateDate(new Date(row.original.createdAt)),
+      },
+      {
+        accessorKey: "total_tax_amount",
+        header: "Amount",
+      },
+      {
+        id: "payment_bucket",
+        header: "Payment Status",
+        accessorFn: (row) => getPaymentBucket(row),
+        filterFn: "equalsString",
+        cell: ({ row }) => {
+          const bucket = getPaymentBucket(row.original);
+          return (
+            <span
+              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getBucketClass(
+                bucket,
+              )}`}
+            >
+              {getBucketText(bucket)}
+            </span>
+          );
+        },
+      },
+      {
+        id: "gateway_status",
+        header: "Gateway Status",
+        accessorFn: (row) => row.order_status ?? row.paymentstatus,
+      },
+      {
+        id: "message",
+        header: "Message",
+        accessorFn: (row) => row.failure_message ?? row.status_message ?? "-",
+      },
+      {
+        id: "last_update",
+        header: "Last Update",
+        accessorFn: (row) =>
+          row.transaction_date
+            ? formateDate(new Date(row.transaction_date))
+            : "-",
+      },
+      {
+        id: "action",
+        header: "Action",
+        enableSorting: false,
+        cell: ({ row }) => {
+          const bucket = getPaymentBucket(row.original);
+          const canRetry = bucket !== "success";
 
-  const totalPages = Math.max(1, Math.ceil(serverTotal / pageSize));
+          if (!canRetry) {
+            return <span className="text-xs text-gray-500">Not required</span>;
+          }
 
-  // Reload when statusFilter changes — reset to page 1
-  useEffect(() => {
-    setCurrentPage(1);
-    setLoading(true);
-    loadRecentChallans(1, pageSize, searchText, statusFilter).finally(() =>
-      setLoading(false),
-    );
-  }, [statusFilter]);
+          return (
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                size="small"
+                onClick={() => handleCheckOrderStatus(row.original)}
+                loading={processingId === row.original.id}
+              >
+                Check Status
+              </Button>
+            </div>
+          );
+        },
+      },
+    ],
+    [processingId],
+  );
 
-  // Debounce search text — reset to page 1 after 500 ms
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setCurrentPage(1);
-      setLoading(true);
-      loadRecentChallans(1, pageSize, searchText, statusFilter).finally(() =>
-        setLoading(false),
-      );
-    }, 500);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [searchText]);
+  const table = useReactTable({
+    data: challanData,
+    columns,
+    state: {
+      sorting,
+      columnFilters,
+      globalFilter: searchText,
+      pagination,
+    },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setSearchText,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const needle = String(filterValue ?? "").trim().toLowerCase();
+      if (!needle) return true;
 
-  const handlePageChange = async (page: number, size?: number) => {
-    const newSize = size ?? pageSize;
-    setCurrentPage(page);
-    setPageSize(newSize);
-    setLoading(true);
-    await loadRecentChallans(page, newSize, searchText, statusFilter);
-    setLoading(false);
+      const haystack = [
+        row.original.cpin,
+        row.original.order_id,
+        row.original.track_id,
+        row.original.order_status,
+        row.original.paymentstatus,
+        row.original.failure_message,
+        row.original.status_message,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(needle);
+    },
+  });
+
+  const handleStatusFilterChange = (value: TableStatusFilter) => {
+    setStatusFilter(value);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    table
+      .getColumn("payment_bucket")
+      ?.setFilterValue(value === "all" ? undefined : value);
   };
 
   const summary = useMemo(() => {
     let pending = 0;
-    let created = 0;
+    let paid = 0;
     let failed = 0;
 
+    const initiatedRows = table.getFilteredRowModel().rows;
+
     for (let i = 0; i < initiatedRows.length; i++) {
-      if (getPaymentBucket(initiatedRows[i]) === "failed") {
+      const bucket = getPaymentBucket(initiatedRows[i].original);
+
+      if (bucket === "failed") {
         failed += 1;
-      } else if (initiatedRows[i].paymentstatus === "PENDING") {
+      } else if (bucket === "pending") {
         pending += 1;
       } else {
-        created += 1;
+        paid += 1;
       }
     }
 
     return {
-      total: serverTotal,
+      total: initiatedRows.length,
+      paid,
       pending,
-      created,
       failed,
     };
-  }, [initiatedRows, serverTotal]);
+  }, [table]);
 
   if (isLoading) {
     return (
@@ -466,7 +548,7 @@ const PaymentStatusPage = () => {
     <div className="p-3">
       <div className="bg-white shadow mt-4 p-3">
         <div className="bg-blue-600 p-3 text-white text-lg font-semibold">
-          Initiated/Failed Payments (Not Completed)
+          All Payments
         </div>
 
         <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3">
@@ -597,11 +679,17 @@ const PaymentStatusPage = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mt-3">
           <div className="rounded border border-sky-200 bg-sky-50 p-3">
-            <p className="text-xs text-sky-700">Total Initiated</p>
+            <p className="text-xs text-sky-700">Total Payments</p>
             <p className="text-xl font-semibold text-sky-700">
               {summary.total}
+            </p>
+          </div>
+          <div className="rounded border border-emerald-200 bg-emerald-50 p-3">
+            <p className="text-xs text-emerald-700">Paid</p>
+            <p className="text-xl font-semibold text-emerald-700">
+              {summary.paid}
             </p>
           </div>
           <div className="rounded border border-amber-200 bg-amber-50 p-3">
@@ -626,7 +714,10 @@ const PaymentStatusPage = () => {
             <input
               type="text"
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              onChange={(e) => {
+                setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                setSearchText(e.target.value);
+              }}
               placeholder="Search CPIN / Order ID / Message"
               className="h-9 w-full rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500 lg:col-span-2"
             />
@@ -634,7 +725,7 @@ const PaymentStatusPage = () => {
             <select
               value={statusFilter}
               onChange={(e) =>
-                setStatusFilter(e.target.value as TableStatusFilter)
+                handleStatusFilterChange(e.target.value as TableStatusFilter)
               }
               className="h-9 rounded border border-gray-300 px-2 text-sm outline-none focus:border-blue-500"
             >
@@ -645,117 +736,89 @@ const PaymentStatusPage = () => {
           </div>
 
           <p className="mt-2 text-xs text-gray-600">
-            Showing {challanData.length} of {serverTotal} total record(s)
+            Showing {table.getRowModel().rows.length} of {summary.total} total
+            record(s)
           </p>
         </div>
 
-        {challanData.length === 0 && (
+        {table.getFilteredRowModel().rows.length === 0 && (
           <Alert
             style={{ marginTop: "12px" }}
             type="warning"
             showIcon
-            description="No records found for selected filter/search in last 3 days."
+            description="No records found for selected filter/search."
           />
         )}
 
-        {challanData.length > 0 && (
+        {table.getFilteredRowModel().rows.length > 0 && (
           <div className="mt-3 overflow-x-auto">
-            <Table className="border min-w-245">
-              <TableHeader>
-                <TableRow className="bg-gray-100">
-                  <TableHead className="text-center">CPIN</TableHead>
-                  <TableHead className="text-center">Created On</TableHead>
-                  <TableHead className="text-center">Amount</TableHead>
-                  <TableHead className="text-center">Payment Status</TableHead>
-                  <TableHead className="text-center">Gateway Status</TableHead>
-                  <TableHead className="text-center">Message</TableHead>
-                  <TableHead className="text-center">Last Update</TableHead>
-                  <TableHead className="text-center">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {challanData.map((row: challan) => {
-                  const bucket = getPaymentBucket(row);
-                  const canRetry = bucket !== "success";
+            <table className="w-full border min-w-245">
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr className="bg-gray-100" key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      const canSort = header.column.getCanSort();
+                      const sortState = header.column.getIsSorted();
+                      const sortText =
+                        sortState === "asc"
+                          ? " ▲"
+                          : sortState === "desc"
+                            ? " ▼"
+                            : "";
 
-                  return (
-                    <TableRow key={row.id}>
-                      <TableCell className="text-center p-2 text-blue-600">
-                        <Link
-                          href={`/dashboard/payments/saved-challan/${encryptURLData(
-                            row.id.toString(),
-                          )}`}
+                      return (
+                        <th
+                          className="text-center px-2 py-2 border-b"
+                          key={header.id}
+                          onClick={
+                            canSort
+                              ? header.column.getToggleSortingHandler()
+                              : undefined
+                          }
+                          role={canSort ? "button" : undefined}
                         >
-                          {row.cpin}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {formateDate(new Date(row.createdAt))}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {row.total_tax_amount}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getBucketClass(
-                            bucket,
-                          )}`}
-                        >
-                          {getBucketText(bucket)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {row.order_status ?? row.paymentstatus}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {row.failure_message ?? row.status_message ?? "-"}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {row.transaction_date
-                          ? formateDate(new Date(row.transaction_date))
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {canRetry ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              size="small"
-                              onClick={() => handleCheckOrderStatus(row)}
-                              loading={processingId === row.id}
-                            >
-                              Check Status
-                            </Button>
-                            {/* <Link
-                              href={`/dashboard/payments/saved-challan/${encryptURLData(
-                                row.id.toString(),
-                              )}`}
-                            >
-                              <Button size="small" type="primary">
-                                Retry
-                              </Button>
-                            </Link> */}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-500">
-                            Not required
-                          </span>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                          {canSort && sortText}
+                        </th>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map((row) => (
+                  <tr key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <td className="text-center p-2 border-b" key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
                         )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-gray-600">
-                Page {currentPage} of {totalPages} &mdash; {serverTotal} total
+                Page {table.getState().pagination.pageIndex + 1} of{" "}
+                {Math.max(1, table.getPageCount())} &mdash; {summary.total} total
                 record(s)
               </p>
               <div className="flex items-center gap-2">
                 <select
-                  value={pageSize}
-                  onChange={(e) => handlePageChange(1, Number(e.target.value))}
+                  value={table.getState().pagination.pageSize}
+                  onChange={(e) => {
+                    table.setPageSize(Number(e.target.value));
+                    table.setPageIndex(0);
+                  }}
                   className="h-7 rounded border border-gray-300 px-2 text-xs outline-none focus:border-blue-500"
                 >
                   <option value={10}>10 / page</option>
@@ -764,17 +827,15 @@ const PaymentStatusPage = () => {
                 </select>
                 <Button
                   size="small"
-                  onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
                 >
                   Previous
                 </Button>
                 <Button
                   size="small"
-                  onClick={() =>
-                    handlePageChange(Math.min(totalPages, currentPage + 1))
-                  }
-                  disabled={currentPage >= totalPages}
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
                 >
                   Next
                 </Button>
