@@ -45,6 +45,8 @@ const DeletePurchase = async (
           commodity_masterId: is_exist.commodity_masterId,
           status: "ACTIVE",
           dvat04Id: is_exist.dvat04Id,
+          deletedAt: null,
+          deletedById: null,
         },
       });
 
@@ -61,6 +63,8 @@ const DeletePurchase = async (
       const stock_update = await prisma.stock.update({
         where: {
           id: find_stock.id,
+          deletedAt: null,
+          deletedById: null,
         },
         data: {
           quantity: find_stock.quantity - is_exist.quantity,

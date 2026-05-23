@@ -180,6 +180,17 @@ const TurnOver = (props: TurnOverProps) => {
         </tr>
         <tr className="w-full">
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            R4.1.1 Goods taxable at 3%
+          </td>
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            {getInvoicePercentage("3").increase}
+          </td>
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            {getInvoicePercentage("3").decrease}
+          </td>
+        </tr>
+        <tr className="w-full">
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
             R4.2 Goods taxable at 4%
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
@@ -357,6 +368,7 @@ const TurnOver = (props: TurnOverProps) => {
               parseFloat(getInvoicePercentage("0").decrease) +
               parseFloat(getInvoicePercentage("1").decrease) +
               parseFloat(getInvoicePercentage("2").decrease) +
+              parseFloat(getInvoicePercentage("3").decrease) +
               parseFloat(getInvoicePercentage("4").decrease) +
               parseFloat(getInvoicePercentage("5").decrease) +
               parseFloat(getInvoicePercentage("6").decrease) +
@@ -398,6 +410,8 @@ const TurnOver = (props: TurnOverProps) => {
             {(
               parseFloat(getInvoicePercentage("0").decrease) +
               parseFloat(getInvoicePercentage("1").decrease) +
+              parseFloat(getInvoicePercentage("2").decrease) +
+              parseFloat(getInvoicePercentage("3").decrease) +
               parseFloat(getInvoicePercentage("4").decrease) +
               parseFloat(getInvoicePercentage("5").decrease) +
               parseFloat(getInvoicePercentage("6").decrease) +

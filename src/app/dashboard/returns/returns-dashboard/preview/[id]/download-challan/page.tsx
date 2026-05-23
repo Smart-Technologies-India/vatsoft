@@ -478,6 +478,8 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     const vatAmount =
       parseFloat(getInvoicePercentage("0").decrease) +
       parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("2").decrease) +
+      parseFloat(getInvoicePercentage("3").decrease) +
       parseFloat(getInvoicePercentage("4").decrease) +
       parseFloat(getInvoicePercentage("5").decrease) +
       parseFloat(getInvoicePercentage("6").decrease) +
@@ -507,6 +509,8 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     return (
       parseFloat(getInvoicePercentage("0").decrease) +
       parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("2").decrease) +
+      parseFloat(getInvoicePercentage("3").decrease) +
       parseFloat(getInvoicePercentage("4").decrease) +
       parseFloat(getInvoicePercentage("5").decrease) +
       parseFloat(getInvoicePercentage("6").decrease) +
@@ -533,6 +537,8 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     return (
       parseFloat(getInvoicePercentage("0").decrease) +
       parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("2").decrease) +
+      parseFloat(getInvoicePercentage("3").decrease) +
       parseFloat(getInvoicePercentage("4").decrease) +
       parseFloat(getInvoicePercentage("5").decrease) +
       parseFloat(getInvoicePercentage("6").decrease) +
@@ -554,6 +560,8 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
           parseFloat(getGoodsReturnsNote().decrease))) +
       (((parseFloat(getInvoicePercentage("0").decrease) +
         parseFloat(getInvoicePercentage("1").decrease) +
+        parseFloat(getInvoicePercentage("2").decrease) +
+        parseFloat(getInvoicePercentage("3").decrease) +
         parseFloat(getInvoicePercentage("4").decrease) +
         parseFloat(getInvoicePercentage("5").decrease) +
         parseFloat(getInvoicePercentage("6").decrease) +
@@ -589,6 +597,8 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
       (isNegative(
         (((parseFloat(getInvoicePercentage("0").decrease) +
           parseFloat(getInvoicePercentage("1").decrease) +
+          parseFloat(getInvoicePercentage("2").decrease) +
+          parseFloat(getInvoicePercentage("3").decrease) +
           parseFloat(getInvoicePercentage("4").decrease) +
           parseFloat(getInvoicePercentage("5").decrease) +
           parseFloat(getInvoicePercentage("6").decrease) +
@@ -615,6 +625,8 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
         ? 0
         : (((parseFloat(getInvoicePercentage("0").decrease) +
             parseFloat(getInvoicePercentage("1").decrease) +
+            parseFloat(getInvoicePercentage("2").decrease) +
+            parseFloat(getInvoicePercentage("3").decrease) +
             parseFloat(getInvoicePercentage("4").decrease) +
             parseFloat(getInvoicePercentage("5").decrease) +
             parseFloat(getInvoicePercentage("6").decrease) +

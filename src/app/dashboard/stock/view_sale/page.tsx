@@ -1,5 +1,4 @@
 "use client";
-// import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import ConvertDvat31 from "@/action/stock/convertdvat31";
 import DeleteSale from "@/action/stock/deletesale";
 import GetSaleDeleteImpact from "@/action/stock/getsaledeleteimpact";
@@ -87,8 +86,7 @@ const DocumentWiseDetails = () => {
   const [tabledata, setTableData] = useState<BulkSheetData[]>([]);
   const hasBulkUploadErrors = tabledata.some((row) => row.error);
   const [bulkSearchTerm, setBulkSearchTerm] = useState<string>("");
-  const [bulkSortKey, setBulkSortKey] =
-    useState<BulkUploadSortKey>("sr_no");
+  const [bulkSortKey, setBulkSortKey] = useState<BulkUploadSortKey>("sr_no");
   const [bulkSortOrder, setBulkSortOrder] =
     useState<BulkUploadSortOrder>("asc");
   const [bulkCurrentPage, setBulkCurrentPage] = useState<number>(1);
@@ -571,7 +569,10 @@ const DocumentWiseDetails = () => {
             if (
               Number.isFinite(mrp) &&
               Number.isFinite(minUnitPrice) &&
-              pricePerUnit < minUnitPrice
+              pricePerUnit <
+                (dvatdata?.commodity == "MANUFACTURER"
+                  ? minUnitPrice
+                  : minUnitPrice * 0.75)
             ) {
               errors.push("* Given item price must not be less than MRP");
             }
@@ -785,10 +786,14 @@ const DocumentWiseDetails = () => {
       if (typeof aValue === "number" && typeof bValue === "number") {
         compareResult = aValue - bValue;
       } else {
-        compareResult = String(aValue).localeCompare(String(bValue), undefined, {
-          numeric: true,
-          sensitivity: "base",
-        });
+        compareResult = String(aValue).localeCompare(
+          String(bValue),
+          undefined,
+          {
+            numeric: true,
+            sensitivity: "base",
+          },
+        );
       }
 
       if (compareResult === 0) {
@@ -1783,7 +1788,8 @@ const DocumentWiseDetails = () => {
         </div>
 
         <p className="mb-2 text-xs text-gray-600">
-          Showing {paginatedBulkRows.length} of {totalBulkRowsAfterFilter} filtered row(s). Error rows are pinned on top.
+          Showing {paginatedBulkRows.length} of {totalBulkRowsAfterFilter}{" "}
+          filtered row(s). Error rows are pinned on top.
         </p>
 
         <Table className="border mt-2">
@@ -1791,7 +1797,9 @@ const DocumentWiseDetails = () => {
             <TableRow className="bg-gray-100">
               <TableHead className="border text-center">Sr. No.</TableHead>
               <TableHead className="border text-center">TIN Number</TableHead>
-              <TableHead className="border text-center  min-w-40 w-60">Trade Name</TableHead>
+              <TableHead className="border text-center  min-w-40 w-60">
+                Trade Name
+              </TableHead>
               <TableHead className="border text-center">Invoice No.</TableHead>
               <TableHead className="border text-center">Invoice Date</TableHead>
               <TableHead className="border text-center">Item Code</TableHead>
@@ -1805,7 +1813,9 @@ const DocumentWiseDetails = () => {
               <TableHead className="border text-center">
                 Is Against C Form
               </TableHead>
-              <TableHead className="border text-center min-w-40 w-80">Error</TableHead>
+              <TableHead className="border text-center min-w-40 w-80">
+                Error
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1819,46 +1829,48 @@ const DocumentWiseDetails = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedBulkRows.map(({ row: val, originalIndex, tradeName }) => (
-                <TableRow
-                  key={`${val.invoice_no}-${val.item_code}-${originalIndex}`}
-                  className={`${val.error ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50"}`}
-                >
-                  <TableCell className="p-2 border text-center">
-                    {originalIndex + 1}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.tin_number}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {tradeName}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.invoice_no}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.invoice_date_display}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.item_code}
-                  </TableCell>
-                  <TableCell className="p-2 border text-left min-w-[240px] w-[280px] whitespace-normal break-words">
-                    {val.commodity_name ?? "-"}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.quantity}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.total_invoice_value}
-                  </TableCell>
-                  <TableCell className="p-2 border text-center">
-                    {val.against_cfrom ? "true" : "false"}
-                  </TableCell>
-                  <TableCell className="p-2 border text-left whitespace-pre-line text-red-600">
-                    {val.errorname || "-"}
-                  </TableCell>
-                </TableRow>
-              ))
+              paginatedBulkRows.map(
+                ({ row: val, originalIndex, tradeName }) => (
+                  <TableRow
+                    key={`${val.invoice_no}-${val.item_code}-${originalIndex}`}
+                    className={`${val.error ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50"}`}
+                  >
+                    <TableCell className="p-2 border text-center">
+                      {originalIndex + 1}
+                    </TableCell>
+                    <TableCell className="p-2 border text-center">
+                      {val.tin_number}
+                    </TableCell>
+                    <TableCell className="p-2 border text-center">
+                      {tradeName}
+                    </TableCell>
+                    <TableCell className="p-2 border text-center">
+                      {val.invoice_no}
+                    </TableCell>
+                    <TableCell className="p-2 border text-center">
+                      {val.invoice_date_display}
+                    </TableCell>
+                    <TableCell className="p-2 border text-center">
+                      {val.item_code}
+                    </TableCell>
+                    <TableCell className="p-2 border text-left min-w-60 w-70 whitespace-normal wrap-break-word">
+                      {val.commodity_name ?? "-"}
+                    </TableCell>
+                    <TableCell className="p-2 border text-center">
+                      {val.quantity}
+                    </TableCell>
+                    <TableCell className="p-2 border text-center">
+                      {val.total_invoice_value}
+                    </TableCell>
+                    <TableCell className="p-2 border text-center">
+                      {val.against_cfrom ? "true" : "false"}
+                    </TableCell>
+                    <TableCell className="p-2 border text-left whitespace-pre-line text-red-600">
+                      {val.errorname || "-"}
+                    </TableCell>
+                  </TableRow>
+                ),
+              )
             )}
           </TableBody>
         </Table>

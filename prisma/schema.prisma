@@ -2058,6 +2058,7 @@ enum Dvat04Commodity {
   OTHER
   OIDC
   MANUFACTURER
+  WHOLESALER
 }
 
 enum ReturnFilingStatus {

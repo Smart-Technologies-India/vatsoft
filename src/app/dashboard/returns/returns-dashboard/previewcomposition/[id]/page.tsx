@@ -34,7 +34,6 @@ import CheckLastPayment from "@/action/return/checklastpayment";
 import GetUser from "@/action/user/getuser";
 import AddPaymentSubmit from "@/action/return/addpaymentsubmit";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import { get } from "node:http";
 
 interface PercentageOutput {
   increase: string;
@@ -382,6 +381,8 @@ const Dvat16ReturnPreview = () => {
     const pending_payment =
       parseFloat(getInvoicePercentage("0").decrease) +
       parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("2").decrease) +
+      parseFloat(getInvoicePercentage("3").decrease) +
       parseFloat(getInvoicePercentage("4").decrease) +
       parseFloat(getInvoicePercentage("5").decrease) +
       parseFloat(getInvoicePercentage("6").decrease) +
@@ -404,6 +405,8 @@ const Dvat16ReturnPreview = () => {
       (isNegative(
         (((parseFloat(getInvoicePercentage("0").decrease) +
           parseFloat(getInvoicePercentage("1").decrease) +
+          parseFloat(getInvoicePercentage("2").decrease) +
+          parseFloat(getInvoicePercentage("3").decrease) +
           parseFloat(getInvoicePercentage("4").decrease) +
           parseFloat(getInvoicePercentage("5").decrease) +
           parseFloat(getInvoicePercentage("6").decrease) +
@@ -430,6 +433,8 @@ const Dvat16ReturnPreview = () => {
         ? 0
         : (((parseFloat(getInvoicePercentage("0").decrease) +
             parseFloat(getInvoicePercentage("1").decrease) +
+            parseFloat(getInvoicePercentage("2").decrease) +
+            parseFloat(getInvoicePercentage("3").decrease) +
             parseFloat(getInvoicePercentage("4").decrease) +
             parseFloat(getInvoicePercentage("5").decrease) +
             parseFloat(getInvoicePercentage("6").decrease) +
@@ -459,6 +464,8 @@ const Dvat16ReturnPreview = () => {
     const interestamount = isNegative(
       (((parseFloat(getInvoicePercentage("0").decrease) +
         parseFloat(getInvoicePercentage("1").decrease) +
+        parseFloat(getInvoicePercentage("2").decrease) +
+        parseFloat(getInvoicePercentage("3").decrease) +
         parseFloat(getInvoicePercentage("4").decrease) +
         parseFloat(getInvoicePercentage("5").decrease) +
         parseFloat(getInvoicePercentage("6").decrease) +
@@ -485,6 +492,8 @@ const Dvat16ReturnPreview = () => {
       ? 0
       : (((parseFloat(getInvoicePercentage("0").decrease) +
           parseFloat(getInvoicePercentage("1").decrease) +
+          parseFloat(getInvoicePercentage("2").decrease) +
+          parseFloat(getInvoicePercentage("3").decrease) +
           parseFloat(getInvoicePercentage("4").decrease) +
           parseFloat(getInvoicePercentage("5").decrease) +
           parseFloat(getInvoicePercentage("6").decrease) +
@@ -836,6 +845,8 @@ const Dvat16ReturnPreview = () => {
   const getR6_1 = (): number =>
     parseFloat(getInvoicePercentage("0").decrease) +
     parseFloat(getInvoicePercentage("1").decrease) +
+    parseFloat(getInvoicePercentage("2").decrease) +
+    parseFloat(getInvoicePercentage("3").decrease) +
     parseFloat(getInvoicePercentage("4").decrease) +
     parseFloat(getInvoicePercentage("5").decrease) +
     parseFloat(getInvoicePercentage("6").decrease) +
@@ -860,6 +871,8 @@ const Dvat16ReturnPreview = () => {
   const getR6_2a = (): number =>
     (((parseFloat(getInvoicePercentage("0").decrease) +
       parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("2").decrease) +
+      parseFloat(getInvoicePercentage("3").decrease) +
       parseFloat(getInvoicePercentage("4").decrease) +
       parseFloat(getInvoicePercentage("5").decrease) +
       parseFloat(getInvoicePercentage("6").decrease) +
@@ -1527,6 +1540,8 @@ const ReturnTable = (props: ReturnTableProps) => {
   const getR6_1 = (): number =>
     parseFloat(getInvoicePercentage("0").decrease) +
     parseFloat(getInvoicePercentage("1").decrease) +
+    parseFloat(getInvoicePercentage("2").decrease) +
+    parseFloat(getInvoicePercentage("3").decrease) +
     parseFloat(getInvoicePercentage("4").decrease) +
     parseFloat(getInvoicePercentage("5").decrease) +
     parseFloat(getInvoicePercentage("6").decrease) +
@@ -1551,6 +1566,8 @@ const ReturnTable = (props: ReturnTableProps) => {
   const getR6_2a = (): number =>
     (((parseFloat(getInvoicePercentage("0").decrease) +
       parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("2").decrease) +
+      parseFloat(getInvoicePercentage("3").decrease) +
       parseFloat(getInvoicePercentage("4").decrease) +
       parseFloat(getInvoicePercentage("5").decrease) +
       parseFloat(getInvoicePercentage("6").decrease) +

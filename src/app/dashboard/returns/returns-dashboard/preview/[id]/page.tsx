@@ -18,13 +18,11 @@ import {
   InputTaxCredit,
   NaturePurchase,
   NaturePurchaseOption,
-  PurchaseType,
   Quarter,
   registration,
   returns_01,
   returns_entry,
   SaleOf,
-  SaleOfInterstate,
   user,
 } from "@prisma/client";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -730,6 +728,8 @@ const Dvat16ReturnPreview = () => {
   const getR6_1 = (): number =>
     parseFloat(getInvoicePercentage("0").decrease) +
     parseFloat(getInvoicePercentage("1").decrease) +
+    parseFloat(getInvoicePercentage("2").decrease) +
+    parseFloat(getInvoicePercentage("3").decrease) +
     parseFloat(getInvoicePercentage("4").decrease) +
     parseFloat(getInvoicePercentage("5").decrease) +
     parseFloat(getInvoicePercentage("6").decrease) +
