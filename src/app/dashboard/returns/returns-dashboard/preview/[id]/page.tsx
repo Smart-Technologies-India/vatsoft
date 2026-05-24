@@ -654,7 +654,7 @@ const Dvat16ReturnPreview = () => {
     let decrease: string = "0";
     const output: returns_entry[] = (returns_entryData ?? []).filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_30 &&
+        // val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
@@ -679,7 +679,7 @@ const Dvat16ReturnPreview = () => {
     let decrease: string = "0";
     const output: returns_entry[] = (returns_entryData ?? []).filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_30 &&
+        // val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&

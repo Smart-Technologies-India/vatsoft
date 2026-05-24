@@ -12,8 +12,6 @@ import {
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-
-
 const formateDate = (date: Date): string => {
   const day = date.getDate();
   const month = date.getMonth() + 1;
@@ -298,7 +296,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_30 &&
+        // val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
@@ -323,7 +321,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_30 &&
+        // val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
@@ -455,12 +453,16 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     parseFloat(get4_9().decrease) -
     (parseFloat(get5_1().decrease) +
       parseFloat(get5_2().decrease) +
-      (parseFloat(getCreditNote().decrease) -
-        parseFloat(getDebitNote().decrease) -
+      (parseFloat(getDebitNote().decrease) -
+        parseFloat(getCreditNote().decrease) -
         parseFloat(getGoodsReturnsNote().decrease) -
         parseFloat(props.lastMonthDue)));
 
-  const getInterestDueDate = (): Date => {
+  const getInterestDueDate = (
+    year: string,
+    month: string,
+    isComp: boolean = false,
+  ): Date => {
     const monthNames = [
       "January",
       "February",
@@ -475,11 +477,11 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       "November",
       "December",
     ];
-    const month = props.return01.month ?? "";
-    let monthIndex = monthNames.indexOf(month);
-    let computedYear = parseInt(props.return01.year);
 
-    if (props.isComp) {
+    let monthIndex = monthNames.indexOf(month);
+    let computedYear = parseInt(year);
+
+    if (isComp) {
       if (["January", "February", "March"].includes(month)) {
         monthIndex = 3;
       } else if (["April", "May", "June"].includes(month)) {
@@ -499,10 +501,10 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       }
     }
 
-    return new Date(computedYear, monthIndex, 16);
+    return new Date(computedYear, monthIndex, 15);
   };
-
-  const calculateInterestForBalance = (
+  
+  const calculateInterest = (
     totalDue: number,
     dueDate: Date,
     payments: challan[],
@@ -529,22 +531,32 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         toDate.getMonth(),
         toDate.getDate(),
       );
-      return Math.max(0, Math.floor((endUtc - startUtc) / dayMs));
+      const diff = Math.floor((endUtc - startUtc) / dayMs);
+      return Math.max(0, diff);
     };
 
     const sortedPayments = payments
       .map((payment) => {
         const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
         const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
+
         if (
           !paymentDateRaw ||
           !Number.isFinite(paymentAmount) ||
           paymentAmount <= 0
-        )
+        ) {
           return null;
-        return { amount: paymentAmount, date: normalizeDate(paymentDateRaw) };
+        }
+
+        return {
+          amount: paymentAmount,
+          date: normalizeDate(paymentDateRaw),
+        };
       })
-      .filter((p): p is { amount: number; date: Date } => p !== null)
+      .filter(
+        (payment): payment is { amount: number; date: Date } =>
+          payment !== null,
+      )
       .sort((a, b) => a.date.getTime() - b.date.getTime());
 
     const effectiveAsOfDate = normalizeDate(asOfDate);
@@ -558,6 +570,8 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
         break;
       }
 
+      // Payments on/before due date should reduce principal, but must not
+      // move anchorDate backward; interest starts from due date.
       if (payment.date <= anchorDate) {
         outstanding = Math.max(0, outstanding - payment.amount);
 
@@ -592,10 +606,16 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
   };
 
   const getR6_2a = (): number => {
-    const totalDue = getR6_1();
-    const dueDate = getInterestDueDate();
-    const interest = calculateInterestForBalance(
-      totalDue,
+    if (!props.return01?.month) return 0;
+
+    const dueDate = getInterestDueDate(
+      props.return01.year,
+      props.return01.month,
+      props.isComp,
+    );
+
+    const interest = calculateInterest(
+      getR6_1(),
       dueDate,
       props.paidChallans,
       15,
@@ -641,12 +661,6 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
                 ? 0
                 : lateFees.toFixed(2)
               : (getR7() + (isNegative(lateFees) ? 0 : lateFees)).toFixed(2)}
-
-            {/* {isNegative(getR7())
-              ? isNegative(lateFees)
-                ? 0
-                : lateFees.toFixed(2)
-              : (getR7() + (isNegative(lateFees) ? 0 : lateFees)).toFixed(2)} */}
           </td>
         </tr>
         <tr className="w-full">

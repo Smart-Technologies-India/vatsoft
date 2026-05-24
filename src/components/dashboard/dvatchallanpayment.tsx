@@ -622,7 +622,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     let decrease: string = "0";
     const output: returns_entry[] = returns_entryData.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_30 &&
+        // val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
@@ -647,7 +647,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     let decrease: string = "0";
     const output: returns_entry[] = returns_entryData.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_30 &&
+        // val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
@@ -672,7 +672,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     let decrease: string = "0";
     const output: returns_entry[] = returns_entryData.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_30 &&
+        // val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
@@ -877,6 +877,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     const challanAmount = paidChallans.reduce((total, challan) => {
       return total + parseFloat(challan.total_tax_amount ?? "0");
     }, 0);
+    console.log("challan amount", challanAmount);
     return (
       parseFloat(getInvoicePercentage("0").decrease) +
       parseFloat(getInvoicePercentage("1").decrease) +
@@ -898,14 +899,15 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       parseFloat(get4_9().decrease) -
       (parseFloat(get5_1().decrease) +
         parseFloat(get5_2().decrease) +
-        (parseFloat(getCreditNote().decrease) -
-          parseFloat(getDebitNote().decrease) -
+        (parseFloat(getDebitNote().decrease) -
+          parseFloat(getCreditNote().decrease) -
           parseFloat(getGoodsReturnsNote().decrease) -
           parseFloat(lastmonthdue))) -
       challanAmount
     );
   };
 
+  console.log("vat amount", getVatAmount());
   const getVatAmountcomp = (): number => {
     const challanAmount = paidChallans.reduce((total, challan) => {
       return total + parseFloat(challan.total_tax_amount ?? "0");
@@ -951,8 +953,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     parseFloat(get4_9().decrease) -
     (parseFloat(get5_1().decrease) +
       parseFloat(get5_2().decrease) +
-      (parseFloat(getCreditNote().decrease) -
-        parseFloat(getDebitNote().decrease) -
+      (parseFloat(getDebitNote().decrease) -
+        parseFloat(getCreditNote().decrease) -
         parseFloat(getGoodsReturnsNote().decrease) -
         parseFloat(lastmonthdue)));
 
@@ -977,8 +979,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       parseFloat(get4_9().decrease) -
       (parseFloat(get5_1().decrease) +
         parseFloat(get5_2().decrease) +
-        (parseFloat(getCreditNote().decrease) -
-          parseFloat(getDebitNote().decrease) -
+        (parseFloat(getDebitNote().decrease) -
+          parseFloat(getCreditNote().decrease) -
           parseFloat(getGoodsReturnsNote().decrease) -
           parseFloat(lastmonthdue)))) *
       0.15) /

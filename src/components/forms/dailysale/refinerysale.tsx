@@ -11,7 +11,6 @@ import { toast } from "react-toastify";
 import { onFormError } from "@/utils/methods";
 import { DateSelect } from "../inputfields/dateselect";
 import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
-import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import { DailySaleForm, DailySaleSchema } from "@/schema/daily_sale";
 import CreateDailySale from "@/action/stock/createdailysale";
@@ -27,8 +26,6 @@ import {
 } from "antd";
 import CreateTinNumber from "@/action/tin_number/createtin";
 import dayjs from "dayjs";
-import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
-import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
 import GetDvat04FromId from "@/action/dvat/getdvatfromid";
 
@@ -305,16 +302,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
     );
     setVatAmount(calculatedVatAmount);
 
-    // const calculatedVatAmount =
-    //   (calculatedTaxableValue *
-    //     parseFloat(isAgainstCForm ? "2" : commoditymaster.taxable_at)) /
-    //   100;
-    // setVatAmount(
-    //   isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2),
-    // );
 
-    // const temp_amount = calculatedTaxableValue + calculatedVatAmount;
-    // const temp_amount = calculatedTaxableValue;
 
     const temp_amount = formatAmount(
       (((Number(quantity) || 0) * (Number(amount_unit) || 0)) /

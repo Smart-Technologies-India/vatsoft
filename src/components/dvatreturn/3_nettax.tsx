@@ -301,7 +301,7 @@ const NetTax = (props: NetTaxProps) => {
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_30 &&
+        // val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
@@ -326,7 +326,7 @@ const NetTax = (props: NetTaxProps) => {
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(
       (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_30 &&
+        // val.dvat_type == DvatType.DVAT_30 &&
         val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
         (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
           val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
@@ -393,8 +393,8 @@ const NetTax = (props: NetTaxProps) => {
     parseFloat(get4_9().decrease) -
     (parseFloat(get5_1().decrease) +
       parseFloat(get5_2().decrease) +
-      (parseFloat(getCreditNote().decrease) -
-        parseFloat(getDebitNote().decrease) -
+      (parseFloat(getDebitNote().decrease) -
+        parseFloat(getCreditNote().decrease) -
         parseFloat(getGoodsReturnsNote().decrease) -
         parseFloat(props.lastMonthDue)));
 

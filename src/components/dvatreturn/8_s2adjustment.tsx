@@ -1,11 +1,17 @@
-import { CategoryOfEntry, DvatType, InputTaxCredit, NaturePurchase, NaturePurchaseOption, returns_entry } from "@prisma/client";
+import {
+  CategoryOfEntry,
+  DvatType,
+  InputTaxCredit,
+  NaturePurchase,
+  NaturePurchaseOption,
+  returns_entry,
+} from "@prisma/client";
 import { useSearchParams } from "next/navigation";
 
 interface PercentageOutput {
   increase: string;
   decrease: string;
 }
-
 
 interface S2AdjustmentOfTaxProps {
   returnsentrys: returns_entry[];
@@ -300,6 +306,5 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
     </table>
   );
 };
-
 
 export default S2AdjustmentOfTax;

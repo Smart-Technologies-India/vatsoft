@@ -31,17 +31,23 @@ export async function POST(req: NextRequest) {
           status: false,
           error: "No data provided.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const createUrn = customAlphabet("1234567890abcdefghijklmnopqrstunvxyz", 12);
+    const createUrn = customAlphabet(
+      "1234567890abcdefghijklmnopqrstunvxyz",
+      12,
+    );
     const CHUNK_SIZE = 10;
     const transactionOptions = { timeout: 30000, maxWait: 10000 } as const;
 
     const tinCache = new Map<string, { id: number }>();
     const dvatCache = new Map<string, { id: number; createdById: number }>();
-    const commodityCache = new Map<number, { id: number; crate_size: number; taxable_at: string }>();
+    const commodityCache = new Map<
+      number,
+      { id: number; crate_size: number; taxable_at: string }
+    >();
 
     let createdCount = 0;
 
@@ -63,7 +69,7 @@ export async function POST(req: NextRequest) {
 
             if (!tinResponse) {
               throw new Error(
-                `TIN number not found for ${data.CustomerTINNo} for voucher no ${data.VchNum}.`
+                `TIN number not found for ${data.CustomerTINNo} for voucher no ${data.VchNum}.`,
               );
             }
 
@@ -80,7 +86,7 @@ export async function POST(req: NextRequest) {
 
             if (!dvatResponse) {
               throw new Error(
-                `DVAT 04 record not found for ${data.SupplierTIN} for voucher no ${data.VchNum}.`
+                `DVAT 04 record not found for ${data.SupplierTIN} for voucher no ${data.VchNum}.`,
               );
             }
 
@@ -109,7 +115,7 @@ export async function POST(req: NextRequest) {
 
               if (!commodityResponse) {
                 throw new Error(
-                  `Commodity master not found for ${item.MasterID} for voucher no ${data.VchNum}.`
+                  `Commodity master not found for ${item.MasterID} for voucher no ${data.VchNum}.`,
                 );
               }
 
@@ -127,6 +133,7 @@ export async function POST(req: NextRequest) {
 
             const existingEntry = await tx.tally_sale.findFirst({
               where: {
+                dvat04Id: dvat.id,
                 seller_tin_number: {
                   tin_number: data.CustomerTINNo,
                 },
@@ -134,13 +141,14 @@ export async function POST(req: NextRequest) {
                 commodity_masterId: commodity.id,
                 batch_name: item.BatchName,
                 quantity,
+                
               },
               select: { id: true },
             });
 
             if (existingEntry) {
               throw new Error(
-                `Entry already exists for ${data.CustomerTINNo} with invoice number ${data.VchNum} and batch ${item.BatchName}.`
+                `Entry already exists for ${data.CustomerTINNo} with invoice number ${data.VchNum} and batch ${item.BatchName}.`,
               );
             }
 
@@ -186,7 +194,7 @@ export async function POST(req: NextRequest) {
           created: createdCount,
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     return NextResponse.json(
@@ -194,7 +202,7 @@ export async function POST(req: NextRequest) {
         status: false,
         error: "Failed to process request. error: " + error.message,
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 }
