@@ -1211,7 +1211,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                       </div>
 
                       <div className="flex gap-2 mt-3 justify-end">
-                        {getTotalTaxAmount() === 0 ? (
+                        {Math.round(getTotalTaxAmount()) == 0 ? (
                           <Button
                             type="primary"
                             disabled={isFileReturnProcessing}
