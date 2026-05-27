@@ -53,7 +53,7 @@ const GetUserTallyPurchase = async (
       where: {
         status: "ACTIVE",
         dvat04Id: dvatId,
-        is_converted: false,
+        is_accept: false,
       },
       include: {
         commodity_master: true,
