@@ -746,8 +746,8 @@ const Dvat16ReturnPreview = () => {
     parseFloat(get4_9().decrease) -
     (parseFloat(get5_1().decrease) +
       parseFloat(get5_2().decrease) +
-      (parseFloat(getCreditNote().decrease) -
-        parseFloat(getDebitNote().decrease) -
+      (parseFloat(getDebitNote().decrease) -
+        parseFloat(getCreditNote().decrease) -
         parseFloat(getGoodsReturnsNote().decrease) -
         parseFloat(lastmonthdue)));
 
@@ -1270,7 +1270,7 @@ const Dvat16ReturnPreview = () => {
 
             {!payment && (
               <>
-                {getNetPayable() <= 0 ? (
+                {Math.round(getNetPayable()) == 0 ? (
                   <>
                     <Button
                       type="primary"
