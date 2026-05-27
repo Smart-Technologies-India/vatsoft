@@ -524,6 +524,7 @@ const CommodityMaster = () => {
         )?.sale_price!,
         createdById: userid,
         against_cfrom: false,
+        batch_name: null,
       }));
 
     const response = await CreateMultiDailyPurchase({ entries });

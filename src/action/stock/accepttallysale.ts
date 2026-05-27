@@ -114,6 +114,7 @@ const AcceptTallySale = async (
         against_cfrom: record.is_against_cform,
         is_against_fform: false,
         is_export: false,
+        batch_name: record.batch_name,
       };
     });
 
@@ -127,7 +128,11 @@ const AcceptTallySale = async (
     }
 
     await prisma.tally_sale.updateMany({
-      where: { id: { in: records.map((record) => record.id) } },
+      where: {
+        id: { in: records.map((record) => record.id) },
+        status: "ACTIVE",
+        is_converted: false,
+      },
       data: { is_converted: true },
     });
 

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetDvat04ByTin from "@/action/dvat/getdvatbytin";
@@ -126,6 +127,7 @@ const AddSale = () => {
       against_cfrom: false,
       is_against_fform: false,
       is_export: false,
+      batch_name: null,
     }));
 
     const created_data = await CreateMultiDailySale({
@@ -340,6 +342,7 @@ const AddSale = () => {
         against_cfrom: true,
         is_against_fform: false,
         is_export: false,
+        batch_name: null,
       }));
 
     const response = await CreateMultiDailySale({ entries });

@@ -1492,6 +1492,7 @@ const DocumentWiseDetails = () => {
         against_cfrom: row.against_cfrom,
         is_against_fform: false,
         is_export: false,
+        batch_name: null,
       };
     });
 

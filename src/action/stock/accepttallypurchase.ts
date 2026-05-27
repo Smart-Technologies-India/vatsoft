@@ -68,6 +68,7 @@ const AcceptTallyPurchase = async (
         amount_unit: record.amount_unit,
         createdById: payload.createdById,
         against_cfrom: record.is_against_cform,
+        batch_name: record.batch_name,
       };
     });
 

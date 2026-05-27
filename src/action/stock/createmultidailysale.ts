@@ -23,11 +23,12 @@ interface CreateMultiDailySalePayload {
     against_cfrom: boolean;
     is_against_fform: boolean;
     is_export: boolean;
+    batch_name: string | null;
   }>;
 }
 
 const CreateMultiDailySale = async (
-  payload: CreateMultiDailySalePayload
+  payload: CreateMultiDailySalePayload,
 ): Promise<ApiResponseType<stock[] | null>> => {
   const functionname: string = CreateMultiDailySale.name;
 
@@ -56,12 +57,13 @@ const CreateMultiDailySale = async (
           quantity: entry.quantity,
           invoice_date: entry.invoice_date,
           commodity_masterId: entry.commodityid,
+          ...(entry.batch_name !== null && { batch_name: entry.batch_name }),
         },
       });
 
       if (isexist) {
         throw new Error(
-          `Entry with invoice number ${entry.invoice_number} already exists.`
+          `Entry with invoice number ${entry.invoice_number} already exists.`,
         );
       }
 
@@ -69,7 +71,7 @@ const CreateMultiDailySale = async (
 
       if (!response.status || !response.data) {
         throw new Error(
-          `Failed to create entry for invoice: ${entry.invoice_number}, error: ${response.message}`
+          `Failed to create entry for invoice: ${entry.invoice_number}, error: ${response.message}`,
         );
       }
 

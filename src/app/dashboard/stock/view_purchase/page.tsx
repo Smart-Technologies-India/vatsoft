@@ -722,8 +722,7 @@ const DocumentWiseDetails = () => {
   const [tabledata, setTableData] = useState<BulkSheetData[]>([]);
   const hasBulkUploadErrors = tabledata.some((row) => row.error);
   const [bulkSearchTerm, setBulkSearchTerm] = useState<string>("");
-  const [bulkSortKey, setBulkSortKey] =
-    useState<BulkUploadSortKey>("sr_no");
+  const [bulkSortKey, setBulkSortKey] = useState<BulkUploadSortKey>("sr_no");
   const [bulkSortOrder, setBulkSortOrder] =
     useState<BulkUploadSortOrder>("asc");
   const [bulkCurrentPage, setBulkCurrentPage] = useState<number>(1);
@@ -1249,6 +1248,7 @@ const DocumentWiseDetails = () => {
         amount_unit: amountUnit.toFixed(2),
         createdById: userid,
         against_cfrom: row.against_cfrom,
+        batch_name: null,
       };
     });
 
@@ -1281,11 +1281,16 @@ const DocumentWiseDetails = () => {
 
         setBulkUploadProgress((prev) => ({
           ...prev,
-          uploadedRows: Math.min(prev.uploadedRows + chunk.length, prev.totalRows),
+          uploadedRows: Math.min(
+            prev.uploadedRows + chunk.length,
+            prev.totalRows,
+          ),
         }));
       }
 
-      toast.success(`Bulk upload successful. ${entries.length} row(s) uploaded.`);
+      toast.success(
+        `Bulk upload successful. ${entries.length} row(s) uploaded.`,
+      );
       setIsBulkModalOpen(false);
       setSheetFileName("");
       setTableData([]);
@@ -1389,10 +1394,14 @@ const DocumentWiseDetails = () => {
       if (typeof aValue === "number" && typeof bValue === "number") {
         compareResult = aValue - bValue;
       } else {
-        compareResult = String(aValue).localeCompare(String(bValue), undefined, {
-          numeric: true,
-          sensitivity: "base",
-        });
+        compareResult = String(aValue).localeCompare(
+          String(bValue),
+          undefined,
+          {
+            numeric: true,
+            sensitivity: "base",
+          },
+        );
       }
 
       if (compareResult === 0) {
@@ -2003,11 +2012,18 @@ const DocumentWiseDetails = () => {
         {isBulkUploading && bulkUploadProgress.totalRows > 0 && (
           <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
             <p>
-              Uploading chunk {bulkUploadProgress.currentChunk} of {bulkUploadProgress.totalChunks}
+              Uploading chunk {bulkUploadProgress.currentChunk} of{" "}
+              {bulkUploadProgress.totalChunks}
             </p>
             <p>
-              Uploaded {bulkUploadProgress.uploadedRows} / {bulkUploadProgress.totalRows} rows
-              ({Math.floor((bulkUploadProgress.uploadedRows / bulkUploadProgress.totalRows) * 100)}%)
+              Uploaded {bulkUploadProgress.uploadedRows} /{" "}
+              {bulkUploadProgress.totalRows} rows (
+              {Math.floor(
+                (bulkUploadProgress.uploadedRows /
+                  bulkUploadProgress.totalRows) *
+                  100,
+              )}
+              %)
             </p>
           </div>
         )}
@@ -2051,7 +2067,8 @@ const DocumentWiseDetails = () => {
         </div>
 
         <p className="mb-2 text-xs text-gray-600">
-          Showing {paginatedBulkRows.length} of {totalBulkRowsAfterFilter} filtered row(s). Error rows are pinned on top.
+          Showing {paginatedBulkRows.length} of {totalBulkRowsAfterFilter}{" "}
+          filtered row(s). Error rows are pinned on top.
         </p>
 
         <div className="overflow-x-auto rounded-lg shadow-sm">
@@ -2104,50 +2121,52 @@ const DocumentWiseDetails = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedBulkRows.map(({ row: val, originalIndex, tradeName }) => (
-                  <TableRow
-                    key={`${val.invoice_no}-${val.item_code}-${originalIndex}`}
-                    className={`${
-                      val.error
-                        ? "bg-red-50 hover:bg-red-100"
-                        : "hover:bg-gray-50"
-                    } transition-colors`}
-                  >
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {originalIndex + 1}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.tin_number}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {tradeName}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.invoice_no}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.invoice_date_display}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.item_code}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.commodity_name ?? "-"}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.quantity}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.total_invoice_value}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.against_cfrom ? "true" : "false"}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-left text-sm text-red-600 whitespace-pre-line">
-                      {val.errorname || "-"}
-                    </TableCell>
-                  </TableRow>
-                ))
+                paginatedBulkRows.map(
+                  ({ row: val, originalIndex, tradeName }) => (
+                    <TableRow
+                      key={`${val.invoice_no}-${val.item_code}-${originalIndex}`}
+                      className={`${
+                        val.error
+                          ? "bg-red-50 hover:bg-red-100"
+                          : "hover:bg-gray-50"
+                      } transition-colors`}
+                    >
+                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                        {originalIndex + 1}
+                      </TableCell>
+                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                        {val.tin_number}
+                      </TableCell>
+                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                        {tradeName}
+                      </TableCell>
+                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                        {val.invoice_no}
+                      </TableCell>
+                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                        {val.invoice_date_display}
+                      </TableCell>
+                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                        {val.item_code}
+                      </TableCell>
+                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                        {val.commodity_name ?? "-"}
+                      </TableCell>
+                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                        {val.quantity}
+                      </TableCell>
+                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                        {val.total_invoice_value}
+                      </TableCell>
+                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                        {val.against_cfrom ? "true" : "false"}
+                      </TableCell>
+                      <TableCell className="p-3 border border-gray-200 text-left text-sm text-red-600 whitespace-pre-line">
+                        {val.errorname || "-"}
+                      </TableCell>
+                    </TableRow>
+                  ),
+                )
               )}
             </TableBody>
           </Table>

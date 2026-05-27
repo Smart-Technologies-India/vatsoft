@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetDvat04ByTin from "@/action/dvat/getdvatbytin";
@@ -122,6 +123,7 @@ const AddPurchase = () => {
       amount_unit: (purchase.net_amount / purchase.quantity).toFixed(2),
       createdById: userid,
       against_cfrom: false,
+      batch_name: null,
     }));
 
     const created_data = await CreateMultiDailyPurchase({
@@ -334,6 +336,7 @@ const AddPurchase = () => {
         )?.sale_price!,
         createdById: userid,
         against_cfrom: true,
+        batch_name: null,
       }));
 
     const response = await CreateMultiDailyPurchase({ entries });
