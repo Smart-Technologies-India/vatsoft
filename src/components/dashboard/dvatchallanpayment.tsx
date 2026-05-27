@@ -997,11 +997,13 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     const vatAmount = isComp ? getVatAmountcomp() : getVatAmount();
     const interest = isComp ? getR6_2acomp() : getInterest();
 
-    return (
-      (isNegative(vatAmount) ? 0 : vatAmount) +
+    // Let negative VAT adjust the net payable, then clamp final total to 0.
+    const netPayable =
+      vatAmount +
       (isNegative(lateFees) ? 0 : lateFees) +
-      (isNegative(interest) ? 0 : interest)
-    );
+      (isNegative(interest) ? 0 : interest);
+
+    return Math.max(0, netPayable);
   };
 
   // challan section start from here

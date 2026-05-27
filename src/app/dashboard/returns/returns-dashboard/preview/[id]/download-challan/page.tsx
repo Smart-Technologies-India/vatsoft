@@ -474,182 +474,49 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     };
   };
 
-  const getInterest = (): number => {
-    const vatAmount =
-      parseFloat(getInvoicePercentage("0").decrease) +
-      parseFloat(getInvoicePercentage("1").decrease) +
-      parseFloat(getInvoicePercentage("2").decrease) +
-      parseFloat(getInvoicePercentage("3").decrease) +
-      parseFloat(getInvoicePercentage("4").decrease) +
-      parseFloat(getInvoicePercentage("5").decrease) +
-      parseFloat(getInvoicePercentage("6").decrease) +
-      parseFloat(getInvoicePercentage("12.5").decrease) +
-      parseFloat(getInvoicePercentage("12.75").decrease) +
-      parseFloat(getInvoicePercentage("13.5").decrease) +
-      parseFloat(getInvoicePercentage("15").decrease) +
-      parseFloat(getInvoicePercentage("20").decrease) +
-      parseFloat(getSaleOfPercentage("4").decrease) +
-      parseFloat(getSaleOfPercentage("5").decrease) +
-      parseFloat(getSaleOfPercentage("12.5").decrease) +
-      parseFloat(get4_6().decrease) +
-      parseFloat(get4_7().decrease) -
-      parseFloat(get4_9().decrease) -
-      (parseFloat(get5_1().decrease) +
-        parseFloat(get5_2().decrease) +
-        (parseFloat(getCreditNote().decrease) -
-          parseFloat(getDebitNote().decrease) -
-          parseFloat(getGoodsReturnsNote().decrease)));
+  const getTaxBaseAmount = (): number =>
+    parseFloat(getInvoicePercentage("0").decrease) +
+    parseFloat(getInvoicePercentage("1").decrease) +
+    parseFloat(getInvoicePercentage("2").decrease) +
+    parseFloat(getInvoicePercentage("3").decrease) +
+    parseFloat(getInvoicePercentage("4").decrease) +
+    parseFloat(getInvoicePercentage("5").decrease) +
+    parseFloat(getInvoicePercentage("6").decrease) +
+    parseFloat(getInvoicePercentage("12.5").decrease) +
+    parseFloat(getInvoicePercentage("12.75").decrease) +
+    parseFloat(getInvoicePercentage("13.5").decrease) +
+    parseFloat(getInvoicePercentage("15").decrease) +
+    parseFloat(getInvoicePercentage("20").decrease) +
+    parseFloat(getSaleOfPercentage("4").decrease) +
+    parseFloat(getSaleOfPercentage("5").decrease) +
+    parseFloat(getSaleOfPercentage("12.5").decrease) +
+    parseFloat(get4_6().decrease) +
+    parseFloat(get4_7().decrease) -
+    parseFloat(get4_9().decrease) -
+    (parseFloat(get5_1().decrease) +
+      parseFloat(get5_2().decrease) +
+      (parseFloat(getDebitNote().decrease) -
+        parseFloat(getCreditNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease)));
 
-    const interest = ((vatAmount * 0.15) / 365) * InterestDiffDays;
+  const getInterest = (): number => {
+    const interest = ((getTaxBaseAmount() * 0.15) / 365) * InterestDiffDays;
 
     return isNegative(interest) ? 0 : interest;
   };
 
-  const getVatAmount = (): number => {
-    return (
-      parseFloat(getInvoicePercentage("0").decrease) +
-      parseFloat(getInvoicePercentage("1").decrease) +
-      parseFloat(getInvoicePercentage("2").decrease) +
-      parseFloat(getInvoicePercentage("3").decrease) +
-      parseFloat(getInvoicePercentage("4").decrease) +
-      parseFloat(getInvoicePercentage("5").decrease) +
-      parseFloat(getInvoicePercentage("6").decrease) +
-      parseFloat(getInvoicePercentage("12.5").decrease) +
-      parseFloat(getInvoicePercentage("12.75").decrease) +
-      parseFloat(getInvoicePercentage("13.5").decrease) +
-      parseFloat(getInvoicePercentage("15").decrease) +
-      parseFloat(getInvoicePercentage("20").decrease) +
-      parseFloat(getSaleOfPercentage("4").decrease) +
-      parseFloat(getSaleOfPercentage("5").decrease) +
-      parseFloat(getSaleOfPercentage("12.5").decrease) +
-      parseFloat(get4_6().decrease) +
-      parseFloat(get4_7().decrease) -
-      parseFloat(get4_9().decrease) -
-      (parseFloat(get5_1().decrease) +
-        parseFloat(get5_2().decrease) +
-        (parseFloat(getCreditNote().decrease) -
-          parseFloat(getDebitNote().decrease) -
-          parseFloat(getGoodsReturnsNote().decrease)))
-    );
-  };
+  const getVatAmount = (): number => getTaxBaseAmount();
 
-  const getValue = () => {
-    return (
-      parseFloat(getInvoicePercentage("0").decrease) +
-      parseFloat(getInvoicePercentage("1").decrease) +
-      parseFloat(getInvoicePercentage("2").decrease) +
-      parseFloat(getInvoicePercentage("3").decrease) +
-      parseFloat(getInvoicePercentage("4").decrease) +
-      parseFloat(getInvoicePercentage("5").decrease) +
-      parseFloat(getInvoicePercentage("6").decrease) +
-      parseFloat(getInvoicePercentage("12.5").decrease) +
-      parseFloat(getInvoicePercentage("12.75").decrease) +
-      parseFloat(getInvoicePercentage("13.5").decrease) +
-      parseFloat(getInvoicePercentage("15").decrease) +
-      parseFloat(getInvoicePercentage("20").decrease) +
-      parseFloat(getSaleOfPercentage("4").decrease) +
-      parseFloat(getSaleOfPercentage("5").decrease) +
-      parseFloat(getSaleOfPercentage("12.5").decrease) +
-      parseFloat(get4_6().decrease) +
-      parseFloat(get4_7().decrease) -
-      parseFloat(get4_9().decrease) -
-      (parseFloat(get5_1().decrease) +
-        parseFloat(get5_2().decrease) +
-        (parseFloat(getCreditNote().decrease) -
-          parseFloat(getDebitNote().decrease) -
-          parseFloat(getGoodsReturnsNote().decrease))) +
-      (((parseFloat(getInvoicePercentage("0").decrease) +
-        parseFloat(getInvoicePercentage("1").decrease) +
-        parseFloat(getInvoicePercentage("2").decrease) +
-        parseFloat(getInvoicePercentage("3").decrease) +
-        parseFloat(getInvoicePercentage("4").decrease) +
-        parseFloat(getInvoicePercentage("5").decrease) +
-        parseFloat(getInvoicePercentage("6").decrease) +
-        parseFloat(getInvoicePercentage("12.5").decrease) +
-        parseFloat(getInvoicePercentage("12.75").decrease) +
-        parseFloat(getInvoicePercentage("13.5").decrease) +
-        parseFloat(getInvoicePercentage("15").decrease) +
-        parseFloat(getInvoicePercentage("20").decrease) +
-        parseFloat(getSaleOfPercentage("4").decrease) +
-        parseFloat(getSaleOfPercentage("5").decrease) +
-        parseFloat(getSaleOfPercentage("12.5").decrease) +
-        parseFloat(get4_6().decrease) +
-        parseFloat(get4_7().decrease) -
-        parseFloat(get4_9().decrease) -
-        (parseFloat(get5_1().decrease) +
-          parseFloat(get5_2().decrease) +
-          (parseFloat(getCreditNote().decrease) -
-            parseFloat(getDebitNote().decrease) -
-            parseFloat(getGoodsReturnsNote().decrease)))) *
-        0.15) /
-        365) *
-        PenaltyDiffDays +
-      lateFees +
-      0 -
-      0
-    );
-  };
+  const getValue = () =>
+    getTaxBaseAmount() +
+    (((getTaxBaseAmount() * 0.15) / 365) * PenaltyDiffDays + lateFees);
 
   const getTotalTaxAmount = (): number => {
-    return (
-      getVatAmount() +
-      lateFees +
-      (isNegative(
-        (((parseFloat(getInvoicePercentage("0").decrease) +
-          parseFloat(getInvoicePercentage("1").decrease) +
-          parseFloat(getInvoicePercentage("2").decrease) +
-          parseFloat(getInvoicePercentage("3").decrease) +
-          parseFloat(getInvoicePercentage("4").decrease) +
-          parseFloat(getInvoicePercentage("5").decrease) +
-          parseFloat(getInvoicePercentage("6").decrease) +
-          parseFloat(getInvoicePercentage("12.5").decrease) +
-          parseFloat(getInvoicePercentage("12.75").decrease) +
-          parseFloat(getInvoicePercentage("13.5").decrease) +
-          parseFloat(getInvoicePercentage("15").decrease) +
-          parseFloat(getInvoicePercentage("20").decrease) +
-          parseFloat(getSaleOfPercentage("4").decrease) +
-          parseFloat(getSaleOfPercentage("5").decrease) +
-          parseFloat(getSaleOfPercentage("12.5").decrease) +
-          parseFloat(get4_6().decrease) +
-          parseFloat(get4_7().decrease) -
-          parseFloat(get4_9().decrease) -
-          (parseFloat(get5_1().decrease) +
-            parseFloat(get5_2().decrease) +
-            (parseFloat(getCreditNote().decrease) -
-              parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease)))) *
-          0.15) /
-          365) *
-          InterestDiffDays,
-      )
-        ? 0
-        : (((parseFloat(getInvoicePercentage("0").decrease) +
-            parseFloat(getInvoicePercentage("1").decrease) +
-            parseFloat(getInvoicePercentage("2").decrease) +
-            parseFloat(getInvoicePercentage("3").decrease) +
-            parseFloat(getInvoicePercentage("4").decrease) +
-            parseFloat(getInvoicePercentage("5").decrease) +
-            parseFloat(getInvoicePercentage("6").decrease) +
-            parseFloat(getInvoicePercentage("12.5").decrease) +
-            parseFloat(getInvoicePercentage("12.75").decrease) +
-            parseFloat(getInvoicePercentage("13.5").decrease) +
-            parseFloat(getInvoicePercentage("15").decrease) +
-            parseFloat(getInvoicePercentage("20").decrease) +
-            parseFloat(getSaleOfPercentage("4").decrease) +
-            parseFloat(getSaleOfPercentage("5").decrease) +
-            parseFloat(getSaleOfPercentage("12.5").decrease) +
-            parseFloat(get4_6().decrease) +
-            parseFloat(get4_7().decrease) -
-            parseFloat(get4_9().decrease) -
-            (parseFloat(get5_1().decrease) +
-              parseFloat(get5_2().decrease) +
-              (parseFloat(getCreditNote().decrease) -
-                parseFloat(getDebitNote().decrease) -
-                parseFloat(getGoodsReturnsNote().decrease)))) *
-            0.15) /
-            365) *
-          InterestDiffDays)
-    );
+    const interest = isNegative(getInterest()) ? 0 : getInterest();
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const netPayable = getVatAmount() + penalty + interest;
+
+    return Math.max(0, netPayable);
   };
   return (
     <>
