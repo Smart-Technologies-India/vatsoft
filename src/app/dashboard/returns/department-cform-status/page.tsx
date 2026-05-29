@@ -76,7 +76,6 @@ const TrackAppliation = () => {
     }
 
     const payment_data = await GetUserTrackPayment({
-      user_id: userid,
       take: 10,
       skip: 0,
     });
@@ -107,7 +106,6 @@ const TrackAppliation = () => {
         setDvatData(dvat_response.data);
       }
       const payment_data = await GetUserTrackPayment({
-        user_id:  authResponse.data,
         take: 10,
         skip: 0,
       });
@@ -184,7 +182,6 @@ const TrackAppliation = () => {
       return toast.error("Enter arn number");
     }
     const search_response = await SearchReturnPayment({
-      userid: userid,
       rr_number: arnRef.current?.input?.value,
       dept: dvatdata?.selectOffice!,
       take: 10,
@@ -207,7 +204,6 @@ const TrackAppliation = () => {
     }
 
     const search_response = await SearchReturnPayment({
-      userid: userid,
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
       dept: dvatdata?.selectOffice!,
@@ -237,7 +233,6 @@ const TrackAppliation = () => {
           return toast.error("Enter arn number");
         }
         const search_response = await SearchReturnPayment({
-          userid: userid,
           rr_number: arnRef.current?.input?.value,
           dept: dvatdata?.selectOffice!,
           take: pagesize,
@@ -263,7 +258,6 @@ const TrackAppliation = () => {
         }
 
         const search_response = await SearchReturnPayment({
-          userid: userid,
           fromdate: searchDate[0]?.toDate(),
           todate: searchDate[1]?.toDate(),
           dept: dvatdata?.selectOffice!,
@@ -283,7 +277,6 @@ const TrackAppliation = () => {
       }
     } else {
       const payment_data = await GetUserTrackPayment({
-        user_id: userid,
         take: pagesize,
         skip: pagesize * (page - 1),
       });
