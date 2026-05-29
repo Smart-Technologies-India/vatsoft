@@ -209,31 +209,32 @@ const DocumentWiseDetails = () => {
   }, []);
 
   const downloadBulkTemplate = () => {
+    const isManufacturerCommodity = dvatdata?.commodity === "MANUFACTURER";
     const rows = [
       {
-        "TIN Number": "11000000001",
+        "TIN Number": "25000000000",
         "Invoice No": "INV1001-A",
         "Invoice Date": "05/05/2026",
         "Item Code": 1,
-        Quantity: 24,
+        Quantity: isManufacturerCommodity ? 2 : 24,
         "Total Invoice Value": 12000,
         "Is Against C Form": "false",
       },
       {
-        "TIN Number": "11000000001",
+        "TIN Number": "25000000000",
         "Invoice No": "INV1001-A",
         "Invoice Date": "05/05/2026",
         "Item Code": 2,
-        Quantity: 12,
+        Quantity: isManufacturerCommodity ? 1 : 12,
         "Total Invoice Value": 8600,
         "Is Against C Form": "false",
       },
       {
-        "TIN Number": "12000000002",
+        "TIN Number": "25000000000",
         "Invoice No": "INV1002-B",
         "Invoice Date": "06/05/2026",
         "Item Code": 3,
-        Quantity: 30,
+        Quantity: isManufacturerCommodity ? 3 : 30,
         "Total Invoice Value": 15000,
         "Is Against C Form": "true",
       },
@@ -265,8 +266,12 @@ const DocumentWiseDetails = () => {
       },
       {
         Field: "Quantity",
-        "What to fill": "Numeric quantity in pieces",
-        Rules: "Enter pieces only (not crate, not words like twenty four).",
+        "What to fill": isManufacturerCommodity
+          ? "Numeric quantity in crates"
+          : "Numeric quantity in pieces",
+        Rules: isManufacturerCommodity
+          ? "Enter crates only. System will convert crates to pieces using commodity crate size."
+          : "Enter pieces only (not crate, not words like twenty four).",
       },
       {
         Field: "Total Invoice Value",
@@ -371,6 +376,7 @@ const DocumentWiseDetails = () => {
       });
 
       const expectedProductType = getExpectedProductType();
+      const isManufacturerCommodity = dvatdata?.commodity === "MANUFACTURER";
 
       // Build tinNumber → commodity map from all dvat04 records
       const tinCommodityMap: { [tinNumber: string]: string | null } = {};
@@ -527,14 +533,28 @@ const DocumentWiseDetails = () => {
             );
           }
 
-          const quantity = parseExcelNumber(quantity_raw);
-          if (!Number.isFinite(quantity) || quantity <= 0) {
+          const parsedQuantity = parseExcelNumber(quantity_raw);
+          if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
             errors.push(
-              "* Quantity must be a number in pieces and greater than 0",
+              isManufacturerCommodity
+                ? "* Quantity must be a number in crates and greater than 0"
+                : "* Quantity must be a number in pieces and greater than 0",
             );
-          } else if (!Number.isInteger(quantity)) {
-            errors.push("* Quantity must be a whole number in pieces");
+          } else if (!Number.isInteger(parsedQuantity)) {
+            errors.push(
+              isManufacturerCommodity
+                ? "* Quantity must be a whole number in crates"
+                : "* Quantity must be a whole number in pieces",
+            );
           }
+
+          const normalizedQuantity =
+            selectedCommodity && isManufacturerCommodity
+              ? parsedQuantity *
+                (selectedCommodity.crate_size > 0
+                  ? selectedCommodity.crate_size
+                  : 1)
+              : parsedQuantity;
 
           const total_invoice_value = parseExcelNumber(total_invoice_value_raw);
           if (
@@ -553,8 +573,8 @@ const DocumentWiseDetails = () => {
 
           if (
             selectedCommodity &&
-            Number.isFinite(quantity) &&
-            quantity > 0 &&
+            Number.isFinite(normalizedQuantity) &&
+            normalizedQuantity > 0 &&
             Number.isFinite(total_invoice_value) &&
             total_invoice_value > 0
           ) {
@@ -564,7 +584,7 @@ const DocumentWiseDetails = () => {
                 ? selectedCommodity.crate_size
                 : 1;
             const minUnitPrice = mrp / crateSize;
-            const pricePerUnit = total_invoice_value / quantity;
+            const pricePerUnit = total_invoice_value / normalizedQuantity;
 
             if (
               Number.isFinite(mrp) &&
@@ -600,7 +620,9 @@ const DocumentWiseDetails = () => {
               : "-",
             invoice_no,
             item_code: Number.isFinite(item_code) ? item_code : 0,
-            quantity: Number.isFinite(quantity) ? quantity : 0,
+            quantity: Number.isFinite(normalizedQuantity)
+              ? normalizedQuantity
+              : 0,
             total_invoice_value: Number.isFinite(total_invoice_value)
               ? total_invoice_value
               : 0,

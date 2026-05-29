@@ -15,18 +15,15 @@ import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
 import GetUserTrackPayment from "@/action/return/getusertrackpayment";
-import { dvat04, returns_01 } from "@prisma/client";
+import { returns_01 } from "@prisma/client";
 import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
-import SearchReturnPayment from "@/action/return/searchreturnpayment";
-import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
 
 const TrackAppliation = () => {
   const router = useRouter();
-  const [userid, setUserId] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
@@ -59,13 +56,75 @@ const TrackAppliation = () => {
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    _dateStrings: [string, string]
   ) => {
     setSearchDate(dates);
   };
 
   const [paymentData, setPaymentData] = useState<returns_01[]>([]);
-  const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
+
+  const updatePaymentList = (paymentData: {
+    status: boolean;
+    message: string;
+    data: {
+      result: returns_01[] | null;
+      skip: number;
+      take: number;
+      total: number;
+    };
+  }) => {
+    if (paymentData.status && paymentData.data.result) {
+      setPaymentData(paymentData.data.result);
+      setPaginatin({
+        skip: paymentData.data.skip,
+        take: paymentData.data.take,
+        total: paymentData.data.total,
+      });
+      return;
+    }
+
+    toast.error(paymentData.message);
+  };
+
+  const fetchPaymentData = async (skip: number, take: number) => {
+    if (!isSearch) {
+      const paymentDataResponse = await GetUserTrackPayment({
+        take,
+        skip,
+      });
+      updatePaymentList(paymentDataResponse);
+      return;
+    }
+
+    if (searchOption === SearchOption.ARN) {
+      const rrNumber = arnRef.current?.input?.value;
+      if (!rrNumber) {
+        toast.error("Enter arn number");
+        return;
+      }
+
+      const paymentDataResponse = await GetUserTrackPayment({
+        rr_number: rrNumber,
+        take,
+        skip,
+      });
+      updatePaymentList(paymentDataResponse);
+      return;
+    }
+
+    if (!searchDate || searchDate.length <= 1) {
+      toast.error("Select state date and end date");
+      return;
+    }
+
+    const paymentDataResponse = await GetUserTrackPayment({
+      fromdate: searchDate[0]?.toDate(),
+      todate: searchDate[1]?.toDate(),
+      take,
+      skip,
+    });
+    updatePaymentList(paymentDataResponse);
+  };
 
   const init = async () => {
     setLoading(true);
@@ -75,55 +134,40 @@ const TrackAppliation = () => {
       return router.push("/");
     }
 
-    setUserId(authResponse.data);
-    const dvat_response = await GetUserDvat04();
-
-    if (dvat_response.data && dvat_response.status) {
-      setDvatData(dvat_response.data);
-    }
-
-    const payment_data = await GetUserTrackPayment({
-      user_id: authResponse.data,
-      take: 10,
-      skip: 0,
-    });
-
-    if (payment_data.status && payment_data.data.result) {
-      setPaymentData(payment_data.data.result);
-      setPaginatin({
-        skip: payment_data.data.skip,
-        take: payment_data.data.take,
-        total: payment_data.data.total,
-      });
-    }
+    await fetchPaymentData(0, 10);
     setLoading(false);
   };
-  useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-      const dvat_response = await GetUserDvat04();
 
-      if (dvat_response.data && dvat_response.status) {
-        setDvatData(dvat_response.data);
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      const authResponse = await getAuthenticatedUserId();
+      if (!authResponse.status || !authResponse.data) {
+        toast.error(authResponse.message);
+        router.push("/");
+        return;
       }
-      const payment_data = await GetUserTrackPayment({
-        user_id: userid,
+
+      const paymentDataResponse = await GetUserTrackPayment({
         take: 10,
         skip: 0,
       });
 
-      if (payment_data.status && payment_data.data.result) {
-        setPaymentData(payment_data.data.result);
+      if (paymentDataResponse.status && paymentDataResponse.data.result) {
+        setPaymentData(paymentDataResponse.data.result);
         setPaginatin({
-          skip: payment_data.data.skip,
-          take: payment_data.data.take,
-          total: payment_data.data.total,
+          skip: paymentDataResponse.data.skip,
+          take: paymentDataResponse.data.take,
+          total: paymentDataResponse.data.total,
         });
+      } else {
+        toast.error(paymentDataResponse.message);
       }
+
       setLoading(false);
     };
-    init();
-  }, [userid]);
+
+    fetchInitialData();
+  }, [router]);
 
   const get_years = (month: string, year: string): string => {
     const monthNames = [
@@ -183,22 +227,8 @@ const TrackAppliation = () => {
     ) {
       return toast.error("Enter arn number");
     }
-    const search_response = await SearchReturnPayment({
-      userid: userid,
-      rr_number: arnRef.current?.input?.value,
-      dept: dvatdata?.selectOffice!,
-      take: 10,
-      skip: 0,
-    });
-    if (search_response.status && search_response.data.result) {
-      setPaymentData(search_response.data.result);
-      setPaginatin({
-        skip: search_response.data.skip,
-        take: search_response.data.take,
-        total: search_response.data.total,
-      });
-      setSearch(true);
-    }
+    setSearch(true);
+    await fetchPaymentData(0, 10);
   };
 
   const datesearch = async () => {
@@ -206,97 +236,12 @@ const TrackAppliation = () => {
       return toast.error("Select state date and end date");
     }
 
-    const search_response = await SearchReturnPayment({
-      userid: userid,
-      fromdate: searchDate[0]?.toDate(),
-      todate: searchDate[1]?.toDate(),
-      dept: dvatdata?.selectOffice!,
-      take: 10,
-      skip: 0,
-    });
-
-    if (search_response.status && search_response.data.result) {
-      setPaymentData(search_response.data.result);
-      setPaginatin({
-        skip: search_response.data.skip,
-        take: search_response.data.take,
-        total: search_response.data.total,
-      });
-      setSearch(true);
-    }
+    setSearch(true);
+    await fetchPaymentData(0, 10);
   };
 
   const onChangePageCount = async (page: number, pagesize: number) => {
-    if (isSearch) {
-      if (searchOption == SearchOption.ARN) {
-        if (
-          arnRef.current?.input?.value == undefined ||
-          arnRef.current?.input?.value == null ||
-          arnRef.current?.input?.value == ""
-        ) {
-          return toast.error("Enter arn number");
-        }
-        const search_response = await SearchReturnPayment({
-          userid: userid,
-          rr_number: arnRef.current?.input?.value,
-          dept: dvatdata?.selectOffice!,
-          take: pagesize,
-          skip: pagesize * (page - 1),
-        });
-
-        if (search_response.status && search_response.data.result) {
-          setPaymentData(search_response.data.result);
-          setPaginatin({
-            skip: search_response.data.skip,
-            take: search_response.data.take,
-            total: search_response.data.total,
-          });
-          setSearch(true);
-        }
-      } else if (searchOption == SearchOption.RETURN) {
-        if (searchDate == null || searchDate.length <= 1) {
-          return toast.error("Select state date and end date");
-        }
-
-        if (searchDate == null || searchDate.length <= 1) {
-          return toast.error("Select state date and end date");
-        }
-
-        const search_response = await SearchReturnPayment({
-          userid: userid,
-          fromdate: searchDate[0]?.toDate(),
-          todate: searchDate[1]?.toDate(),
-          dept: dvatdata?.selectOffice!,
-          take: pagesize,
-          skip: pagesize * (page - 1),
-        });
-
-        if (search_response.status && search_response.data.result) {
-          setPaymentData(search_response.data.result);
-          setPaginatin({
-            skip: search_response.data.skip,
-            take: search_response.data.take,
-            total: search_response.data.total,
-          });
-          setSearch(true);
-        }
-      }
-    } else {
-      const payment_data = await GetUserTrackPayment({
-        user_id: userid,
-        take: pagesize,
-        skip: pagesize * (page - 1),
-      });
-
-      if (payment_data.status && payment_data.data.result) {
-        setPaymentData(payment_data.data.result);
-        setPaginatin({
-          skip: payment_data.data.skip,
-          take: payment_data.data.take,
-          total: payment_data.data.total,
-        });
-      }
-    }
+    await fetchPaymentData(pagesize * (page - 1), pagesize);
   };
 
   if (isLoading)

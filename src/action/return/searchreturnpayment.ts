@@ -10,7 +10,6 @@ import {
 
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface SearchReturnPaymentPayload {
-  userid?: number;
   rr_number?: string;
   fromdate?: Date;
   todate?: Date;
@@ -63,7 +62,6 @@ const SearchReturnPayment = async (
             }),
           },
           NOT: [{ transaction_id: null, track_id: null }],
-          ...(payload.userid && { createdById: payload.userid }),
           ...(payload.rr_number && { rr_number: payload.rr_number }),
           ...(payload.fromdate &&
             payload.todate && {
@@ -101,7 +99,6 @@ const SearchReturnPayment = async (
             }),
           },
           NOT: [{ transaction_id: null, track_id: null }],
-          ...(payload.userid && { createdById: payload.userid }),
           ...(payload.rr_number && { rr_number: payload.rr_number }),
           ...(payload.fromdate &&
             payload.todate && {

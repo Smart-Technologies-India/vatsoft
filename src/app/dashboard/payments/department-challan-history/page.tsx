@@ -149,6 +149,30 @@ const ChallanHistory = () => {
     return Array.from(groups.values());
   }, [challanData]);
 
+  const getLatestTransactionDate = (group: ChallanGroup) => {
+    const latestTransactionDate = group.challans.reduce<Date | null>(
+      (latest, challan) => {
+        if (!challan.transaction_date) {
+          return latest;
+        }
+
+        const transactionDate = new Date(challan.transaction_date);
+        if (Number.isNaN(transactionDate.getTime())) {
+          return latest;
+        }
+
+        if (!latest || transactionDate > latest) {
+          return transactionDate;
+        }
+
+        return latest;
+      },
+      null,
+    );
+
+    return latestTransactionDate ? formateDate(latestTransactionDate) : "-";
+  };
+
   useEffect(() => {
     const loadReturnDetails = async () => {
       const uniqueReturnIds = Array.from(
@@ -266,7 +290,7 @@ const ChallanHistory = () => {
       setLoading(false);
     };
     init();
-  }, [id]);
+  }, [id, router]);
 
   const cpinsearch = async () => {
     if (
@@ -617,6 +641,9 @@ const ChallanHistory = () => {
                       Total Amount
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center px-2">
+                      Last Transaction Date
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center px-2">
                       View
                     </TableHead>
                   </TableRow>
@@ -638,6 +665,9 @@ const ChallanHistory = () => {
                       </TableCell>
                       <TableCell className="text-center p-2">
                         {formatINR(group.totalAmount)}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {getLatestTransactionDate(group)}
                       </TableCell>
                       <TableCell className="text-center p-2">
                         <Button

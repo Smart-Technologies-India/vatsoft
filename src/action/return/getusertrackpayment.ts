@@ -1,6 +1,8 @@
 "use server";
 interface GetUserTrackPaymentPayload {
-  user_id: number;
+  rr_number?: string;
+  fromdate?: Date;
+  todate?: Date;
   skip: number;
   take: number;
 }
@@ -34,9 +36,15 @@ const GetUserTrackPayment = async (
           deletedAt: null,
           deletedBy: null,
           dvat04Id: dvatid,
-          // dvat04Id
-          // createdById: payload.user_id,
           NOT: [{ transaction_id: null, track_id: null }],
+          ...(payload.rr_number && { rr_number: payload.rr_number }),
+          ...(payload.fromdate &&
+            payload.todate && {
+              transaction_date: {
+                gte: payload.fromdate,
+                lte: payload.todate,
+              },
+            }),
         },
         skip: payload.skip,
         take: payload.take,
@@ -46,8 +54,15 @@ const GetUserTrackPayment = async (
           deletedAt: null,
           deletedBy: null,
           dvat04Id: dvatid,
-          // createdById: payload.user_id,
           NOT: [{ transaction_id: null, track_id: null }],
+          ...(payload.rr_number && { rr_number: payload.rr_number }),
+          ...(payload.fromdate &&
+            payload.todate && {
+              transaction_date: {
+                gte: payload.fromdate,
+                lte: payload.todate,
+              },
+            }),
         },
       }),
     ]);
