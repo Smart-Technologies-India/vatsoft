@@ -84,6 +84,9 @@ const DistrictWiseCommodityReport = async (
             product_type: "MANUFACTURER",
           },
           {
+            product_type: "WHOLESALER",
+          },
+          {
             product_type: "OIDC",
           },
         ],

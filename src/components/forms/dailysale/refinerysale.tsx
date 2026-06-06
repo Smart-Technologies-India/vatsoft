@@ -353,7 +353,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
 
       if (
         davtdata?.commodity == "OIDC" ||
-        davtdata?.commodity == "MANUFACTURER"
+        davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER"
       ) {
         if (
           isLiquore &&
@@ -393,14 +393,14 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
     }
 
     const quantityamount =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER"
         ? quantityCount == "crate"
           ? parseInt(data.quantity) * commoditymaster.crate_size
           : parseInt(data.quantity)
         : parseInt(data.quantity);
 
     const amount_unit: string =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER"
         ? quantityCount == "crate"
           ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(
               2,
@@ -495,7 +495,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
 
       if (
         davtdata?.commodity == "OIDC" ||
-        davtdata?.commodity == "MANUFACTURER"
+        davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER"
       ) {
         if (
           isLiquore &&
@@ -534,7 +534,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
     } else {
       if (
         davtdata?.commodity == "OIDC" ||
-        davtdata?.commodity == "MANUFACTURER"
+        davtdata?.commodity == "MANUFACTURER"  || davtdata?.commodity == "WHOLESALER"
       ) {
         if (
           isLiquore &&
@@ -554,14 +554,14 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
     }
 
     const quantityamount =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"  || davtdata?.commodity == "WHOLESALER"
         ? quantityCount == "crate"
           ? parseInt(data.quantity) * commoditymaster.crate_size
           : parseInt(data.quantity)
         : parseInt(data.quantity);
 
     const amount_unit: string =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"  || davtdata?.commodity == "WHOLESALER"
         ? quantityCount == "crate"
           ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(
               2,
@@ -828,7 +828,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
         )}
 
         {(davtdata?.commodity == "OIDC" ||
-          davtdata?.commodity == "MANUFACTURER") &&
+          davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER") &&
           commoditymaster != null && (
             <div className="flex mt-2 gap-2 items-center">
               <div className="p-1 rounded grow text-center bg-gray-100">
@@ -854,7 +854,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
             <TaxtInput<DailySaleForm>
               placeholder={
                 (davtdata?.commodity == "OIDC" ||
-                  davtdata?.commodity == "MANUFACTURER") &&
+                  davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER") &&
                 quantityCount == "crate"
                   ? "Enter Crate amount (Sale price including VAT)"
                   : "Enter Net amount/unit (Sale price including VAT)"
@@ -863,7 +863,7 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
               required={true}
               title={
                 (davtdata?.commodity == "OIDC" ||
-                  davtdata?.commodity == "MANUFACTURER") &&
+                  davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER") &&
                 quantityCount == "crate"
                   ? "Enter Crate amount (Sale price including VAT)"
                   : "Enter Net amount/unit (Sale price including VAT)"

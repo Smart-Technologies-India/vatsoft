@@ -772,7 +772,7 @@ const CommodityMaster = () => {
                 )} */}
 
                 {/* Manufacturer-specific Buttons */}
-                {dvatdata && dvatdata.commodity == "MANUFACTURER" && (
+                {dvatdata && (dvatdata.commodity == "MANUFACTURER" ) && (
                   <>
                     <Button
                       size="small"
@@ -817,7 +817,7 @@ const CommodityMaster = () => {
                     Refinery Purchase
                   </Button>
                 )}
-                {dvatdata && dvatdata.commodity == "MANUFACTURER" && (
+                {dvatdata && (dvatdata.commodity == "MANUFACTURER" || dvatdata.commodity == "WHOLESALER") && (
                   <Button
                     size="small"
                     type="default"

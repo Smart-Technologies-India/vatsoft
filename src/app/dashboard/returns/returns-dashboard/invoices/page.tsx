@@ -463,7 +463,7 @@ const AddRecord = () => {
                       <TableCell className="p-2 border text-center">
                         0
                       </TableCell>
-                      <TableCell className="p-2 border text-center">
+                      {/* <TableCell className="p-2 border text-center">
                         <Link
                           href={getUrlTin(
                             val.seller_tin_number.tin_number.toString()
@@ -473,7 +473,7 @@ const AddRecord = () => {
                             <MdiPlusCircle className="text-white text-sm" />
                           </div>
                         </Link>
-                      </TableCell>
+                      </TableCell> */}
                     </TableRow>
                   );
                 })}

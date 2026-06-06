@@ -32,8 +32,6 @@ import {
   SaleOf,
   user,
 } from "@prisma/client";
-import { valibotResolver } from "@hookform/resolvers/valibot";
-import { useForm } from "react-hook-form";
 import {
   SubmitPaymentForm,
   SubmitPaymentSchema,

@@ -389,14 +389,14 @@ const DailySale = (props: DailySaleProviderProps) => {
     }
 
     const quantityamount =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER"
         ? quantityCount == "crate"
           ? parseInt(data.quantity) * commoditymaster.crate_size
           : parseInt(data.quantity)
         : parseInt(data.quantity);
 
     const amount_unit: string =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER"
         ? quantityCount == "crate"
           ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(
               2,
@@ -527,14 +527,14 @@ const DailySale = (props: DailySaleProviderProps) => {
     }
 
     const quantityamount =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER"
         ? quantityCount == "crate"
           ? parseInt(data.quantity) * commoditymaster.crate_size
           : parseInt(data.quantity)
         : parseInt(data.quantity);
 
     const amount_unit: string =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER"
+      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER"
         ? quantityCount == "crate"
           ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(
               2,
@@ -809,7 +809,7 @@ const DailySale = (props: DailySaleProviderProps) => {
         )}
 
         {(davtdata?.commodity == "OIDC" ||
-          davtdata?.commodity == "MANUFACTURER") &&
+          davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER") &&
           commoditymaster != null && (
             <div className="flex mt-2 gap-2 items-center">
               <div className="p-1 rounded grow text-center bg-gray-100">
@@ -835,7 +835,7 @@ const DailySale = (props: DailySaleProviderProps) => {
             <TaxtInput<DailySaleForm>
               placeholder={
                 (davtdata?.commodity == "OIDC" ||
-                  davtdata?.commodity == "MANUFACTURER") &&
+                  davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER") &&
                 quantityCount == "crate"
                   ? "Enter Crate amount (Sale price including VAT)"
                   : "Enter Net amount/unit (Sale price including VAT)"
@@ -844,7 +844,7 @@ const DailySale = (props: DailySaleProviderProps) => {
               required={true}
               title={
                 (davtdata?.commodity == "OIDC" ||
-                  davtdata?.commodity == "MANUFACTURER") &&
+                  davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER") &&
                 quantityCount == "crate"
                   ? "Enter Crate amount (Sale price including VAT)"
                   : "Enter Net amount/unit (Sale price including VAT)"

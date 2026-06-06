@@ -266,7 +266,8 @@ const DocumentWiseDetails = () => {
   const getExpectedProductType = () => {
     if (
       dvatdata?.commodity === "OIDC" ||
-      dvatdata?.commodity === "MANUFACTURER"
+      dvatdata?.commodity === "MANUFACTURER" ||
+      dvatdata?.commodity == "WHOLESALER"
     ) {
       return "LIQUOR";
     }
@@ -294,7 +295,9 @@ const DocumentWiseDetails = () => {
   }, []);
 
   const downloadBulkTemplate = () => {
-    const isManufacturerCommodity = dvatdata?.commodity === "MANUFACTURER";
+    const isManufacturerCommodity =
+      dvatdata?.commodity === "MANUFACTURER" ||
+      dvatdata?.commodity === "WHOLESALER";
     const rows = [
       {
         "TIN Number": "25000000000",
@@ -533,7 +536,9 @@ const DocumentWiseDetails = () => {
       });
 
       const expectedProductType = getExpectedProductType();
-      const isManufacturerCommodity = dvatdata?.commodity === "MANUFACTURER";
+      const isManufacturerCommodity =
+        dvatdata?.commodity === "MANUFACTURER" ||
+        dvatdata?.commodity === "WHOLESALER";
 
       // Build tinNumber → commodity map from all dvat04 records
       const tinCommodityMap: { [tinNumber: string]: string | null } = {};
@@ -674,20 +679,32 @@ const DocumentWiseDetails = () => {
 
             if (sellerCommodity === "FUEL") {
               // FUEL can only sell to FUEL
-              isValidSale = ["LIQUOR", "FUEL", "OIDC", "MANUFACTURER"].includes(
-                buyerCommodity,
-              );
+              isValidSale = [
+                "LIQUOR",
+                "FUEL",
+                "OIDC",
+                "MANUFACTURER",
+                "WHOLESALER",
+              ].includes(buyerCommodity);
             } else if (sellerCommodity === "OIDC") {
               // OIDC can sell to LIQUOR and MANUFACTURER
-              isValidSale = ["LIQUOR", "MANUFACTURER"].includes(buyerCommodity);
-            } else if (sellerCommodity === "MANUFACTURER") {
+              isValidSale = ["LIQUOR", "MANUFACTURER", "WHOLESALER"].includes(
+                buyerCommodity,
+              );
+            } else if (
+              sellerCommodity === "MANUFACTURER" ||
+              sellerCommodity === "WHOLESALER"
+            ) {
               // MANUFACTURER can sell to OIDC and LIQUOR
               isValidSale = ["OIDC", "LIQUOR"].includes(buyerCommodity);
             } else if (sellerCommodity === "LIQUOR") {
-              // LIQUOR can sell to LIQUOR, MANUFACTURER, and OIDC
-              isValidSale = ["LIQUOR", "MANUFACTURER", "OIDC"].includes(
-                buyerCommodity,
-              );
+              // LIQUOR can sell to LIQUOR, MANUFACTURER, OIDC, and WHOLESALER
+              isValidSale = [
+                "LIQUOR",
+                "MANUFACTURER",
+                "OIDC",
+                "WHOLESALER",
+              ].includes(buyerCommodity);
             }
 
             if (!isValidSale) {
@@ -899,7 +916,8 @@ const DocumentWiseDetails = () => {
               Number.isFinite(mrp) &&
               Number.isFinite(minUnitPrice) &&
               pricePerUnit <
-                (dvatdata?.commodity == "MANUFACTURER"
+                (dvatdata?.commodity == "MANUFACTURER" ||
+                dvatdata?.commodity == "WHOLESALER"
                   ? minUnitPrice * 0.25
                   : minUnitPrice * 0.75)
             ) {
@@ -991,8 +1009,6 @@ const DocumentWiseDetails = () => {
             },
             {} as Record<string, number>,
           );
-
-
 
           parsedRows.forEach((row) => {
             row.error = true;
@@ -1595,7 +1611,6 @@ const DocumentWiseDetails = () => {
     const periodDate = getApplicablePeriodDate();
     const filingFrequency = dvatdata?.frequencyFilings?.toUpperCase();
 
-   
     if (!periodDate) {
       return {
         allowed: false,
@@ -1904,6 +1919,20 @@ const DocumentWiseDetails = () => {
     return Number.isFinite(numericValue) ? numericValue.toFixed(2) : "0.00";
   };
 
+  const getCrateCount = (row: BulkSheetData): string => {
+    const crateSize = row.crate_size && row.crate_size > 0 ? row.crate_size : 0;
+    if (!crateSize || !Number.isFinite(row.quantity) || row.quantity <= 0) {
+      return "-";
+    }
+
+    const crateCount = row.quantity / crateSize;
+    if (!Number.isFinite(crateCount)) return "-";
+
+    return Number.isInteger(crateCount)
+      ? crateCount.toString()
+      : crateCount.toFixed(2);
+  };
+
   const handleBulkUpload = async () => {
     if (!dvatdata) {
       return toast.error("DVAT not found.");
@@ -1923,7 +1952,8 @@ const DocumentWiseDetails = () => {
 
     const entries = tabledata.map((row) => {
       const taxPercent =
-        dvatdata?.commodity === "MANUFACTURER"
+        dvatdata?.commodity === "MANUFACTURER" ||
+        dvatdata?.commodity === "WHOLESALER"
           ? "0"
           : row.sale_type === "CFORM"
             ? "2"
@@ -2024,6 +2054,12 @@ const DocumentWiseDetails = () => {
         Loading...
       </div>
     );
+
+  const bulkUploadTableColumnCount =
+    dvatdata?.commodity === "MANUFACTURER" ||
+    dvatdata?.commodity === "WHOLESALER"
+      ? 12
+      : 11;
 
   return (
     <>
@@ -2276,6 +2312,10 @@ const DocumentWiseDetails = () => {
                 Product Name
               </TableHead>
               <TableHead className="border text-center">Quantity</TableHead>
+              {(dvatdata?.commodity === "MANUFACTURER" ||
+                dvatdata?.commodity === "WHOLESALER") && (
+                <TableHead className="border text-center">Crate</TableHead>
+              )}
               <TableHead className="border text-center">
                 Total Invoice Value
               </TableHead>
@@ -2289,7 +2329,7 @@ const DocumentWiseDetails = () => {
             {paginatedBulkRows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={11}
+                  colSpan={bulkUploadTableColumnCount}
                   className="p-4 border text-center text-sm text-gray-600"
                 >
                   No rows found for current search/filter.
@@ -2324,13 +2364,23 @@ const DocumentWiseDetails = () => {
                       {val.commodity_name ?? "-"}
                     </TableCell>
                     <TableCell className="p-2 border text-center">
-                      {val.quantity}
+                      {dvatdata?.commodity === "MANUFACTURER" ||
+                      dvatdata?.commodity === "WHOLESALER"
+                        ? `${val.quantity} (${getCrateCount(val)} Crate)`
+                        : val.quantity}
+                    </TableCell>
+                    {(dvatdata?.commodity === "MANUFACTURER" ||
+                      dvatdata?.commodity === "WHOLESALER") && (
+                      <TableCell className="p-2 border text-center">
+                        {getCrateCount(val)}
+                      </TableCell>
+                    )}
+                    <TableCell className="p-2 border text-center">
+                      {val.total_invoice_value.toFixed(2)}
                     </TableCell>
                     <TableCell className="p-2 border text-center">
-                      {val.total_invoice_value}
-                    </TableCell>
-                    <TableCell className="p-2 border text-center">
-                      {dvatdata?.commodity === "MANUFACTURER"
+                      {dvatdata?.commodity === "MANUFACTURER" ||
+                      dvatdata?.commodity === "WHOLESALER"
                         ? getSaleRowTypeLabel(val)
                         : getSaleTypeLabel(val.sale_type)}
                     </TableCell>

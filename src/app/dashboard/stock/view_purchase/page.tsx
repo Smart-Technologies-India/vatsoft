@@ -790,6 +790,7 @@ const DocumentWiseDetails = () => {
     seller_tin_id: number | null;
     commodity_name: string | null;
     tax_percent: string | null;
+    crate_size: number | null;
     error: boolean;
     errorname: string;
   }
@@ -825,14 +826,11 @@ const DocumentWiseDetails = () => {
     if (!normalized) return null;
 
     if (["regular", "reguler"].includes(normalized)) return "REGULAR";
-    if (["againstcform", "cform"].includes(normalized))
-      return "AGAINST_CFORM";
-    if (["againstfform", "fform"].includes(normalized))
-      return "AGAINST_FFORM";
+    if (["againstcform", "cform"].includes(normalized)) return "AGAINST_CFORM";
+    if (["againstfform", "fform"].includes(normalized)) return "AGAINST_FFORM";
     if (["againste1", "againste1form", "e1", "e1form"].includes(normalized))
       return "AGAINST_E1";
-    if (["againstiform", "iform"].includes(normalized))
-      return "AGAINST_IFORM";
+    if (["againstiform", "iform"].includes(normalized)) return "AGAINST_IFORM";
     if (["exempt", "isexempt"].includes(normalized)) return "EXEMPT";
     if (["hexport", "ishexport", "againsthform", "hform"].includes(normalized))
       return "H_EXPORT";
@@ -959,7 +957,9 @@ const DocumentWiseDetails = () => {
   };
 
   const downloadBulkTemplate = () => {
-    const isManufacturerCommodity = dvatdata?.commodity === "MANUFACTURER";
+    const isManufacturerCommodity =
+      dvatdata?.commodity === "MANUFACTURER" ||
+      dvatdata?.commodity == "WHOLESALER";
     const rows = [
       {
         "TIN Number": "25000000000",
@@ -1207,7 +1207,9 @@ const DocumentWiseDetails = () => {
         groupedData[key] = (groupedData[key] ?? 0) + 1;
       });
 
-      const isManufacturerCommodity = dvatdata?.commodity === "MANUFACTURER";
+      const isManufacturerCommodity =
+        dvatdata?.commodity === "MANUFACTURER" ||
+        dvatdata?.commodity == "WHOLESALER";
 
       const parsedRows = rows
         .map((row) => {
@@ -1515,7 +1517,9 @@ const DocumentWiseDetails = () => {
             );
           }
 
-          const selectedFlags = allFlagSources.filter((item) => item.value === true);
+          const selectedFlags = allFlagSources.filter(
+            (item) => item.value === true,
+          );
           if (selectedFlags.length > 1) {
             errors.push("* Only one type can be true in a row");
           }
@@ -1580,6 +1584,7 @@ const DocumentWiseDetails = () => {
             seller_tin_id: sellerTin?.id ?? null,
             commodity_name: selectedCommodity?.product_name ?? null,
             tax_percent: selectedCommodity?.taxable_at ?? null,
+            crate_size: selectedCommodity?.crate_size ?? null,
             error: errors.length > 0,
             errorname: errors.join("\n"),
           } as BulkSheetData;
@@ -1654,12 +1659,21 @@ const DocumentWiseDetails = () => {
     }
 
     const entries = tabledata.map((row) => {
-      const isManufacturerCommodity = dvatdata?.commodity === "MANUFACTURER";
+      const isManufacturerCommodity =
+        dvatdata?.commodity === "MANUFACTURER" ||
+        dvatdata?.commodity == "WHOLESALER";
       const taxPercent = isManufacturerCommodity
         ? "0"
         : row.purchase_type === "AGAINST_CFORM"
           ? "2"
-          : ["AGAINST_FFORM", "AGAINST_E1", "AGAINST_IFORM", "EXEMPT", "H_EXPORT", "EXPORT"].includes(row.purchase_type)
+          : [
+                "AGAINST_FFORM",
+                "AGAINST_E1",
+                "AGAINST_IFORM",
+                "EXEMPT",
+                "H_EXPORT",
+                "EXPORT",
+              ].includes(row.purchase_type)
             ? "0"
             : (row.tax_percent ?? "0");
       const totalInvoice = Number(row.total_invoice_value);
@@ -1921,6 +1935,20 @@ const DocumentWiseDetails = () => {
     if (crates == 0) return `${pcs} Pcs`;
     if (pcs == 0) return `${crates} Crate`;
     return `${crates} Crate ${pcs} Pcs`;
+  };
+
+  const getCrateCount = (row: BulkSheetData): string => {
+    const crateSize = row.crate_size && row.crate_size > 0 ? row.crate_size : 0;
+    if (!crateSize || !Number.isFinite(row.quantity) || row.quantity <= 0) {
+      return "-";
+    }
+
+    const crateCount = row.quantity / crateSize;
+    if (!Number.isFinite(crateCount)) return "-";
+
+    return Number.isInteger(crateCount)
+      ? crateCount.toString()
+      : crateCount.toFixed(2);
   };
 
   const markRecordAccepted = (purchaseId: number) => {
@@ -2199,6 +2227,12 @@ const DocumentWiseDetails = () => {
         Loading...
       </div>
     );
+
+  const bulkUploadTableColumnCount =
+    dvatdata?.commodity === "MANUFACTURER" ||
+    dvatdata?.commodity == "WHOLESALER"
+      ? 12
+      : 11;
 
   return (
     <>
@@ -2493,7 +2527,8 @@ const DocumentWiseDetails = () => {
                     width: `${Math.min(
                       100,
                       Math.floor(
-                        (acceptAllProgress.processed / acceptAllProgress.total) *
+                        (acceptAllProgress.processed /
+                          acceptAllProgress.total) *
                           100,
                       ),
                     )}%`,
@@ -2501,7 +2536,7 @@ const DocumentWiseDetails = () => {
                 />
               </div>
               <p className="mt-1">
-                Progress: {" "}
+                Progress:{" "}
                 {Math.min(
                   100,
                   Math.floor(
@@ -2631,6 +2666,12 @@ const DocumentWiseDetails = () => {
                 <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
                   Quantity
                 </TableHead>
+                {(dvatdata?.commodity === "MANUFACTURER" ||
+                  dvatdata?.commodity === "WHOLESALER") && (
+                  <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                    Crate
+                  </TableHead>
+                )}
                 <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
                   Total Invoice Value
                 </TableHead>
@@ -2646,7 +2687,7 @@ const DocumentWiseDetails = () => {
               {paginatedBulkRows.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={11}
+                    colSpan={bulkUploadTableColumnCount}
                     className="p-4 border border-gray-200 text-center text-sm text-gray-600"
                   >
                     No rows found for current search/filter.
@@ -2685,13 +2726,23 @@ const DocumentWiseDetails = () => {
                         {val.commodity_name ?? "-"}
                       </TableCell>
                       <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                        {val.quantity}
+                        {dvatdata?.commodity === "MANUFACTURER" ||
+                        dvatdata?.commodity == "WHOLESALER"
+                          ? `${val.quantity} (${getCrateCount(val)} Crate)`
+                          : val.quantity}
+                      </TableCell>
+                      {dvatdata?.commodity === "MANUFACTURER" ||
+                      dvatdata?.commodity == "WHOLESALER" ? (
+                        <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                          {getCrateCount(val)}
+                        </TableCell>
+                      ) : null}
+                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                        {val.total_invoice_value.toFixed(2)}
                       </TableCell>
                       <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                        {val.total_invoice_value}
-                      </TableCell>
-                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                        {dvatdata?.commodity === "MANUFACTURER"
+                        {dvatdata?.commodity === "MANUFACTURER" ||
+                        dvatdata?.commodity == "WHOLESALER"
                           ? getPurchaseRowTypeLabel(val)
                           : getPurchaseTypeLabel(val.purchase_type)}
                       </TableCell>
