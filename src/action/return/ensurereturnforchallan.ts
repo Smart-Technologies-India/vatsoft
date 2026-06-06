@@ -50,7 +50,7 @@ const EnsureReturnForChallan = async (
     if (!returnInvoice) {
       const dvat04 = await prisma.dvat04.findFirst({
         where: {
-          dvatid: currentDvatId,
+          id: currentDvatId,
           deletedAt: null,
           deletedById: null,
         },
