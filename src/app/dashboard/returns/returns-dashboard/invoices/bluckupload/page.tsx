@@ -19,7 +19,7 @@ import {
   ReturnType,
   SaleOf,
 } from "@prisma/client";
-import { Button, DatePicker, Input, InputRef, Select } from "antd";
+import { Button, DatePicker, Input, Select } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";

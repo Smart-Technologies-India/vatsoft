@@ -59,7 +59,14 @@ const DocumentWiseDetails = () => {
     item_code: number;
     quantity: number;
     total_invoice_value: number;
+    sale_type: string;
     against_cfrom: boolean;
+    is_against_fform: boolean;
+    is_exempt: boolean;
+    is_against_iform: boolean;
+    is_h_export: boolean;
+    is_against_e1: boolean;
+    is_export: boolean;
     seller_tin_id: number | null;
     commodity_name: string | null;
     tax_percent: string | null;
@@ -126,13 +133,19 @@ const DocumentWiseDetails = () => {
 
   const parseDateDDMMYYYY = (value: unknown): Date | null => {
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
-      return value;
+      return new Date(
+        Date.UTC(
+          value.getUTCFullYear(),
+          value.getUTCMonth(),
+          value.getUTCDate(),
+        ),
+      );
     }
 
     if (typeof value === "number") {
       const parsed = XLSX.SSF.parse_date_code(value);
       if (!parsed) return null;
-      return new Date(parsed.y, parsed.m - 1, parsed.d);
+      return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
     }
 
     const raw = normalizeText(value);
@@ -142,12 +155,12 @@ const DocumentWiseDetails = () => {
     const day = Number(match[1]);
     const month = Number(match[2]);
     const year = Number(match[3]);
-    const parsed = new Date(year, month - 1, day);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
 
     if (
-      parsed.getFullYear() !== year ||
-      parsed.getMonth() !== month - 1 ||
-      parsed.getDate() !== day
+      parsed.getUTCFullYear() !== year ||
+      parsed.getUTCMonth() !== month - 1 ||
+      parsed.getUTCDate() !== day
     ) {
       return null;
     }
@@ -156,11 +169,26 @@ const DocumentWiseDetails = () => {
   };
 
   const formatDateDDMMYYYY = (date: Date): string => {
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const year = date.getUTCFullYear();
     return `${day}/${month}/${year}`;
   };
+
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   const parseBooleanValue = (value: unknown): boolean | null => {
     if (typeof value === "boolean") return value;
@@ -176,6 +204,63 @@ const DocumentWiseDetails = () => {
     if (["true", "yes", "y", "1"].includes(normalized)) return true;
     if (["false", "no", "n", "0"].includes(normalized)) return false;
     return null;
+  };
+
+  const normalizeSaleType = (value: unknown): string | null => {
+    const normalized = normalizeText(value)
+      .toLowerCase()
+      .replace(/[_\s-]+/g, "");
+
+    if (!normalized) return null;
+
+    if (["regular", "reguler"].includes(normalized)) return "REGULAR";
+    if (["againstcform", "cform"].includes(normalized)) return "CFORM";
+    if (["againstfform", "fform"].includes(normalized)) return "FFORM";
+    if (["exempt", "isexempt"].includes(normalized)) return "EXEMPT";
+    if (["againstiform", "iform"].includes(normalized)) return "IFORM";
+    if (["hexport", "hformexport", "hform", "ishexport"].includes(normalized)) {
+      return "H_EXPORT";
+    }
+    if (["againste1", "againste1form", "e1", "e1form"].includes(normalized)) {
+      return "E1";
+    }
+    if (["export", "isexport", "directexport"].includes(normalized)) {
+      return "EXPORT";
+    }
+
+    return null;
+  };
+
+  const getSaleTypeLabel = (saleType: string): string => {
+    switch (saleType) {
+      case "CFORM":
+        return "Against C Form";
+      case "FFORM":
+        return "Against F Form";
+      case "EXEMPT":
+        return "Exempt";
+      case "IFORM":
+        return "Against I Form";
+      case "H_EXPORT":
+        return "H Export";
+      case "E1":
+        return "Against E1";
+      case "EXPORT":
+        return "Export";
+      default:
+        return "Regular";
+    }
+  };
+
+  const getSaleRowTypeLabel = (row: BulkSheetData): string => {
+    if (row.against_cfrom) return "Against C Form";
+    if (row.is_against_fform) return "Against F Form";
+    if (row.is_against_e1) return "Against E1";
+    if (row.is_against_iform) return "Against I Form";
+    if (row.is_exempt) return "Exempt";
+    if (row.is_h_export) return "H Export";
+    if (row.is_export) return "Export";
+    return "Regular";
   };
 
   const getExpectedProductType = () => {
@@ -219,6 +304,14 @@ const DocumentWiseDetails = () => {
         Quantity: isManufacturerCommodity ? 2 : 24,
         "Total Invoice Value": 12000,
         "Is Against C Form": "false",
+        ...(isManufacturerCommodity && {
+          "Is Against F Form": "false",
+          "Is Against E1": "false",
+          "Is Against I Form": "false",
+          "Is Exempt": "false",
+          "Is H Export": "false",
+          "Is Export": "false",
+        }),
       },
       {
         "TIN Number": "25000000000",
@@ -227,7 +320,15 @@ const DocumentWiseDetails = () => {
         "Item Code": 2,
         Quantity: isManufacturerCommodity ? 1 : 12,
         "Total Invoice Value": 8600,
-        "Is Against C Form": "false",
+        "Is Against C Form": "true",
+        ...(isManufacturerCommodity && {
+          "Is Against F Form": "false",
+          "Is Against E1": "false",
+          "Is Against I Form": "false",
+          "Is Exempt": "false",
+          "Is H Export": "false",
+          "Is Export": "false",
+        }),
       },
       {
         "TIN Number": "25000000000",
@@ -236,7 +337,15 @@ const DocumentWiseDetails = () => {
         "Item Code": 3,
         Quantity: isManufacturerCommodity ? 3 : 30,
         "Total Invoice Value": 15000,
-        "Is Against C Form": "true",
+        "Is Against C Form": "false",
+        ...(isManufacturerCommodity && {
+          "Is Against F Form": "true",
+          "Is Against E1": "false",
+          "Is Against I Form": "false",
+          "Is Exempt": "false",
+          "Is H Export": "false",
+          "Is Export": "false",
+        }),
       },
     ];
 
@@ -285,6 +394,54 @@ const DocumentWiseDetails = () => {
         Rules:
           "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
       },
+      ...(isManufacturerCommodity
+        ? [
+            {
+              Field: "Is Against F Form",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Against E1",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Against I Form",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Exempt",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is H Export",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Export",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+          ]
+        : [
+            {
+              Field: "Type",
+              "What to fill":
+                "REGULAR, CFORM, FFORM, EXEMPT, IFORM, H_EXPORT, E1, EXPORT",
+              Rules:
+                "Only one type is allowed per row. If blank, it will be treated as REGULAR.",
+            },
+          ]),
     ];
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
@@ -433,6 +590,53 @@ const DocumentWiseDetails = () => {
             "Against C Form",
             "against c form",
           ]);
+          const is_against_fform_raw = readSheetField(row, [
+            "Is Against F Form",
+            "is against f form",
+            "is_against_f_form",
+            "Against F Form",
+            "against f form",
+          ]);
+          const is_exempt_raw = readSheetField(row, [
+            "Is Exempt",
+            "is exempt",
+            "is_exempt",
+            "Exempt",
+            "exempt",
+          ]);
+          const is_against_iform_raw = readSheetField(row, [
+            "Is Against I Form",
+            "is against i form",
+            "is_against_i_form",
+            "Against I Form",
+            "against i form",
+          ]);
+          const is_h_export_raw = readSheetField(row, [
+            "Is H Export",
+            "is h export",
+            "is_h_export",
+            "H Export",
+            "h export",
+          ]);
+          const is_against_e1_raw = readSheetField(row, [
+            "Is Against E1",
+            "is against e1",
+            "is_against_e1",
+            "Against E1",
+            "against e1",
+          ]);
+          const is_export_raw = readSheetField(row, [
+            "Is Export",
+            "is export",
+            "is_export",
+          ]);
+          const sale_type_raw = readSheetField(row, [
+            "Type",
+            "type",
+            "Sale Type",
+            "sale type",
+            "sale_type",
+          ]);
 
           const isAllNull =
             tin_number === "" &&
@@ -441,7 +645,14 @@ const DocumentWiseDetails = () => {
             normalizeText(item_code_raw) === "" &&
             normalizeText(quantity_raw) === "" &&
             normalizeText(total_invoice_value_raw) === "" &&
-            normalizeText(against_cfrom_raw) === "";
+            normalizeText(against_cfrom_raw) === "" &&
+            normalizeText(is_against_fform_raw) === "" &&
+            normalizeText(is_exempt_raw) === "" &&
+            normalizeText(is_against_iform_raw) === "" &&
+            normalizeText(is_h_export_raw) === "" &&
+            normalizeText(is_against_e1_raw) === "" &&
+            normalizeText(is_export_raw) === "" &&
+            normalizeText(sale_type_raw) === "";
 
           if (isAllNull) return null;
 
@@ -501,10 +712,8 @@ const DocumentWiseDetails = () => {
           if (!invoice_date) {
             errors.push("* Invoice Date must be DD/MM/YYYY");
           } else {
-            const invoiceMonth = invoice_date.toLocaleString("default", {
-              month: "long",
-            });
-            const invoiceYear = invoice_date.getFullYear().toString();
+            const invoiceMonth = monthNames[invoice_date.getUTCMonth()];
+            const invoiceYear = invoice_date.getUTCFullYear().toString();
             const periodKey = getPeriodKey(invoiceYear, invoiceMonth);
 
             if (filedReturnPeriods.has(periodKey)) {
@@ -565,10 +774,110 @@ const DocumentWiseDetails = () => {
           }
 
           const parsedAgainstCFrom = parseBooleanValue(against_cfrom_raw);
-          if (parsedAgainstCFrom == null) {
+          const parsedAgainstFForm = parseBooleanValue(is_against_fform_raw);
+          const parsedIsExempt = parseBooleanValue(is_exempt_raw);
+          const parsedAgainstIForm = parseBooleanValue(is_against_iform_raw);
+          const parsedHExport = parseBooleanValue(is_h_export_raw);
+          const parsedAgainstE1 = parseBooleanValue(is_against_e1_raw);
+          const parsedIsExport = parseBooleanValue(is_export_raw);
+          const normalizedType = normalizeSaleType(sale_type_raw);
+
+          const booleanColumnInputs: Array<{
+            label: string;
+            raw: unknown;
+            parsed: boolean | null;
+          }> = [
+            {
+              label: "Is Against C Form",
+              raw: against_cfrom_raw,
+              parsed: parsedAgainstCFrom,
+            },
+            {
+              label: "Is Against F Form",
+              raw: is_against_fform_raw,
+              parsed: parsedAgainstFForm,
+            },
+            {
+              label: "Is Exempt",
+              raw: is_exempt_raw,
+              parsed: parsedIsExempt,
+            },
+            {
+              label: "Is Against I Form",
+              raw: is_against_iform_raw,
+              parsed: parsedAgainstIForm,
+            },
+            {
+              label: "Is H Export",
+              raw: is_h_export_raw,
+              parsed: parsedHExport,
+            },
+            {
+              label: "Is Against E1",
+              raw: is_against_e1_raw,
+              parsed: parsedAgainstE1,
+            },
+            {
+              label: "Is Export",
+              raw: is_export_raw,
+              parsed: parsedIsExport,
+            },
+          ];
+
+          for (const input of booleanColumnInputs) {
+            if (normalizeText(input.raw) !== "" && input.parsed == null) {
+              errors.push(
+                `* ${input.label} must be true/false (yes/no/1/0 also accepted)`,
+              );
+            }
+          }
+
+          if (isManufacturerCommodity) {
+            const requiredManufacturerColumns = [
+              { label: "Is Against C Form", parsed: parsedAgainstCFrom },
+              { label: "Is Against F Form", parsed: parsedAgainstFForm },
+              { label: "Is Against E1", parsed: parsedAgainstE1 },
+              { label: "Is Against I Form", parsed: parsedAgainstIForm },
+              { label: "Is Exempt", parsed: parsedIsExempt },
+              { label: "Is H Export", parsed: parsedHExport },
+              { label: "Is Export", parsed: parsedIsExport },
+            ];
+
+            for (const column of requiredManufacturerColumns) {
+              if (column.parsed == null) {
+                errors.push(
+                  `* ${column.label} must be true/false (yes/no/1/0 also accepted)`,
+                );
+              }
+            }
+          }
+
+          if (normalizeText(sale_type_raw) !== "" && !normalizedType) {
             errors.push(
-              "* Is Against C Form must be true/false (yes/no/1/0 also accepted)",
+              "* Type must be one of: REGULAR, CFORM, FFORM, EXEMPT, IFORM, H_EXPORT, E1, EXPORT",
             );
+          }
+
+          const selectedFlags = [
+            { key: "CFORM", value: parsedAgainstCFrom },
+            { key: "FFORM", value: parsedAgainstFForm },
+            { key: "EXEMPT", value: parsedIsExempt },
+            { key: "IFORM", value: parsedAgainstIForm },
+            { key: "H_EXPORT", value: parsedHExport },
+            { key: "E1", value: parsedAgainstE1 },
+            { key: "EXPORT", value: parsedIsExport },
+          ].filter((item) => item.value === true);
+
+          if (selectedFlags.length > 1) {
+            errors.push("* Only one type can be true in a row");
+          }
+
+          if (
+            normalizedType &&
+            selectedFlags.length === 1 &&
+            selectedFlags[0].key !== normalizedType
+          ) {
+            errors.push("* Type and boolean flags do not match for this row");
           }
 
           if (
@@ -610,11 +919,24 @@ const DocumentWiseDetails = () => {
             errors.push("* Duplicate row in sheet");
           }
 
-          const against_cfrom = parsedAgainstCFrom ?? false;
+          let saleType = "REGULAR";
+          if (normalizedType) {
+            saleType = normalizedType;
+          } else if (selectedFlags.length === 1) {
+            saleType = selectedFlags[0].key;
+          }
+
+          const against_cfrom = saleType === "CFORM";
+          const is_against_fform = saleType === "FFORM";
+          const is_exempt = saleType === "EXEMPT";
+          const is_against_iform = saleType === "IFORM";
+          const is_h_export = saleType === "H_EXPORT";
+          const is_against_e1 = saleType === "E1";
+          const is_export = saleType === "EXPORT";
 
           return {
             tin_number,
-            invoice_date: invoice_date ?? new Date(),
+            invoice_date: invoice_date ?? new Date(Number.NaN),
             invoice_date_display: invoice_date
               ? formatDateDDMMYYYY(invoice_date)
               : "-",
@@ -626,7 +948,14 @@ const DocumentWiseDetails = () => {
             total_invoice_value: Number.isFinite(total_invoice_value)
               ? total_invoice_value
               : 0,
+            sale_type: saleType,
             against_cfrom,
+            is_against_fform,
+            is_exempt,
+            is_against_iform,
+            is_h_export,
+            is_against_e1,
+            is_export,
             seller_tin_id: sellerTin?.id ?? null,
             commodity_name: selectedCommodity?.product_name ?? null,
             tax_percent: selectedCommodity?.taxable_at ?? null,
@@ -638,16 +967,33 @@ const DocumentWiseDetails = () => {
         })
         .filter((val): val is BulkSheetData => val !== null);
 
-      if (parsedRows.length > 0) {
-        const firstMonth = parsedRows[0].invoice_date.getMonth();
-        const firstYear = parsedRows[0].invoice_date.getFullYear();
-        const mixedMonths = parsedRows.some(
+      const validInvoiceDateRows = parsedRows.filter(
+        (row) => !Number.isNaN(row.invoice_date.getTime()),
+      );
+
+      if (validInvoiceDateRows.length > 0) {
+        const firstMonth = validInvoiceDateRows[0].invoice_date.getUTCMonth();
+        const firstYear = validInvoiceDateRows[0].invoice_date.getUTCFullYear();
+        const mixedMonths = validInvoiceDateRows.some(
           (row) =>
-            row.invoice_date.getMonth() !== firstMonth ||
-            row.invoice_date.getFullYear() !== firstYear,
+            row.invoice_date.getUTCMonth() !== firstMonth ||
+            row.invoice_date.getUTCFullYear() !== firstYear,
         );
 
         if (mixedMonths) {
+          const monthBuckets = validInvoiceDateRows.reduce(
+            (acc, row) => {
+              const key = `${row.invoice_date.getUTCFullYear()}-${String(
+                row.invoice_date.getUTCMonth() + 1,
+              ).padStart(2, "0")}`;
+              acc[key] = (acc[key] ?? 0) + 1;
+              return acc;
+            },
+            {} as Record<string, number>,
+          );
+
+
+
           parsedRows.forEach((row) => {
             row.error = true;
             row.errorname = row.errorname
@@ -756,7 +1102,14 @@ const DocumentWiseDetails = () => {
           item.row.commodity_name ?? "",
           item.row.quantity?.toString(),
           item.row.total_invoice_value?.toString(),
+          item.row.sale_type,
           item.row.against_cfrom ? "true" : "false",
+          item.row.is_against_fform ? "true" : "false",
+          item.row.is_against_e1 ? "true" : "false",
+          item.row.is_against_iform ? "true" : "false",
+          item.row.is_exempt ? "true" : "false",
+          item.row.is_h_export ? "true" : "false",
+          item.row.is_export ? "true" : "false",
           item.row.errorname ?? "",
         ]
           .join(" ")
@@ -790,7 +1143,7 @@ const DocumentWiseDetails = () => {
         case "total_invoice_value":
           return item.row.total_invoice_value ?? 0;
         case "against_cform":
-          return item.row.against_cfrom ? 1 : 0;
+          return item.row.sale_type;
         default:
           return item.originalIndex;
       }
@@ -1196,9 +1549,90 @@ const DocumentWiseDetails = () => {
     totalRows: 0,
   });
 
+  const formatEligibilityDate = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const toDateOnly = (date: Date): Date =>
+    new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  const getApplicablePeriodDate = (): Date | null => {
+    if (dailySale.length === 0) {
+      return null;
+    }
+
+    return dailySale.reduce(
+      (minDate, group) =>
+        group.invoice_date < minDate ? group.invoice_date : minDate,
+      dailySale[0].invoice_date,
+    );
+  };
+
+  const getMonthlyDueDate = (periodDate: Date): Date =>
+    new Date(periodDate.getFullYear(), periodDate.getMonth() + 1, 10);
+
+  const getQuarterlyDueDate = (periodDate: Date): Date => {
+    const month = periodDate.getMonth();
+    const year = periodDate.getFullYear();
+
+    if (month <= 2) {
+      return new Date(year, 3, 10); // Jan-Mar -> 10 Apr
+    }
+    if (month <= 5) {
+      return new Date(year, 6, 10); // Apr-Jun -> 10 Jul
+    }
+    if (month <= 8) {
+      return new Date(year, 9, 10); // Jul-Sep -> 10 Oct
+    }
+    return new Date(year + 1, 0, 10); // Oct-Dec -> 10 Jan (next year)
+  };
+
+  const canGenerateDvat31 = (): { allowed: boolean; message?: string } => {
+    const today = toDateOnly(new Date());
+    const periodDate = getApplicablePeriodDate();
+    const filingFrequency = dvatdata?.frequencyFilings?.toUpperCase();
+
+   
+    if (!periodDate) {
+      return {
+        allowed: false,
+        message: "No eligible sale records found for generation.",
+      };
+    }
+
+    const dueDate =
+      filingFrequency === "QUARTERLY"
+        ? getQuarterlyDueDate(periodDate)
+        : getMonthlyDueDate(periodDate);
+
+    if (today >= dueDate) {
+      return { allowed: true };
+    }
+
+    if (filingFrequency === "QUARTERLY") {
+      return {
+        allowed: false,
+        message: `Returns for a tax period shall be available for generation only on or after the 10th day of the month succeeding the applicable tax period. Next allowed date is ${formatEligibilityDate(dueDate)}.`,
+      };
+    }
+
+    return {
+      allowed: false,
+      message: `Returns for a tax period shall be available for generation only on or after the 10th day of the month succeeding the applicable tax period. Next allowed date is ${formatEligibilityDate(dueDate)}.`,
+    };
+  };
+
   const Convertto31 = async () => {
     if (!dvatdata) {
       return toast.error("DVAT not found.");
+    }
+
+    const eligibility = canGenerateDvat31();
+    if (!eligibility.allowed) {
+      return toast.error(eligibility.message);
     }
 
     const response = await ConvertDvat31({
@@ -1488,16 +1922,24 @@ const DocumentWiseDetails = () => {
     }
 
     const entries = tabledata.map((row) => {
-      const taxPercent = row.against_cfrom ? "2" : (row.tax_percent ?? "0");
+      const taxPercent =
+        dvatdata?.commodity === "MANUFACTURER"
+          ? "0"
+          : row.sale_type === "CFORM"
+            ? "2"
+            : row.sale_type === "REGULAR"
+              ? (row.tax_percent ?? "0")
+              : "0";
       const totalInvoice = Number(row.total_invoice_value);
       const taxableValue = (totalInvoice / (100 + Number(taxPercent))) * 100;
       const vatValue = totalInvoice - taxableValue;
       const amountUnit = totalInvoice / Number(row.quantity);
 
       const invoiceDate = new Date(
-        new Date(row.invoice_date).toISOString().split("T")[0],
+        row.invoice_date.getUTCFullYear(),
+        row.invoice_date.getUTCMonth(),
+        row.invoice_date.getUTCDate(),
       );
-      invoiceDate.setDate(invoiceDate.getDate() + 1);
 
       return {
         dvatid: dvatdata.id,
@@ -1512,8 +1954,12 @@ const DocumentWiseDetails = () => {
         amount_unit: amountUnit.toFixed(2),
         createdById: userid,
         against_cfrom: row.against_cfrom,
-        is_against_fform: false,
-        is_export: false,
+        is_against_fform: row.is_against_fform,
+        is_exempt: row.is_exempt,
+        is_against_iform: row.is_against_iform,
+        is_h_export: row.is_h_export,
+        is_against_e1: row.is_against_e1,
+        is_export: row.is_export,
         batch_name: null,
       };
     });
@@ -1796,7 +2242,7 @@ const DocumentWiseDetails = () => {
             <option value="product_name">Sort by Product Name</option>
             <option value="quantity">Sort by Quantity</option>
             <option value="total_invoice_value">Sort by Invoice Value</option>
-            <option value="against_cform">Sort by C Form</option>
+            <option value="against_cform">Sort by Type</option>
           </select>
           <select
             value={bulkSortOrder}
@@ -1833,9 +2279,7 @@ const DocumentWiseDetails = () => {
               <TableHead className="border text-center">
                 Total Invoice Value
               </TableHead>
-              <TableHead className="border text-center">
-                Is Against C Form
-              </TableHead>
+              <TableHead className="border text-center">Type</TableHead>
               <TableHead className="border text-center min-w-40 w-80">
                 Error
               </TableHead>
@@ -1886,7 +2330,9 @@ const DocumentWiseDetails = () => {
                       {val.total_invoice_value}
                     </TableCell>
                     <TableCell className="p-2 border text-center">
-                      {val.against_cfrom ? "true" : "false"}
+                      {dvatdata?.commodity === "MANUFACTURER"
+                        ? getSaleRowTypeLabel(val)
+                        : getSaleTypeLabel(val.sale_type)}
                     </TableCell>
                     <TableCell className="p-2 border text-left whitespace-pre-line text-red-600">
                       {val.errorname || "-"}
@@ -2367,7 +2813,11 @@ const DocumentWiseDetails = () => {
                     {dailySale.map((group: GroupedDailySale, index: number) => (
                       <TableRow
                         key={index}
-                        className="border-b hover:bg-gray-50"
+                        className={
+                          group.records.some((record) => !record.is_accept)
+                            ? "border-b bg-red-50 hover:bg-red-100"
+                            : "border-b hover:bg-gray-50"
+                        }
                       >
                         <TableCell className="p-2 text-center text-xs">
                           <button

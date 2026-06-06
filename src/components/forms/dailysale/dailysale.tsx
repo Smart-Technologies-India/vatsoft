@@ -364,10 +364,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     if (quantityCount == "pcs") {
       // pcs
 
-      if (
-        davtdata?.commodity == "OIDC" ||
-        davtdata?.commodity == "MANUFACTURER"
-      ) {
+      if (davtdata?.commodity == "OIDC") {
         if (
           isLiquore &&
           (parseFloat(data.amount_unit) *
@@ -492,10 +489,7 @@ const DailySale = (props: DailySaleProviderProps) => {
     if (quantityCount == "pcs") {
       // pcs
 
-      if (
-        davtdata?.commodity == "OIDC" ||
-        davtdata?.commodity == "MANUFACTURER"
-      ) {
+      if (davtdata?.commodity == "OIDC") {
         if (
           isLiquore &&
           (parseFloat(data.amount_unit) *
@@ -517,10 +511,7 @@ const DailySale = (props: DailySaleProviderProps) => {
         }
       }
     } else {
-      if (
-        davtdata?.commodity == "OIDC" ||
-        davtdata?.commodity == "MANUFACTURER"
-      ) {
+      if (davtdata?.commodity == "OIDC") {
         if (isLiquore && parseFloat(data.amount_unit) < liquoreOIDCAmount * 0.5) {
           return toast.error("Sale amount can not be less than MRP.");
         }

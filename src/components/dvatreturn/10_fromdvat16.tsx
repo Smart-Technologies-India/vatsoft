@@ -123,9 +123,9 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
             <th className="border border-black px-1 leading-4 text-[0.6rem] w-[6%] text-left">
               VAT Charged
             </th>
-            <th className="border border-black px-1 leading-4 text-[0.6rem] w-[6%] text-left">
+            {/* <th className="border border-black px-1 leading-4 text-[0.6rem] w-[6%] text-left">
               Rate of Charged
-            </th>
+            </th> */}
             <th className="border border-black px-1 leading-4 text-[0.6rem] w-[19%] text-left">
               Remarks
             </th>
@@ -162,9 +162,9 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
                 <td className="border border-black px-1 leading-4 text-[0.6rem]">
                   {val.vatamount}
                 </td>
-                <td className="border border-black px-1 leading-4 text-[0.6rem]">
+                {/* <td className="border border-black px-1 leading-4 text-[0.6rem]">
                   {val.tax_percent}
-                </td>
+                </td> */}
                 <td className="border border-black px-1 leading-4 text-[0.6rem]">
                   {val.remarks}
                 </td>

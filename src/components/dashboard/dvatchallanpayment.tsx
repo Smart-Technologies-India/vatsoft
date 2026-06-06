@@ -16,10 +16,8 @@ import { ToWords } from "to-words";
 import {
   capitalcase,
   formateDate,
-  generatePDF,
   getDaysBetweenDates,
   isNegative,
-  onFormError,
 } from "@/utils/methods";
 import {
   CategoryOfEntry,
@@ -117,6 +115,18 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     }
     return year;
   };
+
+  const paidvatamount = paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.vat ?? "0");
+  }, 0);
+
+  const paidinterestamount = paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.interest ?? "0");
+  }, 0);
+
+  const paidpenaltyamount = paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.penalty ?? "0");
+  }, 0);
 
   useEffect(() => {
     const init = async () => {
@@ -312,16 +322,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     }
   };
 
-  const normalizedPenalty = Math.max(0, lateFees);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-  } = useForm<SubmitPaymentFormCopy>({
-    resolver: valibotResolver(SubmitPaymentSchemaCopy),
-  });
   const get_rr_number = (): string => {
     const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
     const today = new Date();
@@ -330,50 +330,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     const return_id = parseInt(return01?.id.toString() ?? "0") + 4000;
 
     return `${rr_no}${month}${day}${return_id}`;
-  };
-
-  const onSubmit = async (data: SubmitPaymentFormCopy) => {
-    if (return01 == null) return toast.error("No return exist");
-
-    const lastPayment = await CheckLastPayment({
-      id: return01.id ?? 0,
-    });
-
-    if (!lastPayment.status) {
-      toast.error(lastPayment.message);
-      reset();
-      return;
-    }
-
-    if (lastPayment.data == false) {
-      toast.error(lastPayment.message);
-      reset();
-      return;
-    }
-
-    const response = await AddPayment({
-      id: return01.id ?? 0,
-      bank_name: data.bank_name,
-      track_id: data.track_id,
-      transaction_id: data.transaction_id,
-      rr_number: get_rr_number(),
-      penalty: normalizedPenalty.toString(),
-      ...(isNegative(getValue()) && {
-        pending_payment: getValue().toFixed(),
-      }),
-      interestamount: return01?.dvat04?.compositionScheme
-        ? getR6_2acomp().toFixed(0)
-        : getInterest().toFixed(0),
-      totaltaxamount: getTotalTaxAmount().toFixed(0),
-      vatamount: return01?.dvat04?.compositionScheme
-        ? getVatAmountcomp().toFixed(0)
-        : getVatAmount().toFixed(0),
-    });
-
-    if (!response.status) return toast.error(response.message);
-    toast.success(response.message);
-    router.push("/dashboard/returns/returns-dashboard");
-    reset();
   };
 
   const [isOnlineProcessing, setIsOnlineProcessing] = useState(false);
@@ -394,16 +350,21 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         return;
       }
 
+      const paymentBreakdown = getNetPayableBreakdown();
+
       const response = await AddPayment({
-        id: return01.id ?? 0,
+        id: return01.id,
         bank_name: "NIL",
         track_id: "NIL",
         transaction_id: "NIL",
         rr_number: get_rr_number(),
-        penalty: "0",
-        interestamount: "0",
-        totaltaxamount: "0",
-        vatamount: "0",
+        ...(paymentBreakdown.pendingPayment > 0 && {
+          pending_payment: paymentBreakdown.pendingPayment.toFixed(0),
+        }),
+        penalty: paymentBreakdown.penalty.toFixed(0),
+        interestamount: paymentBreakdown.interestamount.toFixed(0),
+        totaltaxamount: paymentBreakdown.totaltaxamount.toFixed(0),
+        vatamount: paymentBreakdown.vatamount.toFixed(0),
       });
 
       if (!response.status) return toast.error(response.message);
@@ -419,20 +380,32 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
     setIsOnlineProcessing(true);
     try {
+      const lastPayment = await CheckLastPayment({
+        id: return01.id ?? 0,
+      });
+
+      if (!lastPayment.status) {
+        toast.error(lastPayment.message);
+        return;
+      }
+
+      if (lastPayment.data == false) {
+        toast.error(lastPayment.message);
+        return;
+      }
+
+      const paymentBreakdown = getNetPayableBreakdown();
+
       const response = await AddPaymentOnline({
         id: return01.id,
         // rr_number: get_rr_number(),
-        penalty: normalizedPenalty.toString(),
-        ...(isNegative(getValue()) && {
-          pending_payment: getValue().toFixed(),
+        penalty: paymentBreakdown.penalty.toFixed(0),
+        ...(paymentBreakdown.pendingPayment > 0 && {
+          pending_payment: paymentBreakdown.pendingPayment.toFixed(0),
         }),
-        interestamount: return01?.dvat04?.compositionScheme
-          ? getR6_2acomp().toFixed(0)
-          : getInterest().toFixed(0),
-        totaltaxamount: getTotalTaxAmount().toFixed(0),
-        vatamount: return01?.dvat04?.compositionScheme
-          ? getVatAmountcomp().toFixed(0)
-          : getVatAmount().toFixed(0),
+        interestamount: paymentBreakdown.interestamount.toFixed(0),
+        totaltaxamount: paymentBreakdown.totaltaxamount.toFixed(0),
+        vatamount: paymentBreakdown.vatamount.toFixed(0),
       });
 
       if (!response.status) {
@@ -617,30 +590,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       decrease,
     };
   };
-  const get5_3 = (): PercentageOutput => {
-    let increase: string = "0";
-    let decrease: string = "0";
-    const output: returns_entry[] = returns_entryData.filter(
-      (val: returns_entry) =>
-        // val.dvat_type == DvatType.DVAT_30 &&
-        val.category_of_entry == CategoryOfEntry.INVOICE &&
-        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
-          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
-    );
-    for (let i = 0; i < output.length; i++) {
-      increase = (
-        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
-      ).toFixed(2);
-      decrease = (
-        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
-      ).toFixed(2);
-    }
-    return {
-      increase,
-      decrease,
-    };
-  };
+ 
 
   const getCreditNote = (): PercentageOutput => {
     let increase: string = "0";
@@ -718,18 +668,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     };
   };
 
-  const getInterest = (): number => {
-    if (!return01?.month) return 0;
-
-    const dueDate = getInterestDueDate(
-      return01.year,
-      return01.month,
-      return01.dvat04?.frequencyFilings === "QUARTERLY",
-    );
-
-    const interest = calculateInterest(getR6_1(), dueDate, paidChallans, 15);
-    return isNegative(interest) ? 0 : interest;
-  };
+ 
 
   const calculateInterest = (
     totalDue: number,
@@ -873,46 +812,10 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     return new Date(computedYear, monthIndex, 15);
   };
 
-  const getVatAmount = (): number => {
-    const challanAmount = paidChallans.reduce((total, challan) => {
-      return total + parseFloat(challan.total_tax_amount ?? "0");
-    }, 0);
-    console.log("challan amount", challanAmount);
-    return (
-      parseFloat(getInvoicePercentage("0").decrease) +
-      parseFloat(getInvoicePercentage("1").decrease) +
-      parseFloat(getInvoicePercentage("2").decrease) +
-      parseFloat(getInvoicePercentage("3").decrease) +
-      parseFloat(getInvoicePercentage("4").decrease) +
-      parseFloat(getInvoicePercentage("5").decrease) +
-      parseFloat(getInvoicePercentage("6").decrease) +
-      parseFloat(getInvoicePercentage("12.5").decrease) +
-      parseFloat(getInvoicePercentage("12.75").decrease) +
-      parseFloat(getInvoicePercentage("13.5").decrease) +
-      parseFloat(getInvoicePercentage("15").decrease) +
-      parseFloat(getInvoicePercentage("20").decrease) +
-      parseFloat(getSaleOfPercentage("4").decrease) +
-      parseFloat(getSaleOfPercentage("5").decrease) +
-      parseFloat(getSaleOfPercentage("12.5").decrease) +
-      parseFloat(get4_6().decrease) +
-      parseFloat(get4_7().decrease) -
-      parseFloat(get4_9().decrease) -
-      (parseFloat(get5_1().decrease) +
-        parseFloat(get5_2().decrease) +
-        (parseFloat(getDebitNote().decrease) -
-          parseFloat(getCreditNote().decrease) -
-          parseFloat(getGoodsReturnsNote().decrease) -
-          parseFloat(lastmonthdue))) -
-      challanAmount
-    );
-  };
 
-  console.log("vat amount", getVatAmount());
+
   const getVatAmountcomp = (): number => {
-    const challanAmount = paidChallans.reduce((total, challan) => {
-      return total + parseFloat(challan.total_tax_amount ?? "0");
-    }, 0);
-    return parseFloat(getInvoicePercentage("1").decrease) - challanAmount;
+    return parseFloat(getInvoicePercentage("1").decrease) - paidvatamount;
   };
 
   const getR6_2acomp = (): number => {
@@ -987,32 +890,96 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       365) *
     PenaltyDiffDays;
 
-  const getR7 = (): number =>
-    getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a());
+  const getNetPayable = (): number => {
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const vat = getR6_1();
 
-  const getValue = () => (isNegative(getR7()) ? getR7() : 0);
+    const vatBalance = vat - paidvatamount;
+    const penaltyBalance = penalty - paidpenaltyamount;
+    const interestBalance = interest - paidinterestamount;
 
-  const getTotalTaxAmount = (): number => {
-    const isComp = return01?.dvat04?.compositionScheme;
-    const vatAmount = isComp ? getVatAmountcomp() : getVatAmount();
-    const interest = isComp ? getR6_2acomp() : getInterest();
+    if (vatBalance <= 0) {
+      return Math.max(0, penaltyBalance) + Math.max(0, interestBalance);
+    }
 
-    // Let negative VAT adjust the net payable, then clamp final total to 0.
-    const netPayable =
-      vatAmount +
-      (isNegative(lateFees) ? 0 : lateFees) +
-      (isNegative(interest) ? 0 : interest);
+    const excessPenalty = penaltyBalance < 0 ? Math.abs(penaltyBalance) : 0;
+    const excessInterest = interestBalance < 0 ? Math.abs(interestBalance) : 0;
+    const adjustedVatBalance = Math.max(
+      0,
+      vatBalance - excessPenalty - excessInterest,
+    );
 
-    return Math.max(0, netPayable);
+    return (
+      adjustedVatBalance +
+      Math.max(0, penaltyBalance) +
+      Math.max(0, interestBalance)
+    );
   };
 
-  // challan section start from here
-  const options: CheckboxGroupProps<string>["options"] = [
-    { label: "Online", value: "ONLINE" },
-    { label: "Offline", value: "OFFLINE" },
-  ];
+  const getNetPayableBreakdown = () => {
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const vat = getR6_1();
 
-  const [paymentMode, setPaymentMode] = useState<string>("ONLINE");
+    const vatBalance = vat - paidvatamount;
+    const penaltyBalance = penalty - paidpenaltyamount;
+    const interestBalance = interest - paidinterestamount;
+
+
+
+    const pendingPaymentRaw =
+      (vatBalance < 0 ? vatBalance : 0) +
+      (penaltyBalance < 0 ? penaltyBalance : 0) +
+      (interestBalance < 0 ? interestBalance : 0);
+    const pendingPayment =
+      pendingPaymentRaw < 0 ? Math.abs(pendingPaymentRaw) : 0;
+
+    if (vatBalance <= 0) {
+      return {
+        vatamount: vat,
+        penalty: Math.max(0, penalty),
+        interestamount: Math.max(0, interest),
+        totaltaxamount: penalty + interest + vat,
+        pendingPayment,
+      };
+    }
+
+    const excessPenalty = penaltyBalance < 0 ? Math.abs(penaltyBalance) : 0;
+    const excessInterest = interestBalance < 0 ? Math.abs(interestBalance) : 0;
+    const adjustedVatBalance = Math.max(
+      0,
+      vatBalance - excessPenalty - excessInterest,
+    );
+
+    return {
+      vatamount: vat,
+      penalty: Math.max(0, penalty),
+      interestamount: Math.max(0, interest),
+      totaltaxamount:
+        adjustedVatBalance +
+        Math.max(0, penaltyBalance) +
+        Math.max(0, interestBalance),
+      pendingPayment,
+    };
+  };
+
+  const getTotalTaxAmount = (): number => {
+    return Math.max(0, getNetPayable());
+  };
+
+ 
+  const remaingVat =
+    getR6_1() - paidvatamount < 0 ? 0 : getR6_1() - paidvatamount;
+
+  const remainingPenalty = isNegative(lateFees - paidpenaltyamount)
+    ? 0
+    : lateFees - paidpenaltyamount;
+  const remainingInterest = isNegative(getR6_2a() - paidinterestamount)
+    ? 0
+    : getR6_2a() - paidinterestamount;
+
+ 
 
   return (
     <>
@@ -1076,7 +1043,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                 <TableCell className="text-center p-2 border ">
                   {return01?.dvat04?.compositionScheme
                     ? getVatAmountcomp().toFixed(0)
-                    : getVatAmount().toFixed(0)}
+                    : remaingVat.toFixed(0)}
                   {/* {getVatAmount().toFixed(0)}- {getVatAmountcomp().toFixed(0)}-{" "}
                   {return01?.dvat04?.compositionScheme?"1":"0"} */}
                 </TableCell>
@@ -1086,7 +1053,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                 <TableCell className="text-center p-2 border">
                   {return01?.dvat04.compositionScheme
                     ? getR6_2acomp().toFixed(0)
-                    : getInterest().toFixed(0)}
+                    : remainingInterest.toFixed(0)}
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -1094,7 +1061,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                   Late Penalty
                 </TableCell>
                 <TableCell className="text-center p-2 border">
-                  {isNegative(lateFees) ? "0" : lateFees}
+                  {remainingPenalty.toFixed(0)}
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -1191,50 +1158,46 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                     }}
                   /> */}
 
-                  {paymentMode == "ONLINE" ? (
-                    <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3">
-                      <p className="text-sm font-medium text-blue-900">
-                        Online Payment
-                      </p>
-                      <p className="text-xs text-blue-800 mt-1">
-                        You will be redirected to the payment gateway. No bank,
-                        transaction, or track details are required here.
-                      </p>
+                  {/* {paymentMode == "ONLINE" ? ( */}
+                  <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3">
+                    <p className="text-sm font-medium text-blue-900">
+                      Online Payment
+                    </p>
+                    <p className="text-xs text-blue-800 mt-1">
+                      You will be redirected to the payment gateway. No bank,
+                      transaction, or track details are required here.
+                    </p>
 
-                      <div className="mt-3 flex items-center justify-between rounded-md bg-white p-2 border border-blue-100">
-                        <span className="text-sm text-gray-600">
-                          Payable Amount
-                        </span>
-                        <span className="text-lg font-semibold text-gray-900">
-                          {getTotalTaxAmount().toFixed(0)}
-                        </span>
-                      </div>
-
-                      <div className="flex gap-2 mt-3 justify-end">
-                        {Math.round(getTotalTaxAmount()) == 0 ? (
-                          <Button
-                            type="primary"
-                            disabled={isFileReturnProcessing}
-                            onClick={onFileReturn}
-                          >
-                            {isFileReturnProcessing
-                              ? "Filing..."
-                              : "File Return"}
-                          </Button>
-                        ) : (
-                          <Button
-                            type="primary"
-                            disabled={isOnlineProcessing}
-                            onClick={onOnlinePayment}
-                          >
-                            {isOnlineProcessing
-                              ? "Redirecting..."
-                              : "Pay Online"}
-                          </Button>
-                        )}
-                      </div>
+                    <div className="mt-3 flex items-center justify-between rounded-md bg-white p-2 border border-blue-100">
+                      <span className="text-sm text-gray-600">
+                        Payable Amount
+                      </span>
+                      <span className="text-lg font-semibold text-gray-900">
+                        {getTotalTaxAmount().toFixed(0)}
+                      </span>
                     </div>
-                  ) : (
+
+                    <div className="flex gap-2 mt-3 justify-end">
+                      {Math.round(getTotalTaxAmount()) == 0 ? (
+                        <Button
+                          type="primary"
+                          disabled={isFileReturnProcessing}
+                          onClick={onFileReturn}
+                        >
+                          {isFileReturnProcessing ? "Filing..." : "File Return"}
+                        </Button>
+                      ) : (
+                        <Button
+                          type="primary"
+                          disabled={isOnlineProcessing}
+                          onClick={onOnlinePayment}
+                        >
+                          {isOnlineProcessing ? "Redirecting..." : "Pay Online"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  {/* ) : (
                     <form
                       className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3"
                       onSubmit={handleSubmit(onSubmit, onFormError)}
@@ -1335,7 +1298,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                         />
                       </div>
                     </form>
-                  )}
+                  )} */}
                 </div>
               </>
             )}

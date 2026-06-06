@@ -50,7 +50,7 @@ interface AddReturnInvoicePayload {
 }
 
 const AddReturnInvoice = async (
-  payload: AddReturnInvoicePayload
+  payload: AddReturnInvoicePayload,
 ): Promise<ApiResponseType<returns_entry | null>> => {
   try {
     const currentUserId = await getCurrentUserId();
@@ -68,7 +68,9 @@ const AddReturnInvoice = async (
       where: {
         year: payload.year,
         month: payload.month,
-        createdById: payload.createdById,
+        dvat04Id: currentDvatId,
+        deletedAt: null,
+        deletedById: null,
         return_type: "REVISED",
       },
     });
@@ -78,7 +80,9 @@ const AddReturnInvoice = async (
         where: {
           year: payload.year,
           month: payload.month,
-          createdById: payload.createdById,
+          dvat04Id: currentDvatId,
+          deletedAt: null,
+          deletedById: null,
           return_type: "ORIGINAL",
         },
       });
@@ -86,7 +90,7 @@ const AddReturnInvoice = async (
 
     if (!returnInvoice) {
       const dvat04 = await prisma.dvat04.findFirst({
-        where: { createdById: payload.createdById },
+        where: { id: currentDvatId, deletedAt: null, deletedById: null },
       });
 
       if (!dvat04) {

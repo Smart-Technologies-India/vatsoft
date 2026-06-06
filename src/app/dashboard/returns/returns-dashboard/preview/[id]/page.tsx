@@ -32,7 +32,6 @@ import { toast } from "react-toastify";
 import CheckPayment from "@/action/return/checkpayment";
 import CheckLastPayment from "@/action/return/checklastpayment";
 import GetUser from "@/action/user/getuser";
-import AddPaymentSubmit from "@/action/return/addpaymentsubmit";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetPaidChallanByReturnId from "@/action/challan/getpaidchallanbyreturnid";
 
@@ -46,6 +45,7 @@ import S1_1Adjustment from "@/components/dvatreturn/7_s1adjustment";
 import S2AdjustmentOfTax from "@/components/dvatreturn/8_s2adjustment";
 import CentralSales from "@/components/dvatreturn/9_centralsales";
 import FORM_DVAT_16 from "@/components/dvatreturn/10_fromdvat16";
+import AddPaymentSubmit from "@/action/return/addpaymentsubmit";
 
 interface PercentageOutput {
   increase: string;
@@ -227,6 +227,7 @@ const Dvat16ReturnPreview = () => {
           returnid: selectedReturn.id,
         });
 
+
         if (challanResponse.status && challanResponse.data) {
           setPaidChallans(challanResponse.data);
         } else {
@@ -376,7 +377,7 @@ const Dvat16ReturnPreview = () => {
     if (return01 == null) return toast.error("There is not return from here");
 
     const lastPayment = await CheckLastPayment({
-      id: return01.id ?? 0,
+      id: return01.id,
     });
 
     if (!lastPayment.status) {
@@ -391,27 +392,28 @@ const Dvat16ReturnPreview = () => {
       return;
     }
 
-    // const response = await AddSubmitPayment({
-    //   id: return01.id ?? 0,
-    //   rr_number: get_rr_number(),
-    //   penalty: lateFees.toString(),
-    // });
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const vat = getR6_1();
 
-    const vatamount = isNegative(getR6_1()) ? 0 : getR6_1();
-    const interestamount = isNegative(getR6_2a()) ? 0 : getR6_2a();
-    const pendingPayment = isNegative(getR7()) ? Math.abs(getR7()) : 0;
-    const totalTaxAmount = isNegative(getR7()) ? 0 : getR7();
+    const vatBalance = vat - paidvatamount;
+    const penaltyBalance = penalty - paidpenaltyamount;
+    const interestBalance = interest - paidinterestamount;
+
+    const pendingPayment = vatBalance + penaltyBalance + interestBalance;
+
+    // make pendingpayment positive if it is negative
+    const positivePendingPayment =
+      pendingPayment < 0 ? Math.abs(pendingPayment) : pendingPayment;
 
     const response = await AddPaymentSubmit({
       id: return01.id ?? 0,
       rr_number: get_rr_number(),
-      penalty: lateFees.toString(),
-      ...(pendingPayment > 0 && {
-        pending_payment: pendingPayment.toFixed(2),
-      }),
-      vatamount: vatamount.toFixed(2),
-      interestamount: interestamount.toFixed(2),
-      totaltaxamount: totalTaxAmount.toFixed(2),
+      pending_payment: positivePendingPayment.toFixed(2),
+      penalty: penalty.toFixed(2),
+      vatamount: vat.toFixed(2),
+      interestamount: interest.toFixed(2),
+      totaltaxamount: (vat + interest + penalty).toFixed(2),
     });
 
     if (!response.status) return toast.error(response.message);
@@ -892,25 +894,44 @@ const Dvat16ReturnPreview = () => {
     return isNegative(interest) ? 0 : interest;
   };
 
-  const getPaidChallanAmount = (): number =>
-    paidChallans.reduce(
-      (total, challan) => total + parseFloat(challan.total_tax_amount ?? "0"),
-      0,
-    );
+  const paidvatamount = paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.vat ?? "0");
+  }, 0);
 
-  const getR7 = (): number =>
-    Math.round(
-      getR6_1() +
-        (isNegative(getR6_2a()) ? 0 : getR6_2a()) -
-        getPaidChallanAmount(),
-    );
+  const paidinterestamount = paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.interest ?? "0");
+  }, 0);
+
+  const paidpenaltyamount = paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.penalty ?? "0");
+  }, 0);
 
   const getNetPayable = (): number => {
-    return isNegative(getR7())
-      ? isNegative(lateFees)
-        ? 0
-        : lateFees
-      : getR7() + (isNegative(lateFees) ? 0 : lateFees);
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const vat = getR6_1();
+
+    const vatBalance = vat - paidvatamount;
+    const penaltyBalance = penalty - paidpenaltyamount;
+    const interestBalance = interest - paidinterestamount;
+
+
+    if (vatBalance <= 0) {
+      return Math.max(0, penaltyBalance) + Math.max(0, interestBalance);
+    }
+
+    const excessPenalty = penaltyBalance < 0 ? Math.abs(penaltyBalance) : 0;
+    const excessInterest = interestBalance < 0 ? Math.abs(interestBalance) : 0;
+    const adjustedVatBalance = Math.max(
+      0,
+      vatBalance - excessPenalty - excessInterest,
+    );
+
+    return (
+      adjustedVatBalance +
+      Math.max(0, penaltyBalance) +
+      Math.max(0, interestBalance)
+    );
   };
   // net payable amount end here
 
@@ -1264,9 +1285,6 @@ const Dvat16ReturnPreview = () => {
             >
               {isDownload ? "Downloading..." : "Download"}
             </Button>
-
-            {/* (isAllNil && lateFees == 0) ||
-                (!isAllNil && getNetPayable() > 0 && lateFees == 0) */}
 
             {!payment && (
               <>

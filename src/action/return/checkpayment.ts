@@ -31,7 +31,6 @@ const CheckPayment = async (
         deletedAt: null,
         deletedById: null,
         status: "PAID",
-        // return_type: "REVISED",
         OR: [
           {
             return_type: "REVISED",

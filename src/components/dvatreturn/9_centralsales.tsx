@@ -36,6 +36,19 @@ interface CentralSalesProps {
 const CentralSales = (props: CentralSalesProps) => {
   const searchparam = useSearchParams();
 
+  const paidvatamount = props.paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.vat);
+  }, 0);
+
+  const paidinterestamount = props.paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.interest);
+  }, 0);
+  const paidpenaltyamount = props.paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.penalty);
+  }, 0);
+
+
+
   const [lateFees, setLateFees] = useState<number>(0);
 
   useEffect(() => {
@@ -945,12 +958,31 @@ const CentralSales = (props: CentralSalesProps) => {
     return isNegative(interest) ? 0 : interest;
   };
 
-  const getR7 = (): number => {
-    return Math.round(
-      getR6_1() +
-        (isNegative(getR6_2a()) ? 0 : getR6_2a()) -
-        props.challan_amount,
-    );
+
+
+  const getNetPayable = (): number => {
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const vat = getR6_1();
+
+    // Remaining balance per component after their own payments
+    const vatBalance = vat - paidvatamount;
+    const penaltyBalance = penalty - paidpenaltyamount;
+    const interestBalance = interest - paidinterestamount;
+
+
+    if (vatBalance <= 0) {
+      // VAT fully paid or overpaid — excess VAT does NOT reduce penalty/interest.
+      // Penalty and interest are shown as independent dues.
+      return Math.max(0, penaltyBalance) + Math.max(0, interestBalance);
+    }
+
+    // VAT is underpaid — excess paid penalty/interest adjusts the VAT balance.
+    const excessPenalty = penaltyBalance < 0 ? Math.abs(penaltyBalance) : 0;
+    const excessInterest = interestBalance < 0 ? Math.abs(interestBalance) : 0;
+    const adjustedVatBalance = Math.max(0, vatBalance - excessPenalty - excessInterest);
+
+    return adjustedVatBalance + Math.max(0, penaltyBalance) + Math.max(0, interestBalance);
   };
 
   return (
@@ -1572,11 +1604,7 @@ const CentralSales = (props: CentralSalesProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {isNegative(getR7())
-              ? isNegative(lateFees)
-                ? 0
-                : lateFees.toFixed(2)
-              : (getR7() + (isNegative(lateFees) ? 0 : lateFees)).toFixed(2)}
+            {getNetPayable().toFixed(2)}
           </td>
         </tr>
       </tbody>

@@ -21,6 +21,11 @@ interface CreateMultiDailyPurchasePayload {
     amount_unit: string;
     createdById: number;
     against_cfrom: boolean;
+    is_against_fform?: boolean;
+    is_against_e1form?: boolean;
+    is_against_iform?: boolean;
+    is_against_hform?: boolean;
+    is_export?: boolean;
     batch_name: string | null;
   }>;
 }

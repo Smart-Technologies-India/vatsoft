@@ -22,6 +22,10 @@ interface CreateMultiDailySalePayload {
     createdById: number;
     against_cfrom: boolean;
     is_against_fform: boolean;
+    is_exempt?: boolean;
+    is_against_iform?: boolean;
+    is_h_export?: boolean;
+    is_against_e1?: boolean;
     is_export: boolean;
     batch_name: string | null;
   }>;

@@ -779,7 +779,7 @@ const CommodityMaster = () => {
                       type="primary"
                       onClick={() => setStockBox(true)}
                     >
-                      Add Stock
+                      Add Production
                     </Button>
                     {/* <Button
                       size="small"

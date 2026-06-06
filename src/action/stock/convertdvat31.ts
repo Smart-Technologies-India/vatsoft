@@ -84,11 +84,14 @@ const ConvertDvat31 = async (
       const year = parseInt(targetMonth.split("-")[0], 10);
       const month = parseInt(targetMonth.split("-")[1], 10);
 
+  
+
       // Calculate the first day of the next month
       const startOfNextMonth = new Date(year, month, 1); // Year and month are 0-indexed in JS Date
 
       // Calculate the last day of the target month
       const endOfMonth = new Date(startOfNextMonth.getTime() - 1).toISOString();
+
 
       const data_to_create = await prisma.daily_sale.findMany({
         where: {
@@ -135,25 +138,50 @@ const ConvertDvat31 = async (
       }
       // const current_date = new Date();
 
-      let returnInvoice = await prisma.returns_01.findFirst({
+      const monthReturns = await prisma.returns_01.findMany({
         where: {
           year: targetDate.getFullYear().toString(),
           month: monthNames[targetDate.getMonth()],
-          return_type: "REVISED",
           dvat04Id: payload.dvatid,
+          OR: [
+            {
+              return_type: "REVISED",
+            },
+            {
+              return_type: "ORIGINAL",
+            },
+          ],
+          deletedAt: null,
+          deletedById: null,
+          status: Status.ACTIVE,
+        },
+        orderBy: {
+          id: "asc",
         },
       });
 
-      if (!returnInvoice) {
-        returnInvoice = await prisma.returns_01.findFirst({
-          where: {
-            year: targetDate.getFullYear().toString(),
-            month: monthNames[targetDate.getMonth()],
-            dvat04Id: payload.dvatid,
-            return_type: "ORIGINAL",
-          },
-        });
+      const isUnpaid = (rrNumber?: string | null) =>
+        rrNumber == null || rrNumber.trim() === "";
+
+      const hasPaidReturnInMonth = monthReturns.some(
+        (entry) => !isUnpaid(entry.rr_number),
+      );
+
+      if (hasPaidReturnInMonth) {
+        throw new Error(
+          "Return for this month is already paid. Cannot attach DVAT31 entries.",
+        );
       }
+
+      let returnInvoice =
+        monthReturns.find(
+          (entry) =>
+            entry.return_type === "REVISED" && isUnpaid(entry.rr_number),
+        ) ||
+        monthReturns.find(
+          (entry) =>
+            entry.return_type === "ORIGINAL" && isUnpaid(entry.rr_number),
+        );
 
       if (!returnInvoice) {
         const dvat04 = await prisma.dvat04.findFirst({

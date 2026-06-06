@@ -11,20 +11,16 @@ import {
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Button, Radio } from "antd";
 import { ToWords } from "to-words";
 import {
   capitalcase,
   decryptURLData,
-  encryptURLData,
-  formateDate,
-  generatePDF,
   getDaysBetweenDates,
   isNegative,
-  onFormError,
 } from "@/utils/methods";
 import {
   CategoryOfEntry,
+  challan,
   dvat04,
   DvatType,
   InputTaxCredit,
@@ -47,6 +43,7 @@ import CheckLastPayment from "@/action/return/checklastpayment";
 import GetReturn01 from "@/action/return/getreturn";
 import getReturnEntry from "@/action/return/getreturnentry";
 import GetUser from "@/action/user/getuser";
+import GetPaidChallanByReturnId from "@/action/challan/getpaidchallanbyreturnid";
 
 interface PercentageOutput {
   increase: string;
@@ -62,11 +59,10 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
   >();
 
   const [lateFees, setLateFees] = useState<number>(0);
-  const [InterestDiffDays, setInterestDiffDays] = useState<number>(0);
-  const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
     [],
   );
+  const [paidChallans, setPaidChallans] = useState<challan[]>([]);
 
   const [user, setUser] = useState<user | null>(null);
 
@@ -77,6 +73,16 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
       });
       if (returns_response.status && returns_response.data) {
         setReturn01(returns_response.data);
+
+        const challanResponse = await GetPaidChallanByReturnId({
+          returnid: returns_response.data.id,
+        });
+
+        if (challanResponse.status && challanResponse.data) {
+          setPaidChallans(challanResponse.data);
+        } else {
+          setPaidChallans([]);
+        }
 
         const user_response = await GetUser({
           id: returns_response.data.dvat04.createdById,
@@ -132,32 +138,27 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
       monthIndex += 1; // Otherwise, just increment the month
     }
 
-    const idiff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 16),
-      currentDate,
-    );
-
-    setInterestDiffDays(idiff_days);
     const pdiff_days = getDaysBetweenDates(
       new Date(newYear, monthIndex, 29),
       currentDate,
     );
-
-    setPenaltyDiffDays(pdiff_days);
 
     if (rr_number == null || rr_number == undefined || rr_number == "") {
       setLateFees(Math.min(100 * pdiff_days, 10000));
     }
   };
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-  } = useForm<SubmitPaymentForm>({
-    resolver: valibotResolver(SubmitPaymentSchema),
-  });
+  const paidvatamount = paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.vat ?? "0");
+  }, 0);
+
+  const paidinterestamount = paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.interest ?? "0");
+  }, 0);
+
+  const paidpenaltyamount = paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.penalty ?? "0");
+  }, 0);
   const get_rr_number = (): string => {
     const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
     const today = new Date();
@@ -177,15 +178,15 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
 
     if (!lastPayment.status) {
       toast.error(lastPayment.message);
-      reset();
       return;
     }
 
     if (lastPayment.data == false) {
       toast.error(lastPayment.message);
-      reset();
       return;
     }
+
+    const paymentBreakdown = getNetPayableBreakdown();
 
     const response = await AddPayment({
       id: return01.id ?? 0,
@@ -193,19 +194,18 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
       track_id: data.track_id,
       transaction_id: data.transaction_id,
       rr_number: get_rr_number(),
-      penalty: lateFees.toString(),
-      ...(isNegative(getValue()) && {
-        pending_payment: getValue().toFixed(),
+      penalty: paymentBreakdown.penalty.toFixed(0),
+      ...(paymentBreakdown.pendingPayment > 0 && {
+        pending_payment: paymentBreakdown.pendingPayment.toFixed(0),
       }),
-      interestamount: getInterest().toFixed(0),
-      totaltaxamount: getTotalTaxAmount().toFixed(0),
-      vatamount: getVatAmount().toFixed(0),
+      interestamount: paymentBreakdown.interestamount.toFixed(0),
+      totaltaxamount: paymentBreakdown.totaltaxamount.toFixed(0),
+      vatamount: paymentBreakdown.vatamount.toFixed(0),
     });
 
     if (!response.status) return toast.error(response.message);
     toast.success(response.message);
     router.push("/dashboard/returns/returns-dashboard");
-    reset();
   };
 
   // extra calcuation
@@ -499,24 +499,188 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
         parseFloat(getCreditNote().decrease) -
         parseFloat(getGoodsReturnsNote().decrease)));
 
-  const getInterest = (): number => {
-    const interest = ((getTaxBaseAmount() * 0.15) / 365) * InterestDiffDays;
+  const calculateInterest = (
+    totalDue: number,
+    dueDate: Date,
+    payments: challan[],
+    annualRate = 15,
+    asOfDate: Date = new Date(),
+  ): number => {
+    if (!Number.isFinite(totalDue) || totalDue <= 0) return 0;
 
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const normalizeDate = (dateInput: Date | string): Date => {
+      const date = new Date(dateInput);
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    };
+
+    const getDaysDiff = (fromDate: Date, toDate: Date): number => {
+      const startUtc = Date.UTC(
+        fromDate.getFullYear(),
+        fromDate.getMonth(),
+        fromDate.getDate(),
+      );
+      const endUtc = Date.UTC(
+        toDate.getFullYear(),
+        toDate.getMonth(),
+        toDate.getDate(),
+      );
+      const diff = Math.floor((endUtc - startUtc) / dayMs);
+      return Math.max(0, diff);
+    };
+
+    const sortedPayments = payments
+      .map((payment) => {
+        const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
+        const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
+
+        if (
+          !paymentDateRaw ||
+          !Number.isFinite(paymentAmount) ||
+          paymentAmount <= 0
+        ) {
+          return null;
+        }
+
+        return {
+          amount: paymentAmount,
+          date: normalizeDate(paymentDateRaw),
+        };
+      })
+      .filter(
+        (payment): payment is { amount: number; date: Date } =>
+          payment !== null,
+      )
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    const effectiveAsOfDate = normalizeDate(asOfDate);
+    let outstanding = totalDue;
+    let anchorDate = normalizeDate(dueDate);
+    let interest = 0;
+
+    for (let i = 0; i < sortedPayments.length; i++) {
+      const payment = sortedPayments[i];
+      if (payment.date > effectiveAsOfDate) {
+        break;
+      }
+
+      if (payment.date <= anchorDate) {
+        outstanding = Math.max(0, outstanding - payment.amount);
+
+        if (outstanding <= 0) {
+          break;
+        }
+        continue;
+      }
+
+      if (payment.date > anchorDate && outstanding > 0) {
+        const days = getDaysDiff(anchorDate, payment.date);
+        const intervalInterest =
+          (outstanding * annualRate * days) / (100 * 365);
+        interest += intervalInterest;
+      }
+
+      outstanding = Math.max(0, outstanding - payment.amount);
+      anchorDate = payment.date;
+
+      if (outstanding <= 0) {
+        break;
+      }
+    }
+
+    if (outstanding > 0 && effectiveAsOfDate > anchorDate) {
+      const days = getDaysDiff(anchorDate, effectiveAsOfDate);
+      const finalInterest = (outstanding * annualRate * days) / (100 * 365);
+      interest += finalInterest;
+    }
+
+    return interest;
+  };
+
+  const getInterestDueDate = (): Date => {
+    if (!return01) return new Date();
+
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const month = return01.month ?? "";
+    let monthIndex = monthNames.indexOf(month);
+    let computedYear = parseInt(return01.year);
+
+    if (monthIndex === 11) {
+      computedYear += 1;
+      monthIndex = 0;
+    } else {
+      monthIndex += 1;
+    }
+
+    return new Date(computedYear, monthIndex, 15);
+  };
+
+  const getR6_1 = (): number => getTaxBaseAmount();
+
+  const getR6_2a = (): number => {
+    const totalDue = getR6_1();
+    const dueDate = getInterestDueDate();
+    const interest = calculateInterest(totalDue, dueDate, paidChallans, 15);
     return isNegative(interest) ? 0 : interest;
   };
 
-  const getVatAmount = (): number => getTaxBaseAmount();
+  const getNetPayableBreakdown = () => {
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const vat = getR6_1();
 
-  const getValue = () =>
-    getTaxBaseAmount() +
-    (((getTaxBaseAmount() * 0.15) / 365) * PenaltyDiffDays + lateFees);
+    const vatBalance = vat - paidvatamount;
+    const penaltyBalance = penalty - paidpenaltyamount;
+    const interestBalance = interest - paidinterestamount;
+
+    const pendingPaymentRaw = vatBalance + penaltyBalance + interestBalance;
+    const pendingPayment = pendingPaymentRaw < 0 ? Math.abs(pendingPaymentRaw) : 0;
+
+    if (vatBalance <= 0) {
+      return {
+        vatamount: 0,
+        penalty: Math.max(0, penaltyBalance),
+        interestamount: Math.max(0, interestBalance),
+        totaltaxamount: Math.max(0, penaltyBalance) + Math.max(0, interestBalance),
+        pendingPayment,
+      };
+    }
+
+    const excessPenalty = penaltyBalance < 0 ? Math.abs(penaltyBalance) : 0;
+    const excessInterest = interestBalance < 0 ? Math.abs(interestBalance) : 0;
+    const adjustedVatBalance = Math.max(0, vatBalance - excessPenalty - excessInterest);
+
+    return {
+      vatamount: adjustedVatBalance,
+      penalty: Math.max(0, penaltyBalance),
+      interestamount: Math.max(0, interestBalance),
+      totaltaxamount:
+        adjustedVatBalance +
+        Math.max(0, penaltyBalance) +
+        Math.max(0, interestBalance),
+      pendingPayment,
+    };
+  };
+
+  const paymentBreakdown = getNetPayableBreakdown();
 
   const getTotalTaxAmount = (): number => {
-    const interest = isNegative(getInterest()) ? 0 : getInterest();
-    const penalty = isNegative(lateFees) ? 0 : lateFees;
-    const netPayable = getVatAmount() + penalty + interest;
-
-    return Math.max(0, netPayable);
+    return Math.max(0, paymentBreakdown.totaltaxamount);
   };
   return (
     <>
@@ -580,7 +744,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
                   <TableRow>
                     <TableCell className="text-left p-2 border">VAT</TableCell>
                     <TableCell className="text-center p-2 border ">
-                      {getVatAmount().toFixed(0)}
+                      {paymentBreakdown.vatamount.toFixed(0)}
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -588,7 +752,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
                       Interest
                     </TableCell>
                     <TableCell className="text-center p-2 border">
-                      {getInterest().toFixed(0)}
+                      {paymentBreakdown.interestamount.toFixed(0)}
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -596,7 +760,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
                       Late Penalty
                     </TableCell>
                     <TableCell className="text-center p-2 border">
-                      {isNegative(lateFees) ? "0" : lateFees}
+                      {paymentBreakdown.penalty.toFixed(0)}
                     </TableCell>
                   </TableRow>
                   <TableRow>

@@ -408,10 +408,80 @@ const DocumentWiseDetails = () => {
   const [debitNoteGroup, setDebitNoteGroup] =
     useState<GroupedDailyPurchase | null>(null);
 
+  const formatEligibilityDate = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const toDateOnly = (date: Date): Date =>
+    new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  const getApplicablePeriodDate = (): Date => {
+    const validDates = dailyPurchase
+      .map((group) => toDateOnly(new Date(group.invoice_date)))
+      .filter((date) => !Number.isNaN(date.getTime()))
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    return validDates[0] ?? toDateOnly(new Date());
+  };
+
+  const getMonthlyDueDate = (periodDate: Date): Date =>
+    new Date(periodDate.getFullYear(), periodDate.getMonth() + 1, 10);
+
+  const getQuarterlyDueDate = (periodDate: Date): Date => {
+    const month = periodDate.getMonth();
+    const year = periodDate.getFullYear();
+
+    if (month <= 2) {
+      return new Date(year, 3, 10); // Jan-Mar -> 10 Apr
+    }
+    if (month <= 5) {
+      return new Date(year, 6, 10); // Apr-Jun -> 10 Jul
+    }
+    if (month <= 8) {
+      return new Date(year, 9, 10); // Jul-Sep -> 10 Oct
+    }
+
+    return new Date(year + 1, 0, 10); // Oct-Dec -> 10 Jan next year
+  };
+
+  const canGenerateDvat30A = (): { allowed: boolean; message?: string } => {
+    const today = toDateOnly(new Date());
+    const periodDate = getApplicablePeriodDate();
+    const filingFrequency = dvatdata?.frequencyFilings?.toUpperCase();
+    const dueDate =
+      filingFrequency === "QUARTERLY"
+        ? getQuarterlyDueDate(periodDate)
+        : getMonthlyDueDate(periodDate);
+
+    if (today >= dueDate) {
+      return { allowed: true };
+    }
+
+    return {
+      allowed: false,
+      message: `Returns for a tax period shall be available for generation only on or after the 10th day of the month succeeding the applicable tax period. Next allowed date is ${formatEligibilityDate(dueDate)}.`,
+    };
+  };
+
   const Convertto30a = async () => {
     if (!dvatdata) {
       return toast.error("DVAT not found.");
     }
+
+    if (hasPendingAcceptable) {
+      return toast.error(
+        "Please accept all pending purchase invoices before generating DVAT 30/30 A.",
+      );
+    }
+
+    const eligibility = canGenerateDvat30A();
+    if (!eligibility.allowed) {
+      return toast.error(eligibility.message);
+    }
+
     const response = await ConvertDvat30A({
       createdById: userid,
       dvatid: dvatdata.id,
@@ -505,7 +575,6 @@ const DocumentWiseDetails = () => {
   };
 
   const delete_purchase_entry = async (id: number) => {
-    // console.log("Deleting purchase entry with ID:", id);
     const response = await DeletePurchase({
       id: id,
       deletedById: userid,
@@ -662,6 +731,19 @@ const DocumentWiseDetails = () => {
   const [addBox, setAddBox] = useState<boolean>(false);
   const [isAcceptAllLoading, setIsAcceptAllLoading] = useState(false);
   const [isAcceptAllModalOpen, setIsAcceptAllModalOpen] = useState(false);
+  const [acceptAllProgress, setAcceptAllProgress] = useState<{
+    total: number;
+    processed: number;
+    success: number;
+    failed: number;
+    currentInvoice: string;
+  }>({
+    total: 0,
+    processed: 0,
+    success: 0,
+    failed: 0,
+    currentInvoice: "",
+  });
   const [isGroupAcceptLoading, setIsGroupAcceptLoading] = useState(false);
   const [isSingleAcceptLoading, setIsSingleAcceptLoading] =
     useState<boolean>(false);
@@ -697,7 +779,14 @@ const DocumentWiseDetails = () => {
     item_code: number;
     quantity: number;
     total_invoice_value: number;
+    purchase_type: string;
     against_cfrom: boolean;
+    is_against_fform: boolean;
+    is_against_e1form: boolean;
+    is_against_iform: boolean;
+    is_against_hform: boolean;
+    is_exempt: boolean;
+    is_export: boolean;
     seller_tin_id: number | null;
     commodity_name: string | null;
     tax_percent: string | null;
@@ -727,6 +816,62 @@ const DocumentWiseDetails = () => {
     useState<BulkUploadSortOrder>("asc");
   const [bulkCurrentPage, setBulkCurrentPage] = useState<number>(1);
   const [bulkPageSize, setBulkPageSize] = useState<number>(10);
+
+  const normalizePurchaseType = (value: unknown): string | null => {
+    const normalized = normalizeText(value)
+      .toLowerCase()
+      .replace(/[_\s-]+/g, "");
+
+    if (!normalized) return null;
+
+    if (["regular", "reguler"].includes(normalized)) return "REGULAR";
+    if (["againstcform", "cform"].includes(normalized))
+      return "AGAINST_CFORM";
+    if (["againstfform", "fform"].includes(normalized))
+      return "AGAINST_FFORM";
+    if (["againste1", "againste1form", "e1", "e1form"].includes(normalized))
+      return "AGAINST_E1";
+    if (["againstiform", "iform"].includes(normalized))
+      return "AGAINST_IFORM";
+    if (["exempt", "isexempt"].includes(normalized)) return "EXEMPT";
+    if (["hexport", "ishexport", "againsthform", "hform"].includes(normalized))
+      return "H_EXPORT";
+    if (["export", "isexport"].includes(normalized)) return "EXPORT";
+
+    return null;
+  };
+
+  const getPurchaseTypeLabel = (purchaseType: string): string => {
+    switch (purchaseType) {
+      case "AGAINST_CFORM":
+        return "Against C Form";
+      case "AGAINST_FFORM":
+        return "Against F Form";
+      case "AGAINST_E1":
+        return "Against E1";
+      case "AGAINST_IFORM":
+        return "Against I Form";
+      case "EXEMPT":
+        return "Exempt";
+      case "H_EXPORT":
+        return "H Export";
+      case "EXPORT":
+        return "Export";
+      default:
+        return "Regular";
+    }
+  };
+
+  const getPurchaseRowTypeLabel = (row: BulkSheetData): string => {
+    if (row.against_cfrom) return "Against C Form";
+    if (row.is_against_fform) return "Against F Form";
+    if (row.is_against_e1form) return "Against E1";
+    if (row.is_against_iform) return "Against I Form";
+    if (row.is_exempt) return "Exempt";
+    if (row.is_against_hform) return "H Export";
+    if (row.is_export) return "Export";
+    return "Regular";
+  };
 
   const readSheetField = (row: Record<string, unknown>, labels: string[]) => {
     for (const label of labels) {
@@ -759,7 +904,9 @@ const DocumentWiseDetails = () => {
 
   const parseDateDDMMYYYY = (value: unknown): Date | null => {
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
-      return value;
+      // Normalize to local date-only to avoid timezone time components
+      // affecting month comparisons in bulk validation.
+      return new Date(value.getFullYear(), value.getMonth(), value.getDate());
     }
 
     if (typeof value === "number") {
@@ -822,6 +969,17 @@ const DocumentWiseDetails = () => {
         Quantity: isManufacturerCommodity ? 2 : 24,
         "Total Invoice Value": 12000,
         "Is Against C Form": "false",
+        ...(isManufacturerCommodity && {
+          "Is Against F Form": "false",
+          "Is Against E1": "false",
+          "Is Against I Form": "false",
+          "Is Exempt": "false",
+          "Is H Export": "false",
+          "Is Export": "false",
+        }),
+        ...(!isManufacturerCommodity && {
+          Type: "REGULAR",
+        }),
       },
       {
         "TIN Number": "25000000000",
@@ -830,7 +988,18 @@ const DocumentWiseDetails = () => {
         "Item Code": 2,
         Quantity: isManufacturerCommodity ? 1 : 12,
         "Total Invoice Value": 8600,
-        "Is Against C Form": "false",
+        "Is Against C Form": isManufacturerCommodity ? "false" : "true",
+        ...(isManufacturerCommodity && {
+          "Is Against F Form": "true",
+          "Is Against E1": "false",
+          "Is Against I Form": "false",
+          "Is Exempt": "false",
+          "Is H Export": "false",
+          "Is Export": "false",
+        }),
+        ...(!isManufacturerCommodity && {
+          Type: "AGAINST_CFORM",
+        }),
       },
       {
         "TIN Number": "25000000000",
@@ -839,7 +1008,18 @@ const DocumentWiseDetails = () => {
         "Item Code": 3,
         Quantity: isManufacturerCommodity ? 3 : 30,
         "Total Invoice Value": 15000,
-        "Is Against C Form": "true",
+        "Is Against C Form": "false",
+        ...(isManufacturerCommodity && {
+          "Is Against F Form": "false",
+          "Is Against E1": "false",
+          "Is Against I Form": "false",
+          "Is Exempt": "false",
+          "Is H Export": "false",
+          "Is Export": "true",
+        }),
+        ...(!isManufacturerCommodity && {
+          Type: "REGULAR",
+        }),
       },
     ];
 
@@ -879,8 +1059,9 @@ const DocumentWiseDetails = () => {
       {
         Field: "Total Invoice Value",
         "What to fill": "Item-wise amount inclusive of VAT",
-        Rules:
-          "If multiple items in same invoice, enter value separately for each item row. Must be inclusive of VAT.",
+        Rules: isManufacturerCommodity
+          ? "If multiple items in same invoice, enter value separately for each item row. Tax will be calculated at 0%."
+          : "If multiple items in same invoice, enter value separately for each item row. Must be inclusive of VAT.",
       },
       {
         Field: "Is Against C Form",
@@ -888,6 +1069,54 @@ const DocumentWiseDetails = () => {
         Rules:
           "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
       },
+      ...(isManufacturerCommodity
+        ? [
+            {
+              Field: "Is Against F Form",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Against E1",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Against I Form",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Exempt",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is H Export",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Export",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+          ]
+        : [
+            {
+              Field: "Type",
+              "What to fill":
+                "REGULAR, AGAINST_CFORM, AGAINST_FFORM, AGAINST_E1, AGAINST_IFORM, EXEMPT, H_EXPORT, EXPORT",
+              Rules:
+                "Only one type is allowed per row. If blank, it will be treated as REGULAR.",
+            },
+          ]),
     ];
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
@@ -1024,6 +1253,54 @@ const DocumentWiseDetails = () => {
             "Against C Form",
             "against c form",
           ]);
+          const is_against_fform_raw = readSheetField(row, [
+            "Is Against F Form",
+            "is against f form",
+            "is_against_f_form",
+            "Against F Form",
+            "against f form",
+          ]);
+          const is_against_e1_raw = readSheetField(row, [
+            "Is Against E1",
+            "is against e1",
+            "is_against_e1",
+            "Against E1",
+            "against e1",
+          ]);
+          const is_against_iform_raw = readSheetField(row, [
+            "Is Against I Form",
+            "is against i form",
+            "is_against_i_form",
+            "Against I Form",
+            "against i form",
+          ]);
+          const is_against_hform_raw = readSheetField(row, [
+            "Is H Export",
+            "is h export",
+            "is_h_export",
+            "Is Against H Form",
+            "is against h form",
+            "is_against_h_form",
+          ]);
+          const is_export_raw = readSheetField(row, [
+            "Is Export",
+            "is export",
+            "is_export",
+          ]);
+          const is_exempt_raw = readSheetField(row, [
+            "Is Exempt",
+            "is exempt",
+            "is_exempt",
+            "Exempt",
+            "exempt",
+          ]);
+          const purchase_type_raw = readSheetField(row, [
+            "Type",
+            "type",
+            "Purchase Type",
+            "purchase type",
+            "purchase_type",
+          ]);
 
           const isAllNull =
             tin_number === "" &&
@@ -1032,7 +1309,14 @@ const DocumentWiseDetails = () => {
             normalizeText(item_code_raw) === "" &&
             normalizeText(quantity_raw) === "" &&
             normalizeText(total_invoice_value_raw) === "" &&
-            normalizeText(against_cfrom_raw) === "";
+            normalizeText(against_cfrom_raw) === "" &&
+            normalizeText(is_against_fform_raw) === "" &&
+            normalizeText(is_against_e1_raw) === "" &&
+            normalizeText(is_against_iform_raw) === "" &&
+            normalizeText(is_against_hform_raw) === "" &&
+            normalizeText(is_exempt_raw) === "" &&
+            normalizeText(is_export_raw) === "" &&
+            normalizeText(purchase_type_raw) === "";
 
           if (isAllNull) return null;
 
@@ -1137,10 +1421,118 @@ const DocumentWiseDetails = () => {
           // }
 
           const parsedAgainstCFrom = parseBooleanValue(against_cfrom_raw);
-          if (parsedAgainstCFrom == null) {
+          const parsedAgainstFForm = parseBooleanValue(is_against_fform_raw);
+          const parsedAgainstE1 = parseBooleanValue(is_against_e1_raw);
+          const parsedAgainstIForm = parseBooleanValue(is_against_iform_raw);
+          const parsedAgainstHForm = parseBooleanValue(is_against_hform_raw);
+          const parsedIsExempt = parseBooleanValue(is_exempt_raw);
+          const parsedIsExport = parseBooleanValue(is_export_raw);
+          const normalizedType = normalizePurchaseType(purchase_type_raw);
+
+          const booleanColumnInputs: Array<{
+            label: string;
+            raw: unknown;
+            parsed: boolean | null;
+          }> = [
+            {
+              label: "Is Against C Form",
+              raw: against_cfrom_raw,
+              parsed: parsedAgainstCFrom,
+            },
+            {
+              label: "Is Against F Form",
+              raw: is_against_fform_raw,
+              parsed: parsedAgainstFForm,
+            },
+            {
+              label: "Is Against E1",
+              raw: is_against_e1_raw,
+              parsed: parsedAgainstE1,
+            },
+            {
+              label: "Is Against I Form",
+              raw: is_against_iform_raw,
+              parsed: parsedAgainstIForm,
+            },
+            {
+              label: "Is Exempt",
+              raw: is_exempt_raw,
+              parsed: parsedIsExempt,
+            },
+            {
+              label: "Is H Export",
+              raw: is_against_hform_raw,
+              parsed: parsedAgainstHForm,
+            },
+            {
+              label: "Is Export",
+              raw: is_export_raw,
+              parsed: parsedIsExport,
+            },
+          ];
+
+          for (const input of booleanColumnInputs) {
+            if (normalizeText(input.raw) !== "" && input.parsed == null) {
+              errors.push(
+                `* ${input.label} must be true/false (yes/no/1/0 also accepted)`,
+              );
+            }
+          }
+
+          if (isManufacturerCommodity) {
+            const requiredManufacturerColumns = [
+              { label: "Is Against C Form", parsed: parsedAgainstCFrom },
+              { label: "Is Against F Form", parsed: parsedAgainstFForm },
+              { label: "Is Against E1", parsed: parsedAgainstE1 },
+              { label: "Is Against I Form", parsed: parsedAgainstIForm },
+              { label: "Is Exempt", parsed: parsedIsExempt },
+              { label: "Is H Export", parsed: parsedAgainstHForm },
+              { label: "Is Export", parsed: parsedIsExport },
+            ];
+
+            for (const column of requiredManufacturerColumns) {
+              if (column.parsed == null) {
+                errors.push(
+                  `* ${column.label} must be true/false (yes/no/1/0 also accepted)`,
+                );
+              }
+            }
+          }
+
+          const allFlagSources = [
+            { key: "AGAINST_CFORM", value: parsedAgainstCFrom },
+            { key: "AGAINST_FFORM", value: parsedAgainstFForm },
+            { key: "AGAINST_E1", value: parsedAgainstE1 },
+            { key: "AGAINST_IFORM", value: parsedAgainstIForm },
+            { key: "EXEMPT", value: parsedIsExempt },
+            { key: "H_EXPORT", value: parsedAgainstHForm },
+            { key: "EXPORT", value: parsedIsExport },
+          ];
+
+          if (normalizeText(purchase_type_raw) !== "" && !normalizedType) {
             errors.push(
-              "* Is Against C Form must be true/false (yes/no/1/0 also accepted)",
+              "* Type must be one of: REGULAR, AGAINST_CFORM, AGAINST_FFORM, AGAINST_E1, AGAINST_IFORM, EXEMPT, H_EXPORT, EXPORT",
             );
+          }
+
+          const selectedFlags = allFlagSources.filter((item) => item.value === true);
+          if (selectedFlags.length > 1) {
+            errors.push("* Only one type can be true in a row");
+          }
+
+          if (
+            normalizedType &&
+            selectedFlags.length === 1 &&
+            selectedFlags[0].key !== normalizedType
+          ) {
+            errors.push("* Type and boolean flags do not match for this row");
+          }
+
+          let purchaseType = "REGULAR";
+          if (normalizedType) {
+            purchaseType = normalizedType;
+          } else if (selectedFlags.length === 1) {
+            purchaseType = selectedFlags[0].key;
           }
 
           const duplicateKey = [
@@ -1155,12 +1547,18 @@ const DocumentWiseDetails = () => {
             errors.push("* Duplicate row in sheet");
           }
 
-          const against_cfrom = parsedAgainstCFrom ?? false;
+          const against_cfrom = purchaseType === "AGAINST_CFORM";
+          const is_against_fform = purchaseType === "AGAINST_FFORM";
+          const is_against_e1form = purchaseType === "AGAINST_E1";
+          const is_against_iform = purchaseType === "AGAINST_IFORM";
+          const is_against_hform = purchaseType === "H_EXPORT";
+          const is_exempt = purchaseType === "EXEMPT";
+          const is_export = purchaseType === "EXPORT";
 
           return {
             tin_number,
             invoice_no,
-            invoice_date: invoice_date ?? new Date(),
+            invoice_date: invoice_date ?? new Date(Number.NaN),
             invoice_date_display: invoice_date
               ? formatDateDDMMYYYY(invoice_date)
               : "-",
@@ -1171,7 +1569,14 @@ const DocumentWiseDetails = () => {
             total_invoice_value: Number.isFinite(total_invoice_value)
               ? total_invoice_value
               : 0,
+            purchase_type: purchaseType,
             against_cfrom,
+            is_against_fform,
+            is_against_e1form,
+            is_against_iform,
+            is_against_hform,
+            is_exempt,
+            is_export,
             seller_tin_id: sellerTin?.id ?? null,
             commodity_name: selectedCommodity?.product_name ?? null,
             tax_percent: selectedCommodity?.taxable_at ?? null,
@@ -1182,11 +1587,13 @@ const DocumentWiseDetails = () => {
         .filter((val): val is BulkSheetData => val !== null);
 
       // Cross-row check: all invoice dates must be in the same month
-      const validDates = parsedRows.filter((r) => !r.error || r.invoice_date);
+      const validDates = parsedRows.filter(
+        (r) => !Number.isNaN(r.invoice_date.getTime()),
+      );
       if (validDates.length > 0) {
-        const firstMonth = parsedRows[0].invoice_date.getMonth();
-        const firstYear = parsedRows[0].invoice_date.getFullYear();
-        const mixedMonths = parsedRows.some(
+        const firstMonth = validDates[0].invoice_date.getMonth();
+        const firstYear = validDates[0].invoice_date.getFullYear();
+        const mixedMonths = validDates.some(
           (r) =>
             r.invoice_date.getMonth() !== firstMonth ||
             r.invoice_date.getFullYear() !== firstYear,
@@ -1247,7 +1654,14 @@ const DocumentWiseDetails = () => {
     }
 
     const entries = tabledata.map((row) => {
-      const taxPercent = row.against_cfrom ? "2" : (row.tax_percent ?? "0");
+      const isManufacturerCommodity = dvatdata?.commodity === "MANUFACTURER";
+      const taxPercent = isManufacturerCommodity
+        ? "0"
+        : row.purchase_type === "AGAINST_CFORM"
+          ? "2"
+          : ["AGAINST_FFORM", "AGAINST_E1", "AGAINST_IFORM", "EXEMPT", "H_EXPORT", "EXPORT"].includes(row.purchase_type)
+            ? "0"
+            : (row.tax_percent ?? "0");
       const totalInvoice = Number(row.total_invoice_value);
       const taxableValue = (totalInvoice / (100 + Number(taxPercent))) * 100;
       const vatValue = totalInvoice - taxableValue;
@@ -1271,6 +1685,11 @@ const DocumentWiseDetails = () => {
         amount_unit: amountUnit.toFixed(2),
         createdById: userid,
         against_cfrom: row.against_cfrom,
+        is_against_fform: row.is_against_fform,
+        is_against_e1form: row.is_against_e1form,
+        is_against_iform: row.is_against_iform,
+        is_against_hform: row.is_against_hform,
+        is_export: row.is_export,
         batch_name: null,
       };
     });
@@ -1365,7 +1784,7 @@ const DocumentWiseDetails = () => {
           item.row.commodity_name ?? "",
           item.row.quantity.toString(),
           item.row.total_invoice_value.toString(),
-          item.row.against_cfrom ? "true" : "false",
+          item.row.purchase_type,
           item.row.errorname ?? "",
         ]
           .join(" ")
@@ -1399,7 +1818,7 @@ const DocumentWiseDetails = () => {
         case "total_invoice_value":
           return item.row.total_invoice_value;
         case "against_cform":
-          return item.row.against_cfrom ? 1 : 0;
+          return item.row.purchase_type;
         default:
           return item.originalIndex;
       }
@@ -1572,9 +1991,24 @@ const DocumentWiseDetails = () => {
         );
 
       if (pendingRecords.length === 0) {
+        setAcceptAllProgress({
+          total: 0,
+          processed: 0,
+          success: 0,
+          failed: 0,
+          currentInvoice: "",
+        });
         toast.info("No pending acceptable purchase records found.");
         return;
       }
+
+      setAcceptAllProgress({
+        total: pendingRecords.length,
+        processed: 0,
+        success: 0,
+        failed: 0,
+        currentInvoice: "",
+      });
 
       setIsAcceptAllModalOpen(true);
     } finally {
@@ -1611,16 +2045,35 @@ const DocumentWiseDetails = () => {
 
     if (pendingRecords.length === 0) {
       setIsAcceptAllModalOpen(false);
+      setAcceptAllProgress({
+        total: 0,
+        processed: 0,
+        success: 0,
+        failed: 0,
+        currentInvoice: "",
+      });
       toast.info("No pending acceptable purchase records found.");
       return;
     }
 
     setIsAcceptAllLoading(true);
+    setAcceptAllProgress({
+      total: pendingRecords.length,
+      processed: 0,
+      success: 0,
+      failed: 0,
+      currentInvoice: "",
+    });
 
     let successCount = 0;
     let failedCount = 0;
 
     for (const record of pendingRecords) {
+      setAcceptAllProgress((prev) => ({
+        ...prev,
+        currentInvoice: record.invoice_number,
+      }));
+
       const response = await AcceptSale({
         commodityid: record.commodity_master.id,
         createdById: userid,
@@ -1633,8 +2086,18 @@ const DocumentWiseDetails = () => {
       if (response.status && response.data) {
         successCount += 1;
         markRecordAccepted(record.id);
+        setAcceptAllProgress((prev) => ({
+          ...prev,
+          processed: prev.processed + 1,
+          success: prev.success + 1,
+        }));
       } else {
         failedCount += 1;
+        setAcceptAllProgress((prev) => ({
+          ...prev,
+          processed: prev.processed + 1,
+          failed: prev.failed + 1,
+        }));
       }
     }
 
@@ -1996,15 +2459,61 @@ const DocumentWiseDetails = () => {
         title="Accept all pending purchase invoices"
         open={isAcceptAllModalOpen}
         onOk={confirmAcceptAllRecords}
-        onCancel={() => setIsAcceptAllModalOpen(false)}
+        onCancel={() => {
+          if (isAcceptAllLoading) return;
+          setIsAcceptAllModalOpen(false);
+        }}
         confirmLoading={isAcceptAllLoading}
         okText="Yes, Accept All"
         cancelText="Cancel"
+        maskClosable={!isAcceptAllLoading}
+        keyboard={!isAcceptAllLoading}
+        cancelButtonProps={{ disabled: isAcceptAllLoading }}
       >
         <p className="text-sm text-slate-600 py-2">
           This is an important step. Once accepted, these changes cannot be
           reversed.
         </p>
+        <div className="rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+          <p>Total pending: {acceptAllProgress.total}</p>
+          <p>
+            Processed: {acceptAllProgress.processed} / {acceptAllProgress.total}
+          </p>
+          <p>Accepted: {acceptAllProgress.success}</p>
+          <p>Failed: {acceptAllProgress.failed}</p>
+          <p>
+            Current invoice: {acceptAllProgress.currentInvoice || "Waiting..."}
+          </p>
+          {acceptAllProgress.total > 0 && (
+            <>
+              <div className="mt-2 h-2 w-full overflow-hidden rounded bg-slate-200">
+                <div
+                  className="h-full bg-blue-500 transition-all"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.floor(
+                        (acceptAllProgress.processed / acceptAllProgress.total) *
+                          100,
+                      ),
+                    )}%`,
+                  }}
+                />
+              </div>
+              <p className="mt-1">
+                Progress: {" "}
+                {Math.min(
+                  100,
+                  Math.floor(
+                    (acceptAllProgress.processed / acceptAllProgress.total) *
+                      100,
+                  ),
+                )}
+                %
+              </p>
+            </>
+          )}
+        </div>
       </Modal>
 
       <Modal
@@ -2075,7 +2584,7 @@ const DocumentWiseDetails = () => {
             <option value="product_name">Sort by Item Name</option>
             <option value="quantity">Sort by Quantity</option>
             <option value="total_invoice_value">Sort by Invoice Value</option>
-            <option value="against_cform">Sort by C Form</option>
+            <option value="against_cform">Sort by Type</option>
           </select>
           <select
             value={bulkSortOrder}
@@ -2126,7 +2635,7 @@ const DocumentWiseDetails = () => {
                   Total Invoice Value
                 </TableHead>
                 <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
-                  Is Against C From
+                  Type
                 </TableHead>
                 <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3 min-w-40 w-60">
                   Error
@@ -2182,7 +2691,9 @@ const DocumentWiseDetails = () => {
                         {val.total_invoice_value}
                       </TableCell>
                       <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                        {val.against_cfrom ? "true" : "false"}
+                        {dvatdata?.commodity === "MANUFACTURER"
+                          ? getPurchaseRowTypeLabel(val)
+                          : getPurchaseTypeLabel(val.purchase_type)}
                       </TableCell>
                       <TableCell className="p-3 border border-gray-200 text-left text-sm text-red-600 whitespace-pre-line">
                         {val.errorname || "-"}
@@ -2487,6 +2998,11 @@ const DocumentWiseDetails = () => {
                     size="small"
                     type="default"
                     onClick={() => {
+                      if (hasPendingAcceptable) {
+                        return toast.error(
+                          "Please accept all pending purchase invoices before generating DVAT 30/30 A.",
+                        );
+                      }
                       setIsModalOpen(true);
                     }}
                   >
@@ -2631,7 +3147,11 @@ const DocumentWiseDetails = () => {
                       (group: GroupedDailyPurchase, index: number) => (
                         <TableRow
                           key={index}
-                          className="border-b hover:bg-gray-50"
+                          className={
+                            group.hasPendingAcceptable
+                              ? "border-b bg-red-50 hover:bg-red-100"
+                              : "border-b hover:bg-gray-50"
+                          }
                         >
                           <TableCell className="p-2 text-center text-xs">
                             <button

@@ -257,6 +257,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
     const invoicePerUnit = totalInvoiceValue / quantityNum;
 
     if (
+      davtdata?.commodity !== "MANUFACTURER" &&
       isLiquore &&
       invoicePerUnit < (liquoreAmount / commoditymaster.crate_size) * 0.9
     ) {

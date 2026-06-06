@@ -187,14 +187,16 @@ const TrackAppliation = () => {
     const monthIndex = monthNames.indexOf(capitalcase(month));
     const yearNum = parseInt(year, 10);
 
-    // If the month is between September (index 8) and March (index 2), return year-year+1
-    if (monthIndex >= 8) {
-      // September to December
-      return `${yearNum}-${yearNum + 1}`;
+ 
+
+    if(monthIndex >= 0 && monthIndex <= 2) {
+      // January to March
+      return `${yearNum - 1}-${yearNum.toString().slice(-2)}`;
     } else {
-      // January to April
-      return `${yearNum - 1}-${yearNum}`;
+      // April to December
+      return `${yearNum}-${(yearNum + 1).toString().slice(-2)}`;
     }
+
   };
 
   const get_month = (composition: boolean, month: string): string => {

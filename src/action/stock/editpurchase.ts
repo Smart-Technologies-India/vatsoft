@@ -135,24 +135,13 @@ const EditPurchase = async (
 
       // Only recalculate stock when quantity is actually changed.
 
-      console.log(
-        "Existing Quantity:",
-        is_exist.quantity,
-        "payload Quantity:",
-        payload.quantity,
-      );
-
+   
 
       if (payload.quantity !== is_exist.quantity) {
         
         const stockAdjustment = payload.quantity - is_exist.quantity;
         const newStockQuantity = find_stock.quantity + stockAdjustment;
-        console.log(
-          "Stock Adjustment:",
-          stockAdjustment,
-          "New Stock Quantity:",
-          newStockQuantity,
-        );
+       
         if (newStockQuantity < 0) {
           throw new Error("Stock not available.");
         }

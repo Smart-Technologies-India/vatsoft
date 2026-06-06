@@ -24,7 +24,6 @@ import { dvat04, Quarter } from "@prisma/client";
 import GetReturn01 from "@/action/return/getreturn";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import EnsureReturnForChallan from "@/action/return/ensurereturnforchallan";
-// import EnsureReturnForChallan from "../../../action/return/ensurereturnforchallan";
 
 type DepartmentPayChallanProviderProps = {
   userid: number;
@@ -127,7 +126,6 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
 
     let returnIdToUse: number | undefined = resolvedReturnId;
 
-
     if (!returnIdToUse) {
       if (!props.returnContext) {
         return toast.error(
@@ -136,7 +134,6 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
       }
 
       const ensureReturnResponse = await EnsureReturnForChallan({
-        createdById: props.userid,
         year: props.returnContext.year,
         quarter: props.returnContext.quarter,
         month: props.returnContext.month,

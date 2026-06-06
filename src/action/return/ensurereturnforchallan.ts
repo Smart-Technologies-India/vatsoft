@@ -7,7 +7,6 @@ import prisma from "../../../prisma/database";
 import { Quarter, returns_01, Status } from "@prisma/client";
 
 interface EnsureReturnForChallanPayload {
-  createdById: number;
   year: string;
   quarter: Quarter;
   month: string;
@@ -34,30 +33,24 @@ const EnsureReturnForChallan = async (
       where: {
         year: payload.year,
         month: payload.month,
-        createdById: payload.createdById,
+        dvat04Id: currentDvatId,
         deletedAt: null,
         deletedById: null,
-        return_type: "REVISED",
+        OR: [
+          {
+            return_type: "REVISED",
+          },
+          {
+            return_type: "ORIGINAL",
+          },
+        ],
       },
     });
 
     if (!returnInvoice) {
-      returnInvoice = await prisma.returns_01.findFirst({
-        where: {
-          year: payload.year,
-          month: payload.month,
-          createdById: payload.createdById,
-          deletedAt: null,
-          deletedById: null,
-          return_type: "ORIGINAL",
-        },
-      });
-    }
-
-    if (!returnInvoice) {
       const dvat04 = await prisma.dvat04.findFirst({
         where: {
-          createdById: payload.createdById,
+          dvatid: currentDvatId,
           deletedAt: null,
           deletedById: null,
         },
@@ -83,7 +76,7 @@ const EnsureReturnForChallan = async (
           total_tax_amount: "0",
           status: Status.ACTIVE,
           compositionScheme: dvat04.compositionScheme,
-          createdById: payload.createdById,
+          createdById: currentUserId,
         },
       });
     }

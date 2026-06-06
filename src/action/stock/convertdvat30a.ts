@@ -94,6 +94,7 @@ const ConvertDvat30A = async (
       }
 
       const lowestInvoiceDate = new Date(lowestMonth.invoice_date);
+
       const targetStartDate =
         startOfMonth(lowestInvoiceDate).getTime() < april2026.getTime()
           ? april2026
@@ -104,6 +105,9 @@ const ConvertDvat30A = async (
         targetStartDate.getTime() === april2026.getTime()
           ? { lt: targetEndDate }
           : { gte: targetStartDate, lt: targetEndDate };
+
+          console.log("Target Start Date:", targetStartDate);
+          console.log("Target End Date:", targetEndDate);
 
       const data_to_create = await prisma.daily_purchase.findMany({
         where: {
@@ -130,9 +134,11 @@ const ConvertDvat30A = async (
       for (let monthAttempts = 0; monthAttempts < 24; monthAttempts += 1) {
         const monthStartDate = startOfMonth(cursorDate);
         const monthEndDate = addMonths(monthStartDate, 1);
+      
 
         const monthName = monthNames[monthStartDate.getMonth()];
         const monthYear = monthStartDate.getFullYear().toString();
+
 
         const monthReturns = await prisma.returns_01.findMany({
           where: {

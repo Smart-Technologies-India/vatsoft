@@ -483,17 +483,18 @@ const ReturnDashboard = () => {
 
     const periodValues: PeriodValue[] = [];
 
-    // Push previous fiscal year
-    periodValues.push({
-      value: (currentFY - 1).toString(),
-      label: `${currentFY - 1}-${currentFY.toString().slice(-2)}`,
-    });
+    // // Push previous fiscal year
+    // periodValues.push({
+    //   value: (currentFY - 1).toString(),
+    //   label: `${currentFY - 1}-${currentFY.toString().slice(-2)}`,
+    // });
 
     // Push current fiscal year
     periodValues.push({
       value: currentFY.toString(),
       label: `${currentFY}-${(currentFY + 1).toString().slice(-2)}`,
     });
+
 
     return periodValues;
   };
