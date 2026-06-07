@@ -56,9 +56,9 @@ const Dvat16ReturnPreview = () => {
   const router = useRouter();
 
   const { id } = useParams<{ id: string | string[] }>();
-  const userid: number = parseInt(
-    decryptURLData(Array.isArray(id) ? id[0] : id, router),
-  );
+  // const userid: number = parseInt(
+  //   decryptURLData(Array.isArray(id) ? id[0] : id, router),
+  // );
 
   const [isDownload, setDownload] = useState<boolean>(false);
   // const [current_user_id, setCurrentUserId] = useState<number>(0);
@@ -199,7 +199,6 @@ const Dvat16ReturnPreview = () => {
       const returnformsresponse = await getPdfReturn({
         year: year,
         month: month,
-        userid: userid,
       });
 
       const monthNames = [
@@ -250,7 +249,6 @@ const Dvat16ReturnPreview = () => {
               getPdfReturn({
                 year: getNewYear(year, quarterMonth),
                 month: quarterMonth,
-                userid: userid,
               }),
             ),
           );
@@ -321,7 +319,6 @@ const Dvat16ReturnPreview = () => {
         const lastmonthdata = await getPdfReturn({
           year: month == "January" ? (parseInt(year) - 1).toString() : year,
           month: lastMonth,
-          userid: userid,
         });
 
         if (lastmonthdata.status && lastmonthdata.data) {
@@ -330,7 +327,7 @@ const Dvat16ReturnPreview = () => {
       }
     };
     init();
-  }, [searchparam, userid]);
+  }, [searchparam]);
 
   useEffect(() => {
     if (return01 == null) return;

@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
 import { ToWords } from "to-words";
 import {
   capitalcase,
@@ -32,12 +31,6 @@ import {
   SaleOf,
   user,
 } from "@prisma/client";
-import {
-  SubmitPaymentForm,
-  SubmitPaymentSchema,
-} from "@/schema/subtmitpayment";
-import AddPayment from "@/action/return/addpayment";
-import CheckLastPayment from "@/action/return/checklastpayment";
 import GetReturn01 from "@/action/return/getreturn";
 import getReturnEntry from "@/action/return/getreturnentry";
 import GetUser from "@/action/user/getuser";
@@ -167,44 +160,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     return `${rr_no}${month}${day}${return_id}`;
   };
 
-  const onSubmit = async (data: SubmitPaymentForm) => {
-    if (return01 == null) return toast.error("No return exist");
-
-    const lastPayment = await CheckLastPayment({
-      id: return01.id ?? 0,
-    });
-
-    if (!lastPayment.status) {
-      toast.error(lastPayment.message);
-      return;
-    }
-
-    if (lastPayment.data == false) {
-      toast.error(lastPayment.message);
-      return;
-    }
-
-    const paymentBreakdown = getNetPayableBreakdown();
-
-    const response = await AddPayment({
-      id: return01.id ?? 0,
-      bank_name: data.bank_name,
-      track_id: data.track_id,
-      transaction_id: data.transaction_id,
-      rr_number: get_rr_number(),
-      penalty: paymentBreakdown.penalty.toFixed(0),
-      ...(paymentBreakdown.pendingPayment > 0 && {
-        pending_payment: paymentBreakdown.pendingPayment.toFixed(0),
-      }),
-      interestamount: paymentBreakdown.interestamount.toFixed(0),
-      totaltaxamount: paymentBreakdown.totaltaxamount.toFixed(0),
-      vatamount: paymentBreakdown.vatamount.toFixed(0),
-    });
-
-    if (!response.status) return toast.error(response.message);
-    toast.success(response.message);
-    router.push("/dashboard/returns/returns-dashboard");
-  };
+  
 
   // extra calcuation
   const getInvoicePercentage = (value: string): PercentageOutput => {

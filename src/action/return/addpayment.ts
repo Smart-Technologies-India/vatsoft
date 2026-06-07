@@ -25,6 +25,10 @@ interface AddPaymentPayload {
   vatamount: string;
   interestamount: string;
   totaltaxamount: string;
+  challan_vat: string;
+  challan_interest: string;
+  challan_penalty: string;
+  challan_total_tax_amount: string;
 }
 
 const AddPayment = async (
@@ -447,14 +451,14 @@ const AddPayment = async (
         data: {
           dvatid: isExist.dvat04Id,
           cpin: cpin,
-          vat: payload.vatamount,
+          vat: payload.challan_vat,
           latefees: "0",
-          interest: payload.interestamount,
+          interest: payload.challan_interest,
           others: "0",
-          penalty: payload.penalty,
+          penalty: payload.challan_penalty,
           createdById: isExist.createdById,
           expire_date: today,
-          total_tax_amount: payload.totaltaxamount,
+          total_tax_amount: payload.challan_total_tax_amount,
           reason: "MONTHLYPAYMENT",
           paymentstatus: "PAID",
           transaction_date: new Date(),

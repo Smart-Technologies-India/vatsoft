@@ -14,7 +14,6 @@ import {
 import { getCurrentDvatId } from "@/lib/auth";
 
 interface getPdfReturnPayload {
-  userid: number;
   month: string;
   year: string;
 }

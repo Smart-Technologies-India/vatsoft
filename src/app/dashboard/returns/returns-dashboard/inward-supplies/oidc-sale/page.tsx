@@ -50,7 +50,6 @@ const OIDCSales = () => {
       const returnformsresponse = await getPdfReturn({
         year: year,
         month: month,
-        userid: authResponse.data,
       });
 
       if (returnformsresponse.status && returnformsresponse.data) {

@@ -101,7 +101,6 @@ const AddRecord = () => {
     const returnformsresponse = await getPdfReturn({
       year,
       month,
-      userid: currentUserId,
     });
 
     let mergedEntries: returns_entry[] = [];
@@ -128,7 +127,6 @@ const AddRecord = () => {
           getPdfReturn({
             year: getNewYear(year, quarterMonth),
             month: quarterMonth,
-            userid: currentUserId,
           }),
         ),
       );

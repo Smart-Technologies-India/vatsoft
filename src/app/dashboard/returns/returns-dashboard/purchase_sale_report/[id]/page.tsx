@@ -159,7 +159,6 @@ const PurchaseSaleReportByIdPage = () => {
               getPdfReturn({
                 year: baseYear,
                 month,
-                userid: authenticatedUserId,
               }),
             ),
           );

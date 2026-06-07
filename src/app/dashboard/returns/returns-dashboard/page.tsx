@@ -191,7 +191,6 @@ const ReturnDashboard = () => {
     const returnformsresponse = await getPdfReturn({
       year: fetchYear,
       month: period,
-      userid: userid,
     });
 
     let mergedEntries: returns_entry[] = [];
@@ -214,7 +213,6 @@ const ReturnDashboard = () => {
           getPdfReturn({
             year: getNewYear(year, month),
             month,
-            userid: userid,
           }),
         ),
       );

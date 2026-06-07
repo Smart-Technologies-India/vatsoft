@@ -503,7 +503,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
 
     return new Date(computedYear, monthIndex, 15);
   };
-  
+
   const calculateInterest = (
     totalDue: number,
     dueDate: Date,

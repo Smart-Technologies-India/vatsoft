@@ -150,7 +150,6 @@ const GSTR = () => {
     const returnformsresponse = await getPdfReturn({
       year,
       month,
-      userid,
     });
 
     let mergedEntries: returns_entry[] = [];
@@ -177,7 +176,6 @@ const GSTR = () => {
           getPdfReturn({
             year: getNewYear(year, quarterMonth),
             month: quarterMonth,
-            userid,
           }),
         ),
       );

@@ -180,7 +180,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                 getPdfReturn({
                   year: getNewYear(selectedYear, month),
                   month,
-                  userid: createdById,
                 }),
               ),
             );
@@ -249,7 +248,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         const lastmonthdata = await getPdfReturn({
           year: month == "January" ? (parseInt(year) - 1).toString() : year,
           month: lastMonth,
-          userid: 0,
         });
 
         if (lastmonthdata.status && lastmonthdata.data) {
@@ -365,6 +363,11 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         interestamount: paymentBreakdown.interestamount.toFixed(0),
         totaltaxamount: paymentBreakdown.totaltaxamount.toFixed(0),
         vatamount: paymentBreakdown.vatamount.toFixed(0),
+
+        challan_vat:remaingVat.toFixed(0),
+        challan_interest: remainingInterest.toFixed(0),
+        challan_penalty: remainingPenalty.toFixed(0),
+        challan_total_tax_amount:(remaingVat + remainingInterest + remainingPenalty).toFixed(0),
       });
 
       if (!response.status) return toast.error(response.message);
@@ -406,6 +409,11 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         interestamount: paymentBreakdown.interestamount.toFixed(0),
         totaltaxamount: paymentBreakdown.totaltaxamount.toFixed(0),
         vatamount: paymentBreakdown.vatamount.toFixed(0),
+
+        challan_vat:remaingVat.toFixed(0),
+        challan_interest: remainingInterest.toFixed(0),
+        challan_penalty: remainingPenalty.toFixed(0),
+        challan_total_tax_amount:(remaingVat + remainingInterest + remainingPenalty).toFixed(0),
       });
 
       if (!response.status) {

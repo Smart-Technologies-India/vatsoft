@@ -115,12 +115,10 @@ const DocumentWiseDetails = () => {
     filingFrequency?: string,
     effectiveUserId?: number,
   ) => {
-    const currentUserId = effectiveUserId ?? userid;
 
     const returnformsresponse = await getPdfReturn({
       year,
       month,
-      userid: currentUserId,
     });
 
     let mergedEntries: Array<
@@ -149,7 +147,6 @@ const DocumentWiseDetails = () => {
           getPdfReturn({
             year: getNewYear(year, quarterMonth),
             month: quarterMonth,
-            userid: currentUserId,
           }),
         ),
       );

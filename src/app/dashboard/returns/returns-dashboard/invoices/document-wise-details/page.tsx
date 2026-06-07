@@ -120,7 +120,6 @@ const DocumentWiseDetails = () => {
     const returnformsresponse = await getPdfReturn({
       year,
       month,
-      userid: currentUserId,
     });
 
     let mergedEntries: Array<
@@ -149,7 +148,6 @@ const DocumentWiseDetails = () => {
           getPdfReturn({
             year: getNewYear(year, quarterMonth),
             month: quarterMonth,
-            userid: currentUserId,
           }),
         ),
       );

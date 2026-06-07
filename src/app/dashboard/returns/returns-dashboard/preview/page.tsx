@@ -198,7 +198,6 @@ const Dvat16ReturnPreview = () => {
       const returnformsresponse = await getPdfReturn({
         year: year,
         month: month,
-        userid: userid,
       });
 
       const monthNames = [
@@ -248,7 +247,6 @@ const Dvat16ReturnPreview = () => {
               getPdfReturn({
                 year: getNewYear(year, quarterMonth),
                 month: quarterMonth,
-                userid: userid,
               }),
             ),
           );
@@ -317,7 +315,6 @@ const Dvat16ReturnPreview = () => {
         const lastmonthdata = await getPdfReturn({
           year: month == "January" ? (parseInt(year) - 1).toString() : year,
           month: lastMonth,
-          userid: userid,
         });
 
         if (lastmonthdata.status && lastmonthdata.data) {
@@ -891,7 +888,7 @@ const Dvat16ReturnPreview = () => {
 
   const getPaidChallanAmount = (): number =>
     paidChallans.reduce(
-      (total, challan) => total + parseFloat(challan.total_tax_amount ?? "0"),
+      (total, challan) => total + parseFloat(challan.vat ?? "0"),
       0,
     );
 
