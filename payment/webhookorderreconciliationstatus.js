@@ -112,7 +112,9 @@ const parseCcavEncryptedResponse = (encResp) => {
   const pairs = ccavResponse.split("&");
 
   pairs.forEach((pair) => {
-    const [key, value] = pair.split("=");
+    const separatorIndex = pair.indexOf("=");
+    const key = separatorIndex >= 0 ? pair.slice(0, separatorIndex) : pair;
+    const value = separatorIndex >= 0 ? pair.slice(separatorIndex + 1) : "";
     if (!keysToKeep.includes(key)) return;
     result[key] = value === "null" ? null : decodeURIComponent(value || "");
   });
@@ -203,6 +205,19 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
       });
     }
 
+    if (orderId && (!intent || intent.gateway_order_id !== orderId)) {
+      return response.status(409).json({
+        success: false,
+        message: "Payment intent mapping mismatch for webhook order_id.",
+        data: {
+          challanId: challan.id,
+          order_id: orderId,
+          paymentIntentId: intent?.id || null,
+          intent_order_id: intent?.gateway_order_id || null,
+        },
+      });
+    }
+
     const challanUpdateBase = {
       track_id: result.tracking_id || challan.track_id || null,
       order_id: result.order_id || challan.order_id || null,
@@ -224,7 +239,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
     };
 
     const canMarkSuccess =
-      !intent || isAmountMatched(intent.expected_amount, result.amount);
+      !!intent && isAmountMatched(intent.expected_amount, result.amount);
 
     if (statusGroup === "success" && canMarkSuccess) {
       if (intent && intent.status !== "SUCCESS") {
@@ -320,7 +335,13 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
       }
     }
 
-    if (statusGroup === "success" && !canMarkSuccess && intent) {
+    if (
+      statusGroup === "success" &&
+      !canMarkSuccess &&
+      intent &&
+      intent.status !== "SUCCESS" &&
+      challan.paymentstatus !== "PAID"
+    ) {
       await prisma.payment_intent.update({
         where: { id: intent.id },
         data: {

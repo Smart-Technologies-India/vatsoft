@@ -869,34 +869,18 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         parseFloat(getGoodsReturnsNote().decrease) -
         parseFloat(lastmonthdue)));
 
-  const getR6_2a = (): number =>
-    (((parseFloat(getInvoicePercentage("0").decrease) +
-      parseFloat(getInvoicePercentage("1").decrease) +
-      parseFloat(getInvoicePercentage("2").decrease) +
-      parseFloat(getInvoicePercentage("3").decrease) +
-      parseFloat(getInvoicePercentage("4").decrease) +
-      parseFloat(getInvoicePercentage("5").decrease) +
-      parseFloat(getInvoicePercentage("6").decrease) +
-      parseFloat(getInvoicePercentage("12.5").decrease) +
-      parseFloat(getInvoicePercentage("12.75").decrease) +
-      parseFloat(getInvoicePercentage("13.5").decrease) +
-      parseFloat(getInvoicePercentage("15").decrease) +
-      parseFloat(getInvoicePercentage("20").decrease) +
-      parseFloat(getSaleOfPercentage("4").decrease) +
-      parseFloat(getSaleOfPercentage("5").decrease) +
-      parseFloat(getSaleOfPercentage("12.5").decrease) +
-      parseFloat(get4_6().decrease) +
-      parseFloat(get4_7().decrease) -
-      parseFloat(get4_9().decrease) -
-      (parseFloat(get5_1().decrease) +
-        parseFloat(get5_2().decrease) +
-        (parseFloat(getDebitNote().decrease) -
-          parseFloat(getCreditNote().decrease) -
-          parseFloat(getGoodsReturnsNote().decrease) -
-          parseFloat(lastmonthdue)))) *
-      0.15) /
-      365) *
-    PenaltyDiffDays;
+  const getR6_2a = (): number => {
+    if (!return01?.month) return 0;
+
+    const dueDate = getInterestDueDate(
+      return01.year,
+      return01.month,
+      return01.dvat04?.frequencyFilings === "QUARTERLY",
+    );
+
+    const interest = calculateInterest(getR6_1(), dueDate, paidChallans, 15);
+    return isNegative(interest) ? 0 : interest;
+  };
 
   const getNetPayable = (): number => {
     const penalty = isNegative(lateFees) ? 0 : lateFees;
