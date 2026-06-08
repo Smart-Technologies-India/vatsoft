@@ -559,6 +559,7 @@ export const postRes = (request, response) => {
               bene_bank: result.bene_bank,
               bene_branch: result.bene_branch,
               trans_fee: result.trans_fee,
+              returnid: return_id
             },
           });
 
@@ -617,6 +618,7 @@ export const postRes = (request, response) => {
               bene_bank: result.bene_bank,
               bene_branch: result.bene_branch,
               trans_fee: result.trans_fee,
+              returnid: return_id
             },
           });
 

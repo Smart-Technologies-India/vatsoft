@@ -534,42 +534,40 @@ const Dvat16ReturnPreview = () => {
   const generatePDF = async (path: string) => {
     setDownload(true);
     try {
-      // Fetch the PDF from the server
-      // const path = `${window.location.pathname}${window.location.search}?sidebar=no`;
+      const printUrl = new URL(path, window.location.origin).toString();
+      const printWindow = window.open(printUrl, "_blank");
 
-      const response = await fetch("/api/getpdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url: path }),
-      });
-
-      if (!response.ok) {
-        setTimeout(() => {
-          setDownload(false);
-        }, 3600);
-
-        throw new Error("Failed to generate PDF");
+      if (!printWindow) {
+        setDownload(false);
+        toast.error("Popup blocked. Please allow popups and try again.");
+        return;
       }
 
-      const blob = await response.blob();
+      let hasTriggered = false;
+      const openPrintDialog = () => {
+        if (hasTriggered) return;
+        hasTriggered = true;
+        try {
+          printWindow.focus();
+          printWindow.print();
+        } finally {
+          setDownload(false);
+        }
+      };
 
-      // Create a link element for the download
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = "output.pdf";
+      // Trigger print once the page is loaded.
+      printWindow.onload = () => {
+        setTimeout(openPrintDialog, 600);
+      };
 
-      // Programmatically click the link to trigger the download
-      link.click();
+      // Fallback in case onload doesn't fire as expected.
       setTimeout(() => {
-        setDownload(false);
-      }, 3600);
+        if (!printWindow.closed) {
+          openPrintDialog();
+        }
+      }, 3000);
     } catch (error) {
-      setTimeout(() => {
-        setDownload(false);
-      }, 3600);
-
+      setDownload(false);
       toast.error("Unable to download pdf try again.");
     }
   };

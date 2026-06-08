@@ -423,7 +423,9 @@ const Dvat16ReturnPreview = () => {
   const generatePDF = async (path: string) => {
     setDownload(true);
     try {
-      const printUrl = new URL(path, window.location.origin).toString();
+      const printUrlObject = new URL(path, window.location.origin);
+      printUrlObject.searchParams.set("sidebar", "no");
+      const printUrl = printUrlObject.toString();
       const printWindow = window.open(printUrl, "_blank");
 
       if (!printWindow) {
@@ -432,7 +434,10 @@ const Dvat16ReturnPreview = () => {
         return;
       }
 
+      let hasTriggered = false;
       const openPrintDialog = () => {
+        if (hasTriggered) return;
+        hasTriggered = true;
         try {
           printWindow.focus();
           printWindow.print();
