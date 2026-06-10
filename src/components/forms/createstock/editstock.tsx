@@ -62,9 +62,9 @@ const EditStockData = (props: EditStockProviderProps) => {
 
   useEffect(() => {
     reset({
-      amount_unit: props.data.amount_unit,
       description_of_goods: props.data.commodity_master.product_name,
-      quantity: props.data.quantity.toString(),
+      crates: (props.data.quantity ?? 0).toString(),
+      amount: (props.data.amount_unit ?? 0).toString(),
     });
     const init = async () => {
       const authResponse = await getAuthenticatedUserId();
@@ -103,8 +103,8 @@ const EditStockData = (props: EditStockProviderProps) => {
   const [taxableValue, setTaxableValue] = useState<string>("0");
 
   const description_of_goods = watch("description_of_goods");
-  const quantity = watch("quantity");
-  const amount_unit = watch("amount_unit");
+  const crates = watch("crates");
+  const amount = watch("amount");
 
   useEffect(() => {
     if (description_of_goods == null || description_of_goods == undefined)
@@ -121,41 +121,41 @@ const EditStockData = (props: EditStockProviderProps) => {
   }, [description_of_goods]);
 
   useEffect(() => {
-    if (commoditymaster == null || quantity == null || amount_unit == null)
+    if (commoditymaster == null || crates == null || amount == null)
       return;
 
     // Calculate taxableValue
     const calculatedTaxableValue =
-      parseFloat(quantity) * parseFloat(amount_unit || "0");
+      parseFloat(crates) * parseFloat(amount || "0");
     setTaxableValue(
       isNaN(calculatedTaxableValue) ? "0" : calculatedTaxableValue.toFixed(2)
     );
 
     // Calculate VAT amount based on commodity master data
-    const taxPercentage: number = parseInt(commoditymaster.taxable_at) || 0; // Assuming `taxable_at` is a percentage
+    const taxPercentage: number = parseInt(commoditymaster.taxable_at) || 0;
     const calculatedVatAmount = (calculatedTaxableValue * taxPercentage) / 100;
     setVatAmount(
       isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
     );
-  }, [quantity, amount_unit, commoditymaster]);
+  }, [crates, amount, commoditymaster]);
 
   const onSubmit = async (data: CreateStockForm) => {
     if (davtdata == null || davtdata == undefined)
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
-    if (parseInt(data.quantity) <= 0)
-      return toast.error("Quantity must be greater than 0.");
+    if (parseInt(data.crates) <= 0)
+      return toast.error("Crates must be greater than 0.");
     const stock_response = await EditManufacture({
       id: props.id,
-      amount_unit: data.amount_unit,
+      amount_unit: data.amount,
       dvatid: davtdata?.id,
       createdById: userid,
-      quantity: parseInt(data.quantity),
+      quantity: parseInt(data.crates),
       vatamount: vatamount,
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
-      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(2),
+      amount: (parseInt(data.crates) * parseFloat(data.amount)).toFixed(2),
     });
 
     if (stock_response.status) {
@@ -194,17 +194,17 @@ const EditStockData = (props: EditStockProviderProps) => {
       </div>
       <div className="mt-2">
         <TaxtInput<CreateStockForm>
-          title="Quantity"
+          title="Quantity (Crates)"
           required={true}
-          name="quantity"
-          placeholder="Enter Quantity"
+          name="crates"
+          placeholder="Enter Crates"
           onlynumber={true}
         />
       </div>
       <div className="mt-2">
         <TaxtInput<CreateStockForm>
           placeholder="Enter amount"
-          name="amount_unit"
+          name="amount"
           required={true}
           title="Enter amount"
           onlynumber={true}
@@ -233,9 +233,9 @@ const EditStockData = (props: EditStockProviderProps) => {
           onClick={(e) => {
             e.preventDefault();
             reset({
-              amount_unit: "",
+              amount: "",
               description_of_goods: undefined,
-              quantity: "",
+              crates: "",
             });
           }}
           value={"Reset"}

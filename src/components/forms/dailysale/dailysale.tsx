@@ -15,6 +15,7 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import { DailySaleForm, DailySaleSchema } from "@/schema/daily_sale";
 import CreateDailySale from "@/action/stock/createdailysale";
+import CreateDailySaleManufacturer from "@/action/stock/createdailysalemanufacturer";
 import GetUserCommodity from "@/action/stock/usercommodity";
 import SearchTin from "@/action/tin_number/searchtin";
 import { Input, InputRef, Modal, Radio, RadioChangeEvent, Select } from "antd";
@@ -409,26 +410,48 @@ const DailySale = (props: DailySaleProviderProps) => {
     );
     date.setDate(date.getDate() + 1);
 
-    const stock_response = await CreateDailySale({
-      amount_unit: amount_unit,
-      invoice_date: date,
-      invoice_number: data.invoice_number,
-      dvatid: davtdata?.id,
-      createdById: userid,
-      quantity: quantityamount,
-      vatamount: vatamount,
-      commodityid: commoditymaster.id,
-      tax_percent: isComp ? "1" : getSelectedTaxRate(),
-      seller_tin_id: sellerTin.id,
-      amount: taxableValue,
-      against_cfrom: againstType === "CFORM",
-      is_against_fform: againstType === "FFORM",
-      is_export: againstType === "EXPORT",
-      is_exempt: againstType === "EXEMPT",
-      is_against_iform: againstType === "IFORM",
-      is_h_export: againstType === "H_EXPORT",
-      is_against_e1: againstType === "E1",
-    });
+    // Use MANUFACTURER action for MANUFACTURER commodity, otherwise use regular action
+    const stock_response = davtdata?.commodity === "MANUFACTURER"
+      ? await CreateDailySaleManufacturer({
+          amount_unit: amount_unit,
+          invoice_date: date,
+          invoice_number: data.invoice_number,
+          dvatid: davtdata?.id,
+          createdById: userid,
+          quantity: quantityamount,
+          vatamount: vatamount,
+          commodityid: commoditymaster.id,
+          tax_percent: isComp ? "1" : getSelectedTaxRate(),
+          seller_tin_id: sellerTin.id,
+          amount: taxableValue,
+          against_cfrom: againstType === "CFORM",
+          is_against_fform: againstType === "FFORM",
+          is_export: againstType === "EXPORT",
+          is_exempt: againstType === "EXEMPT",
+          is_against_iform: againstType === "IFORM",
+          is_h_export: againstType === "H_EXPORT",
+          is_against_e1: againstType === "E1",
+        })
+      : await CreateDailySale({
+          amount_unit: amount_unit,
+          invoice_date: date,
+          invoice_number: data.invoice_number,
+          dvatid: davtdata?.id,
+          createdById: userid,
+          quantity: quantityamount,
+          vatamount: vatamount,
+          commodityid: commoditymaster.id,
+          tax_percent: isComp ? "1" : getSelectedTaxRate(),
+          seller_tin_id: sellerTin.id,
+          amount: taxableValue,
+          against_cfrom: againstType === "CFORM",
+          is_against_fform: againstType === "FFORM",
+          is_export: againstType === "EXPORT",
+          is_exempt: againstType === "EXEMPT",
+          is_against_iform: againstType === "IFORM",
+          is_h_export: againstType === "H_EXPORT",
+          is_against_e1: againstType === "E1",
+        });
 
     if (stock_response.status) {
       toast.success(stock_response.message);
@@ -547,26 +570,48 @@ const DailySale = (props: DailySaleProviderProps) => {
     );
     date.setDate(date.getDate() + 1);
 
-    const stock_response = await CreateDailySale({
-      amount_unit: amount_unit,
-      invoice_date: date,
-      invoice_number: data.invoice_number,
-      dvatid: davtdata?.id,
-      createdById: userid,
-      quantity: quantityamount,
-      vatamount: vatamount,
-      commodityid: commoditymaster.id,
-      tax_percent: isComp ? "1" : getSelectedTaxRate(),
-      seller_tin_id: sellerTin.id,
-      amount: taxableValue,
-      against_cfrom: againstType === "CFORM",
-      is_against_fform: againstType === "FFORM",
-      is_export: againstType === "EXPORT",
-      is_exempt: againstType === "EXEMPT",
-      is_against_iform: againstType === "IFORM",
-      is_h_export: againstType === "H_EXPORT",
-      is_against_e1: againstType === "E1",
-    });
+    // Use MANUFACTURER action for MANUFACTURER commodity, otherwise use regular action
+    const stock_response = davtdata?.commodity === "MANUFACTURER"
+      ? await CreateDailySaleManufacturer({
+          amount_unit: amount_unit,
+          invoice_date: date,
+          invoice_number: data.invoice_number,
+          dvatid: davtdata?.id,
+          createdById: userid,
+          quantity: quantityamount,
+          vatamount: vatamount,
+          commodityid: commoditymaster.id,
+          tax_percent: isComp ? "1" : getSelectedTaxRate(),
+          seller_tin_id: sellerTin.id,
+          amount: taxableValue,
+          against_cfrom: againstType === "CFORM",
+          is_against_fform: againstType === "FFORM",
+          is_export: againstType === "EXPORT",
+          is_exempt: againstType === "EXEMPT",
+          is_against_iform: againstType === "IFORM",
+          is_h_export: againstType === "H_EXPORT",
+          is_against_e1: againstType === "E1",
+        })
+      : await CreateDailySale({
+          amount_unit: amount_unit,
+          invoice_date: date,
+          invoice_number: data.invoice_number,
+          dvatid: davtdata?.id,
+          createdById: userid,
+          quantity: quantityamount,
+          vatamount: vatamount,
+          commodityid: commoditymaster.id,
+          tax_percent: isComp ? "1" : getSelectedTaxRate(),
+          seller_tin_id: sellerTin.id,
+          amount: taxableValue,
+          against_cfrom: againstType === "CFORM",
+          is_against_fform: againstType === "FFORM",
+          is_export: againstType === "EXPORT",
+          is_exempt: againstType === "EXEMPT",
+          is_against_iform: againstType === "IFORM",
+          is_h_export: againstType === "H_EXPORT",
+          is_against_e1: againstType === "E1",
+        });
 
     if (stock_response.status) {
       toast.success(stock_response.message);

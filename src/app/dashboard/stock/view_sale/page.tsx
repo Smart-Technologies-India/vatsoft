@@ -1954,7 +1954,9 @@ const DocumentWiseDetails = () => {
       const taxPercent =
         dvatdata?.commodity === "MANUFACTURER" ||
         dvatdata?.commodity === "WHOLESALER"
-          ? "0"
+          ? row.sale_type === "REGULAR"
+            ? "20"
+            : "0"
           : row.sale_type === "CFORM"
             ? "2"
             : row.sale_type === "REGULAR"

@@ -1663,7 +1663,9 @@ const DocumentWiseDetails = () => {
         dvatdata?.commodity === "MANUFACTURER" ||
         dvatdata?.commodity == "WHOLESALER";
       const taxPercent = isManufacturerCommodity
-        ? "0"
+        ? row.purchase_type === "REGULAR"
+          ? "20"
+          : "0"
         : row.purchase_type === "AGAINST_CFORM"
           ? "2"
           : [

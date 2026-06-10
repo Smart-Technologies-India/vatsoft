@@ -68,9 +68,9 @@ const CreateStockData = (props: CreateStockProviderProps) => {
 
   useEffect(() => {
     reset({
-      amount_unit: "",
+      crates: "",
+      amount: "",
       description_of_goods: undefined,
-      quantity: "",
     });
     const init = async () => {
        const authResponse = await getAuthenticatedUserId();
@@ -153,8 +153,8 @@ const CreateStockData = (props: CreateStockProviderProps) => {
   const [taxableValue, setTaxableValue] = useState<string>("0");
 
   const description_of_goods = watch("description_of_goods");
-  const quantity = watch("quantity");
-  const amount_unit = watch("amount_unit");
+  const crates = watch("crates");
+  const amount = watch("amount");
 
   useEffect(() => {
     if (description_of_goods == null || description_of_goods == undefined)
@@ -171,23 +171,28 @@ const CreateStockData = (props: CreateStockProviderProps) => {
   }, [description_of_goods]);
 
   useEffect(() => {
-    if (commoditymaster == null || quantity == null || amount_unit == null)
+    if (commoditymaster == null || crates == null || amount == null)
       return;
 
+    // Calculate pieces from amount using crate_size from commodity master
+    const cratesNum = parseInt(crates) || 0;
+    const amountNum = parseInt(amount) || 0;
+    const piecesFromAmount = Math.floor(amountNum / commoditymaster.crate_size);
+    const totalQuantity = (cratesNum * commoditymaster.crate_size) + piecesFromAmount;
+
     // Calculate taxableValue
-    const calculatedTaxableValue =
-      parseFloat(quantity) * parseFloat(amount_unit || "0");
+    const calculatedTaxableValue = totalQuantity * commoditymaster.crate_size;
     setTaxableValue(
       isNaN(calculatedTaxableValue) ? "0" : calculatedTaxableValue.toFixed(2)
     );
 
     // Calculate VAT amount based on commodity master data
-    const taxPercentage: number = parseInt(commoditymaster.taxable_at) || 0; // Assuming `taxable_at` is a percentage
+    const taxPercentage: number = parseInt(commoditymaster.taxable_at) || 0;
     const calculatedVatAmount = (calculatedTaxableValue * taxPercentage) / 100;
     setVatAmount(
       isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
     );
-  }, [quantity, amount_unit, commoditymaster]);
+  }, [crates, amount, commoditymaster]);
 
   const onSubmit = async (data: CreateStockForm) => {
     if (davtdata == null || davtdata == undefined)
@@ -195,15 +200,20 @@ const CreateStockData = (props: CreateStockProviderProps) => {
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
 
+    const cratesNum = parseInt(data.crates) || 0;
+    const amountNum = parseInt(data.amount) || 0;
+    const piecesFromAmount = Math.floor(amountNum / commoditymaster.crate_size);
+    const totalQuantity = (cratesNum * commoditymaster.crate_size) + piecesFromAmount;
+
     const stock_response = await CreateStock({
-      amount_unit: data.amount_unit,
+      amount_unit: commoditymaster.crate_size.toString(),
       dvatid: davtdata?.id,
       createdById: userid,
-      quantity: parseInt(data.quantity),
+      quantity: totalQuantity,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
-      amount: (parseInt(data.quantity) * parseInt(data.amount_unit)).toFixed(2),
+      amount: taxableValue,
     });
 
     if (stock_response.status) {
@@ -221,15 +231,21 @@ const CreateStockData = (props: CreateStockProviderProps) => {
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
+    
+    const cratesNum = parseInt(data.crates) || 0;
+    const amountNum = parseInt(data.amount) || 0;
+    const piecesFromAmount = Math.floor(amountNum / commoditymaster.crate_size);
+    const totalQuantity = (cratesNum * commoditymaster.crate_size) + piecesFromAmount;
+
     const stock_response = await CreateStock({
-      amount_unit: data.amount_unit,
+      amount_unit: commoditymaster.crate_size.toString(),
       dvatid: davtdata?.id,
       createdById: userid,
-      quantity: parseInt(data.quantity),
+      quantity: totalQuantity,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
       tax_percent: commoditymaster.taxable_at,
-      amount: vatamount,
+      amount: taxableValue,
     });
 
     if (stock_response.status) {
@@ -242,8 +258,8 @@ const CreateStockData = (props: CreateStockProviderProps) => {
 
     reset({
       ...currentValues,
-      quantity: "",
-      amount_unit: "",
+      crates: "",
+      amount: "",
       description_of_goods: undefined,
     });
     setVatAmount("0");
@@ -289,19 +305,19 @@ const CreateStockData = (props: CreateStockProviderProps) => {
       </div>
       <div className="mt-2">
         <TaxtInput<CreateStockForm>
-          title="Quantity"
+          title="Crates"
           required={true}
-          name="quantity"
-          placeholder="Enter Quantity"
+          name="crates"
+          placeholder="Enter number of crates"
           onlynumber={true}
         />
       </div>
       <div className="mt-2">
         <TaxtInput<CreateStockForm>
-          placeholder="Enter amount"
-          name="amount_unit"
+          placeholder="Enter amount (pieces will be calculated from commodity master crate size)"
+          name="amount"
           required={true}
-          title="Enter amount"
+          title="Amount (pieces)"
           onlynumber={true}
         />
       </div>
@@ -339,9 +355,9 @@ const CreateStockData = (props: CreateStockProviderProps) => {
           onClick={(e) => {
             e.preventDefault();
             reset({
-              amount_unit: "",
+              crates: "",
+              amount: "",
               description_of_goods: undefined,
-              quantity: "",
             });
           }}
           value={"Reset"}

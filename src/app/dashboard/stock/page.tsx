@@ -5,6 +5,7 @@ import { AddMaterialProvider } from "@/components/forms/addmaterial/addmaterial"
 import { CreateStockProvider } from "@/components/forms/createstock/createstock";
 import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
 import { Input } from "@/components/ui/input";
+import * as XLSX from "xlsx";
 import {
   Table,
   TableBody,
@@ -473,6 +474,59 @@ const CommodityMaster = () => {
 
   // csv section end here
 
+  const handleDownloadStockAsXlsx = () => {
+    if (!filteredStocks || filteredStocks.length === 0) {
+      toast.error("No data to download");
+      return;
+    }
+
+    // Prepare data for export
+    const exportData = filteredStocks.map((stock, index) => {
+      const baseData: any = {
+        "Sr. No.": index + 1,
+        "Item ID": stock.commodity_master.id,
+        "Product Name": stock.commodity_master.product_name,
+      };
+
+      // Add quantity or crate based on selection
+      if (quantityCount === "pcs") {
+        baseData[dvatdata?.commodity === "FUEL" ? "Litres" : "Quantity"] =
+          stock.quantity;
+      } else {
+        baseData["Crate"] = showCrates(
+          stock.quantity,
+          stock.commodity_master.crate_size,
+        );
+      }
+
+      return baseData;
+    });
+
+    // Create a new workbook and worksheet
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+    // Set column widths
+    const columnWidths = [
+      { wch: 10 }, // Sr. No.
+      { wch: 12 }, // Item ID
+      { wch: 25 }, // Product Name
+      { wch: 15 }, // Quantity/Crate
+    ];
+    worksheet["!cols"] = columnWidths;
+
+    // Create workbook and add the worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Stock");
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().split("T")[0];
+    const filename = `stock_${quantityCount}_${timestamp}.xlsx`;
+
+    // Write file
+    XLSX.writeFile(workbook, filename);
+    toast.success("Stock data downloaded successfully");
+  };
+
   const handleBulkUpload = async () => {
     if (!tabledata || tabledata.length === 0) {
       return toast.error("No data to upload.");
@@ -772,7 +826,7 @@ const CommodityMaster = () => {
                 )} */}
 
                 {/* Manufacturer-specific Buttons */}
-                {dvatdata && (dvatdata.commodity == "MANUFACTURER" ) && (
+                {/* {dvatdata && (dvatdata.commodity == "MANUFACTURER" ) && (
                   <>
                     <Button
                       size="small"
@@ -781,15 +835,15 @@ const CommodityMaster = () => {
                     >
                       Add Production
                     </Button>
-                    {/* <Button
+                    <Button
                       size="small"
                       type="primary"
                       onClick={() => setMaterialBox(true)}
                     >
                       Add Raw Material
-                    </Button> */}
+                    </Button>
                   </>
-                )}
+                )} */}
 
                 {/* Common Buttons */}
                 <Button
@@ -798,6 +852,14 @@ const CommodityMaster = () => {
                   onClick={() => setAddBox(true)}
                 >
                   Add Purchase
+                </Button>
+
+                <Button
+                  size="small"
+                  type="default"
+                  onClick={handleDownloadStockAsXlsx}
+                >
+                  Download Stock
                 </Button>
 
                 <Button
@@ -817,7 +879,7 @@ const CommodityMaster = () => {
                     Refinery Purchase
                   </Button>
                 )}
-                {dvatdata && (dvatdata.commodity == "MANUFACTURER" || dvatdata.commodity == "WHOLESALER") && (
+                {/* {dvatdata && (dvatdata.commodity == "MANUFACTURER") && (
                   <Button
                     size="small"
                     type="default"
@@ -827,7 +889,7 @@ const CommodityMaster = () => {
                   >
                     Manufacturer Purchase
                   </Button>
-                )}
+                )} */}
               </div>
             </div>
           </div>
