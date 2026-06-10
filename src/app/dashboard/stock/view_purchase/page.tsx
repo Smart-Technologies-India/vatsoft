@@ -16,6 +16,7 @@ import CreateMultiDailyPurchase from "@/action/stock/createmultidailypurchase";
 import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
 import { PurchaseCreditNoteDrawer } from "@/components/forms/purchasecreditnote/purchasecreditnotedrawer";
 import { PurchaseDebitNoteDrawer } from "@/components/forms/purchasedebitnote/purchasedebitnotedrawer";
+import { AntDesignMenuOutlined } from "@/components/icons";
 import {
   Table,
   TableBody,
@@ -49,6 +50,7 @@ const DocumentWiseDetails = () => {
   const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
     {},
   );
+  const [toolbarActionsOpen, setToolbarActionsOpen] = useState(false);
   const handleOpenChange = (newOpen: boolean, index: number) => {
     setOpenPopovers((prev) => ({
       ...prev,
@@ -401,6 +403,7 @@ const DocumentWiseDetails = () => {
     }
   };
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPurchaseConfirmed, setIsPurchaseConfirmed] = useState(false);
   const [creditNoteBox, setCreditNoteBox] = useState<boolean>(false);
   const [creditNoteGroup, setCreditNoteGroup] =
     useState<GroupedDailyPurchase | null>(null);
@@ -2477,18 +2480,66 @@ const DocumentWiseDetails = () => {
         )}
       </Drawer>
       <Modal
-        title="Generate DVAT 30/30 A"
+        title={
+          <div className="text-rose-600 font-semibold text-base">
+            ⚠️ IMPORTANT NOTICE – PURCHASE DATA FINALIZATION
+          </div>
+        }
         open={isModalOpen}
         onOk={Convertto30a}
         onCancel={() => {
           setIsModalOpen(false);
+          setIsPurchaseConfirmed(false);
         }}
-        okText="Generate"
+        okText="Finalize Purchase Data"
         cancelText="Cancel"
+        okButtonProps={{ disabled: !isPurchaseConfirmed, danger: true }}
+        width={600}
       >
-        <p className="text-sm text-gray-600 py-2">
-          Are you sure you want to Generate DVAT 30/30 A Return?
-        </p>
+        <div className="py-3 space-y-4">
+          <p className="text-sm text-gray-700">
+            You are about to <strong>finalize all Purchase entries</strong> for
+            the selected tax period.
+          </p>
+
+          <p className="text-sm text-gray-700">
+            Please ensure that all Purchase invoices and transaction details
+            have been entered correctly and verified carefully.
+          </p>
+
+          <div className="bg-amber-50 border-l-4 border-amber-500 p-3 rounded">
+            <p className="text-sm font-semibold text-amber-800 mb-2">
+              After clicking &quot;Finalize Purchase Data&quot;:
+            </p>
+            <ul className="text-sm text-amber-900 space-y-1">
+              <li>❌ No new Purchase entries can be added.</li>
+              <li>❌ Existing Purchase entries cannot be edited.</li>
+              <li>❌ Existing Purchase entries cannot be deleted.</li>
+              <li>❌ This action cannot be reversed through the system.</li>
+            </ul>
+          </div>
+
+          <p className="text-sm text-gray-700 font-medium">
+            This action should be performed only after completing and verifying
+            all Purchase transactions for the tax period.
+          </p>
+
+          <div className="mt-4 p-3 bg-gray-50 border border-gray-300 rounded">
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isPurchaseConfirmed}
+                onChange={(e) => setIsPurchaseConfirmed(e.target.checked)}
+                className="mt-1 h-4 w-4 cursor-pointer"
+              />
+              <span className="text-sm text-gray-800">
+                I confirm that all Purchase entries have been reviewed and
+                verified. I understand that once finalized, no further
+                additions, modifications, or deletions will be permitted.
+              </span>
+            </label>
+          </div>
+        </div>
       </Modal>
 
       <Modal
@@ -2912,17 +2963,8 @@ const DocumentWiseDetails = () => {
                     </TableRow>,
                     ...group.rows.map((row) => (
                       <TableRow key={row.id} className="hover:bg-gray-50">
-                        <TableCell className="border text-center text-xs">
-                          <input
-                            type="checkbox"
-                            checked={selectedBulkDeleteIds.includes(row.id)}
-                            onChange={(event) =>
-                              toggleBulkDeleteSelection(
-                                row.id,
-                                event.target.checked,
-                              )
-                            }
-                          />
+                        <TableCell className="border text-center text-xs text-gray-400">
+                          —
                         </TableCell>
                         <TableCell className="border text-center text-xs">
                           {row.invoice_number}
@@ -3034,88 +3076,143 @@ const DocumentWiseDetails = () => {
                   </div>
                 )}
 
-                {dvatdata?.commodity === "OIDC" && (
+                <Popover
+                  trigger={["hover", "click"]}
+                  placement="bottomRight"
+                  open={toolbarActionsOpen}
+                  onOpenChange={setToolbarActionsOpen}
+                  content={
+                    <div className="w-48 space-y-3">
+                      <div>
+                        <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                          Purchase Actions
+                        </p>
+                        <div className="mt-2 flex flex-col gap-2">
+                          {dvatdata?.commodity === "OIDC" && (
+                            <Button
+                              size="small"
+                              block
+                              type="default"
+                              onClick={() => {
+                                setToolbarActionsOpen(false);
+                                router.push("/dashboard/stock/tally_purchase");
+                              }}
+                            >
+                              Tally Purchase
+                            </Button>
+                          )}
+
+                          {dailyPurchase.length > 0 && (
+                            <Button
+                              size="small"
+                              block
+                              type="default"
+                              onClick={() => {
+                                setToolbarActionsOpen(false);
+                                if (hasPendingAcceptable) {
+                                  toast.error(
+                                    "Please accept all pending purchase invoices before generating DVAT 30/30 A.",
+                                  );
+                                  return;
+                                }
+                                setIsModalOpen(true);
+                              }}
+                            >
+                              Generate DVAT 30/30 A
+                            </Button>
+                          )}
+
+                          {hasPendingAcceptable && (
+                            <Button
+                              size="small"
+                              block
+                              type="default"
+                              danger
+                              loading={isAcceptAllLoading}
+                              onClick={() => {
+                                setToolbarActionsOpen(false);
+                                handleAcceptAllRecords();
+                              }}
+                            >
+                              Accept All
+                            </Button>
+                          )}
+
+                          <Button
+                            size="small"
+                            block
+                            type="default"
+                            onClick={() => {
+                              setToolbarActionsOpen(false);
+                              downloadBulkTemplate();
+                            }}
+                          >
+                            Download Sample
+                          </Button>
+
+                          <Button
+                            size="small"
+                            block
+                            type="primary"
+                            onClick={() => {
+                              setToolbarActionsOpen(false);
+                              sheetRef.current?.click();
+                            }}
+                          >
+                            Bulk Upload
+                          </Button>
+
+                          <Button
+                            size="small"
+                            block
+                            type="default"
+                            loading={isBulkDeleteLoading}
+                            onClick={() => {
+                              setToolbarActionsOpen(false);
+                              openBulkDeleteModal();
+                            }}
+                          >
+                            Bulk Delete
+                          </Button>
+
+                          <Button
+                            size="small"
+                            block
+                            type="default"
+                            loading={isPurchaseReportLoading}
+                            onClick={() => {
+                              setToolbarActionsOpen(false);
+                              downloadDailyPurchaseReport();
+                            }}
+                          >
+                            Purchase Report
+                          </Button>
+
+                          <Button
+                            size="small"
+                            block
+                            type="primary"
+                            onClick={() => {
+                              setToolbarActionsOpen(false);
+                              setAddBox(true);
+                            }}
+                          >
+                            Add Purchase
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                >
                   <Button
                     size="small"
                     type="default"
-                    onClick={() => {
-                      router.push("/dashboard/stock/tally_purchase");
-                    }}
+                    icon={<AntDesignMenuOutlined />}
+                    className="border-gray-300 text-[#172e57] hover:border-blue-500 hover:text-blue-600"
                   >
-                    Tally Purchase
+                    Actions
                   </Button>
-                )}
-
-                {dailyPurchase.length > 0 && (
-                  <Button
-                    size="small"
-                    type="default"
-                    onClick={() => {
-                      if (hasPendingAcceptable) {
-                        return toast.error(
-                          "Please accept all pending purchase invoices before generating DVAT 30/30 A.",
-                        );
-                      }
-                      setIsModalOpen(true);
-                    }}
-                  >
-                    Generate DVAT 30/30 A
-                  </Button>
-                )}
-
-                {hasPendingAcceptable && (
-                  <Button
-                    size="small"
-                    type="default"
-                    danger
-                    loading={isAcceptAllLoading}
-                    onClick={handleAcceptAllRecords}
-                  >
-                    Accept All
-                  </Button>
-                )}
-                <Button
-                  size="small"
-                  type="default"
-                  onClick={downloadBulkTemplate}
-                >
-                  Download Sample
-                </Button>
-                <Button
-                  size="small"
-                  type="primary"
-                  onClick={() => sheetRef.current?.click()}
-                >
-                  Bulk Upload
-                </Button>
-
-                <Button
-                  size="small"
-                  type="default"
-                  loading={isBulkDeleteLoading}
-                  onClick={openBulkDeleteModal}
-                >
-                  Bulk Delete
-                </Button>
-
-                <Button
-                  size="small"
-                  type="default"
-                  loading={isPurchaseReportLoading}
-                  onClick={downloadDailyPurchaseReport}
-                >
-                  Purchase Report
-                </Button>
-
-                <Button
-                  size="small"
-                  type="primary"
-                  onClick={() => {
-                    setAddBox(true);
-                  }}
-                >
-                  Add Purchase
-                </Button>
+                </Popover>
               </div>
             </div>
           </div>

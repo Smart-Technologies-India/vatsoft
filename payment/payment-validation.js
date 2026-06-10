@@ -30,17 +30,22 @@ export const validateIntentCallbackSecurity = ({
     };
   }
 
-  if (intent.status !== "INITIATED") {
-    return {
-      ok: false,
-      reason: "INTENT_NOT_INITIATED",
-    };
-  }
-
+  // Check if intent has already been completed (prevents duplicate processing)
   if (intent.completedAt) {
     return {
       ok: false,
       reason: "INTENT_ALREADY_COMPLETED",
+    };
+  }
+
+  // Allow processing if status is CREATED, INITIATED, or PENDING (not yet completed)
+  const validStatuses = ["CREATED", "INITIATED", "PENDING"];
+  const normalizedStatus = (intent.status || "").toUpperCase();
+  
+  if (!validStatuses.includes(normalizedStatus)) {
+    return {
+      ok: false,
+      reason: `INVALID_INTENT_STATUS_${normalizedStatus}`,
     };
   }
 
