@@ -100,7 +100,12 @@ const CreateDailySale = async (
       },
     });
 
+    
     if (filedReturnFiling || paidReturn) {
+      console.log("Filed Return:", filedReturnFiling);
+      console.log("Paid Return:", paidReturn);
+      console.log("Invoice Month:", invoiceMonthName);
+      console.log("Invoice Year:", invoiceYear);
       return createResponse({
         message: `The return for ${invoiceMonthName} is already filed. Kindly file revise return.`,
         functionname,

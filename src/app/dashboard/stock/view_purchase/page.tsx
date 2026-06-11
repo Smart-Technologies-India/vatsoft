@@ -780,7 +780,8 @@ const DocumentWiseDetails = () => {
     invoice_date: Date;
     invoice_date_display: string;
     item_code: number;
-    quantity: number;
+    quantity: number; // Always in pieces for database storage
+    quantity_in_crates: number | null; // Original crate quantity (for MANUFACTURER/WHOLESALER)
     total_invoice_value: number;
     purchase_type: string;
     against_cfrom: boolean;
@@ -969,7 +970,9 @@ const DocumentWiseDetails = () => {
         "Invoice No": "INV1001-A",
         "Invoice Date": "04/05/2026",
         "Item Code": 1,
-        Quantity: isManufacturerCommodity ? 2 : 24,
+        ...(isManufacturerCommodity
+          ? { "Quantity in Crates": 2 }
+          : { Quantity: 24 }),
         "Total Invoice Value": 12000,
         "Is Against C Form": "false",
         ...(isManufacturerCommodity && {
@@ -989,7 +992,9 @@ const DocumentWiseDetails = () => {
         "Invoice No": "INV1001-A",
         "Invoice Date": "04/05/2026",
         "Item Code": 2,
-        Quantity: isManufacturerCommodity ? 1 : 12,
+        ...(isManufacturerCommodity
+          ? { "Quantity in Crates": 1 }
+          : { Quantity: 12 }),
         "Total Invoice Value": 8600,
         "Is Against C Form": isManufacturerCommodity ? "false" : "true",
         ...(isManufacturerCommodity && {
@@ -1009,7 +1014,9 @@ const DocumentWiseDetails = () => {
         "Invoice No": "INV1002-B",
         "Invoice Date": "05/05/2026",
         "Item Code": 3,
-        Quantity: isManufacturerCommodity ? 3 : 30,
+        ...(isManufacturerCommodity
+          ? { "Quantity in Crates": 3 }
+          : { Quantity: 30 }),
         "Total Invoice Value": 15000,
         "Is Against C Form": "false",
         ...(isManufacturerCommodity && {
@@ -1051,12 +1058,12 @@ const DocumentWiseDetails = () => {
         Rules: "Use valid item code from commodity master.",
       },
       {
-        Field: "Quantity",
+        Field: isManufacturerCommodity ? "Quantity in Crates" : "Quantity",
         "What to fill": isManufacturerCommodity
           ? "Numeric quantity in crates"
           : "Numeric quantity in pieces",
         Rules: isManufacturerCommodity
-          ? "Enter crates only. System will convert crates to pieces using commodity crate size."
+          ? "Enter crates only. System will automatically convert crates to pieces using commodity crate size."
           : "Enter pieces only (not crate, not words like twenty four).",
       },
       {
@@ -1197,7 +1204,15 @@ const DocumentWiseDetails = () => {
           normalizeText(
             readSheetField(row, ["Item Code", "item code", "item_code"]),
           ),
-          normalizeText(readSheetField(row, ["Quantity", "quantity"])),
+          normalizeText(
+            readSheetField(row, [
+              "Quantity",
+              "quantity",
+              "Quantity in Crates",
+              "quantity in crates",
+              "quantity_in_crates",
+            ]),
+          ),
           normalizeText(
             readSheetField(row, [
               "Total Invoice Value",
@@ -1242,7 +1257,13 @@ const DocumentWiseDetails = () => {
             "item code",
             "item_code",
           ]);
-          const quantity_raw = readSheetField(row, ["Quantity", "quantity"]);
+          const quantity_raw = readSheetField(row, [
+            "Quantity",
+            "quantity",
+            "Quantity in Crates",
+            "quantity in crates",
+            "quantity_in_crates",
+          ]);
           const total_invoice_value_raw = readSheetField(row, [
             "Total Invoice Value",
             "total invoice value",
@@ -1377,6 +1398,14 @@ const DocumentWiseDetails = () => {
           }
 
           const parsedQuantity = parseExcelNumber(quantity_raw);
+          
+          // Store the original crate quantity for MANUFACTURER/WHOLESALER (even if invalid, for display purposes)
+          const quantityInCrates = isManufacturerCommodity && Number.isFinite(parsedQuantity) 
+            ? parsedQuantity 
+            : isManufacturerCommodity && !Number.isFinite(parsedQuantity)
+            ? 0
+            : null;
+          
           if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
             errors.push(
               isManufacturerCommodity
@@ -1391,13 +1420,17 @@ const DocumentWiseDetails = () => {
             );
           }
 
+          // For MANUFACTURER/WHOLESALER: parsedQuantity is in crates, convert to pieces
+          // For others: parsedQuantity is already in pieces
           const normalizedQuantity =
-            selectedCommodity && isManufacturerCommodity
+            selectedCommodity && isManufacturerCommodity && Number.isFinite(parsedQuantity)
               ? parsedQuantity *
                 (selectedCommodity.crate_size > 0
                   ? selectedCommodity.crate_size
                   : 1)
-              : parsedQuantity;
+              : Number.isFinite(parsedQuantity)
+              ? parsedQuantity
+              : 0;
 
           const total_invoice_value = parseExcelNumber(total_invoice_value_raw);
           if (
@@ -1573,6 +1606,7 @@ const DocumentWiseDetails = () => {
             quantity: Number.isFinite(normalizedQuantity)
               ? normalizedQuantity
               : 0,
+            quantity_in_crates: quantityInCrates,
             total_invoice_value: Number.isFinite(total_invoice_value)
               ? total_invoice_value
               : 0,
@@ -1686,15 +1720,13 @@ const DocumentWiseDetails = () => {
       const vatValue = totalInvoice - taxableValue;
       const amountUnit = totalInvoice / Number(row.quantity);
 
-      const invoiceDate = new Date(
-        new Date(row.invoice_date).toISOString().split("T")[0],
-      );
-      invoiceDate.setDate(invoiceDate.getDate() + 1);
+      // Use the parsed date directly (already in UTC from parseDateDDMMYYYY)
+      const invoiceDate = row.invoice_date;
 
       return {
         dvatid: dvatdata.id,
         commodityid: row.item_code,
-        quantity: Number(row.quantity),
+        quantity: Number(row.quantity), // Always stored in pieces (converted from crates for MANUFACTURER/WHOLESALER)
         seller_tin_id: row.seller_tin_id!,
         invoice_number: row.invoice_no,
         invoice_date: invoiceDate,
@@ -2236,7 +2268,7 @@ const DocumentWiseDetails = () => {
   const bulkUploadTableColumnCount =
     dvatdata?.commodity === "MANUFACTURER" ||
     dvatdata?.commodity == "WHOLESALER"
-      ? 12
+      ? 13
       : 11;
 
   return (
@@ -2716,13 +2748,19 @@ const DocumentWiseDetails = () => {
                 <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3 min-w-60 w-80">
                   Item Name
                 </TableHead>
-                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
-                  Quantity
-                </TableHead>
-                {(dvatdata?.commodity === "MANUFACTURER" ||
-                  dvatdata?.commodity === "WHOLESALER") && (
+                {dvatdata?.commodity === "MANUFACTURER" ||
+                dvatdata?.commodity === "WHOLESALER" ? (
+                  <>
+                    <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                      Quantity (Crates)
+                    </TableHead>
+                    <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
+                      Quantity (Pieces)
+                    </TableHead>
+                  </>
+                ) : (
                   <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
-                    Crate
+                    Quantity
                   </TableHead>
                 )}
                 <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
@@ -2778,18 +2816,21 @@ const DocumentWiseDetails = () => {
                       <TableCell className="p-3 border border-gray-200 text-center text-sm">
                         {val.commodity_name ?? "-"}
                       </TableCell>
-                      <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                        {dvatdata?.commodity === "MANUFACTURER" ||
-                        dvatdata?.commodity == "WHOLESALER"
-                          ? `${val.quantity} (${getCrateCount(val)} Crate)`
-                          : val.quantity}
-                      </TableCell>
                       {dvatdata?.commodity === "MANUFACTURER" ||
-                      dvatdata?.commodity == "WHOLESALER" ? (
+                      dvatdata?.commodity === "WHOLESALER" ? (
+                        <>
+                          <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                            {val.quantity_in_crates !== null ? val.quantity_in_crates : "-"}
+                          </TableCell>
+                          <TableCell className="p-3 border border-gray-200 text-center text-sm">
+                            {val.quantity}
+                          </TableCell>
+                        </>
+                      ) : (
                         <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                          {getCrateCount(val)}
+                          {val.quantity}
                         </TableCell>
-                      ) : null}
+                      )}
                       <TableCell className="p-3 border border-gray-200 text-center text-sm">
                         {val.total_invoice_value.toFixed(2)}
                       </TableCell>

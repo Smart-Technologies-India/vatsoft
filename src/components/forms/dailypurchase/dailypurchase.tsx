@@ -77,6 +77,16 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     ) {
       return "0";
     }
+
+    // For MANUFACTURER and WHOLESALER, regular purchases (NONE) have 20% tax
+    if (
+      purchaseTaxType === "NONE" &&
+      (davtdata?.commodity === "MANUFACTURER" ||
+        davtdata?.commodity === "WHOLESALER")
+    ) {
+      return "20";
+    }
+
     return commoditymaster?.taxable_at ?? "0";
   };
 

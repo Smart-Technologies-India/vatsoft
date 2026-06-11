@@ -74,6 +74,15 @@ const DailySale = (props: DailySaleProviderProps) => {
     )
       return "0";
 
+    // For MANUFACTURER and WHOLESALER, regular sales (NONE) have 20% tax
+    if (
+      againstType === "NONE" &&
+      (davtdata?.commodity === "MANUFACTURER" ||
+        davtdata?.commodity === "WHOLESALER")
+    ) {
+      return "20";
+    }
+
     if (commoditymaster == null || commoditymaster == undefined) return "0";
     return commoditymaster.taxable_at;
   };
