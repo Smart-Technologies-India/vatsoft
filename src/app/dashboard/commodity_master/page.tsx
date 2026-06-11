@@ -20,7 +20,6 @@ import { toast } from "react-toastify";
 
 const CommodityMaster = () => {
   const router = useRouter();
-  const [userid, setUserid] = useState<number>(0);
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -107,7 +106,7 @@ const CommodityMaster = () => {
         toast.error(authResponse.message);
         return router.push("/");
       }
-      setUserid(authResponse.data);
+      // setUserid(authResponse.data);
       await fetchAllProductTypes();
       await fetchCommodities(1, 10);
     };
@@ -177,7 +176,6 @@ const CommodityMaster = () => {
     try {
       const delete_commodity = await UpdateCommodityMaster({
         id: id,
-        updatedById: userid,
         status: state,
       });
       if (delete_commodity.status) {
@@ -225,7 +223,6 @@ const CommodityMaster = () => {
           {commid ? "Update" : "Add"} Commodity
         </p>
         <CommodityMasterProvider
-          userid={userid}
           id={commid}
           setAddBox={setAddBox}
           setCommid={setCommid}

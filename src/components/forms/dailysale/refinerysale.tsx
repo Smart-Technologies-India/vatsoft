@@ -50,8 +50,6 @@ export const RefinerySaleProvider = (props: RefinerySaleProviderProps) => {
 };
 
 const RefinerySale = (props: RefinerySaleProviderProps) => {
-  const router = useRouter();
-  const [userid, setUserid] = useState<number>(0);
 
   const taxable_at: OptionValue[] = [
     0, 1, 2, 4, 5, 6, 12.5, 12.75, 13.5, 15, 20,
@@ -116,7 +114,6 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
       quantity: "",
     });
     const init = async () => {
-      setUserid(1);
 
       const tin_response = await SearchTin({
         tinumber: "26000000000",
@@ -418,7 +415,6 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
       invoice_date: date,
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
-      createdById: userid,
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
@@ -579,7 +575,6 @@ const RefinerySale = (props: RefinerySaleProviderProps) => {
       invoice_date: date,
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
-      createdById: userid,
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,

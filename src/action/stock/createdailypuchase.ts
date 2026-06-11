@@ -11,7 +11,6 @@ interface CreateDailyPurchasePayload {
   amount: string;
   vatamount: string;
   amount_unit: string;
-  createdById: number;
   against_cfrom: boolean;
   is_against_fform?: boolean;
   is_against_hform?: boolean;
@@ -90,7 +89,7 @@ const CreateDailyPurchase = async (
           amount_unit: payload.amount_unit,
           vatamount: payload.vatamount,
           is_dvat_30a: false,
-          createdById: payload.createdById,
+          createdById: currentUserId,
           is_local:
             seller_tin_number.tin_number.startsWith("25") ||
             seller_tin_number.tin_number.startsWith("26"),
@@ -137,7 +136,7 @@ const CreateDailyPurchase = async (
           },
           data: {
             quantity: payload.quantity + isstock.quantity,
-            updatedById: payload.createdById,
+            updatedById: currentUserId,
           },
         });
         if (!stock_respone) {
@@ -150,7 +149,7 @@ const CreateDailyPurchase = async (
             quantity: payload.quantity,
             commodity_masterId: payload.commodityid,
             dvat04Id: payload.dvatid,
-            createdById: payload.createdById,
+            createdById: currentUserId,
             status: "ACTIVE",
           },
         });

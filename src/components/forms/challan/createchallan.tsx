@@ -86,7 +86,6 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
 
     const challan_response = await CreateChallan({
       dvatid: dvatdata.id,
-      createdby: props.userid,
       latefees: data.latefees.toString(),
       vat: data.vat.toString(),
       interest: data.interest.toString(),

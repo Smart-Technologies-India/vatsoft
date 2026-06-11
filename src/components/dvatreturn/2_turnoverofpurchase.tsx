@@ -246,7 +246,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
          {(
               parseFloat(getCreditNote().decrease) -
               parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease) -
+              parseFloat(getGoodsReturnsNote().decrease) +
               parseFloat(props.lastMonthDue)
             ).toFixed(2)}
           </td>
@@ -265,7 +265,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
               parseFloat(get5_2().decrease) +
               (parseFloat(getCreditNote().decrease) -
                 parseFloat(getDebitNote().decrease) -
-                parseFloat(getGoodsReturnsNote().decrease) -
+                parseFloat(getGoodsReturnsNote().decrease) +
                 parseFloat(props.lastMonthDue))
             ).toFixed(2)}
           </td>

@@ -69,7 +69,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   >();
 
   const [lateFees, setLateFees] = useState<number>(0);
-  const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
+  // const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
     [],
   );
@@ -202,6 +202,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
           returns_response.data.year,
           returns_response.data.month!,
           returns_response.data.rr_number,
+          new Date(returns_response.data.filing_datetime),
           returns_response.data.dvat04?.frequencyFilings === "QUARTERLY",
         );
       }
@@ -262,6 +263,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     year: string,
     month: string,
     rr_number: string,
+    filing_date: Date,
     isComp: boolean = false,
   ) => {
     const currentDate = new Date();
@@ -307,16 +309,22 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       }
     }
 
-    const pdiff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 29),
-      currentDate,
-    );
-
-    setPenaltyDiffDays(pdiff_days);
+    let pdiff_days = 0;
 
     if (rr_number == null || rr_number == undefined || rr_number == "") {
+      pdiff_days = getDaysBetweenDates(
+        new Date(newYear, monthIndex, 29),
+        currentDate,
+      );
+
       setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
-      // setLateFees(100 * idiff_days);
+    }else{
+      pdiff_days = getDaysBetweenDates(
+        new Date(newYear, monthIndex, 29),
+        filing_date,
+      );
+
+      setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
     }
   };
 
@@ -364,10 +372,14 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         totaltaxamount: paymentBreakdown.totaltaxamount.toFixed(0),
         vatamount: paymentBreakdown.vatamount.toFixed(0),
 
-        challan_vat:remaingVat.toFixed(0),
+        challan_vat: remaingVat.toFixed(0),
         challan_interest: remainingInterest.toFixed(0),
         challan_penalty: remainingPenalty.toFixed(0),
-        challan_total_tax_amount:(remaingVat + remainingInterest + remainingPenalty).toFixed(0),
+        challan_total_tax_amount: (
+          remaingVat +
+          remainingInterest +
+          remainingPenalty
+        ).toFixed(0),
       });
 
       if (!response.status) return toast.error(response.message);
@@ -399,6 +411,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
       const paymentBreakdown = getNetPayableBreakdown();
 
+
       const response = await AddPaymentOnline({
         id: return01.id,
         // rr_number: get_rr_number(),
@@ -410,10 +423,14 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         totaltaxamount: paymentBreakdown.totaltaxamount.toFixed(0),
         vatamount: paymentBreakdown.vatamount.toFixed(0),
 
-        challan_vat:remaingVat.toFixed(0),
+        challan_vat: remaingVat.toFixed(0),
         challan_interest: remainingInterest.toFixed(0),
         challan_penalty: remainingPenalty.toFixed(0),
-        challan_total_tax_amount:(remaingVat + remainingInterest + remainingPenalty).toFixed(0),
+        challan_total_tax_amount: (
+          remaingVat +
+          remainingInterest +
+          remainingPenalty
+        ).toFixed(0),
       });
 
       if (!response.status) {
@@ -598,7 +615,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       decrease,
     };
   };
- 
 
   const getCreditNote = (): PercentageOutput => {
     let increase: string = "0";
@@ -675,8 +691,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       decrease,
     };
   };
-
- 
 
   const calculateInterest = (
     totalDue: number,
@@ -820,8 +834,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     return new Date(computedYear, monthIndex, 15);
   };
 
-
-
   const getVatAmountcomp = (): number => {
     return parseFloat(getInvoicePercentage("1").decrease) - paidvatamount;
   };
@@ -918,8 +930,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     const penaltyBalance = penalty - paidpenaltyamount;
     const interestBalance = interest - paidinterestamount;
 
-
-
     const pendingPaymentRaw =
       (vatBalance < 0 ? vatBalance : 0) +
       (penaltyBalance < 0 ? penaltyBalance : 0) +
@@ -960,7 +970,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     return Math.max(0, getNetPayable());
   };
 
- 
   const remaingVat =
     getR6_1() - paidvatamount < 0 ? 0 : getR6_1() - paidvatamount;
 
@@ -970,8 +979,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   const remainingInterest = isNegative(getR6_2a() - paidinterestamount)
     ? 0
     : getR6_2a() - paidinterestamount;
-
- 
 
   return (
     <>

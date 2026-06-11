@@ -120,6 +120,7 @@ const Dvat16ReturnPreview = () => {
     month: string,
     rr_number: string,
     isComp: boolean = false,
+    filing_date: Date,
   ) => {
     const currentDate = new Date();
 
@@ -166,15 +167,24 @@ const Dvat16ReturnPreview = () => {
       currentDate,
     );
     setInterestDiffDays(idiff_days);
-
-    const pdiff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 29),
-      currentDate,
-    );
-    setPenaltyDiffDays(pdiff_days);
+    let pdiff_days = 0;
 
     if (rr_number == null || rr_number == undefined || rr_number == "") {
-      setLateFees(Math.min(100 * pdiff_days, 10000));
+      pdiff_days = getDaysBetweenDates(
+        new Date(newYear, monthIndex, 29),
+        currentDate,
+      );
+
+      setPenaltyDiffDays(pdiff_days);
+      setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
+    } else {
+      pdiff_days = getDaysBetweenDates(
+        new Date(newYear, monthIndex, 29),
+        filing_date,
+      );
+
+      setPenaltyDiffDays(pdiff_days);
+      setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
     }
   };
 
@@ -282,12 +292,12 @@ const Dvat16ReturnPreview = () => {
               val.dvat_type == DvatType.DVAT_31_A && val.isnil == true,
           ).length > 0;
 
-
         getLateFees(
           selectedReturn.year,
           selectedReturn.month ?? "",
           selectedReturn.rr_number ?? "",
           selectedReturn.dvat04?.frequencyFilings === "QUARTERLY",
+          new Date(selectedReturn.filing_datetime),
         );
 
         const payment_response = await CheckPayment({
@@ -333,6 +343,7 @@ const Dvat16ReturnPreview = () => {
       return01.month ?? "",
       return01.rr_number ?? "",
       return01.dvat04?.frequencyFilings === "QUARTERLY",
+      new Date(return01.filing_datetime),
     );
   }, [return01]);
 

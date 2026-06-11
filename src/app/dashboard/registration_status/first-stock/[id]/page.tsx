@@ -182,7 +182,6 @@ const RegistrationStatusFirstStockPage = () => {
         },
       ],
       dvatid: dvatData.id,
-      createdById: authResponse.data,
     });
 
     if (!response.status) {

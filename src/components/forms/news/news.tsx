@@ -17,7 +17,6 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
 
 type NewsProviderProps = {
-  userid: number;
   id?: number;
   setAddBox: Dispatch<SetStateAction<boolean>>;
   setNewsid: Dispatch<SetStateAction<number | undefined>>;
@@ -32,7 +31,6 @@ export const NewsMasterProvider = (props: NewsProviderProps) => {
   return (
     <FormProvider {...methods}>
       <NewsMaster
-        userid={props.userid}
         id={props.id}
         setAddBox={props.setAddBox}
         setNewsid={props.setNewsid}

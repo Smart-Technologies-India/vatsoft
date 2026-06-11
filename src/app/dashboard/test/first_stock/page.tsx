@@ -90,7 +90,6 @@ const FirstStock = () => {
     const created_data = await CreateFirstStock({
       data: stock,
       dvatid: dvatdata?.id ?? 0,
-      createdById: userid,
     });
     if (created_data.status) {
       setStock([]);

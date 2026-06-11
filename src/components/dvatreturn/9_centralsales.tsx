@@ -47,8 +47,6 @@ const CentralSales = (props: CentralSalesProps) => {
     return total + parseFloat(challan.penalty);
   }, 0);
 
-
-
   const [lateFees, setLateFees] = useState<number>(0);
 
   useEffect(() => {
@@ -99,16 +97,23 @@ const CentralSales = (props: CentralSalesProps) => {
         monthIndex += 1; // Otherwise, just increment the month
       }
     }
-    const pdiff_days = getDaysBetweenDates(
-      new Date(parseInt(props.return01.year), monthIndex, 29),
-      currentDate,
-    );
 
+    let pdiff_days = 0;
     if (
       props.return01.rr_number == null ||
       props.return01.rr_number == undefined ||
       props.return01.rr_number == ""
     ) {
+      pdiff_days = getDaysBetweenDates(
+        new Date(parseInt(props.return01.year), monthIndex, 29),
+        currentDate,
+      );
+      setLateFees(Math.min(100 * pdiff_days, 10000));
+    } else {
+      pdiff_days = getDaysBetweenDates(
+        new Date(parseInt(props.return01.year), monthIndex, 29),
+        new Date(props.return01.transaction_date!),
+      );
       setLateFees(Math.min(100 * pdiff_days, 10000));
     }
   }, [props.return01, props.returnsentrys]);
@@ -790,7 +795,7 @@ const CentralSales = (props: CentralSalesProps) => {
       parseFloat(get5_2().decrease) +
       (parseFloat(getDebitNote().decrease) -
         parseFloat(getCreditNote().decrease) -
-        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease) +
         parseFloat(props.lastMonthDue)));
 
   const calculateInterest = (
@@ -958,8 +963,6 @@ const CentralSales = (props: CentralSalesProps) => {
     return isNegative(interest) ? 0 : interest;
   };
 
-
-
   const getNetPayable = (): number => {
     const penalty = isNegative(lateFees) ? 0 : lateFees;
     const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
@@ -970,7 +973,6 @@ const CentralSales = (props: CentralSalesProps) => {
     const penaltyBalance = penalty - paidpenaltyamount;
     const interestBalance = interest - paidinterestamount;
 
-
     if (vatBalance <= 0) {
       // VAT fully paid or overpaid — excess VAT does NOT reduce penalty/interest.
       // Penalty and interest are shown as independent dues.
@@ -980,9 +982,16 @@ const CentralSales = (props: CentralSalesProps) => {
     // VAT is underpaid — excess paid penalty/interest adjusts the VAT balance.
     const excessPenalty = penaltyBalance < 0 ? Math.abs(penaltyBalance) : 0;
     const excessInterest = interestBalance < 0 ? Math.abs(interestBalance) : 0;
-    const adjustedVatBalance = Math.max(0, vatBalance - excessPenalty - excessInterest);
+    const adjustedVatBalance = Math.max(
+      0,
+      vatBalance - excessPenalty - excessInterest,
+    );
 
-    return adjustedVatBalance + Math.max(0, penaltyBalance) + Math.max(0, interestBalance);
+    return (
+      adjustedVatBalance +
+      Math.max(0, penaltyBalance) +
+      Math.max(0, interestBalance)
+    );
   };
 
   return (
@@ -1592,7 +1601,7 @@ const CentralSales = (props: CentralSalesProps) => {
               parseFloat(get5_2().decrease) +
               (parseFloat(getDebitNote().decrease) -
                 parseFloat(getCreditNote().decrease) -
-                parseFloat(getGoodsReturnsNote().decrease) -
+                parseFloat(getGoodsReturnsNote().decrease) +
                 parseFloat(props.lastMonthDue))
             ).toFixed(2)}
           </td>

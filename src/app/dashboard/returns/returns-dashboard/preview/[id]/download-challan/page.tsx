@@ -93,13 +93,19 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
           returns_response.data.year,
           returns_response.data.month!,
           returns_response.data.rr_number,
+          new Date(returns_response.data.filing_datetime),
         );
       }
     };
     init();
   }, []);
 
-  const getLateFees = (year: string, month: string, rr_number: string) => {
+  const getLateFees = (
+    year: string,
+    month: string,
+    rr_number: string,
+    filing_date: Date,
+  ) => {
     const currentDate = new Date();
 
     const monthNames = [
@@ -129,13 +135,22 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
       monthIndex += 1; // Otherwise, just increment the month
     }
 
-    const pdiff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 29),
-      currentDate,
-    );
+    let pdiff_days = 0;
 
     if (rr_number == null || rr_number == undefined || rr_number == "") {
-      setLateFees(Math.min(100 * pdiff_days, 10000));
+      pdiff_days = getDaysBetweenDates(
+        new Date(newYear, monthIndex, 29),
+        currentDate,
+      );
+
+      setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
+    } else {
+      pdiff_days = getDaysBetweenDates(
+        new Date(newYear, monthIndex, 29),
+        filing_date,
+      );
+
+      setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
     }
   };
 
@@ -159,8 +174,6 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
 
     return `${rr_no}${month}${day}${return_id}`;
   };
-
-  
 
   // extra calcuation
   const getInvoicePercentage = (value: string): PercentageOutput => {
@@ -603,21 +616,26 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     const interestBalance = interest - paidinterestamount;
 
     const pendingPaymentRaw = vatBalance + penaltyBalance + interestBalance;
-    const pendingPayment = pendingPaymentRaw < 0 ? Math.abs(pendingPaymentRaw) : 0;
+    const pendingPayment =
+      pendingPaymentRaw < 0 ? Math.abs(pendingPaymentRaw) : 0;
 
     if (vatBalance <= 0) {
       return {
         vatamount: 0,
         penalty: Math.max(0, penaltyBalance),
         interestamount: Math.max(0, interestBalance),
-        totaltaxamount: Math.max(0, penaltyBalance) + Math.max(0, interestBalance),
+        totaltaxamount:
+          Math.max(0, penaltyBalance) + Math.max(0, interestBalance),
         pendingPayment,
       };
     }
 
     const excessPenalty = penaltyBalance < 0 ? Math.abs(penaltyBalance) : 0;
     const excessInterest = interestBalance < 0 ? Math.abs(interestBalance) : 0;
-    const adjustedVatBalance = Math.max(0, vatBalance - excessPenalty - excessInterest);
+    const adjustedVatBalance = Math.max(
+      0,
+      vatBalance - excessPenalty - excessInterest,
+    );
 
     return {
       vatamount: adjustedVatBalance,

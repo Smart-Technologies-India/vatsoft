@@ -48,7 +48,6 @@ const Dvat16ReturnPreview = () => {
   );
 
   const [isDownload, setDownload] = useState<boolean>(false);
-  const [current_user_id, setCurrentUserId] = useState<number>(0);
 
   const [return01, setReturn01] = useState<
     (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
@@ -109,7 +108,6 @@ const Dvat16ReturnPreview = () => {
         toast.error(authResponse.message);
         return router.push("/");
       }
-      setCurrentUserId(authResponse.data);
       const user_response = await GetUser({
         id: authResponse.data,
       });
@@ -261,7 +259,6 @@ const Dvat16ReturnPreview = () => {
     init();
   }, [searchparam, userid]);
 
-  const [DiffDays, setDiffDays] = useState<number>(0);
 
   useEffect(() => {
     if (return01 == null) return;

@@ -36,7 +36,6 @@ type PurchaseTaxType =
   | "EXPORT";
 
 type DailyPurchaseProviderProps = {
-  userid: number;
   setAddBox: Dispatch<SetStateAction<boolean>>;
   init: () => Promise<void>;
 };
@@ -50,7 +49,6 @@ export const DailyPurchaseMasterProvider = (
   return (
     <FormProvider {...methods}>
       <DailyPurchaseMaster
-        userid={props.userid}
         setAddBox={props.setAddBox}
         init={props.init}
       />
@@ -59,7 +57,6 @@ export const DailyPurchaseMasterProvider = (
 };
 
 const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
-  const [userid, setUserid] = useState<number>(0);
   const router = useRouter();
 
   const [purchaseTaxType, setPurchaseTaxType] =
@@ -148,8 +145,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         toast.error(authResponse.message);
         return router.push("/");
       }
-      setUserid(authResponse.data);
-
       const response = await GetUserDvat04();
 
       if (response.status && response.data) {
@@ -414,7 +409,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       invoice_date: date,
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
-      createdById: userid,
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,
@@ -510,7 +504,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       invoice_date: date,
       invoice_number: data.invoice_number,
       dvatid: davtdata?.id,
-      createdById: userid,
       quantity: quantityamount,
       vatamount: vatamount,
       commodityid: commoditymaster.id,

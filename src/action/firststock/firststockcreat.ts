@@ -14,7 +14,6 @@ interface StockData {
 interface CreateStockPayload {
   data: StockData[];
   dvatid: number;
-  createdById: number;
 }
 
 const mergeStockDataByCommodity = (data: StockData[]): StockData[] => {
@@ -97,7 +96,7 @@ const CreateFirstStock = async (
             },
             data: {
               quantity: existingFirstStock.quantity + item.quantity,
-              updatedById: payload.createdById,
+              updatedById: currentUserId
             },
           });
         } else {
@@ -106,7 +105,7 @@ const CreateFirstStock = async (
               commodity_masterId: item.item.id,
               quantity: item.quantity,
               dvat04Id: payload.dvatid,
-              createdById: payload.createdById,
+              createdById: currentUserId,
               status: "ACTIVE",
             },
           });
@@ -129,7 +128,7 @@ const CreateFirstStock = async (
             },
             data: {
               quantity: existingStock.quantity + item.quantity,
-              updatedById: payload.createdById,
+              updatedById: currentUserId,
             },
           });
         } else {
@@ -139,7 +138,7 @@ const CreateFirstStock = async (
               quantity: item.quantity,
               commodity_masterId: item.item.id,
               dvat04Id: payload.dvatid,
-              createdById: payload.createdById,
+              createdById: currentUserId,
               status: "ACTIVE",
             },
           });

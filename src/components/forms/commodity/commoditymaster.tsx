@@ -23,7 +23,6 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { set } from "date-fns";
 
 type CompositionProviderProps = {
-  userid: number;
   id?: number;
   setAddBox: Dispatch<SetStateAction<boolean>>;
   setCommid: Dispatch<SetStateAction<number | undefined>>;
@@ -37,7 +36,6 @@ export const CommodityMasterProvider = (props: CompositionProviderProps) => {
   return (
     <FormProvider {...methods}>
       <CommodityMaster
-        userid={props.userid}
         id={props.id}
         setAddBox={props.setAddBox}
         setCommid={props.setCommid}
@@ -113,7 +111,6 @@ const CommodityMaster = (props: CompositionProviderProps) => {
     if (props.id) {
       const comm_response = await UpdateCommodityMaster({
         id: props.id,
-        updatedById: userid,
         description: data.description,
         mrp: data.mrp,
         sale_price: data.sale_price,

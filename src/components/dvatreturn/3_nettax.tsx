@@ -93,16 +93,22 @@ const NetTax = (props: NetTaxProps) => {
       }
     }
 
-    const pdiff_days = getDaysBetweenDates(
-      new Date(parseInt(props.return01.year), monthIndex, 29),
-      currentDate,
-    );
-
+    let pdiff_days = 0;
     if (
       props.return01.rr_number == null ||
       props.return01.rr_number == undefined ||
       props.return01.rr_number == ""
     ) {
+      pdiff_days = getDaysBetweenDates(
+        new Date(parseInt(props.return01.year), monthIndex, 29),
+        currentDate,
+      );
+      setLateFees(Math.min(100 * pdiff_days, 10000));
+    } else {
+      pdiff_days = getDaysBetweenDates(
+        new Date(parseInt(props.return01.year), monthIndex, 29),
+        new Date(props.return01.transaction_date!),
+      );
       setLateFees(Math.min(100 * pdiff_days, 10000));
     }
   }, []);
@@ -395,7 +401,7 @@ const NetTax = (props: NetTaxProps) => {
       parseFloat(get5_2().decrease) +
       (parseFloat(getDebitNote().decrease) -
         parseFloat(getCreditNote().decrease) -
-        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease) +
         parseFloat(props.lastMonthDue)));
 
   const calculateInterest = (
@@ -563,8 +569,19 @@ const NetTax = (props: NetTaxProps) => {
     return isNegative(interest) ? 0 : interest;
   };
 
-  const getR7 = (): number =>
-    getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a());
+
+  const getNetPayable = (): number => {
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const vat = getR6_1();
+
+  
+    return (
+      penalty +
+      Math.max(0, interest) +
+      Math.max(0, vat)
+    );
+  };
 
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
@@ -622,17 +639,18 @@ const NetTax = (props: NetTaxProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {/* {getR7().toFixed(2)} */}
-            {isNegative(getR7())
+            {/* {isNegative(getR7())
               ? isNegative(lateFees)
                 ? 0
                 : lateFees.toFixed(2)
-              : (getR7() + (isNegative(lateFees) ? 0 : lateFees)).toFixed(2)}
+              : (getR7() + (isNegative(lateFees) ? 0 : lateFees)).toFixed(2)} */}
+
+            {getNetPayable().toFixed(2)}
           </td>
         </tr>
       </tbody>
     </table>
   );
 };
-
 
 export default NetTax;

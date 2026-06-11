@@ -12,7 +12,6 @@ interface CreateDailySaleManufacturerPayload {
   amount: string;
   vatamount: string;
   amount_unit: string;
-  createdById: number;
   against_cfrom: boolean;
   is_against_fform: boolean;
   is_exempt?: boolean;
@@ -168,7 +167,7 @@ const CreateDailySaleManufacturer = async (
           amount: payload.amount,
           vatamount: payload.vatamount,
           is_dvat_31: false,
-          createdById: payload.createdById,
+          createdById: currentUserId,
           urn_number: ref_no,
           is_against_cform: payload.against_cfrom,
           is_against_fform: payload.is_against_fform,
@@ -258,7 +257,7 @@ const CreateDailySaleManufacturer = async (
                 seller_dvat.tinNumber.startsWith("25") ||
                 seller_dvat.tinNumber.startsWith("26")
               ),
-              createdById: payload.createdById,
+              createdById: currentUserId,
               is_local:
                 seller_dvat.tinNumber.startsWith("25") ||
                 seller_dvat.tinNumber.startsWith("26"),

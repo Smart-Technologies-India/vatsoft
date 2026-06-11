@@ -1,7 +1,6 @@
 "use server";
 interface ConvertDvat30APayload {
   dvatid: number;
-  createdById: number;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -195,7 +194,7 @@ const ConvertDvat30A = async (
             total_tax_amount: "0",
             status: Status.ACTIVE,
             compositionScheme: dvat04.compositionScheme,
-            createdById: payload.createdById,
+            createdById: currentUserId,
           },
         });
         break;
@@ -218,7 +217,7 @@ const ConvertDvat30A = async (
         },
         data: {
           is_dvat_30a: true,
-          updatedById: payload.createdById,
+          updatedById: currentUserId,
         },
       });
 
@@ -242,7 +241,7 @@ const ConvertDvat30A = async (
             returns_01Id: returnInvoice.id,
             dvat_type: val.is_local ? DvatType.DVAT_30 : DvatType.DVAT_30_A,
             status: Status.ACTIVE,
-            createdById: payload.createdById,
+            createdById: currentUserId,
             urn_number: nanoid(),
             invoice_date: val.invoice_date,
             invoice_number: val.invoice_number,

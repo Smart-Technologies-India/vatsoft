@@ -156,7 +156,6 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
     const challan_response = await CreateChallan({
       dvatid: dvatdata.id,
       returnid: returnIdToUse,
-      createdby: props.userid,
       latefees: data.latefees.toString(),
       vat: data.vat.toString(),
       interest: data.interest.toString(),

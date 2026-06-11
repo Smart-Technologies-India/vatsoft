@@ -31,7 +31,6 @@ import { toast } from "react-toastify";
 
 const AddStock = () => {
   const router = useRouter();
-  const [userid, setUserid] = useState<number>(0);
 
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 
@@ -46,7 +45,6 @@ const AddStock = () => {
         toast.error(authResponse.message);
         return router.push("/");
       }
-      setUserid(authResponse.data);
 
       const dvat = await GetUserDvat04FirstStock();
       if (dvat.status && dvat.data) {
@@ -69,7 +67,7 @@ const AddStock = () => {
       setLoading(false);
     };
     init();
-  }, [userid]);
+  }, []);
 
   const [stockBox, setStockBox] = useState<boolean>(false);
 
@@ -120,7 +118,6 @@ const AddStock = () => {
     const created_data = await CreateFirstStock({
       data: stock,
       dvatid: dvatdata?.id ?? 0,
-      createdById: userid,
     });
     if (created_data.status) {
       setStock([]);
@@ -135,7 +132,6 @@ const AddStock = () => {
     const created_data = await CreateSaveStock({
       data: stock,
       dvatid: dvatdata?.id ?? 0,
-      createdById: userid,
     });
     if (created_data.status) {
       toast.success(created_data.message);

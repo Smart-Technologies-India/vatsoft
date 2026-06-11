@@ -13,7 +13,6 @@ import { toast } from "react-toastify";
 
 const Page = () => {
   const router = useRouter();
-  const [userid, setUserid] = useState<number>(0);
   const [user, setUser] = useState<user>();
 
   const [isProfileCompletd, setIsProfileCompleted] = useState<boolean>(false);
@@ -28,7 +27,6 @@ const Page = () => {
         toast.error(authResponse.message);
         return router.push("/");
       }
-      setUserid(authResponse.data);
       const userresponse = await GetUser({
         id: authResponse.data,
       });
@@ -56,7 +54,7 @@ const Page = () => {
       }
     };
     init();
-  }, [userid]);
+  }, []);
 
   return (
     <>

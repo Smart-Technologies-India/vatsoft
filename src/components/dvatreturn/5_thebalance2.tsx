@@ -82,16 +82,23 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
         monthIndex += 1; // Otherwise, just increment the month
       }
     }
-    const pdiff_days = getDaysBetweenDates(
-      new Date(parseInt(props.return01.year), monthIndex, 29),
-      currentDate,
-    );
 
+    let pdiff_days = 0;
     if (
       props.return01.rr_number == null ||
       props.return01.rr_number == undefined ||
       props.return01.rr_number == ""
     ) {
+      pdiff_days = getDaysBetweenDates(
+        new Date(parseInt(props.return01.year), monthIndex, 29),
+        currentDate,
+      );
+      setLateFees(Math.min(100 * pdiff_days, 10000));
+    } else {
+      pdiff_days = getDaysBetweenDates(
+        new Date(parseInt(props.return01.year), monthIndex, 29),
+        new Date(props.return01.transaction_date!),
+      );
       setLateFees(Math.min(100 * pdiff_days, 10000));
     }
   }, [props.return01, props.returnsentrys, props.isComp, searchparam]);
@@ -384,7 +391,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
       parseFloat(get5_2().decrease) +
       (parseFloat(getDebitNote().decrease) -
         parseFloat(getCreditNote().decrease) -
-        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease) +
         parseFloat(props.lastMonthDue)));
 
   const calculateInterest = (
@@ -554,17 +561,25 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
 
   const getPaidChallanAmount = (): number =>
     props.paidChallans.reduce(
-      (total, challan) => total + parseFloat(challan.vat ?? "0"),
+      (total, challan) => total + parseFloat(challan.total_tax_amount ?? "0"),
       0,
     );
 
-  const getR7 = (): number => {
-   
-    return Math.round(
-      getR6_1() +
-        (isNegative(getR6_2a()) ? 0 : getR6_2a()) -
-        getPaidChallanAmount(),
-    );
+  // const getR7 = (): number => {
+
+  //   return Math.round(
+  //     getR6_1() +
+  //       (isNegative(getR6_2a()) ? 0 : getR6_2a()) -
+  //       getPaidChallanAmount(),
+  //   );
+  // };
+
+  const getNetPayable = (): number => {
+    const vat = getR6_1();
+    console.log("VAT on R6_1:", vat);
+    console.log("Paid Challan Amount:", getPaidChallanAmount());
+
+    return Math.max(0, vat) - getPaidChallanAmount();
   };
 
   return (
@@ -585,7 +600,8 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
             Balance brought forward from line R7
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {isNegative(getR7()) ? getR7().toFixed(2) : 0}
+            {/* {isNegative(getR7()) ? getR7().toFixed(2) : 0} */}
+            {getNetPayable().toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -609,7 +625,8 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
             R9.3 Balance carried forward to next tax period
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {isNegative(getR7()) ? getR7().toFixed(2) : 0}
+            {/* {isNegative(getR7()) ? getR7().toFixed(2) : 0} */}
+            {getNetPayable().toFixed(2)}
           </td>
         </tr>
       </tbody>

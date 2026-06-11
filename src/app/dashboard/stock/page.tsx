@@ -741,7 +741,6 @@ const CommodityMaster = () => {
           <h2 className="text-sm font-medium text-gray-900">Add Purchase</h2>
         </div>
         <DailyPurchaseMasterProvider
-          userid={userid}
           setAddBox={setAddBox}
           init={init}
         />

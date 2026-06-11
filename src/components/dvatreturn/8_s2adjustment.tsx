@@ -125,6 +125,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
             0
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            
             {searchparam.get("month") == "April" ? "0" : props.lastMonthDue}
           </td>
         </tr>

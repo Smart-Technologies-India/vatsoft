@@ -90,9 +90,6 @@ const DocumentWiseDetails = () => {
     cvv: "",
   });
 
-  //   const [name, setName] = useState<string>("");
-
-  const [userid, setUserid] = useState<number>(0);
 
   const init = async () => {
     setLoading(true);
@@ -129,7 +126,6 @@ const DocumentWiseDetails = () => {
         toast.error(authResponse.message);
         return router.push("/");
       }
-      setUserid(authResponse.data);
 
       const dvat_response = await GetUserDvat04();
 
@@ -156,7 +152,7 @@ const DocumentWiseDetails = () => {
       setLoading(false);
     };
     init();
-  }, [userid]);
+  }, []);
 
   const onChangePageCount = async (page: number, pagesize: number) => {
     const daily_purchase_response = await GetUserDailyPurchase({
@@ -181,7 +177,6 @@ const DocumentWiseDetails = () => {
       return toast.error("DVAT not found.");
     }
     const response = await ConvertDvat30A({
-      createdById: userid,
       dvatid: dvatdata.id,
     });
 
@@ -198,7 +193,6 @@ const DocumentWiseDetails = () => {
   const delete_purchase_entry = async (id: number) => {
     const response = await DeletePurchase({
       id: id,
-      deletedById: userid,
     });
     if (response.data && response.status) {
       toast.success(response.message);
@@ -685,7 +679,6 @@ const DocumentWiseDetails = () => {
           <h2 className="text-sm font-medium text-gray-900">Add Purchase</h2>
         </div>
         <DailyPurchaseMasterProvider
-          userid={userid}
           setAddBox={setAddBox}
           init={init}
         />

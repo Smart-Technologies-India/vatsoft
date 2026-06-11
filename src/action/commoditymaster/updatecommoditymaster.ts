@@ -2,7 +2,6 @@
 import { getCurrentUserId } from "@/lib/auth";
 interface UpdateCommodityMasterPayload {
   id: number;
-  updatedById: number;
   product_name?: string;
   product_type?: Dvat04Commodity;
   crate_size?: string;
@@ -57,7 +56,7 @@ const UpdateCommodityMaster = async (
         id: payload.id,
       },
       data: {
-        updatedById: payload.updatedById,
+        updatedById: currentUserId,
         ...(payload.product_name && { product_name: payload.product_name }),
         ...(payload.product_type && { product_type: payload.product_type }),
         ...(payload.mrp && { mrp: payload.mrp }),

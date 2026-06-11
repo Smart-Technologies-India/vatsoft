@@ -10,7 +10,6 @@ import { customAlphabet } from "nanoid";
 interface CreateChallanPayload {
   dvatid: number;
   returnid?: number;
-  createdby: number;
   vat: string;
   interest: string;
   penalty: string;
@@ -54,7 +53,7 @@ const CreateChallan = async (
         interest: payload.interest,
         others: payload.others,
         penalty: payload.penalty,
-        createdById: payload.createdby,
+        createdById: currentUserId,
         expire_date: today,
         total_tax_amount: payload.total_tax_amount,
         reason: payload.reason,

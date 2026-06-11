@@ -5,9 +5,8 @@ import { useEffect, useState } from "react";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { toast } from "react-toastify";
 
-const CreateChallan = async () => {
+const CreateChallan = () => {
   const router = useRouter();
-  const [userid, setUserid] = useState<number>(0);
   useEffect(() => {
     const init = async () => {
       const authResponse = await getAuthenticatedUserId();
@@ -15,7 +14,6 @@ const CreateChallan = async () => {
         toast.error(authResponse.message);
         return router.push("/");
       }
-      setUserid(authResponse.data);
     };
     init();
   }, []);
@@ -26,7 +24,7 @@ const CreateChallan = async () => {
           <div className="bg-blue-500 p-2 text-white">
             Create Challan Form DVAT 20
           </div>
-          <DepartmentCreateChallanProvider userid={userid} />
+          <DepartmentCreateChallanProvider />
         </div>
       </div>
     </>

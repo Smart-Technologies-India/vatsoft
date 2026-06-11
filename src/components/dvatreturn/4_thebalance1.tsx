@@ -112,16 +112,23 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       currentDate,
     );
     setDiffDays(diff_days);
-    const pdiff_days = getDaysBetweenDates(
-      new Date(parseInt(props.return01.year), monthIndex, 29),
-      currentDate,
-    );
-
+   
+    let pdiff_days = 0;
     if (
       props.return01.rr_number == null ||
       props.return01.rr_number == undefined ||
       props.return01.rr_number == ""
     ) {
+      pdiff_days = getDaysBetweenDates(
+        new Date(parseInt(props.return01.year), monthIndex, 29),
+        currentDate,
+      );
+      setLateFees(Math.min(100 * pdiff_days, 10000));
+    } else {
+      pdiff_days = getDaysBetweenDates(
+        new Date(parseInt(props.return01.year), monthIndex, 29),
+        new Date(props.return01.transaction_date!) ,
+      );
       setLateFees(Math.min(100 * pdiff_days, 10000));
     }
   }, []);
@@ -455,7 +462,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       parseFloat(get5_2().decrease) +
       (parseFloat(getDebitNote().decrease) -
         parseFloat(getCreditNote().decrease) -
-        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease) +
         parseFloat(props.lastMonthDue)));
 
   const getInterestDueDate = (

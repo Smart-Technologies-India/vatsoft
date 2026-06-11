@@ -2,7 +2,6 @@
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface DeletePurchasePayload {
   id: number;
-  deletedById: number;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -11,7 +10,7 @@ import { daily_purchase } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const DeletePurchase = async (
-  payload: DeletePurchasePayload
+  payload: DeletePurchasePayload,
 ): Promise<ApiResponseType<daily_purchase | null>> => {
   const functionname: string = DeletePurchase.name;
 
@@ -56,7 +55,7 @@ const DeletePurchase = async (
 
       if (find_stock.quantity < is_exist.quantity) {
         throw new Error(
-          "Unable to delete purchase Entry. Stock quantity is less than purchase quantity."
+          "Unable to delete purchase Entry. Stock quantity is less than purchase quantity.",
         );
       }
 
@@ -68,7 +67,7 @@ const DeletePurchase = async (
         },
         data: {
           quantity: find_stock.quantity - is_exist.quantity,
-          updatedById: payload.deletedById,
+          updatedById: currentUserId,
         },
       });
 
@@ -82,7 +81,7 @@ const DeletePurchase = async (
         data: {
           purchaseId: is_exist.id,
           is_delete: true,
-          createdById: payload.deletedById,
+          createdById: currentUserId,
           ...filteredData,
         },
       });
@@ -101,8 +100,8 @@ const DeletePurchase = async (
             status: "ACTIVE",
           },
           data: {
-            updatedById: payload.deletedById,
-            deletedById: payload.deletedById,
+            updatedById: currentUserId,
+            deletedById: currentUserId,
             deletedAt: new Date(),
             status: "INACTIVE",
           },
@@ -112,8 +111,8 @@ const DeletePurchase = async (
       const update_response = await prisma.daily_purchase.update({
         where: { id: is_exist.id },
         data: {
-          updatedById: payload.deletedById,
-          deletedById: payload.deletedById,
+          updatedById: currentUserId,
+          deletedById: currentUserId,
           deletedAt: new Date(),
           status: "INACTIVE",
         },

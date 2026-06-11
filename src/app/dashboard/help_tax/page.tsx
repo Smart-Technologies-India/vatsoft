@@ -10,7 +10,6 @@ import { toast } from "react-toastify";
 
 const Page = () => {
   const router = useRouter();
-  const [userid, setUserid] = useState<number>(0);
   const [user, setUser] = useState<user>();
 
   useEffect(() => {
@@ -20,7 +19,6 @@ const Page = () => {
         toast.error(authResponse.message);
         return router.push("/");
       }
-      setUserid(authResponse.data);
       const userresponse = await GetUser({
         id: authResponse.data,
       });
@@ -29,7 +27,7 @@ const Page = () => {
       }
     };
     init();
-  }, [userid]);
+  }, []);
   return (
     <>
       <main className="bg-linear-to-l py-4 px-4 rounded-md mt-4 w-full xl:w-5/6 xl:mx-auto">

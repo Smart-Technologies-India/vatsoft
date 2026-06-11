@@ -52,6 +52,8 @@ const RefundsData = () => {
 
   const [currentUser, setCurrentUser] = useState<user | null>();
 
+  const [refundsData, setRefundsData] = useState<refunds | null>(null);
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
@@ -88,7 +90,6 @@ const RefundsData = () => {
     init();
   }, [refundsid, userid]);
 
-  const [refundsData, setRefundsData] = useState<refunds | null>(null);
 
   const {
     register,

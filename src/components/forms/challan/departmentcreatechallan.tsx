@@ -27,7 +27,7 @@ import { dvat04, user } from "@prisma/client";
 import SearchTinNumber from "@/action/dvat/searchtin";
 
 type DepartmentCreateChallanProviderProps = {
-  userid: number;
+  // userid: number;
 };
 export const DepartmentCreateChallanProvider = (
   props: DepartmentCreateChallanProviderProps,
@@ -38,7 +38,7 @@ export const DepartmentCreateChallanProvider = (
 
   return (
     <FormProvider {...methods}>
-      <CreateChallanPage userid={props.userid} />
+      <CreateChallanPage />
     </FormProvider>
   );
 };
@@ -86,7 +86,6 @@ const CreateChallanPage = (props: DepartmentCreateChallanProviderProps) => {
   const onSubmit = async (data: CreateChallanForm) => {
     const challan_response = await CreateChallan({
       dvatid: dvatdata?.id ?? 0,
-      createdby: props.userid,
       latefees: data.latefees.toString(),
       vat: data.vat.toString(),
       interest: data.interest.toString(),

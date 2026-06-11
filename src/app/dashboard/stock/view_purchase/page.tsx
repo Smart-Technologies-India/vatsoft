@@ -486,7 +486,6 @@ const DocumentWiseDetails = () => {
     }
 
     const response = await ConvertDvat30A({
-      createdById: userid,
       dvatid: dvatdata.id,
     });
 
@@ -580,7 +579,6 @@ const DocumentWiseDetails = () => {
   const delete_purchase_entry = async (id: number) => {
     const response = await DeletePurchase({
       id: id,
-      deletedById: userid,
     });
     if (response.data && response.status) {
       toast.success(response.message);
@@ -611,7 +609,6 @@ const DocumentWiseDetails = () => {
     for (const id of ids) {
       const response = await DeletePurchase({
         id,
-        deletedById: userid,
       });
 
       if (response.data && response.status) {
@@ -2456,7 +2453,6 @@ const DocumentWiseDetails = () => {
           <h2 className="text-sm font-medium text-gray-900">Add Purchase</h2>
         </div>
         <DailyPurchaseMasterProvider
-          userid={userid}
           setAddBox={setAddBox}
           init={init}
         />

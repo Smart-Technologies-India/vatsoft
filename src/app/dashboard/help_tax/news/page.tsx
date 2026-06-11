@@ -12,7 +12,6 @@ import { toast } from "react-toastify";
 
 const NewsPage = () => {
   const router = useRouter();
-  const [userid, setUserid] = useState<number>(0);
   const [role, setRole] = useState<Role>(Role.USER);
 
 
@@ -54,7 +53,6 @@ const NewsPage = () => {
         toast.error(authResponse.message);
         return router.push("/");
       }
-      setUserid(authResponse.data);
       const roleResponse = await getCurrentUserRole();
       if(roleResponse != null && roleResponse != undefined){
         setRole(roleResponse as Role);
@@ -118,7 +116,6 @@ const NewsPage = () => {
       >
         <p className="text-lg text-left">{newsid ? "Update" : "Add"} News</p>
         <NewsMasterProvider
-          userid={userid}
           id={newsid}
           setAddBox={setAddBox}
           setNewsid={setNewsid}

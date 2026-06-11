@@ -14,7 +14,6 @@ interface StockData {
 interface CreateSaveStockPayload {
   data: StockData[];
   dvatid: number;
-  createdById: number;
 }
 
 const CreateSaveStock = async (
@@ -115,7 +114,7 @@ const CreateSaveStock = async (
             commodity_masterId: commodityId,
             quantity: incomingStockByCommodity.get(commodityId) ?? 0,
             dvat04Id: payload.dvatid,
-            createdById: payload.createdById,
+            createdById: currentUserId,
           })),
         });
       }
@@ -135,7 +134,7 @@ const CreateSaveStock = async (
               },
               data: {
                 quantity: incomingStockByCommodity.get(commodityId) ?? 0,
-                updatedById: payload.createdById,
+                updatedById: currentUserId,
               },
             });
           }),
@@ -152,7 +151,7 @@ const CreateSaveStock = async (
           },
           data: {
             deletedAt: new Date(),
-            updatedById: payload.createdById,
+            updatedById: currentUserId,
           },
         });
       }
