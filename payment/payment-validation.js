@@ -31,12 +31,12 @@ export const validateIntentCallbackSecurity = ({
   }
 
   // Check if intent has already been completed (prevents duplicate processing)
-  // if (intent.completedAt) {
-  //   return {
-  //     ok: false,
-  //     reason: "INTENT_ALREADY_COMPLETED",
-  //   };
-  // }
+  if (intent.completedAt) {
+    return {
+      ok: false,
+      reason: "INTENT_ALREADY_COMPLETED",
+    };
+  }
 
   // Allow processing if status is CREATED, INITIATED, or PENDING (not yet completed)
   const validStatuses = ["CREATED", "INITIATED", "PENDING"];
