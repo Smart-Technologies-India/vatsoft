@@ -1581,7 +1581,7 @@ const ReturnDashboard = () => {
         </div>
       </main>
 
-      <button
+      {/* <button
         type="button"
         aria-label="Open help chat"
         onClick={() => setIsHelpDrawerOpen(true)}
@@ -1604,7 +1604,7 @@ const ReturnDashboard = () => {
         <span className="-translate-y-4 text-sm font-semibold text-[#0f2f67] bg-white/90 px-2 rounded-full border-blue-800 border-2">
           Need Help
         </span>
-      </button>
+      </button> */}
 
       <Drawer
         title={

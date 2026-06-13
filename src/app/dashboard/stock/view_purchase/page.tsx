@@ -469,12 +469,38 @@ const DocumentWiseDetails = () => {
     };
   };
 
+  const hasAnyPendingAcceptableAcrossAll = async (): Promise<boolean> => {
+    if (!dvatdata) return false;
+
+    const allPurchaseResponse = await GetUserDailyPurchase({
+      dvatid: dvatdata.id,
+      skip: 0,
+      take: pagination.total > 0 ? pagination.total : 10000,
+    });
+
+    if (!allPurchaseResponse.status || !allPurchaseResponse.data?.result) {
+      toast.error(
+        "Unable to validate pending purchase invoices. Please try again.",
+      );
+      return true;
+    }
+
+    return allPurchaseResponse.data.result.some((group) =>
+      group.records.some(
+        (record) =>
+          (record.seller_tin_number.tin_number.startsWith("25") ||
+            record.seller_tin_number.tin_number.startsWith("26")) &&
+          !record.is_accept,
+      ),
+    );
+  };
+
   const Convertto30a = async () => {
     if (!dvatdata) {
       return toast.error("DVAT not found.");
     }
 
-    if (hasPendingAcceptable) {
+    if (hasPendingAcceptable || (await hasAnyPendingAcceptableAcrossAll())) {
       return toast.error(
         "Please accept all pending purchase invoices before generating DVAT 30/30 A.",
       );
@@ -754,6 +780,18 @@ const DocumentWiseDetails = () => {
     [],
   );
   const [tindata, setTindata] = useState<tin_number_master[]>([]);
+
+  // Search, Sort, and Filter states
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [sortField, setSortField] = useState<
+    "invoice_number" | "invoice_date" | "trade_name" | "tin_number" | "invoice_value"
+  >("invoice_date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [dateFilter, setDateFilter] = useState<{
+    startDate: string;
+    endDate: string;
+  }>({ startDate: "", endDate: "" });
+  const [acceptStatusFilter, setAcceptStatusFilter] = useState<"all" | "pending" | "accepted">("all");
 
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
@@ -2255,6 +2293,100 @@ const DocumentWiseDetails = () => {
     (group) => group.hasPendingAcceptable,
   );
 
+  // Filtered and sorted daily purchase data
+  const filteredAndSortedPurchase = useMemo(() => {
+    let filtered = [...dailyPurchase];
+
+    // Apply search filter
+    if (searchTerm.trim() !== "") {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (group) =>
+          group.invoice_number.toLowerCase().includes(search) ||
+          group.seller_tin_number.name_of_dealer.toLowerCase().includes(search) ||
+          group.seller_tin_number.tin_number.includes(search)
+      );
+    }
+
+    // Apply date filter
+    if (dateFilter.startDate || dateFilter.endDate) {
+      filtered = filtered.filter((group) => {
+        const invoiceDate = new Date(group.invoice_date);
+        const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null;
+        const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null;
+
+        if (startDate && invoiceDate < startDate) return false;
+        if (endDate && invoiceDate > endDate) return false;
+        return true;
+      });
+    }
+
+    // Apply accept status filter
+    if (acceptStatusFilter !== "all") {
+      filtered = filtered.filter((group) => {
+        const hasPending = group.records.some(
+          (r) =>
+            (r.seller_tin_number.tin_number.startsWith("25") ||
+              r.seller_tin_number.tin_number.startsWith("26")) &&
+            !r.is_accept
+        );
+        
+        if (acceptStatusFilter === "pending") return hasPending;
+        if (acceptStatusFilter === "accepted") return !hasPending;
+        return true;
+      });
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let compareValue = 0;
+
+      switch (sortField) {
+        case "invoice_number":
+          compareValue = a.invoice_number.localeCompare(b.invoice_number);
+          break;
+        case "invoice_date":
+          compareValue = new Date(a.invoice_date).getTime() - new Date(b.invoice_date).getTime();
+          break;
+        case "trade_name":
+          compareValue = a.seller_tin_number.name_of_dealer.localeCompare(
+            b.seller_tin_number.name_of_dealer
+          );
+          break;
+        case "tin_number":
+          compareValue = a.seller_tin_number.tin_number.localeCompare(
+            b.seller_tin_number.tin_number
+          );
+          break;
+        case "invoice_value":
+          compareValue = a.totalInvoiceValue - b.totalInvoiceValue;
+          break;
+      }
+
+      return sortOrder === "asc" ? compareValue : -compareValue;
+    });
+
+    return filtered;
+  }, [dailyPurchase, searchTerm, sortField, sortOrder, dateFilter, acceptStatusFilter]);
+
+  const visiblePurchaseSummary = useMemo(() => {
+    return filteredAndSortedPurchase.reduce(
+      (acc, group) => {
+        acc.totalInvoices += 1;
+        acc.totalTaxableValue += group.totalTaxableValue;
+        acc.totalVatAmount += group.totalVatAmount;
+        acc.totalInvoiceValue += group.totalInvoiceValue;
+        return acc;
+      },
+      {
+        totalInvoices: 0,
+        totalTaxableValue: 0,
+        totalVatAmount: 0,
+        totalInvoiceValue: 0,
+      },
+    );
+  }, [filteredAndSortedPurchase]);
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -2315,6 +2447,9 @@ const DocumentWiseDetails = () => {
                       Product Name
                     </TableHead>
                     <TableHead className="border text-center text-xs">
+                      Item Code
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
                       {quantityCount == "pcs"
                         ? dvatdata?.commodity == "FUEL"
                           ? "Litres"
@@ -2346,6 +2481,9 @@ const DocumentWiseDetails = () => {
                       </TableCell>
                       <TableCell className="p-2 border text-left text-xs">
                         {record.commodity_master.product_name}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {record.commodity_master.id}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {quantityCount == "pcs"
@@ -3144,9 +3282,12 @@ const DocumentWiseDetails = () => {
                               size="small"
                               block
                               type="default"
-                              onClick={() => {
+                              onClick={async () => {
                                 setToolbarActionsOpen(false);
-                                if (hasPendingAcceptable) {
+                                if (
+                                  hasPendingAcceptable ||
+                                  (await hasAnyPendingAcceptableAcrossAll())
+                                ) {
                                   toast.error(
                                     "Please accept all pending purchase invoices before generating DVAT 30/30 A.",
                                   );
@@ -3259,28 +3400,28 @@ const DocumentWiseDetails = () => {
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
               <p className="text-lg font-medium text-gray-900">
-                {purchaseSummary.totalInvoices}
+                {visiblePurchaseSummary.totalInvoices}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Invoice Value</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹{purchaseSummary.totalInvoiceValue.toFixed(2)}
+                ₹{visiblePurchaseSummary.totalInvoiceValue.toFixed(2)}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Tax</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹{purchaseSummary.totalVatAmount.toFixed(2)}
+                ₹{visiblePurchaseSummary.totalVatAmount.toFixed(2)}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Taxable Value</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹{purchaseSummary.totalTaxableValue.toFixed(2)}
+                ₹{visiblePurchaseSummary.totalTaxableValue.toFixed(2)}
               </p>
             </div>
           </div>
@@ -3296,6 +3437,125 @@ const DocumentWiseDetails = () => {
 
           {dailyPurchase.length > 0 ? (
             <div className="bg-white rounded shadow-sm border p-3">
+              {/* Search, Sort, and Filter Controls */}
+              <div className="mb-4 space-y-3">
+                {/* Search Bar */}
+                <div className="flex flex-col md:flex-row gap-3">
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Search
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Search by invoice number, trade name, or TIN..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  {/* Sort Controls */}
+                  <div className="w-full md:w-48">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Sort By
+                    </label>
+                    <select
+                      value={sortField}
+                      onChange={(e) => setSortField(e.target.value as any)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="invoice_date">Invoice Date</option>
+                      <option value="invoice_number">Invoice Number</option>
+                      <option value="trade_name">Trade Name</option>
+                      <option value="tin_number">TIN Number</option>
+                      <option value="invoice_value">Invoice Value</option>
+                    </select>
+                  </div>
+                  
+                  <div className="w-full md:w-32">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Order
+                    </label>
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="asc">Ascending</option>
+                      <option value="desc">Descending</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Filter Controls */}
+                <div className="flex flex-col md:flex-row gap-3">
+                  {/* Date Range Filter */}
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Date Range
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        value={dateFilter.startDate}
+                        onChange={(e) =>
+                          setDateFilter((prev) => ({ ...prev, startDate: e.target.value }))
+                        }
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Start Date"
+                      />
+                      <span className="self-center text-gray-500">to</span>
+                      <input
+                        type="date"
+                        value={dateFilter.endDate}
+                        onChange={(e) =>
+                          setDateFilter((prev) => ({ ...prev, endDate: e.target.value }))
+                        }
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="End Date"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Accept Status Filter */}
+                  <div className="w-full md:w-48">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Accept Status
+                    </label>
+                    <select
+                      value={acceptStatusFilter}
+                      onChange={(e) => setAcceptStatusFilter(e.target.value as any)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="all">All</option>
+                      <option value="pending">Pending</option>
+                      <option value="accepted">Accepted</option>
+                    </select>
+                  </div>
+
+                  {/* Clear Filters Button */}
+                  <div className="w-full md:w-auto flex items-end">
+                    <button
+                      onClick={() => {
+                        setSearchTerm("");
+                        setDateFilter({ startDate: "", endDate: "" });
+                        setAcceptStatusFilter("all");
+                        setSortField("invoice_date");
+                        setSortOrder("desc");
+                      }}
+                      className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-300 transition-colors"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
+                </div>
+
+                {/* Results Count */}
+                <div className="text-xs text-gray-600">
+                  Showing {filteredAndSortedPurchase.length} of {dailyPurchase.length} records
+                </div>
+              </div>
+
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -3330,8 +3590,17 @@ const DocumentWiseDetails = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {dailyPurchase.map(
-                      (group: GroupedDailyPurchase, index: number) => (
+                    {filteredAndSortedPurchase.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-8">
+                          <p className="text-gray-500 text-sm">
+                            No purchase records match your filters.
+                          </p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredAndSortedPurchase.map(
+                        (group: GroupedDailyPurchase, index: number) => (
                         <TableRow
                           key={index}
                           className={
@@ -3534,7 +3803,7 @@ const DocumentWiseDetails = () => {
                           </TableCell>
                         </TableRow>
                       ),
-                    )}
+                    ))}
                   </TableBody>
                 </Table>
               </div>
@@ -3579,7 +3848,7 @@ const DocumentWiseDetails = () => {
       </main>
 
       <>
-        <button
+        {/* <button
           type="button"
           aria-label="Open help chat"
           onClick={() => setIsHelpDrawerOpen(true)}
@@ -3602,7 +3871,7 @@ const DocumentWiseDetails = () => {
           <span className="-translate-y-4 text-lg font-semibold text-[#0f2f67] bg-white/90 px-2 rounded-full border-blue-800 border-2">
             Need Help
           </span>
-        </button>
+        </button> */}
 
         <Drawer
           title={
