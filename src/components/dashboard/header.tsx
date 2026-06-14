@@ -10,7 +10,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import ReturnFiling from "@/action/dashboard/return_filing";
 import { toast } from "react-toastify";
-import { Role } from "@prisma/client";
+import { Dvat04Commodity, Role } from "@prisma/client";
 import { Drawer, Tooltip, Dropdown, type MenuProps } from "antd";
 import { useState } from "react";
 import {
@@ -33,6 +33,7 @@ interface NavbarProps {
   role: string;
   isbluck: boolean;
   isSidebarCollapsed?: boolean;
+  commodity: Dvat04Commodity;
 }
 
 const Navbar = (props: NavbarProps) => {
@@ -105,6 +106,25 @@ const Navbar = (props: NavbarProps) => {
     setOpen(false);
   };
 
+  const getCommodity = (): string => {
+    switch (props.commodity) {
+      case "MANUFACTURER":
+        return "Distillery";
+      case "FUEL":
+        return "Fuel-Retailer";
+      case "WHOLESALER":
+        return "Wholesaler";
+      case "LIQUOR":
+        return "Retailer";
+      case "OIDC":
+        return "OIDC";
+      case "OTHER":
+        return "Other";
+      default:
+        return "Retailer";
+    }
+  };
+
   return (
     <nav
       className={`h-16 px-3 w-full hidden-print ${
@@ -145,9 +165,7 @@ const Navbar = (props: NavbarProps) => {
 
       {/* Page Title */}
 
-      <div
-      className="h-full"
-      >
+      <div className="h-full">
         <h1 className="font-semibold text-2xl md:text-lg text-gray-900/80 mt-1">
           Department of Value Added Tax/GST
         </h1>
@@ -220,7 +238,7 @@ const Navbar = (props: NavbarProps) => {
           <button className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors">
             <div className="text-right hidden md:block">
               <p className="text-sm font-medium text-gray-900">{props.name}</p>
-              <p className="text-xs text-gray-500">{props.role}</p>
+              <p className="text-xs text-gray-500">{getCommodity()}</p>
             </div>
             <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
               {(props.name[0] ?? "").toUpperCase()}

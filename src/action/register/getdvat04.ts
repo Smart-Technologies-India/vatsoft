@@ -33,7 +33,7 @@ const GetDvat04 = async (
       where: {
         deletedAt: null,
         deletedBy: null,
-        id: payload.id,
+        id: parseInt(payload.id.toString() ?? "0"),
       },
       include: {
         registration: true,

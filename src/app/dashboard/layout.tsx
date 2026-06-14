@@ -120,6 +120,7 @@ export default function DashboardLayout({
             isOpen={isOpen}
             setIsOpen={setIsOpen}
             isSidebarCollapsed={isSidebarCollapsed}
+            commodity={dvat?.commodity!}
             name={
               userdata?.role != Role.USER
                 ? (userdata?.firstName ?? "")
