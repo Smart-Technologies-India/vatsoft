@@ -1,4 +1,5 @@
-import { Dvat04Commodity } from "@prisma/client";
+import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
+import { commodity_master, Dvat04Commodity } from "@prisma/client";
 import { Button } from "antd";
 import * as XLSX from "xlsx";
 
@@ -9,9 +10,159 @@ interface DownloadSaleSampleProps {
 const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
   const { commodity } = props;
 
-  const downloadBulkTemplate = () => {
-    const isManufacturerCommodity =
-      commodity === "MANUFACTURER" || commodity === "WHOLESALER";
+  const downloadBulkTemplate = async () => {
+    const commodityType = commodity;
+    const isManufacturerCommodity = commodityType === "MANUFACTURER";
+
+    let commodityMasterData: commodity_master[] = [];
+    const commodityResponse = await AllCommodityMaster({});
+    if (commodityResponse.status && commodityResponse.data) {
+      commodityMasterData = commodityResponse.data;
+    }
+
+    const commoditySheetRows = commodityMasterData
+      .filter(
+        (commodity) =>
+          commodity.deletedAt == null && commodity.deletedById == null,
+      )
+      .map((commodity) => ({
+        "Commodity ID": commodity.id,
+        "Commodity Name": commodity.product_name,
+      }));
+
+    const getCommoditySpecificColumns = (rowVariant: 1 | 2 | 3) => {
+      if (commodityType === "MANUFACTURER") {
+        if (rowVariant === 1) {
+          return {
+            "Is Against C Form": "false",
+            "Is Against F Form": "false",
+            "Is Against E1": "false",
+            "Is Against I Form": "false",
+            "Is Exempt": "false",
+            "Is H Export": "false",
+            "Is Export": "false",
+          };
+        }
+
+        if (rowVariant === 2) {
+          return {
+            "Is Against C Form": "true",
+            "Is Against F Form": "false",
+            "Is Against E1": "false",
+            "Is Against I Form": "false",
+            "Is Exempt": "false",
+            "Is H Export": "false",
+            "Is Export": "false",
+          };
+        }
+
+        return {
+          "Is Against C Form": "false",
+          "Is Against F Form": "true",
+          "Is Against E1": "false",
+          "Is Against I Form": "false",
+          "Is Exempt": "false",
+          "Is H Export": "false",
+          "Is Export": "false",
+        };
+      }
+
+      if (commodityType === "FUEL") {
+        if (rowVariant === 1) {
+          return {
+            "Is Against C Form": "false",
+            "Is Against F Form": "false",
+            "Is Exempt": "false",
+          };
+        }
+
+        if (rowVariant === 2) {
+          return {
+            "Is Against C Form": "true",
+            "Is Against F Form": "false",
+            "Is Exempt": "false",
+          };
+        }
+
+        return {
+          "Is Against C Form": "false",
+          "Is Against F Form": "true",
+          "Is Exempt": "true",
+        };
+      }
+
+      return {};
+    };
+
+    const commoditySpecificInstructionRows =
+      commodityType === "MANUFACTURER"
+        ? [
+            {
+              Field: "Is Against C Form",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Against F Form",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Against E1",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Against I Form",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Exempt",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is H Export",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+            {
+              Field: "Is Export",
+              "What to fill": "true or false",
+              Rules:
+                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+            },
+          ]
+        : commodityType === "FUEL"
+          ? [
+              {
+                Field: "Is Against C Form",
+                "What to fill": "true or false",
+                Rules:
+                  "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+              },
+              {
+                Field: "Is Against F Form",
+                "What to fill": "true or false",
+                Rules:
+                  "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+              },
+              {
+                Field: "Is Exempt",
+                "What to fill": "true or false",
+                Rules:
+                  "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+              },
+            ]
+          : [];
+
     const rows = [
       {
         "TIN Number": "25000000000",
@@ -22,15 +173,7 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
           ? { "Quantity in Crates": 2 }
           : { Quantity: 24 }),
         "Total Invoice Value": 12000,
-        "Is Against C Form": "false",
-        ...(isManufacturerCommodity && {
-          "Is Against F Form": "false",
-          "Is Against E1": "false",
-          "Is Against I Form": "false",
-          "Is Exempt": "false",
-          "Is H Export": "false",
-          "Is Export": "false",
-        }),
+        ...getCommoditySpecificColumns(1),
       },
       {
         "TIN Number": "25000000000",
@@ -41,15 +184,7 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
           ? { "Quantity in Crates": 1 }
           : { Quantity: 12 }),
         "Total Invoice Value": 8600,
-        "Is Against C Form": "true",
-        ...(isManufacturerCommodity && {
-          "Is Against F Form": "false",
-          "Is Against E1": "false",
-          "Is Against I Form": "false",
-          "Is Exempt": "false",
-          "Is H Export": "false",
-          "Is Export": "false",
-        }),
+        ...getCommoditySpecificColumns(2),
       },
       {
         "TIN Number": "25000000000",
@@ -60,15 +195,7 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
           ? { "Quantity in Crates": 3 }
           : { Quantity: 30 }),
         "Total Invoice Value": 15000,
-        "Is Against C Form": "false",
-        ...(isManufacturerCommodity && {
-          "Is Against F Form": "true",
-          "Is Against E1": "false",
-          "Is Against I Form": "false",
-          "Is Exempt": "false",
-          "Is H Export": "false",
-          "Is Export": "false",
-        }),
+        ...getCommoditySpecificColumns(3),
       },
     ];
 
@@ -111,66 +238,20 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
         Rules:
           "If multiple items in same invoice, enter value separately for each item row. Must be inclusive of VAT.",
       },
-      {
-        Field: "Is Against C Form",
-        "What to fill": "true or false",
-        Rules:
-          "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
-      },
-      ...(isManufacturerCommodity
-        ? [
-            {
-              Field: "Is Against F Form",
-              "What to fill": "true or false",
-              Rules:
-                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
-            },
-            {
-              Field: "Is Against E1",
-              "What to fill": "true or false",
-              Rules:
-                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
-            },
-            {
-              Field: "Is Against I Form",
-              "What to fill": "true or false",
-              Rules:
-                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
-            },
-            {
-              Field: "Is Exempt",
-              "What to fill": "true or false",
-              Rules:
-                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
-            },
-            {
-              Field: "Is H Export",
-              "What to fill": "true or false",
-              Rules:
-                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
-            },
-            {
-              Field: "Is Export",
-              "What to fill": "true or false",
-              Rules:
-                "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
-            },
-          ]
-        : [
-            {
-              Field: "Type",
-              "What to fill":
-                "REGULAR, CFORM, FFORM, EXEMPT, IFORM, H_EXPORT, E1, EXPORT",
-              Rules:
-                "Only one type is allowed per row. If blank, it will be treated as REGULAR.",
-            },
-          ]),
+      ...commoditySpecificInstructionRows,
     ];
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const instructionsSheet = XLSX.utils.json_to_sheet(instructionsRows);
+    const commoditySheet = XLSX.utils.json_to_sheet(commoditySheetRows);
+    commoditySheet["!protect"] = {
+      password: "P@ssw0rd#8421",
+      selectLockedCells: true,
+      selectUnlockedCells: true,
+    };
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, instructionsSheet, "Instructions");
+    XLSX.utils.book_append_sheet(workbook, commoditySheet, "Commodity");
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sale Upload");
     XLSX.writeFile(workbook, "vatsoft_sale_template.xlsx");
   };
@@ -181,9 +262,9 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
         size="small"
         block
         type="default"
-        onClick={() => {
+        onClick={async () => {
           props.setToolbarActionsOpen(false);
-          downloadBulkTemplate();
+          await downloadBulkTemplate();
         }}
       >
         Download Sample

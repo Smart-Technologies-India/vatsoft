@@ -1,7 +1,6 @@
 "use client";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
-import GetUser from "@/action/user/getuser";
 import AcceptSale from "@/action/stock/acceptsell";
 import ConvertDvat30A from "@/action/stock/convertdvat30a";
 import DeletePurchase from "@/action/stock/deletepurchase";
@@ -10,8 +9,6 @@ import GetUserDailyPurchase, {
   DailyPurchaseSummary,
   GroupedDailyPurchase,
 } from "@/action/stock/getuserdailypurchase";
-import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
-import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
 import { PurchaseCreditNoteDrawer } from "@/components/forms/purchasecreditnote/purchasecreditnotedrawer";
 import { PurchaseDebitNoteDrawer } from "@/components/forms/purchasedebitnote/purchasedebitnotedrawer";
@@ -42,8 +39,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
-import DownloadSaleSample from "../view_sale/downloadsalesample";
 import PurchaseBulk from "./purchasebulk";
+import DownloadPurchaseSample from "./downloadpurchasesample";
 
 const DocumentWiseDetails = () => {
   const router = useRouter();
@@ -1308,7 +1305,7 @@ const DocumentWiseDetails = () => {
                             )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        ₹{parseFloat(record.amount).toFixed(2)}
+                        ₹{(parseFloat(record.vatamount) + parseFloat(record.amount)).toFixed(2)}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.tax_percent}%
@@ -1868,13 +1865,14 @@ const DocumentWiseDetails = () => {
                             </Button>
                           )}
 
-                          <DownloadSaleSample
+                          <DownloadPurchaseSample
                             commodity={dvatdata?.commodity ?? "OTHER"}
                             setToolbarActionsOpen={setToolbarActionsOpen}
                           />
 
                           <PurchaseBulk
                             setToolbarActionsOpen={setToolbarActionsOpen}
+                            onUploadComplete={init}
                           />
 
                           <Button

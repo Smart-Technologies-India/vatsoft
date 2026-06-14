@@ -26,6 +26,7 @@ import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 interface SaleBulkUploadProps {
   setToolbarActionsOpen: (open: boolean) => void;
   filedReturnPeriods: Set<string>;
+  onUploadComplete: () => Promise<void>;
 }
 
 const SaleBulkUpload = (props: SaleBulkUploadProps) => {
@@ -282,15 +283,14 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
   };
 
   const getExpectedProductType = () => {
-    if (
-      dvatdata?.commodity === "OIDC" ||
-      dvatdata?.commodity === "MANUFACTURER" ||
-      dvatdata?.commodity == "WHOLESALER"
-    ) {
+    // OIDC users sell LIQUOR-typed products.
+    // MANUFACTURER and WHOLESALER use their own product type
+    // so the commodity lookup finds the correct crate_size for quantity conversion.
+    if (dvatdata?.commodity === "OIDC" || dvatdata?.commodity === "WHOLESALER" || dvatdata?.commodity === "MANUFACTURER") {
       return "LIQUOR";
     }
-
     return dvatdata?.commodity;
+
   };
 
   const readSheetField = (row: Record<string, unknown>, labels: string[]) => {
@@ -417,7 +417,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       setIsBulkModalOpen(false);
       setSheetFileName("");
       setTableData([]);
-      //   await init();
+      await props.onUploadComplete();
     } finally {
       setIsBulkUploading(false);
       setBulkUploadProgress({
@@ -520,9 +520,10 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       });
 
       const expectedProductType = getExpectedProductType();
-      const isManufacturerCommodity =
+      const isCrateCommodity =
         dvatdata?.commodity === "MANUFACTURER" ||
         dvatdata?.commodity === "WHOLESALER";
+      const commodityType = dvatdata?.commodity;
 
       // Build tinNumber → commodity map from all dvat04 records
       const tinCommodityMap: { [tinNumber: string]: string | null } = {};
@@ -762,21 +763,21 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
           // Store the original crate quantity for MANUFACTURER/WHOLESALER (even if invalid, for display purposes)
           const quantityInCrates =
-            isManufacturerCommodity && Number.isFinite(parsedQuantity)
+            isCrateCommodity && Number.isFinite(parsedQuantity)
               ? parsedQuantity
-              : isManufacturerCommodity && !Number.isFinite(parsedQuantity)
+              : isCrateCommodity && !Number.isFinite(parsedQuantity)
                 ? 0
                 : null;
 
           if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
             errors.push(
-              isManufacturerCommodity
+              isCrateCommodity
                 ? "* Quantity must be a number in crates and greater than 0"
                 : "* Quantity must be a number in pieces and greater than 0",
             );
           } else if (!Number.isInteger(parsedQuantity)) {
             errors.push(
-              isManufacturerCommodity
+              isCrateCommodity
                 ? "* Quantity must be a whole number in crates"
                 : "* Quantity must be a whole number in pieces",
             );
@@ -786,7 +787,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           // For others: parsedQuantity is already in pieces
           const normalizedQuantity =
             selectedCommodity &&
-            isManufacturerCommodity &&
+            isCrateCommodity &&
             Number.isFinite(parsedQuantity)
               ? parsedQuantity *
                 (selectedCommodity.crate_size > 0
@@ -863,23 +864,39 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             }
           }
 
-          if (isManufacturerCommodity) {
-            const requiredManufacturerColumns = [
-              { label: "Is Against C Form", parsed: parsedAgainstCFrom },
-              { label: "Is Against F Form", parsed: parsedAgainstFForm },
-              { label: "Is Against E1", parsed: parsedAgainstE1 },
-              { label: "Is Against I Form", parsed: parsedAgainstIForm },
-              { label: "Is Exempt", parsed: parsedIsExempt },
-              { label: "Is H Export", parsed: parsedHExport },
-              { label: "Is Export", parsed: parsedIsExport },
-            ];
+          const requiredColumnsByCommodity: Array<{
+            label: string;
+            parsed: boolean | null;
+          }> =
+            commodityType === "MANUFACTURER"
+              ? [
+                  { label: "Is Against C Form", parsed: parsedAgainstCFrom },
+                  { label: "Is Against F Form", parsed: parsedAgainstFForm },
+                  { label: "Is Against E1", parsed: parsedAgainstE1 },
+                  { label: "Is Against I Form", parsed: parsedAgainstIForm },
+                  { label: "Is Exempt", parsed: parsedIsExempt },
+                  { label: "Is H Export", parsed: parsedHExport },
+                  { label: "Is Export", parsed: parsedIsExport },
+                ]
+              : commodityType === "FUEL"
+                ? [
+                    {
+                      label: "Is Against C Form",
+                      parsed: parsedAgainstCFrom,
+                    },
+                    {
+                      label: "Is Against F Form",
+                      parsed: parsedAgainstFForm,
+                    },
+                    { label: "Is Exempt", parsed: parsedIsExempt },
+                  ]
+                : [];
 
-            for (const column of requiredManufacturerColumns) {
-              if (column.parsed == null) {
-                errors.push(
-                  `* ${column.label} must be true/false (yes/no/1/0 also accepted)`,
-                );
-              }
+          for (const column of requiredColumnsByCommodity) {
+            if (column.parsed == null) {
+              errors.push(
+                `* ${column.label} must be true/false (yes/no/1/0 also accepted)`,
+              );
             }
           }
 
@@ -899,14 +916,25 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             { key: "EXPORT", value: parsedIsExport },
           ].filter((item) => item.value === true);
 
-          if (selectedFlags.length > 1) {
+          const allowedFlagKeysByCommodity =
+            commodityType === "MANUFACTURER"
+              ? ["CFORM", "FFORM", "E1", "IFORM", "EXEMPT", "H_EXPORT", "EXPORT"]
+              : commodityType === "FUEL"
+                ? ["CFORM", "FFORM", "EXEMPT"]
+                : [];
+
+          const selectedAllowedFlags = selectedFlags.filter((flag) =>
+            allowedFlagKeysByCommodity.includes(flag.key),
+          );
+
+          if (selectedAllowedFlags.length > 1) {
             errors.push("* Only one type can be true in a row");
           }
 
           if (
             normalizedType &&
-            selectedFlags.length === 1 &&
-            selectedFlags[0].key !== normalizedType
+            selectedAllowedFlags.length === 1 &&
+            selectedAllowedFlags[0].key !== normalizedType
           ) {
             errors.push("* Type and boolean flags do not match for this row");
           }
@@ -952,10 +980,22 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           }
 
           let saleType = "REGULAR";
-          if (normalizedType) {
+          if (commodityType === "LIQUOR" || commodityType === "WHOLESALER") {
+            saleType = "REGULAR";
+          } else if (commodityType === "FUEL") {
+            if (selectedAllowedFlags.length === 0) {
+              saleType = "REGULAR";
+            } else if (normalizedType && ["CFORM", "FFORM", "EXEMPT"].includes(normalizedType)) {
+              saleType = normalizedType;
+            } else if (selectedAllowedFlags.length === 1) {
+              saleType = selectedAllowedFlags[0].key;
+            }
+          } else if (selectedAllowedFlags.length === 0) {
+            saleType = "REGULAR";
+          } else if (normalizedType) {
             saleType = normalizedType;
-          } else if (selectedFlags.length === 1) {
-            saleType = selectedFlags[0].key;
+          } else if (selectedAllowedFlags.length === 1) {
+            saleType = selectedAllowedFlags[0].key;
           }
 
           const against_cfrom = saleType === "CFORM";

@@ -20,6 +20,7 @@ import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 
 interface PurchaseBulkUploadProps {
   setToolbarActionsOpen: (open: boolean) => void;
+  onUploadComplete: () => Promise<void>;
 }
 
 const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
@@ -388,9 +389,10 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
         groupedData[key] = (groupedData[key] ?? 0) + 1;
       });
 
-      const isManufacturerCommodity =
+      const isCrateCommodity =
         dvatdata?.commodity === "MANUFACTURER" ||
         dvatdata?.commodity == "WHOLESALER";
+      const commodityType = dvatdata?.commodity;
 
       const parsedRows = rows
         .map((row) => {
@@ -544,7 +546,18 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
             errors.push("* Item Code must be a valid number");
           }
 
-          const userCommodityType = dvatdata?.commodity;
+          let userCommodityType = "LIQUOR";
+
+          if (
+            dvatdata?.commodity === "MANUFACTURER" ||
+            dvatdata?.commodity === "WHOLESALER" ||
+            dvatdata?.commodity === "OIDC" ||
+            dvatdata?.commodity === "LIQUOR"
+          ) {
+            userCommodityType = "LIQUOR";
+          } else {
+            userCommodityType = dvatdata?.commodity ?? "OTHER";
+          }
 
           const selectedCommodity = commodityMaster.find(
             (commodity) =>
@@ -564,21 +577,21 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
 
           // Store the original crate quantity for MANUFACTURER/WHOLESALER (even if invalid, for display purposes)
           const quantityInCrates =
-            isManufacturerCommodity && Number.isFinite(parsedQuantity)
+            isCrateCommodity && Number.isFinite(parsedQuantity)
               ? parsedQuantity
-              : isManufacturerCommodity && !Number.isFinite(parsedQuantity)
+              : isCrateCommodity && !Number.isFinite(parsedQuantity)
                 ? 0
                 : null;
 
           if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
             errors.push(
-              isManufacturerCommodity
+              isCrateCommodity
                 ? "* Quantity must be a number in crates and greater than 0"
                 : "* Quantity must be a number in pieces and greater than 0",
             );
           } else if (!Number.isInteger(parsedQuantity)) {
             errors.push(
-              isManufacturerCommodity
+              isCrateCommodity
                 ? "* Quantity must be a whole number in crates"
                 : "* Quantity must be a whole number in pieces",
             );
@@ -588,7 +601,7 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
           // For others: parsedQuantity is already in pieces
           const normalizedQuantity =
             selectedCommodity &&
-            isManufacturerCommodity &&
+            isCrateCommodity &&
             Number.isFinite(parsedQuantity)
               ? parsedQuantity *
                 (selectedCommodity.crate_size > 0
@@ -683,23 +696,46 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
             }
           }
 
-          if (isManufacturerCommodity) {
-            const requiredManufacturerColumns = [
-              { label: "Is Against C Form", parsed: parsedAgainstCFrom },
-              { label: "Is Against F Form", parsed: parsedAgainstFForm },
-              { label: "Is Against E1", parsed: parsedAgainstE1 },
-              { label: "Is Against I Form", parsed: parsedAgainstIForm },
-              { label: "Is Exempt", parsed: parsedIsExempt },
-              { label: "Is H Export", parsed: parsedAgainstHForm },
-              { label: "Is Export", parsed: parsedIsExport },
-            ];
+          const requiredColumnsByCommodity: Array<{
+            label: string;
+            parsed: boolean | null;
+          }> =
+            commodityType === "MANUFACTURER"
+              ? [
+                  { label: "Is Against C Form", parsed: parsedAgainstCFrom },
+                  { label: "Is Against F Form", parsed: parsedAgainstFForm },
+                  { label: "Is Against E1", parsed: parsedAgainstE1 },
+                  { label: "Is Against I Form", parsed: parsedAgainstIForm },
+                  { label: "Is Exempt", parsed: parsedIsExempt },
+                  { label: "Is H Export", parsed: parsedAgainstHForm },
+                  { label: "Is Export", parsed: parsedIsExport },
+                ]
+              : commodityType === "FUEL"
+                ? [
+                    {
+                      label: "Is Against C Form",
+                      parsed: parsedAgainstCFrom,
+                    },
+                    {
+                      label: "Is Against F Form",
+                      parsed: parsedAgainstFForm,
+                    },
+                    { label: "Is Exempt", parsed: parsedIsExempt },
+                  ]
+                : commodityType === "WHOLESALER"
+                  ? [
+                      {
+                        label: "Is Against C Form",
+                        parsed: parsedAgainstCFrom,
+                      },
+                    ]
+                  : [];
 
-            for (const column of requiredManufacturerColumns) {
-              if (column.parsed == null) {
-                errors.push(
-                  `* ${column.label} must be true/false (yes/no/1/0 also accepted)`,
-                );
-              }
+          for (const column of requiredColumnsByCommodity) {
+            if (column.parsed == null) {
+              errors.push(
+                `* ${column.label} must be true/false (yes/no/1/0 also accepted)`,
+              );
             }
           }
 
@@ -735,7 +771,40 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
           }
 
           let purchaseType = "REGULAR";
-          if (normalizedType) {
+
+          if (commodityType === "LIQUOR") {
+            purchaseType = "REGULAR";
+          } else if (commodityType === "WHOLESALER") {
+            purchaseType = parsedAgainstCFrom ? "AGAINST_CFORM" : "REGULAR";
+          } else if (commodityType === "FUEL") {
+            const fuelSelectedFlags = [
+              { key: "AGAINST_CFORM", value: parsedAgainstCFrom },
+              { key: "AGAINST_FFORM", value: parsedAgainstFForm },
+              { key: "EXEMPT", value: parsedIsExempt },
+            ].filter((item) => item.value === true);
+
+            if (fuelSelectedFlags.length > 1) {
+              errors.push("* Only one type can be true in a row");
+            }
+
+            if (
+              normalizedType &&
+              fuelSelectedFlags.length === 1 &&
+              fuelSelectedFlags[0].key !== normalizedType
+            ) {
+              errors.push("* Type and boolean flags do not match for this row");
+            }
+
+            if (fuelSelectedFlags.length === 0) {
+              purchaseType = "REGULAR";
+            } else if (normalizedType) {
+              purchaseType = normalizedType;
+            } else if (fuelSelectedFlags.length === 1) {
+              purchaseType = fuelSelectedFlags[0].key;
+            }
+          } else if (selectedFlags.length === 0) {
+            purchaseType = "REGULAR";
+          } else if (normalizedType) {
             purchaseType = normalizedType;
           } else if (selectedFlags.length === 1) {
             purchaseType = selectedFlags[0].key;
@@ -861,10 +930,10 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
     }
 
     const entries = tabledata.map((row) => {
-      const isManufacturerCommodity =
+      const isCrateCommodity =
         dvatdata?.commodity === "MANUFACTURER" ||
         dvatdata?.commodity == "WHOLESALER";
-      const taxPercent = isManufacturerCommodity
+      const taxPercent = isCrateCommodity
         ? row.purchase_type === "REGULAR"
           ? "20"
           : "0"
@@ -891,7 +960,7 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
       return {
         dvatid: dvatdata.id,
         commodityid: row.item_code,
-        quantity: Number(row.quantity), // Always stored in pieces (converted from crates for MANUFACTURER/WHOLESALER)
+        quantity: Number(row.quantity), // Stored in pieces; for MANUFACTURER/WHOLESALER this is converted from crate quantity.
         seller_tin_id: row.seller_tin_id!,
         invoice_number: row.invoice_no,
         invoice_date: invoiceDate,
@@ -905,6 +974,7 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
         is_against_e1form: row.is_against_e1form,
         is_against_iform: row.is_against_iform,
         is_against_hform: row.is_against_hform,
+        is_exempt: row.is_exempt,
         is_export: row.is_export,
         batch_name: null,
       };
@@ -958,6 +1028,7 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
       setBulkCurrentPage(1);
       setBulkPageSize(10);
       await init();
+      await props.onUploadComplete();
     } finally {
       setIsBulkUploading(false);
       setBulkUploadProgress({

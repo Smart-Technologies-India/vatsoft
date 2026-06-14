@@ -364,8 +364,6 @@ const DocumentWiseDetails = () => {
         }
       }
 
-  
-
       setIsLoading(false);
     };
     init();
@@ -984,7 +982,11 @@ const DocumentWiseDetails = () => {
                             )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {parseFloat(record.amount).toFixed(2)}
+                        ₹
+                        {(
+                          
+                          parseFloat(record.amount)
+                        ).toFixed(2)}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.tax_percent}%
@@ -1436,6 +1438,7 @@ const DocumentWiseDetails = () => {
                           <SaleBulkUpload
                             setToolbarActionsOpen={setToolbarActionsOpen}
                             filedReturnPeriods={filedReturnPeriods}
+                            onUploadComplete={init}
                           />
 
                           <Button
