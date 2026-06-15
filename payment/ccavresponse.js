@@ -149,13 +149,13 @@ export const postRes = (request, response) => {
     const paymentIntent = await prisma.payment_intent.findFirst({
       where: {
         gateway_order_id: callbackOrderId,
-        completedAt: null,
-        failure_reason: null,
+        // completedAt: null,
+        // failure_reason: null,
         expiresAt: {
           gt: new Date(),
         },
         status: {
-          in: ["CREATED", "INITIATED"],
+          in: ["CREATED", "INITIATED", "PENDING","SUCCESS"],
         },
       },
       orderBy: {
