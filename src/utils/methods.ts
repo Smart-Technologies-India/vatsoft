@@ -389,7 +389,16 @@ const toBase64Url = (str: string): string =>
   str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
 const fromBase64Url = (str: string): string =>
-  str.replace(/-/g, "+").replace(/_/g, "/") + "==".slice(str.length % 4 || 4);
+  (() => {
+    const normalized = str.replace(/-/g, "+").replace(/_/g, "/");
+    const remainder = normalized.length % 4;
+
+    if (remainder === 0) {
+      return normalized;
+    }
+
+    return normalized + "=".repeat(4 - remainder);
+  })();
 
 export const encryptURLData = (data: string): string => {
   const encryptedData = CryptoJS.AES.encrypt(data, secretKey).toString();

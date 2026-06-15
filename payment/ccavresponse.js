@@ -183,6 +183,9 @@ export const postRes = (request, response) => {
       return toBase64Url(encryptedData);
     };
 
+    const appBaseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
     const renderReceiptHtml = ({
       statusTitle,
       statusTone,
@@ -229,7 +232,10 @@ export const postRes = (request, response) => {
         10,
       );
       const encryptedRedirectId = encryptURLData(numericRedirectId.toString());
-      const redirectUrl = `/dashboard/payments/saved-challan/${encryptedRedirectId}`;
+      const redirectUrl = new URL(
+        `/dashboard/payments/saved-challan/${encryptedRedirectId}`,
+        appBaseUrl,
+      ).toString();
       const shouldAutoRedirect = !enableReturnSmsButton;
 
       return `<!DOCTYPE html>
@@ -342,7 +348,7 @@ export const postRes = (request, response) => {
       </section>
 
       <section class="footer">
-        ${shouldAutoRedirect ? `<p>Redirecting to challan page in <span id="countdown" class="countdown">10</span> seconds...</p>` : `<button id="returnAndSendSmsBtn" class="countdown" style="cursor:pointer;border:1px solid #d1d5db;">Return to Challan Page</button>`}
+        ${shouldAutoRedirect ? `<p>Redirecting to challan page in <span id="countdown" class="countdown">8</span> seconds...</p>` : `<button id="returnAndSendSmsBtn" class="countdown" style="cursor:pointer;border:1px solid #d1d5db;">Return to Challan Page</button>`}
       </section>
     </main>
     <script>
@@ -354,7 +360,7 @@ export const postRes = (request, response) => {
         var returnId = "${return_id}";
 
         if (shouldAutoRedirect) {
-          var seconds = 10;
+          var seconds = 8;
           var el = document.getElementById("countdown");
           var timer = setInterval(function () {
             seconds -= 1;

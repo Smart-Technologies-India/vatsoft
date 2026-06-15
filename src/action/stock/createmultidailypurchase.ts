@@ -3,7 +3,6 @@ import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { stock } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import CreateDailyPurchase from "./createdailypuchase";
 
@@ -32,7 +31,7 @@ interface CreateMultiDailyPurchasePayload {
 
 const CreateMultiDailyPurchase = async (
   payload: CreateMultiDailyPurchasePayload,
-): Promise<ApiResponseType<stock[] | null>> => {
+): Promise<ApiResponseType<{ createdCount: number } | null>> => {
   const functionname: string = CreateMultiDailyPurchase.name;
 
   try {
@@ -70,7 +69,10 @@ const CreateMultiDailyPurchase = async (
         );
       }
 
-      const response = await CreateDailyPurchase(entry);
+      const response = await CreateDailyPurchase({
+        ...entry,
+        dvatid: currentDvatId,
+      });
 
       if (!response.status || !response.data) {
         throw new Error(
@@ -84,7 +86,9 @@ const CreateMultiDailyPurchase = async (
     return createResponse({
       message: `${createdCount} entr${createdCount === 1 ? "y" : "ies"} created successfully.`,
       functionname,
-      data: null,
+      data: {
+        createdCount,
+      },
     });
   } catch (e) {
     return createResponse({

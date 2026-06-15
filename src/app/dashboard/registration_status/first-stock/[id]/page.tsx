@@ -4,6 +4,9 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import CreateFirstStock from "@/action/firststock/firststockcreat";
 import GetDepartmentFirstStockByDvatId from "@/action/firststock/getdepartmentfirststockbydvatid";
+import GetCommodityOpeningStockSummary, {
+  CommodityOpeningStockSummary,
+} from "@/action/firststock/getcommodityopeningstocksummary";
 import {
   Table,
   TableBody,
@@ -46,6 +49,10 @@ const RegistrationStatusFirstStockPage = () => {
   //   undefined,
   // );
   const [noOfPieces, setNoOfPieces] = useState<string>("");
+  const [commodityOpeningSummary, setCommodityOpeningSummary] =
+    useState<CommodityOpeningStockSummary | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState<boolean>(false);
+  const [summaryError, setSummaryError] = useState<string>("");
 
   const fetchFirstStockData = useCallback(async () => {
     if (!dvat04Id || Number.isNaN(dvat04Id)) {
@@ -112,6 +119,8 @@ const RegistrationStatusFirstStockPage = () => {
     setCommodityOptions(commodityResponse.data);
     setSelectedCommodityId(undefined);
     setNoOfPieces("");
+    setCommodityOpeningSummary(null);
+    setSummaryError("");
     setIsAddStockModalOpen(true);
   }, []);
 
@@ -120,6 +129,9 @@ const RegistrationStatusFirstStockPage = () => {
     setSelectedCommodityId(undefined);
     setNoOfPieces("");
     setIsAddingStock(false);
+    setCommodityOpeningSummary(null);
+    setSummaryError("");
+    setIsSummaryLoading(false);
   }, []);
 
   const packTypeOptions = useMemo(
@@ -201,6 +213,36 @@ const RegistrationStatusFirstStockPage = () => {
     selectedCommodity,
     selectedCommodityId,
   ]);
+
+  useEffect(() => {
+    const fetchCommodityOpeningSummary = async () => {
+      if (!isAddStockModalOpen || !dvatData?.id || !selectedCommodityId) {
+        setCommodityOpeningSummary(null);
+        setSummaryError("");
+        return;
+      }
+
+      setIsSummaryLoading(true);
+      setSummaryError("");
+
+      const response = await GetCommodityOpeningStockSummary({
+        dvat04Id: dvatData.id,
+        commodityMasterId: selectedCommodityId,
+      });
+
+      if (!response.status || !response.data) {
+        setCommodityOpeningSummary(null);
+        setSummaryError(response.message || "Unable to fetch stock summary.");
+        setIsSummaryLoading(false);
+        return;
+      }
+
+      setCommodityOpeningSummary(response.data);
+      setIsSummaryLoading(false);
+    };
+
+    fetchCommodityOpeningSummary();
+  }, [dvatData?.id, isAddStockModalOpen, selectedCommodityId]);
 
   const exportAsExcel = useCallback(() => {
     if (stock.length === 0) {
@@ -360,24 +402,6 @@ const RegistrationStatusFirstStockPage = () => {
         confirmLoading={isAddingStock}
       >
         <div className="space-y-3">
-          {/* <div>
-            <p className="mb-1 text-sm font-medium text-gray-700">PET Type</p>
-            <Select
-              allowClear
-              className="w-full"
-              placeholder="Select PET type"
-              value={selectedPackType}
-              onChange={(value) => {
-                setSelectedPackType(value);
-                setSelectedCommodityId(undefined);
-              }}
-              options={packTypeOptions.map((item) => ({
-                value: item,
-                label: item,
-              }))}
-            />
-          </div> */}
-
           <div>
             <p className="mb-1 text-sm font-medium text-gray-700">Commodity</p>
             <Select
@@ -398,10 +422,73 @@ const RegistrationStatusFirstStockPage = () => {
             />
             {selectedCommodity ? (
               <div className="mt-2 p-2 bg-gray-50 border rounded text-xs text-gray-700 space-y-1">
-                <div><span className="font-medium">PET Type:</span> {selectedCommodity.pack_type || 'N/A'}</div>
-                <div><span className="font-medium">Description:</span> {selectedCommodity.description || 'N/A'}</div>
-                <div><span className="font-medium">Crate Size:</span> {selectedCommodity.crate_size ? `${selectedCommodity.crate_size} pcs` : 'N/A'}</div>
-                <div><span className="font-medium">Product Type:</span> {selectedCommodity.product_type || 'N/A'}</div>
+                <div>
+                  <span className="font-medium">PET Type:</span>{" "}
+                  {selectedCommodity.pack_type || "N/A"}
+                </div>
+                <div>
+                  <span className="font-medium">Description:</span>{" "}
+                  {selectedCommodity.description || "N/A"}
+                </div>
+                <div>
+                  <span className="font-medium">Crate Size:</span>{" "}
+                  {selectedCommodity.crate_size
+                    ? `${selectedCommodity.crate_size} pcs`
+                    : "N/A"}
+                </div>
+                <div>
+                  <span className="font-medium">Product Type:</span>{" "}
+                  {selectedCommodity.product_type || "N/A"}
+                </div>
+              </div>
+            ) : null}
+
+            {selectedCommodityId ? (
+              <div className="mt-2 p-2 bg-blue-50 border border-blue-100 rounded text-xs text-gray-700 space-y-2">
+                <p className="font-medium text-blue-900">Existing Data Check</p>
+
+                {isSummaryLoading ? (
+                  <p>Checking records...</p>
+                ) : summaryError ? (
+                  <p className="text-red-600">{summaryError}</p>
+                ) : commodityOpeningSummary ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-white border rounded p-2">
+                        <p className="text-gray-500">First Stock Qty</p>
+                        <p className="font-semibold text-gray-900">
+                          {commodityOpeningSummary.firstStockQuantity}
+                        </p>
+                      </div>
+                      <div className="bg-white border rounded p-2">
+                        <p className="text-gray-500">Stock Qty</p>
+                        <p className="font-semibold text-gray-900">
+                          {commodityOpeningSummary.stockQuantity}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-white border rounded p-2">
+                        <p className="text-gray-500">In Daily Sale</p>
+                        <p className="font-semibold text-gray-900">
+                          {commodityOpeningSummary.existsInDailySale
+                            ? "Yes"
+                            : "No"}
+                        </p>
+                      </div>
+                      <div className="bg-white border rounded p-2">
+                        <p className="text-gray-500">In Daily Purchase</p>
+                        <p className="font-semibold text-gray-900">
+                          {commodityOpeningSummary.existsInDailyPurchase
+                            ? "Yes"
+                            : "No"}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <p>No records found.</p>
+                )}
               </div>
             ) : null}
           </div>

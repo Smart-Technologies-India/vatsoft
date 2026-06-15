@@ -1029,6 +1029,7 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
       setBulkPageSize(10);
       await init();
       await props.onUploadComplete();
+      router.refresh();
     } finally {
       setIsBulkUploading(false);
       setBulkUploadProgress({
