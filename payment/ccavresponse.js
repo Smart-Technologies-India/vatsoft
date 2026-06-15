@@ -149,13 +149,13 @@ export const postRes = (request, response) => {
     const paymentIntent = await prisma.payment_intent.findFirst({
       where: {
         gateway_order_id: callbackOrderId,
-        // completedAt: null,
-        // failure_reason: null,
+        completedAt: null,
+        failure_reason: null,
         expiresAt: {
           gt: new Date(),
         },
         status: {
-          in: ["CREATED", "INITIATED", "PENDING","SUCCESS"],
+          in: ["CREATED", "INITIATED"],
         },
       },
       orderBy: {
@@ -472,49 +472,49 @@ export const postRes = (request, response) => {
       response.write(htmlcode);
       response.end();
     } else if (result.order_status == "Success") {
-      const securityValidation = validateIntentCallbackSecurity({
-        intent: paymentIntent,
-        challan: paymentIntent?.challan,
-        callbackOrderId,
-        callbackAmount: result.amount,
-        callbackChallanId: parsedChallanId,
-        callbackDvatId: parsedDvatId,
-      });
+      // const securityValidation = validateIntentCallbackSecurity({
+      //   intent: paymentIntent,
+      //   challan: paymentIntent?.challan,
+      //   callbackOrderId,
+      //   callbackAmount: result.amount,
+      //   callbackChallanId: parsedChallanId,
+      //   callbackDvatId: parsedDvatId,
+      // });
 
-      if (!securityValidation.ok) {
-        await markIntent(
-          "FAILED",
-          `Payment validation failed: ${securityValidation.reason}`,
-        );
+      // if (!securityValidation.ok) {
+      //   await markIntent(
+      //     "FAILED",
+      //     `Payment validation failed: ${securityValidation.reason}`,
+      //   );
 
-        if (paymentIntent?.challan) {
-          await prisma.challan.update({
-            where: {
-              id: paymentIntent.challan.id,
-            },
-            data: {
-              paymentstatus: "FAILED",
-              order_status: "FAILED",
-              failure_message: `Payment validation failed: ${securityValidation.reason}`,
-              status_message: "Payment validation failed.",
-              transaction_date: new Date().toISOString(),
-            },
-          });
-        }
+      //   if (paymentIntent?.challan) {
+      //     await prisma.challan.update({
+      //       where: {
+      //         id: paymentIntent.challan.id,
+      //       },
+      //       data: {
+      //         paymentstatus: "FAILED",
+      //         order_status: "FAILED",
+      //         failure_message: `Payment validation failed: ${securityValidation.reason}`,
+      //         status_message: "Payment validation failed.",
+      //         transaction_date: new Date().toISOString(),
+      //       },
+      //     });
+      //   }
 
-        const htmlcode = renderReceiptHtml({
-          statusTitle: "Transaction Failed",
-          statusTone: "failed",
-          message: "Payment could not be validated. Please try again.",
-          amount: result.amount,
-          redirectId: paymentIntent?.challan?.id || parsedChallanId || 0,
-        });
+      //   const htmlcode = renderReceiptHtml({
+      //     statusTitle: "Transaction Failed",
+      //     statusTone: "failed",
+      //     message: "Payment could not be validated. Please try again.",
+      //     amount: result.amount,
+      //     redirectId: paymentIntent?.challan?.id || parsedChallanId || 0,
+      //   });
 
-        response.writeHeader(200, { "Content-Type": "text/html" });
-        response.write(htmlcode);
-        response.end();
-        return;
-      }
+      //   response.writeHeader(200, { "Content-Type": "text/html" });
+      //   response.write(htmlcode);
+      //   response.end();
+      //   return;
+      // }
 
       await markIntent("SUCCESS", null);
 
