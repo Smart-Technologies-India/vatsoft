@@ -142,6 +142,7 @@ export const postRes = (request, response) => {
 
     const parsedChallanId = parseInt(challanid?.toString() || "0", 10);
     const parsedDvatId = parseInt(dvatid?.toString() || "0", 10);
+    const parsedReturnId = parseInt(return_id?.toString() || "0", 10);
 
     const callbackOrderId = (result.order_id || "").toString();
 
@@ -149,8 +150,13 @@ export const postRes = (request, response) => {
       where: {
         gateway_order_id: callbackOrderId,
         completedAt: null,
-        expiresAt: null,
         failure_reason: null,
+        expiresAt: {
+          gt: new Date(),
+        },
+        status: {
+          in: ["CREATED", "INITIATED"],
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -571,27 +577,48 @@ export const postRes = (request, response) => {
               bene_bank: result.bene_bank,
               bene_branch: result.bene_branch,
               trans_fee: result.trans_fee,
-              returnid: return_id
+              returnid: parsedReturnId || null,
             },
           });
+
+          const htmlcode = renderReceiptHtml({
+            statusTitle: "Transaction Successful",
+            statusTone: "success",
+            message: "Your payment has been received successfully.",
+            amount: result.amount,
+            redirectId: challan.id,
+            enableReturnSmsButton: true,
+          });
+
+          response.writeHeader(200, { "Content-Type": "text/html" });
+          response.write(htmlcode);
+          response.end();
 
           if (!challan.returnid) {
-            throw new Error("Return payment succeeded but challan has no returnid.");
+            return;
           }
 
-          await prisma.returns_01.update({
-            where: {
-              id: challan.returnid,
-            },
-            data: {
-              paymentmode: result.payment_mode.toString().toUpperCase(),
-              transaction_date: new Date().toISOString(),
-              track_id: result.tracking_id,
-              bank_name: result.bank_ref_no,
-              transaction_id: result.order_id,
-              status: "PAID",
-            },
-          });
+          void (async () => {
+            try {
+              await prisma.returns_01.update({
+                where: {
+                  id: challan.returnid,
+                },
+                data: {
+                  paymentmode: result.payment_mode.toString().toUpperCase(),
+                  transaction_date: new Date().toISOString(),
+                  track_id: result.tracking_id,
+                  bank_name: result.bank_ref_no,
+                  transaction_id: result.order_id,
+                  status: "PAID",
+                },
+              });
+            } catch (backgroundError) {
+              console.log(backgroundError);
+            }
+          })();
+
+          return;
 
         } catch (e) {
           console.log(e);
@@ -630,194 +657,185 @@ export const postRes = (request, response) => {
               bene_bank: result.bene_bank,
               bene_branch: result.bene_branch,
               trans_fee: result.trans_fee,
-              returnid: return_id
+              returnid: parsedReturnId || null,
             },
           });
 
-          if (!challan.returnid) {
-            const htmlcode = renderReceiptHtml({
-              statusTitle: "Transaction Successful",
-              statusTone: "success",
-              message:
-                "Payment was successful. Linked return record was not found, so return filing update was skipped.",
-              amount: result.amount,
-              redirectId: challan.id,
-              enableReturnSmsButton: false,
-            });
+          const htmlcode = renderReceiptHtml({
+            statusTitle: "Transaction Successful",
+            statusTone: "success",
+            message: "Your payment has been received successfully.",
+            amount: result.amount,
+            redirectId: challan.id,
+            enableReturnSmsButton: false,
+          });
 
-            response.writeHeader(200, { "Content-Type": "text/html" });
-            response.write(htmlcode);
-            response.end();
+          response.writeHeader(200, { "Content-Type": "text/html" });
+          response.write(htmlcode);
+          response.end();
+
+          if (!challan.returnid) {
             return;
           }
 
-          const get_rr_number = (returnRecord) => {
-            const rr_no =
-              returnRecord?.dvat04?.tinNumber?.toString().slice(-4) || "0000";
-            const today = new Date();
-            const month = ("0" + (today.getMonth() + 1)).slice(-2);
-            const day = ("0" + today.getDate()).slice(-2);
-            const return_id = parseInt(returnRecord?.id?.toString() ?? "0") + 4000;
+          void (async () => {
+            try {
+              const get_rr_number = (returnRecord) => {
+                const rr_no =
+                  returnRecord?.dvat04?.tinNumber?.toString().slice(-4) || "0000";
+                const today = new Date();
+                const month = ("0" + (today.getMonth() + 1)).slice(-2);
+                const day = ("0" + today.getDate()).slice(-2);
+                const generatedReturnId =
+                  parseInt(returnRecord?.id?.toString() ?? "0", 10) + 4000;
 
-            return `${rr_no}${month}${day}${return_id}`;
-          };
+                return `${rr_no}${month}${day}${generatedReturnId}`;
+              };
 
-          const returnToUpdate = await prisma.returns_01.findFirst({
-            where: {
-              id: challan.returnid,
-            },
-            include: {
-              dvat04: true,
-              challan: true,
-            },
-          });
+              const returnToUpdate = await prisma.returns_01.findFirst({
+                where: {
+                  id: challan.returnid,
+                },
+                include: {
+                  dvat04: true,
+                  challan: true,
+                },
+              });
 
-          if (!returnToUpdate) {
-            throw new Error("Return record not found for paid challan.");
-          }
-
-          await prisma.returns_01.update({
-            where: {
-              id: challan.returnid,
-            },
-            data: {
-              rr_number: get_rr_number(returnToUpdate),
-              paymentmode: result.payment_mode.toString().toUpperCase(),
-              transaction_date: new Date().toISOString(),
-              track_id: result.tracking_id,
-              bank_name: result.bank_ref_no,
-              transaction_id: result.order_id,
-              status: "PAID",
-            },
-          });
-
-          const getMonthGroup = (currentMonth) => {
-            const monthGroups = [
-              ["April", "May", "June"],
-              ["July", "August", "September"],
-              ["October", "November", "December"],
-              ["January", "February", "March"],
-            ];
-
-            // Find the group that contains the current month
-            for (const group of monthGroups) {
-              if (group.includes(currentMonth)) {
-                return group;
+              if (!returnToUpdate) {
+                throw new Error("Return record not found for paid challan.");
               }
-            }
 
-            return [];
-          };
+              await prisma.returns_01.update({
+                where: {
+                  id: challan.returnid,
+                },
+                data: {
+                  rr_number: get_rr_number(returnToUpdate),
+                  paymentmode: result.payment_mode.toString().toUpperCase(),
+                  transaction_date: new Date().toISOString(),
+                  track_id: result.tracking_id,
+                  bank_name: result.bank_ref_no,
+                  transaction_id: result.order_id,
+                  status: "PAID",
+                },
+              });
 
-          if (returnToUpdate.dvat04?.frequencyFilings === "QUARTERLY") {
-            const groupedMonths = getMonthGroup(returnToUpdate.month ?? "");
-            const monthsToUpdate =
-              groupedMonths.length > 0 ? groupedMonths : [returnToUpdate.month ?? ""];
-            const filingDate = new Date();
+              const getMonthGroup = (currentMonth) => {
+                const monthGroups = [
+                  ["April", "May", "June"],
+                  ["July", "August", "September"],
+                  ["October", "November", "December"],
+                  ["January", "February", "March"],
+                ];
 
-            const quarterlyReturns = await prisma.returns_01.findMany({
-              where: {
-                dvat04Id: returnToUpdate.dvat04Id,
-                year: returnToUpdate.year,
-                month: { in: monthsToUpdate },
-              },
-              include: {
-                dvat04: true,
-              },
-            });
+                for (const group of monthGroups) {
+                  if (group.includes(currentMonth)) {
+                    return group;
+                  }
+                }
 
-            await Promise.all(
-              quarterlyReturns.map((quarterlyReturn) =>
-                prisma.returns_01.update({
+                return [];
+              };
+
+              if (returnToUpdate.dvat04?.frequencyFilings === "QUARTERLY") {
+                const groupedMonths = getMonthGroup(returnToUpdate.month ?? "");
+                const monthsToUpdate =
+                  groupedMonths.length > 0
+                    ? groupedMonths
+                    : [returnToUpdate.month ?? ""];
+                const filingDate = new Date();
+
+                const quarterlyReturns = await prisma.returns_01.findMany({
                   where: {
-                    id: quarterlyReturn.id,
+                    dvat04Id: returnToUpdate.dvat04Id,
+                    year: returnToUpdate.year,
+                    month: { in: monthsToUpdate },
                   },
-                  data: {
-                    rr_number: get_rr_number(quarterlyReturn),
-                    paymentmode: result.payment_mode.toString().toUpperCase(),
-                    transaction_date: new Date().toISOString(),
-                    track_id: result.tracking_id,
-                    bank_name: result.bank_ref_no,
-                    transaction_id: result.order_id,
-                    status: "PAID",
+                  include: {
+                    dvat04: true,
                   },
-                }),
-              ),
-            );
+                });
 
-            // Get all records to update to check due dates
-            const recordsToUpdate = await prisma.return_filing.findMany({
-              where: {
-                filing_status: false,
-                dvatid: returnToUpdate.dvat04Id,
-                filing_date: null,
-                year: returnToUpdate.year,
-                month: { in: monthsToUpdate },
-              },
-            });
+                await Promise.all(
+                  quarterlyReturns.map((quarterlyReturn) =>
+                    prisma.returns_01.update({
+                      where: {
+                        id: quarterlyReturn.id,
+                      },
+                      data: {
+                        rr_number: get_rr_number(quarterlyReturn),
+                        paymentmode: result.payment_mode.toString().toUpperCase(),
+                        transaction_date: new Date().toISOString(),
+                        track_id: result.tracking_id,
+                        bank_name: result.bank_ref_no,
+                        transaction_id: result.order_id,
+                        status: "PAID",
+                      },
+                    }),
+                  ),
+                );
 
-            // Update each record with appropriate return_status
-            await Promise.all(
-              recordsToUpdate.map((record) =>
-                prisma.return_filing.update({
-                  where: { id: record.id },
-                  data: {
-                    filing_date: filingDate,
-                    filing_status: true,
-                    return_status:
-                      record.due_date && record.due_date >= filingDate
-                        ? "FILED"
-                        : "LATEFILED",
+                const recordsToUpdate = await prisma.return_filing.findMany({
+                  where: {
+                    filing_status: false,
+                    dvatid: returnToUpdate.dvat04Id,
+                    filing_date: null,
+                    year: returnToUpdate.year,
+                    month: { in: monthsToUpdate },
                   },
-                }),
-              ),
-            );
-          } else {
-            const filingDate = new Date();
+                });
 
-            await prisma.returns_01.update({
-              where: {
-                id: challan.returnid,
-              },
-              data: {
-                rr_number: get_rr_number(returnToUpdate),
-                paymentmode: result.payment_mode.toString().toUpperCase(),
-                transaction_date: new Date().toISOString(),
-                track_id: result.tracking_id,
-                bank_name: result.bank_ref_no,
-                transaction_id: result.order_id,
-                status: "PAID",
-              },
-            });
+                await Promise.all(
+                  recordsToUpdate.map((record) =>
+                    prisma.return_filing.update({
+                      where: { id: record.id },
+                      data: {
+                        filing_date: filingDate,
+                        filing_status: true,
+                        return_status:
+                          record.due_date && record.due_date >= filingDate
+                            ? "FILED"
+                            : "LATEFILED",
+                      },
+                    }),
+                  ),
+                );
+              } else {
+                const filingDate = new Date();
 
-            // Get all records to update to check due dates
-            const recordsToUpdate = await prisma.return_filing.findMany({
-              where: {
-                filing_status: false,
-                dvatid: returnToUpdate.dvat04Id,
-                filing_date: null,
-                year: returnToUpdate.year,
-                month: returnToUpdate.month ?? "",
-              },
-            });
-
-            // Update each record with appropriate return_status
-            await Promise.all(
-              recordsToUpdate.map((record) =>
-                prisma.return_filing.update({
-                  where: { id: record.id },
-                  data: {
-                    filing_date: filingDate,
-                    filing_status: true,
-                    return_status:
-                      record.due_date && record.due_date >= filingDate
-                        ? "FILED"
-                        : "LATEFILED",
+                const recordsToUpdate = await prisma.return_filing.findMany({
+                  where: {
+                    filing_status: false,
+                    dvatid: returnToUpdate.dvat04Id,
+                    filing_date: null,
+                    year: returnToUpdate.year,
+                    month: returnToUpdate.month ?? "",
                   },
-                }),
-              ),
-            );
-          }
+                });
+
+                await Promise.all(
+                  recordsToUpdate.map((record) =>
+                    prisma.return_filing.update({
+                      where: { id: record.id },
+                      data: {
+                        filing_date: filingDate,
+                        filing_status: true,
+                        return_status:
+                          record.due_date && record.due_date >= filingDate
+                            ? "FILED"
+                            : "LATEFILED",
+                      },
+                    }),
+                  ),
+                );
+              }
+            } catch (backgroundError) {
+              console.log(backgroundError);
+            }
+          })();
+
+          return;
         } catch (e) {
           console.log(e);
         }
@@ -849,18 +867,20 @@ export const postRes = (request, response) => {
         // });
       }
 
-      const htmlcode = renderReceiptHtml({
-        statusTitle: "Transaction Successful",
-        statusTone: "success",
-        message: "Your payment has been received successfully.",
-        amount: result.amount,
-        redirectId: challanid ? parseInt(challanid) : 0,
-        enableReturnSmsButton: type == "RETURN",
-      });
+      if (!response.headersSent) {
+        const htmlcode = renderReceiptHtml({
+          statusTitle: "Transaction Successful",
+          statusTone: "success",
+          message: "Your payment has been received successfully.",
+          amount: result.amount,
+          redirectId: challanid ? parseInt(challanid) : 0,
+          enableReturnSmsButton: type == "RETURN",
+        });
 
-      response.writeHeader(200, { "Content-Type": "text/html" });
-      response.write(htmlcode);
-      response.end();
+        response.writeHeader(200, { "Content-Type": "text/html" });
+        response.write(htmlcode);
+        response.end();
+      }
     } else {
       await markIntent("FAILED", "Gateway returned non-success status.");
 
