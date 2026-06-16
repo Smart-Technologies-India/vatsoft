@@ -23,13 +23,12 @@ interface CreateDailySaleManufacturerPayload {
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { stock } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import { customAlphabet } from "nanoid";
 
 const CreateDailySaleManufacturer = async (
   payload: CreateDailySaleManufacturerPayload
-): Promise<ApiResponseType<stock | null>> => {
+): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = CreateDailySaleManufacturer.name;
 
   try {
@@ -277,7 +276,8 @@ const CreateDailySaleManufacturer = async (
     return createResponse({
       message: "Daily Sale Created successfully",
       functionname,
-      data: result,
+      data: true,
+
     });
   } catch (e) {
     return createResponse({

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Alert, Button, Modal, Pagination } from "antd";
 import CreateMultiDailySale from "@/action/stock/createmultidailysale";
+import CreateMultiDailySaleManufacturer from "@/action/stock/createmultidailysalemanufacturer";
 import GetAllStock from "@/action/stock/getallstock";
 import GetAllDvat04 from "@/action/dvat/getalldvat";
 import * as XLSX from "xlsx";
@@ -395,7 +396,10 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           currentChunk,
         }));
 
-        const response = await CreateMultiDailySale({ entries: chunk });
+        const response =
+          dvatdata?.commodity === "MANUFACTURER"
+            ? await CreateMultiDailySaleManufacturer({ entries: chunk })
+            : await CreateMultiDailySale({ entries: chunk });
 
         if (!response.status) {
           toast.error(response.message);
@@ -1078,7 +1082,8 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       }
 
       // Cross-row check: stock availability per item_code
-      if (dvatdata) {
+      // MANUFACTURER uploads should bypass stock validation.
+      if (dvatdata && dvatdata.commodity !== "MANUFACTURER") {
         const stockResponse = await GetAllStock({
           dvatid: dvatdata.id,
           take: 10000,

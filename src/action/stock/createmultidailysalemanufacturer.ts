@@ -3,7 +3,6 @@ import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { stock } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import CreateDailySaleManufacturer from "./createdailysalemanufacturer";
 
@@ -33,7 +32,7 @@ interface CreateMultiDailySaleManufacturerPayload {
 
 const CreateMultiDailySaleManufacturer = async (
   payload: CreateMultiDailySaleManufacturerPayload,
-): Promise<ApiResponseType<stock[] | null>> => {
+): Promise<ApiResponseType<{ createdCount: number } | null>> => {
   const functionname: string = CreateMultiDailySaleManufacturer.name;
 
   try {
@@ -48,7 +47,7 @@ const CreateMultiDailySaleManufacturer = async (
       } as any;
     }
 
-    const createdEntries = [];
+    let createdCount = 0;
 
     for (const entry of payload.entries) {
       const isexist = await prisma.daily_sale.findFirst({
@@ -71,21 +70,26 @@ const CreateMultiDailySaleManufacturer = async (
         );
       }
 
-      const response = await CreateDailySaleManufacturer(entry);
+      const response = await CreateDailySaleManufacturer({
+        ...entry,
+        dvatid: currentDvatId,
+      });
 
-      if (!response.status || !response.data) {
+      if (!response.status) {
         throw new Error(
           `Failed to create entry for invoice: ${entry.invoice_number}, error: ${response.message}`,
         );
       }
 
-      createdEntries.push(response.data);
+      createdCount += 1;
     }
 
     return createResponse({
-      message: "All entries created successfully.",
+      message: `${createdCount} entr${createdCount === 1 ? "y" : "ies"} created successfully.`,
       functionname,
-      data: createdEntries,
+      data: {
+        createdCount,
+      },
     });
   } catch (e) {
     return createResponse({

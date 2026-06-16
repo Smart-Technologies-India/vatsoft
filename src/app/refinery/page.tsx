@@ -8,25 +8,97 @@ import RefinerySendOtp from "@/action/user/refinerysendotp";
 import RefineryVerifyForgetPasswordOtp from "@/action/user/refineryverifyforgetpasswordotp";
 import { FluentEye12Regular, FluentEyeOff16Regular } from "@/components/icons";
 import { Button, Input, Modal } from "antd";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 export default function RefineryLoginPage() {
 	return (
-		<main className="min-h-screen bg-[#e8edf5] grid place-items-center p-4">
-			<div className="w-full max-w-md border border-[#c8d4e8] bg-white shadow-sm">
-				<div className="bg-[#0f2f67] px-4 py-3">
-					<h1 className="text-white text-base font-semibold">Refinery Login</h1>
-					<p className="text-[#dbe8ff] text-sm mt-1">
-						Login with password or OTP using refinery TIN.
-					</p>
+		<div className="min-h-screen w-full bg-[#e8edf5] text-gray-800">
+			<header className="bg-white border-b border-[#b7c6de]">
+				<div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+					<div className="relative w-14 h-14 shrink-0 flex items-center justify-center">
+						<Image
+							src="/favicon.png"
+							alt="DVAT Emblem"
+							fill
+							className="object-contain"
+						/>
+					</div>
+					<div>
+						<p className="text-xs text-gray-500 uppercase tracking-wide">
+							Union Territory of Dadra &amp; Nagar Haveli and Daman &amp; Diu
+						</p>
+						<h1 className="text-base font-bold text-[#0f2f67] leading-tight">
+							VAT-SMART Refinery Portal
+						</h1>
+						<p className="text-xs text-gray-500">
+							Department of Value Added Tax/GST Administration
+						</p>
+					</div>
 				</div>
-				<div className="p-4">
-					<RefineryInlineLoginForm />
+			</header>
+
+			<main className="max-w-6xl mx-auto px-4 py-6 mt-20">
+				<div className="grid grid-cols-1 lg:grid-cols-2 border border-[#c8d4e8] rounded-lg overflow-hidden bg-white shadow-sm">
+					{/* Left branding panel */}
+					<div className="bg-[#0f2f67] px-6 py-8 flex flex-col justify-between gap-6">
+						<div>
+							<p className="inline-block px-2 py-1 text-xs font-semibold text-[#5a4000] bg-[#fff2cc] rounded-sm mb-4">
+								Authorized Access
+							</p>
+							<h2 className="text-2xl font-bold text-white leading-tight">
+								Welcome to VAT-SMART
+								<br />
+								Refinery Login
+							</h2>
+							<p className="text-sm text-[#dbe8ff] mt-3 leading-relaxed max-w-md">
+								Login using OTP or password with your refinery TIN to manage
+								sales records and compliance operations.
+							</p>
+						</div>
+
+						<div className="relative w-44 h-44 bg-white/95 rounded-md self-center">
+							<Image
+								fill
+								src="/emblem.png"
+								alt="DVAT Emblem"
+								className="object-contain object-center p-3"
+							/>
+						</div>
+
+						<ul className="space-y-2 text-sm text-[#e3ecff]">
+							<li className="flex items-start gap-2">
+								<span className="text-[#ffd36a]">&#9658;</span>
+								<span>Secure TIN-based OTP authentication</span>
+							</li>
+							<li className="flex items-start gap-2">
+								<span className="text-[#ffd36a]">&#9658;</span>
+								<span>Password login for existing refinery users</span>
+							</li>
+							<li className="flex items-start gap-2">
+								<span className="text-[#ffd36a]">&#9658;</span>
+								<span>Built-in password recovery through OTP</span>
+							</li>
+						</ul>
+					</div>
+
+					{/* Right form panel */}
+					<div className="px-6 py-8 bg-[#f7f9fc]">
+						<h3 className="text-lg font-semibold text-[#0f2f67] text-center">
+							Sign In
+						</h3>
+						<p className="text-sm text-gray-600 text-center mt-1">
+							Login to access your refinery account
+						</p>
+						<div className="mt-6">
+							<RefineryInlineLoginForm />
+						</div>
+					</div>
 				</div>
-			</div>
-		</main>
+			</main>
+		</div>
 	);
 }
 

@@ -6,6 +6,7 @@ import GetUserDailySale, {
   DailySaleSummary,
   GroupedDailySale,
 } from "@/action/stock/getuserdailysale";
+import GetUserDailySaleFiltered from "@/action/stock/getuserdailysalefiltered";
 import { DailySaleProvider } from "@/components/forms/dailysale/dailysale";
 import { CreditNoteDrawer } from "@/components/forms/creditnote/creditnotedrawer";
 import { DebitNoteDrawer } from "@/components/forms/debitnote/debitnotedrawer";
@@ -32,16 +33,25 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 
-import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUser from "@/action/user/getuser";
-import * as XLSX from "xlsx";
 import DownloadSaleSample from "./downloadsalesample";
 import GetReturnMonth from "@/action/dvat/getreturnmonth";
 import SaleBulkUpload from "./salebulk";
+
+type DailySaleFilteredSummary = {
+  overallSummary: DailySaleSummary;
+  filteredSummary: DailySaleSummary;
+};
+
+const DEFAULT_SALE_SUMMARY: DailySaleSummary = {
+  totalInvoices: 0,
+  totalTaxableValue: 0,
+  totalVatAmount: 0,
+  totalInvoiceValue: 0,
+};
 
 const DocumentWiseDetails = () => {
   const router = useRouter();
@@ -67,111 +77,23 @@ const DocumentWiseDetails = () => {
   >("all");
 
   const [dailySale, setDailySale] = useState<Array<GroupedDailySale>>([]);
+  const [overallSaleSummary, setOverallSaleSummary] =
+    useState<DailySaleSummary>(DEFAULT_SALE_SUMMARY);
+  const [filteredSaleSummary, setFilteredSaleSummary] =
+    useState<DailySaleSummary>(DEFAULT_SALE_SUMMARY);
 
-  // Filtered and sorted daily sale data
-  const filteredAndSortedSale = useMemo(() => {
-    let filtered = [...dailySale];
+  const isFilterApplied = useMemo(
+    () =>
+      searchTerm.trim() !== "" ||
+      dateFilter.startDate !== "" ||
+      dateFilter.endDate !== "" ||
+      acceptStatusFilter !== "all",
+    [searchTerm, dateFilter.startDate, dateFilter.endDate, acceptStatusFilter],
+  );
 
-    // Apply search filter
-    if (searchTerm.trim() !== "") {
-      const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (group) =>
-          group.invoice_number.toLowerCase().includes(search) ||
-          group.seller_tin_number.name_of_dealer
-            .toLowerCase()
-            .includes(search) ||
-          group.seller_tin_number.tin_number.includes(search),
-      );
-    }
-
-    // Apply date filter
-    if (dateFilter.startDate || dateFilter.endDate) {
-      filtered = filtered.filter((group) => {
-        const invoiceDate = new Date(group.invoice_date);
-        const startDate = dateFilter.startDate
-          ? new Date(dateFilter.startDate)
-          : null;
-        const endDate = dateFilter.endDate
-          ? new Date(dateFilter.endDate)
-          : null;
-
-        if (startDate && invoiceDate < startDate) return false;
-        if (endDate && invoiceDate > endDate) return false;
-        return true;
-      });
-    }
-
-    // Apply accept status filter
-    if (acceptStatusFilter !== "all") {
-      filtered = filtered.filter((group) => {
-        const hasPending = group.records.some((r) => !r.is_accept);
-
-        if (acceptStatusFilter === "pending") return hasPending;
-        if (acceptStatusFilter === "accepted") return !hasPending;
-        return true;
-      });
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let compareValue = 0;
-
-      switch (sortField) {
-        case "invoice_number":
-          compareValue = a.invoice_number.localeCompare(b.invoice_number);
-          break;
-        case "invoice_date":
-          compareValue =
-            new Date(a.invoice_date).getTime() -
-            new Date(b.invoice_date).getTime();
-          break;
-        case "trade_name":
-          compareValue = a.seller_tin_number.name_of_dealer.localeCompare(
-            b.seller_tin_number.name_of_dealer,
-          );
-          break;
-        case "tin_number":
-          compareValue = a.seller_tin_number.tin_number.localeCompare(
-            b.seller_tin_number.tin_number,
-          );
-          break;
-        case "invoice_value":
-          compareValue = a.totalInvoiceValue - b.totalInvoiceValue;
-          break;
-      }
-
-      return sortOrder === "asc" ? compareValue : -compareValue;
-    });
-
-    return filtered;
-  }, [
-    dailySale,
-    searchTerm,
-    sortField,
-    sortOrder,
-    dateFilter,
-    acceptStatusFilter,
-  ]);
-
-  // Summary values based on current search/filter result (before pagination)
-  const visibleSaleSummary = useMemo(() => {
-    return filteredAndSortedSale.reduce(
-      (acc, group) => {
-        acc.totalInvoices += 1;
-        acc.totalTaxableValue += group.totalTaxableValue;
-        acc.totalVatAmount += group.totalVatAmount;
-        acc.totalInvoiceValue += group.totalInvoiceValue;
-        return acc;
-      },
-      {
-        totalInvoices: 0,
-        totalTaxableValue: 0,
-        totalVatAmount: 0,
-        totalInvoiceValue: 0,
-      },
-    );
-  }, [filteredAndSortedSale]);
+  const cardSummary = isFilterApplied
+    ? filteredSaleSummary
+    : overallSaleSummary;
 
   const route = useRouter();
   const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
@@ -196,19 +118,12 @@ const DocumentWiseDetails = () => {
     skip: number;
     total: number;
   }>({
-    take: 10,
+    take: 25,
     skip: 0,
     total: 0,
   });
 
   const [dvatdata, setDvatData] = useState<dvat04>();
-
-  const [saleSummary, setSaleSummary] = useState<DailySaleSummary>({
-    totalInvoices: 0,
-    totalTaxableValue: 0,
-    totalVatAmount: 0,
-    totalInvoiceValue: 0,
-  });
 
   const [selectedGroup, setSelectedGroup] = useState<GroupedDailySale | null>(
     null,
@@ -275,10 +190,16 @@ const DocumentWiseDetails = () => {
     if (dvat_response.status && dvat_response.data) {
       setDvatData(dvat_response.data);
       await loadFiledReturnPeriods(dvat_response.data.id);
-      const daily_sale_response = await GetUserDailySale({
+      const daily_sale_response = await GetUserDailySaleFiltered({
         dvatid: dvat_response.data.id,
         skip: 0,
-        take: 10,
+        take: 25,
+        searchTerm,
+        sortField,
+        sortOrder,
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+        acceptStatusFilter,
       });
 
       if (daily_sale_response.status && daily_sale_response.data.result) {
@@ -288,15 +209,12 @@ const DocumentWiseDetails = () => {
           total: daily_sale_response.data.total,
         });
         setDailySale(daily_sale_response.data.result);
-        setSaleSummary(
-          (daily_sale_response.data.summary as
-            | DailySaleSummary
-            | undefined) ?? {
-            totalInvoices: 0,
-            totalTaxableValue: 0,
-            totalVatAmount: 0,
-            totalInvoiceValue: 0,
-          },
+        const summary = daily_sale_response.data.summary as
+          | DailySaleFilteredSummary
+          | undefined;
+        setOverallSaleSummary(summary?.overallSummary ?? DEFAULT_SALE_SUMMARY);
+        setFilteredSaleSummary(
+          summary?.filteredSummary ?? DEFAULT_SALE_SUMMARY,
         );
       }
     }
@@ -338,10 +256,16 @@ const DocumentWiseDetails = () => {
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);
         await loadFiledReturnPeriods(dvat_response.data.id);
-        const daily_sale_response = await GetUserDailySale({
+        const daily_sale_response = await GetUserDailySaleFiltered({
           dvatid: dvat_response.data.id,
           skip: 0,
-          take: 10,
+          take: 25,
+          searchTerm: "",
+          sortField: "invoice_date",
+          sortOrder: "desc",
+          startDate: "",
+          endDate: "",
+          acceptStatusFilter: "all",
         });
 
         if (daily_sale_response.status && daily_sale_response.data.result) {
@@ -351,15 +275,14 @@ const DocumentWiseDetails = () => {
             total: daily_sale_response.data.total,
           });
           setDailySale(daily_sale_response.data.result);
-          setSaleSummary(
-            (daily_sale_response.data.summary as
-              | DailySaleSummary
-              | undefined) ?? {
-              totalInvoices: 0,
-              totalTaxableValue: 0,
-              totalVatAmount: 0,
-              totalInvoiceValue: 0,
-            },
+          const summary = daily_sale_response.data.summary as
+            | DailySaleFilteredSummary
+            | undefined;
+          setOverallSaleSummary(
+            summary?.overallSummary ?? DEFAULT_SALE_SUMMARY,
+          );
+          setFilteredSaleSummary(
+            summary?.filteredSummary ?? DEFAULT_SALE_SUMMARY,
           );
         }
       }
@@ -367,7 +290,7 @@ const DocumentWiseDetails = () => {
       setIsLoading(false);
     };
     init();
-  }, [userid, router]);
+  }, [userid, router, loadFiledReturnPeriods]);
 
   useEffect(() => {
     let mounted = true;
@@ -422,6 +345,53 @@ const DocumentWiseDetails = () => {
     setIsBotTyping(false);
     setShouldAutoScroll(true);
   }, []);
+
+  useEffect(() => {
+    const loadFilteredPage = async () => {
+      if (!dvatdata?.id) return;
+
+      const daily_sale_response = await GetUserDailySaleFiltered({
+        dvatid: dvatdata.id,
+        skip: 0,
+        take: pagination.take,
+        searchTerm,
+        sortField,
+        sortOrder,
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+        acceptStatusFilter,
+      });
+
+      if (daily_sale_response.status && daily_sale_response.data.result) {
+        setDailySale(daily_sale_response.data.result);
+        setPaginatin((prev) => ({
+          ...prev,
+          skip: 0,
+          total: daily_sale_response.data.total,
+        }));
+        const summary = daily_sale_response.data.summary as
+          | DailySaleFilteredSummary
+          | undefined;
+        setOverallSaleSummary(
+          summary?.overallSummary ?? DEFAULT_SALE_SUMMARY,
+        );
+        setFilteredSaleSummary(
+          summary?.filteredSummary ?? DEFAULT_SALE_SUMMARY,
+        );
+      }
+    };
+
+    loadFilteredPage();
+  }, [
+    dvatdata?.id,
+    pagination.take,
+    searchTerm,
+    sortField,
+    sortOrder,
+    dateFilter.startDate,
+    dateFilter.endDate,
+    acceptStatusFilter,
+  ]);
 
   const handleChatScroll = () => {
     if (!chatListRef.current) return;
@@ -500,10 +470,19 @@ const DocumentWiseDetails = () => {
   };
 
   const onChangePageCount = async (page: number, pagesize: number) => {
-    const daily_sale_response = await GetUserDailySale({
-      dvatid: dvatdata!.id,
+    if (!dvatdata?.id) return;
+
+    const skip = pagesize * (page - 1);
+    const daily_sale_response = await GetUserDailySaleFiltered({
+      dvatid: dvatdata.id,
       take: pagesize,
-      skip: pagesize * (page - 1),
+      skip,
+      searchTerm,
+      sortField,
+      sortOrder,
+      startDate: dateFilter.startDate,
+      endDate: dateFilter.endDate,
+      acceptStatusFilter,
     });
 
     if (daily_sale_response.status && daily_sale_response.data.result) {
@@ -513,14 +492,11 @@ const DocumentWiseDetails = () => {
         take: daily_sale_response.data.take,
         total: daily_sale_response.data.total,
       });
-      setSaleSummary(
-        (daily_sale_response.data.summary as DailySaleSummary | undefined) ?? {
-          totalInvoices: 0,
-          totalTaxableValue: 0,
-          totalVatAmount: 0,
-          totalInvoiceValue: 0,
-        },
-      );
+      const summary = daily_sale_response.data.summary as
+        | DailySaleFilteredSummary
+        | undefined;
+      setOverallSaleSummary(summary?.overallSummary ?? DEFAULT_SALE_SUMMARY);
+      setFilteredSaleSummary(summary?.filteredSummary ?? DEFAULT_SALE_SUMMARY);
     }
   };
   const [addBox, setAddBox] = useState<boolean>(false);
@@ -1487,25 +1463,25 @@ const DocumentWiseDetails = () => {
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
               <p className="text-lg font-medium text-gray-900">
-                {visibleSaleSummary.totalInvoices}
+                {cardSummary.totalInvoices}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Taxable Value</p>
               <p className="text-lg font-medium text-gray-900">
-                {formatAmount(visibleSaleSummary.totalTaxableValue)}
+                {formatAmount(cardSummary.totalTaxableValue)}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Tax</p>
               <p className="text-lg font-medium text-gray-900">
-                {visibleSaleSummary.totalVatAmount.toFixed(2)}
+                {cardSummary.totalVatAmount.toFixed(2)}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Sale Price</p>
               <p className="text-lg font-medium text-gray-900">
-                {formatAmount(visibleSaleSummary.totalInvoiceValue)}
+                {formatAmount(cardSummary.totalInvoiceValue)}
               </p>
             </div>
           </div>
@@ -1637,8 +1613,7 @@ const DocumentWiseDetails = () => {
 
                 {/* Results Count */}
                 <div className="text-xs text-gray-600">
-                  Showing {filteredAndSortedSale.length} of {dailySale.length}{" "}
-                  records
+                  Showing {dailySale.length} of {pagination.total} filtered record(s)
                 </div>
               </div>
 
@@ -1676,7 +1651,7 @@ const DocumentWiseDetails = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredAndSortedSale.length === 0 ? (
+                    {dailySale.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={9} className="text-center py-8">
                           <p className="text-gray-500 text-sm">
@@ -1685,7 +1660,7 @@ const DocumentWiseDetails = () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredAndSortedSale.map(
+                      dailySale.map(
                         (group: GroupedDailySale, index: number) => (
                           <TableRow
                             key={index}
@@ -1864,7 +1839,8 @@ const DocumentWiseDetails = () => {
                 <div className="lg:hidden">
                   <Pagination
                     align="center"
-                    defaultCurrent={1}
+                    current={Math.floor(pagination.skip / pagination.take) + 1}
+                    pageSize={pagination.take}
                     onChange={onChangePageCount}
                     showSizeChanger
                     total={pagination.total}
@@ -1875,7 +1851,8 @@ const DocumentWiseDetails = () => {
                   <Pagination
                     showQuickJumper
                     align="center"
-                    defaultCurrent={1}
+                    current={Math.floor(pagination.skip / pagination.take) + 1}
+                    pageSize={pagination.take}
                     onChange={onChangePageCount}
                     showSizeChanger
                     pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}

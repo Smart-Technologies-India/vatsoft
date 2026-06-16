@@ -159,9 +159,12 @@ model user {
   refinery_createdBy      refinery[]      @relation("refinery_createdBy")
   refinery_updatedBy      refinery[]      @relation("refinery_updatedBy")
   refinery_deletedBy      refinery[]      @relation("refinery_deletedBy")
-  refinery_sale_createdBy refinery_sale[] @relation("refinery_sale_createdBy")
-  refinery_sale_updatedBy refinery_sale[] @relation("refinery_sale_updatedBy")
-  refinery_sale_deletedBy refinery_sale[] @relation("refinery_sale_deletedBy")
+  refinery_sale_createdBy  refinery_sale[]  @relation("refinery_sale_createdBy")
+  refinery_sale_updatedBy  refinery_sale[]  @relation("refinery_sale_updatedBy")
+  refinery_sale_deletedBy  refinery_sale[]  @relation("refinery_sale_deletedBy")
+  refinery_price_createdBy refinery_price[] @relation("refinery_price_createdBy")
+  refinery_price_updatedBy refinery_price[] @relation("refinery_price_updatedBy")
+  refinery_price_deletedBy refinery_price[] @relation("refinery_price_deletedBy")
 }
 
 model change {
@@ -949,6 +952,7 @@ model commodity_master {
   tally_purchase               tally_purchase[]
   tally_sale                   tally_sale[]
   refinerySales                refinery_sale[]
+  refineryPrices               refinery_price[]
 
   @@index([createdById], map: "commodity_master_createdById_fkey")
   @@index([deletedById], map: "commodity_master_deletedById_fkey")
@@ -1642,6 +1646,7 @@ model refinery {
   updatedBy     user?             @relation("refinery_updatedBy", fields: [updatedById], references: [id])
   deletedBy     user?             @relation("refinery_deletedBy", fields: [deletedById], references: [id])
   refinerySales refinery_sale[]
+  refineryPrices refinery_price[]
 
   @@index([createdById], map: "refinery_createdById_fkey")
 }
@@ -1691,9 +1696,32 @@ model refinery_sale {
   updatedBy           user?             @relation("refinery_sale_updatedBy", fields: [updatedById], references: [id])
 }
 
-// model refinery_price{
+model refinery_price {
+  id                 Int              @id @default(autoincrement())
+  refineryId         Int
+  commodity_masterId Int
+  price              String
+  effective_date     DateTime
+  status             Status           @default(ACTIVE)
+  createdAt          DateTime         @default(now())
+  createdById        Int
+  updatedAt          DateTime         @updatedAt
+  updatedById        Int?
+  deletedAt          DateTime?
+  deletedById        Int?
+  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
+  refinery           refinery         @relation(fields: [refineryId], references: [id])
+  createdBy          user             @relation("refinery_price_createdBy", fields: [createdById], references: [id])
+  updatedBy          user?            @relation("refinery_price_updatedBy", fields: [updatedById], references: [id])
+  deletedBy          user?            @relation("refinery_price_deletedBy", fields: [deletedById], references: [id])
 
-// }
+  @@unique([refineryId, commodity_masterId, effective_date])
+  @@index([refineryId], map: "refinery_price_refineryId_fkey")
+  @@index([commodity_masterId], map: "refinery_price_commodity_masterId_fkey")
+  @@index([createdById], map: "refinery_price_createdById_fkey")
+  @@index([updatedById], map: "refinery_price_updatedById_fkey")
+  @@index([deletedById], map: "refinery_price_deletedById_fkey")
+}
 
 enum NotificationType {
   GENERAL

@@ -107,21 +107,25 @@ const Navbar = (props: NavbarProps) => {
   };
 
   const getCommodity = (): string => {
-    switch (props.commodity) {
-      case "MANUFACTURER":
-        return "Distillery";
-      case "FUEL":
-        return "Fuel-Retailer";
-      case "WHOLESALER":
-        return "Wholesaler";
-      case "LIQUOR":
-        return "Retailer";
-      case "OIDC":
-        return "OIDC";
-      case "OTHER":
-        return "Other";
-      default:
-        return "Retailer";
+    if (props.role == Role.USER) {
+      switch (props.commodity) {
+        case "MANUFACTURER":
+          return "Distillery";
+        case "FUEL":
+          return "Fuel-Retailer";
+        case "WHOLESALER":
+          return "Wholesaler";
+        case "LIQUOR":
+          return "Retailer";
+        case "OIDC":
+          return "OIDC";
+        case "OTHER":
+          return "Other";
+        default:
+          return "Retailer";
+      }
+    } else {
+      return "Department";
     }
   };
 

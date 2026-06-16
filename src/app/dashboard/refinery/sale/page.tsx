@@ -34,8 +34,11 @@ type RefinerySaleFormValues = {
   invoiceNumber: string;
   invoiceDate: string;
   selectedCommodityId?: string;
+  price: string;
   quantity: string;
 };
+
+const ALLOWED_COMMODITY_IDS = [1, 2, 748, 749];
 
 const toDateTimeLocalValue = (date: Date): string => {
   const pad = (value: number) => value.toString().padStart(2, "0");
@@ -100,6 +103,7 @@ const RefinerySalePage = () => {
       invoiceNumber: generateInvoiceNumber(),
       invoiceDate: toDateTimeLocalValue(new Date()),
       selectedCommodityId: undefined,
+      price: "",
       quantity: "1",
     },
   });
@@ -110,10 +114,12 @@ const RefinerySalePage = () => {
   const invoiceNumber = watch("invoiceNumber");
   const invoiceDate = watch("invoiceDate");
   const selectedCommodityId = watch("selectedCommodityId");
+  const price = Number.parseFloat(watch("price") ?? "0") || 0;
   const selectedCommodityIdNumber: number | undefined = selectedCommodityId
     ? Number.parseInt(String(selectedCommodityId), 10)
     : undefined;
-  const quantity = Number.parseInt(watch("quantity") ?? "1", 10) || 1;
+  const quantityInKL = Number.parseFloat(watch("quantity") ?? "1") || 1;
+  const quantityInLitres = quantityInKL * 1000;
 
   const selectedCommodity = useMemo(() => {
     return commodities.find(
@@ -122,9 +128,9 @@ const RefinerySalePage = () => {
   }, [commodities, selectedCommodityIdNumber]);
 
   const itemPrice = useMemo(() => {
-    const parsedPrice = Number.parseFloat(selectedCommodity?.sale_price ?? "0");
+    const parsedPrice = price;
     return Number.isFinite(parsedPrice) ? parsedPrice : 0;
-  }, [selectedCommodity]);
+  }, [price]);
 
   const taxPercent = useMemo(() => {
     const parsedTax = Number.parseFloat(selectedCommodity?.taxable_at ?? "0");
@@ -132,8 +138,8 @@ const RefinerySalePage = () => {
   }, [selectedCommodity]);
 
   const taxableValue = useMemo(() => {
-    return quantity * itemPrice;
-  }, [quantity, itemPrice]);
+    return quantityInLitres * itemPrice;
+  }, [quantityInLitres, itemPrice]);
 
   const vatAmount = useMemo(() => {
     return (taxableValue * taxPercent) / 100;
@@ -182,6 +188,7 @@ const RefinerySalePage = () => {
       invoiceNumber: generateInvoiceNumber(),
       invoiceDate: toDateTimeLocalValue(new Date()),
       selectedCommodityId: undefined,
+      price: "",
       quantity: "1",
     });
   };
@@ -202,7 +209,11 @@ const RefinerySalePage = () => {
       }
 
       if (commodityResponse.status && commodityResponse.data) {
-        setCommodities(commodityResponse.data);
+        setCommodities(
+          commodityResponse.data.filter((val) =>
+            ALLOWED_COMMODITY_IDS.includes(val.id),
+          ),
+        );
       }
 
       if (salesResponse.status && salesResponse.data) {
@@ -243,17 +254,30 @@ const RefinerySalePage = () => {
     }
 
     const parsedCommodityId = Number.parseInt(data.selectedCommodityId, 10);
-    const parsedQuantity = Number.parseInt(data.quantity, 10);
+    const parsedPrice = Number.parseFloat(data.price);
+    const parsedQuantityInKL = Number.parseFloat(data.quantity);
 
     if (!Number.isInteger(parsedCommodityId) || parsedCommodityId <= 0) {
       toast.error("Invalid item details selection.");
       return;
     }
 
-    if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
-      toast.error("Quantity must be a positive whole number.");
+    if (!ALLOWED_COMMODITY_IDS.includes(parsedCommodityId)) {
+      toast.error("Only allowed refinery commodities can be selected.");
       return;
     }
+
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+      toast.error("Price must be greater than 0.");
+      return;
+    }
+
+    if (!Number.isFinite(parsedQuantityInKL) || parsedQuantityInKL <= 0) {
+      toast.error("Quantity (kL) must be greater than 0.");
+      return;
+    }
+
+    const parsedQuantityInLitres = parsedQuantityInKL * 1000;
 
     setIsSubmitting(true);
 
@@ -263,7 +287,8 @@ const RefinerySalePage = () => {
         invoice_number: data.invoiceNumber,
         invoice_date: new Date(data.invoiceDate),
         commodity_master_id: parsedCommodityId,
-        quantity: parsedQuantity,
+        price: parsedPrice,
+        quantity: parsedQuantityInLitres,
       });
 
       if (!response.status || !response.data) {
@@ -341,18 +366,13 @@ const RefinerySalePage = () => {
           placement="right"
           open={isDrawerOpen}
           onClose={() => setIsDrawerOpen(false)}
-          width={460}
+          size={660}
         >
           <FormProvider {...methods}>
             <form
               onSubmit={handleSubmit(handleCreateSale)}
               className="space-y-3"
             >
-              <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
-                🔒 Locked fields: Invoice No, Invoice Date, and calculated
-                values
-              </div>
-
               <div className="space-y-1">
                 <MultiSelect<RefinerySaleFormValues>
                   name="purchaserTin"
@@ -392,18 +412,26 @@ const RefinerySalePage = () => {
                   required={true}
                   options={commodities.map((commodity) => ({
                     value: commodity.id.toString(),
-                    label: `${commodity.product_name} | Price: ${commodity.sale_price}`,
+                    label: `${commodity.product_name} (${commodity.id})`,
                   }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <TaxtInput<RefinerySaleFormValues>
+                  name="price"
+                  title="Price"
+                  placeholder="Enter price"
+                  required={true}
                 />
               </div>
 
               <div className="space-y-1">
                 <TaxtInput<RefinerySaleFormValues>
                   name="quantity"
-                  title="Quantity"
-                  placeholder="Enter Quantity"
+                  title="Quantity (kL)"
+                  placeholder="Enter Quantity in kL"
                   required={true}
-                  onlynumber={true}
+                  numdes={true}
                 />
               </div>
 
@@ -421,9 +449,11 @@ const RefinerySalePage = () => {
                     </p>
                   </div>
                   <div className="rounded bg-white px-2 py-1.5">
-                    <p className="text-xs font-medium text-gray-600">Tax %</p>
+                    <p className="text-xs font-medium text-gray-600">
+                      Quantity in Liter
+                    </p>
                     <p className="text-sm font-semibold text-gray-900">
-                      {formatCurrency(taxPercent)}
+                      {formatCurrency(quantityInLitres)}
                     </p>
                   </div>
                 </div>
@@ -431,6 +461,12 @@ const RefinerySalePage = () => {
 
               <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">
                 <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded bg-white px-2 py-1.5">
+                    <p className="text-xs font-medium text-gray-600">Tax %</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {formatCurrency(taxPercent)}
+                    </p>
+                  </div>
                   <div className="rounded bg-white px-2 py-1.5">
                     <p className="text-xs font-medium text-gray-600">
                       Taxable Value
@@ -447,16 +483,15 @@ const RefinerySalePage = () => {
                       {formatCurrency(vatAmount)}
                     </p>
                   </div>
+                  <div className="rounded bg-white px-2 py-1.5">
+                    <p className="text-xs font-medium text-gray-600">
+                      Total Invoice Value
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {formatCurrency(formDrawerTotalInvoiceValue)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-
-              <div className="rounded bg-white px-2 py-1.5">
-                <p className="text-xs font-medium text-gray-600">
-                  Total Invoice Value
-                </p>
-                <p className="text-sm font-semibold text-gray-900">
-                  {formatCurrency(formDrawerTotalInvoiceValue)}
-                </p>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">

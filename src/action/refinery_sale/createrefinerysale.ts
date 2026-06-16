@@ -11,8 +11,11 @@ interface CreateRefinerySalePayload {
   invoice_number?: string;
   invoice_date?: Date;
   commodity_master_id: number;
+  price: number;
   quantity: number;
 }
+
+const ALLOWED_COMMODITY_IDS = [1, 2, 748, 749];
 
 type RefinerySaleWithRelations = refinery_sale & {
   commodity_master: commodity_master;
@@ -106,14 +109,28 @@ const CreateRefinerySale = async (
       });
     }
 
-    if (!Number.isInteger(payload.quantity) || payload.quantity <= 0) {
+    if (!ALLOWED_COMMODITY_IDS.includes(commodityResponse.id)) {
       return createResponse({
-        message: "Quantity must be a positive whole number.",
+        message: "Selected item is not allowed for refinery sale.",
         functionname,
       });
     }
 
-    const salePrice = Number.parseFloat(commodityResponse.sale_price || "0");
+    if (!Number.isFinite(payload.quantity) || payload.quantity <= 0) {
+      return createResponse({
+        message: "Quantity must be greater than 0.",
+        functionname,
+      });
+    }
+
+    if (!Number.isFinite(payload.price) || payload.price <= 0) {
+      return createResponse({
+        message: "Price must be greater than 0.",
+        functionname,
+      });
+    }
+
+    const salePrice = Number(payload.price);
     const taxPercent = Number.parseFloat(commodityResponse.taxable_at || "0");
 
     if (!Number.isFinite(salePrice) || salePrice <= 0) {
@@ -133,7 +150,9 @@ const CreateRefinerySale = async (
     const taxableAmount = salePrice * payload.quantity;
     const vatAmount = (taxableAmount * taxPercent) / 100;
 
-    const invoiceDate = payload.invoice_date ? new Date(payload.invoice_date) : new Date();
+    const invoiceDate = payload.invoice_date
+      ? new Date(payload.invoice_date)
+      : new Date();
     const invoiceNumber = payload.invoice_number?.trim() || buildInvoiceNumber();
 
     const existingInvoice = await prisma.refinery_sale.findFirst({

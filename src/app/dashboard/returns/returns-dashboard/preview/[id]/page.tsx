@@ -2,7 +2,6 @@
 "use client";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import {
-  decryptURLData,
   encryptURLData,
   formatDateTime,
   formateDate,
@@ -56,12 +55,8 @@ const Dvat16ReturnPreview = () => {
   const router = useRouter();
 
   const { id } = useParams<{ id: string | string[] }>();
-  // const userid: number = parseInt(
-  //   decryptURLData(Array.isArray(id) ? id[0] : id, router),
-  // );
 
   const [isDownload, setDownload] = useState<boolean>(false);
-  // const [current_user_id, setCurrentUserId] = useState<number>(0);
 
   const [return01, setReturn01] = useState<
     (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
@@ -73,7 +68,7 @@ const Dvat16ReturnPreview = () => {
   const [paymentSubmitBox, setPaymentSubmitBox] = useState<boolean>(false);
   const searchparam = useSearchParams();
   const [user, setUser] = useState<user | null>();
-  const [isAllNil, setAllNil] = useState<boolean>(false);
+  // const [isAllNil, setAllNil] = useState<boolean>(false);
   const [lateFees, setLateFees] = useState<number>(0);
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
   const [InterestDiffDays, setInterestDiffDays] = useState<number>(0);
@@ -296,7 +291,7 @@ const Dvat16ReturnPreview = () => {
               val.dvat_type == DvatType.DVAT_31_A && val.isnil == true,
           ).length > 0;
 
-        setAllNil(dvat_30 && dvat_30a && dvat_31 && dvat_31a);
+        // setAllNil(dvat_30 && dvat_30a && dvat_31 && dvat_31a);
 
         getLateFees(
           selectedReturn.year,
@@ -315,7 +310,7 @@ const Dvat16ReturnPreview = () => {
       } else {
         setReturn01(null);
         serReturns_entryData([]);
-        setAllNil(false);
+        // setAllNil(false);
         setPaidChallans([]);
       }
 

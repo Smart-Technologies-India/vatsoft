@@ -186,7 +186,12 @@ const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
         ...(isManufacturerCommodity
           ? { "Quantity in Crates": 2 }
           : { Quantity: 24 }),
-        "Total Invoice Value": 12000,
+        ...(commodityType === "WHOLESALER"
+          ? {
+              "Item Value": 12000,
+              "Total Invoice Value": 20600,
+            }
+          : { "Total Invoice Value": 12000 }),
         ...getCommoditySpecificColumns(1),
       },
       {
@@ -197,7 +202,12 @@ const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
         ...(isManufacturerCommodity
           ? { "Quantity in Crates": 1 }
           : { Quantity: 12 }),
-        "Total Invoice Value": 8600,
+        ...(commodityType === "WHOLESALER"
+          ? {
+              "Item Value": 8600,
+              "Total Invoice Value": 20600,
+            }
+          : { "Total Invoice Value": 8600 }),
         ...getCommoditySpecificColumns(2),
       },
       {
@@ -208,7 +218,12 @@ const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
         ...(isManufacturerCommodity
           ? { "Quantity in Crates": 3 }
           : { Quantity: 30 }),
-        "Total Invoice Value": 15000,
+        ...(commodityType === "WHOLESALER"
+          ? {
+              "Item Value": 15000,
+              "Total Invoice Value": 15000,
+            }
+          : { "Total Invoice Value": 15000 }),
         ...getCommoditySpecificColumns(3),
       },
     ];
@@ -246,10 +261,22 @@ const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
           ? "Enter crates only. System will automatically convert crates to pieces using commodity crate size."
           : "Enter pieces only (not crate, not words like twenty four).",
       },
+      ...(commodityType === "WHOLESALER"
+        ? [
+            {
+              Field: "Item Value",
+              "What to fill": "Per-item invoice value",
+              Rules:
+                "Enter each line item value. System allocates invoice-level adjustments proportionally using Total Invoice Value.",
+            },
+          ]
+        : []),
       {
         Field: "Total Invoice Value",
         "What to fill": "Item-wise amount inclusive of VAT",
-        Rules: isManufacturerCommodity
+        Rules: commodityType === "WHOLESALER"
+          ? "For rows of the same invoice, keep this value identical. This is invoice-level total and must be greater than 0."
+          : isManufacturerCommodity
           ? "If multiple items in same invoice, enter value separately for each item row. Tax will be calculated at 0%."
           : "If multiple items in same invoice, enter value separately for each item row. Must be inclusive of VAT.",
       },

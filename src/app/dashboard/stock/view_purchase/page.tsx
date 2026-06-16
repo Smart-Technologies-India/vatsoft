@@ -9,6 +9,7 @@ import GetUserDailyPurchase, {
   DailyPurchaseSummary,
   GroupedDailyPurchase,
 } from "@/action/stock/getuserdailypurchase";
+import GetUserDailyPurchaseFiltered from "@/action/stock/getuserdailypurchasefiltered";
 import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
 import { PurchaseCreditNoteDrawer } from "@/components/forms/purchasecreditnote/purchasecreditnotedrawer";
 import { PurchaseDebitNoteDrawer } from "@/components/forms/purchasedebitnote/purchasedebitnotedrawer";
@@ -36,11 +37,23 @@ import {
   RadioChangeEvent,
 } from "antd";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import PurchaseBulk from "./purchasebulk";
 import DownloadPurchaseSample from "./downloadpurchasesample";
+
+type DailyPurchaseFilteredSummary = {
+  overallSummary: DailyPurchaseSummary;
+  filteredSummary: DailyPurchaseSummary;
+};
+
+const DEFAULT_PURCHASE_SUMMARY: DailyPurchaseSummary = {
+  totalInvoices: 0,
+  totalTaxableValue: 0,
+  totalVatAmount: 0,
+  totalInvoiceValue: 0,
+};
 
 const DocumentWiseDetails = () => {
   const router = useRouter();
@@ -70,7 +83,7 @@ const DocumentWiseDetails = () => {
     skip: number;
     total: number;
   }>({
-    take: 10,
+    take: 25,
     skip: 0,
     total: 0,
   });
@@ -80,12 +93,10 @@ const DocumentWiseDetails = () => {
   const [dailyPurchase, setDailyPurchase] = useState<
     Array<GroupedDailyPurchase>
   >([]);
-  const [purchaseSummary, setPurchaseSummary] = useState<DailyPurchaseSummary>({
-    totalInvoices: 0,
-    totalTaxableValue: 0,
-    totalVatAmount: 0,
-    totalInvoiceValue: 0,
-  });
+  const [overallPurchaseSummary, setOverallPurchaseSummary] =
+    useState<DailyPurchaseSummary>(DEFAULT_PURCHASE_SUMMARY);
+  const [filteredPurchaseSummary, setFilteredPurchaseSummary] =
+    useState<DailyPurchaseSummary>(DEFAULT_PURCHASE_SUMMARY);
 
   const [selectedGroup, setSelectedGroup] =
     useState<GroupedDailyPurchase | null>(null);
@@ -135,39 +146,81 @@ const DocumentWiseDetails = () => {
     // },
   ];
 
+  const fetchPurchasePage = useCallback(
+    async ({
+      dvatid,
+      skip,
+      take,
+      search,
+      sortBy,
+      order,
+      startDate,
+      endDate,
+      acceptFilter,
+    }: {
+      dvatid: number;
+      skip: number;
+      take: number;
+      search: string;
+      sortBy: "invoice_number" | "invoice_date" | "trade_name" | "tin_number" | "invoice_value";
+      order: "asc" | "desc";
+      startDate: string;
+      endDate: string;
+      acceptFilter: "all" | "pending" | "accepted";
+    }) => {
+      const response = await GetUserDailyPurchaseFiltered({
+        dvatid,
+        skip,
+        take,
+        searchTerm: search,
+        sortField: sortBy,
+        sortOrder: order,
+        startDate,
+        endDate,
+        acceptStatusFilter: acceptFilter,
+      });
+
+      if (response.status && response.data.result) {
+        setDailyPurchase(response.data.result);
+        setPaginatin({
+          skip: response.data.skip,
+          take: response.data.take,
+          total: response.data.total,
+        });
+
+        const summary = response.data.summary as
+          | DailyPurchaseFilteredSummary
+          | undefined;
+        setOverallPurchaseSummary(
+          summary?.overallSummary ?? DEFAULT_PURCHASE_SUMMARY,
+        );
+        setFilteredPurchaseSummary(
+          summary?.filteredSummary ?? DEFAULT_PURCHASE_SUMMARY,
+        );
+      }
+
+      return response;
+    },
+    [],
+  );
+
   const init = async () => {
     setLoading(true);
     const dvat_response = await GetUserDvat04();
 
     if (dvat_response.status && dvat_response.data) {
       setDvatData(dvat_response.data);
-      const daily_purchase_response = await GetUserDailyPurchase({
+      await fetchPurchasePage({
         dvatid: dvat_response.data.id,
         skip: 0,
-        take: 10,
+        take: 25,
+        search: "",
+        sortBy: "invoice_date",
+        order: "desc",
+        startDate: "",
+        endDate: "",
+        acceptFilter: "all",
       });
-
-      if (
-        daily_purchase_response.status &&
-        daily_purchase_response.data.result
-      ) {
-        setPaginatin({
-          skip: daily_purchase_response.data.skip,
-          take: daily_purchase_response.data.take,
-          total: daily_purchase_response.data.total,
-        });
-        setDailyPurchase(daily_purchase_response.data.result);
-        setPurchaseSummary(
-          (daily_purchase_response.data.summary as
-            | DailyPurchaseSummary
-            | undefined) ?? {
-            totalInvoices: 0,
-            totalTaxableValue: 0,
-            totalVatAmount: 0,
-            totalInvoiceValue: 0,
-          },
-        );
-      }
     }
 
     setLoading(false);
@@ -187,39 +240,23 @@ const DocumentWiseDetails = () => {
 
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);
-        const daily_purchase_response = await GetUserDailyPurchase({
+        await fetchPurchasePage({
           dvatid: dvat_response.data.id,
           skip: 0,
-          take: 10,
+          take: 25,
+          search: "",
+          sortBy: "invoice_date",
+          order: "desc",
+          startDate: "",
+          endDate: "",
+          acceptFilter: "all",
         });
-
-        if (
-          daily_purchase_response.status &&
-          daily_purchase_response.data.result
-        ) {
-          setPaginatin({
-            skip: daily_purchase_response.data.skip,
-            take: daily_purchase_response.data.take,
-            total: daily_purchase_response.data.total,
-          });
-          setDailyPurchase(daily_purchase_response.data.result);
-          setPurchaseSummary(
-            (daily_purchase_response.data.summary as
-              | DailyPurchaseSummary
-              | undefined) ?? {
-              totalInvoices: 0,
-              totalTaxableValue: 0,
-              totalVatAmount: 0,
-              totalInvoiceValue: 0,
-            },
-          );
-        }
       }
 
       setLoading(false);
     };
     init();
-  }, [userid, router]);
+  }, [userid, router, fetchPurchasePage]);
 
   useEffect(() => {
     let mounted = true;
@@ -352,30 +389,19 @@ const DocumentWiseDetails = () => {
   };
 
   const onChangePageCount = async (page: number, pagesize: number) => {
-    const daily_purchase_response = await GetUserDailyPurchase({
-      dvatid: dvatdata!.id,
+    if (!dvatdata?.id) return;
+
+    await fetchPurchasePage({
+      dvatid: dvatdata.id,
       take: pagesize,
       skip: pagesize * (page - 1),
+      search: searchTerm,
+      sortBy: sortField,
+      order: sortOrder,
+      startDate: dateFilter.startDate,
+      endDate: dateFilter.endDate,
+      acceptFilter: acceptStatusFilter,
     });
-
-    if (daily_purchase_response.status && daily_purchase_response.data.result) {
-      setDailyPurchase(daily_purchase_response.data.result);
-      setPaginatin({
-        skip: daily_purchase_response.data.skip,
-        take: daily_purchase_response.data.take,
-        total: daily_purchase_response.data.total,
-      });
-      setPurchaseSummary(
-        (daily_purchase_response.data.summary as
-          | DailyPurchaseSummary
-          | undefined) ?? {
-          totalInvoices: 0,
-          totalTaxableValue: 0,
-          totalVatAmount: 0,
-          totalInvoiceValue: 0,
-        },
-      );
-    }
   };
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPurchaseConfirmed, setIsPurchaseConfirmed] = useState(false);
@@ -444,7 +470,8 @@ const DocumentWiseDetails = () => {
     };
   };
 
-  const hasAnyPendingAcceptableAcrossAll = async (): Promise<boolean> => {
+  const hasPendingAcceptableForApplicablePeriodAcrossAll =
+    async (): Promise<boolean> => {
     if (!dvatdata) return false;
 
     const allPurchaseResponse = await GetUserDailyPurchase({
@@ -460,14 +487,49 @@ const DocumentWiseDetails = () => {
       return true;
     }
 
-    return allPurchaseResponse.data.result.some((group) =>
-      group.records.some(
-        (record) =>
-          (record.seller_tin_number.tin_number.startsWith("25") ||
-            record.seller_tin_number.tin_number.startsWith("26")) &&
-          !record.is_accept,
-      ),
+    const groups = allPurchaseResponse.data.result;
+    if (groups.length === 0) {
+      return false;
+    }
+
+    const april2026 = new Date(2026, 3, 1);
+    const startOfMonth = (date: Date) =>
+      new Date(date.getFullYear(), date.getMonth(), 1);
+    const addMonths = (date: Date, months: number) =>
+      new Date(date.getFullYear(), date.getMonth() + months, 1);
+
+    const lowestInvoiceDate = groups.reduce(
+      (minDate, group) => {
+        const groupDate = new Date(group.invoice_date);
+        return groupDate < minDate ? groupDate : minDate;
+      },
+      new Date(groups[0].invoice_date),
     );
+
+    const targetStartDate =
+      startOfMonth(lowestInvoiceDate).getTime() < april2026.getTime()
+        ? april2026
+        : startOfMonth(lowestInvoiceDate);
+    const targetEndDate = addMonths(targetStartDate, 1);
+
+    const isInTargetPeriod = (invoiceDate: Date): boolean => {
+      if (targetStartDate.getTime() === april2026.getTime()) {
+        return invoiceDate < targetEndDate;
+      }
+
+      return invoiceDate >= targetStartDate && invoiceDate < targetEndDate;
+    };
+
+    return groups
+      .filter((group) => isInTargetPeriod(new Date(group.invoice_date)))
+      .some((group) =>
+        group.records.some(
+          (record) =>
+            (record.seller_tin_number.tin_number.startsWith("25") ||
+              record.seller_tin_number.tin_number.startsWith("26")) &&
+            !record.is_accept,
+        ),
+      );
   };
 
   const Convertto30a = async () => {
@@ -475,7 +537,10 @@ const DocumentWiseDetails = () => {
       return toast.error("DVAT not found.");
     }
 
-    if (hasPendingAcceptable || (await hasAnyPendingAcceptableAcrossAll())) {
+    if (
+      hasPendingAcceptable ||
+      (await hasPendingAcceptableForApplicablePeriodAcrossAll())
+    ) {
       return toast.error(
         "Please accept all pending purchase invoices before generating DVAT 30/30 A.",
       );
@@ -768,6 +833,36 @@ const DocumentWiseDetails = () => {
   const [acceptStatusFilter, setAcceptStatusFilter] = useState<
     "all" | "pending" | "accepted"
   >("all");
+
+  useEffect(() => {
+    const loadFilteredPage = async () => {
+      if (!dvatdata?.id) return;
+
+      await fetchPurchasePage({
+        dvatid: dvatdata.id,
+        skip: 0,
+        take: pagination.take,
+        search: searchTerm,
+        sortBy: sortField,
+        order: sortOrder,
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+        acceptFilter: acceptStatusFilter,
+      });
+    };
+
+    loadFilteredPage();
+  }, [
+    dvatdata?.id,
+    pagination.take,
+    searchTerm,
+    sortField,
+    sortOrder,
+    dateFilter.startDate,
+    dateFilter.endDate,
+    acceptStatusFilter,
+    fetchPurchasePage,
+  ]);
 
   const downloadDailyPurchaseReport = async () => {
     if (!dvatdata) {
@@ -1096,114 +1191,18 @@ const DocumentWiseDetails = () => {
     (group) => group.hasPendingAcceptable,
   );
 
-  // Filtered and sorted daily purchase data
-  const filteredAndSortedPurchase = useMemo(() => {
-    let filtered = [...dailyPurchase];
+  const isFilterApplied = useMemo(
+    () =>
+      searchTerm.trim() !== "" ||
+      dateFilter.startDate !== "" ||
+      dateFilter.endDate !== "" ||
+      acceptStatusFilter !== "all",
+    [searchTerm, dateFilter.startDate, dateFilter.endDate, acceptStatusFilter],
+  );
 
-    // Apply search filter
-    if (searchTerm.trim() !== "") {
-      const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (group) =>
-          group.invoice_number.toLowerCase().includes(search) ||
-          group.seller_tin_number.name_of_dealer
-            .toLowerCase()
-            .includes(search) ||
-          group.seller_tin_number.tin_number.includes(search),
-      );
-    }
-
-    // Apply date filter
-    if (dateFilter.startDate || dateFilter.endDate) {
-      filtered = filtered.filter((group) => {
-        const invoiceDate = new Date(group.invoice_date);
-        const startDate = dateFilter.startDate
-          ? new Date(dateFilter.startDate)
-          : null;
-        const endDate = dateFilter.endDate
-          ? new Date(dateFilter.endDate)
-          : null;
-
-        if (startDate && invoiceDate < startDate) return false;
-        if (endDate && invoiceDate > endDate) return false;
-        return true;
-      });
-    }
-
-    // Apply accept status filter
-    if (acceptStatusFilter !== "all") {
-      filtered = filtered.filter((group) => {
-        const hasPending = group.records.some(
-          (r) =>
-            (r.seller_tin_number.tin_number.startsWith("25") ||
-              r.seller_tin_number.tin_number.startsWith("26")) &&
-            !r.is_accept,
-        );
-
-        if (acceptStatusFilter === "pending") return hasPending;
-        if (acceptStatusFilter === "accepted") return !hasPending;
-        return true;
-      });
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let compareValue = 0;
-
-      switch (sortField) {
-        case "invoice_number":
-          compareValue = a.invoice_number.localeCompare(b.invoice_number);
-          break;
-        case "invoice_date":
-          compareValue =
-            new Date(a.invoice_date).getTime() -
-            new Date(b.invoice_date).getTime();
-          break;
-        case "trade_name":
-          compareValue = a.seller_tin_number.name_of_dealer.localeCompare(
-            b.seller_tin_number.name_of_dealer,
-          );
-          break;
-        case "tin_number":
-          compareValue = a.seller_tin_number.tin_number.localeCompare(
-            b.seller_tin_number.tin_number,
-          );
-          break;
-        case "invoice_value":
-          compareValue = a.totalInvoiceValue - b.totalInvoiceValue;
-          break;
-      }
-
-      return sortOrder === "asc" ? compareValue : -compareValue;
-    });
-
-    return filtered;
-  }, [
-    dailyPurchase,
-    searchTerm,
-    sortField,
-    sortOrder,
-    dateFilter,
-    acceptStatusFilter,
-  ]);
-
-  const visiblePurchaseSummary = useMemo(() => {
-    return filteredAndSortedPurchase.reduce(
-      (acc, group) => {
-        acc.totalInvoices += 1;
-        acc.totalTaxableValue += group.totalTaxableValue;
-        acc.totalVatAmount += group.totalVatAmount;
-        acc.totalInvoiceValue += group.totalInvoiceValue;
-        return acc;
-      },
-      {
-        totalInvoices: 0,
-        totalTaxableValue: 0,
-        totalVatAmount: 0,
-        totalInvoiceValue: 0,
-      },
-    );
-  }, [filteredAndSortedPurchase]);
+  const cardSummary = isFilterApplied
+    ? filteredPurchaseSummary
+    : overallPurchaseSummary;
 
   if (isLoading)
     return (
@@ -1835,7 +1834,7 @@ const DocumentWiseDetails = () => {
                                 setToolbarActionsOpen(false);
                                 if (
                                   hasPendingAcceptable ||
-                                  (await hasAnyPendingAcceptableAcrossAll())
+                                  (await hasPendingAcceptableForApplicablePeriodAcrossAll())
                                 ) {
                                   toast.error(
                                     "Please accept all pending purchase invoices before generating DVAT 30/30 A.",
@@ -1935,28 +1934,28 @@ const DocumentWiseDetails = () => {
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
               <p className="text-lg font-medium text-gray-900">
-                {visiblePurchaseSummary.totalInvoices}
+                {cardSummary.totalInvoices}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Invoice Value</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹{visiblePurchaseSummary.totalInvoiceValue.toFixed(2)}
+                ₹{cardSummary.totalInvoiceValue.toFixed(2)}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Tax</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹{visiblePurchaseSummary.totalVatAmount.toFixed(2)}
+                ₹{cardSummary.totalVatAmount.toFixed(2)}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Taxable Value</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹{visiblePurchaseSummary.totalTaxableValue.toFixed(2)}
+                ₹{cardSummary.totalTaxableValue.toFixed(2)}
               </p>
             </div>
           </div>
@@ -2097,8 +2096,7 @@ const DocumentWiseDetails = () => {
 
                 {/* Results Count */}
                 <div className="text-xs text-gray-600">
-                  Showing {filteredAndSortedPurchase.length} of{" "}
-                  {dailyPurchase.length} records
+                  Showing {dailyPurchase.length} of {pagination.total} filtered record(s)
                 </div>
               </div>
 
@@ -2136,7 +2134,7 @@ const DocumentWiseDetails = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredAndSortedPurchase.length === 0 ? (
+                    {dailyPurchase.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={9} className="text-center py-8">
                           <p className="text-gray-500 text-sm">
@@ -2145,7 +2143,7 @@ const DocumentWiseDetails = () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredAndSortedPurchase.map(
+                      dailyPurchase.map(
                         (group: GroupedDailyPurchase, index: number) => (
                           <TableRow
                             key={index}
@@ -2361,7 +2359,8 @@ const DocumentWiseDetails = () => {
                 <div className="lg:hidden">
                   <Pagination
                     align="center"
-                    defaultCurrent={1}
+                    current={Math.floor(pagination.skip / pagination.take) + 1}
+                    pageSize={pagination.take}
                     onChange={onChangePageCount}
                     showSizeChanger
                     total={pagination.total}
@@ -2372,7 +2371,8 @@ const DocumentWiseDetails = () => {
                   <Pagination
                     showQuickJumper
                     align="center"
-                    defaultCurrent={1}
+                    current={Math.floor(pagination.skip / pagination.take) + 1}
+                    pageSize={pagination.take}
                     onChange={onChangePageCount}
                     showSizeChanger
                     pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}

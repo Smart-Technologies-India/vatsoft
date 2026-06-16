@@ -53,6 +53,7 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
     item_code: number;
     quantity: number; // Always in pieces for database storage
     quantity_in_crates: number | null; // Original crate quantity (for MANUFACTURER/WHOLESALER)
+    item_value: number | null; // Original item value from sheet (used for WHOLESALER proportional allocation)
     total_invoice_value: number;
     purchase_type: string;
     against_cfrom: boolean;
@@ -294,6 +295,9 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
     if (["false", "no", "n", "0"].includes(normalized)) return false;
     return null;
   };
+
+  const roundToTwo = (value: number): number =>
+    Math.round((value + Number.EPSILON) * 100) / 100;
   const sellerTinNameMap = useMemo(() => {
     const map: Record<number, string> = {};
     for (const tin of tindata) {
@@ -434,6 +438,13 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
             "total invoice value",
             "total_invoice_value",
           ]);
+          const item_value_raw = readSheetField(row, [
+            "Item Value",
+            "item value",
+            "item_value",
+            "Invoice Item Value",
+            "invoice item value",
+          ]);
           const against_cfrom_raw = readSheetField(row, [
             "Is Against C Form",
             "is against c form",
@@ -499,6 +510,7 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
             normalizeText(invoice_date_raw) === "" &&
             normalizeText(item_code_raw) === "" &&
             normalizeText(quantity_raw) === "" &&
+            normalizeText(item_value_raw) === "" &&
             normalizeText(total_invoice_value_raw) === "" &&
             normalizeText(against_cfrom_raw) === "" &&
             normalizeText(is_against_fform_raw) === "" &&
@@ -611,8 +623,21 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
                 ? parsedQuantity
                 : 0;
 
+          const item_value = parseExcelNumber(item_value_raw);
           const total_invoice_value = parseExcelNumber(total_invoice_value_raw);
-          if (
+
+          if (commodityType === "WHOLESALER") {
+            if (!Number.isFinite(item_value) || item_value <= 0) {
+              errors.push("* Item Value must be greater than 0");
+            }
+
+            if (
+              !Number.isFinite(total_invoice_value) ||
+              total_invoice_value <= 0
+            ) {
+              errors.push("* Total Invoice Value must be greater than 0");
+            }
+          } else if (
             !Number.isFinite(total_invoice_value) ||
             total_invoice_value <= 0
           ) {
@@ -842,6 +867,7 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
               ? normalizedQuantity
               : 0,
             quantity_in_crates: quantityInCrates,
+            item_value: Number.isFinite(item_value) ? item_value : null,
             total_invoice_value: Number.isFinite(total_invoice_value)
               ? total_invoice_value
               : 0,
@@ -888,6 +914,106 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
                   "\n* Invoice month of all entries must be the same"
                 : "* Invoice month of all entries must be the same";
             }
+          });
+        }
+      }
+
+      // WHOLESALER only: Column F is item value, Column G is invoice total.
+      // Distribute invoice-level difference proportionally per row and store final item value.
+      if (commodityType === "WHOLESALER") {
+        const invoiceGroups = new Map<string, BulkSheetData[]>();
+
+        for (const row of parsedRows) {
+          const key = row.invoice_no.trim();
+          if (!invoiceGroups.has(key)) {
+            invoiceGroups.set(key, []);
+          }
+          invoiceGroups.get(key)!.push(row);
+        }
+
+        for (const [, invoiceRows] of invoiceGroups) {
+          const validItemRows = invoiceRows.filter(
+            (row) => row.item_value != null && Number.isFinite(row.item_value),
+          );
+          const validTotalRows = invoiceRows.filter(
+            (row) =>
+              Number.isFinite(row.total_invoice_value) &&
+              row.total_invoice_value > 0,
+          );
+
+          if (validItemRows.length !== invoiceRows.length) {
+            invoiceRows.forEach((row) => {
+              if (!row.errorname.includes("* Item Value must be greater than 0")) {
+                row.error = true;
+                row.errorname = row.errorname
+                  ? row.errorname + "\n* Item Value must be greater than 0"
+                  : "* Item Value must be greater than 0";
+              }
+            });
+            continue;
+          }
+
+          if (validTotalRows.length !== invoiceRows.length) {
+            invoiceRows.forEach((row) => {
+              if (
+                !row.errorname.includes(
+                  "* Total Invoice Value must be greater than 0",
+                )
+              ) {
+                row.error = true;
+                row.errorname = row.errorname
+                  ? row.errorname + "\n* Total Invoice Value must be greater than 0"
+                  : "* Total Invoice Value must be greater than 0";
+              }
+            });
+            continue;
+          }
+
+          const invoiceTotal = invoiceRows[0].total_invoice_value;
+          const hasMismatchedInvoiceTotal = invoiceRows.some(
+            (row) => row.total_invoice_value !== invoiceTotal,
+          );
+
+          if (hasMismatchedInvoiceTotal) {
+            invoiceRows.forEach((row) => {
+              row.error = true;
+              row.errorname = row.errorname
+                ? row.errorname + "\n* Total Invoice Value must be same for all rows of an invoice"
+                : "* Total Invoice Value must be same for all rows of an invoice";
+            });
+            continue;
+          }
+
+          const sumOfItemValues = invoiceRows.reduce(
+            (sum, row) => sum + Number(row.item_value ?? 0),
+            0,
+          );
+
+          if (!Number.isFinite(sumOfItemValues) || sumOfItemValues <= 0) {
+            invoiceRows.forEach((row) => {
+              row.error = true;
+              row.errorname = row.errorname
+                ? row.errorname + "\n* Sum of Item Value for invoice must be greater than 0"
+                : "* Sum of Item Value for invoice must be greater than 0";
+            });
+            continue;
+          }
+
+          let allocatedRunningTotal = 0;
+          invoiceRows.forEach((row, rowIndex) => {
+            if (rowIndex === invoiceRows.length - 1) {
+              row.total_invoice_value = roundToTwo(
+                invoiceTotal - allocatedRunningTotal,
+              );
+              return;
+            }
+
+            const proportion = Number(row.item_value ?? 0) / sumOfItemValues;
+            const finalItemValue = roundToTwo(proportion * invoiceTotal);
+            row.total_invoice_value = finalItemValue;
+            allocatedRunningTotal = roundToTwo(
+              allocatedRunningTotal + finalItemValue,
+            );
           });
         }
       }
