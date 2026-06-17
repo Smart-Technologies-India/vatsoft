@@ -114,7 +114,8 @@ const RefineryLoginOtp = async (
 
     cookieStore.set("auth_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      // secure: process.env.NODE_ENV === "production",
+      secure: false, // Only over HTTPS in production
       sameSite: "strict",
       maxAge: 60 * 60 * 24 * 7,
       path: "/",

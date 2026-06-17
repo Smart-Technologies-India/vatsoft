@@ -869,7 +869,7 @@ const CommodityMaster = () => {
                   View Purchase
                 </Button>
 
-                {/* {dvatdata?.commodity == "FUEL" && (
+                {dvatdata?.commodity == "FUEL" && (
                   <Button
                     size="small"
                     type="default"
@@ -877,7 +877,7 @@ const CommodityMaster = () => {
                   >
                     Refinery Purchase
                   </Button>
-                )} */}
+                )}
                 {/* {dvatdata && (dvatdata.commodity == "MANUFACTURER") && (
                   <Button
                     size="small"

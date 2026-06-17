@@ -120,7 +120,8 @@ const LoginOtp = async (
     // Set httpOnly secure cookie
     cookieStore.set("auth_token", token, {
       httpOnly: true, // Cannot be accessed by JavaScript
-      secure: process.env.NODE_ENV === "production", // Only over HTTPS in production
+      // secure: process.env.NODE_ENV === "production", // Only over HTTPS in production
+      secure: false, // Only over HTTPS in production
       sameSite: "strict", // CSRF protection
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
