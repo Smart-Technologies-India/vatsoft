@@ -8,6 +8,7 @@ import prisma from "../../../prisma/database";
 const ALLOWED_COMMODITY_IDS = [1, 2, 748, 749];
 
 interface AddRefineryDayPricePayload {
+  dvatId: number;
   commodityMasterId: number;
   price: number;
   effectiveDate: string;
@@ -32,6 +33,13 @@ const AddRefineryDayPrice = async (
     if (!payload.commodityMasterId || payload.commodityMasterId <= 0) {
       return createResponse({
         message: "Commodity is required.",
+        functionname,
+      });
+    }
+
+    if (!payload.dvatId || payload.dvatId <= 0) {
+      return createResponse({
+        message: "Dealer is required.",
         functionname,
       });
     }
@@ -62,6 +70,25 @@ const AddRefineryDayPrice = async (
     if (!refinery) {
       return createResponse({
         message: "No refinery profile found for this account.",
+        functionname,
+      });
+    }
+
+    const mappedDealer = await prisma.refinery_dealer.findFirst({
+      where: {
+        refineryId: refinery.id,
+        dealerId: payload.dvatId,
+        deletedAt: null,
+        status: "ACTIVE",
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!mappedDealer) {
+      return createResponse({
+        message: "Selected dealer is not mapped in refinery dealer master.",
         functionname,
       });
     }
@@ -104,6 +131,7 @@ const AddRefineryDayPrice = async (
     const existing = await prisma.refinery_price.findFirst({
       where: {
         refineryId: refinery.id,
+        dvatid: payload.dvatId,
         commodity_masterId: payload.commodityMasterId,
         effective_date: effectiveDate,
         deletedAt: null,
@@ -121,6 +149,7 @@ const AddRefineryDayPrice = async (
     await prisma.refinery_price.create({
       data: {
         refineryId: refinery.id,
+        dvatid: payload.dvatId,
         commodity_masterId: payload.commodityMasterId,
         price: payload.price.toFixed(2),
         effective_date: effectiveDate,

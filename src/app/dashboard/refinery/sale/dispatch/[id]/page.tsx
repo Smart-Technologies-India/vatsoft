@@ -3,7 +3,13 @@
 import GetVatpaidInvoiceById, {
   VatpaidInvoiceDetail,
 } from "@/action/refinery_sale/getvatpaidinvoicebyid";
+import GetCompletedDailyPurchaseView, {
+  CompletedDailyPurchaseView,
+} from "@/action/refinery_sale/getcompleteddailypurchaseview";
 import DispatchRefinerySale from "@/action/refinery_sale/dispatchrefinerysale";
+import { DateSelect } from "@/components/forms/inputfields/dateselect";
+import { MultiSelect } from "@/components/forms/inputfields/multiselect";
+import { TaxtInput } from "@/components/forms/inputfields/textinput";
 import {
   Table,
   TableBody,
@@ -13,9 +19,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
+
+type DispatchFormValues = {
+  invoiceNumber: string;
+  invoiceDate: string;
+  vehicleNumber?: string;
+  shipmentTime: string;
+  cstpurchase: string;
+};
 
 const formatCurrency = (val: string | null | undefined) =>
   val
@@ -33,53 +48,126 @@ export default function DispatchPage() {
   const [invoice, setInvoice] = useState<VatpaidInvoiceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [tankerOptions, setTankerOptions] = useState<string[]>([]);
+  const [completedPurchaseView, setCompletedPurchaseView] =
+    useState<CompletedDailyPurchaseView | null>(null);
 
-  // Editable fields
-  const [invoiceNumber, setInvoiceNumber] = useState("");
-  const [invoiceDate, setInvoiceDate] = useState("");
-  const [vehicleNumber, setVehicleNumber] = useState("");
-  const [shipmentTime, setShipmentTime] = useState("");
+  const methods = useForm<DispatchFormValues>({
+    defaultValues: {
+      invoiceNumber: "",
+      invoiceDate: "",
+      vehicleNumber: undefined,
+      shipmentTime: "",
+      cstpurchase: "",
+    },
+  });
+
+  const { handleSubmit, reset } = methods;
+  const canDispatch = invoice?.refineryStatus === "VATPAID";
+
+  const currentWorkflowStatus = useMemo(() => {
+    if (!invoice || invoice.rows.length === 0) {
+      return "SALE";
+    }
+
+    const statuses = invoice.rows.map((row) => row.refinery_status || "SALE");
+
+    if (statuses.includes("COMPLETED")) {
+      return "COMPLETED";
+    }
+    if (statuses.includes("DISPATCH")) {
+      return "DISPATCH";
+    }
+    if (statuses.every((status) => status === "VATPAID")) {
+      return "VATPAID";
+    }
+
+    return "SALE";
+  }, [invoice]);
 
   useEffect(() => {
-    GetVatpaidInvoiceById(id).then((res) => {
-      if (res.status && res.data) {
-        setInvoice(res.data);
-        setInvoiceNumber(res.data.invoiceNumber);
-        setInvoiceDate(
-          format(new Date(res.data.invoiceDate), "yyyy-MM-dd")
-        );
+    const loadInvoice = async () => {
+      const res = await GetVatpaidInvoiceById(id);
+      const data = res.data;
+      if (res.status && data) {
+        setInvoice(data);
+        const tankerList = data.tankerOptions || [];
+        setTankerOptions(tankerList);
+
+        reset({
+          invoiceNumber: data.invoiceNumber,
+          invoiceDate: new Date(data.invoiceDate).toISOString(),
+          vehicleNumber: tankerList[0] || undefined,
+          shipmentTime: "",
+          cstpurchase: "",
+        });
+
+        if (data.refineryStatus === "COMPLETED") {
+          const completedResponse = await GetCompletedDailyPurchaseView(id);
+          if (completedResponse.status && completedResponse.data) {
+            setCompletedPurchaseView(completedResponse.data);
+          } else {
+            setCompletedPurchaseView(null);
+          }
+        } else {
+          setCompletedPurchaseView(null);
+        }
       } else {
         toast.error(res.message || "Invoice not found.");
       }
       setLoading(false);
-    });
-  }, [id]);
+    };
 
-  const handleApproveRelease = async () => {
-    if (!invoiceNumber.trim()) {
+    void loadInvoice();
+  }, [id, reset]);
+
+  const handleApproveRelease = async (data: DispatchFormValues) => {
+    if (!canDispatch) {
+      toast.info("This invoice is already processed and available in view mode.");
+      return;
+    }
+
+    if (!data.invoiceNumber.trim()) {
       toast.error("Invoice Number is required.");
       return;
     }
-    if (!invoiceDate) {
+    if (!data.invoiceDate) {
       toast.error("Invoice Date is required.");
       return;
     }
-    if (!vehicleNumber.trim()) {
+    if (!data.vehicleNumber?.trim()) {
       toast.error("Vehicle Number is required.");
       return;
     }
-    if (!shipmentTime) {
+    if (!data.shipmentTime) {
       toast.error("Shipment Time is required.");
+      return;
+    }
+    if (!data.cstpurchase.trim()) {
+      toast.error("CST Purchase value is required.");
+      return;
+    }
+
+    const parsedInvoiceDate = new Date(data.invoiceDate);
+    if (Number.isNaN(parsedInvoiceDate.getTime())) {
+      toast.error("Invoice Date is invalid.");
+      return;
+    }
+
+    const parsedShipmentTime = new Date(data.shipmentTime);
+    if (Number.isNaN(parsedShipmentTime.getTime())) {
+      toast.error("Shipment Time is invalid.");
       return;
     }
 
     setSubmitting(true);
     const res = await DispatchRefinerySale({
       id,
-      invoice_number: invoiceNumber,
-      invoice_date: invoiceDate,
-      vehicle_number: vehicleNumber,
-      shipment_time: shipmentTime,
+      invoice_number: data.invoiceNumber,
+      invoice_date: format(parsedInvoiceDate, "dd/MM/yyyy"),
+      vehicle_number: data.vehicleNumber,
+      shipment_time: parsedShipmentTime.toISOString(),
+      cstpurchase: data.cstpurchase,
     });
 
     if (res.status) {
@@ -115,6 +203,11 @@ export default function DispatchPage() {
           <h1 className="text-base font-semibold text-gray-800">
             Invoice Shipment Workflow
           </h1>
+          {invoice?.refineryStatus && (
+            <span className="text-xs font-medium px-2 py-1 rounded bg-gray-100 text-gray-700">
+              Status: {invoice.refineryStatus}
+            </span>
+          )}
           <button
             onClick={() => router.back()}
             className="text-gray-400 hover:text-gray-600 text-xl leading-none"
@@ -128,16 +221,16 @@ export default function DispatchPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                {/* <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
                   Sr. No.
-                </TableHead>
+                </TableHead> */}
                 <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
                   Product Name
                 </TableHead>
                 <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
                   Litres
                 </TableHead>
-                <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                {/* <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
                   Taxable Value
                 </TableHead>
                 <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
@@ -148,7 +241,7 @@ export default function DispatchPage() {
                 </TableHead>
                 <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
                   Invoice Value
-                </TableHead>
+                </TableHead> */}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -158,16 +251,16 @@ export default function DispatchPage() {
                 const total = amount + vat;
                 return (
                   <TableRow key={row.id} className="border-b">
-                    <TableCell className="text-center p-2 text-xs">
+                    {/* <TableCell className="text-center p-2 text-xs">
                       {idx + 1}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className="text-center p-2 text-xs">
                       {row.commodity_master.product_name}
                     </TableCell>
                     <TableCell className="text-center p-2 text-xs">
                       {row.quantity.toLocaleString("en-IN")}
                     </TableCell>
-                    <TableCell className="text-center p-2 text-xs">
+                    {/* <TableCell className="text-center p-2 text-xs">
                       {formatCurrency(row.amount)}
                     </TableCell>
                     <TableCell className="text-center p-2 text-xs">
@@ -178,7 +271,7 @@ export default function DispatchPage() {
                     </TableCell>
                     <TableCell className="text-center p-2 text-xs">
                       {formatCurrency(String(total))}
-                    </TableCell>
+                    </TableCell> */}
                   </TableRow>
                 );
               })}
@@ -186,107 +279,184 @@ export default function DispatchPage() {
           </Table>
         </div>
 
-        {/* Invoice Info Row */}
-        <div className="grid grid-cols-3 gap-4 mb-5">
-          <div>
-            <div className="text-xs text-gray-500 mb-1">Invoice Number</div>
-            <input
-              value={invoiceNumber}
-              onChange={(e) => setInvoiceNumber(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm font-semibold focus:outline-none focus:border-blue-400"
-            />
-          </div>
-          <div>
-            <div className="text-xs text-gray-500 mb-1">Invoice Date</div>
-            <input
-              type="date"
-              value={invoiceDate}
-              onChange={(e) => setInvoiceDate(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm font-semibold focus:outline-none focus:border-blue-400"
-            />
-          </div>
-          <div>
-            <div className="text-xs text-gray-500 mb-1">Purchaser</div>
-            <div className="text-sm font-semibold text-gray-800 py-1.5">
-              {invoice.buyer.name_of_dealer}
+        {invoice.refineryStatus === "COMPLETED" ? (
+          <div className="border border-gray-200 rounded-lg p-4 mb-6 bg-gray-50">
+            <div className="text-sm font-semibold text-gray-800 mb-3">
+              Completed Purchase View
             </div>
+            {completedPurchaseView?.rows?.length ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-white">
+                      <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                        Product
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                        Quantity
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                        Tax %
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                        Amount
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                        Tax
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {completedPurchaseView.rows.map((row) => (
+                      <TableRow key={row.id} className="bg-white border-b">
+                        <TableCell className="text-center p-2 text-xs">
+                          {row.commodity_master.product_name}
+                        </TableCell>
+                        <TableCell className="text-center p-2 text-xs">
+                          {row.quantity.toLocaleString("en-IN")}
+                        </TableCell>
+                        <TableCell className="text-center p-2 text-xs">
+                          {row.tax_percent}%
+                        </TableCell>
+                        <TableCell className="text-center p-2 text-xs">
+                          {formatCurrency(row.amount)}
+                        </TableCell>
+                        <TableCell className="text-center p-2 text-xs">
+                          {formatCurrency(row.vatamount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-xs text-gray-500">
+                Daily purchase details are not available for this completed invoice.
+              </div>
+            )}
           </div>
-        </div>
+        ) : (
+          <FormProvider {...methods}>
+            <form onSubmit={handleSubmit(handleApproveRelease)}>
+              {/* Invoice Info Row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+                <div>
+                  <TaxtInput<DispatchFormValues>
+                    name="invoiceNumber"
+                    title="Invoice Number"
+                    required={true}
+                  />
+                </div>
+                <div>
+                  <DateSelect<DispatchFormValues>
+                    name="invoiceDate"
+                    title="Invoice Date"
+                    placeholder="Select Invoice Date"
+                    required={true}
+                    format="DD/MM/YYYY"
+                  />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Purchaser</div>
+                  <div className="text-sm font-semibold text-gray-800 py-1.5">
+                    {invoice.buyer.name_of_dealer}
+                  </div>
+                </div>
+              </div>
 
-        {/* Vehicle + Shipment Time Row */}
-        <div className="grid grid-cols-2 gap-4 mb-5">
-          <div>
-            <label className="text-xs text-gray-500 block mb-1">
-              Vehicle No
-            </label>
-            <input
-              value={vehicleNumber}
-              onChange={(e) => setVehicleNumber(e.target.value)}
-              placeholder="e.g. GJ-05-DH-1234"
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 block mb-1">
-              Shipment Time
-            </label>
-            <input
-              type="datetime-local"
-              value={shipmentTime}
-              onChange={(e) => setShipmentTime(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
-            />
-          </div>
-        </div>
+              {/* Vehicle + Shipment Time Row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+                <div>
+                  <MultiSelect<DispatchFormValues>
+                    name="vehicleNumber"
+                    title="Vehicle No"
+                    placeholder={
+                      tankerOptions.length ? "Select tanker" : "No tanker mapped"
+                    }
+                    required={true}
+                    options={tankerOptions.map((tanker) => ({
+                      value: tanker,
+                      label: tanker,
+                    }))}
+                    disable={!tankerOptions.length}
+                  />
+                </div>
+                <div>
+                  <DateSelect<DispatchFormValues>
+                    name="shipmentTime"
+                    title="Shipment Time"
+                    placeholder="Select Shipment Date"
+                    required={true}
+                    format="DD/MM/YYYY"
+                  />
+                </div>
+                <div>
+                  <TaxtInput<DispatchFormValues>
+                    name="cstpurchase"
+                    title="CST Purchase"
+                    required={true}
+                    numdes={true}
+                  />
+                </div>
+              </div>
 
-        {/* Approve Button */}
-        <button
-          onClick={handleApproveRelease}
-          disabled={submitting}
-          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium px-6 py-2 rounded mb-6"
-        >
-          {submitting ? "Processing..." : "Approve and Release"}
-        </button>
+              {/* Approve Button */}
+              <button
+                type="submit"
+                disabled={submitting || !canDispatch}
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium px-6 py-2 rounded mb-6"
+              >
+                {submitting
+                  ? "Processing..."
+                  : canDispatch
+                    ? "Approve and Release"
+                    : "View Only"}
+              </button>
+            </form>
+          </FormProvider>
+        )}
 
         {/* Steps */}
         <div className="border border-gray-200 rounded-lg p-4">
           <div className="text-sm font-medium text-gray-700 mb-3">Steps</div>
           <ol className="flex flex-col gap-2">
             {[
-              "Accept invoice",
-              "Tax Paid",
-              "Approve by refinery",
-              "Shipped",
-            ].map((step, i) => {
-              const completed = i < 2; // steps 1 & 2 are done (VATPAID status)
-              const current = i === 2;
-              return (
-                <li key={step} className="flex items-center gap-3">
-                  <span
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
-                      completed
-                        ? "bg-green-100 text-green-700 border border-green-300"
-                        : current
-                        ? "bg-blue-100 text-blue-700 border border-blue-300"
-                        : "bg-gray-100 text-gray-400 border border-gray-200"
-                    }`}
-                  >
-                    {i + 1}
-                  </span>
-                  <span
-                    className={`text-sm ${
-                      completed
-                        ? "text-green-700"
-                        : current
-                        ? "text-blue-700"
-                        : "text-gray-400"
-                    }`}
-                  >
-                    {step}
-                  </span>
-                </li>
-              );
-            })}
+              {
+                label: "Accept invoice",
+                done: true,
+              },
+              {
+                label: "Tax Paid",
+                done: ["VATPAID", "DISPATCH", "COMPLETED"].includes(currentWorkflowStatus),
+              },
+              {
+                label: "Approve by refinery",
+                done: ["DISPATCH", "COMPLETED"].includes(currentWorkflowStatus),
+              },
+              {
+                label: "Completed",
+                done: currentWorkflowStatus === "COMPLETED",
+              },
+            ].map((step, index) => (
+              <li key={step.label} className="flex items-center gap-3">
+                <span
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
+                    step.done
+                      ? "bg-green-100 text-green-700 border border-green-300"
+                      : "bg-gray-100 text-gray-400 border border-gray-200"
+                  }`}
+                >
+                  {index + 1}
+                </span>
+                <span
+                  className={`text-sm ${
+                    step.done ? "text-green-700 font-medium" : "text-gray-400"
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </li>
+            ))}
           </ol>
         </div>
       </div>

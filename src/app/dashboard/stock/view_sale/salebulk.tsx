@@ -691,7 +691,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               sellerCommodity === "WHOLESALER"
             ) {
               // MANUFACTURER can sell to OIDC and LIQUOR
-              isValidSale = ["OIDC", "LIQUOR"].includes(buyerCommodity);
+              isValidSale = ["OIDC", "LIQUOR","WHOLESALER", "MANUFACTURER"].includes(buyerCommodity);
             } else if (sellerCommodity === "LIQUOR") {
               // LIQUOR can sell to LIQUOR, MANUFACTURER, OIDC, and WHOLESALER
               isValidSale = [

@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentDvatId, getCurrentUserId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { refinery_sale, commodity_master, tin_number_master } from "@prisma/client";
 import prisma from "../../../prisma/database";
@@ -37,7 +37,8 @@ const CreateRefinerySale = async (
 
   try {
     const currentUserId = await getCurrentUserId();
-    if (!currentUserId) {
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
       return {
         status: false,
         data: null,
@@ -46,49 +47,66 @@ const CreateRefinerySale = async (
       } as any;
     }
 
-    const refineryResponse = await prisma.refinery.findFirst({
+    const selectedRefineryTin = payload.purchaser_tin_number.trim();
+    if (!/^\d{11}$/.test(selectedRefineryTin)) {
+      return createResponse({
+        message: "Refinery TIN number must be 11 digits.",
+        functionname,
+      });
+    }
+
+    const mappedDealer = await prisma.refinery_dealer.findFirst({
       where: {
+        dealerId: currentDvatId,
         deletedAt: null,
-        createdById: currentUserId,
+        status: "ACTIVE",
+        refinery: {
+          deletedAt: null,
+          tinNumber: selectedRefineryTin,
+        },
+        dvat: {
+          deletedAt: null,
+          status: "APPROVED",
+        },
       },
       orderBy: {
-        id: "desc",
+        updatedAt: "desc",
+      },
+      include: {
+        refinery: true,
+        dvat: {
+          select: {
+            tin_master_id: true,
+            tin_master: {
+              select: {
+                tin_number: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    if (!refineryResponse) {
+    if (!mappedDealer || !mappedDealer.refinery) {
       return createResponse({
-        message: "No refinery profile found for this account.",
+        message: "Selected refinery is not mapped in refinery dealer master.",
         functionname,
       });
     }
 
-    const purchaserTin = payload.purchaser_tin_number.trim();
-    if (!/^\d{11}$/.test(purchaserTin)) {
+    const refineryResponse = mappedDealer.refinery;
+    const currentDvatTin = mappedDealer.dvat?.tin_master?.tin_number || "";
+
+    if (!mappedDealer.dvat?.tin_master_id) {
       return createResponse({
-        message: "Purchaser TIN number must be 11 digits.",
+        message: "Current DVAT TIN details not found.",
         functionname,
       });
     }
 
-    if (refineryResponse.tinNumber && refineryResponse.tinNumber === purchaserTin) {
+    if (refineryResponse.tinNumber && refineryResponse.tinNumber === currentDvatTin) {
       return createResponse({
-        message: "Purchaser TIN number cannot be your own TIN.",
-        functionname,
-      });
-    }
-
-    const purchaserTinMaster = await prisma.tin_number_master.findFirst({
-      where: {
-        tin_number: purchaserTin,
-        status: "ACTIVE",
-        deletedAt: null,
-      },
-    });
-
-    if (!purchaserTinMaster) {
-      return createResponse({
-        message: "Purchaser TIN number not found.",
+        message: "Refinery TIN number cannot be your own TIN.",
         functionname,
       });
     }
@@ -123,9 +141,9 @@ const CreateRefinerySale = async (
       });
     }
 
-    if (!Number.isFinite(payload.price) || payload.price <= 0) {
+    if (!Number.isFinite(payload.price) || payload.price < 0) {
       return createResponse({
-        message: "Price must be greater than 0.",
+        message: "Price must be 0 or greater.",
         functionname,
       });
     }
@@ -133,7 +151,7 @@ const CreateRefinerySale = async (
     const salePrice = Number(payload.price);
     const taxPercent = Number.parseFloat(commodityResponse.taxable_at || "0");
 
-    if (!Number.isFinite(salePrice) || salePrice <= 0) {
+    if (!Number.isFinite(salePrice) || salePrice < 0) {
       return createResponse({
         message: "Item sale price is invalid.",
         functionname,
@@ -172,15 +190,15 @@ const CreateRefinerySale = async (
         temp_invoice_number: finalInvoiceNumber,
         invoice_date: invoiceDate,
         commodity_masterId: commodityResponse.id,
-        seller_tin_numberId: purchaserTinMaster.id,
+        seller_tin_numberId: mappedDealer.dvat.tin_master_id,
         amount_unit: "UNIT",
         quantity: payload.quantity,
         tax_percent: taxPercent.toFixed(2),
         amount: taxableAmount.toFixed(2),
         vatamount: vatAmount.toFixed(2),
         is_local:
-          purchaserTinMaster.tin_number.startsWith("25") ||
-          purchaserTinMaster.tin_number.startsWith("26"),
+          currentDvatTin.startsWith("25") ||
+          currentDvatTin.startsWith("26"),
         createdById: currentUserId,
       },
       include: {

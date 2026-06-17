@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Button, Spin } from "antd";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 
 const formatDate = (value: Date | string) => {
@@ -40,7 +40,7 @@ const RefinerySaleInvoiceViewPage = () => {
 
   const invoiceId = Number.parseInt(params.id, 10);
 
-  const loadInvoice = async () => {
+  const loadInvoice = useCallback(async () => {
     if (!Number.isInteger(invoiceId) || invoiceId <= 0) {
       toast.error("Invalid invoice id.");
       router.push("/dashboard/refinery_sales");
@@ -60,11 +60,11 @@ const RefinerySaleInvoiceViewPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [invoiceId, router]);
 
   useEffect(() => {
     loadInvoice();
-  }, [params.id]);
+  }, [loadInvoice]);
 
   const hasSaleStatus = useMemo(() => {
     if (!invoiceData) {
@@ -80,6 +80,26 @@ const RefinerySaleInvoiceViewPage = () => {
     }
 
     return invoiceData.rows.every((row) => row.refinery_status === "VATPAID");
+  }, [invoiceData]);
+
+  const currentWorkflowStatus = useMemo(() => {
+    if (!invoiceData || invoiceData.rows.length === 0) {
+      return "SALE";
+    }
+
+    const statuses = invoiceData.rows.map((row) => row.refinery_status || "SALE");
+
+    if (statuses.includes("COMPLETED")) {
+      return "COMPLETED";
+    }
+    if (statuses.includes("DISPATCH")) {
+      return "DISPATCH";
+    }
+    if (statuses.every((status) => status === "VATPAID")) {
+      return "VATPAID";
+    }
+
+    return "SALE";
   }, [invoiceData]);
 
   const handlePayTax = async () => {
@@ -223,28 +243,39 @@ const RefinerySaleInvoiceViewPage = () => {
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-3">
           <h2 className="text-xl font-semibold text-gray-900">Steps</h2>
           <div className="mt-3 space-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700 font-semibold">1</span>
-              <span className="text-green-700 font-medium">Accept invoice</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-semibold ${
-                  isVatPaid ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-                }`}
-              >
-                2
-              </span>
-              <span className={isVatPaid ? "text-green-700 font-medium" : "text-gray-600"}>Tax Paid</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-gray-500 font-semibold">3</span>
-              <span className="text-gray-600">Approve by refinery</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-gray-500 font-semibold">4</span>
-              <span className="text-gray-600">Shipped</span>
-            </div>
+            {[
+              {
+                label: "Accept invoice",
+                done: true,
+              },
+              {
+                label: "Tax Paid",
+                done: ["VATPAID", "DISPATCH", "COMPLETED"].includes(currentWorkflowStatus),
+              },
+              {
+                label: "Approve by refinery",
+                done: ["DISPATCH", "COMPLETED"].includes(currentWorkflowStatus),
+              },
+              {
+                label: "Completed",
+                done: currentWorkflowStatus === "COMPLETED",
+              },
+            ].map((step, index) => (
+              <div key={step.label} className="flex items-center gap-2">
+                <span
+                  className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-semibold ${
+                    step.done
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  {index + 1}
+                </span>
+                <span className={step.done ? "text-green-700 font-medium" : "text-gray-600"}>
+                  {step.label}
+                </span>
+              </div>
+            ))}
           </div>
 
           <div className="mt-4 rounded border border-gray-200 bg-gray-50 p-3 grid grid-cols-1 md:grid-cols-3 gap-3">

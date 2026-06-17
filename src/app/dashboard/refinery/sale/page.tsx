@@ -1,11 +1,7 @@
 "use client";
 
-import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
-import CreateRefinerySale from "@/action/refinery_sale/createrefinerysale";
 import GetUserRefinerySale from "@/action/refinery_sale/getuserrefinerysale";
-import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
-import { MultiSelect } from "@/components/forms/inputfields/multiselect";
-import { TaxtInput } from "@/components/forms/inputfields/textinput";
+
 import {
   Table,
   TableBody,
@@ -19,40 +15,27 @@ import {
   refinery_sale,
   tin_number_master,
 } from "@prisma/client";
-import { Button, Drawer, Pagination, Spin } from "antd";
-import { FormProvider, useForm } from "react-hook-form";
+import { Button, Spin } from "antd";
+import {
+  type ColumnDef,
+  type ColumnFiltersState,
+  type PaginationState,
+  type SortingState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { formatDate } from "date-fns";
 
 type RefinerySaleWithRelations = refinery_sale & {
   commodity_master: commodity_master;
   seller_tin_number: tin_number_master;
-};
-
-type RefinerySaleFormValues = {
-  purchaserTin?: string;
-  invoiceNumber: string;
-  invoiceDate: string;
-  selectedCommodityId?: string;
-  price: string;
-  quantity: string;
-};
-
-const ALLOWED_COMMODITY_IDS = [1, 2, 748, 749];
-
-const toDateTimeLocalValue = (date: Date): string => {
-  const pad = (value: number) => value.toString().padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate(),
-  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
-const generateInvoiceNumber = () => {
-  const now = new Date();
-  const pad = (value: number) => value.toString().padStart(2, "0");
-  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-  const random = Math.floor(100 + Math.random() * 900);
-  return `RS-${timestamp}-${random}`;
 };
 
 const formatDateTime = (date: Date) => {
@@ -78,83 +61,20 @@ const getStatusColor = (status: string) => {
 };
 
 const RefinerySalePage = () => {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isPageLoading, setIsPageLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
-  const [tinNumbers, setTinNumbers] = useState<tin_number_master[]>([]);
-  const [commodities, setCommodities] = useState<commodity_master[]>([]);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const [saleEntries, setSaleEntries] = useState<RefinerySaleWithRelations[]>(
     [],
   );
-  const [pagination, setPagination] = useState<{
-    take: number;
-    skip: number;
-    total: number;
-  }>({
-    take: 10,
-    skip: 0,
-    total: 0,
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
   });
-
-  const methods = useForm<RefinerySaleFormValues>({
-    defaultValues: {
-      purchaserTin: undefined,
-      invoiceNumber: generateInvoiceNumber(),
-      invoiceDate: toDateTimeLocalValue(new Date()),
-      selectedCommodityId: undefined,
-      price: "",
-      quantity: "1",
-    },
-  });
-
-  const { handleSubmit, reset, watch } = methods;
-
-  const purchaserTin = watch("purchaserTin");
-  const invoiceNumber = watch("invoiceNumber");
-  const invoiceDate = watch("invoiceDate");
-  const selectedCommodityId = watch("selectedCommodityId");
-  const price = Number.parseFloat(watch("price") ?? "0") || 0;
-  const selectedCommodityIdNumber: number | undefined = selectedCommodityId
-    ? Number.parseInt(String(selectedCommodityId), 10)
-    : undefined;
-  const quantityInKL = Number.parseFloat(watch("quantity") ?? "1") || 1;
-  const quantityInLitres = quantityInKL * 1000;
-
-  const selectedCommodity = useMemo(() => {
-    return commodities.find(
-      (commodity) => commodity.id === selectedCommodityIdNumber,
-    );
-  }, [commodities, selectedCommodityIdNumber]);
-
-  const itemPrice = useMemo(() => {
-    const parsedPrice = price;
-    return Number.isFinite(parsedPrice) ? parsedPrice : 0;
-  }, [price]);
-
-  const taxPercent = useMemo(() => {
-    const parsedTax = Number.parseFloat(selectedCommodity?.taxable_at ?? "0");
-    return Number.isFinite(parsedTax) ? parsedTax : 0;
-  }, [selectedCommodity]);
-
-  const taxableValue = useMemo(() => {
-    return quantityInLitres * itemPrice;
-  }, [quantityInLitres, itemPrice]);
-
-  const vatAmount = useMemo(() => {
-    return (taxableValue * taxPercent) / 100;
-  }, [taxPercent, taxableValue]);
-
-  const formDrawerTotalInvoiceValue = useMemo(() => {
-    return taxableValue + vatAmount;
-  }, [taxableValue, vatAmount]);
-
-  const paginatedEntries = useMemo(() => {
-    return saleEntries.slice(
-      pagination.skip,
-      pagination.skip + pagination.take,
-    );
-  }, [saleEntries, pagination]);
 
   const totalTaxableValue = useMemo(() => {
     return saleEntries.reduce(
@@ -174,62 +94,134 @@ const RefinerySalePage = () => {
     return totalTaxableValue + totalVatAmount;
   }, [totalTaxableValue, totalVatAmount]);
 
-  const handlePaginationChange = (page: number, pageSize: number) => {
-    setPagination({
-      take: pageSize,
-      skip: (page - 1) * pageSize,
-      total: saleEntries.length,
-    });
-  };
+  const columns = useMemo<ColumnDef<RefinerySaleWithRelations>[]>(
+    () => [
+      {
+        id: "count",
+        header: "Count",
+        enableSorting: false,
+        cell: ({ row, table }) => {
+          const pageIndex = table.getState().pagination.pageIndex;
+          const pageSize = table.getState().pagination.pageSize;
+          return (
+            <span className="text-xs">
+              {pageIndex * pageSize + row.index + 1}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "invoice_number",
+        header: "Invoice No.",
+      },
+      {
+        id: "invoice_date",
+        header: "Invoice Date",
+        accessorFn: (row) => row.invoice_date,
+        sortingFn: "datetime",
+        cell: ({ row }) => formatDate(new Date(row.original.invoice_date), "dd/MM/yyyy"),
+      },
+      {
+        id: "purchaser_tin",
+        header: "Purchaser TIN",
+        accessorFn: (row) => row.seller_tin_number.tin_number,
+      },
+      {
+        id: "item_details",
+        header: "Item Details",
+        accessorFn: (row) => row.commodity_master.product_name,
+      },
+      {
+        accessorKey: "quantity",
+        header: "Quantity",
+      },
+      {
+        id: "status",
+        header: "Status",
+        accessorFn: (row) => row.refinery_status || "SALE",
+        filterFn: "equalsString",
+        cell: ({ row }) => {
+          const status = row.original.refinery_status || "SALE";
+          return (
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                getStatusColor(status).bg
+              } ${getStatusColor(status).text}`}
+            >
+              {status}
+            </span>
+          );
+        },
+      },
+      {
+        id: "action",
+        header: "Action",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Button
+            size="small"
+            onClick={() =>
+              router.push(`/dashboard/refinery/sale/dispatch/${row.original.id}`)
+            }
+          >
+            View
+          </Button>
+        ),
+      },
+    ],
+    [router],
+  );
 
-  const resetForm = () => {
-    reset({
-      purchaserTin: undefined,
-      invoiceNumber: generateInvoiceNumber(),
-      invoiceDate: toDateTimeLocalValue(new Date()),
-      selectedCommodityId: undefined,
-      price: "",
-      quantity: "1",
-    });
+  const table = useReactTable({
+    data: saleEntries,
+    columns,
+    state: {
+      sorting,
+      columnFilters,
+      globalFilter: searchText,
+      pagination,
+    },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setSearchText,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const needle = String(filterValue ?? "").trim().toLowerCase();
+      if (!needle) return true;
+
+      const haystack = [
+        row.original.invoice_number,
+        row.original.seller_tin_number.tin_number,
+        row.original.commodity_master.product_name,
+        row.original.refinery_status || "SALE",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(needle);
+    },
+  });
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    table.getColumn("status")?.setFilterValue(value === "all" ? undefined : value);
   };
 
   const loadData = async () => {
     setIsPageLoading(true);
     try {
-      const [tinResponse, commodityResponse, salesResponse] = await Promise.all(
-        [
-          getAllTinNumberMaster(),
-          AllCommodityMaster({}),
-          GetUserRefinerySale(),
-        ],
-      );
-
-      if (tinResponse.status && tinResponse.data) {
-        setTinNumbers(tinResponse.data);
-      }
-
-      if (commodityResponse.status && commodityResponse.data) {
-        setCommodities(
-          commodityResponse.data.filter((val) =>
-            ALLOWED_COMMODITY_IDS.includes(val.id),
-          ),
-        );
-      }
+      const salesResponse = await GetUserRefinerySale();
 
       if (salesResponse.status && salesResponse.data) {
         setSaleEntries(salesResponse.data);
-        setPagination({
-          take: 10,
-          skip: 0,
-          total: salesResponse.data.length,
-        });
       } else {
         setSaleEntries([]);
-        setPagination({
-          take: 10,
-          skip: 0,
-          total: 0,
-        });
       }
     } catch (error) {
       toast.error("Unable to load refinery sale data.");
@@ -242,80 +234,6 @@ const RefinerySalePage = () => {
     loadData();
   }, []);
 
-  const handleCreateSale = async (data: RefinerySaleFormValues) => {
-    if (!data.purchaserTin) {
-      toast.error("Please select purchaser TIN number.");
-      return;
-    }
-
-    if (!data.selectedCommodityId) {
-      toast.error("Please select item details.");
-      return;
-    }
-
-    const parsedCommodityId = Number.parseInt(data.selectedCommodityId, 10);
-    const parsedPrice = Number.parseFloat(data.price);
-    const parsedQuantityInKL = Number.parseFloat(data.quantity);
-
-    if (!Number.isInteger(parsedCommodityId) || parsedCommodityId <= 0) {
-      toast.error("Invalid item details selection.");
-      return;
-    }
-
-    if (!ALLOWED_COMMODITY_IDS.includes(parsedCommodityId)) {
-      toast.error("Only allowed refinery commodities can be selected.");
-      return;
-    }
-
-    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
-      toast.error("Price must be greater than 0.");
-      return;
-    }
-
-    if (!Number.isFinite(parsedQuantityInKL) || parsedQuantityInKL <= 0) {
-      toast.error("Quantity (kL) must be greater than 0.");
-      return;
-    }
-
-    const parsedQuantityInLitres = parsedQuantityInKL * 1000;
-
-    setIsSubmitting(true);
-
-    try {
-      const response = await CreateRefinerySale({
-        purchaser_tin_number: data.purchaserTin,
-        invoice_number: data.invoiceNumber,
-        invoice_date: new Date(data.invoiceDate),
-        commodity_master_id: parsedCommodityId,
-        price: parsedPrice,
-        quantity: parsedQuantityInLitres,
-      });
-
-      if (!response.status || !response.data) {
-        toast.error(response.message || "Unable to create refinery sale.");
-        return;
-      }
-
-      setSaleEntries((previousEntries) => [response.data!, ...previousEntries]);
-      setPagination((prev) => ({
-        ...prev,
-        total: prev.total + 1,
-      }));
-      toast.success("Refinery sale entry added successfully.");
-      setIsDrawerOpen(false);
-      resetForm();
-    } catch (error) {
-      toast.error("Unable to create refinery sale entry.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const openDrawer = () => {
-    resetForm();
-    setIsDrawerOpen(true);
-  };
-
   return (
     <main className="p-3 bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-3">
@@ -327,14 +245,35 @@ const RefinerySalePage = () => {
               </h1>
             </div>
             <div className="grow"></div>
-            <Button type="primary" onClick={openDrawer}>
-              Add Refinery Sale
-            </Button>
+            <div className="w-full lg:w-auto flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={searchText}
+                onChange={(e) => {
+                  setSearchText(e.target.value);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                }}
+                placeholder="Search invoice, TIN, item, status"
+                className="h-9 w-full sm:w-72 rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
+              />
+              <select
+                value={statusFilter}
+                onChange={(e) => handleStatusFilterChange(e.target.value)}
+                className="h-9 rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
+              >
+                <option value="all">All Status</option>
+                <option value="SALE">SALE</option>
+                <option value="PAID">PAID</option>
+                <option value="VATPAID">VATPAID</option>
+                <option value="DISPATCH">DISPATCH</option>
+                <option value="COMPLETED">COMPLETED</option>
+              </select>
+            </div>
           </div>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
             <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
             <p className="text-lg font-medium text-gray-900">
@@ -359,258 +298,102 @@ const RefinerySalePage = () => {
               {formatCurrency(tableTotalInvoiceValue)}
             </p>
           </div>
-        </div>
+        </div> */}
 
-        <Drawer
-          title="Add Refinery Sale"
-          placement="right"
-          open={isDrawerOpen}
-          onClose={() => setIsDrawerOpen(false)}
-          size={660}
-        >
-          <FormProvider {...methods}>
-            <form
-              onSubmit={handleSubmit(handleCreateSale)}
-              className="space-y-3"
-            >
-              <div className="space-y-1">
-                <MultiSelect<RefinerySaleFormValues>
-                  name="purchaserTin"
-                  title="Purchaser TIN Number"
-                  placeholder="Select purchaser TIN"
-                  required={true}
-                  options={tinNumbers.map((tin) => ({
-                    value: tin.tin_number,
-                    label: `${tin.tin_number} - ${tin.name_of_dealer ?? "NA"}`,
-                  }))}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <TaxtInput<RefinerySaleFormValues>
-                  name="invoiceNumber"
-                  title="Invoice No (Auto Generated)"
-                  required={true}
-                  disable={true}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <TaxtInput<RefinerySaleFormValues>
-                  name="invoiceDate"
-                  title="Invoice Date (Current Timestamp)"
-                  required={true}
-                  disable={true}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <MultiSelect<RefinerySaleFormValues>
-                  name="selectedCommodityId"
-                  title="Item Details"
-                  placeholder="Select item"
-                  required={true}
-                  options={commodities.map((commodity) => ({
-                    value: commodity.id.toString(),
-                    label: `${commodity.product_name} (${commodity.id})`,
-                  }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <TaxtInput<RefinerySaleFormValues>
-                  name="price"
-                  title="Price"
-                  placeholder="Enter price"
-                  required={true}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <TaxtInput<RefinerySaleFormValues>
-                  name="quantity"
-                  title="Quantity (kL)"
-                  placeholder="Enter Quantity in kL"
-                  required={true}
-                  numdes={true}
-                />
-              </div>
-
-              <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">
-                <p className="text-xs font-medium text-gray-700 mb-2">
-                  Calculated Values
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded bg-white px-2 py-1.5">
-                    <p className="text-xs font-medium text-gray-600">
-                      Item Price
-                    </p>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {formatCurrency(itemPrice)}
-                    </p>
-                  </div>
-                  <div className="rounded bg-white px-2 py-1.5">
-                    <p className="text-xs font-medium text-gray-600">
-                      Quantity in Liter
-                    </p>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {formatCurrency(quantityInLitres)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-gray-100 bg-gray-50 p-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded bg-white px-2 py-1.5">
-                    <p className="text-xs font-medium text-gray-600">Tax %</p>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {formatCurrency(taxPercent)}
-                    </p>
-                  </div>
-                  <div className="rounded bg-white px-2 py-1.5">
-                    <p className="text-xs font-medium text-gray-600">
-                      Taxable Value
-                    </p>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {formatCurrency(taxableValue)}
-                    </p>
-                  </div>
-                  <div className="rounded bg-white px-2 py-1.5">
-                    <p className="text-xs font-medium text-gray-600">
-                      VAT Amount
-                    </p>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {formatCurrency(vatAmount)}
-                    </p>
-                  </div>
-                  <div className="rounded bg-white px-2 py-1.5">
-                    <p className="text-xs font-medium text-gray-600">
-                      Total Invoice Value
-                    </p>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {formatCurrency(formDrawerTotalInvoiceValue)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
-                <Button onClick={() => setIsDrawerOpen(false)}>Cancel</Button>
-                <Button type="primary" loading={isSubmitting} htmlType="submit">
-                  Save Entry
-                </Button>
-              </div>
-            </form>
-          </FormProvider>
-        </Drawer>
+        
 
         {isPageLoading ? (
           <div className="flex min-h-56 items-center justify-center">
             <Spin />
           </div>
-        ) : saleEntries.length > 0 ? (
+        ) : table.getFilteredRowModel().rows.length > 0 ? (
           <div className="bg-white rounded shadow-sm border p-3">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50 border-b">
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Count
-                    </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Invoice No.
-                    </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Invoice Date
-                    </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Purchaser TIN
-                    </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Item Details
-                    </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Quantity
-                    </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Taxable Value
-                    </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      VAT Amount
-                    </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Status
-                    </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Invoice Value (₹)
-                    </TableHead>
-                  </TableRow>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id} className="bg-gray-50 border-b">
+                      {headerGroup.headers.map((header) => (
+                        <TableHead
+                          key={header.id}
+                          className="text-center p-2 font-medium text-gray-700 text-xs"
+                        >
+                          {header.isPlaceholder ? null : (
+                            <button
+                              type="button"
+                              onClick={header.column.getToggleSortingHandler()}
+                              className={`inline-flex items-center gap-1 ${
+                                header.column.getCanSort() ? "cursor-pointer" : "cursor-default"
+                              }`}
+                            >
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                              {header.column.getCanSort() && (
+                                <span>
+                                  {header.column.getIsSorted() === "asc"
+                                    ? "↑"
+                                    : header.column.getIsSorted() === "desc"
+                                      ? "↓"
+                                      : "↕"}
+                                </span>
+                              )}
+                            </button>
+                          )}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
                 </TableHeader>
                 <TableBody>
-                  {paginatedEntries.map((entry, index) => {
-                    const amount = Number.parseFloat(entry.amount || "0");
-                    const vat = Number.parseFloat(entry.vatamount || "0");
-                    const total = amount + vat;
-                    const status = entry.refinery_status || "SALE";
-
-                    return (
-                      <TableRow
-                        key={entry.id}
-                        className="border-b hover:bg-gray-50"
-                      >
-                        <TableCell className="p-2 text-center text-xs">
-                          1
+                  {table.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id} className="border-b hover:bg-gray-50">
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id} className="p-2 text-center text-xs">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {entry.invoice_number}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {formatDateTime(entry.invoice_date)}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {entry.seller_tin_number.tin_number}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {entry.commodity_master.product_name}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {entry.quantity}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {formatCurrency(amount)}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {formatCurrency(vat)}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              getStatusColor(status).bg
-                            } ${getStatusColor(status).text}`}
-                          >
-                            {status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {formatCurrency(total)}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                      ))}
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
             {/* Pagination */}
-            <div className="px-3 py-2 border-t bg-gray-50">
-              <Pagination
-                align="center"
-                current={Math.floor(pagination.skip / pagination.take) + 1}
-                onChange={handlePaginationChange}
-                pageSize={pagination.take}
-                total={pagination.total}
-                showSizeChanger
-                showTotal={(total: number) => `Total ${total} items`}
-              />
+            <div className="px-3 py-2 border-t bg-gray-50 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+              <div className="text-xs text-gray-600">
+                Showing {table.getRowModel().rows.length} of {table.getFilteredRowModel().rows.length} filtered rows ({saleEntries.length} total)
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={table.getState().pagination.pageSize}
+                  onChange={(e) => table.setPageSize(Number(e.target.value))}
+                  className="h-8 rounded border border-gray-300 px-2 text-xs"
+                >
+                  {[10, 20, 30, 50].map((pageSize) => (
+                    <option key={pageSize} value={pageSize}>
+                      {pageSize} / page
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  size="small"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  Previous
+                </Button>
+                <span className="text-xs text-gray-600">
+                  Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+                </span>
+                <Button
+                  size="small"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           </div>
         ) : (

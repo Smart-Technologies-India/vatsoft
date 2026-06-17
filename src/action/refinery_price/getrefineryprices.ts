@@ -18,7 +18,16 @@ export type RefineryPriceCommodityOption = {
   unit: string;
 };
 
+export type RefineryPriceDealerOption = {
+  id: number;
+  tinNumber: string;
+  tradeName: string;
+  dealerName: string;
+};
+
 export type GetRefineryPricesResult = {
+  selectedDvatId: number;
+  dealerOptions: RefineryPriceDealerOption[];
   dayLabels: string[];
   categories: RefineryPriceDayData[];
   commodityOptions: RefineryPriceCommodityOption[];
@@ -43,7 +52,13 @@ const formatDateKey = (date: Date) =>
 const formatDisplayDateDDMMYYYY = (date: Date) =>
   `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
 
-const GetRefineryPriceLast7Days = async (): Promise<
+interface GetRefineryPricesPayload {
+  dvatid?: number;
+}
+
+const GetRefineryPriceLast7Days = async (
+  payload: GetRefineryPricesPayload = {},
+): Promise<
   ApiResponseType<GetRefineryPricesResult | null>
 > => {
   const functionname = GetRefineryPriceLast7Days.name;
@@ -75,6 +90,55 @@ const GetRefineryPriceLast7Days = async (): Promise<
       });
     }
 
+    const mappedDealers = await prisma.refinery_dealer.findMany({
+      where: {
+        refineryId: refinery.id,
+        deletedAt: null,
+        status: "ACTIVE",
+      },
+      include: {
+        dvat: {
+          include: {
+            tin_master: {
+              select: {
+                tin_number: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    });
+
+    const dealerOptions: RefineryPriceDealerOption[] = mappedDealers
+      .filter((item) => item.dvat.tin_master?.tin_number)
+      .map((item) => ({
+        id: item.dealerId,
+        tinNumber: item.dvat.tin_master.tin_number,
+        tradeName: item.dvat.tradename || "",
+        dealerName: item.dvat.name || "",
+      }));
+
+    if (!dealerOptions.length) {
+      return createResponse({
+        message: "No refinery dealer mapping found. Please add dealer in dealer master.",
+        functionname,
+        data: {
+          selectedDvatId: 0,
+          dealerOptions: [],
+          dayLabels: [],
+          categories: [],
+          commodityOptions: [],
+        },
+      });
+    }
+
+    const requestedDvatId = payload.dvatid;
+    const selectedDvatId =
+      requestedDvatId && dealerOptions.some((dealer) => dealer.id === requestedDvatId)
+        ? requestedDvatId
+        : dealerOptions[0].id;
+
     const commodityOptionsRaw = await prisma.commodity_master.findMany({
       where: {
         deletedAt: null,
@@ -102,14 +166,15 @@ const GetRefineryPriceLast7Days = async (): Promise<
     const last7Days = getLast7Days();
     const dayLabels = last7Days.map((d) => formatDisplayDateDDMMYYYY(d));
     const dateKeys = last7Days.map(formatDateKey);
+    const windowStartKey = dateKeys[0];
 
-    const windowStart = last7Days[0];
     const windowEnd = new Date(last7Days[6]);
     windowEnd.setHours(23, 59, 59, 999);
 
     const entries = await prisma.refinery_price.findMany({
       where: {
         refineryId: refinery.id,
+        dvatid: selectedDvatId,
         deletedAt: null,
         status: "ACTIVE",
         effective_date: {
@@ -125,12 +190,22 @@ const GetRefineryPriceLast7Days = async (): Promise<
     });
 
     const priceMap = new Map<number, Map<string, number>>();
+    const latestPriceBeforeWindow = new Map<number, number>();
     for (const entry of entries) {
       const dk = formatDateKey(new Date(entry.effective_date));
       if (!priceMap.has(entry.commodity_masterId)) {
         priceMap.set(entry.commodity_masterId, new Map());
       }
       priceMap.get(entry.commodity_masterId)!.set(dk, parseFloat(entry.price));
+
+      // Keep the most recent known price prior to the visible window start,
+      // so the 7-day table can carry forward older rates correctly.
+      if (dk < windowStartKey) {
+        latestPriceBeforeWindow.set(
+          entry.commodity_masterId,
+          parseFloat(entry.price),
+        );
+      }
     }
 
     const categories: RefineryPriceDayData[] = commodityOptions.map((item) => {
@@ -138,7 +213,8 @@ const GetRefineryPriceLast7Days = async (): Promise<
 
       // Carry forward the most recent known price so the rate stays same
       // on subsequent days until a new price is explicitly added.
-      let lastKnownPrice: number | null = null;
+      let lastKnownPrice: number | null =
+        latestPriceBeforeWindow.get(item.id) ?? null;
       const dayPrices = dateKeys.map((dk) => {
         if (commodityMap?.has(dk)) {
           lastKnownPrice = commodityMap.get(dk) ?? null;
@@ -157,7 +233,13 @@ const GetRefineryPriceLast7Days = async (): Promise<
     return createResponse({
       message: "Refinery prices fetched successfully.",
       functionname,
-      data: { dayLabels, categories, commodityOptions },
+      data: {
+        selectedDvatId,
+        dealerOptions,
+        dayLabels,
+        categories,
+        commodityOptions,
+      },
     });
   } catch (e) {
     return createResponse({ message: errorToString(e), functionname });

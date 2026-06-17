@@ -2,6 +2,7 @@
 
 import GetRefineryPriceLast7Days, {
   RefineryPriceCommodityOption,
+  RefineryPriceDealerOption,
   RefineryPriceDayData,
 } from "@/action/refinery_price/getrefineryprices";
 import AddRefineryDayPrice from "@/action/refinery_price/upsertrefineryprice";
@@ -48,8 +49,12 @@ export default function DealerMasterPricePage() {
   const [commodityOptions, setCommodityOptions] = useState<
     RefineryPriceCommodityOption[]
   >([]);
+  const [dealerOptions, setDealerOptions] = useState<
+    RefineryPriceDealerOption[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [selectedDvatId, setSelectedDvatId] = useState<number>(0);
   const [selectedCommodityId, setSelectedCommodityId] = useState<number>(0);
   const [newPrice, setNewPrice] = useState("");
   const [effectiveDate, setEffectiveDate] = useState<string>(
@@ -59,8 +64,12 @@ export default function DealerMasterPricePage() {
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
-    const response = await GetRefineryPriceLast7Days();
+    const response = await GetRefineryPriceLast7Days({
+      dvatid: selectedDvatId || undefined,
+    });
     if (response.status && response.data) {
+      setDealerOptions(response.data.dealerOptions);
+      setSelectedDvatId(response.data.selectedDvatId || 0);
       setDayLabels(response.data.dayLabels);
       setCategories(response.data.categories);
       setCommodityOptions(response.data.commodityOptions);
@@ -71,7 +80,7 @@ export default function DealerMasterPricePage() {
       toast.error(response.message);
     }
     setIsLoading(false);
-  }, [selectedCommodityId]);
+  }, [selectedCommodityId, selectedDvatId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -83,6 +92,11 @@ export default function DealerMasterPricePage() {
 
   const handleAddPrice = async () => {
     const parsed = parseFloat(newPrice);
+
+    if (!selectedDvatId) {
+      toast.error("Select dealer.");
+      return;
+    }
 
     if (!selectedCommodityId) {
       toast.error("Select commodity.");
@@ -102,6 +116,7 @@ export default function DealerMasterPricePage() {
 
     setIsSaving(true);
     const response = await AddRefineryDayPrice({
+      dvatId: selectedDvatId,
       commodityMasterId: selectedCommodityId,
       price: parsed,
       effectiveDate: effectiveDateForApi,
@@ -145,7 +160,24 @@ export default function DealerMasterPricePage() {
           <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-800">
             Add Price
           </h2>
-          <div className="mt-3 grid gap-3 md:grid-cols-[1fr_200px_180px_auto] md:items-end">
+          <div className="mt-3 grid gap-3 md:grid-cols-[1fr_1fr_200px_180px_auto] md:items-end">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">
+                Dealer (DVAT)
+              </label>
+              <select
+                value={selectedDvatId || ""}
+                onChange={(e) => setSelectedDvatId(parseInt(e.target.value, 10))}
+                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-300"
+              >
+                {dealerOptions.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.tinNumber} - {item.tradeName || item.dealerName || "NA"}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-600">
                 Commodity
@@ -289,6 +321,11 @@ export default function DealerMasterPricePage() {
           <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-800">
             Price Snapshot
           </h2>
+          {selectedDvatId ? (
+            <p className="mt-1 text-xs text-slate-500">
+              Showing prices for selected dealer mapping.
+            </p>
+          ) : null}
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {categories.map((item) => {
               const nonNull = item.dayPrices.filter(

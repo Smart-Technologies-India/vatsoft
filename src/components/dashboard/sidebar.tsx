@@ -317,21 +317,21 @@ const Sidebar = (props: SidebarProps) => {
               collapsed={isCollapsed}
             />
 
-            <MenuTab
+            {/* <MenuTab
               click={() => props.setIsOpen(false)}
               icon={<FluentCalendar12Regular className="w-5 h-5" />}
               name="Dispatch"
               path={path}
               pathcheck={"/dashboard/refinery/dispatch"}
               collapsed={isCollapsed}
-            />
+            /> */}
 
             <MenuTab
               click={() => props.setIsOpen(false)}
               icon={<FluentAlignBottom24Regular className="w-5 h-5" />}
-              name="Reports"
+              name="Dealer Master"
               path={path}
-              pathcheck={"/dashboard/refinery/reports"}
+              pathcheck={"/dashboard/refinery/dealer_master"}
               collapsed={isCollapsed}
             />
           </>

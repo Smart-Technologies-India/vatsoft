@@ -124,6 +124,8 @@ const Navbar = (props: NavbarProps) => {
         default:
           return "Retailer";
       }
+    } else if (props.role == Role.REFINERY_MANAGER) {
+      return "Refinery";
     } else {
       return "Department";
     }

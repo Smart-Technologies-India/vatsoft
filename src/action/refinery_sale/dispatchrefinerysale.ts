@@ -4,17 +4,20 @@ import { getCurrentUserId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { errorToString } from "@/utils/methods";
+import { parse, isValid } from "date-fns";
+import CreateDailyPurchase from "../stock/createdailypuchase";
 
 export interface DispatchPayload {
   id: number; // any row id of the invoice
   invoice_number: string;
-  invoice_date: string; // ISO date string
+  invoice_date: string; // dd/MM/yyyy
   vehicle_number: string;
   shipment_time: string; // ISO datetime string
+  cstpurchase: string;
 }
 
 const DispatchRefinerySale = async (
-  payload: DispatchPayload
+  payload: DispatchPayload,
 ): Promise<ApiResponseType<null>> => {
   const functionname = DispatchRefinerySale.name;
 
@@ -57,6 +60,26 @@ const DispatchRefinerySale = async (
       });
     }
 
+    const parsedInvoiceDate = parse(
+      payload.invoice_date,
+      "dd/MM/yyyy",
+      new Date(),
+    );
+    if (!isValid(parsedInvoiceDate)) {
+      return createResponse({
+        message: "Invoice date must be in dd/MM/yyyy format.",
+        functionname,
+      });
+    }
+
+    const parsedShipmentTime = new Date(payload.shipment_time);
+    if (Number.isNaN(parsedShipmentTime.getTime())) {
+      return createResponse({
+        message: "Shipment time is invalid.",
+        functionname,
+      });
+    }
+
     await prisma.refinery_sale.updateMany({
       where: {
         refineryId: refinery.id,
@@ -67,20 +90,61 @@ const DispatchRefinerySale = async (
         status: "ACTIVE",
       },
       data: {
-        refinery_status: "DISPATCH",
+        refinery_status: "COMPLETED",
         invoice_number: payload.invoice_number,
-        invoice_date: new Date(payload.invoice_date),
+        invoice_date: parsedInvoiceDate,
         vehicle_number: payload.vehicle_number,
-        Shipment_time: new Date(payload.shipment_time),
+        Shipment_time: parsedShipmentTime,
         updatedById: currentUserId,
         updatedAt: new Date(),
       },
     });
 
+    const taxRate = 2; // CST tax rate in percentage
+
+    const amount = (
+      parseFloat(payload.cstpurchase) /
+      (1 + taxRate / 100)
+    ).toFixed(2);
+
+    const vatAmount = (
+      parseFloat(payload.cstpurchase) - parseFloat(amount)
+    ).toFixed(2);
+
+    const amount_unit = (
+      parseFloat(payload.cstpurchase) / targetSale.quantity
+    ).toFixed(2);
+
+    const stock_response = await CreateDailyPurchase({
+      amount_unit: amount_unit,
+      invoice_date: parsedInvoiceDate,
+      invoice_number: payload.invoice_number,
+      dvatid: targetSale.seller_tin_numberId,
+      quantity: targetSale.quantity,
+      vatamount: vatAmount,
+      commodityid: targetSale.commodity_masterId,
+      tax_percent: "2",
+      seller_tin_id: refinery.tin_master_id,
+      amount: amount,
+      against_cfrom: true,
+      is_against_fform: false,
+      is_against_hform: false,
+      is_against_iform: false,
+      is_against_e1form: false,
+      is_export: false,
+    });
+
+    if (!stock_response.status) {
+      return createResponse({
+        functionname,
+        message: `Failed to create daily purchase record: ${stock_response.message}`,
+      });
+    }
+
     return {
       status: true,
       data: null,
-      message: "Invoice dispatched successfully.",
+      message: "Sale Completed successfully.",
       functionname,
     };
   } catch (error) {

@@ -19,6 +19,8 @@ export interface VatpaidInvoiceDetail {
   invoiceNumber: string;
   invoiceDate: Date;
   buyer: tin_number_master;
+  tankerOptions: string[];
+  refineryStatus: refinery_sale["refinery_status"];
   rows: VatpaidInvoiceRow[];
 }
 
@@ -53,7 +55,6 @@ const GetVatpaidInvoiceById = async (
       where: {
         id,
         refineryId: refinery.id,
-        refinery_status: "VATPAID",
         deletedAt: null,
         status: "ACTIVE",
       },
@@ -65,7 +66,7 @@ const GetVatpaidInvoiceById = async (
 
     if (!targetSale) {
       return createResponse({
-        message: "Invoice not found or not in VATPAID status.",
+        message: "Invoice not found.",
         functionname,
       });
     }
@@ -75,7 +76,6 @@ const GetVatpaidInvoiceById = async (
         refineryId: refinery.id,
         invoice_number: targetSale.invoice_number,
         seller_tin_numberId: targetSale.seller_tin_numberId,
-        refinery_status: "VATPAID",
         deletedAt: null,
         status: "ACTIVE",
       },
@@ -86,12 +86,57 @@ const GetVatpaidInvoiceById = async (
       orderBy: { id: "asc" },
     });
 
+    const buyerDvat = await prisma.dvat04.findFirst({
+      where: {
+        tin_master_id: targetSale.seller_tin_numberId,
+        deletedAt: null,
+        status: "APPROVED",
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    let tankerOptions: string[] = [];
+    if (buyerDvat) {
+      const mappedDealer = await prisma.refinery_dealer.findFirst({
+        where: {
+          refineryId: refinery.id,
+          dealerId: buyerDvat.id,
+          deletedAt: null,
+          status: "ACTIVE",
+        },
+        select: {
+          tanker_1: true,
+          tanker_2: true,
+          tanker_3: true,
+          tanker_4: true,
+          tanker_5: true,
+        },
+        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+      });
+
+      if (mappedDealer) {
+        tankerOptions = [
+          mappedDealer.tanker_1,
+          mappedDealer.tanker_2,
+          mappedDealer.tanker_3,
+          mappedDealer.tanker_4,
+          mappedDealer.tanker_5,
+        ]
+          .map((item) => item?.trim())
+          .filter((item): item is string => Boolean(item));
+      }
+    }
+
     return {
       status: true,
       data: {
         invoiceNumber: targetSale.invoice_number,
         invoiceDate: targetSale.invoice_date,
         buyer: targetSale.seller_tin_number,
+        tankerOptions,
+        refineryStatus: targetSale.refinery_status,
         rows: allRows,
       },
       message: "Invoice loaded.",

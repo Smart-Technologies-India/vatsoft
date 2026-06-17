@@ -192,6 +192,11 @@ const GetUserDailyPurchaseFiltered = async (
     }
 
     filtered.sort((a, b) => {
+      // Keep pending acceptable groups at the top across all pages.
+      if (a.hasPendingAcceptable !== b.hasPendingAcceptable) {
+        return a.hasPendingAcceptable ? -1 : 1;
+      }
+
       let compareValue = 0;
 
       switch (sortField) {
