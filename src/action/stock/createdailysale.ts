@@ -28,7 +28,7 @@ import prisma from "../../../prisma/database";
 import { customAlphabet } from "nanoid";
 
 const CreateDailySale = async (
-  payload: CreateDailySalePayload
+  payload: CreateDailySalePayload,
 ): Promise<ApiResponseType<stock | null>> => {
   const functionname: string = CreateDailySale.name;
 
@@ -49,8 +49,7 @@ const CreateDailySale = async (
 
     if (invoiceDate < april2026Start) {
       return createResponse({
-        message:
-          "The return upto March 2026 has to be filed on old portal.",
+        message: "The return upto March 2026 has to be filed on old portal.",
         functionname,
       });
     }
@@ -99,12 +98,7 @@ const CreateDailySale = async (
       },
     });
 
-    
     if (filedReturnFiling || paidReturn) {
-      console.log("Filed Return:", filedReturnFiling);
-      console.log("Paid Return:", paidReturn);
-      console.log("Invoice Month:", invoiceMonthName);
-      console.log("Invoice Year:", invoiceYear);
       return createResponse({
         message: `The return for ${invoiceMonthName} is already filed. Kindly file revise return.`,
         functionname,
@@ -215,7 +209,7 @@ const CreateDailySale = async (
 
       if (payload.quantity > isexist.quantity) {
         throw new Error(
-          `Insufficient stock. You requested ${payload.quantity}, but only ${isexist.quantity} is available.`
+          `Insufficient stock. You requested ${payload.quantity}, but only ${isexist.quantity} is available.`,
         );
       }
 
@@ -283,8 +277,15 @@ const CreateDailySale = async (
             throw new Error("Unable to create daily purchase.");
           }
         }
-
-        
+      } else {
+        await prisma.daily_sale.update({
+          where: {
+            id: daily_sale_response.id,
+          },
+          data: {
+            is_accept: true,
+          },
+        });
       }
 
       return update_response;

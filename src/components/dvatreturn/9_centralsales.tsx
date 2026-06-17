@@ -993,6 +993,54 @@ const CentralSales = (props: CentralSalesProps) => {
       Math.max(0, interestBalance)
     );
   };
+  // const adjustAmount = (): number => {
+  //   const penalty = isNegative(lateFees) ? 0 : lateFees;
+  //   const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+  //   const vat = getR6_1();
+
+  //   return isNegative(penalty + interest + vat) ? penalty + interest + vat : 0;
+  // };
+
+  const adjustAmount = (): number => {
+    const amount = isNegative(getR6_1()) ? Math.abs(getR6_1()) : 0;
+
+    const total =
+      parseFloat(get10_2_6_2().decrease) +
+      parseFloat(getPercentageValue("0").decrease) +
+      parseFloat(getPercentageValue("1").decrease) +
+      parseFloat(getPercentageValue("2").decrease) +
+      parseFloat(getPercentageValue("4").decrease) +
+      parseFloat(getPercentageValue("5").decrease) +
+      parseFloat(getPercentageValue("6").decrease) +
+      parseFloat(getPercentageValue("12.5").decrease) +
+      parseFloat(getPercentageValue("12.75").decrease) +
+      parseFloat(getPercentageValue("13.5").decrease) +
+      parseFloat(getPercentageValue("15").decrease) +
+      parseFloat(getPercentageValue("20").decrease) +
+      parseFloat(getProcessedGoods().decrease);
+
+    return Math.min(amount, total);
+  };
+
+  const totalPayable = (): number => {
+    const total =
+      parseFloat(get10_2_6_2().decrease) +
+      parseFloat(getPercentageValue("0").decrease) +
+      parseFloat(getPercentageValue("1").decrease) +
+      parseFloat(getPercentageValue("2").decrease) +
+      parseFloat(getPercentageValue("4").decrease) +
+      parseFloat(getPercentageValue("5").decrease) +
+      parseFloat(getPercentageValue("6").decrease) +
+      parseFloat(getPercentageValue("12.5").decrease) +
+      parseFloat(getPercentageValue("12.75").decrease) +
+      parseFloat(getPercentageValue("13.5").decrease) +
+      parseFloat(getPercentageValue("15").decrease) +
+      parseFloat(getPercentageValue("20").decrease) +
+      parseFloat(getProcessedGoods().decrease);
+
+    const val = total - adjustAmount();
+    return val;
+  };
 
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
@@ -1257,23 +1305,6 @@ const CentralSales = (props: CentralSalesProps) => {
             Balance -Total Taxable turnover of Inter-State Sales
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {/* {(
-              parseFloat(getGoodsReturnsNoteTwo().increase) -
-              parseFloat(getLabour().increase) -
-              parseFloat(getFormF().increase) -
-              parseFloat(getExportIndia().increase) -
-              parseFloat(getFreightCharges().increase) -
-              parseFloat(getSaleCanceled().increase) -
-              parseFloat(getUS6().increase) -
-              parseFloat(getSch1().increase) -
-              parseFloat(get10_3().increase) +
-              (parseFloat(getStateSales().increase) +
-                parseFloat(getInterStateSales().increase) +
-                parseFloat(get10_2().increase) -
-                (parseFloat(getStateSales().increase) +
-                  parseFloat(getInterStateSales().increase) +
-                  parseFloat(get10_2().increase)))
-            ).toFixed(2)} */}
             {(
               parseFloat(getInterStateSales().increase) +
               parseFloat(get10_2_6_2().increase)
@@ -1596,14 +1627,15 @@ const CentralSales = (props: CentralSalesProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {(
+            {/* {(
               parseFloat(get5_1().decrease) +
               parseFloat(get5_2().decrease) +
               (parseFloat(getDebitNote().decrease) -
                 parseFloat(getCreditNote().decrease) -
                 parseFloat(getGoodsReturnsNote().decrease) +
                 parseFloat(props.lastMonthDue))
-            ).toFixed(2)}
+            ).toFixed(2)} */}
+            {adjustAmount().toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">

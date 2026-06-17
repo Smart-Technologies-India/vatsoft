@@ -52,7 +52,6 @@ export const DailySaleProvider = (props: DailySaleProviderProps) => {
 
 const DailySale = (props: DailySaleProviderProps) => {
   const router = useRouter();
-  const [userid, setUserid] = useState<number>(0);
 
   const taxable_at: OptionValue[] = [
     0, 1, 2, 4, 5, 6, 12.5, 12.75, 13.5, 15, 20,
@@ -144,7 +143,6 @@ const DailySale = (props: DailySaleProviderProps) => {
         toast.error(authResponse.message);
         return router.push("/");
       }
-      setUserid(authResponse.data);
 
       const tin_response = await SearchTin({
         tinumber: "26000000000",

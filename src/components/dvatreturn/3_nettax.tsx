@@ -569,18 +569,12 @@ const NetTax = (props: NetTaxProps) => {
     return isNegative(interest) ? 0 : interest;
   };
 
-
   const getNetPayable = (): number => {
     const penalty = isNegative(lateFees) ? 0 : lateFees;
     const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
     const vat = getR6_1();
 
-  
-    return (
-      penalty +
-      Math.max(0, interest) +
-      Math.max(0, vat)
-    );
+    return penalty + interest + vat;
   };
 
   return (

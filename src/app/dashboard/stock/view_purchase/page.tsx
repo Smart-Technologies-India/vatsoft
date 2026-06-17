@@ -5,6 +5,8 @@ import AcceptSale from "@/action/stock/acceptsell";
 import ConvertDvat30A from "@/action/stock/convertdvat30a";
 import DeletePurchase from "@/action/stock/deletepurchase";
 import GetPurchaseDeleteImpact from "@/action/stock/getpurchasedeleteimpact";
+import RejectAllPendingPurchase from "@/action/stock/rejectallpendingpurchase";
+import RejectPurchase from "@/action/stock/rejectpurchase";
 import GetUserDailyPurchase, {
   DailyPurchaseSummary,
   GroupedDailyPurchase,
@@ -813,6 +815,10 @@ const DocumentWiseDetails = () => {
   const [isGroupAcceptLoading, setIsGroupAcceptLoading] = useState(false);
   const [isSingleAcceptLoading, setIsSingleAcceptLoading] =
     useState<boolean>(false);
+  const [isRejectAllLoading, setIsRejectAllLoading] = useState(false);
+  const [isGroupRejectLoading, setIsGroupRejectLoading] = useState(false);
+  const [isSingleRejectLoading, setIsSingleRejectLoading] =
+    useState<boolean>(false);
   const [isPurchaseReportLoading, setIsPurchaseReportLoading] =
     useState<boolean>(false);
 
@@ -872,36 +878,68 @@ const DocumentWiseDetails = () => {
 
     setIsPurchaseReportLoading(true);
     try {
-      const reportResponse = await GetUserDailyPurchase({
-        dvatid: dvatdata.id,
-        skip: 0,
-        take: pagination.total > 0 ? pagination.total : 10000,
-      });
+      const BATCH_SIZE = 1000;
+      let skip = 0;
+      let total = Number.POSITIVE_INFINITY;
+      const reportData: GroupedDailyPurchase[] = [];
 
-      const reportData = reportResponse.status
-        ? (reportResponse.data.result ?? [])
-        : [];
+      while (skip < total) {
+        const reportResponse = await GetUserDailyPurchase({
+          dvatid: dvatdata.id,
+          skip,
+          take: BATCH_SIZE,
+        });
+
+        if (!reportResponse.status || !reportResponse.data?.result) {
+          toast.error(reportResponse.message || "Unable to load report data.");
+          return;
+        }
+
+        const batch = reportResponse.data.result;
+        reportData.push(...batch);
+        total = reportResponse.data.total;
+        skip += BATCH_SIZE;
+
+        if (batch.length === 0) {
+          break;
+        }
+      }
 
       if (reportData.length === 0) {
         toast.info("No purchase records found to export.");
         return;
       }
 
-      const rows = reportData.map((group, index) => ({
-        "S. No.": index + 1,
-        Count: group.count,
-        "Invoice No.": group.invoice_number,
-        "Invoice Date": formateDate(group.invoice_date),
-        "Trade Name": group.seller_tin_number.name_of_dealer,
-        "TIN Number": group.seller_tin_number.tin_number,
-        "Invoice Value": Number(group.totalInvoiceValue.toFixed(2)),
-        "VAT Amount": Number(group.totalVatAmount.toFixed(2)),
-        "Taxable Value": Number(group.totalTaxableValue.toFixed(2)),
-      }));
+      const detailRows = reportData.flatMap((group) =>
+        group.records.map((record) => ({
+          "Invoice No.": group.invoice_number,
+          "Invoice Date": formateDate(group.invoice_date),
+          "Trade Name": group.seller_tin_number.name_of_dealer,
+          "TIN Number": group.seller_tin_number.tin_number,
+          "Product Name": record.commodity_master.product_name,
+          "Item Code": record.commodity_master.id,
+          Quantity: record.quantity,
+          "Invoice Value": Number(
+            (parseFloat(record.vatamount) + parseFloat(record.amount)).toFixed(
+              2,
+            ),
+          ),
+          "Tax Rate": record.tax_percent,
+          "VAT Amount": Number(parseFloat(record.vatamount).toFixed(2)),
+          "Taxable Value": Number(parseFloat(record.amount).toFixed(2)),
+          URN: record.urn_number ?? "",
+          "Accept Status": record.is_accept ? "ACCEPTED" : "PENDING",
+        })),
+      );
 
-      const worksheet = XLSX.utils.json_to_sheet(rows);
+      if (detailRows.length === 0) {
+        toast.info("No invoice item records found to export.");
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(detailRows);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Daily Purchase");
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Invoice Details");
 
       const fileDate = new Date().toISOString().slice(0, 10);
       XLSX.writeFile(workbook, `dailyPurchase_report_${fileDate}.xlsx`);
@@ -1187,6 +1225,91 @@ const DocumentWiseDetails = () => {
     }
   };
 
+  const handleRejectSingleRecord = async (
+    record: GroupedDailyPurchase["records"][number],
+  ) => {
+    setIsSingleRejectLoading(true);
+
+    const response = await RejectPurchase({ id: record.id });
+
+    setIsSingleRejectLoading(false);
+
+    if (response.status && response.data) {
+      toast.success("Purchase record rejected.");
+      await init();
+    } else {
+      toast.error(response.message);
+    }
+  };
+
+  const handleRejectGroupAll = async () => {
+    if (!selectedGroup || !dvatdata) return;
+
+    const pendingRecords = selectedGroup.records.filter(
+      (record) =>
+        (record.seller_tin_number.tin_number.startsWith("25") ||
+          record.seller_tin_number.tin_number.startsWith("26")) &&
+        !record.is_accept,
+    );
+
+    if (pendingRecords.length === 0) return;
+
+    setIsGroupRejectLoading(true);
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (const record of pendingRecords) {
+      const response = await RejectPurchase({ id: record.id });
+      if (response.status && response.data) {
+        successCount += 1;
+      } else {
+        failedCount += 1;
+      }
+    }
+
+    setIsGroupRejectLoading(false);
+
+    if (successCount > 0) {
+      toast.success(`${successCount} record(s) rejected.`);
+      await init();
+    }
+    if (failedCount > 0) {
+      toast.error(`${failedCount} record(s) could not be rejected.`);
+    }
+  };
+
+  const handleRejectAllRecords = async () => {
+    if (!dvatdata) {
+      toast.error("DVAT not found.");
+      return;
+    }
+
+    setIsRejectAllLoading(true);
+    const response = await RejectAllPendingPurchase({
+      dvatid: dvatdata.id,
+    });
+    setIsRejectAllLoading(false);
+
+    if (!response.status || !response.data) {
+      toast.error(response.message);
+      return;
+    }
+
+    if (response.data.total === 0) {
+      toast.info("No pending acceptable purchase records found.");
+      return;
+    }
+
+    if (response.data.success > 0) {
+      toast.success(`${response.data.success} record(s) rejected.`);
+    }
+    if (response.data.failed > 0) {
+      toast.error(`${response.data.failed} record(s) could not be rejected.`);
+    }
+
+    await init();
+  };
+
   const hasPendingAcceptable = dailyPurchase.some(
     (group) => group.hasPendingAcceptable,
   );
@@ -1375,13 +1498,32 @@ const DocumentWiseDetails = () => {
                   r.seller_tin_number.tin_number.startsWith("26")) &&
                 !r.is_accept,
             ) && (
-              <div className="mt-4 flex justify-end">
+              <div className="mt-4 flex justify-end gap-2">
                 <button
                   disabled={isGroupAcceptLoading}
                   onClick={handleAcceptGroupAll}
                   className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
                 >
                   {isGroupAcceptLoading ? "Accepting..." : "Accept All"}
+                </button>
+                <button
+                  disabled={isGroupRejectLoading}
+                  onClick={() => {
+                    Modal.confirm({
+                      title: "Confirm Reject All",
+                      content:
+                        "This will reject all pending records in this invoice group and cannot be undone.",
+                      okText: "Reject All",
+                      cancelText: "Cancel",
+                      okButtonProps: { danger: true },
+                      onOk: async () => {
+                        await handleRejectGroupAll();
+                      },
+                    });
+                  }}
+                  className="text-sm bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+                >
+                  {isGroupRejectLoading ? "Rejecting..." : "Reject All"}
                 </button>
               </div>
             )}
@@ -1849,19 +1991,43 @@ const DocumentWiseDetails = () => {
                           )}
 
                           {hasPendingAcceptable && (
-                            <Button
-                              size="small"
-                              block
-                              type="default"
-                              danger
-                              loading={isAcceptAllLoading}
-                              onClick={() => {
-                                setToolbarActionsOpen(false);
-                                handleAcceptAllRecords();
-                              }}
-                            >
-                              Accept All
-                            </Button>
+                            <>
+                              <Button
+                                size="small"
+                                block
+                                type="default"
+                                danger
+                                loading={isAcceptAllLoading}
+                                onClick={() => {
+                                  setToolbarActionsOpen(false);
+                                  handleAcceptAllRecords();
+                                }}
+                              >
+                                Accept All
+                              </Button>
+                              <Button
+                                size="small"
+                                block
+                                type="default"
+                                loading={isRejectAllLoading}
+                                onClick={() => {
+                                  setToolbarActionsOpen(false);
+                                  Modal.confirm({
+                                    title: "Confirm Reject All",
+                                    content:
+                                      "This will reject all pending purchase records and cannot be undone.",
+                                    okText: "Reject All",
+                                    cancelText: "Cancel",
+                                    okButtonProps: { danger: true },
+                                    onOk: async () => {
+                                      await handleRejectAllRecords();
+                                    },
+                                  });
+                                }}
+                              >
+                                Reject All
+                              </Button>
+                            </>
                           )}
 
                           <DownloadPurchaseSample
@@ -2250,20 +2416,48 @@ const DocumentWiseDetails = () => {
                                           "26",
                                         )) &&
                                       !group.records[0].is_accept && (
-                                        <button
-                                          onClick={async () => {
-                                            await handleAcceptSingleRecord(
-                                              group.records[0],
-                                            );
-                                            handelClose(index);
-                                          }}
-                                          disabled={isSingleAcceptLoading}
-                                          className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded disabled:opacity-60"
-                                        >
-                                          {isSingleAcceptLoading
-                                            ? "Accepting..."
-                                            : "Accept"}
-                                        </button>
+                                        <>
+                                          <button
+                                            onClick={async () => {
+                                              await handleAcceptSingleRecord(
+                                                group.records[0],
+                                              );
+                                              handelClose(index);
+                                            }}
+                                            disabled={isSingleAcceptLoading}
+                                            className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded disabled:opacity-60"
+                                          >
+                                            {isSingleAcceptLoading
+                                              ? "Accepting..."
+                                              : "Accept"}
+                                          </button>
+                                          <button
+                                            onClick={async () => {
+                                              Modal.confirm({
+                                                title: "Confirm Reject",
+                                                content:
+                                                  "This will reject this purchase record and cannot be undone.",
+                                                okText: "Reject",
+                                                cancelText: "Cancel",
+                                                okButtonProps: {
+                                                  danger: true,
+                                                },
+                                                onOk: async () => {
+                                                  await handleRejectSingleRecord(
+                                                    group.records[0],
+                                                  );
+                                                  handelClose(index);
+                                                },
+                                              });
+                                            }}
+                                            disabled={isSingleRejectLoading}
+                                            className="text-sm bg-white border hover:border-red-500 hover:text-red-600 text-gray-700 py-1 px-3 rounded disabled:opacity-60"
+                                          >
+                                            {isSingleRejectLoading
+                                              ? "Rejecting..."
+                                              : "Reject"}
+                                          </button>
+                                        </>
                                       )}
                                     <button
                                       onClick={() => {

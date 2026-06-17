@@ -575,11 +575,11 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
   // };
 
   const getNetPayable = (): number => {
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
     const vat = getR6_1();
-    console.log("VAT on R6_1:", vat);
-    console.log("Paid Challan Amount:", getPaidChallanAmount());
 
-    return Math.max(0, vat) - getPaidChallanAmount();
+    return isNegative(penalty + interest + vat) ? penalty + interest + vat : 0;
   };
 
   return (

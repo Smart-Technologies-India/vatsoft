@@ -101,7 +101,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
         <tr className="w-full">
           <th
             colSpan={3}
-            className="border border-black px-2 leading-4 text-[0.6rem] w-[100%] text-left"
+            className="border border-black px-2 leading-4 text-[0.6rem] w-full text-left"
           >
             S2.1 Adjustment to Tax Credits
           </th>
@@ -111,10 +111,10 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
             Nature of Adjustment
           </th>
           <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-            Increase in Output Tax(C)
+            Increase in Tax Credit(C)
           </th>
           <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-            Decrease in Output Tax(D)
+            Decrease in Tax Credit(D)
           </th>
         </tr>
         <tr className="w-full">

@@ -112,7 +112,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       currentDate,
     );
     setDiffDays(diff_days);
-   
+
     let pdiff_days = 0;
     if (
       props.return01.rr_number == null ||
@@ -127,7 +127,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     } else {
       pdiff_days = getDaysBetweenDates(
         new Date(parseInt(props.return01.year), monthIndex, 29),
-        new Date(props.return01.transaction_date!) ,
+        new Date(props.return01.transaction_date!),
       );
       setLateFees(Math.min(100 * pdiff_days, 10000));
     }
@@ -644,6 +644,14 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     .map((date) => new Date(date))
     .sort((a, b) => b.getTime() - a.getTime())[0];
 
+  const getNetPayable = (): number => {
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const vat = getR6_1();
+
+    return isNegative(penalty + interest + vat) ? 0 : penalty + interest + vat;
+  };
+
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
       <thead>
@@ -663,11 +671,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
             Balance brought forward from line R7
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {isNegative(getR7())
-              ? isNegative(lateFees)
-                ? 0
-                : lateFees.toFixed(2)
-              : (getR7() + (isNegative(lateFees) ? 0 : lateFees)).toFixed(2)}
+            {getNetPayable() .toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -675,7 +679,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
             R8.1 Challan number by which payment made
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {getR7() == 0 ? "-" : paidChallanCpins || "-"}
+            {getNetPayable() == 0 ? "-" : paidChallanCpins || "-"}
           </td>
         </tr>
         <tr className="w-full">
@@ -683,7 +687,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
             R8.2 Date of payment
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {getR7() == 0
+            {getNetPayable() == 0
               ? "-"
               : latestPaidChallanDate
                 ? formateDate(latestPaidChallanDate)

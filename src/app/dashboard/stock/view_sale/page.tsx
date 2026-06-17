@@ -578,6 +578,32 @@ const DocumentWiseDetails = () => {
     };
   };
 
+  const hasPendingAcceptableForSelectedDateRange = async (): Promise<boolean> => {
+    if (!dvatdata) return false;
+
+    const pendingResponse = await GetUserDailySaleFiltered({
+      dvatid: dvatdata.id,
+      skip: 0,
+      take: 1,
+      searchTerm: "",
+      sortField: "invoice_date",
+      sortOrder: "desc",
+      startDate: dateFilter.startDate,
+      endDate: dateFilter.endDate,
+      acceptStatusFilter: "pending",
+    });
+
+    if (!pendingResponse.status || !pendingResponse.data) {
+      toast.error(
+        pendingResponse.message ||
+          "Unable to validate pending sales invoices for generation.",
+      );
+      return true;
+    }
+
+    return pendingResponse.data.total > 0;
+  };
+
   const Convertto31 = async () => {
     if (!dvatdata) {
       return toast.error("DVAT not found.");
@@ -1398,8 +1424,19 @@ const DocumentWiseDetails = () => {
                               size="small"
                               block
                               type="default"
-                              onClick={() => {
+                              onClick={async () => {
                                 setToolbarActionsOpen(false);
+
+                                const hasPendingInSelectedRange =
+                                  await hasPendingAcceptableForSelectedDateRange();
+
+                                if (hasPendingInSelectedRange) {
+                                  toast.error(
+                                    "All sale invoices should be accepted by buyer for the selected date range before generating DVAT 31/31 A.",
+                                  );
+                                  return;
+                                }
+
                                 setIsModalOpen(true);
                               }}
                             >
