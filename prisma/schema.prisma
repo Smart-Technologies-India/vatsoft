@@ -1750,7 +1750,6 @@ model refinery_price {
   updatedBy          user?            @relation("refinery_price_updatedBy", fields: [updatedById], references: [id])
   deletedBy          user?            @relation("refinery_price_deletedBy", fields: [deletedById], references: [id])
 
-  @@unique([refineryId, dvatid, commodity_masterId, effective_date])
   @@index([refineryId], map: "refinery_price_refineryId_fkey")
   @@index([dvatid], map: "refinery_price_dvatid_fkey")
   @@index([commodity_masterId], map: "refinery_price_commodity_masterId_fkey")
