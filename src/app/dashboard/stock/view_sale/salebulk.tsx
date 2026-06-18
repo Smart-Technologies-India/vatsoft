@@ -337,9 +337,11 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       const taxPercent =
         dvatdata?.commodity === "MANUFACTURER" ||
         dvatdata?.commodity === "WHOLESALER"
-          ? row.sale_type === "REGULAR"
-            ? "20"
-            : "0"
+          ? row.sale_type === "CFORM"
+            ? "2"
+            : row.sale_type === "REGULAR"
+              ? "20"
+              : "0"
           : row.sale_type === "CFORM"
             ? "2"
             : row.sale_type === "REGULAR"
@@ -923,6 +925,8 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           const allowedFlagKeysByCommodity =
             commodityType === "MANUFACTURER"
               ? ["CFORM", "FFORM", "E1", "IFORM", "EXEMPT", "H_EXPORT", "EXPORT"]
+              : commodityType === "WHOLESALER"
+                ? ["CFORM"]
               : commodityType === "FUEL"
                 ? ["CFORM", "FFORM", "EXEMPT"]
                 : [];
@@ -984,7 +988,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           }
 
           let saleType = "REGULAR";
-          if (commodityType === "LIQUOR" || commodityType === "WHOLESALER") {
+          if (commodityType === "LIQUOR") {
             saleType = "REGULAR";
           } else if (commodityType === "FUEL") {
             if (selectedAllowedFlags.length === 0) {

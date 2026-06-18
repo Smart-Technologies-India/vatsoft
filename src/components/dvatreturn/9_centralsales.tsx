@@ -1022,6 +1022,9 @@ const CentralSales = (props: CentralSalesProps) => {
     return Math.min(amount, total);
   };
 
+  const otherPayments = props.paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.others);
+  }, 0);
   const totalPayable = (): number => {
     const total =
       parseFloat(get10_2_6_2().decrease) +
@@ -1038,7 +1041,7 @@ const CentralSales = (props: CentralSalesProps) => {
       parseFloat(getPercentageValue("20").decrease) +
       parseFloat(getProcessedGoods().decrease);
 
-    const val = total - adjustAmount();
+    const val = total - adjustAmount() - otherPayments;
     return val;
   };
 
@@ -1645,7 +1648,8 @@ const CentralSales = (props: CentralSalesProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {getNetPayable().toFixed(2)}
+            {isNegative(totalPayable()) ? 0 : totalPayable().toFixed(2)}{" "}
+            {/* pending_cash */}
           </td>
         </tr>
       </tbody>

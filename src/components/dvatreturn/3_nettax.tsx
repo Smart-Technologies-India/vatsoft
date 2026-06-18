@@ -574,7 +574,7 @@ const NetTax = (props: NetTaxProps) => {
     const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
     const vat = getR6_1();
 
-    return penalty + interest + vat;
+    return interest + vat;
   };
 
   return (
@@ -629,16 +629,9 @@ const NetTax = (props: NetTaxProps) => {
         </tr>
         <tr className="w-full">
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            R7 Balance (R6.1+R6.2-R6.3)
+            R7 Balance (R6.1+R6.2a-R6.3)
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {/* {getR7().toFixed(2)} */}
-            {/* {isNegative(getR7())
-              ? isNegative(lateFees)
-                ? 0
-                : lateFees.toFixed(2)
-              : (getR7() + (isNegative(lateFees) ? 0 : lateFees)).toFixed(2)} */}
-
             {getNetPayable().toFixed(2)}
           </td>
         </tr>

@@ -6,9 +6,11 @@ import {
   InputTaxCredit,
   NaturePurchase,
   NaturePurchaseOption,
+  PurchaseType,
   returns_01,
   returns_entry,
   SaleOf,
+  SaleOfInterstate,
 } from "@prisma/client";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -559,12 +561,6 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
     return isNegative(interest) ? 0 : interest;
   };
 
-  const getPaidChallanAmount = (): number =>
-    props.paidChallans.reduce(
-      (total, challan) => total + parseFloat(challan.total_tax_amount ?? "0"),
-      0,
-    );
-
   // const getR7 = (): number => {
 
   //   return Math.round(
@@ -574,12 +570,103 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
   //   );
   // };
 
+  const getPercentageValue = (value: string): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31_A &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE &&
+        val.tax_percent == value,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const getProcessedGoods = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31_A &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of_interstate == SaleOfInterstate.PROCESSED_GOODS,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const get10_2_6_2 = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31_A &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        (val.sale_of_interstate == SaleOfInterstate.FORMC ||
+          val.purchase_type == PurchaseType.FORMC_CONCESSION),
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
   const getNetPayable = (): number => {
     const penalty = isNegative(lateFees) ? 0 : lateFees;
     const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
     const vat = getR6_1();
 
-    return isNegative(penalty + interest + vat) ? penalty + interest + vat : 0;
+    return isNegative(interest + vat) ? interest + vat : 0;
+  };
+
+  const adjustAmount = (): number => {
+    const amount = isNegative(getR6_1()) ? Math.abs(getR6_1()) : 0;
+
+    const total =
+      parseFloat(get10_2_6_2().decrease) +
+      parseFloat(getPercentageValue("0").decrease) +
+      parseFloat(getPercentageValue("1").decrease) +
+      parseFloat(getPercentageValue("2").decrease) +
+      parseFloat(getPercentageValue("4").decrease) +
+      parseFloat(getPercentageValue("5").decrease) +
+      parseFloat(getPercentageValue("6").decrease) +
+      parseFloat(getPercentageValue("12.5").decrease) +
+      parseFloat(getPercentageValue("12.75").decrease) +
+      parseFloat(getPercentageValue("13.5").decrease) +
+      parseFloat(getPercentageValue("15").decrease) +
+      parseFloat(getPercentageValue("20").decrease) +
+      parseFloat(getProcessedGoods().decrease);
+
+    return Math.min(amount, total);
   };
 
   return (
@@ -609,7 +696,7 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
             R9.1 Adjusted against liability under Central Sales Tax
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            0
+            {adjustAmount().toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -625,8 +712,8 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
             R9.3 Balance carried forward to next tax period
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {/* {isNegative(getR7()) ? getR7().toFixed(2) : 0} */}
-            {getNetPayable().toFixed(2)}
+            {(getNetPayable() + adjustAmount()).toFixed(2)}{" "}
+            {/* forward to next period pending_payment*/}
           </td>
         </tr>
       </tbody>

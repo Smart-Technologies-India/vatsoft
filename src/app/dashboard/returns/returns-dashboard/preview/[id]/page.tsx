@@ -17,11 +17,13 @@ import {
   InputTaxCredit,
   NaturePurchase,
   NaturePurchaseOption,
+  PurchaseType,
   Quarter,
   registration,
   returns_01,
   returns_entry,
   SaleOf,
+  SaleOfInterstate,
   user,
 } from "@prisma/client";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -71,8 +73,8 @@ const Dvat16ReturnPreview = () => {
   // const [isAllNil, setAllNil] = useState<boolean>(false);
   const [lateFees, setLateFees] = useState<number>(0);
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
-  const [InterestDiffDays, setInterestDiffDays] = useState<number>(0);
-  const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
+  // const [InterestDiffDays, setInterestDiffDays] = useState<number>(0);
+  // const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
 
   const getQuarterForMonth = (month: string): Quarter | undefined => {
     const monthToQuarterMap: { [key: string]: Quarter } = {
@@ -162,9 +164,8 @@ const Dvat16ReturnPreview = () => {
       new Date(newYear, monthIndex, 16),
       currentDate,
     );
-    setInterestDiffDays(idiff_days);
+    // setInterestDiffDays(idiff_days);
 
-  
     let pdiff_days = 0;
 
     if (rr_number == null || rr_number == undefined || rr_number == "") {
@@ -173,15 +174,15 @@ const Dvat16ReturnPreview = () => {
         currentDate,
       );
 
-      setPenaltyDiffDays(pdiff_days);
+      // setPenaltyDiffDays(pdiff_days);
       setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
-    }else{
+    } else {
       pdiff_days = getDaysBetweenDates(
         new Date(newYear, monthIndex, 29),
         filing_date,
       );
 
-      setPenaltyDiffDays(pdiff_days);
+      // setPenaltyDiffDays(pdiff_days);
       setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
     }
   };
@@ -232,7 +233,6 @@ const Dvat16ReturnPreview = () => {
         const challanResponse = await GetPaidChallanByReturnId({
           returnid: selectedReturn.id,
         });
-
 
         if (challanResponse.status && challanResponse.data) {
           setPaidChallans(challanResponse.data);
@@ -347,7 +347,7 @@ const Dvat16ReturnPreview = () => {
       return01.month ?? "",
       return01.rr_number ?? "",
       return01.dvat04?.frequencyFilings === "QUARTERLY",
-      new Date(return01.filing_datetime)
+      new Date(return01.filing_datetime),
     );
   }, [return01]);
 
@@ -928,7 +928,6 @@ const Dvat16ReturnPreview = () => {
     const penaltyBalance = penalty - paidpenaltyamount;
     const interestBalance = interest - paidinterestamount;
 
-
     if (vatBalance <= 0) {
       return Math.max(0, penaltyBalance) + Math.max(0, interestBalance);
     }
@@ -947,6 +946,155 @@ const Dvat16ReturnPreview = () => {
     );
   };
   // net payable amount end here
+
+  const getPercentageValue = (value: string): PercentageOutput => {
+    if (!returns_entryData) return { increase: "0", decrease: "0" };
+
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = returns_entryData.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31_A &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE &&
+        val.tax_percent == value,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const getProcessedGoods = (): PercentageOutput => {
+    if (!returns_entryData) return { increase: "0", decrease: "0" };
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = returns_entryData.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31_A &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of_interstate == SaleOfInterstate.PROCESSED_GOODS,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const get10_2_6_2 = (): PercentageOutput => {
+    if (!returns_entryData) return { increase: "0", decrease: "0" };
+
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = returns_entryData.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31_A &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        (val.sale_of_interstate == SaleOfInterstate.FORMC ||
+          val.purchase_type == PurchaseType.FORMC_CONCESSION),
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const adjustAmount = (): number => {
+    const amount = isNegative(getR6_1()) ? Math.abs(getR6_1()) : 0;
+
+    const total =
+      parseFloat(get10_2_6_2().decrease) +
+      parseFloat(getPercentageValue("0").decrease) +
+      parseFloat(getPercentageValue("1").decrease) +
+      parseFloat(getPercentageValue("2").decrease) +
+      parseFloat(getPercentageValue("4").decrease) +
+      parseFloat(getPercentageValue("5").decrease) +
+      parseFloat(getPercentageValue("6").decrease) +
+      parseFloat(getPercentageValue("12.5").decrease) +
+      parseFloat(getPercentageValue("12.75").decrease) +
+      parseFloat(getPercentageValue("13.5").decrease) +
+      parseFloat(getPercentageValue("15").decrease) +
+      parseFloat(getPercentageValue("20").decrease) +
+      parseFloat(getProcessedGoods().decrease);
+
+    return Math.min(amount, total);
+  };
+
+  const otherPayments = paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.others);
+  }, 0);
+
+  const pendingcashone = (): number => {
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const vat = getR6_1();
+
+    const totalpaid = paidvatamount + paidinterestamount + paidpenaltyamount;
+
+    const val = isNegative(interest + vat)
+      ? penalty - totalpaid
+      : interest + vat + penalty - totalpaid;
+
+    return Math.abs(val);
+  };
+
+  const pendingcashtwo = (): number => {
+    const total =
+      parseFloat(get10_2_6_2().decrease) +
+      parseFloat(getPercentageValue("0").decrease) +
+      parseFloat(getPercentageValue("1").decrease) +
+      parseFloat(getPercentageValue("2").decrease) +
+      parseFloat(getPercentageValue("4").decrease) +
+      parseFloat(getPercentageValue("5").decrease) +
+      parseFloat(getPercentageValue("6").decrease) +
+      parseFloat(getPercentageValue("12.5").decrease) +
+      parseFloat(getPercentageValue("12.75").decrease) +
+      parseFloat(getPercentageValue("13.5").decrease) +
+      parseFloat(getPercentageValue("15").decrease) +
+      parseFloat(getPercentageValue("20").decrease) +
+      parseFloat(getProcessedGoods().decrease);
+
+    const val =  total - adjustAmount() - otherPayments;
+    return Math.abs(val);
+  };
+
+  const pendingpayment = (): number => {
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const vat = getR6_1();
+
+    const val =
+      (isNegative(interest + vat) ? interest + vat : 0) + adjustAmount();
+
+    return Math.abs(val);
+  };
+
+  console.log("pendingcashone", pendingcashone());
+  console.log("pendingcashtwo", pendingcashtwo());
+  console.log("pendingpayment", pendingpayment());
 
   return (
     <>

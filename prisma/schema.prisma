@@ -586,6 +586,7 @@ model returns_01 {
   status            ReturnStatus    @default(DUE)
   challan_number    String?
   pending_payment   String?
+  cash_payment      String?
   createdAt         DateTime        @default(now())
   createdById       Int
   updatedAt         DateTime        @updatedAt
@@ -1659,29 +1660,27 @@ model refinery {
 }
 
 model refinery_dealer {
-  id         Int      @id @default(autoincrement())
-  refinery   refinery @relation(fields: [refineryId], references: [id])
-  refineryId Int
-  dvat       dvat04   @relation(fields: [dealerId], references: [id])
-  dealerId   Int
-  tanker_1 String?
-  tanker_2 String?
-  tanker_3 String?
-  tanker_4 String?
-  tanker_5 String?
-  status    Status   @default(ACTIVE)
-  createdAt DateTime @default(now())
+  id          Int       @id @default(autoincrement())
+  refinery    refinery  @relation(fields: [refineryId], references: [id])
+  refineryId  Int
+  dvat        dvat04    @relation(fields: [dealerId], references: [id])
+  dealerId    Int
+  tanker_1    String?
+  tanker_2    String?
+  tanker_3    String?
+  tanker_4    String?
+  tanker_5    String?
+  status      Status    @default(ACTIVE)
+  createdAt   DateTime  @default(now())
   createdById Int
-  createdBy user  @relation("refinery_dealer_createdBy", fields: [createdById], references: [id])
-  updatedAt DateTime @updatedAt
+  createdBy   user      @relation("refinery_dealer_createdBy", fields: [createdById], references: [id])
+  updatedAt   DateTime  @updatedAt
   updatedById Int?
-  updatedBy user? @relation("refinery_dealer_updatedBy", fields: [updatedById], references: [id])
-  deletedAt DateTime?
+  updatedBy   user?     @relation("refinery_dealer_updatedBy", fields: [updatedById], references: [id])
+  deletedAt   DateTime?
   deletedById Int?
-  deletedBy user? @relation("refinery_dealer_deletedBy", fields: [deletedById], references: [id])
+  deletedBy   user?     @relation("refinery_dealer_deletedBy", fields: [deletedById], references: [id])
 }
-
-
 
 enum RefineryStatus {
   SALE
