@@ -2,6 +2,8 @@
 interface ConvertDvat31Payload {
   dvatid: number;
   createdById: number;
+  startDate?: string;
+  endDate?: string;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -56,63 +58,65 @@ const ConvertDvat31 = async (
     }
 
     const result: returns_01 = await prisma.$transaction(async (prisma) => {
-      const lowestMonth = await prisma.daily_sale.findFirst({
-        where: {
-          deletedAt: null,
-          deletedBy: null,
-          status: "ACTIVE",
-          dvat04Id: payload.dvatid,
-          is_dvat_31: false,
-        },
-        orderBy: {
-          invoice_date: "asc", // Sort by date to get the earliest month
-        },
-        select: {
-          invoice_date: true,
-        },
-      });
+      const shouldUseSelectedPeriod = Boolean(
+        payload.startDate || payload.endDate,
+      );
 
-      if (!lowestMonth) {
-        throw new Error("No records found");
+      const invoiceDateFilter: {
+        gte?: Date;
+        lte?: Date;
+      } = {};
+
+      if (payload.startDate) {
+        invoiceDateFilter.gte = new Date(payload.startDate);
       }
 
-      const targetDate = new Date(lowestMonth.invoice_date);
-      const targetMonth = new Date(lowestMonth.invoice_date)
-        .toISOString()
-        .slice(0, 7); // Extract YYYY-MM format
+      if (payload.endDate) {
+        const endDate = new Date(payload.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        invoiceDateFilter.lte = endDate;
+      }
 
-      const year = parseInt(targetMonth.split("-")[0], 10);
-      const month = parseInt(targetMonth.split("-")[1], 10);
-
-  
-
-      // Calculate the first day of the next month
-      const startOfNextMonth = new Date(year, month, 1); // Year and month are 0-indexed in JS Date
-
-      // Calculate the last day of the target month
-      const endOfMonth = new Date(startOfNextMonth.getTime() - 1).toISOString();
-
-
-      const data_to_create = await prisma.daily_sale.findMany({
+      const candidateRows = await prisma.daily_sale.findMany({
         where: {
           deletedAt: null,
           deletedBy: null,
           status: "ACTIVE",
           dvat04Id: payload.dvatid,
           is_dvat_31: false,
-          invoice_date: {
-            gte: new Date(`${targetMonth}-01`),
-            lt: endOfMonth,
-          },
+          ...(Object.keys(invoiceDateFilter).length > 0 && {
+            invoice_date: invoiceDateFilter,
+          }),
         },
         include: {
           seller_tin_number: true,
           commodity_master: true,
         },
+        orderBy: {
+          invoice_date: "asc",
+        },
       });
 
-      if (data_to_create.length == 0) {
+      if (candidateRows.length === 0) {
         throw new Error("There is no remaning daily sale");
+      }
+
+      const targetDate = new Date(candidateRows[0].invoice_date);
+      const targetMonth = targetDate.toISOString().slice(0, 7);
+      const monthStart = new Date(`${targetMonth}-01`);
+      const year = monthStart.getFullYear();
+      const month = monthStart.getMonth();
+      const monthEndExclusive = new Date(year, month + 1, 1);
+
+      const data_to_create = shouldUseSelectedPeriod
+        ? candidateRows
+        : candidateRows.filter((row) => {
+            const invoiceDate = new Date(row.invoice_date);
+            return invoiceDate >= monthStart && invoiceDate < monthEndExclusive;
+          });
+
+      if (data_to_create.length === 0) {
+        throw new Error("No sale rows found for selected period.");
       }
 
       const update_response = await prisma.daily_sale.updateMany({
@@ -122,9 +126,8 @@ const ConvertDvat31 = async (
           status: "ACTIVE",
           dvat04Id: payload.dvatid,
           is_dvat_31: false,
-          invoice_date: {
-            gte: new Date(`${targetMonth}-01`),
-            lt: endOfMonth,
+          id: {
+            in: data_to_create.map((item) => item.id),
           },
         },
         data: {

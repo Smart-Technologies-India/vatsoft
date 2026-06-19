@@ -438,7 +438,7 @@ const NetTax = (props: NetTaxProps) => {
     const sortedPayments = payments
       .map((payment) => {
         const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
-        const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
+        const paymentAmount = parseFloat(payment.vat ?? "0") + parseFloat(payment.penalty ?? "0") + parseFloat(payment.interest ?? "0");
 
         if (
           !paymentDateRaw ||

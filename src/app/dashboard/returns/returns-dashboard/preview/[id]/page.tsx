@@ -408,16 +408,12 @@ const Dvat16ReturnPreview = () => {
     const penaltyBalance = penalty - paidpenaltyamount;
     const interestBalance = interest - paidinterestamount;
 
-    const pendingPayment = vatBalance + penaltyBalance + interestBalance;
-
-    // make pendingpayment positive if it is negative
-    const positivePendingPayment =
-      pendingPayment < 0 ? Math.abs(pendingPayment) : pendingPayment;
-
+    
     const response = await AddPaymentSubmit({
       id: return01.id ?? 0,
       rr_number: get_rr_number(),
-      pending_payment: positivePendingPayment.toFixed(2),
+      pending_payment: Math.abs(pendingpayment()).toFixed(2),
+      pending_cash: (Math.abs(pendingcashone()) + Math.abs(pendingcashtwo())).toFixed(2),
       penalty: penalty.toFixed(2),
       vatamount: vat.toFixed(2),
       interestamount: interest.toFixed(2),
@@ -799,7 +795,8 @@ const Dvat16ReturnPreview = () => {
     const sortedPayments = payments
       .map((payment) => {
         const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
-        const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
+              const paymentAmount = parseFloat(payment.vat ?? "0") + parseFloat(payment.penalty ?? "0") + parseFloat(payment.interest ?? "0");
+
         if (
           !paymentDateRaw ||
           !Number.isFinite(paymentAmount) ||
@@ -897,7 +894,7 @@ const Dvat16ReturnPreview = () => {
         monthIndex += 1;
       }
     }
-    return new Date(computedYear, monthIndex, 16);
+    return new Date(computedYear, monthIndex, 15);
   };
 
   const getR6_2a = (): number => {
@@ -1047,6 +1044,7 @@ const Dvat16ReturnPreview = () => {
     return total + parseFloat(challan.others);
   }, 0);
 
+  // 4 number
   const pendingcashone = (): number => {
     const penalty = isNegative(lateFees) ? 0 : lateFees;
     const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
@@ -1058,9 +1056,10 @@ const Dvat16ReturnPreview = () => {
       ? penalty - totalpaid
       : interest + vat + penalty - totalpaid;
 
-    return Math.abs(val);
+    return val;
   };
 
+  // 9 number
   const pendingcashtwo = (): number => {
     const total =
       parseFloat(get10_2_6_2().decrease) +
@@ -1077,8 +1076,18 @@ const Dvat16ReturnPreview = () => {
       parseFloat(getPercentageValue("20").decrease) +
       parseFloat(getProcessedGoods().decrease);
 
-    const val =  total - adjustAmount() - otherPayments;
-    return Math.abs(val);
+    const val = total - adjustAmount() - otherPayments;
+    return val;
+  };
+
+  const showSubmitButton = (): boolean => {
+    if (
+      (Math.round(pendingcashone()) == 0 || isNegative(pendingcashone())) &&
+      (Math.round(pendingcashtwo()) == 0 || isNegative(pendingcashtwo()))
+    ) {
+      return true;
+    }
+    return false;
   };
 
   const pendingpayment = (): number => {
@@ -1089,13 +1098,10 @@ const Dvat16ReturnPreview = () => {
     const val =
       (isNegative(interest + vat) ? interest + vat : 0) + adjustAmount();
 
-    return Math.abs(val);
+    return val;
   };
 
-  console.log("pendingcashone", pendingcashone());
-  console.log("pendingcashtwo", pendingcashtwo());
-  console.log("pendingpayment", pendingpayment());
-
+ 
   return (
     <>
       {/* <DevTool control={control} /> */}
@@ -1449,7 +1455,7 @@ const Dvat16ReturnPreview = () => {
 
             {!payment && (
               <>
-                {Math.round(getNetPayable()) == 0 ? (
+                {showSubmitButton()? (
                   <>
                     <Button
                       type="primary"

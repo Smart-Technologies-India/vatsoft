@@ -35,6 +35,7 @@ import GetReturn01 from "@/action/return/getreturn";
 import getReturnEntry from "@/action/return/getreturnentry";
 import GetUser from "@/action/user/getuser";
 import GetPaidChallanByReturnId from "@/action/challan/getpaidchallanbyreturnid";
+import getPdfReturn from "@/action/return/getpdfreturn";
 
 interface PercentageOutput {
   increase: string;
@@ -54,6 +55,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     [],
   );
   const [paidChallans, setPaidChallans] = useState<challan[]>([]);
+  const [lastmonthdue, setLastMonthDue] = useState<string>("0");
 
   const [user, setUser] = useState<user | null>(null);
 
@@ -89,11 +91,48 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
           serReturns_entryData(entry_response.data);
         }
 
+        const monthNames = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
+
+        const currentMonthIndex = monthNames.indexOf(
+          returns_response.data.month ?? "",
+        );
+
+        if (currentMonthIndex !== -1) {
+          const lastMonthIndex = (currentMonthIndex - 1 + 12) % 12;
+          const lastMonth = monthNames[lastMonthIndex];
+
+          const lastmonthdata = await getPdfReturn({
+            year:
+              returns_response.data.month == "January"
+                ? (parseInt(returns_response.data.year) - 1).toString()
+                : returns_response.data.year,
+            month: lastMonth,
+          });
+
+          if (lastmonthdata.status && lastmonthdata.data) {
+            setLastMonthDue(lastmonthdata.data.returns_01.pending_payment ?? "0");
+          }
+        }
+
         getLateFees(
           returns_response.data.year,
           returns_response.data.month!,
           returns_response.data.rr_number,
           new Date(returns_response.data.filing_datetime),
+          returns_response.data.dvat04?.frequencyFilings === "QUARTERLY",
         );
       }
     };
@@ -105,6 +144,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     month: string,
     rr_number: string,
     filing_date: Date,
+    isComp: boolean = false,
   ) => {
     const currentDate = new Date();
 
@@ -126,13 +166,25 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     // Get the month index from the month name
     let monthIndex = monthNames.indexOf(month);
 
-    // Check if it's December (index 11) and increment year if needed
     let newYear = parseInt(year);
-    if (monthIndex === 11) {
-      newYear += 1;
-      monthIndex = 0; // Set month to January
+    if (isComp) {
+      if (["January", "February", "March"].includes(month)) {
+        monthIndex = 3; // April
+      } else if (["April", "May", "June"].includes(month)) {
+        monthIndex = 6; // July
+      } else if (["July", "August", "September"].includes(month)) {
+        monthIndex = 9; // October
+      } else {
+        monthIndex = 0; // January
+        newYear += 1;
+      }
     } else {
-      monthIndex += 1; // Otherwise, just increment the month
+      if (monthIndex === 11) {
+        newYear += 1;
+        monthIndex = 0; // Set month to January
+      } else {
+        monthIndex += 1; // Otherwise, just increment the month
+      }
     }
 
     let pdiff_days = 0;
@@ -441,7 +493,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     };
   };
 
-  const getTaxBaseAmount = (): number =>
+  const getR6_1 = (): number =>
     parseFloat(getInvoicePercentage("0").decrease) +
     parseFloat(getInvoicePercentage("1").decrease) +
     parseFloat(getInvoicePercentage("2").decrease) +
@@ -464,7 +516,8 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
       parseFloat(get5_2().decrease) +
       (parseFloat(getDebitNote().decrease) -
         parseFloat(getCreditNote().decrease) -
-        parseFloat(getGoodsReturnsNote().decrease)));
+        parseFloat(getGoodsReturnsNote().decrease) -
+        parseFloat(lastmonthdue)));
 
   const calculateInterest = (
     totalDue: number,
@@ -500,7 +553,10 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     const sortedPayments = payments
       .map((payment) => {
         const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
-        const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
+        const paymentAmount =
+          parseFloat(payment.vat ?? "0") +
+          parseFloat(payment.penalty ?? "0") +
+          parseFloat(payment.interest ?? "0");
 
         if (
           !paymentDateRaw ||
@@ -565,8 +621,11 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     return interest;
   };
 
-  const getInterestDueDate = (): Date => {
-    if (!return01) return new Date();
+  const getInterestDueDate = (
+    year: string,
+    month: string,
+    isComp: boolean = false,
+  ): Date => {
 
     const monthNames = [
       "January",
@@ -583,26 +642,42 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
       "December",
     ];
 
-    const month = return01.month ?? "";
     let monthIndex = monthNames.indexOf(month);
-    let computedYear = parseInt(return01.year);
+    let computedYear = parseInt(year);
 
-    if (monthIndex === 11) {
-      computedYear += 1;
-      monthIndex = 0;
+    if (isComp) {
+      if (["January", "February", "March"].includes(month)) {
+        monthIndex = 3;
+      } else if (["April", "May", "June"].includes(month)) {
+        monthIndex = 6;
+      } else if (["July", "August", "September"].includes(month)) {
+        monthIndex = 9;
+      } else {
+        monthIndex = 0;
+        computedYear += 1;
+      }
     } else {
-      monthIndex += 1;
+      if (monthIndex === 11) {
+        computedYear += 1;
+        monthIndex = 0;
+      } else {
+        monthIndex += 1;
+      }
     }
 
     return new Date(computedYear, monthIndex, 15);
   };
 
-  const getR6_1 = (): number => getTaxBaseAmount();
-
   const getR6_2a = (): number => {
-    const totalDue = getR6_1();
-    const dueDate = getInterestDueDate();
-    const interest = calculateInterest(totalDue, dueDate, paidChallans, 15);
+    if (!return01?.month) return 0;
+
+    const dueDate = getInterestDueDate(
+      return01.year,
+      return01.month,
+      return01.dvat04?.frequencyFilings === "QUARTERLY",
+    );
+
+    const interest = calculateInterest(getR6_1(), dueDate, paidChallans, 15);
     return isNegative(interest) ? 0 : interest;
   };
 
@@ -615,17 +690,19 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     const penaltyBalance = penalty - paidpenaltyamount;
     const interestBalance = interest - paidinterestamount;
 
-    const pendingPaymentRaw = vatBalance + penaltyBalance + interestBalance;
+    const pendingPaymentRaw =
+      (vatBalance < 0 ? vatBalance : 0) +
+      (penaltyBalance < 0 ? penaltyBalance : 0) +
+      (interestBalance < 0 ? interestBalance : 0);
     const pendingPayment =
       pendingPaymentRaw < 0 ? Math.abs(pendingPaymentRaw) : 0;
 
     if (vatBalance <= 0) {
       return {
-        vatamount: 0,
-        penalty: Math.max(0, penaltyBalance),
-        interestamount: Math.max(0, interestBalance),
-        totaltaxamount:
-          Math.max(0, penaltyBalance) + Math.max(0, interestBalance),
+        vatamount: vat,
+        penalty: Math.max(0, penalty),
+        interestamount: Math.max(0, interest),
+        totaltaxamount: penalty + interest + vat,
         pendingPayment,
       };
     }
@@ -638,9 +715,9 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     );
 
     return {
-      vatamount: adjustedVatBalance,
-      penalty: Math.max(0, penaltyBalance),
-      interestamount: Math.max(0, interestBalance),
+      vatamount: vat,
+      penalty: Math.max(0, penalty),
+      interestamount: Math.max(0, interest),
       totaltaxamount:
         adjustedVatBalance +
         Math.max(0, penaltyBalance) +

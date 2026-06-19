@@ -416,6 +416,9 @@ const Dvat16ReturnPreview = () => {
       }),
       vatamount: vatamount.toFixed(2),
       interestamount: interestamount.toFixed(2),
+      ...(pendingPayment > 0 && {
+        pending_cash: pendingPayment.toFixed(2),
+      }),
       totaltaxamount: totalTaxAmount.toFixed(2),
     });
 
@@ -892,10 +895,12 @@ const Dvat16ReturnPreview = () => {
         monthIndex += 1;
       }
     }
-    return new Date(computedYear, monthIndex, 16);
+    return new Date(computedYear, monthIndex, 15);
   };
 
   const getR6_2a = (): number => {
+    if (!return01?.month) return 0;
+
     const totalDue = getR6_1();
     const dueDate = getInterestDueDate();
     const interest = calculateInterest(totalDue, dueDate, paidChallans, 15);

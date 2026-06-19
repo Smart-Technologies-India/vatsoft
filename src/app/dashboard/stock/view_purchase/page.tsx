@@ -472,59 +472,36 @@ const DocumentWiseDetails = () => {
     };
   };
 
-  const hasPendingAcceptableForApplicablePeriodAcrossAll =
-    async (): Promise<boolean> => {
-    if (!dvatdata) return false;
+  const getSelectedPeriodGroupsAcrossAll = async (): Promise<
+    GroupedDailyPurchase[]
+  > => {
+    if (!dvatdata) return [];
 
-    const allPurchaseResponse = await GetUserDailyPurchase({
+    const response = await GetUserDailyPurchaseFiltered({
       dvatid: dvatdata.id,
       skip: 0,
-      take: pagination.total > 0 ? pagination.total : 10000,
+      take: Math.max(pagination.total, 10000),
+      searchTerm: "",
+      sortField: "invoice_date",
+      sortOrder: "desc",
+      startDate: dateFilter.startDate,
+      endDate: dateFilter.endDate,
+      acceptStatusFilter: "all",
     });
 
-    if (!allPurchaseResponse.status || !allPurchaseResponse.data?.result) {
-      toast.error(
-        "Unable to validate pending purchase invoices. Please try again.",
-      );
-      return true;
+    if (!response.status || !response.data?.result) {
+      toast.error("Unable to load selected period purchase invoices.");
+      return [];
     }
 
-    const groups = allPurchaseResponse.data.result;
-    if (groups.length === 0) {
-      return false;
-    }
+    return response.data.result;
+  };
 
-    const april2026 = new Date(2026, 3, 1);
-    const startOfMonth = (date: Date) =>
-      new Date(date.getFullYear(), date.getMonth(), 1);
-    const addMonths = (date: Date, months: number) =>
-      new Date(date.getFullYear(), date.getMonth() + months, 1);
+  const hasPendingAcceptableForSelectedPeriodAcrossAll =
+    async (): Promise<boolean> => {
+      const groups = await getSelectedPeriodGroupsAcrossAll();
 
-    const lowestInvoiceDate = groups.reduce(
-      (minDate, group) => {
-        const groupDate = new Date(group.invoice_date);
-        return groupDate < minDate ? groupDate : minDate;
-      },
-      new Date(groups[0].invoice_date),
-    );
-
-    const targetStartDate =
-      startOfMonth(lowestInvoiceDate).getTime() < april2026.getTime()
-        ? april2026
-        : startOfMonth(lowestInvoiceDate);
-    const targetEndDate = addMonths(targetStartDate, 1);
-
-    const isInTargetPeriod = (invoiceDate: Date): boolean => {
-      if (targetStartDate.getTime() === april2026.getTime()) {
-        return invoiceDate < targetEndDate;
-      }
-
-      return invoiceDate >= targetStartDate && invoiceDate < targetEndDate;
-    };
-
-    return groups
-      .filter((group) => isInTargetPeriod(new Date(group.invoice_date)))
-      .some((group) =>
+      return groups.some((group) =>
         group.records.some(
           (record) =>
             (record.seller_tin_number.tin_number.startsWith("25") ||
@@ -532,7 +509,7 @@ const DocumentWiseDetails = () => {
             !record.is_accept,
         ),
       );
-  };
+    };
 
   const Convertto30a = async () => {
     if (!dvatdata) {
@@ -541,7 +518,7 @@ const DocumentWiseDetails = () => {
 
     if (
       hasPendingAcceptable ||
-      (await hasPendingAcceptableForApplicablePeriodAcrossAll())
+      (await hasPendingAcceptableForSelectedPeriodAcrossAll())
     ) {
       return toast.error(
         "Please accept all pending purchase invoices before generating DVAT 30/30 A.",
@@ -555,6 +532,8 @@ const DocumentWiseDetails = () => {
 
     const response = await ConvertDvat30A({
       dvatid: dvatdata.id,
+      startDate: dateFilter.startDate,
+      endDate: dateFilter.endDate,
     });
 
     if (response.status && response.data) {
@@ -1006,18 +985,9 @@ const DocumentWiseDetails = () => {
 
     setIsAcceptAllLoading(true);
     try {
-      const allPurchaseResponse = await GetUserDailyPurchase({
-        dvatid: dvatdata.id,
-        skip: 0,
-        take: pagination.total > 0 ? pagination.total : 10000,
-      });
+      const groups = await getSelectedPeriodGroupsAcrossAll();
 
-      if (!allPurchaseResponse.status) {
-        toast.error(allPurchaseResponse.message);
-        return;
-      }
-
-      const pendingRecords = (allPurchaseResponse.data?.result ?? [])
+      const pendingRecords = groups
         .flatMap((group) => group.records)
         .filter(
           (record) =>
@@ -1058,19 +1028,9 @@ const DocumentWiseDetails = () => {
       return;
     }
 
-    const allPurchaseResponse = await GetUserDailyPurchase({
-      dvatid: dvatdata.id,
-      skip: 0,
-      take: pagination.total > 0 ? pagination.total : 10000,
-    });
+    const groups = await getSelectedPeriodGroupsAcrossAll();
 
-    if (!allPurchaseResponse.status) {
-      setIsAcceptAllModalOpen(false);
-      toast.error(allPurchaseResponse.message);
-      return;
-    }
-
-    const pendingRecords = (allPurchaseResponse.data?.result ?? [])
+    const pendingRecords = groups
       .flatMap((group) => group.records)
       .filter(
         (record) =>
@@ -1976,7 +1936,7 @@ const DocumentWiseDetails = () => {
                                 setToolbarActionsOpen(false);
                                 if (
                                   hasPendingAcceptable ||
-                                  (await hasPendingAcceptableForApplicablePeriodAcrossAll())
+                                  (await hasPendingAcceptableForSelectedPeriodAcrossAll())
                                 ) {
                                   toast.error(
                                     "Please accept all pending purchase invoices before generating DVAT 30/30 A.",

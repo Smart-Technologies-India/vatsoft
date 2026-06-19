@@ -279,7 +279,7 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
                   />
                 </TableCell>
               </TableRow>
-              <TableRow>
+              {/* <TableRow>
                 <TableCell className="text-left p-2 border">Penalty</TableCell>
                 <TableCell className="text-center p-2 border">
                   <TaxtInput<CreateChallanForm>
@@ -298,7 +298,7 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
                     numdes={true}
                   />
                 </TableCell>
-              </TableRow>
+              </TableRow> */}
               <TableRow>
                 <TableCell className="text-left p-2 border">
                   Total Challan Amount:

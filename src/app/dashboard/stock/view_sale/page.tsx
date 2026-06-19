@@ -617,6 +617,8 @@ const DocumentWiseDetails = () => {
     const response = await ConvertDvat31({
       createdById: userid,
       dvatid: dvatdata.id,
+      startDate: dateFilter.startDate,
+      endDate: dateFilter.endDate,
     });
 
     if (response.status && response.data) {

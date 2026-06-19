@@ -22,10 +22,11 @@ interface AddPaymentSubmitPayload {
   vatamount: string;
   interestamount: string;
   totaltaxamount: string;
+  pending_cash?: string;
 }
 
 const AddPaymentSubmit = async (
-  payload: AddPaymentSubmitPayload
+  payload: AddPaymentSubmitPayload,
 ): Promise<ApiResponseType<returns_01 | null>> => {
   const functionname: string = AddPaymentSubmit.name;
   const nanoid = customAlphabet("1234567890", 12);
@@ -84,6 +85,9 @@ const AddPaymentSubmit = async (
           challan_number: cpin,
           ...(payload.pending_payment && {
             pending_payment: payload.pending_payment,
+          }),
+          ...(payload.pending_cash && {
+            pending_cash: payload.pending_cash,
           }),
           interest: payload.interestamount,
           vatamount: payload.vatamount,
@@ -191,7 +195,7 @@ const AddPaymentSubmit = async (
           group.entries.map((entry) => ({
             ...entry,
             amount: group.totalAmount.toString(), // Overwrite or add the total amount
-          }))
+          })),
         );
 
         const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
@@ -221,10 +225,7 @@ const AddPaymentSubmit = async (
                 office_of_issue: isExist.dvat04.selectOffice,
                 date_of_issue: new Date(),
                 valid_date: isExist.dvat04.certificateDate!,
-                sr_no: getsrno(
-                  isExist.dvat04.selectOffice!,
-                  lastOfficeSerial,
-                ),
+                sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial),
                 seller_address:
                   representativeEntry.seller_tin_number.state ?? "",
                 seller_name:
@@ -233,16 +234,16 @@ const AddPaymentSubmit = async (
                   representativeEntry.seller_tin_number.tin_number ?? "",
                 cform_type: ReturnType.ORIGINAL,
                 from_period: new Date(
-                  dates.fromDate.split("-").reverse().join("-")
+                  dates.fromDate.split("-").reverse().join("-"),
                 ),
                 to_period: new Date(
-                  dates.toDate.split("-").reverse().join("-")
+                  dates.toDate.split("-").reverse().join("-"),
                 ),
                 status: "ACTIVE",
                 createdById: isExist.createdById,
               },
             });
-          })
+          }),
         );
 
         const cformReturnsEntries: Array<{
@@ -255,7 +256,7 @@ const AddPaymentSubmit = async (
 
           if (!cform || !cform.id) {
             throw new Error(
-              `CForm entry for group ${groupIndex} was not created`
+              `CForm entry for group ${groupIndex} was not created`,
             );
           }
 
@@ -316,7 +317,7 @@ const getMonthGroup = (currentMonth: string): string[] => {
 
 function getFromDateAndToDate(
   year: string,
-  month: string
+  month: string,
 ): { fromDate: string; toDate: string } {
   const monthNames = [
     "January",
@@ -361,23 +362,20 @@ function getFromDateAndToDate(
   };
 }
 
-const getsrno = (
-  selectOffice: SelectOffice,
-  last: number,
-): string => {
+const getsrno = (selectOffice: SelectOffice, last: number): string => {
   let pre =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
       ? "DNH"
       : selectOffice == SelectOffice.DAMAN
-      ? "DD"
-      : "DIU";
+        ? "DD"
+        : "DIU";
 
   let value1 =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
       ? "01"
       : selectOffice == SelectOffice.DAMAN
-      ? "02"
-      : "03";
+        ? "02"
+        : "03";
 
-  return `${pre}/${value1}/C/${last  + 1}`;
+  return `${pre}/${value1}/C/${last + 1}`;
 };

@@ -1,6 +1,8 @@
 "use server";
 interface ConvertDvat30APayload {
   dvatid: number;
+  startDate?: string;
+  endDate?: string;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -65,25 +67,6 @@ const ConvertDvat30A = async (
       new Date(date.getFullYear(), date.getMonth() + months, 1);
 
     await prisma.$transaction(async (prisma) => {
-      const lowestMonth = await prisma.daily_purchase.findFirst({
-        where: {
-          deletedAt: null,
-          deletedBy: null,
-          status: "ACTIVE",
-          dvat04Id: payload.dvatid,
-          is_dvat_30a: false,
-        },
-        orderBy: {
-          invoice_date: "asc", // Sort by date to get the earliest month
-        },
-        select: {
-          invoice_date: true,
-        },
-      });
-
-      if (!lowestMonth) {
-        throw new Error("No records found");
-      }
       const dvat04 = await prisma.dvat04.findFirst({
         where: { id: payload.dvatid },
       });
@@ -92,30 +75,35 @@ const ConvertDvat30A = async (
         throw new Error("User Dvat04 not found.");
       }
 
-      const lowestInvoiceDate = new Date(lowestMonth.invoice_date);
+      const shouldUseSelectedPeriod = Boolean(
+        payload.startDate || payload.endDate,
+      );
 
-      const targetStartDate =
-        startOfMonth(lowestInvoiceDate).getTime() < april2026.getTime()
-          ? april2026
-          : startOfMonth(lowestInvoiceDate);
+      const invoiceDateFilter: {
+        gte?: Date;
+        lte?: Date;
+      } = {};
 
-      const targetEndDate = addMonths(targetStartDate, 1);
-      const baseInvoiceDateFilter =
-        targetStartDate.getTime() === april2026.getTime()
-          ? { lt: targetEndDate }
-          : { gte: targetStartDate, lt: targetEndDate };
+      if (payload.startDate) {
+        invoiceDateFilter.gte = new Date(payload.startDate);
+      }
 
-          console.log("Target Start Date:", targetStartDate);
-          console.log("Target End Date:", targetEndDate);
+      if (payload.endDate) {
+        const endDate = new Date(payload.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        invoiceDateFilter.lte = endDate;
+      }
 
-      const data_to_create = await prisma.daily_purchase.findMany({
+      const candidateRows = await prisma.daily_purchase.findMany({
         where: {
           deletedAt: null,
           deletedBy: null,
           status: "ACTIVE",
           dvat04Id: payload.dvatid,
           is_dvat_30a: false,
-          invoice_date: baseInvoiceDateFilter,
+          ...(Object.keys(invoiceDateFilter).length > 0 && {
+            invoice_date: invoiceDateFilter,
+          }),
         },
         include: {
           commodity_master: true,
@@ -123,8 +111,35 @@ const ConvertDvat30A = async (
         },
       });
 
-      if (data_to_create.length === 0) {
+      if (candidateRows.length === 0) {
         throw new Error("There is no remaning daily purchase");
+      }
+
+      const lowestInvoiceDate = candidateRows.reduce((minDate, row) => {
+        const rowDate = new Date(row.invoice_date);
+        return rowDate < minDate ? rowDate : minDate;
+      }, new Date(candidateRows[0].invoice_date));
+
+      const targetStartDate =
+        startOfMonth(lowestInvoiceDate).getTime() < april2026.getTime()
+          ? april2026
+          : startOfMonth(lowestInvoiceDate);
+
+      const targetEndDate = addMonths(targetStartDate, 1);
+
+      const data_to_create = shouldUseSelectedPeriod
+        ? candidateRows
+        : candidateRows.filter((row) => {
+            const invoiceDate = new Date(row.invoice_date);
+            if (targetStartDate.getTime() === april2026.getTime()) {
+              return invoiceDate < targetEndDate;
+            }
+
+            return invoiceDate >= targetStartDate && invoiceDate < targetEndDate;
+          });
+
+      if (data_to_create.length === 0) {
+        throw new Error("No purchase rows found for selected period.");
       }
 
       let cursorDate = targetStartDate;

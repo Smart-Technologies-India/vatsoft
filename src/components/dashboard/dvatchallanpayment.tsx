@@ -27,11 +27,13 @@ import {
   InputTaxCredit,
   NaturePurchase,
   NaturePurchaseOption,
+  PurchaseType,
   Quarter,
   registration,
   returns_01,
   returns_entry,
   SaleOf,
+  SaleOfInterstate,
   user,
 } from "@prisma/client";
 import { valibotResolver } from "@hookform/resolvers/valibot";
@@ -318,7 +320,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       );
 
       setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
-    }else{
+    } else {
       pdiff_days = getDaysBetweenDates(
         new Date(newYear, monthIndex, 29),
         filing_date,
@@ -364,9 +366,10 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         track_id: "NIL",
         transaction_id: "NIL",
         rr_number: get_rr_number(),
-        ...(paymentBreakdown.pendingPayment > 0 && {
-          pending_payment: paymentBreakdown.pendingPayment.toFixed(0),
-        }),
+        pending_payment: Math.abs(pendingpayment()).toFixed(2),
+        pending_cash: (
+          Math.abs(pendingcashone()) + Math.abs(pendingcashtwo())
+        ).toFixed(2),
         penalty: paymentBreakdown.penalty.toFixed(0),
         interestamount: paymentBreakdown.interestamount.toFixed(0),
         totaltaxamount: paymentBreakdown.totaltaxamount.toFixed(0),
@@ -411,14 +414,14 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
       const paymentBreakdown = getNetPayableBreakdown();
 
-
       const response = await AddPaymentOnline({
         id: return01.id,
         // rr_number: get_rr_number(),
         penalty: paymentBreakdown.penalty.toFixed(0),
-        ...(paymentBreakdown.pendingPayment > 0 && {
-          pending_payment: paymentBreakdown.pendingPayment.toFixed(0),
-        }),
+        pending_payment: Math.abs(pendingpayment()).toFixed(2),
+        pending_cash: (
+          Math.abs(pendingcashone()) + Math.abs(pendingcashtwo())
+        ).toFixed(2),
         interestamount: paymentBreakdown.interestamount.toFixed(0),
         totaltaxamount: paymentBreakdown.totaltaxamount.toFixed(0),
         vatamount: paymentBreakdown.vatamount.toFixed(0),
@@ -726,7 +729,10 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     const sortedPayments = payments
       .map((payment) => {
         const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
-        const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
+        const paymentAmount =
+          parseFloat(payment.vat ?? "0") +
+          parseFloat(payment.penalty ?? "0") +
+          parseFloat(payment.interest ?? "0");
 
         if (
           !paymentDateRaw ||
@@ -758,14 +764,22 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         break;
       }
 
-      const outstandingBefore = outstanding;
+      // Payments on/before due date reduce principal only.
+      // Anchor date must stay at due date so interest starts from due date.
+      if (payment.date <= anchorDate) {
+        outstanding = Math.max(0, outstanding - payment.amount);
+
+        if (outstanding <= 0) {
+          break;
+        }
+        continue;
+      }
 
       if (payment.date > anchorDate && outstanding > 0) {
         const days = getDaysDiff(anchorDate, payment.date);
         const intervalInterest =
           (outstanding * annualRate * days) / (100 * 365);
         interest += intervalInterest;
-      } else {
       }
 
       outstanding = Math.max(0, outstanding - payment.amount);
@@ -781,8 +795,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       const days = getDaysDiff(anchorDate, effectiveAsOfDate);
       const finalInterest = (outstanding * annualRate * days) / (100 * 365);
       interest += finalInterest;
-    } else if (outstanding <= 0) {
-    } else {
     }
 
     return interest;
@@ -967,7 +979,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   };
 
   const getTotalTaxAmount = (): number => {
-    return Math.max(0, getNetPayable());
+    const pendingcasetwo = isNegative(pendingcashtwo()) ? 0 : pendingcashtwo();
+    return Math.max(0, getNetPayable() + pendingcasetwo);
   };
 
   const remaingVat =
@@ -979,6 +992,153 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   const remainingInterest = isNegative(getR6_2a() - paidinterestamount)
     ? 0
     : getR6_2a() - paidinterestamount;
+
+  const adjustAmount = (): number => {
+    const amount = isNegative(getR6_1()) ? Math.abs(getR6_1()) : 0;
+
+    const total =
+      parseFloat(get10_2_6_2().decrease) +
+      parseFloat(getPercentageValue("0").decrease) +
+      parseFloat(getPercentageValue("1").decrease) +
+      parseFloat(getPercentageValue("2").decrease) +
+      parseFloat(getPercentageValue("4").decrease) +
+      parseFloat(getPercentageValue("5").decrease) +
+      parseFloat(getPercentageValue("6").decrease) +
+      parseFloat(getPercentageValue("12.5").decrease) +
+      parseFloat(getPercentageValue("12.75").decrease) +
+      parseFloat(getPercentageValue("13.5").decrease) +
+      parseFloat(getPercentageValue("15").decrease) +
+      parseFloat(getPercentageValue("20").decrease) +
+      parseFloat(getProcessedGoods().decrease);
+
+    return Math.min(amount, total);
+  };
+
+  const otherPayments = paidChallans.reduce((total, challan) => {
+    return total + parseFloat(challan.others);
+  }, 0);
+
+  // 4 number
+  const pendingcashone = (): number => {
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const vat = getR6_1();
+
+    const totalpaid = paidvatamount + paidinterestamount + paidpenaltyamount;
+
+    const val = isNegative(interest + vat)
+      ? penalty - totalpaid
+      : interest + vat + penalty - totalpaid;
+
+    return val;
+  };
+
+  const getPercentageValue = (value: string): PercentageOutput => {
+    if (!returns_entryData) return { increase: "0", decrease: "0" };
+
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = returns_entryData.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31_A &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of_interstate == SaleOfInterstate.TAXABLE_SALE &&
+        val.tax_percent == value,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  const getProcessedGoods = (): PercentageOutput => {
+    if (!returns_entryData) return { increase: "0", decrease: "0" };
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = returns_entryData.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31_A &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of_interstate == SaleOfInterstate.PROCESSED_GOODS,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const get10_2_6_2 = (): PercentageOutput => {
+    if (!returns_entryData) return { increase: "0", decrease: "0" };
+
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = returns_entryData.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31_A &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        (val.sale_of_interstate == SaleOfInterstate.FORMC ||
+          val.purchase_type == PurchaseType.FORMC_CONCESSION),
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
+  // 9 number
+  const pendingcashtwo = (): number => {
+    const total =
+      parseFloat(get10_2_6_2().decrease) +
+      parseFloat(getPercentageValue("0").decrease) +
+      parseFloat(getPercentageValue("1").decrease) +
+      parseFloat(getPercentageValue("2").decrease) +
+      parseFloat(getPercentageValue("4").decrease) +
+      parseFloat(getPercentageValue("5").decrease) +
+      parseFloat(getPercentageValue("6").decrease) +
+      parseFloat(getPercentageValue("12.5").decrease) +
+      parseFloat(getPercentageValue("12.75").decrease) +
+      parseFloat(getPercentageValue("13.5").decrease) +
+      parseFloat(getPercentageValue("15").decrease) +
+      parseFloat(getPercentageValue("20").decrease) +
+      parseFloat(getProcessedGoods().decrease);
+
+    const val = total - adjustAmount() - otherPayments;
+    return val;
+  };
+
+  const pendingpayment = (): number => {
+    const penalty = isNegative(lateFees) ? 0 : lateFees;
+    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const vat = getR6_1();
+
+    const val =
+      (isNegative(interest + vat) ? interest + vat : 0) + adjustAmount();
+
+    return val;
+  };
 
   return (
     <>
@@ -1064,12 +1224,12 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className="text-left p-2 border">Penalty</TableCell>
-                <TableCell className="text-center p-2 border">0</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="text-left p-2 border">Others</TableCell>
-                <TableCell className="text-center p-2 border">0</TableCell>
+                <TableCell className="text-left p-2 border">CST</TableCell>
+                <TableCell className="text-center p-2 border">
+                  {isNegative(pendingcashtwo())
+                    ? 0
+                    : pendingcashtwo().toFixed(2)}
+                </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="text-left p-2 border">

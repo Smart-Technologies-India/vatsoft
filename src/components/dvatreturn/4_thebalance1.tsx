@@ -545,7 +545,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     const sortedPayments = payments
       .map((payment) => {
         const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
-        const paymentAmount = parseFloat(payment.total_tax_amount ?? "0");
+        const paymentAmount = parseFloat(payment.vat ?? "0") + parseFloat(payment.penalty ?? "0") + parseFloat(payment.interest ?? "0");
 
         if (
           !paymentDateRaw ||
@@ -627,11 +627,10 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       props.paidChallans,
       15,
     );
+    console.log("interest for 4", interest);
     return isNegative(interest) ? 0 : interest;
   };
 
-  const getR7 = (): number =>
-    getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a());
 
   const paidChallanCpins = props.paidChallans
     .map((challan) => challan.cpin)
@@ -686,7 +685,7 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
             Balance brought forward from line R7
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {isNegative(getNetPayable()) ? 0 : getNetPayable().toFixed(2)} 
+            {isNegative(getNetPayable()) ? 0 : getNetPayable().toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">

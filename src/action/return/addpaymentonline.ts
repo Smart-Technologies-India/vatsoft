@@ -25,6 +25,7 @@ interface AddPaymentOnlinePayload {
   challan_vat: string;
   challan_interest: string;
   challan_penalty: string;
+  pending_cash?: string;
   challan_total_tax_amount: string;
 }
 
@@ -78,8 +79,7 @@ const AddPaymentOnline = async (
         isExist.month ?? "",
         isExist.dvat04.frequencyFilings === "QUARTERLY",
       );
-      const isQuarterlyFiling =
-        isExist.dvat04.frequencyFilings === "QUARTERLY";
+      const isQuarterlyFiling = isExist.dvat04.frequencyFilings === "QUARTERLY";
 
       const returnIdsToUpdate = await prisma.returns_01.findMany({
         where: {
@@ -116,6 +116,9 @@ const AddPaymentOnline = async (
           ...(payload.pending_payment && {
             pending_payment: payload.pending_payment,
           }),
+          ...(payload.pending_cash && {
+            pending_cash: payload.pending_cash,
+          }),
           interest: getQuarterlyDistributedAmount(
             payload.interestamount,
             isQuarterlyFiling,
@@ -144,7 +147,7 @@ const AddPaymentOnline = async (
         throw new Error("Something went wrong! Unable to update");
       }
 
-       await prisma.return_filing.findMany({
+      await prisma.return_filing.findMany({
         where: {
           filing_status: false,
           dvatid: updateresponse.dvat04Id,
@@ -260,10 +263,7 @@ const AddPaymentOnline = async (
                 office_of_issue: isExist.dvat04.selectOffice,
                 date_of_issue: new Date(),
                 valid_date: isExist.dvat04.certificateDate!,
-                sr_no: getsrno(
-                  isExist.dvat04.selectOffice!,
-                  lastOfficeSerial,
-                ),
+                sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial),
                 seller_address:
                   representativeEntry.seller_tin_number.state ?? "",
                 seller_name:
@@ -498,10 +498,7 @@ function getFromDateAndToDate(
   };
 }
 
-const getsrno = (
-  selectOffice: SelectOffice,
-  last: number,
-): string => {
+const getsrno = (selectOffice: SelectOffice, last: number): string => {
   let pre =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
       ? "DNH"

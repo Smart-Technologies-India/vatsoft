@@ -29,6 +29,7 @@ interface AddPaymentPayload {
   challan_interest: string;
   challan_penalty: string;
   challan_total_tax_amount: string;
+  pending_cash?: string;
 }
 
 const AddPayment = async (
@@ -123,6 +124,9 @@ const AddPayment = async (
           challan_number: cpin,
           ...(payload.pending_payment && {
             pending_payment: payload.pending_payment,
+          }),
+          ...(payload.pending_cash && {
+            pending_cash: payload.pending_cash,
           }),
           interest: getQuarterlyDistributedAmount(
             payload.interestamount,

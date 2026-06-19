@@ -543,6 +543,8 @@ export const postRes = (request, response) => {
               bene_bank: result.bene_bank,
               bene_branch: result.bene_branch,
               trans_fee: result.trans_fee,
+              deletedAt:null,
+              deletedById:null,
             },
           });
         } catch (e) {
@@ -578,6 +580,8 @@ export const postRes = (request, response) => {
               bene_branch: result.bene_branch,
               trans_fee: result.trans_fee,
               returnid: parsedReturnId || null,
+              deletedAt: null,
+              deletedById: null,
             },
           });
 
@@ -658,6 +662,8 @@ export const postRes = (request, response) => {
               bene_branch: result.bene_branch,
               trans_fee: result.trans_fee,
               returnid: parsedReturnId || null,
+              deletedAt: null,
+              deletedById: null,
             },
           });
 
