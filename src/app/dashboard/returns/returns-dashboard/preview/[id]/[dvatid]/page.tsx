@@ -82,6 +82,7 @@ const Dvat16ReturnPreview = () => {
   // const [isAllNil, setAllNil] = useState<boolean>(false);
   const [lateFees, setLateFees] = useState<number>(0);
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
+  const [lastmonthcash, setLastMonthCash] = useState<string>("0");
 
   useEffect(() => {
     const init = async () => {
@@ -229,6 +230,7 @@ const Dvat16ReturnPreview = () => {
 
         if (lastmonthdata.status && lastmonthdata.data) {
           setLastMonthDue(lastmonthdata.data.returns_01.pending_payment ?? "0");
+          setLastMonthCash(lastmonthdata.data.returns_01.cash_payment ?? "0");
         }
       }
     };
@@ -760,7 +762,10 @@ const Dvat16ReturnPreview = () => {
               </tbody>
             </table>
             {/* section 4 start here */}
-            <TurnOver returnsentrys={returns_entryData ?? []} />
+            <TurnOver
+              returnsentrys={returns_entryData ?? []}
+              lastMonthCash={lastmonthcash}
+            />
             {/* section 5 start here */}
             <R1TurnOverOfPurchase
               returnsentrys={returns_entryData ?? []}
@@ -771,6 +776,7 @@ const Dvat16ReturnPreview = () => {
               returnsentrys={returns_entryData ?? []}
               return01={return01}
               lastMonthDue={lastmonthdue}
+              lastMonthCash={lastmonthcash}
               isComp={return01?.dvat04.frequencyFilings === "QUARTERLY"}
               paidChallans={paidChallans}
               challan_amount={paidChallans.reduce(
@@ -783,6 +789,7 @@ const Dvat16ReturnPreview = () => {
               returnsentrys={returns_entryData ?? []}
               return01={return01}
               lastMonthDue={lastmonthdue}
+              lastMonthCash={lastmonthcash}
               isComp={return01?.dvat04.frequencyFilings === "QUARTERLY"}
               paidChallans={paidChallans}
             />
@@ -792,6 +799,7 @@ const Dvat16ReturnPreview = () => {
               returnsentrys={returns_entryData ?? []}
               return01={return01}
               lastMonthDue={lastmonthdue}
+              lastMonthCash={lastmonthcash}
               isComp={return01?.dvat04.frequencyFilings === "QUARTERLY"}
               paidChallans={paidChallans}
             />
@@ -803,10 +811,14 @@ const Dvat16ReturnPreview = () => {
 
             {/* page 2 start here */}
             {/* section 10 start here */}
-            <S1_1Adjustment returnsentrys={returns_entryData ?? []} />
+            <S1_1Adjustment
+              returnsentrys={returns_entryData ?? []}
+              lastMonthCash={lastmonthcash}
+            />
             <S2AdjustmentOfTax
               returnsentrys={returns_entryData ?? []}
               lastMonthDue={lastmonthdue}
+              lastMonthCash={lastmonthcash}
             />
             {/* page 2 end here */}
 
@@ -815,6 +827,7 @@ const Dvat16ReturnPreview = () => {
               returnsentrys={returns_entryData ?? []}
               return01={return01}
               lastMonthDue={lastmonthdue}
+              lastMonthCash={lastmonthcash}
               isComp={return01?.dvat04.frequencyFilings === "QUARTERLY"}
               paidChallans={paidChallans}
               challan_amount={paidChallans.reduce(
