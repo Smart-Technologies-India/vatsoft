@@ -116,7 +116,7 @@ const ShopView = () => {
         const getdata: return_filing | undefined = value.find(
           (item: return_filing) =>
             item.year == year.toString() &&
-            item.month == monthNames[adjustedMonth]
+            item.month == monthNames[adjustedMonth],
         );
         if (getdata) {
           ret_filing.push({
@@ -129,8 +129,8 @@ const ShopView = () => {
                 ? Status.PAID
                 : Status.LATE
               : getdata.due_date! < currentdate
-              ? Status.PENDING
-              : Status.DUE,
+                ? Status.PENDING
+                : Status.DUE,
           });
         } else {
           ret_filing.push({
@@ -210,7 +210,9 @@ const ShopView = () => {
         <div className="bg-linear-to-r from-blue-500 to-indigo-600 px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-8 bg-white rounded-full"></div>
-            <h1 className="text-2xl font-bold text-white">Pending Returns Overview</h1>
+            <h1 className="text-2xl font-bold text-white">
+              Pending Returns Overview
+            </h1>
           </div>
         </div>
       </div>
@@ -219,19 +221,25 @@ const ShopView = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Dealer Details</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Dealer Details
+            </h2>
           </div>
 
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">TIN Number</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  TIN Number
+                </p>
                 <p className="text-sm font-semibold text-gray-900">
                   {dvatData?.tinNumber}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Applicant Name</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Applicant Name
+                </p>
                 <p className="text-sm font-semibold text-gray-900">
                   {user?.firstName}-{user?.lastName}
                 </p>
@@ -239,62 +247,84 @@ const ShopView = () => {
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Trade Name</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Trade Name
+                </p>
                 <p className="text-sm font-semibold text-gray-900">
                   {dvatData?.tradename}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Constitution of Business</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Constitution of Business
+                </p>
                 <p className="text-sm font-semibold text-gray-900">
                   {capitalcase(dvatData?.constitutionOfBusiness!)}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Liquor/Fuel</p>
-                <p className="text-sm font-semibold text-gray-900">Liquor</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Liquor/Fuel
+                </p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {dvatData?.commodity === "FUEL" ? "Fuel" : "Liquor"}
+                </p>
               </div>
             </div>
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Return Details</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Return Details
+            </h2>
           </div>
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">VAT Liable Date</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  VAT Liable Date
+                </p>
                 <p className="text-sm font-semibold text-gray-900">
                   {formateDate(dvatData?.vatLiableDate!)}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Composition/Regular</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Composition/Regular
+                </p>
                 <p className="text-sm font-semibold text-gray-900">
                   {dvatData?.compositionScheme ? "COMP" : "REG"}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Last Filed Return Period</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Last Filed Return Period
+                </p>
                 <p className="text-sm font-semibold text-gray-900">
                   {pendingreturn?.lastfiling}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Pending Returns</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Pending Returns
+                </p>
                 <p className="text-sm font-semibold text-gray-900">
                   {pendingreturn?.pending}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Demand Pending</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Demand Pending
+                </p>
                 <p className="text-sm font-semibold text-gray-900">
                   {pendingchallan.count}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Demand Amount Pending</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Demand Amount Pending
+                </p>
                 <p className="text-sm font-semibold text-gray-900">
                   {pendingchallan.pending}
                 </p>
@@ -306,7 +336,10 @@ const ShopView = () => {
 
       {/* Return History Section */}
       {returndetails.map((item, index) => (
-        <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+        <div
+          key={index}
+          className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6"
+        >
           <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900">
               Return History - {item.displayyear}

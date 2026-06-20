@@ -126,7 +126,7 @@ const AddPayment = async (
             pending_payment: payload.pending_payment,
           }),
           ...(payload.pending_cash && {
-            pending_cash: payload.pending_cash,
+            cash_payment: payload.pending_cash,
           }),
           interest: getQuarterlyDistributedAmount(
             payload.interestamount,

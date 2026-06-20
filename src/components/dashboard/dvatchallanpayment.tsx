@@ -76,6 +76,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     [],
   );
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
+  const [lastmonthcash, setLastMonthCash] = useState<string>("0");
   const searchparam = useSearchParams();
   const [paidChallans, setPaidChallans] = useState<challan[]>([]);
 
@@ -255,6 +256,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
         if (lastmonthdata.status && lastmonthdata.data) {
           setLastMonthDue(lastmonthdata.data.returns_01.pending_payment ?? "0");
+          setLastMonthCash(lastmonthdata.data.returns_01.cash_payment ?? "0");
         }
       }
     };
@@ -890,8 +892,9 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       parseFloat(get5_2().decrease) +
       (parseFloat(getDebitNote().decrease) -
         parseFloat(getCreditNote().decrease) -
-        parseFloat(getGoodsReturnsNote().decrease) -
-        parseFloat(lastmonthdue)));
+        parseFloat(getGoodsReturnsNote().decrease) +
+        parseFloat(lastmonthdue) +
+        parseFloat(lastmonthcash)));
 
   const getR6_2a = (): number => {
     if (!return01?.month) return 0;

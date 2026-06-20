@@ -28,6 +28,7 @@ interface THEBALANCEProps {
   returnsentrys: returns_entry[];
   return01: returns_01;
   lastMonthDue: string;
+  lastMonthCash: string;
   isComp: boolean;
   paidChallans: challan[];
 }
@@ -394,7 +395,8 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
       (parseFloat(getDebitNote().decrease) -
         parseFloat(getCreditNote().decrease) -
         parseFloat(getGoodsReturnsNote().decrease) +
-        parseFloat(props.lastMonthDue)));
+        parseFloat(props.lastMonthDue) +
+        parseFloat(props.lastMonthCash)));
 
   const calculateInterest = (
     totalDue: number,

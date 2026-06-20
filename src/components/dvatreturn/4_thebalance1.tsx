@@ -53,6 +53,7 @@ interface THEBALANCEProps {
   lastMonthDue: string;
   isComp: boolean;
   paidChallans: challan[];
+  lastMonthCash: string;
 }
 
 const THEBALANCE1 = (props: THEBALANCEProps) => {
@@ -463,7 +464,8 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       (parseFloat(getDebitNote().decrease) -
         parseFloat(getCreditNote().decrease) -
         parseFloat(getGoodsReturnsNote().decrease) +
-        parseFloat(props.lastMonthDue)));
+        parseFloat(props.lastMonthDue) +
+        parseFloat(props.lastMonthCash)));
 
   const getInterestDueDate = (
     year: string,
@@ -545,7 +547,10 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     const sortedPayments = payments
       .map((payment) => {
         const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
-        const paymentAmount = parseFloat(payment.vat ?? "0") + parseFloat(payment.penalty ?? "0") + parseFloat(payment.interest ?? "0");
+        const paymentAmount =
+          parseFloat(payment.vat ?? "0") +
+          parseFloat(payment.penalty ?? "0") +
+          parseFloat(payment.interest ?? "0");
 
         if (
           !paymentDateRaw ||
@@ -630,7 +635,6 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     console.log("interest for 4", interest);
     return isNegative(interest) ? 0 : interest;
   };
-
 
   const paidChallanCpins = props.paidChallans
     .map((challan) => challan.cpin)

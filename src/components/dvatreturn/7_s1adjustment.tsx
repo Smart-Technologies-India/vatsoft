@@ -1,13 +1,19 @@
-import { CategoryOfEntry, DvatType, returns_entry, SaleOf } from "@prisma/client";
+import {
+  CategoryOfEntry,
+  DvatType,
+  returns_entry,
+  SaleOf,
+} from "@prisma/client";
+import { useSearchParams } from "next/navigation";
 
 interface PercentageOutput {
   increase: string;
   decrease: string;
 }
 
-
 interface S1_1AdjustmentProps {
   returnsentrys: returns_entry[];
+  lastMonthCash: string;
 }
 
 const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
@@ -55,6 +61,8 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
       decrease,
     };
   };
+
+  const searchparam = useSearchParams();
 
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
@@ -153,7 +161,9 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             0
           </td>
-          <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            {searchparam.get("month") == "April" ? "0" : props.lastMonthCash}
+          </td>
         </tr>
         <tr className="w-full">
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
@@ -183,7 +193,8 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
               parseFloat(getGoodsReturns().decrease) +
-              parseFloat(getSaleCanceled().decrease)
+              parseFloat(getSaleCanceled().decrease) +
+              parseFloat(props.lastMonthCash)
             ).toFixed(2)}
           </td>
         </tr>
@@ -198,7 +209,8 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
             {(
               0 -
               (parseFloat(getGoodsReturns().decrease) +
-                parseFloat(getSaleCanceled().decrease))
+                parseFloat(getSaleCanceled().decrease) +
+                parseFloat(props.lastMonthCash))
             ).toFixed(2)}
           </td>
         </tr>
@@ -206,6 +218,5 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
     </table>
   );
 };
-
 
 export default S1_1Adjustment;

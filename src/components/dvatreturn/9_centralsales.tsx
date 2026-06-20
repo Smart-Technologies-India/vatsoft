@@ -28,6 +28,7 @@ interface CentralSalesProps {
   return01: returns_01;
   returnsentrys: returns_entry[];
   lastMonthDue: string;
+  lastMonthCash: string;
   isComp: boolean;
   challan_amount: number;
   paidChallans: challan[];
@@ -796,7 +797,8 @@ const CentralSales = (props: CentralSalesProps) => {
       (parseFloat(getDebitNote().decrease) -
         parseFloat(getCreditNote().decrease) -
         parseFloat(getGoodsReturnsNote().decrease) +
-        parseFloat(props.lastMonthDue)));
+        parseFloat(props.lastMonthDue) +
+        parseFloat(props.lastMonthCash)));
 
   const calculateInterest = (
     totalDue: number,

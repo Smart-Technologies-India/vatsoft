@@ -5,7 +5,6 @@ import {
   SaleOf,
 } from "@prisma/client";
 
-
 interface PercentageOutput {
   increase: string;
   decrease: string;
@@ -13,6 +12,7 @@ interface PercentageOutput {
 
 interface TurnOverProps {
   returnsentrys: returns_entry[];
+  lastMonthCash: string;
 }
 
 const TurnOver = (props: TurnOverProps) => {
@@ -395,7 +395,9 @@ const TurnOver = (props: TurnOverProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            -({get4_9().decrease})
+            {(
+              parseFloat(get4_9().decrease) - parseFloat(props.lastMonthCash)
+            ).toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -425,7 +427,8 @@ const TurnOver = (props: TurnOverProps) => {
               parseFloat(getSaleOfPercentage("12.5").decrease) +
               parseFloat(get4_6().decrease) +
               parseFloat(get4_7().decrease) -
-              parseFloat(get4_9().decrease)
+              parseFloat(get4_9().decrease) - 
+              parseFloat(props.lastMonthCash)
             ).toFixed(2)}
           </td>
         </tr>

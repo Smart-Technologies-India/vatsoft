@@ -56,6 +56,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
   );
   const [paidChallans, setPaidChallans] = useState<challan[]>([]);
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
+  const [lastmonthcash, setLastMonthCash] = useState<string>("0");
 
   const [user, setUser] = useState<user | null>(null);
 
@@ -123,7 +124,10 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
           });
 
           if (lastmonthdata.status && lastmonthdata.data) {
-            setLastMonthDue(lastmonthdata.data.returns_01.pending_payment ?? "0");
+            setLastMonthDue(
+              lastmonthdata.data.returns_01.pending_payment ?? "0",
+            );
+            setLastMonthCash(lastmonthdata.data.returns_01.cash_payment ?? "0");
           }
         }
 
@@ -516,8 +520,9 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
       parseFloat(get5_2().decrease) +
       (parseFloat(getDebitNote().decrease) -
         parseFloat(getCreditNote().decrease) -
-        parseFloat(getGoodsReturnsNote().decrease) -
-        parseFloat(lastmonthdue)));
+        parseFloat(getGoodsReturnsNote().decrease) +
+        parseFloat(lastmonthdue) +
+        parseFloat(lastmonthcash)));
 
   const calculateInterest = (
     totalDue: number,
@@ -626,7 +631,6 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
     month: string,
     isComp: boolean = false,
   ): Date => {
-
     const monthNames = [
       "January",
       "February",
