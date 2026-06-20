@@ -83,10 +83,7 @@ const ReverseSaleAccept = async (
           id: sale.id,
         },
         data: {
-          status: "INACTIVE",
-          deletedAt: new Date(),
-          deletedById: payload.updatedById,
-          updatedById: payload.updatedById,
+          is_accept: false,
         },
       });
 

@@ -1,5 +1,6 @@
 "use client";
 import ConvertDvat31 from "@/action/stock/convertdvat31";
+import AcceptSaleWithoutDvat from "@/action/stock/acceptsalewithoutdvat";
 import DeleteSale from "@/action/stock/deletesale";
 import GetSaleDeleteImpact from "@/action/stock/getsaledeleteimpact";
 import GetUserDailySale, {
@@ -35,6 +36,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
+import GetAllDvat04 from "@/action/dvat/getalldvat";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUser from "@/action/user/getuser";
 import DownloadSaleSample from "./downloadsalesample";
@@ -124,11 +126,16 @@ const DocumentWiseDetails = () => {
   });
 
   const [dvatdata, setDvatData] = useState<dvat04>();
+  const [allDvatTinNumbers, setAllDvatTinNumbers] = useState<Set<string>>(
+    new Set(),
+  );
 
   const [selectedGroup, setSelectedGroup] = useState<GroupedDailySale | null>(
     null,
   );
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [isSingleAcceptLoading, setIsSingleAcceptLoading] =
+    useState<boolean>(false);
   const [filedReturnPeriods, setFiledReturnPeriods] = useState<Set<string>>(
     new Set(),
   );
@@ -253,6 +260,17 @@ const DocumentWiseDetails = () => {
 
       const dvat_response = await GetUserDvat04Anx({});
 
+      const allDvatResponse = await GetAllDvat04({});
+      if (allDvatResponse.status && allDvatResponse.data) {
+        setAllDvatTinNumbers(
+          new Set(
+            allDvatResponse.data
+              .map((row) => row.tinNumber)
+              .filter((tin): tin is string => Boolean(tin)),
+          ),
+        );
+      }
+
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);
         await loadFiledReturnPeriods(dvat_response.data.id);
@@ -291,6 +309,60 @@ const DocumentWiseDetails = () => {
     };
     init();
   }, [userid, router, loadFiledReturnPeriods]);
+
+  const canManualAcceptSale = useCallback(
+    (tinNumber: string): boolean => {
+      if (!tinNumber) return false;
+      return !allDvatTinNumbers.has(tinNumber);
+    },
+    [allDvatTinNumbers],
+  );
+
+  const handleAcceptSingleRecord = async (
+    record: GroupedDailySale["records"][number],
+  ) => {
+    setIsSingleAcceptLoading(true);
+
+    const response = await AcceptSaleWithoutDvat({
+      saleId: record.id,
+    });
+
+    setIsSingleAcceptLoading(false);
+
+    if (response.status && response.data) {
+      toast.success("Sale record accepted.");
+      await init();
+      return;
+    }
+
+    toast.error(response.message);
+  };
+
+  const handleAcceptGroupRecords = async (group: GroupedDailySale) => {
+    const pendingRecords = group.records.filter((record) => !record.is_accept);
+
+    if (pendingRecords.length === 0) {
+      toast.info("No pending sale records found for this invoice.");
+      return;
+    }
+
+    setIsSingleAcceptLoading(true);
+
+    try {
+      for (const record of pendingRecords) {
+        const response = await AcceptSaleWithoutDvat({ saleId: record.id });
+        if (!response.status || !response.data) {
+          toast.error(response.message);
+          return;
+        }
+      }
+
+      toast.success(`${pendingRecords.length} sale record(s) accepted.`);
+      await init();
+    } finally {
+      setIsSingleAcceptLoading(false);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -1007,7 +1079,25 @@ const DocumentWiseDetails = () => {
                           : "0.00"}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {record.is_accept ? (
+                        {canManualAcceptSale(
+                          record.seller_tin_number.tin_number,
+                        ) ? (
+                          record.is_accept ? (
+                            <span className="text-xs text-gray-400">
+                              Accepted
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                handleAcceptSingleRecord(record);
+                              }}
+                              disabled={isSingleAcceptLoading}
+                              className="text-xs bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1 px-3 rounded"
+                            >
+                              {isSingleAcceptLoading ? "Accepting..." : "Accept"}
+                            </button>
+                          )
+                        ) : record.is_accept ? (
                           "NA"
                         ) : (
                           <button
@@ -1746,6 +1836,25 @@ const DocumentWiseDetails = () => {
                               <Popover
                                 content={
                                   <div className="flex flex-col gap-2">
+                                    {canManualAcceptSale(
+                                      group.seller_tin_number.tin_number,
+                                    ) &&
+                                      group.records.some(
+                                        (record) => !record.is_accept,
+                                      ) && (
+                                        <button
+                                          onClick={async () => {
+                                            await handleAcceptGroupRecords(group);
+                                            handelClose(index);
+                                          }}
+                                          disabled={isSingleAcceptLoading}
+                                          className="text-sm bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white py-1 px-3 rounded"
+                                        >
+                                          {isSingleAcceptLoading
+                                            ? "Accepting..."
+                                            : "Accept"}
+                                        </button>
+                                      )}
                                     {!group.records[0].is_accept && (
                                       <button
                                         onClick={() => {

@@ -642,7 +642,12 @@ const ChallanData = () => {
                 <h1 className="mt-1 text-2xl font-semibold text-gray-900">
                   Challan Receipt
                 </h1>
-                <p className="mt-1 text-sm text-gray-600">Form DVAT 20</p>
+                <p className="mt-1 text-sm text-gray-600">
+                  {" "}
+                  {challanData?.others != "0"
+                    ? "Form Challan CST"
+                    : "Form DVAT 20"}
+                </p>
               </div>
               <div className="rounded-md border border-gray-300 bg-white px-3 py-2 text-right">
                 <p className="text-xs text-gray-500">Receipt Date</p>
@@ -758,12 +763,25 @@ const ChallanData = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell className="text-left p-2 border">VAT</TableCell>
-                    <TableCell className="text-center p-2 border ">
-                      {challanData?.vat}
-                    </TableCell>
-                  </TableRow>
+                  {challanData?.others != "0" ? (
+                    <TableRow>
+                      <TableCell className="text-left p-2 border">
+                        CST
+                      </TableCell>
+                      <TableCell className="text-center p-2 border">
+                        {challanData?.others}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <TableRow>
+                      <TableCell className="text-left p-2 border">
+                        VAT
+                      </TableCell>
+                      <TableCell className="text-center p-2 border ">
+                        {challanData?.vat}
+                      </TableCell>
+                    </TableRow>
+                  )}
                   <TableRow>
                     <TableCell className="text-left p-2 border">
                       Interest
@@ -788,14 +806,7 @@ const ChallanData = () => {
                       {challanData?.penalty}
                     </TableCell>
                   </TableRow>
-                  <TableRow>
-                    <TableCell className="text-left p-2 border">
-                      Others
-                    </TableCell>
-                    <TableCell className="text-center p-2 border">
-                      {challanData?.others}
-                    </TableCell>
-                  </TableRow>
+
                   <TableRow>
                     <TableCell className="text-left p-2 border">
                       Total Challan Amount:
@@ -929,43 +940,43 @@ const ChallanData = () => {
             </div>
           )}
 
-          <div className="mt-4 rounded-b-2xl border-t border-dashed border-gray-300 bg-gray-50 px-5 py-4">
-            <p className="text-center text-lg font-semibold text-gray-800">
-              Form DVAT 20
-            </p>
-            <p className="mt-2 text-sm text-gray-700">
-              (See Rule 28 of the Dadra and Nagar Haveli and Daman and Diu Value
-              Added Tax Rules, 2021)
-            </p>
-            <p className="mt-2 text-sm text-gray-700">
-              Challan for the Dadra and Nagar Haveli and Daman and Diu Value
-              Added Regulation, 2005
-            </p>
-            <p className="mt-2 text-sm text-gray-700">
-              Credited: Consolidated Fund of India
-            </p>
-            <p className="mt-2 text-sm text-gray-700">
-              Head: 0040, Value Added Tax Receipt - Value Added Tax Receipt
-            </p>
-            {/* <p className="text-sm">
-              <span className="font-semibold">Note:</span>
-              For taxpayer filing VAT on quarterly basis:
-            </p>
-            <p className="text-sm mt-1">
-              1. To make payment for the first (M1) and second (M2) months of
-              the quarter, please select reason as &lsquo;Monthly Payment for
-              Quarterly Return&lsquo; and the relevant period (financial year,
-              month) and choose whether to pay through 35% challan or
-              self-assessment challan.
-            </p>
-            <p className="text-sm mt-1">
-              2. To make payment for the third month of the Quarter (M3), please
-              use &apos;Create Challan&apos; option in payment Table-6 of Form
-              VAT Quarterly. An auto- populated challan amounting to liabilities
-              for the quarter net off credit utilization and existing cash
-              balance can be generated and used to offset liabilities.
-            </p> */}
-          </div>
+          {challanData?.others != "0" ? (
+            <>
+              <div className="mt-4 rounded-b-2xl border-t border-dashed border-gray-300 bg-gray-50 px-5 py-4">
+                <p className="text-center text-xl font-semibold">
+                  Form Challan CST
+                </p>
+                <p className="mt-2 text-sm">XII Sales Tax (Central)</p>
+                <p className="mt-3 text-sm">
+                  Receipt Under the Central Sales Tax Act
+                </p>
+                <p className="mt-3 text-sm">
+                  Challan of Tax, Penalty, Composition Money, Registration Fee
+                  and Other Fee Paid.
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="mt-4 rounded-b-2xl border-t border-dashed border-gray-300 bg-gray-50 px-5 py-4">
+              <p className="text-center text-lg font-semibold text-gray-800">
+                Form DVAT 20
+              </p>
+              <p className="mt-2 text-sm text-gray-700">
+                (See Rule 28 of the Dadra and Nagar Haveli and Daman and Diu
+                Value Added Tax Rules, 2021)
+              </p>
+              <p className="mt-2 text-sm text-gray-700">
+                Challan for the Dadra and Nagar Haveli and Daman and Diu Value
+                Added Regulation, 2005
+              </p>
+              <p className="mt-2 text-sm text-gray-700">
+                Credited: Consolidated Fund of India
+              </p>
+              <p className="mt-2 text-sm text-gray-700">
+                Head: 0040, Value Added Tax Receipt - Value Added Tax Receipt
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </>

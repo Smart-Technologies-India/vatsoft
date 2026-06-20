@@ -3,7 +3,11 @@
 import { getCurrentDvatId, getCurrentUserId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
-import { commodity_master, daily_sale, tin_number_master } from "@prisma/client";
+import {
+  commodity_master,
+  daily_sale,
+  tin_number_master,
+} from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 export type ReverseInvoiceSaleRow = daily_sale & {
@@ -36,6 +40,7 @@ const GetReverseInvoiceSale = async (): Promise<
         status: "ACTIVE",
         dvat04Id: currentDvatId,
         is_dvat_31: false,
+        is_accept: true,
         seller_tin_number: {
           deletedAt: null,
           status: "ACTIVE",

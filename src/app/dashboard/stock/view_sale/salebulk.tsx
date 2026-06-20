@@ -33,6 +33,8 @@ interface SaleBulkUploadProps {
 const SaleBulkUpload = (props: SaleBulkUploadProps) => {
   const sheetRef = useRef<HTMLInputElement>(null);
 
+  const manufacturerBulkUploadDvatIds = new Set([821, 831, 35]);
+
   const [sheetFileName, setSheetFileName] = useState<string>("");
 
   interface BulkSheetData {
@@ -114,6 +116,11 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     }
     return map;
   }, [tindata]);
+
+  const isManufacturerBulkUpload =
+    dvatdata?.commodity === "MANUFACTURER" ||
+    dvatdata?.commodity === "WHOLESALER" ||
+    (dvatdata?.id != null && manufacturerBulkUploadDvatIds.has(dvatdata.id));
 
   useEffect(() => {
     const init = async () => {
@@ -287,7 +294,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     // OIDC users sell LIQUOR-typed products.
     // MANUFACTURER and WHOLESALER use their own product type
     // so the commodity lookup finds the correct crate_size for quantity conversion.
-    if (dvatdata?.commodity === "OIDC" || dvatdata?.commodity === "WHOLESALER" || dvatdata?.commodity === "MANUFACTURER") {
+    if (dvatdata?.commodity === "OIDC" || isManufacturerBulkUpload) {
       return "LIQUOR";
     }
     return dvatdata?.commodity;
@@ -335,8 +342,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
     const entries = tabledata.map((row) => {
       const taxPercent =
-        dvatdata?.commodity === "MANUFACTURER" ||
-        dvatdata?.commodity === "WHOLESALER"
+        isManufacturerBulkUpload
           ? row.sale_type === "CFORM"
             ? "2"
             : row.sale_type === "REGULAR"
@@ -358,7 +364,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       return {
         dvatid: dvatdata.id,
         commodityid: row.item_code,
-        quantity: Number(row.quantity), // Always stored in pieces (converted from crates for MANUFACTURER/WHOLESALER)
+        quantity: Number(row.quantity), // Always stored in pieces (converted from crates for manufacturer-style bulk uploads)
         seller_tin_id: row.seller_tin_id!,
         invoice_number: row.invoice_no,
         invoice_date: invoiceDate,
@@ -398,10 +404,9 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           currentChunk,
         }));
 
-        const response =
-          dvatdata?.commodity === "MANUFACTURER"
-            ? await CreateMultiDailySaleManufacturer({ entries: chunk })
-            : await CreateMultiDailySale({ entries: chunk });
+        const response = isManufacturerBulkUpload
+          ? await CreateMultiDailySaleManufacturer({ entries: chunk })
+          : await CreateMultiDailySale({ entries: chunk });
 
         if (!response.status) {
           toast.error(response.message);
@@ -526,9 +531,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       });
 
       const expectedProductType = getExpectedProductType();
-      const isCrateCommodity =
-        dvatdata?.commodity === "MANUFACTURER" ||
-        dvatdata?.commodity === "WHOLESALER";
+      const isCrateCommodity = isManufacturerBulkUpload;
       const commodityType = dvatdata?.commodity;
 
       // Build tinNumber → commodity map from all dvat04 records
@@ -781,7 +784,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                 ? "* Quantity must be a number in crates and greater than 0"
                 : "* Quantity must be a number in pieces and greater than 0",
             );
-          } else if (!Number.isInteger(parsedQuantity)) {
+          } else if (!Number.isInteger(parsedQuantity) && !isManufacturerBulkUpload) {
             errors.push(
               isCrateCommodity
                 ? "* Quantity must be a whole number in crates"
@@ -966,8 +969,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               Number.isFinite(mrp) &&
               Number.isFinite(minUnitPrice) &&
               pricePerUnit <
-                (dvatdata?.commodity == "MANUFACTURER" ||
-                dvatdata?.commodity == "WHOLESALER"
+                (isManufacturerBulkUpload
                   ? minUnitPrice * 0.25
                   : minUnitPrice * 0.75)
             ) {
@@ -1086,8 +1088,8 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       }
 
       // Cross-row check: stock availability per item_code
-      // MANUFACTURER uploads should bypass stock validation.
-      if (dvatdata && dvatdata.commodity !== "MANUFACTURER") {
+      // Manufacturer-style uploads should bypass stock validation.
+      if (dvatdata && !isManufacturerBulkUpload) {
         const stockResponse = await GetAllStock({
           dvatid: dvatdata.id,
           take: 10000,

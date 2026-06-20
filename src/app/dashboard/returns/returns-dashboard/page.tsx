@@ -4,7 +4,6 @@
 import { Label } from "@/components/ui/label";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Marquee from "react-fast-marquee";
-import Lottie from "lottie-react";
 import { RowData } from "@tanstack/react-table";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Alert, Checkbox, Drawer, Modal, Select } from "antd";
@@ -1084,6 +1083,23 @@ const ReturnDashboard = () => {
                   }}
                 >
                   Pay Challan
+                </button>
+              )}
+              {isSearch && !ispayment() && davtdata?.commodity == "MANUFACTURER" && (
+                <button
+                  className="py-1 px-4 border text-white text-lg font-semibold bg-blue-500 rounded-lg cursor-pointer"
+                  onClick={() => {
+                    if (return01 == null) {
+                      router.push(
+                        `/dashboard/returns/returns-dashboard/pay_cst?form=30A&year=${getNewYear(year!, period!)}&quarter=${quarter}&month=${period}`,
+                      );
+                    }
+                    router.push(
+                      `/dashboard/returns/returns-dashboard/pay_cst/${encryptURLData(return01!.id.toString())}`,
+                    );
+                  }}
+                >
+                  Pay CST
                 </button>
               )}
             </div>
