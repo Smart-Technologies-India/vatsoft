@@ -157,7 +157,7 @@ const EditSale = async (
           where: {
             urn_number: updatedSale.urn_number,
             deletedAt: null,
-            deletedBy: null,
+            deletedById: null,
             status: "ACTIVE",
           },
           data: {
