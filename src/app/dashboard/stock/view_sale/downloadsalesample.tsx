@@ -12,7 +12,7 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
 
   const downloadBulkTemplate = async () => {
     const commodityType = commodity;
-    const isManufacturerCommodity = commodityType === "MANUFACTURER";
+    const isManufacturerCommodity = commodityType === "MANUFACTURER" || commodityType === "WHOLESALER";
 
     let commodityMasterData: commodity_master[] = [];
     const commodityResponse = await AllCommodityMaster({});
