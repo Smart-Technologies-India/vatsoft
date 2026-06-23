@@ -147,7 +147,11 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
         setDvatdata(response.data);
         const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
-          if (response.data.commodity == "OIDC") {
+          if (
+            response.data.commodity == "OIDC" ||
+            response.data.commodity == "WHOLESALER" ||
+            response.data.commodity == "MANUFACTURER"
+          ) {
             const filterdata = commodity_resposen.data.filter(
               (val: commodity_master) => val.product_type == "LIQUOR",
             );

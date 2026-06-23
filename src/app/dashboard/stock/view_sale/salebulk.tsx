@@ -33,7 +33,7 @@ interface SaleBulkUploadProps {
 const SaleBulkUpload = (props: SaleBulkUploadProps) => {
   const sheetRef = useRef<HTMLInputElement>(null);
 
-  const manufacturerBulkUploadDvatIds = new Set([821, 831, 35]);
+  const manufacturerBulkUploadDvatIds = new Set([821, 35]);
 
   const [sheetFileName, setSheetFileName] = useState<string>("");
 
@@ -119,8 +119,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
   const isManufacturerBulkUpload =
     dvatdata?.commodity === "MANUFACTURER" ||
-    dvatdata?.commodity === "WHOLESALER" ||
-    (dvatdata?.id != null && manufacturerBulkUploadDvatIds.has(dvatdata.id));
+    dvatdata?.commodity === "WHOLESALER";
 
   useEffect(() => {
     const init = async () => {
@@ -298,7 +297,6 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       return "LIQUOR";
     }
     return dvatdata?.commodity;
-
   };
 
   const readSheetField = (row: Record<string, unknown>, labels: string[]) => {
@@ -341,18 +339,17 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     }
 
     const entries = tabledata.map((row) => {
-      const taxPercent =
-        isManufacturerBulkUpload
-          ? row.sale_type === "CFORM"
-            ? "2"
-            : row.sale_type === "REGULAR"
-              ? "20"
-              : "0"
-          : row.sale_type === "CFORM"
-            ? "2"
-            : row.sale_type === "REGULAR"
-              ? (row.tax_percent ?? "0")
-              : "0";
+      const taxPercent = isManufacturerBulkUpload
+        ? row.sale_type === "CFORM"
+          ? "2"
+          : row.sale_type === "REGULAR"
+            ? "20"
+            : "0"
+        : row.sale_type === "CFORM"
+          ? "2"
+          : row.sale_type === "REGULAR"
+            ? (row.tax_percent ?? "0")
+            : "0";
       const totalInvoice = Number(row.total_invoice_value);
       const taxableValue = (totalInvoice / (100 + Number(taxPercent))) * 100;
       const vatValue = totalInvoice - taxableValue;
@@ -696,7 +693,12 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               sellerCommodity === "WHOLESALER"
             ) {
               // MANUFACTURER can sell to OIDC and LIQUOR
-              isValidSale = ["OIDC", "LIQUOR","WHOLESALER", "MANUFACTURER"].includes(buyerCommodity);
+              isValidSale = [
+                "OIDC",
+                "LIQUOR",
+                "WHOLESALER",
+                "MANUFACTURER",
+              ].includes(buyerCommodity);
             } else if (sellerCommodity === "LIQUOR") {
               // LIQUOR can sell to LIQUOR, MANUFACTURER, OIDC, and WHOLESALER
               isValidSale = [
@@ -784,7 +786,10 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                 ? "* Quantity must be a number in crates and greater than 0"
                 : "* Quantity must be a number in pieces and greater than 0",
             );
-          } else if (!Number.isInteger(parsedQuantity) && !isManufacturerBulkUpload) {
+          } else if (
+            !Number.isInteger(parsedQuantity) &&
+            !isManufacturerBulkUpload
+          ) {
             errors.push(
               isCrateCommodity
                 ? "* Quantity must be a whole number in crates"
@@ -927,12 +932,20 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
           const allowedFlagKeysByCommodity =
             commodityType === "MANUFACTURER"
-              ? ["CFORM", "FFORM", "E1", "IFORM", "EXEMPT", "H_EXPORT", "EXPORT"]
+              ? [
+                  "CFORM",
+                  "FFORM",
+                  "E1",
+                  "IFORM",
+                  "EXEMPT",
+                  "H_EXPORT",
+                  "EXPORT",
+                ]
               : commodityType === "WHOLESALER"
                 ? ["CFORM"]
-              : commodityType === "FUEL"
-                ? ["CFORM", "FFORM", "EXEMPT"]
-                : [];
+                : commodityType === "FUEL"
+                  ? ["CFORM", "FFORM", "EXEMPT"]
+                  : [];
 
           const selectedAllowedFlags = selectedFlags.filter((flag) =>
             allowedFlagKeysByCommodity.includes(flag.key),
@@ -995,7 +1008,10 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           } else if (commodityType === "FUEL") {
             if (selectedAllowedFlags.length === 0) {
               saleType = "REGULAR";
-            } else if (normalizedType && ["CFORM", "FFORM", "EXEMPT"].includes(normalizedType)) {
+            } else if (
+              normalizedType &&
+              ["CFORM", "FFORM", "EXEMPT"].includes(normalizedType)
+            ) {
               saleType = normalizedType;
             } else if (selectedAllowedFlags.length === 1) {
               saleType = selectedAllowedFlags[0].key;

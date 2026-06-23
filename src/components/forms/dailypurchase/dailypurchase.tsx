@@ -103,6 +103,25 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     [],
   );
 
+  const filterCommodityOptions = (
+    allCommodities: commodity_master[],
+    userCommodity: dvat04["commodity"],
+  ): commodity_master[] => {
+    if (
+      userCommodity == "OIDC" ||
+      userCommodity == "WHOLESALER" ||
+      userCommodity == "MANUFACTURER"
+    ) {
+      return allCommodities.filter(
+        (val: commodity_master) => val.product_type == "LIQUOR",
+      );
+    }
+
+    return allCommodities.filter(
+      (val: commodity_master) => val.product_type == userCommodity,
+    );
+  };
+
   const init = async () => {
     const response = await GetUserDvat04();
 
@@ -112,18 +131,12 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
       const commodity_resposen = await AllCommodityMaster({});
       if (commodity_resposen.status && commodity_resposen.data) {
-        if (response.data.commodity == "OIDC") {
-          const filterdata = commodity_resposen.data.filter(
-            (val: commodity_master) => val.product_type == "LIQUOR",
-          );
-          setCommodityMaster(filterdata);
-        } else {
-          const filterdata = commodity_resposen.data.filter(
-            (val: commodity_master) =>
-              val.product_type == response.data!.commodity,
-          );
-          setCommodityMaster(filterdata);
-        }
+        setCommodityMaster(
+          filterCommodityOptions(
+            commodity_resposen.data,
+            response.data.commodity,
+          ),
+        );
       }
     }
 
@@ -153,18 +166,12 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
         const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
-          if (response.data.commodity == "OIDC") {
-            const filterdata = commodity_resposen.data.filter(
-              (val: commodity_master) => val.product_type == "LIQUOR",
-            );
-            setCommodityMaster(filterdata);
-          } else {
-            const filterdata = commodity_resposen.data.filter(
-              (val: commodity_master) =>
-                val.product_type == response.data!.commodity,
-            );
-            setCommodityMaster(filterdata);
-          }
+          setCommodityMaster(
+            filterCommodityOptions(
+              commodity_resposen.data,
+              response.data.commodity,
+            ),
+          );
         }
       }
 

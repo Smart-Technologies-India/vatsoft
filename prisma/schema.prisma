@@ -916,6 +916,7 @@ model commodity_master {
   id                           Int                     @id @default(autoincrement())
   product_name                 String
   product_type                 Dvat04Commodity?        @default(OTHER)
+  pack_size                    String?
   mrp                          String
   sale_price                   String
   oidc_price                   String
