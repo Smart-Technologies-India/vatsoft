@@ -369,7 +369,9 @@ const DailySale = (props: DailySaleProviderProps) => {
     if (sellerTin == null || sellerTin == undefined)
       return toast.error("Seller TIN Number not found.");
 
-    if (quantityCount == "pcs") {
+    const shouldValidateMrp = davtdata?.commodity !== "WHOLESALER";
+
+    if (shouldValidateMrp && quantityCount == "pcs") {
       // pcs
 
       if (davtdata?.commodity == "OIDC") {
@@ -514,7 +516,9 @@ const DailySale = (props: DailySaleProviderProps) => {
     if (sellerTin == null || sellerTin == undefined)
       return toast.error("Seller TIN Number not found.");
 
-    if (quantityCount == "pcs") {
+    const shouldValidateMrp = davtdata?.commodity !== "WHOLESALER";
+
+    if (shouldValidateMrp && quantityCount == "pcs") {
       // pcs
 
       if (davtdata?.commodity == "OIDC") {
@@ -538,7 +542,7 @@ const DailySale = (props: DailySaleProviderProps) => {
           return toast.error("Sale amount can not be less than MRP.");
         }
       }
-    } else {
+    } else if (shouldValidateMrp) {
       if (davtdata?.commodity == "OIDC") {
         if (isLiquore && parseFloat(data.amount_unit) < liquoreOIDCAmount * 0.5) {
           return toast.error("Sale amount can not be less than MRP.");

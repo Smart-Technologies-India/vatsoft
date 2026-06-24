@@ -62,6 +62,10 @@ const FORM_DVAT_16 = (props: FORM_DVAT_16Props) => {
         existing.amount = amountSum.toFixed(2); // or keep as number if preferred
         existing.vatamount = vatSum.toFixed(2);
         existing.quantity = quantitySum; // assuming you want quantity as string
+        existing.total_invoice_number = (
+          parseFloat(existing.total_invoice_number || "0") +
+          parseFloat(entry.total_invoice_number || "0")
+        ).toFixed(2);
       }
     }
     for (const key in grouped) {

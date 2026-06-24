@@ -1,6 +1,7 @@
 "use client";
 import ConvertDvat31 from "@/action/stock/convertdvat31";
 import AcceptSaleWithoutDvat from "@/action/stock/acceptsalewithoutdvat";
+import AcceptSaleForPendingProcess from "@/action/stock/acceptsaleforpendingprocess";
 import DeleteSale from "@/action/stock/deletesale";
 import GetSaleDeleteImpact from "@/action/stock/getsaledeleteimpact";
 import GetUserDailySale, {
@@ -39,6 +40,7 @@ import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 import GetAllDvat04 from "@/action/dvat/getalldvat";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUser from "@/action/user/getuser";
+import GetAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import DownloadSaleSample from "./downloadsalesample";
 import GetReturnMonth from "@/action/dvat/getreturnmonth";
 import SaleBulkUpload from "./salebulk";
@@ -53,6 +55,19 @@ const DEFAULT_SALE_SUMMARY: DailySaleSummary = {
   totalTaxableValue: 0,
   totalVatAmount: 0,
   totalInvoiceValue: 0,
+};
+
+const formatDateInputValue = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const formatMonthInputValue = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
 };
 
 const DocumentWiseDetails = () => {
@@ -70,6 +85,7 @@ const DocumentWiseDetails = () => {
     | "invoice_value"
   >("invoice_date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<{
     startDate: string;
     endDate: string;
@@ -96,6 +112,11 @@ const DocumentWiseDetails = () => {
   const cardSummary = isFilterApplied
     ? filteredSaleSummary
     : overallSaleSummary;
+
+  const maxSelectableMonth = useMemo(
+    () => formatMonthInputValue(new Date()),
+    [],
+  );
 
   const route = useRouter();
   const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
@@ -129,6 +150,9 @@ const DocumentWiseDetails = () => {
   const [allDvatTinNumbers, setAllDvatTinNumbers] = useState<Set<string>>(
     new Set(),
   );
+  const [allTinMasterTinNumbers, setAllTinMasterTinNumbers] = useState<
+    Set<string>
+  >(new Set());
 
   const [selectedGroup, setSelectedGroup] = useState<GroupedDailySale | null>(
     null,
@@ -163,6 +187,7 @@ const DocumentWiseDetails = () => {
   const chatListRef = useRef<HTMLDivElement | null>(null);
 
   const normalizedStatus = (dvatdata?.status ?? "").toUpperCase();
+  const normalizeTin = (tinNumber: string): string => tinNumber.trim();
 
   const salesChatOptions = [
     {
@@ -260,15 +285,35 @@ const DocumentWiseDetails = () => {
 
       const dvat_response = await GetUserDvat04Anx({});
 
-      const allDvatResponse = await GetAllDvat04({});
+      const [allDvatResponse, allTinMasterResponse] = await Promise.all([
+        GetAllDvat04({}),
+        GetAllTinNumberMaster(),
+      ]);
+
       if (allDvatResponse.status && allDvatResponse.data) {
         setAllDvatTinNumbers(
           new Set(
             allDvatResponse.data
               .map((row) => row.tinNumber)
-              .filter((tin): tin is string => Boolean(tin)),
+              .filter((tin): tin is string => Boolean(tin))
+              .map(normalizeTin),
           ),
         );
+      } else {
+        setAllDvatTinNumbers(new Set());
+      }
+
+      if (allTinMasterResponse.status && allTinMasterResponse.data) {
+        setAllTinMasterTinNumbers(
+          new Set(
+            allTinMasterResponse.data
+              .map((row) => row.tin_number)
+              .filter((tin): tin is string => Boolean(tin))
+              .map(normalizeTin),
+          ),
+        );
+      } else {
+        setAllTinMasterTinNumbers(new Set());
       }
 
       if (dvat_response.status && dvat_response.data) {
@@ -308,14 +353,20 @@ const DocumentWiseDetails = () => {
       setIsLoading(false);
     };
     init();
-  }, [userid, router, loadFiledReturnPeriods]);
+  }, [router, loadFiledReturnPeriods]);
 
   const canManualAcceptSale = useCallback(
     (tinNumber: string): boolean => {
       if (!tinNumber) return false;
-      return !allDvatTinNumbers.has(tinNumber);
+      const normalizedTin = normalizeTin(tinNumber);
+      const existsInDvat = allDvatTinNumbers.has(normalizedTin);
+      const existsInTinMaster = allTinMasterTinNumbers.has(normalizedTin);
+
+      // Manual accept is allowed only when TIN exists in tin_number_master
+      // and does not exist in dvat04.
+      return existsInTinMaster && !existsInDvat;
     },
-    [allDvatTinNumbers],
+    [allDvatTinNumbers, allTinMasterTinNumbers],
   );
 
   const handleAcceptSingleRecord = async (
@@ -323,9 +374,15 @@ const DocumentWiseDetails = () => {
   ) => {
     setIsSingleAcceptLoading(true);
 
-    const response = await AcceptSaleWithoutDvat({
+    let response = await AcceptSaleForPendingProcess({
       saleId: record.id,
     });
+
+    if (!response.status && response.message === "Seller DVAT status is not pendingprocess.") {
+      response = await AcceptSaleWithoutDvat({
+        saleId: record.id,
+      });
+    }
 
     setIsSingleAcceptLoading(false);
 
@@ -350,7 +407,17 @@ const DocumentWiseDetails = () => {
 
     try {
       for (const record of pendingRecords) {
-        const response = await AcceptSaleWithoutDvat({ saleId: record.id });
+        let response = await AcceptSaleForPendingProcess({
+          saleId: record.id,
+        });
+
+        if (
+          !response.status &&
+          response.message === "Seller DVAT status is not pendingprocess."
+        ) {
+          response = await AcceptSaleWithoutDvat({ saleId: record.id });
+        }
+
         if (!response.status || !response.data) {
           toast.error(response.message);
           return;
@@ -419,41 +486,57 @@ const DocumentWiseDetails = () => {
   }, []);
 
   useEffect(() => {
-    const loadFilteredPage = async () => {
-      if (!dvatdata?.id) return;
+    if (!dvatdata?.id) return;
 
-      const daily_sale_response = await GetUserDailySaleFiltered({
-        dvatid: dvatdata.id,
-        skip: 0,
-        take: pagination.take,
-        searchTerm,
-        sortField,
-        sortOrder,
-        startDate: dateFilter.startDate,
-        endDate: dateFilter.endDate,
-        acceptStatusFilter,
-      });
+    // If only one of startDate/endDate is set, wait for the user to finish
+    // selecting the range before firing the request. This prevents the page
+    // from refreshing as soon as the first date is picked and gives the user
+    // enough time to choose the second date.
+    const hasIncompleteRange =
+      (dateFilter.startDate && !dateFilter.endDate) ||
+      (!dateFilter.startDate && dateFilter.endDate);
 
-      if (daily_sale_response.status && daily_sale_response.data.result) {
-        setDailySale(daily_sale_response.data.result);
-        setPaginatin((prev) => ({
-          ...prev,
+    if (hasIncompleteRange) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const loadFilteredPage = async () => {
+        const daily_sale_response = await GetUserDailySaleFiltered({
+          dvatid: dvatdata.id,
           skip: 0,
-          total: daily_sale_response.data.total,
-        }));
-        const summary = daily_sale_response.data.summary as
-          | DailySaleFilteredSummary
-          | undefined;
-        setOverallSaleSummary(
-          summary?.overallSummary ?? DEFAULT_SALE_SUMMARY,
-        );
-        setFilteredSaleSummary(
-          summary?.filteredSummary ?? DEFAULT_SALE_SUMMARY,
-        );
-      }
-    };
+          take: pagination.take,
+          searchTerm,
+          sortField,
+          sortOrder,
+          startDate: dateFilter.startDate,
+          endDate: dateFilter.endDate,
+          acceptStatusFilter,
+        });
 
-    loadFilteredPage();
+        if (daily_sale_response.status && daily_sale_response.data.result) {
+          setDailySale(daily_sale_response.data.result);
+          setPaginatin((prev) => ({
+            ...prev,
+            skip: 0,
+            total: daily_sale_response.data.total,
+          }));
+          const summary = daily_sale_response.data.summary as
+            | DailySaleFilteredSummary
+            | undefined;
+          setOverallSaleSummary(
+            summary?.overallSummary ?? DEFAULT_SALE_SUMMARY,
+          );
+          setFilteredSaleSummary(
+            summary?.filteredSummary ?? DEFAULT_SALE_SUMMARY,
+          );
+        }
+      };
+
+      loadFilteredPage();
+    }, 600);
+
+    return () => clearTimeout(timer);
   }, [
     dvatdata?.id,
     pagination.take,
@@ -464,6 +547,30 @@ const DocumentWiseDetails = () => {
     dateFilter.endDate,
     acceptStatusFilter,
   ]);
+
+  useEffect(() => {
+    if (!selectedPeriod) {
+      setDateFilter({ startDate: "", endDate: "" });
+      return;
+    }
+
+    const [yearString, monthString] = selectedPeriod.split("-");
+    const year = Number(yearString);
+    const monthIndex = Number(monthString) - 1;
+    const startDate = new Date(year, monthIndex, 1);
+    const monthEndDate = new Date(year, monthIndex + 1, 0);
+    const today = new Date();
+
+    const endDate =
+      year === today.getFullYear() && monthIndex === today.getMonth()
+        ? today
+        : monthEndDate;
+
+    setDateFilter({
+      startDate: formatDateInputValue(startDate),
+      endDate: formatDateInputValue(endDate),
+    });
+  }, [selectedPeriod]);
 
   const handleChatScroll = () => {
     if (!chatListRef.current) return;
@@ -1615,13 +1722,11 @@ const DocumentWiseDetails = () => {
             </div>
           </div>
 
-          {dailySale.length > 0 ? (
-            <div className="bg-white rounded shadow-sm border p-3">
+          <div className="bg-white rounded shadow-sm border p-3">
               {/* Search, Sort, and Filter Controls */}
               <div className="mb-4 space-y-3">
-                {/* Search Bar */}
-                <div className="flex flex-col md:flex-row gap-3">
-                  <div className="flex-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3 items-end">
+                  <div className="xl:col-span-2">
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Search
                     </label>
@@ -1634,8 +1739,7 @@ const DocumentWiseDetails = () => {
                     />
                   </div>
 
-                  {/* Sort Controls */}
-                  <div className="w-full md:w-48">
+                  <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Sort By
                     </label>
@@ -1652,7 +1756,7 @@ const DocumentWiseDetails = () => {
                     </select>
                   </div>
 
-                  <div className="w-full md:w-32">
+                  <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Order
                     </label>
@@ -1667,46 +1771,22 @@ const DocumentWiseDetails = () => {
                       <option value="desc">Descending</option>
                     </select>
                   </div>
-                </div>
 
-                {/* Filter Controls */}
-                <div className="flex flex-col md:flex-row gap-3">
-                  {/* Date Range Filter */}
-                  <div className="flex-1">
+                  <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Date Range
+                      Month
                     </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="date"
-                        value={dateFilter.startDate}
-                        onChange={(e) =>
-                          setDateFilter((prev) => ({
-                            ...prev,
-                            startDate: e.target.value,
-                          }))
-                        }
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Start Date"
-                      />
-                      <span className="self-center text-gray-500">to</span>
-                      <input
-                        type="date"
-                        value={dateFilter.endDate}
-                        onChange={(e) =>
-                          setDateFilter((prev) => ({
-                            ...prev,
-                            endDate: e.target.value,
-                          }))
-                        }
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="End Date"
-                      />
-                    </div>
+                    <input
+                      type="month"
+                      value={selectedPeriod}
+                      onChange={(e) => setSelectedPeriod(e.target.value)}
+                      min="2026-04"
+                      max={maxSelectableMonth}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                   </div>
 
-                  {/* Accept Status Filter */}
-                  <div className="w-full md:w-48">
+                  <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Accept Status
                     </label>
@@ -1723,22 +1803,26 @@ const DocumentWiseDetails = () => {
                     </select>
                   </div>
 
-                  {/* Clear Filters Button */}
-                  <div className="w-full md:w-auto flex items-end">
+                  <div>
                     <button
                       onClick={() => {
                         setSearchTerm("");
+                        setSelectedPeriod("");
                         setDateFilter({ startDate: "", endDate: "" });
                         setAcceptStatusFilter("all");
                         setSortField("invoice_date");
                         setSortOrder("desc");
                       }}
-                      className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-300 transition-colors"
+                      className="w-full px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-300 transition-colors"
                     >
                       Clear Filters
                     </button>
                   </div>
                 </div>
+
+                <p className="text-[11px] text-gray-500">
+                  Month filter allowed from April 2026 to current month.
+                </p>
 
                 {/* Results Count */}
                 <div className="text-xs text-gray-600">
@@ -2013,11 +2097,6 @@ const DocumentWiseDetails = () => {
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="bg-white rounded shadow-sm border p-3 text-center">
-              <p className="text-gray-500 text-sm">There is no daily sale.</p>
-            </div>
-          )}
         </div>
       </main>
 

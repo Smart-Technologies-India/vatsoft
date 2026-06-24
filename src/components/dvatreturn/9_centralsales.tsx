@@ -1075,11 +1075,12 @@ const CentralSales = (props: CentralSalesProps) => {
           </th>
 
           <th className="border border-black px-2 leading-4 text-[0.6rem] w-[15%] text-left font-normal">
-            {/* {getGoodsReturnsNote().increase} */}
-            {parseFloat(getStateSalesTaxable().increase) +
+            {(
+              parseFloat(getStateSalesTaxable().increase) +
               parseFloat(getInterStateSales().increase) +
               parseFloat(get10_2_6_2().increase) +
-              get4_6().increase}
+              parseFloat(get4_6().increase)
+            ).toFixed(2)}
           </th>
         </tr>
       </thead>
@@ -1137,14 +1138,16 @@ const CentralSales = (props: CentralSalesProps) => {
             Balance turnover of Inter State Sales and Sales within the State
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {parseFloat(getStateSalesTaxable().increase) +
+            {(
+              parseFloat(getStateSalesTaxable().increase) +
               parseFloat(getInterStateSales().increase) +
-              +get4_6().increase +
+              parseFloat(get4_6().increase) +
               parseFloat(get10_2_6_2().increase) -
               (parseFloat(getGoodsReturnsNote().increase) -
                 parseFloat(getLabour().increase) -
                 parseFloat(getFormF().increase) -
-                parseFloat(getExportIndia().increase))}
+                parseFloat(getExportIndia().increase))
+            ).toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -1156,7 +1159,10 @@ const CentralSales = (props: CentralSalesProps) => {
             Deduct turnover Sales within the State
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {parseFloat(getStateSalesTaxable().increase) + get4_6().increase}
+            {(
+              parseFloat(getStateSalesTaxable().increase) +
+              parseFloat(get4_6().increase)
+            ).toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
