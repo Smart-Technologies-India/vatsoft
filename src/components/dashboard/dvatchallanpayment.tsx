@@ -909,7 +909,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     return isNegative(interest) ? 0 : interest;
   };
 
-  const getNetPayable = (): number => {
+  const getAdjustedBalances = () => {
     const penalty = isNegative(lateFees) ? 0 : lateFees;
     const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
     const vat = getR6_1();
@@ -917,48 +917,15 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     const vatBalance = vat - paidvatamount;
     const penaltyBalance = penalty - paidpenaltyamount;
     const interestBalance = interest - paidinterestamount;
-
-    if (vatBalance <= 0) {
-      return Math.max(0, penaltyBalance) + Math.max(0, interestBalance);
-    }
-
-    const excessPenalty = penaltyBalance < 0 ? Math.abs(penaltyBalance) : 0;
-    const excessInterest = interestBalance < 0 ? Math.abs(interestBalance) : 0;
-    const adjustedVatBalance = Math.max(
-      0,
-      vatBalance - excessPenalty - excessInterest,
-    );
-
-    return (
-      adjustedVatBalance +
-      Math.max(0, penaltyBalance) +
-      Math.max(0, interestBalance)
-    );
-  };
-
-  const getNetPayableBreakdown = () => {
-    const penalty = isNegative(lateFees) ? 0 : lateFees;
-    const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
-    const vat = getR6_1();
-
-    const vatBalance = vat - paidvatamount;
-    const penaltyBalance = penalty - paidpenaltyamount;
-    const interestBalance = interest - paidinterestamount;
-
-    const pendingPaymentRaw =
-      (vatBalance < 0 ? vatBalance : 0) +
-      (penaltyBalance < 0 ? penaltyBalance : 0) +
-      (interestBalance < 0 ? interestBalance : 0);
-    const pendingPayment =
-      pendingPaymentRaw < 0 ? Math.abs(pendingPaymentRaw) : 0;
 
     if (vatBalance <= 0) {
       return {
-        vatamount: vat,
-        penalty: Math.max(0, penalty),
-        interestamount: Math.max(0, interest),
-        totaltaxamount: penalty + interest + vat,
-        pendingPayment,
+        vat,
+        penalty,
+        interest,
+        vatBalance: 0,
+        penaltyBalance: Math.max(0, penaltyBalance),
+        interestBalance: Math.max(0, interestBalance),
       };
     }
 
@@ -970,13 +937,47 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     );
 
     return {
-      vatamount: vat,
-      penalty: Math.max(0, penalty),
-      interestamount: Math.max(0, interest),
+      vat,
+      penalty,
+      interest,
+      vatBalance: adjustedVatBalance,
+      penaltyBalance: Math.max(0, penaltyBalance),
+      interestBalance: Math.max(0, interestBalance),
+    };
+  };
+
+  const getNetPayable = (): number => {
+    const adjustedBalances = getAdjustedBalances();
+
+    return (
+      adjustedBalances.vatBalance +
+      adjustedBalances.penaltyBalance +
+      adjustedBalances.interestBalance
+    );
+  };
+
+  const getNetPayableBreakdown = () => {
+    const adjustedBalances = getAdjustedBalances();
+
+    const vatBalanceRaw = adjustedBalances.vat - paidvatamount;
+    const penaltyBalanceRaw = adjustedBalances.penalty - paidpenaltyamount;
+    const interestBalanceRaw = adjustedBalances.interest - paidinterestamount;
+
+    const pendingPaymentRaw =
+      (vatBalanceRaw < 0 ? vatBalanceRaw : 0) +
+      (penaltyBalanceRaw < 0 ? penaltyBalanceRaw : 0) +
+      (interestBalanceRaw < 0 ? interestBalanceRaw : 0);
+    const pendingPayment =
+      pendingPaymentRaw < 0 ? Math.abs(pendingPaymentRaw) : 0;
+
+    return {
+      vatamount: adjustedBalances.vat,
+      penalty: Math.max(0, adjustedBalances.penalty),
+      interestamount: Math.max(0, adjustedBalances.interest),
       totaltaxamount:
-        adjustedVatBalance +
-        Math.max(0, penaltyBalance) +
-        Math.max(0, interestBalance),
+        adjustedBalances.vatBalance +
+        adjustedBalances.penaltyBalance +
+        adjustedBalances.interestBalance,
       pendingPayment,
     };
   };
@@ -986,15 +987,10 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     return Math.max(0, getNetPayable() + pendingcasetwo);
   };
 
-  const remaingVat =
-    getR6_1() - paidvatamount < 0 ? 0 : getR6_1() - paidvatamount;
-
-  const remainingPenalty = isNegative(lateFees - paidpenaltyamount)
-    ? 0
-    : lateFees - paidpenaltyamount;
-  const remainingInterest = isNegative(getR6_2a() - paidinterestamount)
-    ? 0
-    : getR6_2a() - paidinterestamount;
+  const adjustedBalances = getAdjustedBalances();
+  const remaingVat = adjustedBalances.vatBalance;
+  const remainingPenalty = adjustedBalances.penaltyBalance;
+  const remainingInterest = adjustedBalances.interestBalance;
 
   const adjustAmount = (): number => {
     const amount = isNegative(getR6_1()) ? Math.abs(getR6_1()) : 0;

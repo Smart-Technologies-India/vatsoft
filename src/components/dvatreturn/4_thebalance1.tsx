@@ -683,11 +683,10 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       ? penalty - totalpaid
       : interest + vat + penalty - totalpaid;
 
-    return val;
+    return isNegative(val) ? Math.abs(val) : 0;
   };
 
   const getPercentageValue = (value: string): PercentageOutput => {
-
     let increase: string = "0";
     let decrease: string = "0";
     const output: returns_entry[] = props.returnsentrys.filter(

@@ -579,7 +579,7 @@ const NetTax = (props: NetTaxProps) => {
     const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
     const vat = getR6_1();
 
-    return interest + vat;
+    return interest + vat + penalty;
   };
 
   return (
