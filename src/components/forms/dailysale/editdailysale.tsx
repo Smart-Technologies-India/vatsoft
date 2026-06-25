@@ -40,7 +40,15 @@ type EditDailySaleProviderProps = {
     is_against_e1?: boolean;
   };
 };
-type AgainstType = "NONE" | "CFORM" | "FFORM" | "EXEMPT" | "IFORM" | "H_EXPORT" | "E1" | "EXPORT";
+type AgainstType =
+  | "NONE"
+  | "CFORM"
+  | "FFORM"
+  | "EXEMPT"
+  | "IFORM"
+  | "H_EXPORT"
+  | "E1"
+  | "EXPORT";
 export const EditDailySaleProvider = (props: EditDailySaleProviderProps) => {
   const methods = useForm<DailySaleForm>({
     resolver: valibotResolver(DailySaleSchema),
@@ -257,7 +265,8 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
     const invoicePerUnit = totalInvoiceValue / quantityNum;
 
     if (
-      (davtdata?.commodity !== "MANUFACTURER" && davtdata?.commodity !== "WHOLESALER") &&
+      davtdata?.commodity !== "MANUFACTURER" &&
+      davtdata?.commodity !== "WHOLESALER" &&
       isLiquore &&
       invoicePerUnit < (liquoreAmount / commoditymaster.crate_size) * 0.9
     ) {

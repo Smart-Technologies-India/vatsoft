@@ -386,7 +386,7 @@ const ProcessProductRequestForm = (
     >
       <div className="mb-4">
         <p className="text-sm text-gray-600">
-          Found <strong>{matchingProducts.length}</strong> product(s) matching "{product_name}"
+          Found <strong>{matchingProducts.length}</strong> product(s) matching &quot;{product_name}&quot;
         </p>
         {matchingProducts.length > 0 && (
           <p className="text-sm text-orange-600 mt-2">

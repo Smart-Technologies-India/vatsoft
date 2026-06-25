@@ -678,6 +678,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               // FUEL can only sell to FUEL
               isValidSale = [
                 "LIQUOR",
+                "RESTAURANT",
                 "FUEL",
                 "OIDC",
                 "MANUFACTURER",
@@ -685,9 +686,13 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               ].includes(buyerCommodity);
             } else if (sellerCommodity === "OIDC") {
               // OIDC can sell to LIQUOR and MANUFACTURER
-              isValidSale = ["LIQUOR", "MANUFACTURER", "WHOLESALER"].includes(
-                buyerCommodity,
-              );
+              isValidSale = [
+                "LIQUOR",
+                "RESTAURANT",
+                "MANUFACTURER",
+                "WHOLESALER",
+                "RESTAURANT",
+              ].includes(buyerCommodity);
             } else if (
               sellerCommodity === "MANUFACTURER" ||
               sellerCommodity === "WHOLESALER"
@@ -696,13 +701,18 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               isValidSale = [
                 "OIDC",
                 "LIQUOR",
+                "RESTAURANT",
                 "WHOLESALER",
                 "MANUFACTURER",
               ].includes(buyerCommodity);
-            } else if (sellerCommodity === "LIQUOR") {
+            } else if (
+              sellerCommodity === "LIQUOR" ||
+              sellerCommodity === "RESTAURANT"
+            ) {
               // LIQUOR can sell to LIQUOR, MANUFACTURER, OIDC, and WHOLESALER
               isValidSale = [
                 "LIQUOR",
+                "RESTAURANT",
                 "MANUFACTURER",
                 "OIDC",
                 "WHOLESALER",
@@ -994,7 +1004,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           }
 
           let saleType = "REGULAR";
-          if (commodityType === "LIQUOR") {
+          if (commodityType === "LIQUOR" || commodityType === "RESTAURANT") {
             saleType = "REGULAR";
           } else if (commodityType === "FUEL") {
             if (selectedAllowedFlags.length === 0) {

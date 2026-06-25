@@ -220,6 +220,8 @@ const CommodityMaster = () => {
     return stocks.filter((val) => val.quantity !== 0);
   }, [stockFilter, stocks]);
 
+  const isRestaurantCommodity = String(dvatdata?.commodity) === "RESTAURANT";
+
   const columns = useMemo<ColumnDef<StockRow>[]>(
     () => [
       {
@@ -248,19 +250,41 @@ const CommodityMaster = () => {
         id: "quantity",
         accessorFn: (row) => row.quantity,
         header:
-          quantityCount == "pcs"
+          quantityCount == "pcs" || isRestaurantCommodity
             ? dvatdata?.commodity == "FUEL"
               ? "Litres"
               : "Quantity"
             : "Crate",
         cell: ({ row }) =>
-          quantityCount == "pcs"
+          quantityCount == "pcs" || isRestaurantCommodity
             ? row.original.quantity
             : showCrates(
                 row.original.quantity,
                 row.original.commodity_master.crate_size,
               ),
       },
+      ...(isRestaurantCommodity
+        ? [
+            {
+              id: "ml",
+              header: "ML",
+              accessorFn: (row: StockRow) => {
+                const packSize = Number(row.commodity_master.pack_size);
+                if (!Number.isFinite(packSize) || packSize <= 0) {
+                  return null;
+                }
+                return Number(row.quantity) * packSize;
+              },
+              cell: ({ row }: { row: { original: StockRow } }) => {
+                const packSize = Number(row.original.commodity_master.pack_size);
+                if (!Number.isFinite(packSize) || packSize <= 0) {
+                  return "-";
+                }
+                return Number(row.original.quantity) * packSize;
+              },
+            } as ColumnDef<StockRow>,
+          ]
+        : []),
       {
         id: "description",
         accessorFn: (row) => row.commodity_master.description || "-",
@@ -268,7 +292,7 @@ const CommodityMaster = () => {
         cell: ({ row }) => row.original.commodity_master.description || "-",
       },
     ],
-    [dvatdata?.commodity, quantityCount],
+    [dvatdata?.commodity, isRestaurantCommodity, quantityCount],
   );
 
   const table = useReactTable({
@@ -778,7 +802,7 @@ const CommodityMaster = () => {
               {/* Controls Section */}
               <div className="flex flex-wrap gap-2 items-center">
                 {/* Quantity Toggle for Non-Fuel */}
-                {dvatdata?.commodity != "FUEL" && (
+                {dvatdata?.commodity != "FUEL" && !isRestaurantCommodity && (
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-600">View:</span>
                     <Radio.Group
@@ -866,7 +890,7 @@ const CommodityMaster = () => {
                   View Purchase
                 </Button>
 
-                {dvatdata?.commodity == "FUEL" && (
+                {/* {dvatdata?.commodity == "FUEL" && (
                   <Button
                     size="small"
                     type="default"
@@ -874,7 +898,7 @@ const CommodityMaster = () => {
                   >
                     Refinery Purchase
                   </Button>
-                )}
+                )} */}
                 {/* {dvatdata && (dvatdata.commodity == "MANUFACTURER") && (
                   <Button
                     size="small"

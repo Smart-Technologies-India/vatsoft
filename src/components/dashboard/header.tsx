@@ -121,6 +121,8 @@ const Navbar = (props: NavbarProps) => {
           return "OIDC";
         case "OTHER":
           return "Other";
+        case "RESTAURANT":
+          return "Restaurant";
         default:
           return "Retailer";
       }

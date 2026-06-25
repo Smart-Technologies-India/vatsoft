@@ -48,10 +48,7 @@ export const DailyPurchaseMasterProvider = (
 
   return (
     <FormProvider {...methods}>
-      <DailyPurchaseMaster
-        setAddBox={props.setAddBox}
-        init={props.init}
-      />
+      <DailyPurchaseMaster setAddBox={props.setAddBox} init={props.init} />
     </FormProvider>
   );
 };
@@ -110,7 +107,8 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     if (
       userCommodity == "OIDC" ||
       userCommodity == "WHOLESALER" ||
-      userCommodity == "MANUFACTURER"
+      userCommodity == "MANUFACTURER" ||
+      userCommodity == "RESTAURANT"
     ) {
       return allCommodities.filter(
         (val: commodity_master) => val.product_type == "LIQUOR",

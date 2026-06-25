@@ -103,6 +103,16 @@ const Page = () => {
                 description="Reverse unregister sale invoice."
                 link="/dashboard/user_service/reverse_sale_invoice"
               />
+              <DashboardCards
+                title="Breakage"
+                description="Report and manage breakage incidents."
+                link="/dashboard/user_service/breakage"
+              />
+              <DashboardCards
+                title="PCS to mL"
+                description="Convert PCS to mL for accurate measurements."
+                link="/dashboard/user_service/pcstoml"
+              />
               {/* <DashboardCards
                 title="My Profile"
                 description="Update and manage your personal and business profile information."

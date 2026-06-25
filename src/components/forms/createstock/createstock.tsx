@@ -43,9 +43,9 @@ export const CreateStockProvider = (props: CreateStockProviderProps) => {
 
 const CreateStockData = (props: CreateStockProviderProps) => {
   const router = useRouter();
-  
+
   // const userid: number = parseFloat(getCookie("id") ?? "0");
-  const [userid,setUserid] = useState<number>(0);
+  const [userid, setUserid] = useState<number>(0);
 
   const taxable_at: OptionValue[] = [
     0, 1, 2, 4, 5, 6, 12.5, 12.75, 13.5, 15, 20,
@@ -63,7 +63,7 @@ const CreateStockData = (props: CreateStockProviderProps) => {
   const [davtdata, setDvatdata] = useState<dvat04 | null>(null);
 
   const [commodityMaster, setCommodityMaster] = useState<commodity_master[]>(
-    []
+    [],
   );
 
   useEffect(() => {
@@ -73,7 +73,7 @@ const CreateStockData = (props: CreateStockProviderProps) => {
       description_of_goods: undefined,
     });
     const init = async () => {
-       const authResponse = await getAuthenticatedUserId();
+      const authResponse = await getAuthenticatedUserId();
       if (!authResponse.status || !authResponse.data) {
         toast.error(authResponse.message);
         return router.push("/");
@@ -87,7 +87,7 @@ const CreateStockData = (props: CreateStockProviderProps) => {
         const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
           const filterdata = commodity_resposen.data.filter(
-            (val: commodity_master) => val.product_type == "LIQUOR"
+            (val: commodity_master) => val.product_type == "LIQUOR",
           );
           setCommodityMaster(filterdata);
         }
@@ -171,26 +171,26 @@ const CreateStockData = (props: CreateStockProviderProps) => {
   }, [description_of_goods]);
 
   useEffect(() => {
-    if (commoditymaster == null || crates == null || amount == null)
-      return;
+    if (commoditymaster == null || crates == null || amount == null) return;
 
     // Calculate pieces from amount using crate_size from commodity master
     const cratesNum = parseInt(crates) || 0;
     const amountNum = parseInt(amount) || 0;
     const piecesFromAmount = Math.floor(amountNum / commoditymaster.crate_size);
-    const totalQuantity = (cratesNum * commoditymaster.crate_size) + piecesFromAmount;
+    const totalQuantity =
+      cratesNum * commoditymaster.crate_size + piecesFromAmount;
 
     // Calculate taxableValue
     const calculatedTaxableValue = totalQuantity * commoditymaster.crate_size;
     setTaxableValue(
-      isNaN(calculatedTaxableValue) ? "0" : calculatedTaxableValue.toFixed(2)
+      isNaN(calculatedTaxableValue) ? "0" : calculatedTaxableValue.toFixed(2),
     );
 
     // Calculate VAT amount based on commodity master data
     const taxPercentage: number = parseInt(commoditymaster.taxable_at) || 0;
     const calculatedVatAmount = (calculatedTaxableValue * taxPercentage) / 100;
     setVatAmount(
-      isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2)
+      isNaN(calculatedVatAmount) ? "0" : calculatedVatAmount.toFixed(2),
     );
   }, [crates, amount, commoditymaster]);
 
@@ -203,7 +203,8 @@ const CreateStockData = (props: CreateStockProviderProps) => {
     const cratesNum = parseInt(data.crates) || 0;
     const amountNum = parseInt(data.amount) || 0;
     const piecesFromAmount = Math.floor(amountNum / commoditymaster.crate_size);
-    const totalQuantity = (cratesNum * commoditymaster.crate_size) + piecesFromAmount;
+    const totalQuantity =
+      cratesNum * commoditymaster.crate_size + piecesFromAmount;
 
     const stock_response = await CreateStock({
       amount_unit: commoditymaster.crate_size.toString(),
@@ -231,11 +232,12 @@ const CreateStockData = (props: CreateStockProviderProps) => {
       return toast.error("User Dvat not found.");
     if (commoditymaster == null || commoditymaster == undefined)
       return toast.error("Commodity Master not found.");
-    
+
     const cratesNum = parseInt(data.crates) || 0;
     const amountNum = parseInt(data.amount) || 0;
     const piecesFromAmount = Math.floor(amountNum / commoditymaster.crate_size);
-    const totalQuantity = (cratesNum * commoditymaster.crate_size) + piecesFromAmount;
+    const totalQuantity =
+      cratesNum * commoditymaster.crate_size + piecesFromAmount;
 
     const stock_response = await CreateStock({
       amount_unit: commoditymaster.crate_size.toString(),
@@ -298,7 +300,7 @@ const CreateStockData = (props: CreateStockProviderProps) => {
               (val: commodity_master, index: number) => ({
                 value: val.id.toString(),
                 label: val.product_name,
-              })
+              }),
             )}
           />
         </div>

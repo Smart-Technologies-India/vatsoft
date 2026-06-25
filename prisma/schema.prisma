@@ -138,6 +138,9 @@ model user {
   stock_createdBy                 stock[]                 @relation("stock_createdBy")
   stock_deletedBy                 stock[]                 @relation("stock_deletedBy")
   stock_updatedBy                 stock[]                 @relation("stock_updatedBy")
+  breakage_createdBy              breakage[]              @relation("breakage_createdBy")
+  breakage_deletedBy              breakage[]              @relation("breakage_deletedBy")
+  breakage_updatedBy              breakage[]              @relation("breakage_updatedBy")
   tally_purchase_createdBy        tally_purchase[]        @relation("tally_purchase_createdBy")
   tally_sale_createdBy            tally_sale[]            @relation("tally_sale_createdBy")
   user_commodity_master_createdBy user_commodity_master[] @relation("user_commodity_master_createdBy")
@@ -352,6 +355,7 @@ model dvat04 {
   returns_01                      returns_01[]
   save_stock                      save_stock[]
   stock                           stock[]
+  breakage                        breakage[]
   tally_purchase                  tally_purchase[]
   tally_sale                      tally_sale[]
   user_commodity_master           user_commodity_master[]
@@ -957,6 +961,7 @@ model commodity_master {
   returns_entry                returns_entry[]
   save_stock                   save_stock[]
   stock                        stock[]
+  breakage                     breakage[]
   tally_purchase               tally_purchase[]
   tally_sale                   tally_sale[]
   refinerySales                refinery_sale[]
@@ -1234,6 +1239,33 @@ model stock {
   @@index([deletedById], map: "stock_deletedById_fkey")
   @@index([dvat04Id], map: "stock_dvat04Id_fkey")
   @@index([updatedById], map: "stock_updatedById_fkey")
+}
+
+model breakage {
+  id                 Int              @id @default(autoincrement())
+  dvat04Id           Int
+  commodity_masterId Int
+  quantity           Int
+  description        String?
+  remark             String?
+  status             Status           @default(ACTIVE)
+  createdAt          DateTime         @default(now())
+  createdById        Int
+  updatedAt          DateTime         @updatedAt
+  updatedById        Int?
+  deletedAt          DateTime?
+  deletedById        Int?
+  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
+  createdBy          user             @relation("breakage_createdBy", fields: [createdById], references: [id])
+  deletedBy          user?            @relation("breakage_deletedBy", fields: [deletedById], references: [id])
+  dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
+  updatedBy          user?            @relation("breakage_updatedBy", fields: [updatedById], references: [id])
+
+  @@index([commodity_masterId], map: "breakage_commodity_masterId_fkey")
+  @@index([createdById], map: "breakage_createdById_fkey")
+  @@index([deletedById], map: "breakage_deletedById_fkey")
+  @@index([dvat04Id], map: "breakage_dvat04Id_fkey")
+  @@index([updatedById], map: "breakage_updatedById_fkey")
 }
 
 model first_stock {
@@ -2122,6 +2154,7 @@ enum Dvat04Commodity {
   OIDC
   MANUFACTURER
   WHOLESALER
+  RESTAURANT
 }
 
 enum ReturnFilingStatus {

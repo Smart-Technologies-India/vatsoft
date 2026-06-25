@@ -48,6 +48,7 @@ import { formateDate } from "@/utils/methods";
 import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import CreateMultiDailyPurchase from "@/action/stock/createmultidailypurchase";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import UpdateStockQuantityFromSheet from "@/action/stock/updatestockquantityfromsheet";
 
 type StockRow = stock & { commodity_master: commodity_master };
 
@@ -186,10 +187,7 @@ const CommodityMaster = () => {
     init();
   }, [userid]);
 
-  const [addBox, setAddBox] = useState<boolean>(false);
   const [stockBox, setStockBox] = useState<boolean>(false);
-  const [materialBox, setMaterialBox] = useState<boolean>(false);
-  // const [commid, setCommid] = useState<number>();
 
   const [quantityCount, setQuantityCount] = useState("pcs");
 
@@ -220,6 +218,8 @@ const CommodityMaster = () => {
     return stocks.filter((val) => val.quantity !== 0);
   }, [stockFilter, stocks]);
 
+  const isRestaurantCommodity = String(dvatdata?.commodity) === "RESTAURANT";
+
   const columns = useMemo<ColumnDef<StockRow>[]>(
     () => [
       {
@@ -248,27 +248,45 @@ const CommodityMaster = () => {
         id: "quantity",
         accessorFn: (row) => row.quantity,
         header:
-          quantityCount == "pcs"
+          quantityCount == "pcs" || isRestaurantCommodity
             ? dvatdata?.commodity == "FUEL"
               ? "Litres"
               : "Quantity"
             : "Crate",
         cell: ({ row }) =>
-          quantityCount == "pcs"
+          quantityCount == "pcs" || isRestaurantCommodity
             ? row.original.quantity
             : showCrates(
                 row.original.quantity,
                 row.original.commodity_master.crate_size,
               ),
       },
-      {
-        id: "description",
-        accessorFn: (row) => row.commodity_master.description || "-",
-        header: "Description",
-        cell: ({ row }) => row.original.commodity_master.description || "-",
-      },
+      ...(isRestaurantCommodity
+        ? [
+            {
+              id: "ml",
+              header: "ML",
+              accessorFn: (row: StockRow) => {
+                const packSize = Number(row.commodity_master.pack_size);
+                if (!Number.isFinite(packSize) || packSize <= 0) {
+                  return null;
+                }
+                return Number(row.quantity) * packSize;
+              },
+              cell: ({ row }: { row: { original: StockRow } }) => {
+                const packSize = Number(
+                  row.original.commodity_master.pack_size,
+                );
+                if (!Number.isFinite(packSize) || packSize <= 0) {
+                  return "-";
+                }
+                return Number(row.original.quantity) * packSize;
+              },
+            } as ColumnDef<StockRow>,
+          ]
+        : []),
     ],
-    [dvatdata?.commodity, quantityCount],
+    [dvatdata?.commodity, isRestaurantCommodity, quantityCount],
   );
 
   const table = useReactTable({
@@ -290,7 +308,6 @@ const CommodityMaster = () => {
       return [
         row.original.commodity_master.id,
         row.original.commodity_master.product_name,
-        row.original.commodity_master.description,
       ]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(searchValue));
@@ -472,23 +489,36 @@ const CommodityMaster = () => {
 
   // csv section end here
 
+  const [isDownloadWarningOpen, setIsDownloadWarningOpen] = useState(false);
+  const stockSheetRef = useRef<HTMLInputElement>(null);
+
   const handleDownloadStockAsXlsx = () => {
+    setIsDownloadWarningOpen(true);
+  };
+
+  const confirmDownloadStockAsXlsx = () => {
+    setIsDownloadWarningOpen(false);
+
     if (!filteredStocks || filteredStocks.length === 0) {
       toast.error("No data to download");
       return;
     }
 
     // Prepare data for export
+    const expectedRows = filteredStocks.length;
     const exportData = filteredStocks.map((stock, index) => {
       const baseData: any = {
         "Sr. No.": index + 1,
         "Item ID": stock.commodity_master.id,
         "Product Name": stock.commodity_master.product_name,
+        "Expected Rows": expectedRows,
       };
+
+      const packSize = Number(stock.commodity_master.pack_size);
 
       // Add quantity or crate based on selection
       if (quantityCount === "pcs") {
-        baseData[dvatdata?.commodity === "FUEL" ? "Litres" : "Quantity"] =
+        baseData[dvatdata?.commodity === "FUEL" ? "Litres" : "Quantity in PCS"] =
           stock.quantity;
       } else {
         baseData["Crate"] = showCrates(
@@ -496,6 +526,11 @@ const CommodityMaster = () => {
           stock.commodity_master.crate_size,
         );
       }
+      baseData["Quantity in ML"] =
+        Number.isFinite(packSize) && packSize > 0
+          ? Number(stock.quantity) * packSize
+          : "-";
+      baseData["Update Quantity"] = "";
 
       return baseData;
     });
@@ -508,7 +543,10 @@ const CommodityMaster = () => {
       { wch: 10 }, // Sr. No.
       { wch: 12 }, // Item ID
       { wch: 25 }, // Product Name
+      { wch: 14 }, // Expected Rows
       { wch: 15 }, // Quantity/Crate
+      { wch: 16 }, // Quantity in ML
+      { wch: 18 }, // Update Quantity
     ];
     worksheet["!cols"] = columnWidths;
 
@@ -523,6 +561,128 @@ const CommodityMaster = () => {
     // Write file
     XLSX.writeFile(workbook, filename);
     toast.success("Stock data downloaded successfully");
+  };
+
+  const handleStockSheetUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    try {
+      const file = event.target.files?.[0];
+      if (!file) {
+        return;
+      }
+
+      if (!dvatdata) {
+        toast.error("DVAT details not found.");
+        return;
+      }
+
+      const fileBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(fileBuffer, { type: "array" });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+
+      if (!worksheet) {
+        toast.error("Uploaded sheet is empty or invalid.");
+        return;
+      }
+
+      const parsedRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+        worksheet,
+        {
+          defval: "",
+        },
+      );
+
+      if (!parsedRows || parsedRows.length === 0) {
+        toast.error("No rows found in uploaded sheet.");
+        return;
+      }
+
+      const effectiveRows = parsedRows.filter((row) => {
+        const itemId = String(row["Item ID"] ?? "").trim();
+        const updateQty = String(row["Update Quantity"] ?? "").trim();
+        return itemId !== "" || updateQty !== "";
+      });
+
+      if (effectiveRows.length === 0) {
+        toast.error("No valid stock rows found in uploaded sheet.");
+        return;
+      }
+
+      const expectedRowValues = effectiveRows.map((row) =>
+        Number(row["Expected Rows"]),
+      );
+
+      if (
+        expectedRowValues.some(
+          (value) => !Number.isFinite(value) || value <= 0,
+        )
+      ) {
+        toast.error(
+          "Invalid sheet format. Download a fresh sheet and try again.",
+        );
+        return;
+      }
+
+      const expectedRows = expectedRowValues[0];
+      if (expectedRowValues.some((value) => value !== expectedRows)) {
+        toast.error(
+          "Data is wrong. Expected row count mismatch in uploaded sheet.",
+        );
+        return;
+      }
+
+      if (effectiveRows.length !== expectedRows) {
+        toast.error(
+          `Data is wrong. Downloaded rows were ${expectedRows}, but uploaded rows are ${effectiveRows.length}.`,
+        );
+        return;
+      }
+
+      const invalidRowIndex = effectiveRows.findIndex((row) => {
+        const itemId = Number(row["Item ID"]);
+        const updateQty = Number(row["Update Quantity"]);
+
+        return (
+          !Number.isFinite(itemId) ||
+          itemId <= 0 ||
+          !Number.isFinite(updateQty) ||
+          updateQty < 0
+        );
+      });
+
+      if (invalidRowIndex !== -1) {
+        toast.error(
+          `Invalid Item ID or Update Quantity at row ${invalidRowIndex + 2}.`,
+        );
+        return;
+      }
+
+      const entries = effectiveRows.map((row) => ({
+        commodityid: Number(row["Item ID"]),
+        quantity: Number(row["Update Quantity"]),
+      }));
+
+      const response = await UpdateStockQuantityFromSheet({
+        dvatid: dvatdata.id,
+        entries,
+      });
+
+      if (!response.status || !response.data) {
+        toast.error(response.message);
+        return;
+      }
+
+      toast.success(
+        `Stock quantities updated for ${response.data.updatedCount} rows.`,
+      );
+      await init();
+    } catch {
+      toast.error("Unable to process uploaded sheet.");
+    } finally {
+      event.target.value = "";
+    }
   };
 
   const handleBulkUpload = async () => {
@@ -598,6 +758,31 @@ const CommodityMaster = () => {
     );
   return (
     <>
+      <Modal
+        title={
+          <div className="text-xl font-semibold text-red-700">Warning</div>
+        }
+        open={isDownloadWarningOpen}
+        onOk={confirmDownloadStockAsXlsx}
+        onCancel={() => setIsDownloadWarningOpen(false)}
+        okText="I Understand, Download"
+        cancelText="Cancel"
+        okButtonProps={{
+          className: "bg-red-600 hover:bg-red-700",
+        }}
+      >
+        <div className="mt-2 rounded-md border border-red-300 bg-red-50 p-4">
+          <p className="text-lg font-bold text-red-800">
+            Please accept all pending purchase invoices before converting the
+            stock.
+          </p>
+          <p className="mt-2 text-sm text-red-700">
+            Download and conversion should be done only after pending purchase
+            invoices are accepted to avoid wrong stock conversion values.
+          </p>
+        </div>
+      </Modal>
+
       <Modal
         title={
           <div className="text-xl font-semibold text-gray-800">Bulk Upload</div>
@@ -706,40 +891,7 @@ const CommodityMaster = () => {
           />
         )}
       </Modal>
-      <Drawer
-        placement="right"
-        closeIcon={null}
-        onClose={() => {
-          setMaterialBox(false);
-        }}
-        open={materialBox}
-        size="large"
-      >
-        <div className="mb-3 pb-2 border-b">
-          <h2 className="text-sm font-medium text-gray-900">
-            Add Raw Material
-          </h2>
-        </div>
-        <AddMaterialProvider
-          userid={userid}
-          setAddBox={setMaterialBox}
-          init={init}
-        />
-      </Drawer>
-      <Drawer
-        placement="right"
-        closeIcon={null}
-        onClose={() => {
-          setAddBox(false);
-        }}
-        open={addBox}
-        size="large"
-      >
-        <div className="mb-3 pb-2 border-b">
-          <h2 className="text-sm font-medium text-gray-900">Add Purchase</h2>
-        </div>
-        <DailyPurchaseMasterProvider setAddBox={setAddBox} init={init} />
-      </Drawer>
+
       <Drawer
         placement="right"
         closeIcon={null}
@@ -778,7 +930,7 @@ const CommodityMaster = () => {
               {/* Controls Section */}
               <div className="flex flex-wrap gap-2 items-center">
                 {/* Quantity Toggle for Non-Fuel */}
-                {dvatdata?.commodity != "FUEL" && (
+                {dvatdata?.commodity != "FUEL" && !isRestaurantCommodity && (
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-600">View:</span>
                     <Radio.Group
@@ -842,13 +994,6 @@ const CommodityMaster = () => {
                 )} */}
 
                 {/* Common Buttons */}
-                <Button
-                  size="small"
-                  type="primary"
-                  onClick={() => setAddBox(true)}
-                >
-                  Add Purchase
-                </Button>
 
                 <Button
                   size="small"
@@ -861,31 +1006,19 @@ const CommodityMaster = () => {
                 <Button
                   size="small"
                   type="default"
-                  onClick={() => router.push("/dashboard/stock/view_purchase")}
+                  onClick={() => stockSheetRef.current?.click()}
                 >
-                  View Purchase
+                  Upload Updated Stock
                 </Button>
 
-                {dvatdata?.commodity == "FUEL" && (
-                  <Button
-                    size="small"
-                    type="default"
-                    onClick={() => router.push("/dashboard/refinery_sales")}
-                  >
-                    Refinery Purchase
-                  </Button>
-                )}
-                {/* {dvatdata && (dvatdata.commodity == "MANUFACTURER") && (
-                  <Button
-                    size="small"
-                    type="default"
-                    onClick={() =>
-                      router.push("/dashboard/stock/manufacturer_purchase")
-                    }
-                  >
-                    Manufacturer Purchase
-                  </Button>
-                )} */}
+                <div className="hidden">
+                  <input
+                    type="file"
+                    ref={stockSheetRef}
+                    accept=".xlsx,.xls"
+                    onChange={handleStockSheetUpload}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -935,8 +1068,7 @@ const CommodityMaster = () => {
                           const canSort = header.column.getCanSort();
                           const sortState = header.column.getIsSorted();
                           const alignClass =
-                            header.column.id === "productName" ||
-                            header.column.id === "description"
+                            header.column.id === "productName"
                               ? "text-left"
                               : "text-center";
 
@@ -986,19 +1118,14 @@ const CommodityMaster = () => {
                         >
                           {row.getVisibleCells().map((cell) => {
                             const alignClass =
-                              cell.column.id === "productName" ||
-                              cell.column.id === "description"
+                              cell.column.id === "productName"
                                 ? "text-left"
                                 : "text-center";
 
                             return (
                               <TableCell
                                 key={cell.id}
-                                className={`p-2 text-xs ${alignClass}${
-                                  cell.column.id === "description"
-                                    ? " text-gray-600"
-                                    : ""
-                                }`}
+                                className={`p-2 text-xs ${alignClass}`}
                               >
                                 {flexRender(
                                   cell.column.columnDef.cell,

@@ -221,8 +221,7 @@ const Sidebar = (props: SidebarProps) => {
               path={path}
               pathcheck={"/dashboard/stock"}
               collapsed={isCollapsed}
-            />
-          </>
+            />          </>
         )}
 
         {[

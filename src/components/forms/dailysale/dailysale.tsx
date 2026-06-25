@@ -26,7 +26,15 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
 
 const DAILY_SALE_ADD_MORE_LOCK_KEY = "dailySaleAddMoreLock";
-type AgainstType = "NONE" | "CFORM" | "FFORM" | "EXEMPT" | "IFORM" | "H_EXPORT" | "E1" | "EXPORT";
+type AgainstType =
+  | "NONE"
+  | "CFORM"
+  | "FFORM"
+  | "EXEMPT"
+  | "IFORM"
+  | "H_EXPORT"
+  | "E1"
+  | "EXPORT";
 
 type DailySaleProviderProps = {
   userid: number;
@@ -399,14 +407,18 @@ const DailySale = (props: DailySaleProviderProps) => {
     }
 
     const quantityamount =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER"
+      davtdata?.commodity == "OIDC" ||
+      davtdata?.commodity == "MANUFACTURER" ||
+      davtdata?.commodity == "WHOLESALER"
         ? quantityCount == "crate"
           ? parseInt(data.quantity) * commoditymaster.crate_size
           : parseInt(data.quantity)
         : parseInt(data.quantity);
 
     const amount_unit: string =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER"
+      davtdata?.commodity == "OIDC" ||
+      davtdata?.commodity == "MANUFACTURER" ||
+      davtdata?.commodity == "WHOLESALER"
         ? quantityCount == "crate"
           ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(
               2,
@@ -420,45 +432,46 @@ const DailySale = (props: DailySaleProviderProps) => {
     date.setDate(date.getDate() + 1);
 
     // Use MANUFACTURER action for MANUFACTURER commodity, otherwise use regular action
-    const stock_response = davtdata?.commodity === "MANUFACTURER"
-      ? await CreateDailySaleManufacturer({
-          amount_unit: amount_unit,
-          invoice_date: date,
-          invoice_number: data.invoice_number,
-          dvatid: davtdata?.id,
-          quantity: quantityamount,
-          vatamount: vatamount,
-          commodityid: commoditymaster.id,
-          tax_percent: isComp ? "1" : getSelectedTaxRate(),
-          seller_tin_id: sellerTin.id,
-          amount: taxableValue,
-          against_cfrom: againstType === "CFORM",
-          is_against_fform: againstType === "FFORM",
-          is_export: againstType === "EXPORT",
-          is_exempt: againstType === "EXEMPT",
-          is_against_iform: againstType === "IFORM",
-          is_h_export: againstType === "H_EXPORT",
-          is_against_e1: againstType === "E1",
-        })
-      : await CreateDailySale({
-          amount_unit: amount_unit,
-          invoice_date: date,
-          invoice_number: data.invoice_number,
-          dvatid: davtdata?.id,
-          quantity: quantityamount,
-          vatamount: vatamount,
-          commodityid: commoditymaster.id,
-          tax_percent: isComp ? "1" : getSelectedTaxRate(),
-          seller_tin_id: sellerTin.id,
-          amount: taxableValue,
-          against_cfrom: againstType === "CFORM",
-          is_against_fform: againstType === "FFORM",
-          is_export: againstType === "EXPORT",
-          is_exempt: againstType === "EXEMPT",
-          is_against_iform: againstType === "IFORM",
-          is_h_export: againstType === "H_EXPORT",
-          is_against_e1: againstType === "E1",
-        });
+    const stock_response =
+      davtdata?.commodity === "MANUFACTURER"
+        ? await CreateDailySaleManufacturer({
+            amount_unit: amount_unit,
+            invoice_date: date,
+            invoice_number: data.invoice_number,
+            dvatid: davtdata?.id,
+            quantity: quantityamount,
+            vatamount: vatamount,
+            commodityid: commoditymaster.id,
+            tax_percent: isComp ? "1" : getSelectedTaxRate(),
+            seller_tin_id: sellerTin.id,
+            amount: taxableValue,
+            against_cfrom: againstType === "CFORM",
+            is_against_fform: againstType === "FFORM",
+            is_export: againstType === "EXPORT",
+            is_exempt: againstType === "EXEMPT",
+            is_against_iform: againstType === "IFORM",
+            is_h_export: againstType === "H_EXPORT",
+            is_against_e1: againstType === "E1",
+          })
+        : await CreateDailySale({
+            amount_unit: amount_unit,
+            invoice_date: date,
+            invoice_number: data.invoice_number,
+            dvatid: davtdata?.id,
+            quantity: quantityamount,
+            vatamount: vatamount,
+            commodityid: commoditymaster.id,
+            tax_percent: isComp ? "1" : getSelectedTaxRate(),
+            seller_tin_id: sellerTin.id,
+            amount: taxableValue,
+            against_cfrom: againstType === "CFORM",
+            is_against_fform: againstType === "FFORM",
+            is_export: againstType === "EXPORT",
+            is_exempt: againstType === "EXEMPT",
+            is_against_iform: againstType === "IFORM",
+            is_h_export: againstType === "H_EXPORT",
+            is_against_e1: againstType === "E1",
+          });
 
     if (stock_response.status) {
       toast.success(stock_response.message);
@@ -544,7 +557,10 @@ const DailySale = (props: DailySaleProviderProps) => {
       }
     } else if (shouldValidateMrp) {
       if (davtdata?.commodity == "OIDC") {
-        if (isLiquore && parseFloat(data.amount_unit) < liquoreOIDCAmount * 0.5) {
+        if (
+          isLiquore &&
+          parseFloat(data.amount_unit) < liquoreOIDCAmount * 0.5
+        ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
       } else {
@@ -559,14 +575,18 @@ const DailySale = (props: DailySaleProviderProps) => {
     }
 
     const quantityamount =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER"
+      davtdata?.commodity == "OIDC" ||
+      davtdata?.commodity == "MANUFACTURER" ||
+      davtdata?.commodity == "WHOLESALER"
         ? quantityCount == "crate"
           ? parseInt(data.quantity) * commoditymaster.crate_size
           : parseInt(data.quantity)
         : parseInt(data.quantity);
 
     const amount_unit: string =
-      davtdata?.commodity == "OIDC" || davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER"
+      davtdata?.commodity == "OIDC" ||
+      davtdata?.commodity == "MANUFACTURER" ||
+      davtdata?.commodity == "WHOLESALER"
         ? quantityCount == "crate"
           ? (parseFloat(data.amount_unit) / commoditymaster.crate_size).toFixed(
               2,
@@ -580,45 +600,46 @@ const DailySale = (props: DailySaleProviderProps) => {
     date.setDate(date.getDate() + 1);
 
     // Use MANUFACTURER action for MANUFACTURER commodity, otherwise use regular action
-    const stock_response = davtdata?.commodity === "MANUFACTURER"
-      ? await CreateDailySaleManufacturer({
-          amount_unit: amount_unit,
-          invoice_date: date,
-          invoice_number: data.invoice_number,
-          dvatid: davtdata?.id,
-          quantity: quantityamount,
-          vatamount: vatamount,
-          commodityid: commoditymaster.id,
-          tax_percent: isComp ? "1" : getSelectedTaxRate(),
-          seller_tin_id: sellerTin.id,
-          amount: taxableValue,
-          against_cfrom: againstType === "CFORM",
-          is_against_fform: againstType === "FFORM",
-          is_export: againstType === "EXPORT",
-          is_exempt: againstType === "EXEMPT",
-          is_against_iform: againstType === "IFORM",
-          is_h_export: againstType === "H_EXPORT",
-          is_against_e1: againstType === "E1",
-        })
-      : await CreateDailySale({
-          amount_unit: amount_unit,
-          invoice_date: date,
-          invoice_number: data.invoice_number,
-          dvatid: davtdata?.id,
-          quantity: quantityamount,
-          vatamount: vatamount,
-          commodityid: commoditymaster.id,
-          tax_percent: isComp ? "1" : getSelectedTaxRate(),
-          seller_tin_id: sellerTin.id,
-          amount: taxableValue,
-          against_cfrom: againstType === "CFORM",
-          is_against_fform: againstType === "FFORM",
-          is_export: againstType === "EXPORT",
-          is_exempt: againstType === "EXEMPT",
-          is_against_iform: againstType === "IFORM",
-          is_h_export: againstType === "H_EXPORT",
-          is_against_e1: againstType === "E1",
-        });
+    const stock_response =
+      davtdata?.commodity === "MANUFACTURER"
+        ? await CreateDailySaleManufacturer({
+            amount_unit: amount_unit,
+            invoice_date: date,
+            invoice_number: data.invoice_number,
+            dvatid: davtdata?.id,
+            quantity: quantityamount,
+            vatamount: vatamount,
+            commodityid: commoditymaster.id,
+            tax_percent: isComp ? "1" : getSelectedTaxRate(),
+            seller_tin_id: sellerTin.id,
+            amount: taxableValue,
+            against_cfrom: againstType === "CFORM",
+            is_against_fform: againstType === "FFORM",
+            is_export: againstType === "EXPORT",
+            is_exempt: againstType === "EXEMPT",
+            is_against_iform: againstType === "IFORM",
+            is_h_export: againstType === "H_EXPORT",
+            is_against_e1: againstType === "E1",
+          })
+        : await CreateDailySale({
+            amount_unit: amount_unit,
+            invoice_date: date,
+            invoice_number: data.invoice_number,
+            dvatid: davtdata?.id,
+            quantity: quantityamount,
+            vatamount: vatamount,
+            commodityid: commoditymaster.id,
+            tax_percent: isComp ? "1" : getSelectedTaxRate(),
+            seller_tin_id: sellerTin.id,
+            amount: taxableValue,
+            against_cfrom: againstType === "CFORM",
+            is_against_fform: againstType === "FFORM",
+            is_export: againstType === "EXPORT",
+            is_exempt: againstType === "EXEMPT",
+            is_against_iform: againstType === "IFORM",
+            is_h_export: againstType === "H_EXPORT",
+            is_against_e1: againstType === "E1",
+          });
 
     if (stock_response.status) {
       toast.success(stock_response.message);
@@ -861,7 +882,8 @@ const DailySale = (props: DailySaleProviderProps) => {
         )}
 
         {(davtdata?.commodity == "OIDC" ||
-          davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER") &&
+          davtdata?.commodity == "MANUFACTURER" ||
+          davtdata?.commodity == "WHOLESALER") &&
           commoditymaster != null && (
             <div className="flex mt-2 gap-2 items-center">
               <div className="p-1 rounded grow text-center bg-gray-100">
@@ -887,7 +909,8 @@ const DailySale = (props: DailySaleProviderProps) => {
             <TaxtInput<DailySaleForm>
               placeholder={
                 (davtdata?.commodity == "OIDC" ||
-                  davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER") &&
+                  davtdata?.commodity == "MANUFACTURER" ||
+                  davtdata?.commodity == "WHOLESALER") &&
                 quantityCount == "crate"
                   ? "Enter Crate amount (Sale price including VAT)"
                   : "Enter Net amount/unit (Sale price including VAT)"
@@ -896,7 +919,8 @@ const DailySale = (props: DailySaleProviderProps) => {
               required={true}
               title={
                 (davtdata?.commodity == "OIDC" ||
-                  davtdata?.commodity == "MANUFACTURER" || davtdata?.commodity == "WHOLESALER") &&
+                  davtdata?.commodity == "MANUFACTURER" ||
+                  davtdata?.commodity == "WHOLESALER") &&
                 quantityCount == "crate"
                   ? "Enter Crate amount (Sale price including VAT)"
                   : "Enter Net amount/unit (Sale price including VAT)"
