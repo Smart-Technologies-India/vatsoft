@@ -563,7 +563,6 @@ const THEBALANCE2 = (props: THEBALANCEProps) => {
       props.paidChallans,
       15,
     );
-    console.log("interest for 5", interest);
     return isNegative(interest) ? 0 : interest;
   };
 

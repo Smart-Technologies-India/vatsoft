@@ -2,7 +2,11 @@
 
 import { getCurrentDvatId, getCurrentUserId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { refinery_sale, commodity_master, tin_number_master } from "@prisma/client";
+import {
+  refinery_sale,
+  commodity_master,
+  tin_number_master,
+} from "@prisma/client";
 import prisma from "../../../prisma/database";
 import { errorToString } from "@/utils/methods";
 
@@ -104,7 +108,10 @@ const CreateRefinerySale = async (
       });
     }
 
-    if (refineryResponse.tinNumber && refineryResponse.tinNumber === currentDvatTin) {
+    if (
+      refineryResponse.tinNumber &&
+      refineryResponse.tinNumber === currentDvatTin
+    ) {
       return createResponse({
         message: "Refinery TIN number cannot be your own TIN.",
         functionname,
@@ -171,7 +178,8 @@ const CreateRefinerySale = async (
     const invoiceDate = payload.invoice_date
       ? new Date(payload.invoice_date)
       : new Date();
-    const invoiceNumber = payload.invoice_number?.trim() || buildInvoiceNumber();
+    const invoiceNumber =
+      payload.invoice_number?.trim() || buildInvoiceNumber();
 
     const existingInvoice = await prisma.refinery_sale.findFirst({
       where: {
@@ -181,13 +189,16 @@ const CreateRefinerySale = async (
       },
     });
 
-    const finalInvoiceNumber = existingInvoice ? buildInvoiceNumber() : invoiceNumber;
+    const finalInvoiceNumber = existingInvoice
+      ? buildInvoiceNumber()
+      : invoiceNumber;
 
     const createdEntry = await prisma.refinery_sale.create({
       data: {
         refineryId: refineryResponse.id,
         invoice_number: finalInvoiceNumber,
         temp_invoice_number: finalInvoiceNumber,
+        Shipment_time: invoiceDate,
         invoice_date: invoiceDate,
         commodity_masterId: commodityResponse.id,
         seller_tin_numberId: mappedDealer.dvat.tin_master_id,
@@ -197,8 +208,7 @@ const CreateRefinerySale = async (
         amount: taxableAmount.toFixed(2),
         vatamount: vatAmount.toFixed(2),
         is_local:
-          currentDvatTin.startsWith("25") ||
-          currentDvatTin.startsWith("26"),
+          currentDvatTin.startsWith("25") || currentDvatTin.startsWith("26"),
         createdById: currentUserId,
       },
       include: {

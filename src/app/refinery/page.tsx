@@ -1,16 +1,20 @@
 "use client";
 
 import RefineryLoginOtp from "@/action/user/refineryloginotp";
+import RefineryGetByTin, {
+  RefineryTinOption,
+} from "@/action/user/refinerygetbytin";
 import RefineryPasswordLogin from "@/action/user/refinerypasswordlogin";
 import RefineryResetForgetPassword from "@/action/user/refineryresetforgotpassword";
 import RefinerySendForgetPasswordOtp from "@/action/user/refinerysendforgetpasswordotp";
 import RefinerySendOtp from "@/action/user/refinerysendotp";
 import RefineryVerifyForgetPasswordOtp from "@/action/user/refineryverifyforgetpasswordotp";
-import { FluentEye12Regular, FluentEyeOff16Regular } from "@/components/icons";
-import { Button, Input, Modal } from "antd";
+import { TaxtInput } from "@/components/forms/inputfields/textinput";
+import { Button, Modal } from "antd";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { toast } from "react-toastify";
 
 export default function RefineryLoginPage() {
@@ -104,22 +108,51 @@ export default function RefineryLoginPage() {
 
 const RefineryInlineLoginForm = () => {
   const router = useRouter();
-  const [tin, setTin] = useState<string | undefined>(undefined);
-  const [password, setPassword] = useState<string | undefined>(undefined);
+  type LoginFormValues = {
+    tin: string;
+    password: string;
+    loginOtp: string;
+    selectedRefineryId: number | null;
+  };
+
+  type ForgotFormValues = {
+    forgotTin: string;
+    forgotOtp: string;
+    newPassword: string;
+    rePassword: string;
+  };
+
+  const methods = useForm<LoginFormValues>({
+    defaultValues: {
+      tin: "",
+      password: "",
+      loginOtp: "",
+      selectedRefineryId: null,
+    },
+  });
+
+  const forgotMethods = useForm<ForgotFormValues>({
+    defaultValues: {
+      forgotTin: "",
+      forgotOtp: "",
+      newPassword: "",
+      rePassword: "",
+    },
+  });
+
   const [loginMode, setLoginMode] = useState<"password" | "otp">("otp");
-  const [loginOtp, setLoginOtp] = useState("");
   const [isTinOtpSent, setIsTinOtpSent] = useState(false);
   const [tinMaskedMobile, setTinMaskedMobile] = useState("");
   const [tinOtpResendInSeconds, setTinOtpResendInSeconds] = useState(0);
   const [isSendingTinOtp, setIsSendingTinOtp] = useState(false);
   const [isVerifyingTinOtp, setIsVerifyingTinOtp] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
+  const [refineryOptions, setRefineryOptions] = useState<RefineryTinOption[]>(
+    [],
+  );
+  const [isFetchingRefineries, setIsFetchingRefineries] = useState(false);
 
   const [isForgotOpen, setIsForgotOpen] = useState(false);
-  const [forgotTin, setForgotTin] = useState("");
-  const [forgotOtp, setForgotOtp] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [rePassword, setRePassword] = useState("");
   const [maskedMobile, setMaskedMobile] = useState("");
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
@@ -128,8 +161,19 @@ const RefineryInlineLoginForm = () => {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  const normalizedTin = tin?.trim() ?? "";
+  const tin = useWatch({
+    control: methods.control,
+    name: "tin",
+    defaultValue: "",
+  });
+  const selectedRefineryId = useWatch({
+    control: methods.control,
+    name: "selectedRefineryId",
+    defaultValue: null,
+  });
+  const normalizedTin = tin.trim();
   const isTinValid = normalizedTin.length === 11;
+  const previousTinRef = useRef(normalizedTin);
 
   useEffect(() => {
     if (resendInSeconds <= 0) return;
@@ -147,23 +191,56 @@ const RefineryInlineLoginForm = () => {
     return () => clearInterval(timer);
   }, [tinOtpResendInSeconds]);
 
-  const handleNumberChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    setData: Dispatch<SetStateAction<string | undefined>>,
-  ) => {
-    const { value } = event.target;
-    if (/^[0-9]*$/.test(value)) setData(value);
-  };
-
   const resetTinOtpFlow = () => {
-    setLoginOtp("");
+    methods.setValue("loginOtp", "");
     setIsTinOtpSent(false);
     setTinMaskedMobile("");
     setTinOtpResendInSeconds(0);
   };
 
+  useEffect(() => {
+    if (previousTinRef.current === normalizedTin) return;
+    previousTinRef.current = normalizedTin;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRefineryOptions([]);
+    methods.setValue("selectedRefineryId", null);
+    resetTinOtpFlow();
+  }, [normalizedTin, methods]);
+
+  useEffect(() => {
+    const fetchRefineryOptions = async () => {
+      if (!isTinValid) {
+        setRefineryOptions([]);
+        methods.setValue("selectedRefineryId", null);
+        return;
+      }
+
+      setIsFetchingRefineries(true);
+
+      const response = await RefineryGetByTin({
+        tin_number: normalizedTin,
+      });
+
+      if (!response.status || !response.data) {
+        setRefineryOptions([]);
+        methods.setValue("selectedRefineryId", null);
+        setIsFetchingRefineries(false);
+        return;
+      }
+
+      setRefineryOptions(response.data);
+      methods.setValue("selectedRefineryId", response.data[0]?.id ?? null);
+      setIsFetchingRefineries(false);
+    };
+
+    fetchRefineryOptions();
+  }, [isTinValid, normalizedTin, methods]);
+
   const submit = async () => {
     setIsLogin(true);
+    const password = methods.getValues("password").trim();
+
     if (!isTinValid) {
       toast.error("TIN number must be 11 digits");
       setIsLogin(false);
@@ -175,9 +252,16 @@ const RefineryInlineLoginForm = () => {
       return;
     }
 
+    if (!selectedRefineryId) {
+      toast.error("Select refinery name");
+      setIsLogin(false);
+      return;
+    }
+
     const response = await RefineryPasswordLogin({
       tin_number: normalizedTin,
       password,
+      refinery_id: selectedRefineryId,
     });
 
     if (!response.status) {
@@ -187,7 +271,7 @@ const RefineryInlineLoginForm = () => {
     }
 
     toast.success(response.message);
-    router.push("/dashboard/refinery_sales");
+    router.push("/dashboard/refinery/sale");
     setTimeout(() => setIsLogin(false), 1000);
   };
 
@@ -200,8 +284,15 @@ const RefineryInlineLoginForm = () => {
       return;
     }
 
+    if (!selectedRefineryId) {
+      toast.error("Select refinery name");
+      setIsSendingTinOtp(false);
+      return;
+    }
+
     const response = await RefinerySendOtp({
       tin_number: normalizedTin,
+      refinery_id: selectedRefineryId,
     });
 
     if (!response.status || !response.data) {
@@ -215,7 +306,7 @@ const RefineryInlineLoginForm = () => {
 
     if (response.data.otpSent) {
       setIsTinOtpSent(true);
-      setLoginOtp("");
+      methods.setValue("loginOtp", "");
       toast.success(response.message);
     } else {
       toast.info(response.message);
@@ -226,6 +317,7 @@ const RefineryInlineLoginForm = () => {
 
   const loginWithOtp = async () => {
     setIsVerifyingTinOtp(true);
+    const loginOtp = methods.getValues("loginOtp").trim();
 
     if (!isTinValid) {
       toast.error("TIN number must be 11 digits");
@@ -233,15 +325,22 @@ const RefineryInlineLoginForm = () => {
       return;
     }
 
-    if (!loginOtp.trim()) {
+    if (!loginOtp) {
       toast.error("Enter OTP");
+      setIsVerifyingTinOtp(false);
+      return;
+    }
+
+    if (!selectedRefineryId) {
+      toast.error("Select refinery name");
       setIsVerifyingTinOtp(false);
       return;
     }
 
     const response = await RefineryLoginOtp({
       tin_number: normalizedTin,
-      otp: loginOtp.trim(),
+      otp: loginOtp,
+      refinery_id: selectedRefineryId,
     });
 
     if (!response.status) {
@@ -251,15 +350,12 @@ const RefineryInlineLoginForm = () => {
     }
 
     toast.success(response.message);
-    router.push("/dashboard/refinery_sales");
+    router.push("/dashboard/refinery/sale");
     setIsVerifyingTinOtp(false);
   };
 
   const resetForgotPasswordModal = () => {
-    setForgotTin("");
-    setForgotOtp("");
-    setNewPassword("");
-    setRePassword("");
+    forgotMethods.reset();
     setMaskedMobile("");
     setIsOtpSent(false);
     setIsOtpVerified(false);
@@ -268,15 +364,16 @@ const RefineryInlineLoginForm = () => {
 
   const sendOtp = async () => {
     setIsSendingOtp(true);
+    const forgotTin = forgotMethods.getValues("forgotTin").trim();
 
-    if (!forgotTin.trim()) {
+    if (!forgotTin) {
       toast.error("Enter valid TIN number");
       setIsSendingOtp(false);
       return;
     }
 
     const response = await RefinerySendForgetPasswordOtp({
-      tin_number: forgotTin.trim(),
+      tin_number: forgotTin,
     });
 
     if (!response.status || !response.data) {
@@ -291,7 +388,7 @@ const RefineryInlineLoginForm = () => {
     if (response.data.otpSent) {
       setIsOtpSent(true);
       setIsOtpVerified(false);
-      setForgotOtp("");
+      forgotMethods.setValue("forgotOtp", "");
       toast.success(response.message);
     } else {
       toast.info(response.message);
@@ -302,22 +399,24 @@ const RefineryInlineLoginForm = () => {
 
   const verifyOtp = async () => {
     setIsVerifyingOtp(true);
+    const forgotTin = forgotMethods.getValues("forgotTin").trim();
+    const forgotOtp = forgotMethods.getValues("forgotOtp").trim();
 
-    if (!forgotTin.trim()) {
+    if (!forgotTin) {
       toast.error("Enter valid TIN number");
       setIsVerifyingOtp(false);
       return;
     }
 
-    if (!forgotOtp.trim()) {
+    if (!forgotOtp) {
       toast.error("Enter OTP");
       setIsVerifyingOtp(false);
       return;
     }
 
     const response = await RefineryVerifyForgetPasswordOtp({
-      tin_number: forgotTin.trim(),
-      otp: forgotOtp.trim(),
+      tin_number: forgotTin,
+      otp: forgotOtp,
     });
 
     if (!response.status || !response.data) {
@@ -339,6 +438,9 @@ const RefineryInlineLoginForm = () => {
 
   const submitForgotPassword = async () => {
     setIsChangingPassword(true);
+    const forgotTin = forgotMethods.getValues("forgotTin").trim();
+    const newPassword = forgotMethods.getValues("newPassword");
+    const rePassword = forgotMethods.getValues("rePassword");
 
     if (!isOtpVerified) {
       toast.error("Verify OTP before changing password");
@@ -347,7 +449,7 @@ const RefineryInlineLoginForm = () => {
     }
 
     const response = await RefineryResetForgetPassword({
-      tin_number: forgotTin.trim(),
+      tin_number: forgotTin,
       password: newPassword,
       repassword: rePassword,
     });
@@ -365,13 +467,14 @@ const RefineryInlineLoginForm = () => {
   };
 
   return (
-    <div className="space-y-2 w-80 mx-auto">
+    <FormProvider {...methods}>
+      <div className="space-y-2 w-80 mx-auto">
       <div className="flex items-center justify-center gap-2 mt-5 mb-2 p-1 rounded-md">
         <button
           type="button"
           onClick={() => {
             setLoginMode("otp");
-            setPassword(undefined);
+            methods.setValue("password", "");
           }}
           className={`px-3 py-1.5 text-sm rounded ${
             loginMode === "otp"
@@ -397,17 +500,12 @@ const RefineryInlineLoginForm = () => {
         </button>
       </div>
       <div>
-        <label className="text-sm text-gray-500 block mb-2">TIN Number</label>
-        <Input
-          size="small"
-          maxLength={11}
+        <TaxtInput<LoginFormValues>
+          name="tin"
+          title="TIN Number"
           placeholder="Enter TIN Number"
-          value={tin ?? ""}
-          onChange={(e) => {
-            handleNumberChange(e, setTin);
-            resetTinOtpFlow();
-          }}
-          className="text-sm"
+          onlynumber={true}
+          maxlength={11}
         />
         {normalizedTin.length > 0 && !isTinValid ? (
           <p className="mt-1 text-xs text-red-600">
@@ -416,24 +514,50 @@ const RefineryInlineLoginForm = () => {
         ) : null}
       </div>
 
+      {isTinValid ? (
+        <div>
+          <label className="text-sm text-gray-500 block mb-2">Refinery Name</label>
+          {isFetchingRefineries ? (
+            <p className="text-xs text-gray-500">Fetching refinery names...</p>
+          ) : refineryOptions.length > 0 ? (
+            <div className="space-y-2 border border-[#e5ebf5] rounded-md p-2 bg-white">
+              {refineryOptions.map((option) => (
+                <label
+                  key={option.id}
+                  className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer"
+                >
+                  <input
+                    type="radio"
+                    name="refinery-option"
+                    value={option.id}
+                    checked={selectedRefineryId === option.id}
+                    onChange={() => {
+                      methods.setValue("selectedRefineryId", option.id);
+                      resetTinOtpFlow();
+                    }}
+                  />
+                  <span>{option.name}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-red-600">
+              No refinery name found for this TIN number.
+            </p>
+          )}
+        </div>
+      ) : null}
+
       {loginMode === "password" ? (
         <>
           <p className="text-sm text-gray-600 bg-[#f7f9fc] border border-[#e5ebf5] px-2 py-1.5">
             Use your refinery TIN and account password to login.
           </p>
-          <div>
-            <label className="text-sm text-gray-500 block mb-2">Password</label>
-            <Input.Password
-              size="small"
-              placeholder="Enter Password"
-              iconRender={(visible) =>
-                visible ? <FluentEye12Regular /> : <FluentEyeOff16Regular />
-              }
-              value={password ?? ""}
-              onChange={(e) => setPassword(e.target.value)}
-              className="text-sm"
-            />
-          </div>
+          <TaxtInput<LoginFormValues>
+            name="password"
+            title="Password"
+            placeholder="Enter Password"
+          />
           <div className="text-right">
             <button
               type="button"
@@ -445,7 +569,7 @@ const RefineryInlineLoginForm = () => {
           </div>
           <Button
             onClick={submit}
-            disabled={isLogin || !isTinValid}
+            disabled={isLogin || !isTinValid || !selectedRefineryId}
             className="mt-4 text-center font-semibold text-white bg-[#0f2f67] hover:bg-[#16448b] rounded-md block py-2 w-full max-w-sm mx-auto"
           >
             {isLogin ? "Verifying..." : "Login with Password"}
@@ -460,7 +584,7 @@ const RefineryInlineLoginForm = () => {
           {!isTinOtpSent && (
             <Button
               onClick={sendTinOtp}
-              disabled={isSendingTinOtp || !isTinValid}
+              disabled={isSendingTinOtp || !isTinValid || !selectedRefineryId}
               className="mt-4 text-center font-semibold text-white bg-[#0f2f67] hover:bg-[#16448b] rounded-md block py-2 w-full max-w-sm mx-auto"
             >
               {isSendingTinOtp ? "Sending OTP..." : "Send OTP"}
@@ -474,23 +598,18 @@ const RefineryInlineLoginForm = () => {
                 <b>{tinMaskedMobile}</b>
               </p>
               <div>
-                <label className="text-sm text-gray-500 block mb-2">OTP</label>
-                <Input
-                  size="small"
-                  maxLength={6}
+                <TaxtInput<LoginFormValues>
+                  name="loginOtp"
+                  title="OTP"
                   placeholder="Enter 6-digit OTP"
-                  value={loginOtp}
-                  onChange={(e) => {
-                    const { value } = e.target;
-                    if (/^[0-9]*$/.test(value)) setLoginOtp(value);
-                  }}
-                  className="text-sm"
+                  onlynumber={true}
+                  maxlength={6}
                 />
               </div>
 
               <Button
                 onClick={loginWithOtp}
-                disabled={isVerifyingTinOtp || !isTinValid}
+                disabled={isVerifyingTinOtp || !isTinValid || !selectedRefineryId}
                 className="mt-4 text-center font-semibold text-white bg-[#0f2f67] hover:bg-[#16448b] rounded-md block py-2 w-full max-w-sm mx-auto"
               >
                 {isVerifyingTinOtp ? "Verifying OTP..." : "Login with OTP"}
@@ -525,21 +644,16 @@ const RefineryInlineLoginForm = () => {
         }}
         footer={null}
       >
-        <div className="space-y-3 mt-1">
+        <FormProvider {...forgotMethods}>
+          <div className="space-y-3 mt-1">
           <div>
-            <label className="text-sm text-gray-600 block mb-1.5">
-              TIN Number
-            </label>
-            <Input
-              maxLength={11}
+            <TaxtInput<ForgotFormValues>
+              name="forgotTin"
+              title="TIN Number"
               placeholder="Enter TIN Number"
-              value={forgotTin}
-              disabled={isOtpSent}
-              onChange={(e) => {
-                const { value } = e.target;
-                if (/^[0-9]*$/.test(value)) setForgotTin(value);
-              }}
-              className="text-sm"
+              onlynumber={true}
+              maxlength={11}
+              disable={isOtpSent}
             />
           </div>
 
@@ -561,19 +675,13 @@ const RefineryInlineLoginForm = () => {
               </p>
 
               <div>
-                <label className="text-sm text-gray-600 block mb-1.5">
-                  OTP
-                </label>
-                <Input
-                  maxLength={6}
+                <TaxtInput<ForgotFormValues>
+                  name="forgotOtp"
+                  title="OTP"
                   placeholder="Enter 6-digit OTP"
-                  value={forgotOtp}
-                  disabled={isOtpVerified}
-                  onChange={(e) => {
-                    const { value } = e.target;
-                    if (/^[0-9]*$/.test(value)) setForgotOtp(value);
-                  }}
-                  className="text-sm"
+                  onlynumber={true}
+                  maxlength={6}
+                  disable={isOtpVerified}
                 />
               </div>
 
@@ -608,25 +716,17 @@ const RefineryInlineLoginForm = () => {
           {isOtpVerified && (
             <>
               <div>
-                <label className="text-sm text-gray-600 block mb-1.5">
-                  New Password
-                </label>
-                <Input.Password
+                <TaxtInput<ForgotFormValues>
+                  name="newPassword"
+                  title="New Password"
                   placeholder="Enter New Password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="text-sm"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-600 block mb-1.5">
-                  Re-Password
-                </label>
-                <Input.Password
+                <TaxtInput<ForgotFormValues>
+                  name="rePassword"
+                  title="Re-Password"
                   placeholder="Enter Re-Password"
-                  value={rePassword}
-                  onChange={(e) => setRePassword(e.target.value)}
-                  className="text-sm"
                 />
               </div>
               <Button
@@ -638,8 +738,10 @@ const RefineryInlineLoginForm = () => {
               </Button>
             </>
           )}
-        </div>
+          </div>
+        </FormProvider>
       </Modal>
-    </div>
+      </div>
+    </FormProvider>
   );
 };

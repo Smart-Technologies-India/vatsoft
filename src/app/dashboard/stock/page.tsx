@@ -77,9 +77,9 @@ const CommodityMaster = () => {
   const [tindata, setTindata] = useState<Array<tin_number_master>>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
-  const [stockFilter, setStockFilter] = useState<
-    "available" | "all" | "zero"
-  >("available");
+  const [stockFilter, setStockFilter] = useState<"available" | "all" | "zero">(
+    "available",
+  );
 
   const loadAllStocks = async (dvatId: number) => {
     const initialStockResponse = await GetAllStock({
@@ -293,9 +293,7 @@ const CommodityMaster = () => {
         row.original.commodity_master.description,
       ]
         .filter(Boolean)
-        .some((value) =>
-          String(value).toLowerCase().includes(searchValue),
-        );
+        .some((value) => String(value).toLowerCase().includes(searchValue));
     },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -740,10 +738,7 @@ const CommodityMaster = () => {
         <div className="mb-3 pb-2 border-b">
           <h2 className="text-sm font-medium text-gray-900">Add Purchase</h2>
         </div>
-        <DailyPurchaseMasterProvider
-          setAddBox={setAddBox}
-          init={init}
-        />
+        <DailyPurchaseMasterProvider setAddBox={setAddBox} init={init} />
       </Drawer>
       <Drawer
         placement="right"
@@ -755,7 +750,9 @@ const CommodityMaster = () => {
         size="large"
       >
         <div className="mb-3 pb-2 border-b">
-          <h2 className="text-sm font-medium text-gray-900">Add Production Stock</h2>
+          <h2 className="text-sm font-medium text-gray-900">
+            Add Production Stock
+          </h2>
         </div>
         <CreateStockProvider
           userid={userid}
@@ -869,7 +866,7 @@ const CommodityMaster = () => {
                   View Purchase
                 </Button>
 
-                {/* {dvatdata?.commodity == "FUEL" && (
+                {dvatdata?.commodity == "FUEL" && (
                   <Button
                     size="small"
                     type="default"
@@ -877,7 +874,7 @@ const CommodityMaster = () => {
                   >
                     Refinery Purchase
                   </Button>
-                )} */}
+                )}
                 {/* {dvatdata && (dvatdata.commodity == "MANUFACTURER") && (
                   <Button
                     size="small"
@@ -921,7 +918,8 @@ const CommodityMaster = () => {
                   </select>
                 </div>
                 <div className="text-xs text-gray-500 lg:ml-auto">
-                  Showing {table.getFilteredRowModel().rows.length} of {pagination.total} items
+                  Showing {table.getFilteredRowModel().rows.length} of{" "}
+                  {pagination.total} items
                 </div>
               </div>
 
@@ -929,7 +927,10 @@ const CommodityMaster = () => {
                 <Table>
                   <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
-                      <TableRow key={headerGroup.id} className="bg-gray-50 border-b">
+                      <TableRow
+                        key={headerGroup.id}
+                        className="bg-gray-50 border-b"
+                      >
                         {headerGroup.headers.map((header) => {
                           const canSort = header.column.getCanSort();
                           const sortState = header.column.getIsSorted();
@@ -979,7 +980,10 @@ const CommodityMaster = () => {
                   <TableBody>
                     {table.getRowModel().rows.length > 0 ? (
                       table.getRowModel().rows.map((row) => (
-                        <TableRow key={row.id} className="border-b hover:bg-gray-50">
+                        <TableRow
+                          key={row.id}
+                          className="border-b hover:bg-gray-50"
+                        >
                           {row.getVisibleCells().map((cell) => {
                             const alignClass =
                               cell.column.id === "productName" ||

@@ -110,10 +110,6 @@ const DealerMasterPage = () => {
         setDealerOptions(
           optionsResponse.data.filter((val) => val.commodity == "FUEL"),
         );
-        console.log(
-          "Dealer Options:",
-          optionsResponse.data.filter((val) => val.commodity == "FUEL").length,
-        );
       } else {
         setDealerOptions([]);
       }

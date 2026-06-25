@@ -84,8 +84,6 @@ const CreateDailySaleManufacturer = async (
       },
     });
 
-    console.log("Filed Return Filing:", filedReturnFiling);
-
     const paidReturn = await prisma.returns_01.findFirst({
       where: {
         deletedAt: null,
@@ -100,7 +98,6 @@ const CreateDailySaleManufacturer = async (
       },
     });
 
-    console.log("Paid Return:", paidReturn);
     
     if (filedReturnFiling || paidReturn) {
       return createResponse({

@@ -747,19 +747,10 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             errors.push("* Item Code must be a valid number");
           }
 
-          console.log("Expected Product Type:", expectedProductType);
-          console.log("commodityMaster:", commodityMaster);
-
           const selectedCommodity = commodityMaster.find(
             (commodity) =>
               commodity.id === item_code &&
               commodity.product_type === expectedProductType,
-          );
-          console.log(
-            "Selected Commodity for Item Code",
-            item_code,
-            ":",
-            selectedCommodity,
           );
 
           if (!selectedCommodity) {

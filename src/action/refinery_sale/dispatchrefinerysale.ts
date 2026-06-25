@@ -12,7 +12,7 @@ export interface DispatchPayload {
   invoice_number: string;
   invoice_date: string; // dd/MM/yyyy
   vehicle_number: string;
-  shipment_time: string; // ISO datetime string
+  kilo_liter: string;
   cstpurchase: string;
 }
 
@@ -72,13 +72,17 @@ const DispatchRefinerySale = async (
       });
     }
 
-    const parsedShipmentTime = new Date(payload.shipment_time);
-    if (Number.isNaN(parsedShipmentTime.getTime())) {
+    const parsedKiloLiter = Number.parseFloat(payload.kilo_liter);
+    if (!Number.isFinite(parsedKiloLiter) || parsedKiloLiter <= 0) {
       return createResponse({
-        message: "Shipment time is invalid.",
+        message: "Kilo liter must be greater than 0.",
         functionname,
       });
     }
+
+    const parsedLiter = parsedKiloLiter * 1000;
+
+    const dispatchQuantity = Math.round(parsedLiter);
 
     await prisma.refinery_sale.updateMany({
       where: {
@@ -94,9 +98,10 @@ const DispatchRefinerySale = async (
         invoice_number: payload.invoice_number,
         invoice_date: parsedInvoiceDate,
         vehicle_number: payload.vehicle_number,
-        Shipment_time: parsedShipmentTime,
+        // Shipment_time: new Date(),
         updatedById: currentUserId,
         updatedAt: new Date(),
+        quantity: dispatchQuantity,
       },
     });
 
@@ -112,7 +117,7 @@ const DispatchRefinerySale = async (
     ).toFixed(2);
 
     const amount_unit = (
-      parseFloat(payload.cstpurchase) / targetSale.quantity
+      parseFloat(payload.cstpurchase) / dispatchQuantity
     ).toFixed(2);
 
     const stock_response = await CreateDailyPurchase({
@@ -120,7 +125,7 @@ const DispatchRefinerySale = async (
       invoice_date: parsedInvoiceDate,
       invoice_number: payload.invoice_number,
       dvatid: targetSale.seller_tin_numberId,
-      quantity: targetSale.quantity,
+      quantity: dispatchQuantity,
       vatamount: vatAmount,
       commodityid: targetSale.commodity_masterId,
       tax_percent: "2",

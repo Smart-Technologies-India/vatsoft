@@ -11,6 +11,7 @@ import { generateToken } from "@/lib/jwt";
 interface RefineryPasswordLoginPayload {
   tin_number: string;
   password: string;
+  refinery_id?: number;
 }
 
 const RefineryPasswordLogin = async (
@@ -24,9 +25,14 @@ const RefineryPasswordLogin = async (
 
     const refineryResponse = await prisma.refinery.findFirst({
       where: {
-        OR: [{ status: "APPROVED" }, { status: "VERIFICATION" }, { status: "PENDINGPROCESSING" }],
+        OR: [
+          { status: "APPROVED" },
+          { status: "VERIFICATION" },
+          { status: "PENDINGPROCESSING" },
+        ],
         deletedAt: null,
         tinNumber,
+        ...(payload.refinery_id ? { id: payload.refinery_id } : {}),
       },
     });
 

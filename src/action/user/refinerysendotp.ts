@@ -7,6 +7,7 @@ import axios from "axios";
 
 interface RefinerySendOtpPayload {
   tin_number: string;
+  refinery_id?: number;
 }
 
 interface RefinerySendOtpResponse {
@@ -37,9 +38,14 @@ const RefinerySendOtp = async (
 
     const refineryResponse = await prisma.refinery.findFirst({
       where: {
-        OR: [{ status: "APPROVED" }, { status: "VERIFICATION" }, { status: "PENDINGPROCESSING" }],
+        OR: [
+          { status: "APPROVED" },
+          { status: "VERIFICATION" },
+          { status: "PENDINGPROCESSING" },
+        ],
         deletedAt: null,
         tinNumber,
+        ...(payload.refinery_id ? { id: payload.refinery_id } : {}),
       },
     });
 

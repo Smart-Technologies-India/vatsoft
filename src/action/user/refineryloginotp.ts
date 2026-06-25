@@ -10,6 +10,7 @@ import { generateToken } from "@/lib/jwt";
 interface RefineryLoginOtpPayload {
   tin_number: string;
   otp: string;
+  refinery_id?: number;
 }
 
 const RefineryLoginOtp = async (
@@ -22,9 +23,14 @@ const RefineryLoginOtp = async (
 
     const refineryResponse = await prisma.refinery.findFirst({
       where: {
-        OR: [{ status: "APPROVED" }, { status: "VERIFICATION" }, { status: "PENDINGPROCESSING" }],
+        OR: [
+          { status: "APPROVED" },
+          { status: "VERIFICATION" },
+          { status: "PENDINGPROCESSING" },
+        ],
         deletedAt: null,
         tinNumber,
+        ...(payload.refinery_id ? { id: payload.refinery_id } : {}),
       },
     });
 

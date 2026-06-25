@@ -667,6 +667,34 @@ export const postRes = (request, response) => {
             },
           });
 
+          const refineryMarker = (challan.remark || "").toString();
+          const isRefineryVatPayment = refineryMarker.startsWith("REFINERY_SALE_VAT#");
+
+          if (isRefineryVatPayment) {
+            const markerParts = refineryMarker.split("#");
+            const markerInvoiceNo = markerParts[1] || "";
+            const markerRefineryId = parseInt(markerParts[2] || "0", 10);
+            const markerSellerTinId = parseInt(markerParts[3] || "0", 10);
+
+            if (markerInvoiceNo && markerRefineryId > 0 && markerSellerTinId > 0) {
+              await prisma.refinery_sale.updateMany({
+                where: {
+                  invoice_number: markerInvoiceNo,
+                  refineryId: markerRefineryId,
+                  seller_tin_numberId: markerSellerTinId,
+                  refinery_status: "SALE",
+                  deletedAt: null,
+                  deletedById: null,
+                  status: "ACTIVE",
+                },
+                data: {
+                  refinery_status: "VATPAID",
+                  updatedById: challan.createdById,
+                },
+              });
+            }
+          }
+
           const htmlcode = renderReceiptHtml({
             statusTitle: "Transaction Successful",
             statusTone: "success",

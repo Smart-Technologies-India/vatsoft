@@ -315,6 +315,7 @@ const RefinerySalesPage = () => {
       toast.success("Refinery sale entry added successfully.");
       setIsDrawerOpen(false);
       resetForm();
+      router.push(`/dashboard/refinery_sales/view/${response.data.id}`);
     } catch (error) {
       toast.error("Unable to create refinery sale entry.");
     } finally {

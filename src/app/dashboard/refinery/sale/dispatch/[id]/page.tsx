@@ -28,7 +28,7 @@ type DispatchFormValues = {
   invoiceNumber: string;
   invoiceDate: string;
   vehicleNumber?: string;
-  shipmentTime: string;
+  kiloLiter: string;
   cstpurchase: string;
 };
 
@@ -57,7 +57,7 @@ export default function DispatchPage() {
       invoiceNumber: "",
       invoiceDate: "",
       vehicleNumber: undefined,
-      shipmentTime: "",
+      kiloLiter: "",
       cstpurchase: "",
     },
   });
@@ -96,9 +96,12 @@ export default function DispatchPage() {
 
         reset({
           invoiceNumber: data.invoiceNumber,
-          invoiceDate: new Date(data.invoiceDate).toISOString(),
+          invoiceDate:
+            data.refineryStatus === "VATPAID"
+              ? new Date().toISOString()
+              : new Date(data.invoiceDate).toISOString(),
           vehicleNumber: tankerList[0] || undefined,
-          shipmentTime: "",
+          kiloLiter: "",
           cstpurchase: "",
         });
 
@@ -139,8 +142,8 @@ export default function DispatchPage() {
       toast.error("Vehicle Number is required.");
       return;
     }
-    if (!data.shipmentTime) {
-      toast.error("Shipment Time is required.");
+    if (!data.kiloLiter.trim()) {
+      toast.error("Kilo Liter is required.");
       return;
     }
     if (!data.cstpurchase.trim()) {
@@ -154,9 +157,9 @@ export default function DispatchPage() {
       return;
     }
 
-    const parsedShipmentTime = new Date(data.shipmentTime);
-    if (Number.isNaN(parsedShipmentTime.getTime())) {
-      toast.error("Shipment Time is invalid.");
+    const parsedKiloLiter = Number.parseFloat(data.kiloLiter);
+    if (!Number.isFinite(parsedKiloLiter) || parsedKiloLiter <= 0) {
+      toast.error("Kilo Liter must be greater than 0.");
       return;
     }
 
@@ -166,7 +169,7 @@ export default function DispatchPage() {
       invoice_number: data.invoiceNumber,
       invoice_date: format(parsedInvoiceDate, "dd/MM/yyyy"),
       vehicle_number: data.vehicleNumber,
-      shipment_time: parsedShipmentTime.toISOString(),
+      kilo_liter: parsedKiloLiter.toString(),
       cstpurchase: data.cstpurchase,
     });
 
@@ -364,7 +367,7 @@ export default function DispatchPage() {
                 </div>
               </div>
 
-              {/* Vehicle + Shipment Time Row */}
+              {/* Vehicle + Liter Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
                 <div>
                   <MultiSelect<DispatchFormValues>
@@ -382,12 +385,11 @@ export default function DispatchPage() {
                   />
                 </div>
                 <div>
-                  <DateSelect<DispatchFormValues>
-                    name="shipmentTime"
-                    title="Shipment Time"
-                    placeholder="Select Shipment Date"
+                  <TaxtInput<DispatchFormValues>
+                    name="kiloLiter"
+                    title="Kilo Liter"
                     required={true}
-                    format="DD/MM/YYYY"
+                    numdes={true}
                   />
                 </div>
                 <div>

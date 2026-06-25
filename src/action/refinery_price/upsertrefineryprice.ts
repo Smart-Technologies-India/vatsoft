@@ -140,9 +140,16 @@ const AddRefineryDayPrice = async (
     });
 
     if (existing) {
-      return createResponse({
-        message: "Today's price is already added for this commodity.",
-        functionname,
+      // return createResponse({
+      //   message: "Today's price is already added for this commodity.",
+      //   functionname,
+      // });
+      await prisma.refinery_price.update({
+        where: { id: existing.id },
+        data: {
+          price: payload.price.toFixed(2),
+          updatedById: currentUserId,
+        },
       });
     }
 

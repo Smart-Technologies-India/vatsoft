@@ -37,6 +37,7 @@
     "@tailwindcss/postcss": "^4.1.18",
     "@tanstack/react-table": "^8.21.3",
     "@types/papaparse": "^5.5.2",
+    "@xstate/react": "^6.1.0",
     "antd": "^6.1.3",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
@@ -86,6 +87,7 @@
     "valibot": "^1.2.0",
     "vaul": "^1.1.2",
     "xlsx": "^0.18.5",
+    "xstate": "^5.32.2",
     "zod": "^4.3.4"
   },
   "devDependencies": {
