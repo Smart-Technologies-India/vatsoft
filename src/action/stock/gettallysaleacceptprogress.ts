@@ -50,7 +50,6 @@ const GetTallySaleAcceptProgress = async (
         where: {
           id: { in: uniqueIds },
           status: "ACTIVE",
-          deletedAt: null,
           dvat04Id: currentDvatId,
         },
       }),
@@ -58,7 +57,6 @@ const GetTallySaleAcceptProgress = async (
         where: {
           id: { in: uniqueIds },
           status: "ACTIVE",
-          deletedAt: null,
           dvat04Id: currentDvatId,
           is_converted: true,
         },
