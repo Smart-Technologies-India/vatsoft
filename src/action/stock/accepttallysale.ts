@@ -16,6 +16,7 @@ const AcceptTallySale = async (
   payload: AcceptTallySalePayload,
 ): Promise<ApiResponseType<boolean>> => {
   const functionname: string = AcceptTallySale.name;
+  const chunkSize = 100;
 
   try {
     const currentUserId = await getCurrentUserId();
@@ -87,57 +88,64 @@ const AcceptTallySale = async (
       }
     }
 
-    const entries = records.map((record) => {
-      const taxPercent = record.tax_percent;
-      const totalInvoice = parseFloat(record.amount) + parseFloat(record.vatamount);
-      // const taxableValue = (totalInvoice / (100 + parseFloat(taxPercent))) * 100;
-      const taxableValue = totalInvoice / (1 + parseFloat(taxPercent) / 100);
-      const vatValue = totalInvoice - taxableValue;
+    const totalRecords = records.length;
+    const totalChunks = Math.ceil(totalRecords / chunkSize);
 
-      const invoiceDate = new Date(
-        new Date(record.invoice_date).toISOString().split("T")[0],
-      );
-      invoiceDate.setDate(invoiceDate.getDate() + 1);
+    for (let start = 0; start < totalRecords; start += chunkSize) {
+      const chunkRecords = records.slice(start, start + chunkSize);
 
-      return {
-        dvatid: payload.dvatid,
-        commodityid: record.commodity_masterId,
-        quantity: record.quantity,
-        seller_tin_id: record.seller_tin_numberId,
-        invoice_number: record.invoice_number,
-        invoice_date: invoiceDate,
-        tax_percent: taxPercent,
-        amount: taxableValue.toFixed(2),
-        vatamount: vatValue.toFixed(2),
-        amount_unit: record.amount_unit,
-        createdById: payload.createdById,
-        against_cfrom: record.is_against_cform,
-        is_against_fform: false,
-        is_export: false,
-        batch_name: record.batch_name,
-      };
-    });
+      const entries = chunkRecords.map((record) => {
+        const taxPercent = record.tax_percent;
+        const totalInvoice =
+          parseFloat(record.amount) + parseFloat(record.vatamount);
+        const taxableValue = totalInvoice / (1 + parseFloat(taxPercent) / 100);
+        const vatValue = totalInvoice - taxableValue;
 
-    const createResponseData = await CreateMultiDailySale({ entries });
+        const invoiceDate = new Date(
+          new Date(record.invoice_date).toISOString().split("T")[0],
+        );
+        invoiceDate.setDate(invoiceDate.getDate() + 1);
 
-    if (!createResponseData.status) {
-      return createResponse({
-        message: createResponseData.message,
-        functionname,
+        return {
+          dvatid: payload.dvatid,
+          commodityid: record.commodity_masterId,
+          quantity: record.quantity,
+          seller_tin_id: record.seller_tin_numberId,
+          invoice_number: record.invoice_number,
+          invoice_date: invoiceDate,
+          tax_percent: taxPercent,
+          amount: taxableValue.toFixed(2),
+          vatamount: vatValue.toFixed(2),
+          amount_unit: record.amount_unit,
+          createdById: payload.createdById,
+          against_cfrom: record.is_against_cform,
+          is_against_fform: false,
+          is_export: false,
+          batch_name: record.batch_name,
+        };
+      });
+
+      const createResponseData = await CreateMultiDailySale({ entries });
+
+      if (!createResponseData.status) {
+        return createResponse({
+          message: createResponseData.message,
+          functionname,
+        });
+      }
+
+      await prisma.tally_sale.updateMany({
+        where: {
+          id: { in: chunkRecords.map((record) => record.id) },
+          status: "ACTIVE",
+          is_converted: false,
+        },
+        data: { is_converted: true },
       });
     }
 
-    await prisma.tally_sale.updateMany({
-      where: {
-        id: { in: records.map((record) => record.id) },
-        status: "ACTIVE",
-        is_converted: false,
-      },
-      data: { is_converted: true },
-    });
-
     return createResponse({
-      message: "Tally sale records accepted and converted to daily sale successfully.",
+      message: `Tally sale records accepted and converted successfully. Processed ${totalRecords} row(s) in ${totalChunks} batch(es) of ${chunkSize}.`,
       functionname,
       data: true,
     });

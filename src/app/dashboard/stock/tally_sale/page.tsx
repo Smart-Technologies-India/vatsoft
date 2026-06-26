@@ -4,6 +4,7 @@ import GetUserTallySale, {
   GroupedTallySale,
 } from "@/action/stock/getusertallysale";
 import AcceptTallySale from "@/action/stock/accepttallysale";
+import GetTallySaleAcceptProgress from "@/action/stock/gettallysaleacceptprogress";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import {
@@ -18,7 +19,7 @@ import { formateDate } from "@/utils/methods";
 import { dvat04 } from "@prisma/client";
 import { Button, Modal, Pagination, Radio, RadioChangeEvent } from "antd";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 
@@ -44,6 +45,18 @@ const TallySalePage = () => {
   const [userid, setUserid] = useState<number>(0);
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [acceptProgress, setAcceptProgress] = useState<{
+    total: number;
+    processed: number;
+    percent: number;
+    statusText: string;
+  }>({
+    total: 0,
+    processed: 0,
+    percent: 0,
+    statusText: "Waiting...",
+  });
+  const acceptPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [acceptingGroupIndex, setAcceptingGroupIndex] = useState<number | null>(
     null,
   );
@@ -171,6 +184,14 @@ const TallySalePage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (acceptPollingRef.current) {
+        clearInterval(acceptPollingRef.current);
+      }
+    };
+  }, []);
+
   const handleAccept = async () => {
     if (!dvatdata) return;
     if (pendingRecordCount === 0) {
@@ -180,19 +201,88 @@ const TallySalePage = () => {
 
     setIsAccepting(true);
     const ids = pendingRecords.map((record) => record.id);
-    const response = await AcceptTallySale({
-      tallyIds: ids,
-      dvatid: dvatdata.id,
-      createdById: userid,
-    });
-    setIsAccepting(false);
-    setIsAcceptModalOpen(false);
+    const baselineResponse = await GetTallySaleAcceptProgress({ tallyIds: ids });
 
-    if (response.status) {
-      toast.success(response.message);
-      await init(dvatdata.id, 0, pagination.take);
-    } else {
-      toast.error(response.message);
+    if (!baselineResponse.status || !baselineResponse.data) {
+      setIsAccepting(false);
+      toast.error(
+        baselineResponse.message || "Unable to start progress tracking.",
+      );
+      return;
+    }
+
+    const baselineConverted = baselineResponse.data.converted;
+    const totalAtStart = baselineResponse.data.total;
+    const pendingAtStart = Math.max(0, totalAtStart - baselineConverted);
+
+    setAcceptProgress({
+      total: pendingAtStart,
+      processed: 0,
+      percent: 0,
+      statusText:
+        pendingAtStart > 0
+          ? "Starting conversion..."
+          : "No pending rows found.",
+    });
+
+    try {
+      if (pendingAtStart > 0) {
+        acceptPollingRef.current = setInterval(async () => {
+          const pollResponse = await GetTallySaleAcceptProgress({
+            tallyIds: ids,
+          });
+
+          if (!pollResponse.status || !pollResponse.data) {
+            return;
+          }
+
+          const processed = Math.max(
+            0,
+            pollResponse.data.converted - baselineConverted,
+          );
+          const boundedProcessed = Math.min(pendingAtStart, processed);
+          const percent = Math.min(
+            100,
+            Math.floor((boundedProcessed / pendingAtStart) * 100),
+          );
+
+          setAcceptProgress({
+            total: pendingAtStart,
+            processed: boundedProcessed,
+            percent,
+            statusText: `Processing ${boundedProcessed} of ${pendingAtStart} rows...`,
+          });
+        }, 1500);
+      }
+
+      const response = await AcceptTallySale({
+        tallyIds: ids,
+        dvatid: dvatdata.id,
+        createdById: userid,
+      });
+
+      if (response.status) {
+        if (pendingAtStart > 0) {
+          setAcceptProgress({
+            total: pendingAtStart,
+            processed: pendingAtStart,
+            percent: 100,
+            statusText: "Conversion completed successfully.",
+          });
+        }
+
+        toast.success(response.message);
+        setIsAcceptModalOpen(false);
+        await init(dvatdata.id, 0, pagination.take);
+      } else {
+        toast.error(response.message);
+      }
+    } finally {
+      if (acceptPollingRef.current) {
+        clearInterval(acceptPollingRef.current);
+        acceptPollingRef.current = null;
+      }
+      setIsAccepting(false);
     }
   };
 
@@ -272,17 +362,36 @@ const TallySalePage = () => {
         open={isAcceptModalOpen}
         onOk={handleAccept}
         onCancel={() => {
+          if (isAccepting) return;
           setIsAcceptModalOpen(false);
         }}
         confirmLoading={isAccepting}
         okText="Yes, Accept All"
         cancelText="Cancel"
+        cancelButtonProps={{ disabled: isAccepting }}
+        maskClosable={!isAccepting}
+        closable={!isAccepting}
       >
         <p className="text-sm text-slate-600 py-2">
           This will convert <strong>{pendingRecordCount} record(s)</strong> from
           tally sale to daily sale. Stock will be checked and deducted. This
           action cannot be undone.
         </p>
+        {isAccepting && (
+          <div className="mt-2 rounded border border-blue-200 bg-blue-50 p-3 text-xs text-slate-700">
+            <p>Status: {acceptProgress.statusText}</p>
+            <p>
+              Processed: {acceptProgress.processed} / {acceptProgress.total}
+            </p>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded bg-slate-200">
+              <div
+                className="h-full bg-blue-500 transition-all"
+                style={{ width: `${acceptProgress.percent}%` }}
+              />
+            </div>
+            <p className="mt-1">Progress: {acceptProgress.percent}%</p>
+          </div>
+        )}
       </Modal>
 
       {/* Invoice detail modal */}
