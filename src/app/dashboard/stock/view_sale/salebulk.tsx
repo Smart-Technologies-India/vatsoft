@@ -964,33 +964,6 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             errors.push("* Type and boolean flags do not match for this row");
           }
 
-          if (
-            selectedCommodity &&
-            Number.isFinite(normalizedQuantity) &&
-            normalizedQuantity > 0 &&
-            Number.isFinite(total_invoice_value) &&
-            total_invoice_value > 0
-          ) {
-            const mrp = parseExcelNumber(selectedCommodity.mrp);
-            const crateSize =
-              selectedCommodity.crate_size > 0
-                ? selectedCommodity.crate_size
-                : 1;
-            const minUnitPrice = mrp / crateSize;
-            const pricePerUnit = total_invoice_value / normalizedQuantity;
-
-            if (
-              Number.isFinite(mrp) &&
-              Number.isFinite(minUnitPrice) &&
-              pricePerUnit <
-                (isManufacturerBulkUpload
-                  ? minUnitPrice * 0.25
-                  : minUnitPrice * 0.75)
-            ) {
-              errors.push("* Given item price must not be less than MRP");
-            }
-          }
-
           const duplicateKey = [
             tin_number,
             invoice_no,
@@ -1023,6 +996,40 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             saleType = normalizedType;
           } else if (selectedAllowedFlags.length === 1) {
             saleType = selectedAllowedFlags[0].key;
+          }
+
+          const skipMrpValidationForManufacturerTypes =
+            commodityType === "MANUFACTURER" &&
+            ["FFORM", "IFORM", "H_EXPORT", "E1", "EXPORT"].includes(
+              saleType,
+            );
+
+          if (
+            !skipMrpValidationForManufacturerTypes &&
+            selectedCommodity &&
+            Number.isFinite(normalizedQuantity) &&
+            normalizedQuantity > 0 &&
+            Number.isFinite(total_invoice_value) &&
+            total_invoice_value > 0
+          ) {
+            const mrp = parseExcelNumber(selectedCommodity.mrp);
+            const crateSize =
+              selectedCommodity.crate_size > 0
+                ? selectedCommodity.crate_size
+                : 1;
+            const minUnitPrice = mrp / crateSize;
+            const pricePerUnit = total_invoice_value / normalizedQuantity;
+
+            if (
+              Number.isFinite(mrp) &&
+              Number.isFinite(minUnitPrice) &&
+              pricePerUnit <
+                (isManufacturerBulkUpload
+                  ? minUnitPrice * 0.25
+                  : minUnitPrice * 0.75)
+            ) {
+              errors.push("* Given item price must not be less than MRP");
+            }
           }
 
           const against_cfrom = saleType === "CFORM";
