@@ -3,6 +3,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AcceptSale from "@/action/stock/acceptsell";
 import ConvertDvat30A from "@/action/stock/convertdvat30a";
+import GetDvat30AProgress from "@/action/stock/getdvat30aprogress";
 import DeletePurchase from "@/action/stock/deletepurchase";
 import GetPurchaseDeleteImpact from "@/action/stock/getpurchasedeleteimpact";
 import RejectAllPendingPurchase from "@/action/stock/rejectallpendingpurchase";
@@ -420,6 +421,22 @@ const DocumentWiseDetails = () => {
   };
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPurchaseConfirmed, setIsPurchaseConfirmed] = useState(false);
+  const [isFinalizingPurchase, setIsFinalizingPurchase] =
+    useState<boolean>(false);
+  const [finalizeProgress, setFinalizeProgress] = useState<{
+    total: number;
+    processed: number;
+    percent: number;
+    statusText: string;
+  }>({
+    total: 0,
+    processed: 0,
+    percent: 0,
+    statusText: "Waiting...",
+  });
+  const finalizePollingRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
   const [creditNoteBox, setCreditNoteBox] = useState<boolean>(false);
   const [creditNoteGroup, setCreditNoteGroup] =
     useState<GroupedDailyPurchase | null>(null);
@@ -543,20 +560,104 @@ const DocumentWiseDetails = () => {
       return toast.error(eligibility.message);
     }
 
-    const response = await ConvertDvat30A({
+    const baselineProgressResponse = await GetDvat30AProgress({
       dvatid: dvatdata.id,
       startDate: dateFilter.startDate,
       endDate: dateFilter.endDate,
     });
 
-    if (response.status && response.data) {
-      toast.success(response.message);
-      setIsModalOpen(false);
-      await init();
-    } else {
-      toast.error(response.message);
+    if (!baselineProgressResponse.status || !baselineProgressResponse.data) {
+      return toast.error(
+        baselineProgressResponse.message ||
+          "Unable to start upload progress tracking.",
+      );
+    }
+
+    const baselineConverted = baselineProgressResponse.data.convertedInRange;
+    const pendingAtStart =
+      baselineProgressResponse.data.totalInRange - baselineConverted;
+
+    setFinalizeProgress({
+      total: Math.max(0, pendingAtStart),
+      processed: 0,
+      percent: 0,
+      statusText:
+        pendingAtStart > 0
+          ? "Starting batch upload..."
+          : "No pending rows found for selected period.",
+    });
+
+    setIsFinalizingPurchase(true);
+
+    try {
+      if (pendingAtStart > 0) {
+        finalizePollingRef.current = setInterval(async () => {
+          const pollResponse = await GetDvat30AProgress({
+            dvatid: dvatdata.id,
+            startDate: dateFilter.startDate,
+            endDate: dateFilter.endDate,
+          });
+
+          if (!pollResponse.status || !pollResponse.data) {
+            return;
+          }
+
+          const processed = Math.max(
+            0,
+            pollResponse.data.convertedInRange - baselineConverted,
+          );
+          const boundedProcessed = Math.min(pendingAtStart, processed);
+          const percent = Math.min(
+            100,
+            Math.floor((boundedProcessed / pendingAtStart) * 100),
+          );
+
+          setFinalizeProgress({
+            total: pendingAtStart,
+            processed: boundedProcessed,
+            percent,
+            statusText: `Processing ${boundedProcessed} of ${pendingAtStart} rows...`,
+          });
+        }, 1500);
+      }
+
+      const response = await ConvertDvat30A({
+        dvatid: dvatdata.id,
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+      });
+
+      if (response.status && response.data) {
+        if (pendingAtStart > 0) {
+          setFinalizeProgress({
+            total: pendingAtStart,
+            processed: pendingAtStart,
+            percent: 100,
+            statusText: "Upload completed successfully.",
+          });
+        }
+        toast.success(response.message);
+        setIsModalOpen(false);
+        await init();
+      } else {
+        toast.error(response.message);
+      }
+    } finally {
+      if (finalizePollingRef.current) {
+        clearInterval(finalizePollingRef.current);
+        finalizePollingRef.current = null;
+      }
+      setIsFinalizingPurchase(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (finalizePollingRef.current) {
+        clearInterval(finalizePollingRef.current);
+      }
+    };
+  }, []);
 
   const [deletebox, setDeleteBox] = useState<boolean>(false);
   const [deleteRecord, setDeleteRecord] = useState<number | null>(null);
@@ -1618,12 +1719,20 @@ const DocumentWiseDetails = () => {
         open={isModalOpen}
         onOk={Convertto30a}
         onCancel={() => {
+          if (isFinalizingPurchase) return;
           setIsModalOpen(false);
           setIsPurchaseConfirmed(false);
         }}
         okText="Finalize Purchase Data"
         cancelText="Cancel"
-        okButtonProps={{ disabled: !isPurchaseConfirmed, danger: true }}
+        okButtonProps={{
+          disabled: !isPurchaseConfirmed || isFinalizingPurchase,
+          danger: true,
+          loading: isFinalizingPurchase,
+        }}
+        cancelButtonProps={{ disabled: isFinalizingPurchase }}
+        maskClosable={!isFinalizingPurchase}
+        closable={!isFinalizingPurchase}
         width={600}
       >
         <div className="py-3 space-y-4">
@@ -1654,12 +1763,47 @@ const DocumentWiseDetails = () => {
             all Purchase transactions for the tax period.
           </p>
 
+          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+            <p className="text-sm text-blue-900">
+              Large uploads are processed in batches of 100 records to avoid
+              timeout issues. For around 10,000 records, this may take
+              approximately 2 to 4 minutes. Please wait until processing is
+              complete.
+            </p>
+          </div>
+
+          {isFinalizingPurchase && (
+            <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded">
+              <p className="text-sm font-medium text-amber-800">
+                Finalization in progress...
+              </p>
+              <p className="text-xs text-amber-700 mt-1">
+                Uploading and updating records in chunks. Do not close or
+                refresh this page.
+              </p>
+              <div className="mt-3 rounded border border-amber-200 bg-white p-2.5 text-xs text-slate-700">
+                <p>Status: {finalizeProgress.statusText}</p>
+                <p>
+                  Uploaded: {finalizeProgress.processed} / {finalizeProgress.total}
+                </p>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded bg-slate-200">
+                  <div
+                    className="h-full bg-blue-500 transition-all"
+                    style={{ width: `${finalizeProgress.percent}%` }}
+                  />
+                </div>
+                <p className="mt-1">Progress: {finalizeProgress.percent}%</p>
+              </div>
+            </div>
+          )}
+
           <div className="mt-4 p-3 bg-gray-50 border border-gray-300 rounded">
             <label className="flex items-start gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isPurchaseConfirmed}
                 onChange={(e) => setIsPurchaseConfirmed(e.target.checked)}
+                disabled={isFinalizingPurchase}
                 className="mt-1 h-4 w-4 cursor-pointer"
               />
               <span className="text-sm text-gray-800">

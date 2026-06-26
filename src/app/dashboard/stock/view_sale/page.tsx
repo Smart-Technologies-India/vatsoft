@@ -1,5 +1,6 @@
 "use client";
 import ConvertDvat31 from "@/action/stock/convertdvat31";
+import GetDvat31Progress from "@/action/stock/getdvat31progress";
 import AcceptSaleWithoutDvat from "@/action/stock/acceptsalewithoutdvat";
 import AcceptSaleForPendingProcess from "@/action/stock/acceptsaleforpendingprocess";
 import DeleteSale from "@/action/stock/deletesale";
@@ -681,6 +682,21 @@ const DocumentWiseDetails = () => {
   const [addBox, setAddBox] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSalesConfirmed, setIsSalesConfirmed] = useState(false);
+  const [isFinalizingSales, setIsFinalizingSales] = useState(false);
+  const [finalizeProgress, setFinalizeProgress] = useState<{
+    total: number;
+    processed: number;
+    percent: number;
+    statusText: string;
+  }>({
+    total: 0,
+    processed: 0,
+    percent: 0,
+    statusText: "Waiting...",
+  });
+  const finalizePollingRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
 
   const formatEligibilityDate = (date: Date): string => {
     const day = String(date.getDate()).padStart(2, "0");
@@ -793,21 +809,105 @@ const DocumentWiseDetails = () => {
       return toast.error(eligibility.message);
     }
 
-    const response = await ConvertDvat31({
-      createdById: userid,
+    const baselineProgressResponse = await GetDvat31Progress({
       dvatid: dvatdata.id,
       startDate: dateFilter.startDate,
       endDate: dateFilter.endDate,
     });
 
-    if (response.status && response.data) {
-      toast.success(response.message);
-      setIsModalOpen(false);
-      await init();
-    } else {
-      toast.error(response.message);
+    if (!baselineProgressResponse.status || !baselineProgressResponse.data) {
+      return toast.error(
+        baselineProgressResponse.message ||
+          "Unable to start upload progress tracking.",
+      );
+    }
+
+    const baselineConverted = baselineProgressResponse.data.convertedInRange;
+    const pendingAtStart =
+      baselineProgressResponse.data.totalInRange - baselineConverted;
+
+    setFinalizeProgress({
+      total: Math.max(0, pendingAtStart),
+      processed: 0,
+      percent: 0,
+      statusText:
+        pendingAtStart > 0
+          ? "Starting batch upload..."
+          : "No pending rows found for selected period.",
+    });
+
+    setIsFinalizingSales(true);
+
+    try {
+      if (pendingAtStart > 0) {
+        finalizePollingRef.current = setInterval(async () => {
+          const pollResponse = await GetDvat31Progress({
+            dvatid: dvatdata.id,
+            startDate: dateFilter.startDate,
+            endDate: dateFilter.endDate,
+          });
+
+          if (!pollResponse.status || !pollResponse.data) {
+            return;
+          }
+
+          const processed = Math.max(
+            0,
+            pollResponse.data.convertedInRange - baselineConverted,
+          );
+          const boundedProcessed = Math.min(pendingAtStart, processed);
+          const percent = Math.min(
+            100,
+            Math.floor((boundedProcessed / pendingAtStart) * 100),
+          );
+
+          setFinalizeProgress({
+            total: pendingAtStart,
+            processed: boundedProcessed,
+            percent,
+            statusText: `Processing ${boundedProcessed} of ${pendingAtStart} rows...`,
+          });
+        }, 1500);
+      }
+
+      const response = await ConvertDvat31({
+        createdById: userid,
+        dvatid: dvatdata.id,
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+      });
+
+      if (response.status && response.data) {
+        if (pendingAtStart > 0) {
+          setFinalizeProgress({
+            total: pendingAtStart,
+            processed: pendingAtStart,
+            percent: 100,
+            statusText: "Upload completed successfully.",
+          });
+        }
+        toast.success(response.message);
+        setIsModalOpen(false);
+        await init();
+      } else {
+        toast.error(response.message);
+      }
+    } finally {
+      if (finalizePollingRef.current) {
+        clearInterval(finalizePollingRef.current);
+        finalizePollingRef.current = null;
+      }
+      setIsFinalizingSales(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (finalizePollingRef.current) {
+        clearInterval(finalizePollingRef.current);
+      }
+    };
+  }, []);
 
   const [deletebox, setDeleteBox] = useState<boolean>(false);
   const [deleteRecords, setDeleteRecords] = useState<number[]>([]);
@@ -1261,12 +1361,20 @@ const DocumentWiseDetails = () => {
         open={isModalOpen}
         onOk={Convertto31}
         onCancel={() => {
+          if (isFinalizingSales) return;
           setIsModalOpen(false);
           setIsSalesConfirmed(false);
         }}
         okText="Finalize Sales Data"
         cancelText="Cancel"
-        okButtonProps={{ disabled: !isSalesConfirmed, danger: true }}
+        okButtonProps={{
+          disabled: !isSalesConfirmed || isFinalizingSales,
+          danger: true,
+          loading: isFinalizingSales,
+        }}
+        cancelButtonProps={{ disabled: isFinalizingSales }}
+        maskClosable={!isFinalizingSales}
+        closable={!isFinalizingSales}
         width={600}
       >
         <div className="py-3 space-y-4">
@@ -1297,12 +1405,47 @@ const DocumentWiseDetails = () => {
             all Sales transactions for the tax period.
           </p>
 
+          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+            <p className="text-sm text-blue-900">
+              Large uploads are processed in batches of 100 records to avoid
+              timeout issues. For around 10,000 records, this may take
+              approximately 2 to 4 minutes. Please wait until processing is
+              complete.
+            </p>
+          </div>
+
+          {isFinalizingSales && (
+            <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded">
+              <p className="text-sm font-medium text-amber-800">
+                Finalization in progress...
+              </p>
+              <p className="text-xs text-amber-700 mt-1">
+                Uploading and updating records in chunks. Do not close or
+                refresh this page.
+              </p>
+              <div className="mt-3 rounded border border-amber-200 bg-white p-2.5 text-xs text-slate-700">
+                <p>Status: {finalizeProgress.statusText}</p>
+                <p>
+                  Uploaded: {finalizeProgress.processed} / {finalizeProgress.total}
+                </p>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded bg-slate-200">
+                  <div
+                    className="h-full bg-blue-500 transition-all"
+                    style={{ width: `${finalizeProgress.percent}%` }}
+                  />
+                </div>
+                <p className="mt-1">Progress: {finalizeProgress.percent}%</p>
+              </div>
+            </div>
+          )}
+
           <div className="mt-4 p-3 bg-gray-50 border border-gray-300 rounded">
             <label className="flex items-start gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isSalesConfirmed}
                 onChange={(e) => setIsSalesConfirmed(e.target.checked)}
+                disabled={isFinalizingSales}
                 className="mt-1 h-4 w-4 cursor-pointer"
               />
               <span className="text-sm text-gray-800">
