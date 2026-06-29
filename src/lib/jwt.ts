@@ -10,6 +10,7 @@ export interface JWTPayload {
   mobile: string;
   role: string;
   dvatid?: number;
+  refineryId?: number;
   iat?: number;
   exp?: number;
 }

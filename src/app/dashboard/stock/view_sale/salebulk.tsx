@@ -293,7 +293,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     // OIDC users sell LIQUOR-typed products.
     // MANUFACTURER and WHOLESALER use their own product type
     // so the commodity lookup finds the correct crate_size for quantity conversion.
-    if (dvatdata?.commodity === "OIDC" || isManufacturerBulkUpload) {
+    if (dvatdata?.commodity === "OIDC" || isManufacturerBulkUpload || dvatdata?.commodity === "RESTAURANT") {
       return "LIQUOR";
     }
     return dvatdata?.commodity;

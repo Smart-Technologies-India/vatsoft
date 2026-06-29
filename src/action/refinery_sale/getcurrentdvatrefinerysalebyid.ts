@@ -79,6 +79,7 @@ const GetCurrentDvatRefinerySaleById = async (
     const invoiceRows = await prisma.refinery_sale.findMany({
       where: {
         invoice_number: targetSale.invoice_number,
+        invoice_date: targetSale.invoice_date,
         refineryId: targetSale.refineryId,
         seller_tin_numberId: targetSale.seller_tin_numberId,
         deletedAt: null,

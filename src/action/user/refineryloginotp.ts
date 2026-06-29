@@ -116,6 +116,7 @@ const RefineryLoginOtp = async (
       userId: linkedUser.id,
       mobile: linkedUser.mobileOne ?? "",
       role: linkedUser.role,
+      refineryId: refineryResponse.id,
     });
 
     cookieStore.set("auth_token", token, {

@@ -39,6 +39,28 @@ const CRATE_BASED_COMMODITIES = new Set([
   "MANUFACTURER",
 ]);
 
+type QuantityMode = "CRATE" | "PCS" | "LITER";
+
+const getQuantityMode = (commodity: string | null | undefined): QuantityMode => {
+  const normalized = String(commodity ?? "");
+  if (CRATE_BASED_COMMODITIES.has(normalized)) {
+    return "CRATE";
+  }
+  if (normalized === "FUEL") {
+    return "LITER";
+  }
+  return "PCS";
+};
+
+const formatQuantity = (value: number): string => {
+  return value.toFixed(2).replace(/\.00$/, "");
+};
+
+const toPositiveNumber = (value: number | string | null | undefined): number | null => {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
 const BreakagePage = () => {
   const router = useRouter();
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
@@ -63,12 +85,20 @@ const BreakagePage = () => {
   const [entryQuantity, setEntryQuantity] = useState<string>("");
   const [isSubmitting, setSubmitting] = useState(false);
 
-  const isCrateBasedCommodity = useMemo(
-    () => CRATE_BASED_COMMODITIES.has(String(dvatdata?.commodity ?? "")),
+  const currentCommodity = useMemo(
+    () => String(dvatdata?.commodity ?? ""),
     [dvatdata?.commodity],
   );
 
-  const quantityUnitLabel = isCrateBasedCommodity ? "Crate" : "Pcs";
+  const quantityMode = useMemo(
+    () => getQuantityMode(currentCommodity),
+    [currentCommodity],
+  );
+
+  const quantityUnitLabel =
+    quantityMode === "CRATE" ? "Crate" : quantityMode === "LITER" ? "Liter" : "Pcs";
+
+  const isRestaurantCommodity = currentCommodity === "RESTAURANT";
 
   const loadAllStocks = async (dvatId: number) => {
     const initialResponse = await GetAllStock({
@@ -196,17 +226,26 @@ const BreakagePage = () => {
 
   const renderBreakageQuantity = (
     quantityInPcs: number,
-    crateSize: number,
+    crateSize: number | string | null,
+    packSize: number | string | null,
   ): string | number => {
-    if (!isCrateBasedCommodity) {
-      return quantityInPcs;
+    if (quantityMode === "CRATE") {
+      const crateFactor = toPositiveNumber(crateSize);
+      if (!crateFactor) {
+        return "-";
+      }
+      return formatQuantity(quantityInPcs / crateFactor);
     }
 
-    if (!crateSize || crateSize <= 0) {
-      return "-";
+    if (isRestaurantCommodity) {
+      const packFactor = toPositiveNumber(packSize);
+      if (!packFactor) {
+        return "-";
+      }
+      return formatQuantity(quantityInPcs / packFactor);
     }
 
-    return (quantityInPcs / crateSize).toFixed(2);
+    return quantityInPcs;
   };
 
   const columns = useMemo<ColumnDef<BreakageRow>[]>(
@@ -241,6 +280,7 @@ const BreakagePage = () => {
           renderBreakageQuantity(
             row.original.quantity,
             row.original.commodity_master.crate_size,
+            row.original.commodity_master.pack_size,
           ),
       },
       {
@@ -260,7 +300,7 @@ const BreakagePage = () => {
         },
       },
     ],
-    [quantityUnitLabel, isCrateBasedCommodity],
+    [quantityUnitLabel, quantityMode, isRestaurantCommodity],
   );
 
   const table = useReactTable({
@@ -382,7 +422,7 @@ const BreakagePage = () => {
                   key={stockRow.commodity_masterId}
                   value={stockRow.commodity_masterId}
                 >
-                  {stockRow.commodity_master.product_name} (Stock: {renderBreakageQuantity(stockRow.quantity, stockRow.commodity_master.crate_size)} {quantityUnitLabel})
+                  {stockRow.commodity_master.product_name} (Stock: {renderBreakageQuantity(stockRow.quantity, stockRow.commodity_master.crate_size, stockRow.commodity_master.pack_size)} {quantityUnitLabel})
                 </option>
               ))}
             </select>

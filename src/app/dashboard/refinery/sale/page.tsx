@@ -38,6 +38,17 @@ type RefinerySaleWithRelations = refinery_sale & {
   seller_tin_number: tin_number_master;
 };
 
+type GroupedRefinerySale = {
+  id: number;
+  invoice_number: string;
+  invoice_date: Date;
+  seller_tin_number: tin_number_master;
+  item_details: string;
+  item_count: number;
+  quantity: number;
+  refinery_status: string;
+};
+
 const formatDateTime = (date: Date) => {
   return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
@@ -47,6 +58,22 @@ const formatDateTime = (date: Date) => {
 
 const formatCurrency = (value: number) => {
   return Number.isFinite(value) ? value.toFixed(2) : "0.00";
+};
+
+const formatQuantity = (value: number) => {
+  if (!Number.isFinite(value)) {
+    return "0";
+  }
+
+  return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(3)));
+};
+
+const formatDateKey = (date: Date | string) => {
+  const value = new Date(date);
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 const getStatusColor = (status: string) => {
@@ -76,6 +103,52 @@ const RefinerySalePage = () => {
     pageSize: 10,
   });
 
+  const groupedSaleEntries = useMemo<GroupedRefinerySale[]>(() => {
+    const grouped = new Map<string, GroupedRefinerySale>();
+
+    saleEntries.forEach((entry) => {
+      const dateKey = formatDateKey(entry.invoice_date);
+      const key = `${entry.seller_tin_numberId}|${entry.invoice_number}|${dateKey}`;
+      const existing = grouped.get(key);
+
+      if (!existing) {
+        grouped.set(key, {
+          id: entry.id,
+          invoice_number: entry.invoice_number,
+          invoice_date: new Date(entry.invoice_date),
+          seller_tin_number: entry.seller_tin_number,
+          item_details: entry.commodity_master.product_name,
+          item_count: 1,
+          quantity: Number(entry.quantity || 0),
+          refinery_status: entry.refinery_status || "SALE",
+        });
+        return;
+      }
+
+      existing.quantity += Number(entry.quantity || 0);
+      existing.item_count += 1;
+      existing.item_details =
+        existing.item_count > 1 ? `${existing.item_count} items` : existing.item_details;
+
+      const statuses = [existing.refinery_status, entry.refinery_status || "SALE"];
+      if (statuses.includes("COMPLETED")) {
+        existing.refinery_status = "COMPLETED";
+      } else if (statuses.includes("DISPATCH")) {
+        existing.refinery_status = "DISPATCH";
+      } else if (statuses.every((status) => status === "VATPAID")) {
+        existing.refinery_status = "VATPAID";
+      } else if (statuses.includes("PAID")) {
+        existing.refinery_status = "PAID";
+      } else {
+        existing.refinery_status = "SALE";
+      }
+    });
+
+    return Array.from(grouped.values()).sort(
+      (a, b) => b.invoice_date.getTime() - a.invoice_date.getTime() || b.id - a.id,
+    );
+  }, [saleEntries]);
+
   const totalTaxableValue = useMemo(() => {
     return saleEntries.reduce(
       (sum, entry) => sum + Number.parseFloat(entry.amount || "0"),
@@ -94,7 +167,7 @@ const RefinerySalePage = () => {
     return totalTaxableValue + totalVatAmount;
   }, [totalTaxableValue, totalVatAmount]);
 
-  const columns = useMemo<ColumnDef<RefinerySaleWithRelations>[]>(
+  const columns = useMemo<ColumnDef<GroupedRefinerySale>[]>(
     () => [
       {
         id: "count",
@@ -119,7 +192,8 @@ const RefinerySalePage = () => {
         header: "Invoice Date",
         accessorFn: (row) => row.invoice_date,
         sortingFn: "datetime",
-        cell: ({ row }) => formatDate(new Date(row.original.invoice_date), "dd/MM/yyyy"),
+        cell: ({ row }) =>
+          formatDate(new Date(row.original.invoice_date), "dd/MM/yyyy"),
       },
       {
         id: "purchaser_tin",
@@ -129,11 +203,12 @@ const RefinerySalePage = () => {
       {
         id: "item_details",
         header: "Item Details",
-        accessorFn: (row) => row.commodity_master.product_name,
+        accessorFn: (row) => row.item_details,
       },
       {
         accessorKey: "quantity",
         header: "Quantity",
+        cell: ({ row }) => formatQuantity(Number(row.original.quantity || 0)),
       },
       {
         id: "status",
@@ -173,7 +248,7 @@ const RefinerySalePage = () => {
   );
 
   const table = useReactTable({
-    data: saleEntries,
+    data: groupedSaleEntries,
     columns,
     state: {
       sorting,
@@ -196,7 +271,7 @@ const RefinerySalePage = () => {
       const haystack = [
         row.original.invoice_number,
         row.original.seller_tin_number.tin_number,
-        row.original.commodity_master.product_name,
+        row.original.item_details,
         row.original.refinery_status || "SALE",
       ]
         .filter(Boolean)
@@ -362,7 +437,7 @@ const RefinerySalePage = () => {
             {/* Pagination */}
             <div className="px-3 py-2 border-t bg-gray-50 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
               <div className="text-xs text-gray-600">
-                Showing {table.getRowModel().rows.length} of {table.getFilteredRowModel().rows.length} filtered rows ({saleEntries.length} total)
+                Showing {table.getRowModel().rows.length} of {table.getFilteredRowModel().rows.length} filtered rows ({groupedSaleEntries.length} total)
               </div>
               <div className="flex items-center gap-2">
                 <select

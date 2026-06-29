@@ -74,6 +74,54 @@ export async function getCurrentDvatId(): Promise<number | null> {
   }
 }
 
+export async function getCurrentRefineryId(): Promise<number | null> {
+  try {
+    const cookiesStore = await cookies();
+    const token = cookiesStore.get("auth_token")?.value;
+    if (!token) {
+      return null;
+    }
+
+    const payload: JWTPayload | null = verifyToken(token);
+    if (!payload?.userId) {
+      return null;
+    }
+
+    // Preferred path: explicit refinery context from token.
+    if (payload.refineryId) {
+      const refineryByToken = await prisma.refinery.findFirst({
+        where: {
+          id: payload.refineryId,
+          createdById: payload.userId,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+
+      if (refineryByToken) {
+        return refineryByToken.id;
+      }
+    }
+
+    // Backward compatibility for old sessions that do not carry refineryId.
+    const fallbackRefinery = await prisma.refinery.findFirst({
+      where: {
+        createdById: payload.userId,
+        deletedAt: null,
+      },
+      orderBy: {
+        id: "desc",
+      },
+      select: { id: true },
+    });
+
+    return fallbackRefinery?.id ?? null;
+  } catch (error) {
+    console.error("Error getting current refinery ID:", error);
+    return null;
+  }
+}
+
 export async function getCurrentUserRole(): Promise<string | null> {
   const user = await getCurrentUser();
   return user?.role ?? null;

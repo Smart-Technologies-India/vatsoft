@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentRefineryId, getCurrentUserId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
@@ -28,7 +28,8 @@ const UpdateRefineryDealer = async (
 
   try {
     const currentUserId = await getCurrentUserId();
-    if (!currentUserId) {
+    const currentRefineryId = await getCurrentRefineryId();
+    if (!currentUserId || !currentRefineryId) {
       return {
         status: false,
         data: null,
@@ -53,14 +54,12 @@ const UpdateRefineryDealer = async (
 
     const refinery = await prisma.refinery.findFirst({
       where: {
-        createdById: currentUserId,
+        id: currentRefineryId,
         deletedAt: null,
-      },
-      orderBy: {
-        id: "desc",
       },
       select: {
         id: true,
+        tinNumber: true,
       },
     });
 
@@ -79,6 +78,7 @@ const UpdateRefineryDealer = async (
       },
       select: {
         id: true,
+        dealerId: true,
       },
     });
 
@@ -107,39 +107,110 @@ const UpdateRefineryDealer = async (
       });
     }
 
-    const duplicate = await prisma.refinery_dealer.findFirst({
+    const targetRefineries = await prisma.refinery.findMany({
       where: {
-        refineryId: refinery.id,
-        dealerId: payload.dealerId,
         deletedAt: null,
-        NOT: {
-          id: payload.id,
-        },
+        tinNumber: refinery.tinNumber,
       },
       select: {
         id: true,
       },
     });
 
-    if (duplicate) {
-      return createResponse({
-        message: "Dealer is already mapped to this refinery.",
-        functionname,
-      });
-    }
+    const sourceDealerId = existing.dealerId;
 
-    const updated = await prisma.refinery_dealer.update({
+    await prisma.$transaction(async (tx) => {
+      for (const targetRefinery of targetRefineries) {
+        const oldRow = await tx.refinery_dealer.findFirst({
+          where: {
+            refineryId: targetRefinery.id,
+            dealerId: sourceDealerId,
+            deletedAt: null,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        const newRow = await tx.refinery_dealer.findFirst({
+          where: {
+            refineryId: targetRefinery.id,
+            dealerId: payload.dealerId,
+            deletedAt: null,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        if (oldRow) {
+          if (
+            payload.dealerId !== sourceDealerId &&
+            newRow &&
+            newRow.id !== oldRow.id
+          ) {
+            throw new Error(
+              "Dealer is already mapped to one or more refinery entries with this TIN.",
+            );
+          }
+
+          await tx.refinery_dealer.update({
+            where: {
+              id: oldRow.id,
+            },
+            data: {
+              dealerId: payload.dealerId,
+              tanker_1: sanitizeTanker(payload.tanker_1),
+              tanker_2: sanitizeTanker(payload.tanker_2),
+              tanker_3: sanitizeTanker(payload.tanker_3),
+              tanker_4: sanitizeTanker(payload.tanker_4),
+              tanker_5: sanitizeTanker(payload.tanker_5),
+              updatedById: currentUserId,
+            },
+          });
+
+          continue;
+        }
+
+        if (newRow) {
+          await tx.refinery_dealer.update({
+            where: {
+              id: newRow.id,
+            },
+            data: {
+              tanker_1: sanitizeTanker(payload.tanker_1),
+              tanker_2: sanitizeTanker(payload.tanker_2),
+              tanker_3: sanitizeTanker(payload.tanker_3),
+              tanker_4: sanitizeTanker(payload.tanker_4),
+              tanker_5: sanitizeTanker(payload.tanker_5),
+              updatedById: currentUserId,
+            },
+          });
+
+          continue;
+        }
+
+        await tx.refinery_dealer.create({
+          data: {
+            refineryId: targetRefinery.id,
+            dealerId: payload.dealerId,
+            tanker_1: sanitizeTanker(payload.tanker_1),
+            tanker_2: sanitizeTanker(payload.tanker_2),
+            tanker_3: sanitizeTanker(payload.tanker_3),
+            tanker_4: sanitizeTanker(payload.tanker_4),
+            tanker_5: sanitizeTanker(payload.tanker_5),
+            createdById: currentUserId,
+            updatedById: currentUserId,
+          },
+        });
+      }
+    });
+
+    const updated = await prisma.refinery_dealer.findFirst({
       where: {
-        id: payload.id,
-      },
-      data: {
+        refineryId: refinery.id,
         dealerId: payload.dealerId,
-        tanker_1: sanitizeTanker(payload.tanker_1),
-        tanker_2: sanitizeTanker(payload.tanker_2),
-        tanker_3: sanitizeTanker(payload.tanker_3),
-        tanker_4: sanitizeTanker(payload.tanker_4),
-        tanker_5: sanitizeTanker(payload.tanker_5),
-        updatedById: currentUserId,
+        deletedAt: null,
       },
       include: {
         dvat: {
@@ -148,10 +219,13 @@ const UpdateRefineryDealer = async (
           },
         },
       },
+      orderBy: {
+        id: "desc",
+      },
     });
 
     return createResponse({
-      message: "Refinery dealer updated successfully.",
+      message: `Refinery dealer updated for ${targetRefineries.length} refinery entr${targetRefineries.length === 1 ? "y" : "ies"} with same TIN.`,
       functionname,
       data: updated,
     });

@@ -59,6 +59,7 @@ const PayRefinerySaleTax = async (
       },
       select: {
         invoice_number: true,
+        invoice_date: true,
         refineryId: true,
         seller_tin_numberId: true,
       },
@@ -74,6 +75,7 @@ const PayRefinerySaleTax = async (
     const updated = await prisma.refinery_sale.updateMany({
       where: {
         invoice_number: targetSale.invoice_number,
+        invoice_date: targetSale.invoice_date,
         refineryId: targetSale.refineryId,
         seller_tin_numberId: targetSale.seller_tin_numberId,
         refinery_status: "SALE",

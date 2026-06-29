@@ -76,6 +76,7 @@ const GetCompletedDailyPurchaseView = async (
     const rows = await prisma.daily_purchase.findMany({
       where: {
         invoice_number: targetSale.invoice_number,
+        invoice_date: targetSale.invoice_date,
         dvat04Id: targetSale.seller_tin_numberId,
         seller_tin_numberId: refinery.tin_master_id,
         deletedAt: null,

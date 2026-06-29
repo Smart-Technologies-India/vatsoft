@@ -1383,6 +1383,8 @@ const DocumentWiseDetails = () => {
     if (successCount > 0) {
       toast.success(`${successCount} record(s) rejected.`);
       await init();
+      setIsGroupModalOpen(false);
+      setSelectedGroup(null);
     }
     if (failedCount > 0) {
       toast.error(`${failedCount} record(s) could not be rejected.`);
@@ -1419,6 +1421,11 @@ const DocumentWiseDetails = () => {
     }
 
     await init();
+
+    if (response.data.success > 0) {
+      setIsGroupModalOpen(false);
+      setSelectedGroup(null);
+    }
   };
 
   const hasPendingAcceptable = dailyPurchase.some(

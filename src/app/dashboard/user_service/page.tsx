@@ -1,9 +1,10 @@
 "use client";
 
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUser from "@/action/user/getuser";
 import DashboardCards from "@/components/dashboard/cards/dashboardcard";
-import { user } from "@prisma/client";
+import { Dvat04Commodity, user } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -12,6 +13,7 @@ const Page = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
   const [user, setUser] = useState<user>();
+  const [commodity, setCommodity] = useState<Dvat04Commodity | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -27,6 +29,11 @@ const Page = () => {
       });
       if (userresponse.status && userresponse.data) {
         setUser(userresponse.data);
+      }
+
+      const dvatResponse = await GetUserDvat04();
+      if (dvatResponse.status && dvatResponse.data) {
+        setCommodity(dvatResponse.data.commodity);
       }
     };
     init();
@@ -104,15 +111,21 @@ const Page = () => {
                 link="/dashboard/user_service/reverse_sale_invoice"
               />
               <DashboardCards
-                title="Breakage"
-                description="Report and manage breakage incidents."
+                title={commodity === "FUEL" ? "Evaporation" : "Breakage"}
+                description={
+                  commodity === "FUEL"
+                    ? "Report and manage evaporation incidents."
+                    : "Report and manage breakage incidents."
+                }
                 link="/dashboard/user_service/breakage"
               />
-              <DashboardCards
-                title="PCS to mL"
-                description="Convert PCS to mL for accurate measurements."
-                link="/dashboard/user_service/pcstoml"
-              />
+              {commodity === "RESTAURANT" && (
+                <DashboardCards
+                  title="PCS to mL"
+                  description="Convert PCS to mL for accurate measurements."
+                  link="/dashboard/user_service/pcstoml"
+                />
+              )}
               {/* <DashboardCards
                 title="My Profile"
                 description="Update and manage your personal and business profile information."

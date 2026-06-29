@@ -17,6 +17,7 @@ interface CreateRefinerySalePayload {
   commodity_master_id: number;
   price: number;
   quantity: number;
+  allow_existing_invoice?: boolean;
 }
 
 const ALLOWED_COMMODITY_IDS = [1, 2, 748, 749];
@@ -181,17 +182,20 @@ const CreateRefinerySale = async (
     const invoiceNumber =
       payload.invoice_number?.trim() || buildInvoiceNumber();
 
-    const existingInvoice = await prisma.refinery_sale.findFirst({
-      where: {
-        refineryId: refineryResponse.id,
-        invoice_number: invoiceNumber,
-        deletedAt: null,
-      },
-    });
+    const shouldAllowExistingInvoice = payload.allow_existing_invoice === true;
+    let finalInvoiceNumber = invoiceNumber;
 
-    const finalInvoiceNumber = existingInvoice
-      ? buildInvoiceNumber()
-      : invoiceNumber;
+    if (!shouldAllowExistingInvoice) {
+      const existingInvoice = await prisma.refinery_sale.findFirst({
+        where: {
+          refineryId: refineryResponse.id,
+          invoice_number: invoiceNumber,
+          deletedAt: null,
+        },
+      });
+
+      finalInvoiceNumber = existingInvoice ? buildInvoiceNumber() : invoiceNumber;
+    }
 
     const createdEntry = await prisma.refinery_sale.create({
       data: {

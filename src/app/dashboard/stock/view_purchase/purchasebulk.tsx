@@ -564,7 +564,8 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
             dvatdata?.commodity === "MANUFACTURER" ||
             dvatdata?.commodity === "WHOLESALER" ||
             dvatdata?.commodity === "OIDC" ||
-            dvatdata?.commodity === "LIQUOR"
+            dvatdata?.commodity === "LIQUOR" ||
+            dvatdata?.commodity === "RESTAURANT"
           ) {
             userCommodityType = "LIQUOR";
           } else {

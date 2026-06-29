@@ -69,6 +69,7 @@ const CreateBreakage = async (
         select: {
           id: true,
           crate_size: true,
+          pack_size: true,
         },
       });
 
@@ -78,17 +79,25 @@ const CreateBreakage = async (
 
       const dvatCommodity = String(dvatRecord.commodity ?? "");
       const isCrateBased = CRATE_BASED_COMMODITIES.has(dvatCommodity);
+      const isRestaurant = dvatCommodity === "RESTAURANT";
 
-      let quantityInPcs = Math.trunc(payload.quantity);
-      if (quantityInPcs <= 0) {
+      const enteredQuantity = Math.trunc(payload.quantity);
+      if (enteredQuantity <= 0) {
         throw new Error("Quantity must be greater than zero.");
       }
+
+      let quantityInPcs = enteredQuantity;
 
       if (isCrateBased) {
         if (!commodityRecord.crate_size || commodityRecord.crate_size <= 0) {
           throw new Error("Crate size is not configured for this commodity.");
         }
-        quantityInPcs = quantityInPcs * commodityRecord.crate_size;
+        quantityInPcs = enteredQuantity * commodityRecord.crate_size;
+      } else if (isRestaurant) {
+        if (!commodityRecord.pack_size || commodityRecord.pack_size <= 0) {
+          throw new Error("Pack size is not configured for this commodity.");
+        }
+        quantityInPcs = enteredQuantity * commodityRecord.pack_size;
       }
 
       const stockRow = await tx.stock.findFirst({

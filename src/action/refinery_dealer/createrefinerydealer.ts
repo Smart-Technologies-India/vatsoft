@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentRefineryId, getCurrentUserId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
@@ -27,7 +27,8 @@ const CreateRefineryDealer = async (
 
   try {
     const currentUserId = await getCurrentUserId();
-    if (!currentUserId) {
+    const currentRefineryId = await getCurrentRefineryId();
+    if (!currentUserId || !currentRefineryId) {
       return {
         status: false,
         data: null,
@@ -45,14 +46,12 @@ const CreateRefineryDealer = async (
 
     const refinery = await prisma.refinery.findFirst({
       where: {
-        createdById: currentUserId,
+        id: currentRefineryId,
         deletedAt: null,
-      },
-      orderBy: {
-        id: "desc",
       },
       select: {
         id: true,
+        tinNumber: true,
       },
     });
 
@@ -81,27 +80,46 @@ const CreateRefineryDealer = async (
       });
     }
 
-    const existing = await prisma.refinery_dealer.findFirst({
+    const targetRefineries = await prisma.refinery.findMany({
       where: {
-        refineryId: refinery.id,
-        dealerId: payload.dealerId,
         deletedAt: null,
+        tinNumber: refinery.tinNumber,
       },
       select: {
         id: true,
       },
     });
 
-    if (existing) {
+    const targetRefineryIds = targetRefineries.map((item) => item.id);
+
+    const existing = await prisma.refinery_dealer.findMany({
+      where: {
+        refineryId: {
+          in: targetRefineryIds,
+        },
+        dealerId: payload.dealerId,
+        deletedAt: null,
+      },
+      select: {
+        refineryId: true,
+      },
+    });
+
+    const existingRefineryIds = new Set(existing.map((item) => item.refineryId));
+    const missingRefineryIds = targetRefineryIds.filter(
+      (refineryId) => !existingRefineryIds.has(refineryId),
+    );
+
+    if (missingRefineryIds.length === 0) {
       return createResponse({
-        message: "Dealer is already mapped to this refinery.",
+        message: "Dealer is already mapped to all refinery entries with same TIN.",
         functionname,
       });
     }
 
-    const created = await prisma.refinery_dealer.create({
-      data: {
-        refineryId: refinery.id,
+    await prisma.refinery_dealer.createMany({
+      data: missingRefineryIds.map((refineryId) => ({
+        refineryId,
         dealerId: payload.dealerId,
         tanker_1: sanitizeTanker(payload.tanker_1),
         tanker_2: sanitizeTanker(payload.tanker_2),
@@ -109,6 +127,14 @@ const CreateRefineryDealer = async (
         tanker_4: sanitizeTanker(payload.tanker_4),
         tanker_5: sanitizeTanker(payload.tanker_5),
         createdById: currentUserId,
+      })),
+    });
+
+    const created = await prisma.refinery_dealer.findFirst({
+      where: {
+        refineryId: refinery.id,
+        dealerId: payload.dealerId,
+        deletedAt: null,
       },
       include: {
         dvat: {
@@ -117,10 +143,13 @@ const CreateRefineryDealer = async (
           },
         },
       },
+      orderBy: {
+        id: "desc",
+      },
     });
 
     return createResponse({
-      message: "Refinery dealer created successfully.",
+      message: `Refinery dealer created for ${missingRefineryIds.length} refinery entr${missingRefineryIds.length === 1 ? "y" : "ies"} with same TIN.`,
       functionname,
       data: created,
     });

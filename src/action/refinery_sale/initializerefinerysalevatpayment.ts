@@ -62,6 +62,7 @@ const InitializeRefinerySaleVatPayment = async (
       select: {
         id: true,
         invoice_number: true,
+        invoice_date: true,
         refineryId: true,
         seller_tin_numberId: true,
       },
@@ -77,6 +78,7 @@ const InitializeRefinerySaleVatPayment = async (
     const saleRows = await prisma.refinery_sale.findMany({
       where: {
         invoice_number: targetSale.invoice_number,
+        invoice_date: targetSale.invoice_date,
         refineryId: targetSale.refineryId,
         seller_tin_numberId: targetSale.seller_tin_numberId,
         refinery_status: "SALE",

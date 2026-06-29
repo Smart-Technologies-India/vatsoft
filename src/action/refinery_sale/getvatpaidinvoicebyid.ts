@@ -24,6 +24,27 @@ export interface VatpaidInvoiceDetail {
   rows: VatpaidInvoiceRow[];
 }
 
+const deriveWorkflowStatus = (
+  rows: VatpaidInvoiceRow[],
+): refinery_sale["refinery_status"] => {
+  const statuses = rows.map((row) => row.refinery_status || "SALE");
+
+  if (statuses.includes("COMPLETED")) {
+    return "COMPLETED";
+  }
+  if (statuses.includes("DISPATCH")) {
+    return "DISPATCH";
+  }
+  if (statuses.every((status) => status === "VATPAID")) {
+    return "VATPAID";
+  }
+  if (statuses.includes("PAID")) {
+    return "PAID";
+  }
+
+  return "SALE";
+};
+
 const GetVatpaidInvoiceById = async (
   id: number
 ): Promise<ApiResponseType<VatpaidInvoiceDetail | null>> => {
@@ -75,6 +96,7 @@ const GetVatpaidInvoiceById = async (
       where: {
         refineryId: refinery.id,
         invoice_number: targetSale.invoice_number,
+        invoice_date: targetSale.invoice_date,
         seller_tin_numberId: targetSale.seller_tin_numberId,
         deletedAt: null,
         status: "ACTIVE",
@@ -136,7 +158,7 @@ const GetVatpaidInvoiceById = async (
         invoiceDate: targetSale.invoice_date,
         buyer: targetSale.seller_tin_number,
         tankerOptions,
-        refineryStatus: targetSale.refinery_status,
+        refineryStatus: deriveWorkflowStatus(allRows),
         rows: allRows,
       },
       message: "Invoice loaded.",

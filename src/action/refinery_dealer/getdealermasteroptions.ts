@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentRefineryId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
@@ -12,14 +12,31 @@ const GetRefineryDealerOptions = async (): Promise<
   const functionname = GetRefineryDealerOptions.name;
 
   try {
-    const currentUserId = await getCurrentUserId();
-    if (!currentUserId) {
+    const currentRefineryId = await getCurrentRefineryId();
+    if (!currentRefineryId) {
       return {
         status: false,
         data: null,
         message: "Not authenticated. Please login.",
         functionname,
       } as any;
+    }
+
+    const refinery = await prisma.refinery.findFirst({
+      where: {
+        id: currentRefineryId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!refinery) {
+      return createResponse({
+        message: "No refinery profile found for this account.",
+        functionname,
+      });
     }
 
     const dealers = await prisma.dvat04.findMany({

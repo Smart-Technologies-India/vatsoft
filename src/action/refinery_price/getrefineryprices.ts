@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentRefineryId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
@@ -64,8 +64,8 @@ const GetRefineryPriceLast7Days = async (
   const functionname = GetRefineryPriceLast7Days.name;
 
   try {
-    const currentUserId = await getCurrentUserId();
-    if (!currentUserId) {
+    const currentRefineryId = await getCurrentRefineryId();
+    if (!currentRefineryId) {
       return {
         status: false,
         data: null,
@@ -77,9 +77,8 @@ const GetRefineryPriceLast7Days = async (
     const refinery = await prisma.refinery.findFirst({
       where: {
         deletedAt: null,
-        createdById: currentUserId,
+        id: currentRefineryId,
       },
-      orderBy: { id: "desc" },
       select: { id: true },
     });
 
