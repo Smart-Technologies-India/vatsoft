@@ -1445,6 +1445,11 @@ const DocumentWiseDetails = () => {
     ? filteredPurchaseSummary
     : overallPurchaseSummary;
 
+  const hidePurchaseManagementActions = useMemo(() => {
+    const commodity = String(dvatdata?.commodity ?? "");
+    return commodity === "RESTAURANT" || commodity === "LIQUOR";
+  }, [dvatdata?.commodity]);
+
   const maxSelectableMonth = useMemo(
     () => formatMonthInputValue(new Date()),
     [],
@@ -2196,28 +2201,34 @@ const DocumentWiseDetails = () => {
                             </>
                           )}
 
-                          <DownloadPurchaseSample
-                            commodity={dvatdata?.commodity ?? "OTHER"}
-                            setToolbarActionsOpen={setToolbarActionsOpen}
-                          />
+                          {!hidePurchaseManagementActions && (
+                            <DownloadPurchaseSample
+                              commodity={dvatdata?.commodity ?? "OTHER"}
+                              setToolbarActionsOpen={setToolbarActionsOpen}
+                            />
+                          )}
 
-                          <PurchaseBulk
-                            setToolbarActionsOpen={setToolbarActionsOpen}
-                            onUploadComplete={init}
-                          />
+                          {!hidePurchaseManagementActions && (
+                            <PurchaseBulk
+                              setToolbarActionsOpen={setToolbarActionsOpen}
+                              onUploadComplete={init}
+                            />
+                          )}
 
-                          <Button
-                            size="small"
-                            block
-                            type="default"
-                            loading={isBulkDeleteLoading}
-                            onClick={() => {
-                              setToolbarActionsOpen(false);
-                              openBulkDeleteModal();
-                            }}
-                          >
-                            Bulk Delete
-                          </Button>
+                          {!hidePurchaseManagementActions && (
+                            <Button
+                              size="small"
+                              block
+                              type="default"
+                              loading={isBulkDeleteLoading}
+                              onClick={() => {
+                                setToolbarActionsOpen(false);
+                                openBulkDeleteModal();
+                              }}
+                            >
+                              Bulk Delete
+                            </Button>
+                          )}
 
                           <Button
                             size="small"
@@ -2232,17 +2243,19 @@ const DocumentWiseDetails = () => {
                             Purchase Report
                           </Button>
 
-                          <Button
-                            size="small"
-                            block
-                            type="primary"
-                            onClick={() => {
-                              setToolbarActionsOpen(false);
-                              setAddBox(true);
-                            }}
-                          >
-                            Add Purchase
-                          </Button>
+                          {!hidePurchaseManagementActions && (
+                            <Button
+                              size="small"
+                              block
+                              type="primary"
+                              onClick={() => {
+                                setToolbarActionsOpen(false);
+                                setAddBox(true);
+                              }}
+                            >
+                              Add Purchase
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -191,9 +191,27 @@ const DispatchRefinerySale = async (
       dispatchRows.map((row) => [row.saleId, row.quantity]),
     );
 
-    await prisma.$transaction(
-      vatPaidRows.map((row) =>
-        prisma.refinery_sale.update({
+    await prisma.$transaction(async (tx) => {
+      for (const row of vatPaidRows) {
+        const dispatchQuantity = quantityBySaleId.get(row.id) || row.quantity;
+
+        const oldStockAggregate = await tx.refinery_sale.aggregate({
+          _sum: {
+            quantity: true,
+          },
+          where: {
+            refineryId: refinery.id,
+            commodity_masterId: row.commodity_masterId,
+            refinery_status: "VATPAID",
+            status: "ACTIVE",
+            deletedAt: null,
+          },
+        });
+
+        const oldStock = Number(oldStockAggregate._sum.quantity || 0);
+        const oldStockAfter = Math.max(0, oldStock - Number(row.quantity || 0));
+
+        const updatedSale = await tx.refinery_sale.update({
           where: {
             id: row.id,
           },
@@ -204,11 +222,33 @@ const DispatchRefinerySale = async (
             vehicle_number: payload.vehicle_number,
             updatedById: currentUserId,
             updatedAt: new Date(),
-            quantity: quantityBySaleId.get(row.id) || row.quantity,
+            quantity: dispatchQuantity,
           },
-        }),
-      ),
-    );
+        });
+
+        await tx.refinery_sale_change_log.create({
+          data: {
+            refinery_sale_id: row.id,
+            old_refinery_id: refinery.id,
+            new_refinery_id: refinery.id,
+            old_stock: oldStock,
+            new_stock: oldStock,
+            old_stock_after: oldStockAfter,
+            new_stock_after: oldStockAfter,
+            commodity_master_id: row.commodity_masterId,
+            seller_tin_number_id: row.seller_tin_numberId,
+            invoice_number: row.invoice_number,
+            invoice_date: row.invoice_date,
+            quantity: Number(dispatchQuantity || 0),
+            amount_unit: row.amount_unit,
+            refinery_status_before: row.refinery_status,
+            refinery_status_after: updatedSale.refinery_status,
+            change_source: "DISPATCH_STOCK_CHANGE",
+            createdById: currentUserId,
+          },
+        });
+      }
+    });
 
     const taxRate = 2; // CST tax rate in percentage
 

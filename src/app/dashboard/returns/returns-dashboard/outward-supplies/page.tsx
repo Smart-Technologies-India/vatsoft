@@ -335,7 +335,7 @@ const GSTR = () => {
 
     const year: number = parseInt(searchParams.get("year")!);
     const month: string = searchParams.get("month")!;
-    const day = 11;
+    const day = 28;
 
     return formateDate(new Date(year, monthNames.indexOf(month) + 1, day));
   };

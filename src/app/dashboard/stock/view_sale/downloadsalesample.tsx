@@ -12,7 +12,9 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
 
   const downloadBulkTemplate = async () => {
     const commodityType = commodity;
-    const isManufacturerCommodity = commodityType === "MANUFACTURER" || commodityType === "WHOLESALER";
+    const isManufacturerCommodity =
+      commodityType === "MANUFACTURER" || commodityType === "WHOLESALER";
+    const isRestaurantCommodity = commodityType === "RESTAURANT";
 
     let commodityMasterData: commodity_master[] = [];
     const commodityResponse = await AllCommodityMaster({});
@@ -91,6 +93,24 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
         };
       }
 
+      if (commodityType === "RESTAURANT") {
+        if (rowVariant === 1) {
+          return {
+            "Pcs/mL": "true",
+          };
+        }
+
+        if (rowVariant === 2) {
+          return {
+            "Pcs/mL": "false",
+          };
+        }
+
+        return {
+          "Pcs/mL": "true",
+        };
+      }
+
       return {};
     };
 
@@ -161,6 +181,15 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
                   "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
               },
             ]
+          : commodityType === "RESTAURANT"
+            ? [
+                {
+                  Field: "Pcs/mL",
+                  "What to fill": "true/false or ml/pcs or 1/0",
+                  Rules:
+                    "Accepted values: true, false, ml, pcs, 1, 0. true/ml/1 = mL quantity (taken as-is). false/pcs/0 = pcs quantity (system multiplies by commodity pack size).",
+                },
+              ]
           : [];
 
     const rows = [
@@ -232,6 +261,16 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
           ? "Enter crates only. System will automatically convert crates to pieces using commodity crate size."
           : "Enter pieces only (not crate, not words like twenty four).",
       },
+      ...(isRestaurantCommodity
+        ? [
+            {
+              Field: "Pcs/mL",
+              "What to fill": "true/false or ml/pcs or 1/0",
+              Rules:
+                "For RESTAURANT accepted values are true, false, ml, pcs, 1, 0. true/ml/1 means quantity is mL (1:1 stock deduction). false/pcs/0 means quantity is pcs (deduction = quantity x pack size).",
+            },
+          ]
+        : []),
       {
         Field: "Total Invoice Value",
         "What to fill": "Item-wise amount inclusive of VAT",

@@ -192,6 +192,35 @@ const ConvertDvat31 = async (
     const totalRows = data_to_create.length;
     const totalChunks = Math.ceil(totalRows / chunkSize);
 
+    const sellerDvat = await prisma.dvat04.findFirst({
+      where: {
+        id: payload.dvatid,
+        deletedAt: null,
+        deletedById: null,
+      },
+      select: {
+        tinNumber: true,
+      },
+    });
+
+    const stateRows = await prisma.state.findMany({
+      where: {
+        deletedAt: null,
+        status: Status.ACTIVE,
+      },
+      select: {
+        id: true,
+        code: true,
+      },
+    });
+
+    const stateCodeToId = new Map<string, number>();
+    for (const state of stateRows) {
+      stateCodeToId.set(String(state.code).trim(), state.id);
+    }
+
+    const ownTinStateCode = sellerDvat?.tinNumber?.substring(0, 2) ?? "";
+
     for (let start = 0; start < totalRows; start += chunkSize) {
       const chunkRows = data_to_create.slice(start, start + chunkSize);
 
@@ -203,49 +232,58 @@ const ConvertDvat31 = async (
                 seller_tin_number: tin_number_master;
                 commodity_master: commodity_master;
               },
-            ) => ({
-              returns_01Id: returnInvoice.id,
-              dvat_type: val.is_local ? DvatType.DVAT_31 : DvatType.DVAT_31_A,
-              status: Status.ACTIVE,
-              createdById: payload.createdById,
-              urn_number: nanoid(),
-              invoice_date: val.invoice_date,
-              invoice_number: val.invoice_number,
-              seller_tin_numberId: val.seller_tin_numberId,
-              category_of_entry: CategoryOfEntry.INVOICE,
-              total_invoice_number: (
-                parseFloat(val.amount) + parseFloat(val.vatamount)
-              ).toFixed(2),
-              commodity_masterId: val.commodity_masterId,
-              ...(val.is_local && {
-                sale_of: SaleOf.GOODS_TAXABLE,
-                place_of_supply: 26,
-              }),
-              ...(!val.is_local && {
-                sale_of_interstate: val.is_against_cform
-                  ? SaleOfInterstate.FORMC
-                  : val.is_against_fform
-                    ? SaleOfInterstate.FORMF
-                    : val.is_export
-                      ? SaleOfInterstate.EXPORT_OUTOF_INDIA
-                      : val.is_h_export
-                        ? SaleOfInterstate.FORMH
-                        : val.is_against_iform
-                          ? SaleOfInterstate.FORMI
-                          : val.is_against_e1
-                            ? SaleOfInterstate.EXEMPT_US6
-                            : SaleOfInterstate.TAXABLE_SALE,
-                place_of_supply: parseInt(
-                  val.seller_tin_number.tin_number.substring(0, 2),
-                ),
-              }),
-              tax_percent: val.tax_percent,
-              amount: parseFloat(val.amount).toFixed(2),
-              vatamount: parseFloat(val.vatamount).toFixed(2),
-              quantity: val.quantity,
-              remarks: "",
-              description_of_goods: val.commodity_master.product_name,
-            }),
+            ) => {
+              const sellerTinCode =
+                val.seller_tin_number.tin_number?.substring(0, 2) ?? "";
+
+              const placeOfSupplyId = val.is_local
+                ? stateCodeToId.get(ownTinStateCode) ??
+                  stateCodeToId.get(sellerTinCode) ??
+                  null
+                : stateCodeToId.get(sellerTinCode) ?? null;
+
+              return {
+                returns_01Id: returnInvoice.id,
+                dvat_type: val.is_local ? DvatType.DVAT_31 : DvatType.DVAT_31_A,
+                status: Status.ACTIVE,
+                createdById: payload.createdById,
+                urn_number: nanoid(),
+                invoice_date: val.invoice_date,
+                invoice_number: val.invoice_number,
+                seller_tin_numberId: val.seller_tin_numberId,
+                category_of_entry: CategoryOfEntry.INVOICE,
+                total_invoice_number: (
+                  parseFloat(val.amount) + parseFloat(val.vatamount)
+                ).toFixed(2),
+                commodity_masterId: val.commodity_masterId,
+                ...(val.is_local && {
+                  sale_of: SaleOf.GOODS_TAXABLE,
+                  place_of_supply: placeOfSupplyId,
+                }),
+                ...(!val.is_local && {
+                  sale_of_interstate: val.is_against_cform
+                    ? SaleOfInterstate.FORMC
+                    : val.is_against_fform
+                      ? SaleOfInterstate.FORMF
+                      : val.is_export
+                        ? SaleOfInterstate.EXPORT_OUTOF_INDIA
+                        : val.is_h_export
+                          ? SaleOfInterstate.FORMH
+                          : val.is_against_iform
+                            ? SaleOfInterstate.FORMI
+                            : val.is_against_e1
+                              ? SaleOfInterstate.EXEMPT_US6
+                              : SaleOfInterstate.TAXABLE_SALE,
+                  place_of_supply: placeOfSupplyId,
+                }),
+                tax_percent: val.tax_percent,
+                amount: parseFloat(val.amount).toFixed(2),
+                vatamount: parseFloat(val.vatamount).toFixed(2),
+                quantity: val.quantity,
+                remarks: "",
+                description_of_goods: val.commodity_master.product_name,
+              };
+            },
           ),
         });
 
@@ -278,6 +316,7 @@ const ConvertDvat31 = async (
       data: returnInvoice,
     });
   } catch (e) {
+    console.error(`Error in ${functionname}:`, e);
     return createResponse({
       message: errorToString(e),
       functionname,

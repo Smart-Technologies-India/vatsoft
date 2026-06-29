@@ -168,6 +168,7 @@ model user {
   refinery_price_createdBy refinery_price[] @relation("refinery_price_createdBy")
   refinery_price_updatedBy refinery_price[] @relation("refinery_price_updatedBy")
   refinery_price_deletedBy refinery_price[] @relation("refinery_price_deletedBy")
+  refinery_sale_change_logs refinery_sale_change_log[] @relation("refinery_sale_change_logs_createdBy")
 
   refinery_dealer_createdBy refinery_dealer[] @relation("refinery_dealer_createdBy")
   refinery_dealer_updatedBy refinery_dealer[] @relation("refinery_dealer_updatedBy")
@@ -563,6 +564,7 @@ model tin_number_master {
   tally_sale     tally_sale[]
   refineries     refinery[]
   refinerySales  refinery_sale[]
+  refinerySaleChangeLogs refinery_sale_change_log[]
 }
 
 model returns_01 {
@@ -966,6 +968,7 @@ model commodity_master {
   tally_sale                   tally_sale[]
   refinerySales                refinery_sale[]
   refineryPrices               refinery_price[]
+  refinerySaleChangeLogs       refinery_sale_change_log[]
 
   @@index([createdById], map: "commodity_master_createdById_fkey")
   @@index([deletedById], map: "commodity_master_deletedById_fkey")
@@ -1688,6 +1691,8 @@ model refinery {
   refinerySales   refinery_sale[]
   refineryPrices  refinery_price[]
   refineryDealers refinery_dealer[]
+  refinerySaleChangesFrom refinery_sale_change_log[] @relation("refinery_sale_change_log_old_refinery")
+  refinerySaleChangesTo   refinery_sale_change_log[] @relation("refinery_sale_change_log_new_refinery")
 
   @@index([createdById], map: "refinery_createdById_fkey")
 }
@@ -1759,6 +1764,43 @@ model refinery_sale {
   refinery            refinery          @relation(fields: [refineryId], references: [id])
   seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
   updatedBy           user?             @relation("refinery_sale_updatedBy", fields: [updatedById], references: [id])
+  refinerySaleChangeLogs refinery_sale_change_log[]
+}
+
+model refinery_sale_change_log {
+  id                    Int               @id @default(autoincrement())
+  refinery_sale_id      Int
+  old_refinery_id       Int
+  new_refinery_id       Int
+  old_stock             Int
+  new_stock             Int
+  old_stock_after       Int
+  new_stock_after       Int
+  commodity_master_id   Int
+  seller_tin_number_id  Int
+  invoice_number        String
+  invoice_date          DateTime
+  quantity              Int
+  amount_unit           String
+  refinery_status_before RefineryStatus?
+  refinery_status_after  RefineryStatus?
+  change_source         String            @default("MANUAL_SWITCH")
+  change_note           String?
+  createdAt             DateTime          @default(now())
+  createdById           Int?
+  refinerySale          refinery_sale     @relation(fields: [refinery_sale_id], references: [id])
+  oldRefinery           refinery          @relation("refinery_sale_change_log_old_refinery", fields: [old_refinery_id], references: [id])
+  newRefinery           refinery          @relation("refinery_sale_change_log_new_refinery", fields: [new_refinery_id], references: [id])
+  commodityMaster       commodity_master  @relation(fields: [commodity_master_id], references: [id])
+  sellerTinNumber       tin_number_master @relation(fields: [seller_tin_number_id], references: [id])
+  createdBy             user?             @relation("refinery_sale_change_logs_createdBy", fields: [createdById], references: [id])
+
+  @@index([refinery_sale_id], map: "refinery_sale_change_log_refinery_sale_id_fkey")
+  @@index([old_refinery_id], map: "refinery_sale_change_log_old_refinery_id_fkey")
+  @@index([new_refinery_id], map: "refinery_sale_change_log_new_refinery_id_fkey")
+  @@index([commodity_master_id], map: "refinery_sale_change_log_commodity_master_id_fkey")
+  @@index([seller_tin_number_id], map: "refinery_sale_change_log_seller_tin_number_id_fkey")
+  @@index([createdById], map: "refinery_sale_change_log_createdById_fkey")
 }
 
 model refinery_price {

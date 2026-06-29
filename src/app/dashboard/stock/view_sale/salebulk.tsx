@@ -45,6 +45,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     item_code: number;
     quantity: number; // Always in pieces for database storage
     quantity_in_crates: number | null; // Original crate quantity (for MANUFACTURER/WHOLESALER)
+    pcs_ml: boolean | null; // RESTAURANT only: true = mL, false = pcs
     total_invoice_value: number;
     sale_type: string;
     against_cfrom: boolean;
@@ -59,6 +60,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     tax_percent: string | null;
     mrp: string | null;
     crate_size: number | null;
+    pack_size: number | null;
     error: boolean;
     errorname: string;
   }
@@ -227,8 +229,8 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
     const normalized = normalizeText(value).toLowerCase();
     if (["na", "n/a", "nil", ""].includes(normalized)) return null;
-    if (["true", "yes", "y", "1"].includes(normalized)) return true;
-    if (["false", "no", "n", "0"].includes(normalized)) return false;
+    if (["true", "yes", "y", "1", "ml"].includes(normalized)) return true;
+    if (["false", "no", "n", "0", "pcs"].includes(normalized)) return false;
     return null;
   };
 
@@ -522,6 +524,9 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               "total_invoice_value",
             ]),
           ),
+          normalizeText(
+            readSheetField(row, ["Pcs/mL", "pcs/ml", "pcs_ml"]),
+          ),
         ].join("|");
 
         groupedData[key] = (groupedData[key] ?? 0) + 1;
@@ -639,6 +644,11 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             "sale type",
             "sale_type",
           ]);
+          const pcs_ml_raw = readSheetField(row, [
+            "Pcs/mL",
+            "pcs/ml",
+            "pcs_ml",
+          ]);
 
           const isAllNull =
             tin_number === "" &&
@@ -647,6 +657,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             normalizeText(item_code_raw) === "" &&
             normalizeText(quantity_raw) === "" &&
             normalizeText(total_invoice_value_raw) === "" &&
+            normalizeText(pcs_ml_raw) === "" &&
             normalizeText(against_cfrom_raw) === "" &&
             normalizeText(is_against_fform_raw) === "" &&
             normalizeText(is_exempt_raw) === "" &&
@@ -781,6 +792,14 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                 ? 0
                 : null;
 
+          const parsedPcsMl = parseBooleanValue(pcs_ml_raw);
+
+          if (commodityType === "RESTAURANT" && parsedPcsMl == null) {
+            errors.push(
+              "* Pcs/mL must be true/false/ml/pcs/1/0 (true|ml|1 = mL, false|pcs|0 = pcs)",
+            );
+          }
+
           if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
             errors.push(
               isCrateCommodity
@@ -808,9 +827,29 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                 (selectedCommodity.crate_size > 0
                   ? selectedCommodity.crate_size
                   : 1)
+              : selectedCommodity &&
+                  commodityType === "RESTAURANT" &&
+                  Number.isFinite(parsedQuantity)
+                ? parsedPcsMl === true
+                  ? parsedQuantity
+                  : parsedPcsMl === false
+                    ? parsedQuantity *
+                      (Number(selectedCommodity.pack_size) > 0
+                        ? Number(selectedCommodity.pack_size)
+                        : 1)
+                    : 0
               : Number.isFinite(parsedQuantity)
                 ? parsedQuantity
                 : 0;
+
+          if (
+            commodityType === "RESTAURANT" &&
+            parsedPcsMl === false &&
+            selectedCommodity &&
+            Number(selectedCommodity.pack_size) <= 0
+          ) {
+            errors.push("* Pack size is not configured for selected item code");
+          }
 
           const total_invoice_value = parseExcelNumber(total_invoice_value_raw);
           if (
@@ -1017,12 +1056,25 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               selectedCommodity.crate_size > 0
                 ? selectedCommodity.crate_size
                 : 1;
-            const minUnitPrice = mrp / crateSize;
-            const pricePerUnit = total_invoice_value / normalizedQuantity;
+            const packSize =
+              Number(selectedCommodity.pack_size) > 0
+                ? Number(selectedCommodity.pack_size)
+                : 1;
+
+            const comparisonQuantity =
+              commodityType === "RESTAURANT"
+                ? normalizedQuantity / packSize
+                : normalizedQuantity;
+
+            const minUnitPrice =
+             mrp / crateSize;
+            const pricePerUnit = total_invoice_value / comparisonQuantity;
 
             if (
               Number.isFinite(mrp) &&
               Number.isFinite(minUnitPrice) &&
+              Number.isFinite(comparisonQuantity) &&
+              comparisonQuantity > 0 &&
               pricePerUnit <
                 (isManufacturerBulkUpload
                   ? minUnitPrice * 0.25
@@ -1052,6 +1104,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               ? normalizedQuantity
               : 0,
             quantity_in_crates: quantityInCrates,
+            pcs_ml: commodityType === "RESTAURANT" ? parsedPcsMl : null,
             total_invoice_value: Number.isFinite(total_invoice_value)
               ? total_invoice_value
               : 0,
@@ -1069,6 +1122,9 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             mrp: selectedCommodity?.mrp ?? null,
             crate_size: selectedCommodity?.crate_size
               ? Number(selectedCommodity.crate_size)
+              : null,
+            pack_size: selectedCommodity?.pack_size
+              ? Number(selectedCommodity.pack_size)
               : null,
             error: errors.length > 0,
             errorname: errors.join("\n"),
@@ -1111,9 +1167,13 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         }
       }
 
-      // Cross-row check: stock availability per item_code
-      // Manufacturer-style uploads should bypass stock validation.
-      if (dvatdata && !isManufacturerBulkUpload) {
+      // Cross-row check: stock availability per item_code.
+      // Manufacturer-style uploads and special DVAT IDs should bypass stock validation.
+      if (
+        dvatdata &&
+        !isManufacturerBulkUpload &&
+        !manufacturerBulkUploadDvatIds.has(dvatdata.id)
+      ) {
         const stockResponse = await GetAllStock({
           dvatid: dvatdata.id,
           take: 10000,
@@ -1210,6 +1270,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           item.row.quantity?.toString(),
           item.row.total_invoice_value?.toString(),
           item.row.sale_type,
+          item.row.pcs_ml === null ? "" : item.row.pcs_ml ? "true" : "false",
           item.row.against_cfrom ? "true" : "false",
           item.row.is_against_fform ? "true" : "false",
           item.row.is_against_e1 ? "true" : "false",
@@ -1302,6 +1363,8 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     dvatdata?.commodity === "MANUFACTURER" ||
     dvatdata?.commodity === "WHOLESALER"
       ? 13
+      : dvatdata?.commodity === "RESTAURANT"
+        ? 12
       : 11;
 
   return (
@@ -1414,6 +1477,11 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                     Quantity (Pieces)
                   </TableHead>
                 </>
+              ) : dvatdata?.commodity === "RESTAURANT" ? (
+                <>
+                  <TableHead className="border text-center">Quantity</TableHead>
+                  <TableHead className="border text-center">Pcs/mL</TableHead>
+                </>
               ) : (
                 <TableHead className="border text-center">Quantity</TableHead>
               )}
@@ -1474,6 +1542,15 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                         </TableCell>
                         <TableCell className="p-2 border text-center">
                           {val.quantity}
+                        </TableCell>
+                      </>
+                    ) : dvatdata?.commodity === "RESTAURANT" ? (
+                      <>
+                        <TableCell className="p-2 border text-center">
+                          {val.quantity}
+                        </TableCell>
+                        <TableCell className="p-2 border text-center">
+                          {val.pcs_ml === null ? "-" : val.pcs_ml ? "true" : "false"}
                         </TableCell>
                       </>
                     ) : (
