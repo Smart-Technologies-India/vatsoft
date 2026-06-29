@@ -94,10 +94,11 @@ const CreateBreakage = async (
         }
         quantityInPcs = enteredQuantity * commodityRecord.crate_size;
       } else if (isRestaurant) {
-        if (!commodityRecord.pack_size || commodityRecord.pack_size <= 0) {
+        const packSize = Number.parseFloat(String(commodityRecord.pack_size || ""));
+        if (!Number.isFinite(packSize) || packSize <= 0) {
           throw new Error("Pack size is not configured for this commodity.");
         }
-        quantityInPcs = enteredQuantity * commodityRecord.pack_size;
+        quantityInPcs = enteredQuantity * packSize;
       }
 
       const stockRow = await tx.stock.findFirst({

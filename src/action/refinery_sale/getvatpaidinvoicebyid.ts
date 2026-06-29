@@ -38,15 +38,12 @@ const deriveWorkflowStatus = (
   if (statuses.every((status) => status === "VATPAID")) {
     return "VATPAID";
   }
-  if (statuses.includes("PAID")) {
-    return "PAID";
-  }
 
   return "SALE";
 };
 
 const GetVatpaidInvoiceById = async (
-  id: number
+  id: number,
 ): Promise<ApiResponseType<VatpaidInvoiceDetail | null>> => {
   const functionname = GetVatpaidInvoiceById.name;
 
