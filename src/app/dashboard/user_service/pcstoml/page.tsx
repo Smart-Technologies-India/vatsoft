@@ -49,6 +49,7 @@ import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import CreateMultiDailyPurchase from "@/action/stock/createmultidailypurchase";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import UpdateStockQuantityFromSheet from "@/action/stock/updatestockquantityfromsheet";
+import GetPendingAcceptStatus from "@/action/stock/getpendingacceptstatus";
 
 type StockRow = stock & { commodity_master: commodity_master };
 
@@ -496,8 +497,24 @@ const CommodityMaster = () => {
     setIsDownloadWarningOpen(true);
   };
 
-  const confirmDownloadStockAsXlsx = () => {
+  const confirmDownloadStockAsXlsx = async () => {
     setIsDownloadWarningOpen(false);
+
+    const pendingStatusResponse = await GetPendingAcceptStatus();
+    if (!pendingStatusResponse.status || !pendingStatusResponse.data) {
+      toast.error(
+        pendingStatusResponse.message ||
+          "Unable to validate pending invoices before download.",
+      );
+      return;
+    }
+
+    if (pendingStatusResponse.data.hasPending) {
+      toast.error(
+        `Please accept pending invoices before download. Pending Purchase: ${pendingStatusResponse.data.pendingPurchaseCount}, Pending Sale: ${pendingStatusResponse.data.pendingSaleCount}.`,
+      );
+      return;
+    }
 
     if (!filteredStocks || filteredStocks.length === 0) {
       toast.error("No data to download");
@@ -1003,13 +1020,13 @@ const CommodityMaster = () => {
                   Download Stock
                 </Button>
 
-                <Button
+                {/* <Button
                   size="small"
                   type="default"
                   onClick={() => stockSheetRef.current?.click()}
                 >
                   Upload Updated Stock
-                </Button>
+                </Button> */}
 
                 <div className="hidden">
                   <input

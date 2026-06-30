@@ -220,6 +220,8 @@ const CommodityMaster = () => {
     return stocks.filter((val) => val.quantity !== 0);
   }, [stockFilter, stocks]);
 
+  const isRestaurantCommodity = String(dvatdata?.commodity) === "RESTAURANT";
+
   const columns = useMemo<ColumnDef<StockRow>[]>(
     () => [
       {
@@ -261,6 +263,30 @@ const CommodityMaster = () => {
                 row.original.commodity_master.crate_size,
               ),
       },
+      ...(isRestaurantCommodity
+        ? [
+            {
+              id: "ml",
+              header: "mL",
+              accessorFn: (row: StockRow) => {
+                const packSize = Number(row.commodity_master.pack_size);
+                if (!Number.isFinite(packSize) || packSize <= 0) {
+                  return null;
+                }
+                return Number(row.quantity) * packSize;
+              },
+              cell: ({ row }: { row: { original: StockRow } }) => {
+                const packSize = Number(
+                  row.original.commodity_master.pack_size,
+                );
+                if (!Number.isFinite(packSize) || packSize <= 0) {
+                  return "-";
+                }
+                return Number(row.original.quantity) * packSize;
+              },
+            } as ColumnDef<StockRow>,
+          ]
+        : []),
       {
         id: "description",
         accessorFn: (row) => row.commodity_master.description || "-",
@@ -268,7 +294,7 @@ const CommodityMaster = () => {
         cell: ({ row }) => row.original.commodity_master.description || "-",
       },
     ],
-    [dvatdata?.commodity, quantityCount],
+    [dvatdata?.commodity, isRestaurantCommodity, quantityCount],
   );
 
   const table = useReactTable({

@@ -125,7 +125,7 @@ const InitializeRefinerySaleVatPayment = async (
         latefees: "0",
         others: "0",
         total_tax_amount: vatAmount,
-        reason: "DEMAND",
+        reason: "MONTHLYPAYMENT",
         remark: challanRemark,
         paymentmode: "ONLINE",
         paymentstatus: "CREATED",

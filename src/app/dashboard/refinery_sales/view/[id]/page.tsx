@@ -311,14 +311,14 @@ const RefinerySaleInvoiceViewPage = () => {
             >
               Pay VAT
             </Button>
-            <Button
+            {/* <Button
               type="primary"
               onClick={handledemoPayTax}
               loading={isPayingTax}
               disabled={!hasSaleStatus}
             >
               Pay VAT (Demo)
-            </Button>
+            </Button> */}
             {!hasSaleStatus && (
               <span className="text-xs text-gray-600">
                 Tax is already paid for this invoice.
