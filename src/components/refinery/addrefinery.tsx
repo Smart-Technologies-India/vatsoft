@@ -8,7 +8,7 @@ import { MultiSelect } from "@/components/forms/inputfields/multiselect";
 import { TaxtInput } from "@/components/forms/inputfields/textinput";
 import { commodity_master, refinery } from "@prisma/client";
 import { Button, Drawer, Radio } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FormProvider,
   useFieldArray,
@@ -109,25 +109,25 @@ const AddRefinery = ({ open, onClose, onCreated }: AddRefineryProps) => {
       return undefined;
     }
 
-    return purchaserOptions.find((item) => item.tinNumber === purchaserTin);
+    const selectedRefineryId = Number.parseInt(purchaserTin, 10);
+    if (!Number.isInteger(selectedRefineryId)) {
+      return undefined;
+    }
+
+    return purchaserOptions.find((item) => item.id === selectedRefineryId);
   }, [purchaserOptions, purchaserTin]);
 
   const purchaserSelectOptions = useMemo(() => {
-    const uniqueByTin = new Map<string, { value: string; label: string }>();
+    return purchaserOptions
+      .filter((refinery) => Number.isInteger(refinery.id))
+      .map((refinery) => {
+        const tin = refinery.tinNumber?.trim() || "No TIN";
 
-    purchaserOptions.forEach((refinery) => {
-      const tin = refinery.tinNumber?.trim();
-      if (!tin || uniqueByTin.has(tin)) {
-        return;
-      }
-
-      uniqueByTin.set(tin, {
-        value: tin,
-        label: `${refinery.tradename || refinery.name || "Refinery"} - ${tin}`,
+        return {
+          value: refinery.id.toString(),
+          label: `${refinery.tradename || refinery.name || "Refinery"} - ${tin} (ID: ${refinery.id})`,
+        };
       });
-    });
-
-    return Array.from(uniqueByTin.values());
   }, [purchaserOptions]);
 
   const lineCalculations = useMemo(() => {
@@ -189,7 +189,7 @@ const AddRefinery = ({ open, onClose, onCreated }: AddRefineryProps) => {
     );
   }, [lineCalculations]);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     reset({
       entryMode: "single",
       purchaserTin: undefined,
@@ -203,7 +203,7 @@ const AddRefinery = ({ open, onClose, onCreated }: AddRefineryProps) => {
         },
       ],
     });
-  };
+  }, [reset]);
 
   const handleClose = () => {
     onClose();
@@ -236,7 +236,7 @@ const AddRefinery = ({ open, onClose, onCreated }: AddRefineryProps) => {
       resetForm();
       void loadDrawerData();
     }
-  }, [open, reset]);
+  }, [open, resetForm]);
 
   useEffect(() => {
     if (entryMode !== "single") {
@@ -321,7 +321,18 @@ const AddRefinery = ({ open, onClose, onCreated }: AddRefineryProps) => {
 
   const handleCreateSale = async (data: RefinerySaleFormValues) => {
     if (!data.purchaserTin) {
-      toast.error("Please select purchaser TIN number.");
+      toast.error("Please select purchaser refinery.");
+      return;
+    }
+
+    const selectedPurchaserRefineryId = Number.parseInt(data.purchaserTin, 10);
+    const selectedPurchaserRefinery = purchaserOptions.find(
+      (item) => item.id === selectedPurchaserRefineryId,
+    );
+    const selectedPurchaserTin = selectedPurchaserRefinery?.tinNumber?.trim();
+
+    if (!selectedPurchaserRefinery || !selectedPurchaserTin) {
+      toast.error("Selected purchaser refinery has no valid TIN number.");
       return;
     }
 
@@ -424,7 +435,7 @@ const AddRefinery = ({ open, onClose, onCreated }: AddRefineryProps) => {
       for (let index = 0; index < normalizedEntries.length; index += 1) {
         const entry = normalizedEntries[index];
         const response = await CreateRefinerySale({
-          purchaser_tin_number: data.purchaserTin,
+          purchaser_tin_number: selectedPurchaserTin,
           invoice_number: data.invoiceNumber,
           invoice_date: parsedInvoiceDate,
           commodity_master_id: entry.commodityMasterId,
