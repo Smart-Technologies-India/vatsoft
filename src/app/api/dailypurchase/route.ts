@@ -28,17 +28,23 @@ export async function POST(req: NextRequest) {
     if (datalength === 0) {
       return NextResponse.json(
         { status: false, error: "No data provided." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const createUrn = customAlphabet("1234567890abcdefghijklmnopqrstunvxyz", 12);
+    const createUrn = customAlphabet(
+      "1234567890abcdefghijklmnopqrstunvxyz",
+      12,
+    );
     const CHUNK_SIZE = 10;
     const transactionOptions = { timeout: 30000, maxWait: 10000 } as const;
 
     const tinCache = new Map<string, { id: number }>();
     const dvatCache = new Map<string, { id: number; createdById: number }>();
-    const commodityCache = new Map<number, { id: number; crate_size: number; taxable_at: string }>();
+    const commodityCache = new Map<
+      number,
+      { id: number; crate_size: number; taxable_at: string }
+    >();
 
     let createdCount = 0;
 
@@ -60,7 +66,7 @@ export async function POST(req: NextRequest) {
 
             if (!tinResponse) {
               throw new Error(
-                `TIN number not found for ${data.CustomerTINNo} for voucher no ${data.VchNum}.`
+                `TIN number not found for ${data.CustomerTINNo} for voucher no ${data.VchNum}.`,
               );
             }
 
@@ -77,7 +83,7 @@ export async function POST(req: NextRequest) {
 
             if (!dvatResponse) {
               throw new Error(
-                `DVAT 04 record not found for ${data.SupplierTIN} for voucher no ${data.VchNum}.`
+                `DVAT 04 record not found for ${data.SupplierTIN} for voucher no ${data.VchNum}.`,
               );
             }
 
@@ -106,7 +112,7 @@ export async function POST(req: NextRequest) {
 
               if (!commodityResponse) {
                 throw new Error(
-                  `Commodity master not found for ${item.MasterID} for voucher no ${data.VchNum}.`
+                  `Commodity master not found for ${item.MasterID} for voucher no ${data.VchNum}.`,
                 );
               }
 
@@ -137,7 +143,7 @@ export async function POST(req: NextRequest) {
 
             if (existingEntry) {
               throw new Error(
-                `Entry already exists for ${data.CustomerTINNo} with invoice number ${data.VchNum} and batch ${item.BatchName}.`
+                `Entry already exists for ${data.CustomerTINNo} with invoice number ${data.VchNum} and batch ${item.BatchName}.`,
               );
             }
 
@@ -152,7 +158,7 @@ export async function POST(req: NextRequest) {
                 seller_tin_numberId: tin.id,
                 quantity,
                 tax_percent: commodity.taxable_at,
-                amount_unit: ((testAmount * 1.2) / commodity.crate_size).toFixed(2),
+                amount_unit: ((testAmount * 1.2) / quantity).toFixed(2),
                 amount: testAmount.toFixed(2),
                 vatamount: (testAmount * 0.2).toFixed(2),
                 batch_name: item.BatchName,
@@ -184,7 +190,7 @@ export async function POST(req: NextRequest) {
           created: createdCount,
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     return NextResponse.json(
@@ -192,7 +198,7 @@ export async function POST(req: NextRequest) {
         status: false,
         error: "Failed to process request. error: " + error.message,
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 }

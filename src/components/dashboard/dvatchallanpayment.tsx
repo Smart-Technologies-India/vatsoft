@@ -19,6 +19,7 @@ import {
   getDaysBetweenDates,
   isNegative,
 } from "@/utils/methods";
+
 import {
   CategoryOfEntry,
   challan,
@@ -1201,7 +1202,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                 <TableCell className="text-center p-2 border ">
                   {return01?.dvat04?.compositionScheme
                     ? getVatAmountcomp().toFixed(0)
-                    : remaingVat.toFixed(0)}
+                    : Math.ceil(remaingVat)}
                   {/* {getVatAmount().toFixed(0)}- {getVatAmountcomp().toFixed(0)}-{" "}
                   {return01?.dvat04?.compositionScheme?"1":"0"} */}
                 </TableCell>

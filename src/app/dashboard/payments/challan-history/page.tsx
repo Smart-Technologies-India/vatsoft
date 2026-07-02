@@ -14,8 +14,11 @@ import { Radio, DatePicker } from "antd";
 import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
-import { challan, dvat04 } from "@prisma/client";
-import GetUserChallan from "@/action/challan/getuserchallan";
+import { dvat04 } from "@prisma/client";
+import GetUserChallan, {
+  type UserChallanWithReturn,
+} from "@/action/challan/getuserchallan";
+import UpdateChallanStatus from "@/action/challan/updatechallanstatus";
 import { encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -29,6 +32,9 @@ const ChallanHistory = () => {
   const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
+  const [processingId, setProcessingId] = useState<number | null>(null);
+
+  const successGatewayStatus = ["Successful", "Success", "Shipped"];
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -66,8 +72,19 @@ const ChallanHistory = () => {
     setSearchDate(dates);
   };
 
-  const [challanData, setChallanData] = useState<challan[]>([]);
+  const [challanData, setChallanData] = useState<UserChallanWithReturn[]>([]);
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
+
+  const getReturnPeriodLabel = (row: UserChallanWithReturn) => {
+    const period = row.returns_01?.month ?? row.returns_01?.quarter;
+    const year = row.returns_01?.year;
+
+    if (!period || !year) {
+      return "-";
+    }
+
+    return `${period} - ${year}`;
+  };
 
   const init = async () => {
     setLoading(true);
@@ -244,6 +261,113 @@ const ChallanHistory = () => {
     }
   };
 
+  const isCreatedAndNotExpired = (challan: UserChallanWithReturn) => {
+    if (challan.paymentstatus !== "CREATED") {
+      return false;
+    }
+
+    const expiry = new Date(challan.expire_date).getTime();
+    return Number.isFinite(expiry) && expiry >= Date.now();
+  };
+
+  const isCreatedAndExpired = (challan: UserChallanWithReturn) => {
+    if (challan.paymentstatus !== "CREATED") {
+      return false;
+    }
+
+    const expiry = new Date(challan.expire_date).getTime();
+    return Number.isFinite(expiry) && expiry < Date.now();
+  };
+
+  const isZeroTotalTaxAmount = (challan: UserChallanWithReturn) => {
+    const parsedAmount = Number(
+      String(challan.total_tax_amount ?? "")
+        .replace(/,/g, "")
+        .trim(),
+    );
+
+    return Number.isFinite(parsedAmount) && parsedAmount === 0;
+  };
+
+  const visibleChallanData = challanData.filter(
+    (challan) => !isCreatedAndExpired(challan) && !isZeroTotalTaxAmount(challan),
+  );
+
+  const fetchOrderStatus = async (orderNo: string) => {
+    const query = new URLSearchParams();
+    query.set("order_no", orderNo);
+
+    return fetch(`/orderstatus?${query.toString()}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
+  const handleVerifyStatus = async (challan: UserChallanWithReturn) => {
+    if (!challan.order_id) {
+      toast.error("Order ID is missing for this challan.");
+      return;
+    }
+
+    if (!isCreatedAndNotExpired(challan)) {
+      toast.error("Only non-expired CREATED challans can be verified.");
+      return;
+    }
+
+    setProcessingId(challan.id);
+    try {
+      const response = await fetchOrderStatus(challan.order_id);
+      const data = await response.json();
+
+      if (!response.ok || !data?.success) {
+        toast.error(data?.message || "Unable to check payment status.");
+        return;
+      }
+
+      const apiData = data?.data;
+      const apiStatusGroup = apiData?.status_group;
+      const isApiSuccess = apiStatusGroup === "success";
+      const isAlreadySuccess =
+        challan.order_status && successGatewayStatus.includes(challan.order_status);
+
+      if (isApiSuccess && !isAlreadySuccess) {
+        const updateResponse = await UpdateChallanStatus({
+          challanId: challan.id,
+          orderStatus: apiData?.order_status,
+          statusGroup: apiData?.status_group,
+          orderStatusDateTime: apiData?.order_status_date_time,
+          bankRefNo: apiData?.order_bank_ref_no,
+          cardName: apiData?.order_card_name,
+          paymentMode: apiData?.order_option_type,
+          statusCode: apiData?.status_code,
+          statusMessage: "Completed Successfully",
+          responseCode: apiData?.response_code,
+          failureMessage: apiData?.error_desc,
+          tracking_id: apiData?.reference_no,
+          orderFeeFlat: apiData?.order_fee_flat,
+          orderTax: apiData?.order_tax,
+        });
+
+        if (updateResponse.status) {
+          toast.success("Challan updated with payment success status");
+          await init();
+        } else {
+          toast.warning(updateResponse.message);
+        }
+      }
+
+      toast.success(
+        `Status checked: ${apiData?.order_status || "Fetched successfully"}`,
+      );
+    } catch (error) {
+      toast.error("Something went wrong while checking payment status.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -316,7 +440,7 @@ const ChallanHistory = () => {
             })()}
           </div>
 
-          {challanData.length == 0 && (
+          {visibleChallanData.length == 0 && (
             <Alert
               style={{
                 marginTop: "10px",
@@ -328,7 +452,7 @@ const ChallanHistory = () => {
             />
           )}
 
-          {challanData.length > 0 && (
+          {visibleChallanData.length > 0 && (
             <>
               <Table className="border mt-2">
                 <TableHeader>
@@ -337,7 +461,7 @@ const ChallanHistory = () => {
                       CPIN
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center w-36  px-2">
-                      Created On
+                      Transaction Date
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center  px-2">
                       Amount
@@ -349,18 +473,18 @@ const ChallanHistory = () => {
                       Challan Reason
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center  px-2">
-                      Expire Date
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center  px-2">
-                      Deposit Date
+                      Return Period
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center  px-2">
                       Deposit Status
                     </TableHead>
+                    <TableHead className="whitespace-nowrap text-center  px-2">
+                      Action
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {challanData.map((val: challan, index: number) => (
+                  {visibleChallanData.map((val: UserChallanWithReturn, index: number) => (
                     <TableRow key={index}>
                       <TableCell className="text-center p-2">
                         <Link
@@ -373,7 +497,9 @@ const ChallanHistory = () => {
                         </Link>
                       </TableCell>
                       <TableCell className="text-center p-2">
-                        {formateDate(new Date(val.createdAt))}
+                        {val.transaction_date
+                          ? formateDate(new Date(val.transaction_date))
+                          : "-"}
                       </TableCell>
                       <TableCell className="text-center p-2">
                         {val.total_tax_amount}
@@ -385,15 +511,23 @@ const ChallanHistory = () => {
                         {val.reason}
                       </TableCell>
                       <TableCell className="text-center p-2">
-                        {formateDate(new Date(val.expire_date))}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {val.transaction_date
-                          ? formateDate(new Date(val.transaction_date))
-                          : "-"}
+                        {getReturnPeriodLabel(val)}
                       </TableCell>
                       <TableCell className="text-center p-2">
                         {val.paymentstatus}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {isCreatedAndNotExpired(val) ? (
+                          <Button
+                            size="small"
+                            onClick={() => handleVerifyStatus(val)}
+                            loading={processingId === val.id}
+                          >
+                            Verify
+                          </Button>
+                        ) : (
+                          "-"
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

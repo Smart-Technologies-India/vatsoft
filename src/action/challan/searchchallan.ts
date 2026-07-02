@@ -45,6 +45,7 @@ interface SearchChallanPayload {
   dept?: SelectOffice;
   paymentstatus?: PaymentStatus;
   excludePaid?: boolean;
+  excludeCreatedExpired?: boolean;
   searchText?: string;
   bucketFilter?: "pending" | "failed";
   skip: number;
@@ -71,6 +72,16 @@ const buildWhere = (payload: SearchChallanPayload) => {
             },
           },
         },
+      ],
+    });
+  }
+
+  if (payload.excludeCreatedExpired) {
+    andConditions.push({ paymentstatus: { not: "CREATED" } });
+    andConditions.push({
+      OR: [
+        { order_status: null },
+        { order_status: { notIn: ["Expired", "EXPIRED"] } },
       ],
     });
   }

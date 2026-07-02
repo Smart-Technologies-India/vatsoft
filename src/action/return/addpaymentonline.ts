@@ -318,7 +318,7 @@ const AddPaymentOnline = async (
       }
 
       let today = new Date();
-      today.setDate(today.getDate() + 3);
+      today.setDate(today.getDate() + 7);
 
       const challan_response = await prisma.challan.create({
         data: {

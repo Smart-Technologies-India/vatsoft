@@ -13,9 +13,28 @@ interface UpdateStockQuantityFromSheetPayload {
   }>;
 }
 
+interface StockUpdateDifference {
+  stockId: number;
+  commodityid: number;
+  productName: string;
+  packSize: number;
+  oldQuantity: number;
+  newQuantity: number;
+  difference: number;
+  newStockBottle: number;
+  differenceBottle: number;
+}
+
 const UpdateStockQuantityFromSheet = async (
   payload: UpdateStockQuantityFromSheetPayload,
-): Promise<ApiResponseType<{ updatedCount: number } | null>> => {
+): Promise<
+  ApiResponseType<
+    {
+      updatedCount: number;
+      differences: StockUpdateDifference[];
+    } | null
+  >
+> => {
   const functionname: string = UpdateStockQuantityFromSheet.name;
 
   try {
@@ -64,8 +83,11 @@ const UpdateStockQuantityFromSheet = async (
       });
     }
 
-    const updatedCount = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const commodityIds = [...new Set(normalizedEntries.map((x) => x.commodityid))];
+      const quantityByCommodityId = new Map<number, number>(
+        normalizedEntries.map((entry) => [entry.commodityid, entry.quantity]),
+      );
 
       const existingStockRows = await tx.stock.findMany({
         where: {
@@ -80,42 +102,75 @@ const UpdateStockQuantityFromSheet = async (
         select: {
           id: true,
           commodity_masterId: true,
+          quantity: true,
+          commodity_master: {
+            select: {
+              product_name: true,
+              pack_size: true,
+            },
+          },
         },
       });
 
-      const stockByCommodityId = new Map<number, { id: number }>();
+      const stockByCommodityId = new Map<
+        number,
+        {
+          id: number;
+          quantity: number;
+          product_name: string;
+          pack_size: string;
+        }
+      >();
       existingStockRows.forEach((row) => {
-        stockByCommodityId.set(row.commodity_masterId, { id: row.id });
+        stockByCommodityId.set(row.commodity_masterId, {
+          id: row.id,
+          quantity: row.quantity,
+          product_name: row.commodity_master.product_name,
+          pack_size: row.commodity_master.pack_size || "0",
+        });
       });
 
-      for (const entry of normalizedEntries) {
-        const stockRow = stockByCommodityId.get(entry.commodityid);
-        if (!stockRow) {
-          throw new Error(
-            `Stock row not found for commodity id ${entry.commodityid}.`,
-          );
-        }
-
-        await tx.stock.update({
-          where: {
-            id: stockRow.id,
-          },
-          data: {
-            quantity: entry.quantity,
-            updatedById: currentUserId,
-          },
-        });
+      const missingCommodityIds = commodityIds.filter(
+        (commodityId) => !stockByCommodityId.has(commodityId),
+      );
+      if (missingCommodityIds.length > 0) {
+        throw new Error(
+          `Stock row not found for commodity id(s): ${missingCommodityIds.join(", ")}. Do not modify the commodity IDs in the sheet. Please use the original commodity IDs from the stock list.`,
+        );
       }
 
-      return normalizedEntries.length;
+      const differences: StockUpdateDifference[] = commodityIds.map(
+        (commodityid) => {
+          const stockRow = stockByCommodityId.get(commodityid)!;
+          const newQuantity = quantityByCommodityId.get(commodityid)!;
+          const packSize = Number(stockRow.pack_size) || 1;
+          const newStockBottle = newQuantity / packSize;
+          const differenceBottle = newStockBottle - stockRow.quantity / packSize;
+
+          return {
+            stockId: stockRow.id,
+            commodityid,
+            productName: stockRow.product_name,
+            packSize,
+            oldQuantity: stockRow.quantity,
+            newQuantity,
+            difference: newQuantity - stockRow.quantity,
+            newStockBottle,
+            differenceBottle,
+          };
+        },
+      );
+
+      return {
+        updatedCount: 0,
+        differences,
+      };
     });
 
     return createResponse({
-      message: "Stock quantities updated successfully.",
+      message: "Stock sheet preview generated. Please review and submit to apply updates.",
       functionname,
-      data: {
-        updatedCount,
-      },
+      data: result,
     });
   } catch (e) {
     return createResponse({

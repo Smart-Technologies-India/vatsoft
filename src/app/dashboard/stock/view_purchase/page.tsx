@@ -71,6 +71,18 @@ const formatMonthInputValue = (date: Date): string => {
   return `${year}-${month}`;
 };
 
+const isTinAcceptable = (tinNumber: string): boolean =>
+  tinNumber.startsWith("25") || tinNumber.startsWith("26");
+
+const isAprilOrMay2026 = (inputDate: Date | string): boolean => {
+  const date = new Date(inputDate);
+  if (Number.isNaN(date.getTime())) return false;
+
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  return year === 2026 && (month === 3 || month === 4);
+};
+
 const DocumentWiseDetails = () => {
   const router = useRouter();
 
@@ -532,12 +544,7 @@ const DocumentWiseDetails = () => {
       const groups = await getSelectedPeriodGroupsAcrossAll();
 
       return groups.some((group) =>
-        group.records.some(
-          (record) =>
-            (record.seller_tin_number.tin_number.startsWith("25") ||
-              record.seller_tin_number.tin_number.startsWith("26")) &&
-            !record.is_accept,
-        ),
+        group.records.some((record) => canAcceptRecord(record)),
       );
     };
 
@@ -934,6 +941,29 @@ const DocumentWiseDetails = () => {
     "all" | "pending" | "accepted"
   >("all");
 
+  const isRestaurantCommodity = useMemo(() => {
+    return String(dvatdata?.commodity ?? "") === "RESTAURANT";
+  }, [dvatdata?.commodity]);
+
+  const canAcceptRecord = useCallback(
+    (record: GroupedDailyPurchase["records"][number]) => {
+      if (!isTinAcceptable(record.seller_tin_number.tin_number)) {
+        return false;
+      }
+
+      if (record.is_accept) {
+        return false;
+      }
+
+      if (!isRestaurantCommodity) {
+        return true;
+      }
+
+      return isAprilOrMay2026(record.invoice_date);
+    },
+    [isRestaurantCommodity],
+  );
+
   useEffect(() => {
     if (!dvatdata?.id) return;
 
@@ -1093,12 +1123,7 @@ const DocumentWiseDetails = () => {
     const getPendingAcceptable = (
       records: GroupedDailyPurchase["records"],
     ): boolean => {
-      return records.some(
-        (row) =>
-          (row.seller_tin_number.tin_number.startsWith("25") ||
-            row.seller_tin_number.tin_number.startsWith("26")) &&
-          !row.is_accept,
-      );
+      return records.some((row) => canAcceptRecord(row));
     };
 
     setSelectedGroup((prev) => {
@@ -1140,12 +1165,7 @@ const DocumentWiseDetails = () => {
 
       const pendingRecords = groups
         .flatMap((group) => group.records)
-        .filter(
-          (record) =>
-            (record.seller_tin_number.tin_number.startsWith("25") ||
-              record.seller_tin_number.tin_number.startsWith("26")) &&
-            !record.is_accept,
-        );
+        .filter((record) => canAcceptRecord(record));
 
       if (pendingRecords.length === 0) {
         setAcceptAllProgress({
@@ -1183,12 +1203,7 @@ const DocumentWiseDetails = () => {
 
     const pendingRecords = groups
       .flatMap((group) => group.records)
-      .filter(
-        (record) =>
-          (record.seller_tin_number.tin_number.startsWith("25") ||
-            record.seller_tin_number.tin_number.startsWith("26")) &&
-          !record.is_accept,
-      );
+      .filter((record) => canAcceptRecord(record));
 
     if (pendingRecords.length === 0) {
       setIsAcceptAllModalOpen(false);
@@ -1265,10 +1280,7 @@ const DocumentWiseDetails = () => {
     if (!selectedGroup || !dvatdata) return;
 
     const pendingRecords = selectedGroup.records.filter(
-      (record) =>
-        (record.seller_tin_number.tin_number.startsWith("25") ||
-          record.seller_tin_number.tin_number.startsWith("26")) &&
-        !record.is_accept,
+      (record) => canAcceptRecord(record),
     );
 
     if (pendingRecords.length === 0) return;
@@ -1428,8 +1440,8 @@ const DocumentWiseDetails = () => {
     }
   };
 
-  const hasPendingAcceptable = dailyPurchase.some(
-    (group) => group.hasPendingAcceptable,
+  const hasPendingAcceptable = dailyPurchase.some((group) =>
+    group.records.some((record) => canAcceptRecord(record)),
   );
 
   const isFilterApplied = useMemo(
@@ -1621,10 +1633,7 @@ const DocumentWiseDetails = () => {
               </div>
             </div>
             {selectedGroup.records.some(
-              (r) =>
-                (r.seller_tin_number.tin_number.startsWith("25") ||
-                  r.seller_tin_number.tin_number.startsWith("26")) &&
-                !r.is_accept,
+              (r) => canAcceptRecord(r),
             ) && (
               <div className="mt-4 flex justify-end gap-2">
                 <button
@@ -2571,7 +2580,7 @@ const DocumentWiseDetails = () => {
                                         group.seller_tin_number.tin_number.startsWith(
                                           "26",
                                         )) &&
-                                      !group.records[0].is_accept && (
+                                      canAcceptRecord(group.records[0]) && (
                                         <>
                                           <button
                                             onClick={async () => {

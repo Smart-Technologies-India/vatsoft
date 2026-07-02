@@ -25,7 +25,7 @@ const CreateChallan = async (
 ): Promise<ApiResponseType<challan | null>> => {
   const functionname: string = CreateChallan.name;
   let today = new Date();
-  today.setDate(today.getDate() + 3);
+  today.setDate(today.getDate() + 7);
 
   const nanoid = customAlphabet("1234567890", 12);
 

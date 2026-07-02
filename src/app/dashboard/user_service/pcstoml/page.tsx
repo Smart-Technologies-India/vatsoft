@@ -33,6 +33,7 @@ import {
 import {
   Alert,
   Button,
+  Checkbox,
   Drawer,
   Modal,
   Pagination,
@@ -50,8 +51,21 @@ import CreateMultiDailyPurchase from "@/action/stock/createmultidailypurchase";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import UpdateStockQuantityFromSheet from "@/action/stock/updatestockquantityfromsheet";
 import GetPendingAcceptStatus from "@/action/stock/getpendingacceptstatus";
+import ApplyStockUpdatesInChunks from "@/action/stock/applystockupdatesinchunks";
 
 type StockRow = stock & { commodity_master: commodity_master };
+
+type StockDiffRow = {
+  stockId: number;
+  commodityid: number;
+  productName: string;
+  packSize: number;
+  oldQuantity: number;
+  newQuantity: number;
+  difference: number;
+  newStockBottle: number;
+  differenceBottle: number;
+};
 
 const CommodityMaster = () => {
   const router = useRouter();
@@ -491,16 +505,53 @@ const CommodityMaster = () => {
   // csv section end here
 
   const [isDownloadWarningOpen, setIsDownloadWarningOpen] = useState(false);
+  const [isUploadWarningOpen, setIsUploadWarningOpen] = useState(false);
+  const [isUploadWarningAccepted, setIsUploadWarningAccepted] = useState(false);
+  const [isStockDiffModalOpen, setIsStockDiffModalOpen] = useState(false);
+  const [stockDiffRows, setStockDiffRows] = useState<StockDiffRow[]>([]);
+  const [currentModalPage, setCurrentModalPage] = useState(1);
+  const [isApplyingUpdates, setIsApplyingUpdates] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState({
+    processed: 0,
+    total: 0,
+  });
+  const [uploadedEntries, setUploadedEntries] = useState<
+    Array<{
+      commodityid: number;
+      quantity: number;
+    }>
+  >([]);
   const stockSheetRef = useRef<HTMLInputElement>(null);
 
   const handleDownloadStockAsXlsx = () => {
     setIsDownloadWarningOpen(true);
   };
 
+  const openUploadWarning = () => {
+    setIsUploadWarningAccepted(false);
+    setIsUploadWarningOpen(true);
+  };
+
+  const confirmUploadWarning = () => {
+    if (!isUploadWarningAccepted) {
+      toast.error("Please accept the declaration before uploading stock.");
+      return;
+    }
+
+    setIsUploadWarningOpen(false);
+    stockSheetRef.current?.click();
+  };
+
   const confirmDownloadStockAsXlsx = async () => {
     setIsDownloadWarningOpen(false);
 
-    const pendingStatusResponse = await GetPendingAcceptStatus();
+    const pendingFromDate = new Date(2026, 3, 1, 0, 0, 0, 0);
+    const pendingToDate = new Date(2026, 4, 31, 23, 59, 59, 999);
+
+    const pendingStatusResponse = await GetPendingAcceptStatus({
+      fromDate: pendingFromDate,
+      toDate: pendingToDate,
+    });
     if (!pendingStatusResponse.status || !pendingStatusResponse.data) {
       toast.error(
         pendingStatusResponse.message ||
@@ -511,7 +562,7 @@ const CommodityMaster = () => {
 
     if (pendingStatusResponse.data.hasPending) {
       toast.error(
-        `Please accept pending invoices before download. Pending Purchase: ${pendingStatusResponse.data.pendingPurchaseCount}, Pending Sale: ${pendingStatusResponse.data.pendingSaleCount}.`,
+        `Please accept pending invoices for Apr-May 2026 before download. Pending Purchase: ${pendingStatusResponse.data.pendingPurchaseCount}.`,
       );
       return;
     }
@@ -535,8 +586,9 @@ const CommodityMaster = () => {
 
       // Add quantity or crate based on selection
       if (quantityCount === "pcs") {
-        baseData[dvatdata?.commodity === "FUEL" ? "Litres" : "Quantity in PCS"] =
-          stock.quantity;
+        baseData[
+          dvatdata?.commodity === "FUEL" ? "Litres" : "Quantity in PCS"
+        ] = stock.quantity;
       } else {
         baseData["Crate"] = showCrates(
           stock.quantity,
@@ -547,7 +599,7 @@ const CommodityMaster = () => {
         Number.isFinite(packSize) && packSize > 0
           ? Number(stock.quantity) * packSize
           : "-";
-      baseData["Update Quantity"] = "";
+      baseData["Update Quantity (all product in mL only)"] = "";
 
       return baseData;
     });
@@ -563,7 +615,7 @@ const CommodityMaster = () => {
       { wch: 14 }, // Expected Rows
       { wch: 15 }, // Quantity/Crate
       { wch: 16 }, // Quantity in ML
-      { wch: 18 }, // Update Quantity
+      { wch: 18 }, // Update Quantity (all product in mL only)
     ];
     worksheet["!cols"] = columnWidths;
 
@@ -618,7 +670,9 @@ const CommodityMaster = () => {
 
       const effectiveRows = parsedRows.filter((row) => {
         const itemId = String(row["Item ID"] ?? "").trim();
-        const updateQty = String(row["Update Quantity"] ?? "").trim();
+        const updateQty = String(
+          row["Update Quantity (all product in mL only)"] ?? "",
+        ).trim();
         return itemId !== "" || updateQty !== "";
       });
 
@@ -632,9 +686,7 @@ const CommodityMaster = () => {
       );
 
       if (
-        expectedRowValues.some(
-          (value) => !Number.isFinite(value) || value <= 0,
-        )
+        expectedRowValues.some((value) => !Number.isFinite(value) || value <= 0)
       ) {
         toast.error(
           "Invalid sheet format. Download a fresh sheet and try again.",
@@ -659,7 +711,9 @@ const CommodityMaster = () => {
 
       const invalidRowIndex = effectiveRows.findIndex((row) => {
         const itemId = Number(row["Item ID"]);
-        const updateQty = Number(row["Update Quantity"]);
+        const updateQty = Number(
+          row["Update Quantity (all product in mL only)"],
+        );
 
         return (
           !Number.isFinite(itemId) ||
@@ -678,7 +732,7 @@ const CommodityMaster = () => {
 
       const entries = effectiveRows.map((row) => ({
         commodityid: Number(row["Item ID"]),
-        quantity: Number(row["Update Quantity"]),
+        quantity: Number(row["Update Quantity (all product in mL only)"]),
       }));
 
       const response = await UpdateStockQuantityFromSheet({
@@ -691,10 +745,15 @@ const CommodityMaster = () => {
         return;
       }
 
+      setStockDiffRows(response.data.differences || []);
+      setUploadedEntries(entries);
+      setCurrentModalPage(1);
+      setUpdateProgress({ processed: 0, total: entries.length });
+      setIsStockDiffModalOpen(true);
+
       toast.success(
-        `Stock quantities updated for ${response.data.updatedCount} rows.`,
+        `Preview generated for ${response.data.differences?.length || 0} rows. Please review and click Submit to apply updates.`,
       );
-      await init();
     } catch {
       toast.error("Unable to process uploaded sheet.");
     } finally {
@@ -767,6 +826,52 @@ const CommodityMaster = () => {
     }
   };
 
+  const formatBottleDisplay = (bottles: number): string => {
+    const intBottles = Math.floor(bottles);
+    return `${intBottles} bottle${intBottles !== 1 ? "s" : ""}`;
+  };
+
+  const handleSubmitUpdates = async () => {
+    if (uploadedEntries.length === 0) {
+      toast.error("No updates to apply.");
+      return;
+    }
+
+    setIsApplyingUpdates(true);
+    setUpdateProgress({ processed: 0, total: uploadedEntries.length });
+
+    try {
+      const response = await ApplyStockUpdatesInChunks({
+        dvatid: dvatdata!.id,
+        entries: uploadedEntries,
+      });
+
+      if (!response.status) {
+        toast.error(response.message || "Failed to apply updates");
+        return;
+      }
+
+      setUpdateProgress({
+        processed: response.data?.processedCount || uploadedEntries.length,
+        total: uploadedEntries.length,
+      });
+
+      toast.success(
+        response.data?.message || "Stock updates applied successfully",
+      );
+
+      setIsStockDiffModalOpen(false);
+      setStockDiffRows([]);
+      setUploadedEntries([]);
+      setCurrentModalPage(1);
+      await init();
+    } catch (error) {
+      toast.error("Error applying updates");
+    } finally {
+      setIsApplyingUpdates(false);
+    }
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -797,6 +902,54 @@ const CommodityMaster = () => {
             Download and conversion should be done only after pending purchase
             invoices are accepted to avoid wrong stock conversion values.
           </p>
+        </div>
+      </Modal>
+
+      <Modal
+        title={
+          <div className="text-xl font-semibold text-red-700">
+            Upload Updated Stock Warning
+          </div>
+        }
+        open={isUploadWarningOpen}
+        onOk={confirmUploadWarning}
+        onCancel={() => {
+          setIsUploadWarningOpen(false);
+          setIsUploadWarningAccepted(false);
+        }}
+        okText="I Understand, Continue"
+        cancelText="Cancel"
+        okButtonProps={{
+          className: "bg-red-600 hover:bg-red-700",
+          disabled: !isUploadWarningAccepted,
+        }}
+      >
+        <div className="mt-2 rounded-md border border-red-300 bg-red-50 p-4">
+          <ul className="list-disc pl-5 text-sm text-red-800 space-y-1">
+            <li>Upload opening stock of 1 June 2026.</li>
+            <li>
+              Before upload, verify all purchases and sales of April and May for
+              regular dealer and purchases of composition/quarterly filing
+              dealers are accepted.
+            </li>
+            <li>
+              All stock should be entered in ML only irrespective of any product
+              category.
+            </li>
+            <li>
+              Any product entered in PCS or bottle will be considered as ML.
+            </li>
+          </ul>
+
+          <div className="mt-4 rounded border border-red-200 bg-white p-3">
+            <Checkbox
+              checked={isUploadWarningAccepted}
+              onChange={(e) => setIsUploadWarningAccepted(e.target.checked)}
+            >
+              I {dvatdata?.tradename || "(trade name)"} accept that all data are
+              correct and won&apos;t be allowed to be modified later on.
+            </Checkbox>
+          </div>
         </div>
       </Modal>
 
@@ -907,6 +1060,164 @@ const CommodityMaster = () => {
             className="mt-4 rounded-lg"
           />
         )}
+      </Modal>
+
+      <Modal
+        title={
+          <div className="text-xl font-semibold text-gray-800">
+            Stock Update Difference
+          </div>
+        }
+        open={isStockDiffModalOpen}
+        onCancel={() => {
+          if (!isApplyingUpdates) {
+            setIsStockDiffModalOpen(false);
+            setStockDiffRows([]);
+            setUploadedEntries([]);
+            setCurrentModalPage(1);
+          }
+        }}
+        footer={null}
+        width={1200}
+      >
+        {/* Progress Bar */}
+        {isApplyingUpdates && (
+          <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-medium text-blue-900">
+                Updating database...
+              </span>
+              <span className="text-sm font-semibold text-blue-900">
+                {updateProgress.processed} / {updateProgress.total} records
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-blue-200">
+              <div
+                className="h-full bg-blue-600 transition-all duration-300"
+                style={{
+                  width: `${
+                    updateProgress.total > 0
+                      ? (updateProgress.processed / updateProgress.total) * 100
+                      : 0
+                  }%`,
+                }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-blue-800">
+              Processing in chunks of 100... Please wait and do not close this
+              dialog.
+            </p>
+          </div>
+        )}
+
+        <div className="overflow-x-auto rounded-lg border border-gray-200">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50">
+                <TableHead className="text-center text-xs">Sr. No.</TableHead>
+                <TableHead className="text-center text-xs">Item ID</TableHead>
+                <TableHead className="text-left text-xs">
+                  Product Name
+                </TableHead>
+                <TableHead className="text-center text-xs">
+                  Old Stock (Bottle)
+                </TableHead>
+                <TableHead className="text-center text-xs">
+                  New Stock (Bottle)
+                </TableHead>
+                <TableHead className="text-center text-xs">
+                  Difference (Bottle)
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stockDiffRows.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="p-4 text-center text-sm text-gray-500"
+                  >
+                    No stock differences available.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                stockDiffRows
+                  .slice((currentModalPage - 1) * 10, currentModalPage * 10)
+                  .map((row, index) => (
+                    <TableRow key={`${row.stockId}-${row.commodityid}`}>
+                      <TableCell className="text-center text-xs">
+                        {(currentModalPage - 1) * 10 + index + 1}
+                      </TableCell>
+                      <TableCell className="text-center text-xs">
+                        {row.commodityid}
+                      </TableCell>
+                      <TableCell className="text-left text-xs">
+                        {row.productName}
+                      </TableCell>
+                      <TableCell className="text-center text-xs">
+                        {formatBottleDisplay(row.oldQuantity)}
+                      </TableCell>
+                      <TableCell className="text-center text-xs font-semibold text-emerald-700">
+                        {formatBottleDisplay(row.newStockBottle)}
+                      </TableCell>
+                      <TableCell
+                        className={`text-center text-xs font-semibold ${
+                          row.differenceBottle < 0
+                            ? "text-red-600"
+                            : row.differenceBottle > 0
+                              ? "text-emerald-600"
+                              : "text-gray-600"
+                        }`}
+                      >
+                        {formatBottleDisplay(Math.abs(row.differenceBottle))}
+                        {row.differenceBottle < 0
+                          ? " ↓"
+                          : row.differenceBottle > 0
+                            ? " ↑"
+                            : ""}
+                      </TableCell>
+                    </TableRow>
+                  ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Pagination */}
+        {stockDiffRows.length > 10 && (
+          <div className="mt-4 flex justify-center">
+            <Pagination
+              current={currentModalPage}
+              total={stockDiffRows.length}
+              pageSize={10}
+              onChange={setCurrentModalPage}
+              disabled={isApplyingUpdates}
+            />
+          </div>
+        )}
+
+        {/* Footer Buttons */}
+        <div className="mt-6 flex gap-3 justify-end border-t pt-4">
+          <Button
+            onClick={() => {
+              setIsStockDiffModalOpen(false);
+              setStockDiffRows([]);
+              setUploadedEntries([]);
+              setCurrentModalPage(1);
+            }}
+            disabled={isApplyingUpdates}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="primary"
+            onClick={handleSubmitUpdates}
+            loading={isApplyingUpdates}
+            disabled={isApplyingUpdates || stockDiffRows.length === 0}
+          >
+            {isApplyingUpdates ? "Updating..." : "Submit Updates"}
+          </Button>
+        </div>
       </Modal>
 
       <Drawer
@@ -1020,13 +1331,9 @@ const CommodityMaster = () => {
                   Download Stock
                 </Button>
 
-                {/* <Button
-                  size="small"
-                  type="default"
-                  onClick={() => stockSheetRef.current?.click()}
-                >
+                <Button size="small" type="default" onClick={openUploadWarning}>
                   Upload Updated Stock
-                </Button> */}
+                </Button>
 
                 <div className="hidden">
                   <input

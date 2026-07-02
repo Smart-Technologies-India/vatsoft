@@ -12,9 +12,26 @@ export interface RefinerySwitchOption {
   company: string;
 }
 
+export interface CurrentRefineryProfile {
+  id: number;
+  tinNumber: string;
+  tradeName: string;
+  legalName: string;
+  company: string;
+  pan: string;
+  gst: string;
+  address: string;
+  city: string;
+  pincode: string;
+  email: string;
+  contactOne: string;
+  contactTwo: string;
+}
+
 export interface RefinerySwitchOptionsResponse {
   currentRefineryId: number;
   currentCompany: string;
+  currentRefinery: CurrentRefineryProfile;
   options: RefinerySwitchOption[];
 }
 
@@ -84,6 +101,21 @@ const GetRefinerySwitchOptions = async (): Promise<
       data: {
         currentRefineryId: currentRefinery.id,
         currentCompany: currentRefinery.company,
+        currentRefinery: {
+          id: currentRefinery.id,
+          tinNumber: currentRefinery.tinNumber?.trim() || "-",
+          tradeName: currentRefinery.tradename?.trim() || "-",
+          legalName: currentRefinery.name?.trim() || "-",
+          company: currentRefinery.company || "-",
+          pan: currentRefinery.pan?.trim() || "-",
+          gst: currentRefinery.gst?.trim() || "-",
+          address: currentRefinery.address?.trim() || "-",
+          city: currentRefinery.city?.trim() || "-",
+          pincode: currentRefinery.pincode?.trim() || "-",
+          email: currentRefinery.email?.trim() || "-",
+          contactOne: currentRefinery.contact_one?.trim() || "-",
+          contactTwo: currentRefinery.contact_two?.trim() || "-",
+        },
         options,
       },
     });

@@ -141,7 +141,6 @@ export async function POST(req: NextRequest) {
                 commodity_masterId: commodity.id,
                 batch_name: item.BatchName,
                 quantity,
-                
               },
               select: { id: true },
             });
@@ -162,7 +161,7 @@ export async function POST(req: NextRequest) {
                 seller_tin_numberId: tin.id,
                 quantity,
                 tax_percent: commodity.taxable_at,
-                amount_unit: ((testAmount * 1.2) / commodity.crate_size).toFixed(2),
+                amount_unit: ((testAmount * 1.2) / quantity).toFixed(2),
                 amount: testAmount.toFixed(2),
                 vatamount: (testAmount * 0.2).toFixed(2),
                 batch_name: item.BatchName,

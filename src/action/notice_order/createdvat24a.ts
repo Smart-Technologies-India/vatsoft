@@ -27,7 +27,7 @@ const CreateDvat24A = async (
 ): Promise<ApiResponseType<order_notice | null>> => {
   const functionname: string = CreateDvat24A.name;
   let today = new Date();
-  today.setDate(today.getDate() + 3);
+  today.setDate(today.getDate() + 7);
 
   const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstuvwyz", 12);
   const ref_no: string = nanoid();

@@ -6,6 +6,7 @@ import GetUserRefinerySale from "@/action/refinery_sale/getuserrefinerysale";
 import ChangeRefinerySales from "@/action/refinery_sale/changevatpaidrefinerysales";
 
 import GetRefinerySwitchOptions, {
+  CurrentRefineryProfile,
   RefinerySwitchOption,
 } from "@/action/refinery/getrefineryswitchoptions";
 import { toast } from "react-toastify";
@@ -63,6 +64,8 @@ const RefineryDashboard = () => {
   const [currentRefineryId, setCurrentRefineryId] = useState<number | null>(
     null,
   );
+  const [currentRefinery, setCurrentRefinery] =
+    useState<CurrentRefineryProfile | null>(null);
   const [isSwitchModalOpen, setIsSwitchModalOpen] = useState(false);
   const [activeInvoice, setActiveInvoice] = useState<VatpaidRefineryInvoice | null>(
     null,
@@ -210,6 +213,7 @@ const RefineryDashboard = () => {
       setRefineryOptions(optionsRes.data.options);
       setCurrentCompany(optionsRes.data.currentCompany);
       setCurrentRefineryId(optionsRes.data.currentRefineryId);
+      setCurrentRefinery(optionsRes.data.currentRefinery);
 
       await loadInvoices();
     };
@@ -269,16 +273,61 @@ const RefineryDashboard = () => {
     );
   }
 
-  if (invoices.length === 0) {
-    return (
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mt-4 mx-4">
-        <div className="text-sm text-gray-500">No dispatch records found.</div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mt-4 mx-4">
+      <div className="mb-4 rounded-lg border border-sky-200 bg-sky-50 p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-sky-800">
+            Current Refinery
+          </h3>
+          {/* <span className="text-xs text-sky-700">
+            Refinery ID: {currentRefinery?.id ?? "-"}
+          </span> */}
+        </div>
+
+        <div className="grid grid-cols-1 gap-2 text-xs text-sky-900 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <span className="font-medium">TIN Number:</span>{" "}
+            {currentRefinery?.tinNumber || "-"}
+          </div>
+          <div>
+            <span className="font-medium">Trade Name:</span>{" "}
+            {currentRefinery?.tradeName || "-"}
+          </div>
+          <div>
+            <span className="font-medium">Legal Name:</span>{" "}
+            {currentRefinery?.legalName || "-"}
+          </div>
+          <div>
+            <span className="font-medium">Company:</span>{" "}
+            {currentRefinery?.company || "-"}
+          </div>
+          <div>
+            <span className="font-medium">Contact :</span>{" "}
+            {currentRefinery?.contactOne || "-"}
+          </div>
+          {/* <div>
+            <span className="font-medium">PAN:</span> {currentRefinery?.pan || "-"}
+          </div>
+          <div>
+            <span className="font-medium">GST:</span> {currentRefinery?.gst || "-"}
+          </div>
+          <div>
+            <span className="font-medium">Email:</span> {currentRefinery?.email || "-"}
+          </div>
+          <div>
+            <span className="font-medium">Contact 2:</span>{" "}
+            {currentRefinery?.contactTwo || "-"}
+          </div>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <span className="font-medium">Address:</span>{" "}
+            {currentRefinery
+              ? `${currentRefinery.address || "-"}, ${currentRefinery.city || "-"}, ${currentRefinery.pincode || "-"}`
+              : "-"}
+          </div> */}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-semibold text-gray-800 text-sm">Dispatch</h2>
         <span className="text-xs text-gray-400 border border-gray-200 rounded px-2 py-0.5">
@@ -286,40 +335,46 @@ const RefineryDashboard = () => {
         </span>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="bg-gray-50">
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="text-xs font-semibold text-gray-600"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id} className="align-top">
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="text-xs">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {invoices.length === 0 ? (
+        <div className="rounded-lg border border-gray-200 p-4 text-sm text-gray-500 text-center">
+          No dispatch records found.
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-gray-200">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="bg-gray-50">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className="text-xs font-semibold text-gray-600"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} className="align-top">
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="text-xs">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <Modal
         title="Change Refinery"

@@ -27,7 +27,7 @@ const CreateRefund = async (
 ): Promise<ApiResponseType<refunds | null>> => {
   const functionname: string = CreateRefund.name;
   let today = new Date();
-  today.setDate(today.getDate() + 3);
+  today.setDate(today.getDate() + 7);
 
   const nanoid = customAlphabet("1234567890", 12);
 

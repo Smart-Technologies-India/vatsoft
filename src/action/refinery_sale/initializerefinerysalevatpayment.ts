@@ -111,7 +111,7 @@ const InitializeRefinerySaleVatPayment = async (
     }
 
     const expireDate = new Date();
-    expireDate.setDate(expireDate.getDate() + 3);
+    expireDate.setDate(expireDate.getDate() + 7);
     const vatAmount = vatTotal.toFixed(2);
     const challanRemark = `REFINERY_SALE_VAT#${targetSale.invoice_number}#${targetSale.refineryId}#${targetSale.seller_tin_numberId}#${targetSale.id}`;
 

@@ -6,11 +6,17 @@ import { errorToString } from "@/utils/methods";
 
 interface PendingAcceptStatus {
   pendingPurchaseCount: number;
-  pendingSaleCount: number;
   hasPending: boolean;
 }
 
-const GetPendingAcceptStatus = async (): Promise<{
+interface GetPendingAcceptStatusPayload {
+  fromDate?: Date;
+  toDate?: Date;
+}
+
+const GetPendingAcceptStatus = async (
+  payload?: GetPendingAcceptStatusPayload,
+): Promise<{
   status: boolean;
   data: PendingAcceptStatus | null;
   message: string;
@@ -27,31 +33,30 @@ const GetPendingAcceptStatus = async (): Promise<{
       };
     }
 
-    const [pendingPurchaseCount, pendingSaleCount] = await Promise.all([
-      prisma.daily_purchase.count({
-        where: {
-          dvat04Id: currentDvatId,
-          is_accept: false,
-          deletedAt: null,
-          deletedById: null,
-          status: "ACTIVE",
-        },
-      }),
-      prisma.daily_sale.count({
-        where: {
-          dvat04Id: currentDvatId,
-          is_accept: false,
-          deletedAt: null,
-          deletedById: null,
-          status: "ACTIVE",
-        },
-      }),
-    ]);
+    const invoiceDateFilter =
+      payload?.fromDate && payload?.toDate
+        ? {
+            invoice_date: {
+              gte: payload.fromDate,
+              lte: payload.toDate,
+            },
+          }
+        : {};
+
+    const pendingPurchaseCount = await prisma.daily_purchase.count({
+      where: {
+        dvat04Id: currentDvatId,
+        is_accept: false,
+        deletedAt: null,
+        deletedById: null,
+        status: "ACTIVE",
+        ...invoiceDateFilter,
+      },
+    });
 
     const data: PendingAcceptStatus = {
       pendingPurchaseCount,
-      pendingSaleCount,
-      hasPending: pendingPurchaseCount > 0 || pendingSaleCount > 0,
+      hasPending: pendingPurchaseCount > 0,
     };
 
     return {

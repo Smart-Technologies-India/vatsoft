@@ -1,7 +1,7 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { challan } from "@prisma/client";
+import { challan, Prisma, returns_01 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import {
   createPaginationResponse,
@@ -13,11 +13,16 @@ interface GetUserChallanPayload {
   dvatid: number;
   skip: number;
   take: number;
+  excludeCreatedExpired?: boolean;
 }
+
+export type UserChallanWithReturn = challan & {
+  returns_01: returns_01 | null;
+};
 
 const GetUserChallan = async (
   payload: GetUserChallanPayload
-): Promise<PaginationResponse<challan[] | null>> => {
+): Promise<PaginationResponse<UserChallanWithReturn[] | null>> => {
   const functionname: string = GetUserChallan.name;
 
   try {
@@ -32,23 +37,38 @@ const GetUserChallan = async (
       } as any;
     }
 
+    const where: Prisma.challanWhereInput = {
+      deletedAt: null,
+      deletedById: null,
+      dvatid: payload.dvatid,
+    };
+
+    if (payload.excludeCreatedExpired) {
+      where.AND = [
+        { paymentstatus: { not: "CREATED" } },
+        {
+          OR: [
+            { order_status: null },
+            {
+              order_status: {
+                notIn: ["Expired", "EXPIRED"],
+              },
+            },
+          ],
+        },
+      ];
+    }
+
     const [challan, totalCount] = await Promise.all([
       prisma.challan.findMany({
-        where: {
-          deletedAt: null,
-          deletedById: null,
-          dvatid: payload.dvatid,
+        where,
+        include: {
+          returns_01: true,
         },
         skip: payload.skip,
         take: payload.take,
       }),
-      prisma.challan.count({
-        where: {
-          deletedAt: null,
-          deletedById: null,
-          dvatid: payload.dvatid,
-        },
-      }),
+      prisma.challan.count({ where }),
     ]);
 
     return createPaginationResponse({

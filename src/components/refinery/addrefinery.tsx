@@ -435,6 +435,7 @@ const AddRefinery = ({ open, onClose, onCreated }: AddRefineryProps) => {
       for (let index = 0; index < normalizedEntries.length; index += 1) {
         const entry = normalizedEntries[index];
         const response = await CreateRefinerySale({
+          purchaser_refinery_id: selectedPurchaserRefineryId,
           purchaser_tin_number: selectedPurchaserTin,
           invoice_number: data.invoiceNumber,
           invoice_date: parsedInvoiceDate,

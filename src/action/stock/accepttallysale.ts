@@ -104,7 +104,7 @@ const AcceptTallySale = async (
         const invoiceDate = new Date(
           new Date(record.invoice_date).toISOString().split("T")[0],
         );
-        invoiceDate.setDate(invoiceDate.getDate() + 1);
+        // invoiceDate.setDate(invoiceDate.getDate() + 1);
 
         return {
           dvatid: payload.dvatid,

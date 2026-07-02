@@ -138,6 +138,7 @@ model user {
   stock_createdBy                 stock[]                 @relation("stock_createdBy")
   stock_deletedBy                 stock[]                 @relation("stock_deletedBy")
   stock_updatedBy                 stock[]                 @relation("stock_updatedBy")
+  stock_update_snapshot_createdBy stock_update_snapshot[] @relation("stock_update_snapshot_createdBy")
   breakage_createdBy              breakage[]              @relation("breakage_createdBy")
   breakage_deletedBy              breakage[]              @relation("breakage_deletedBy")
   breakage_updatedBy              breakage[]              @relation("breakage_updatedBy")
@@ -356,6 +357,7 @@ model dvat04 {
   returns_01                      returns_01[]
   save_stock                      save_stock[]
   stock                           stock[]
+  stock_update_snapshot           stock_update_snapshot[]
   breakage                        breakage[]
   tally_purchase                  tally_purchase[]
   tally_sale                      tally_sale[]
@@ -963,6 +965,7 @@ model commodity_master {
   returns_entry                returns_entry[]
   save_stock                   save_stock[]
   stock                        stock[]
+  stock_update_snapshot        stock_update_snapshot[]
   breakage                     breakage[]
   tally_purchase               tally_purchase[]
   tally_sale                   tally_sale[]
@@ -1235,6 +1238,7 @@ model stock {
   createdBy          user             @relation("stock_createdBy", fields: [createdById], references: [id])
   deletedBy          user?            @relation("stock_deletedBy", fields: [deletedById], references: [id])
   dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
+  stock_update_snapshot stock_update_snapshot[]
   updatedBy          user?            @relation("stock_updatedBy", fields: [updatedById], references: [id])
 
   @@index([commodity_masterId], map: "stock_commodity_masterId_fkey")
@@ -1242,6 +1246,27 @@ model stock {
   @@index([deletedById], map: "stock_deletedById_fkey")
   @@index([dvat04Id], map: "stock_dvat04Id_fkey")
   @@index([updatedById], map: "stock_updatedById_fkey")
+}
+
+model stock_update_snapshot {
+  id                 Int              @id @default(autoincrement())
+  dvat04Id           Int
+  stockId            Int
+  commodity_masterId Int
+  old_quantity       Int
+  new_quantity       Int
+  source             String?
+  createdAt          DateTime         @default(now())
+  createdById        Int
+  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
+  createdBy          user             @relation("stock_update_snapshot_createdBy", fields: [createdById], references: [id])
+  dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
+  stock              stock            @relation(fields: [stockId], references: [id])
+
+  @@index([createdById], map: "stock_update_snapshot_createdById_fkey")
+  @@index([commodity_masterId], map: "stock_update_snapshot_commodity_masterId_fkey")
+  @@index([dvat04Id], map: "stock_update_snapshot_dvat04Id_fkey")
+  @@index([stockId], map: "stock_update_snapshot_stockId_fkey")
 }
 
 model breakage {

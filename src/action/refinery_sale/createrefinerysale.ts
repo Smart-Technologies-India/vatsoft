@@ -11,7 +11,8 @@ import prisma from "../../../prisma/database";
 import { errorToString } from "@/utils/methods";
 
 interface CreateRefinerySalePayload {
-  purchaser_tin_number: string;
+  purchaser_refinery_id: number;
+  purchaser_tin_number?: string;
   invoice_number?: string;
   invoice_date?: Date;
   commodity_master_id: number;
@@ -52,10 +53,12 @@ const CreateRefinerySale = async (
       } as any;
     }
 
-    const selectedRefineryTin = payload.purchaser_tin_number.trim();
-    if (!/^\d{11}$/.test(selectedRefineryTin)) {
+    if (
+      !Number.isInteger(payload.purchaser_refinery_id) ||
+      payload.purchaser_refinery_id <= 0
+    ) {
       return createResponse({
-        message: "Refinery TIN number must be 11 digits.",
+        message: "Please select a valid purchaser refinery.",
         functionname,
       });
     }
@@ -63,11 +66,11 @@ const CreateRefinerySale = async (
     const mappedDealer = await prisma.refinery_dealer.findFirst({
       where: {
         dealerId: currentDvatId,
+        refineryId: payload.purchaser_refinery_id,
         deletedAt: null,
         status: "ACTIVE",
         refinery: {
           deletedAt: null,
-          tinNumber: selectedRefineryTin,
         },
         dvat: {
           deletedAt: null,
