@@ -145,9 +145,9 @@ const AddRefinery = ({ open, onClose, onCreated }: AddRefineryProps) => {
       const quantityInLitres = quantityInKL * 1000;
       const taxPercent =
         Number.parseFloat(selectedCommodity?.taxable_at ?? "0") || 0;
-      const taxableValue = quantityInLitres * itemPrice;
+      const totalInvoiceValue = quantityInLitres * itemPrice;
+      const taxableValue = totalInvoiceValue / (1 + taxPercent / 100);
       const vatAmount = (taxableValue * taxPercent) / 100;
-      const totalInvoiceValue = taxableValue + vatAmount;
 
       return {
         itemPrice,
@@ -170,9 +170,7 @@ const AddRefinery = ({ open, onClose, onCreated }: AddRefineryProps) => {
     );
 
     return commodities
-      .filter(
-        (commodity) => !selectedInOtherRows.has(commodity.id.toString()),
-      )
+      .filter((commodity) => !selectedInOtherRows.has(commodity.id.toString()))
       .map((commodity) => ({
         value: commodity.id.toString(),
         label: `${commodity.product_name}`,
@@ -405,7 +403,9 @@ const AddRefinery = ({ open, onClose, onCreated }: AddRefineryProps) => {
       }
 
       if (!Number.isFinite(parsedQuantityInKL) || parsedQuantityInKL <= 0) {
-        toast.error(`Quantity (kL) must be greater than 0 in row ${index + 1}.`);
+        toast.error(
+          `Quantity (kL) must be greater than 0 in row ${index + 1}.`,
+        );
         return;
       }
 

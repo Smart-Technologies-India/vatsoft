@@ -158,7 +158,7 @@ export default function DealerMasterPricePage() {
 
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-800">
-            Add Price
+            Add Price (Market selling price )
           </h2>
           <div className="mt-3 grid gap-3 md:grid-cols-[1fr_1fr_200px_180px_auto] md:items-end">
             <div>

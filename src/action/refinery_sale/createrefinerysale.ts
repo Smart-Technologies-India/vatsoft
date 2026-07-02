@@ -173,7 +173,8 @@ const CreateRefinerySale = async (
       });
     }
 
-    const taxableAmount = salePrice * payload.quantity;
+    const taxableAmount =
+      (salePrice * payload.quantity) / (1 + taxPercent / 100);
     const vatAmount = (taxableAmount * taxPercent) / 100;
 
     const invoiceDate = payload.invoice_date
@@ -194,7 +195,9 @@ const CreateRefinerySale = async (
         },
       });
 
-      finalInvoiceNumber = existingInvoice ? buildInvoiceNumber() : invoiceNumber;
+      finalInvoiceNumber = existingInvoice
+        ? buildInvoiceNumber()
+        : invoiceNumber;
     }
 
     const createdEntry = await prisma.refinery_sale.create({

@@ -186,7 +186,7 @@ const Navbar = (props: NavbarProps) => {
 
       {/* Action Buttons */}
       <div className="flex items-center gap-2">
-        {props.role != Role.USER && (
+        {!["USER", "REFINERY_MANAGER"].includes(props.role) && (
           <Tooltip title="Sync data">
             <button
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
