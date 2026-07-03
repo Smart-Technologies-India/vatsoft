@@ -3,6 +3,7 @@
 import GetCurrentDvatRefinerySale, {
   CurrentDvatRefinerySale,
 } from "@/action/refinery_sale/getcurrentdvatrefinerysale";
+import DeleteRefinerySale from "@/action/refinery_sale/deleterefinerysale";
 import {
   Table,
   TableBody,
@@ -11,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button, Spin } from "antd";
+import { Button, Spin, Modal } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
@@ -87,8 +88,17 @@ const RefinerySalesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [sales, setSales] = useState<CurrentDvatRefinerySale[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [deleteModalState, setDeleteModalState] = useState<{
+    open: boolean;
+    saleId: number | null;
+    isDeleting: boolean;
+  }>({
+    open: false,
+    saleId: null,
+    isDeleting: false,
+  });
 
-  const loadSales = async () => {
+  const  loadSales = async () => {
     setIsLoading(true);
     try {
       const response = await GetCurrentDvatRefinerySale();
@@ -102,6 +112,58 @@ const RefinerySalesPage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteModalState.saleId) return;
+
+    const deleteSaleId = deleteModalState.saleId;
+
+    setDeleteModalState((prev) => ({ ...prev, isDeleting: true }));
+
+    try {
+      const response = await DeleteRefinerySale({
+        id: deleteSaleId,
+      });
+
+      if (response.status) {
+        // FIRST: Close modal immediately
+        setDeleteModalState({
+          open: false,
+          saleId: null,
+          isDeleting: false,
+        });
+
+        // SECOND: Show success toast
+        toast.success(response.message || "Refinery sale deleted successfully.");
+
+        // THIRD: Reload all data
+        await loadSales();
+      } else {
+        toast.error(response.message || "Failed to delete refinery sale.");
+        setDeleteModalState((prev) => ({ ...prev, isDeleting: false }));
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("An error occurred while deleting refinery sale.");
+      setDeleteModalState((prev) => ({ ...prev, isDeleting: false }));
+    }
+  };
+
+  const openDeleteModal = (saleId: number) => {
+    setDeleteModalState({
+      open: true,
+      saleId,
+      isDeleting: false,
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModalState({
+      open: false,
+      saleId: null,
+      isDeleting: false,
+    });
   };
 
   useEffect(() => {
@@ -340,16 +402,27 @@ const RefinerySalesPage = () => {
                           </span>
                         </TableCell>
                         <TableCell className="text-center p-2 text-xs">
-                          <Button
-                            size="small"
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/refinery_sales/view/${sale.id}`,
-                              )
-                            }
-                          >
-                            View
-                          </Button>
+                          <div className="flex gap-1 justify-center">
+                            <Button
+                              size="small"
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/refinery_sales/view/${sale.id}`,
+                                )
+                              }
+                            >
+                              View
+                            </Button>
+                            {status === "SALE" && (
+                              <Button
+                                size="small"
+                                danger
+                                onClick={() => openDeleteModal(sale.id)}
+                              >
+                                Delete
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -365,6 +438,20 @@ const RefinerySalesPage = () => {
             </p>
           </div>
         )}
+
+        <Modal
+          title="Delete Refinery Sale"
+          open={deleteModalState.open}
+          onCancel={closeDeleteModal}
+          okText="Delete"
+          cancelText="Cancel"
+          okButtonProps={{ danger: true, loading: deleteModalState.isDeleting }}
+          onOk={handleDeleteConfirm}
+        >
+          <p>
+            Are you sure you want to delete this refinery sale? This action cannot be undone.
+          </p>
+        </Modal>
       </div>
     </main>
   );
