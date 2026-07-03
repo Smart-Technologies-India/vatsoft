@@ -26,6 +26,7 @@ import {
 } from "@tanstack/react-table";
 import { Modal, Select } from "antd";
 import { commodity_master, tin_number_master } from "@prisma/client";
+import { encryptURLData } from "@/utils/methods";
 
 type VatpaidRefineryInvoice = {
   invoice_number: string;
@@ -67,9 +68,8 @@ const RefineryDashboard = () => {
   const [currentRefinery, setCurrentRefinery] =
     useState<CurrentRefineryProfile | null>(null);
   const [isSwitchModalOpen, setIsSwitchModalOpen] = useState(false);
-  const [activeInvoice, setActiveInvoice] = useState<VatpaidRefineryInvoice | null>(
-    null,
-  );
+  const [activeInvoice, setActiveInvoice] =
+    useState<VatpaidRefineryInvoice | null>(null);
   const [modalSelectedRefineryId, setModalSelectedRefineryId] = useState<
     number | null
   >(null);
@@ -173,7 +173,7 @@ const RefineryDashboard = () => {
         <button
           onClick={() =>
             router.push(
-              `/dashboard/refinery/sale/dispatch/${row.original.items[0].id}`,
+              `/dashboard/refinery/sale/dispatch/${encryptURLData(row.original.items[0].id.toString())}`,
             )
           }
           className="text-sm text-blue-600 border border-gray-200 hover:border-blue-400 rounded px-4 py-1"
@@ -366,7 +366,10 @@ const RefineryDashboard = () => {
                 <TableRow key={row.id} className="align-top">
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="text-xs">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>

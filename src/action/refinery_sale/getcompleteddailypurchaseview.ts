@@ -1,9 +1,13 @@
 "use server";
 
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentRefineryId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
-import { commodity_master, daily_purchase, tin_number_master } from "@prisma/client";
+import {
+  commodity_master,
+  daily_purchase,
+  tin_number_master,
+} from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 export type CompletedDailyPurchaseRow = daily_purchase & {
@@ -23,8 +27,8 @@ const GetCompletedDailyPurchaseView = async (
   const functionname = GetCompletedDailyPurchaseView.name;
 
   try {
-    const currentUserId = await getCurrentUserId();
-    if (!currentUserId) {
+    const currentRefineryId = await getCurrentRefineryId();
+    if (!currentRefineryId) {
       return {
         status: false,
         data: null,
@@ -35,7 +39,7 @@ const GetCompletedDailyPurchaseView = async (
 
     const refinery = await prisma.refinery.findFirst({
       where: {
-        createdById: currentUserId,
+        id: currentRefineryId,
         deletedAt: null,
       },
       select: {

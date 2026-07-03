@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentRefineryId, getCurrentUserId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { errorToString } from "@/utils/methods";
@@ -27,7 +27,8 @@ const DispatchRefinerySale = async (
 
   try {
     const currentUserId = await getCurrentUserId();
-    if (!currentUserId) {
+    const currentRefineryId = await getCurrentRefineryId();
+    if (!currentRefineryId) {
       return {
         status: false,
         data: null,
@@ -37,7 +38,7 @@ const DispatchRefinerySale = async (
     }
 
     const refinery = await prisma.refinery.findFirst({
-      where: { deletedAt: null, createdById: currentUserId },
+      where: { deletedAt: null, id: currentRefineryId },
     });
 
     if (!refinery) {

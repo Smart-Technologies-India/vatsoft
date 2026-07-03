@@ -32,6 +32,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { formatDate } from "date-fns";
+import { enc } from "crypto-js";
+import { encryptURLData } from "@/utils/methods";
 
 type RefinerySaleWithRelations = refinery_sale & {
   commodity_master: commodity_master;
@@ -65,7 +67,9 @@ const formatQuantity = (value: number) => {
     return "0";
   }
 
-  return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(3)));
+  return Number.isInteger(value)
+    ? String(value)
+    : String(Number(value.toFixed(3)));
 };
 
 const formatDateKey = (date: Date | string) => {
@@ -128,9 +132,14 @@ const RefinerySalePage = () => {
       existing.quantity += Number(entry.quantity || 0);
       existing.item_count += 1;
       existing.item_details =
-        existing.item_count > 1 ? `${existing.item_count} items` : existing.item_details;
+        existing.item_count > 1
+          ? `${existing.item_count} items`
+          : existing.item_details;
 
-      const statuses = [existing.refinery_status, entry.refinery_status || "SALE"];
+      const statuses = [
+        existing.refinery_status,
+        entry.refinery_status || "SALE",
+      ];
       if (statuses.includes("COMPLETED")) {
         existing.refinery_status = "COMPLETED";
       } else if (statuses.includes("DISPATCH")) {
@@ -145,7 +154,8 @@ const RefinerySalePage = () => {
     });
 
     return Array.from(grouped.values()).sort(
-      (a, b) => b.invoice_date.getTime() - a.invoice_date.getTime() || b.id - a.id,
+      (a, b) =>
+        b.invoice_date.getTime() - a.invoice_date.getTime() || b.id - a.id,
     );
   }, [saleEntries]);
 
@@ -236,7 +246,9 @@ const RefinerySalePage = () => {
           <Button
             size="small"
             onClick={() =>
-              router.push(`/dashboard/refinery/sale/dispatch/${row.original.id}`)
+              router.push(
+                `/dashboard/refinery/sale/dispatch/${encryptURLData(row.original.id.toString())}`,
+              )
             }
           >
             View
@@ -265,7 +277,9 @@ const RefinerySalePage = () => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     globalFilterFn: (row, _columnId, filterValue) => {
-      const needle = String(filterValue ?? "").trim().toLowerCase();
+      const needle = String(filterValue ?? "")
+        .trim()
+        .toLowerCase();
       if (!needle) return true;
 
       const haystack = [
@@ -285,7 +299,9 @@ const RefinerySalePage = () => {
   const handleStatusFilterChange = (value: string) => {
     setStatusFilter(value);
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    table.getColumn("status")?.setFilterValue(value === "all" ? undefined : value);
+    table
+      .getColumn("status")
+      ?.setFilterValue(value === "all" ? undefined : value);
   };
 
   const loadData = async () => {
@@ -375,8 +391,6 @@ const RefinerySalePage = () => {
           </div>
         </div> */}
 
-        
-
         {isPageLoading ? (
           <div className="flex min-h-56 items-center justify-center">
             <Spin />
@@ -387,7 +401,10 @@ const RefinerySalePage = () => {
               <Table>
                 <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id} className="bg-gray-50 border-b">
+                    <TableRow
+                      key={headerGroup.id}
+                      className="bg-gray-50 border-b"
+                    >
                       {headerGroup.headers.map((header) => (
                         <TableHead
                           key={header.id}
@@ -398,7 +415,9 @@ const RefinerySalePage = () => {
                               type="button"
                               onClick={header.column.getToggleSortingHandler()}
                               className={`inline-flex items-center gap-1 ${
-                                header.column.getCanSort() ? "cursor-pointer" : "cursor-default"
+                                header.column.getCanSort()
+                                  ? "cursor-pointer"
+                                  : "cursor-default"
                               }`}
                             >
                               {flexRender(
@@ -423,10 +442,19 @@ const RefinerySalePage = () => {
                 </TableHeader>
                 <TableBody>
                   {table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} className="border-b hover:bg-gray-50">
+                    <TableRow
+                      key={row.id}
+                      className="border-b hover:bg-gray-50"
+                    >
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="p-2 text-center text-xs">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        <TableCell
+                          key={cell.id}
+                          className="p-2 text-center text-xs"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
                         </TableCell>
                       ))}
                     </TableRow>
@@ -437,7 +465,9 @@ const RefinerySalePage = () => {
             {/* Pagination */}
             <div className="px-3 py-2 border-t bg-gray-50 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
               <div className="text-xs text-gray-600">
-                Showing {table.getRowModel().rows.length} of {table.getFilteredRowModel().rows.length} filtered rows ({groupedSaleEntries.length} total)
+                Showing {table.getRowModel().rows.length} of{" "}
+                {table.getFilteredRowModel().rows.length} filtered rows (
+                {groupedSaleEntries.length} total)
               </div>
               <div className="flex items-center gap-2">
                 <select
@@ -459,7 +489,8 @@ const RefinerySalePage = () => {
                   Previous
                 </Button>
                 <span className="text-xs text-gray-600">
-                  Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+                  Page {table.getState().pagination.pageIndex + 1} of{" "}
+                  {table.getPageCount() || 1}
                 </span>
                 <Button
                   size="small"

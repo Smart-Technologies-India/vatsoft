@@ -23,6 +23,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
+import { decryptURLData } from "@/utils/methods";
 
 type DispatchFormValues = {
   invoiceNumber: string;
@@ -73,7 +74,9 @@ const deriveWorkflowStatus = (
 export default function DispatchPage() {
   const params = useParams();
   const router = useRouter();
-  const id = Number(params.id);
+  const id: number = parseInt(
+    decryptURLData((params.id ?? "").toString(), router),
+  );
 
   const [invoice, setInvoice] = useState<VatpaidInvoiceDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,7 +151,9 @@ export default function DispatchPage() {
 
   const handleApproveRelease = async (data: DispatchFormValues) => {
     if (!canDispatch) {
-      toast.info("This invoice is already processed and available in view mode.");
+      toast.info(
+        "This invoice is already processed and available in view mode.",
+      );
       return;
     }
 
@@ -182,9 +187,13 @@ export default function DispatchPage() {
 
     for (let index = 0; index < data.lineItems.length; index += 1) {
       const item = data.lineItems[index];
-      const parsedItemKiloLiter = Number.parseFloat(String(item.kiloLiter || ""));
+      const parsedItemKiloLiter = Number.parseFloat(
+        String(item.kiloLiter || ""),
+      );
       if (!Number.isFinite(parsedItemKiloLiter) || parsedItemKiloLiter <= 0) {
-        toast.error(`Kilo Liter must be greater than 0 in item row ${index + 1}.`);
+        toast.error(
+          `Kilo Liter must be greater than 0 in item row ${index + 1}.`,
+        );
         return;
       }
     }
@@ -352,7 +361,8 @@ export default function DispatchPage() {
               </div>
             ) : (
               <div className="text-xs text-gray-500">
-                Daily purchase details are not available for this completed invoice.
+                Daily purchase details are not available for this completed
+                invoice.
               </div>
             )}
           </div>
@@ -390,7 +400,9 @@ export default function DispatchPage() {
                     name="vehicleNumber"
                     title="Vehicle No"
                     placeholder={
-                      tankerOptions.length ? "Select tanker" : "No tanker mapped"
+                      tankerOptions.length
+                        ? "Select tanker"
+                        : "No tanker mapped"
                     }
                     required={true}
                     options={tankerOptions.map((tanker) => ({
@@ -435,7 +447,9 @@ export default function DispatchPage() {
               },
               {
                 label: "Tax Paid",
-                done: ["VATPAID", "DISPATCH", "COMPLETED"].includes(currentWorkflowStatus),
+                done: ["VATPAID", "DISPATCH", "COMPLETED"].includes(
+                  currentWorkflowStatus,
+                ),
               },
               {
                 label: "Approve by refinery",

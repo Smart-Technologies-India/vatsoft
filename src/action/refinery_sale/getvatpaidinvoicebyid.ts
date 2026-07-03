@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentRefineryId, getCurrentUserId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import {
   commodity_master,
@@ -48,8 +48,8 @@ const GetVatpaidInvoiceById = async (
   const functionname = GetVatpaidInvoiceById.name;
 
   try {
-    const currentUserId = await getCurrentUserId();
-    if (!currentUserId) {
+    const currentRefineryId = await getCurrentRefineryId();
+    if (!currentRefineryId) {
       return {
         status: false,
         data: null,
@@ -59,7 +59,7 @@ const GetVatpaidInvoiceById = async (
     }
 
     const refinery = await prisma.refinery.findFirst({
-      where: { deletedAt: null, createdById: currentUserId },
+      where: { deletedAt: null, id: currentRefineryId },
     });
 
     if (!refinery) {

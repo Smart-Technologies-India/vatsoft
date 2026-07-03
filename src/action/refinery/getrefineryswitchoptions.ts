@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentRefineryId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { errorToString } from "@/utils/methods";
@@ -41,8 +41,8 @@ const GetRefinerySwitchOptions = async (): Promise<
   const functionname = GetRefinerySwitchOptions.name;
 
   try {
-    const currentUserId = await getCurrentUserId();
-    if (!currentUserId) {
+    const currentRefineryId = await getCurrentRefineryId();
+    if (!currentRefineryId) {
       return {
         status: false,
         data: null,
@@ -54,7 +54,7 @@ const GetRefinerySwitchOptions = async (): Promise<
     const currentRefinery = await prisma.refinery.findFirst({
       where: {
         deletedAt: null,
-        createdById: currentUserId,
+        id: currentRefineryId,
       },
       orderBy: {
         id: "asc",
