@@ -629,6 +629,21 @@ const ChallanData = () => {
   }
   /* ─── END PRINT LAYOUT ───────────────────────────────────── */
 
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
   return (
     <>
       <div className="mainpdf min-h-screen bg-gray-100 p-3 md:p-6" id="mainpdf">
@@ -745,7 +760,7 @@ const ChallanData = () => {
                   <p className="text-xs text-gray-500">Return Period</p>
                   <p className="text-sm font-medium text-gray-900">
                     {challanData?.returns_01
-                      ? `${challanData.returns_01.month ?? challanData.returns_01.quarter} ${challanData.returns_01.year}`
+                      ? `${monthNames[parseInt(challanData.returns_01.month ?? "0") - 1] ?? challanData.returns_01.quarter}  ${challanData.returns_01.year}`
                       : "N/A"}
                   </p>
                 </div>

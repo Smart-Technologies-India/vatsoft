@@ -55,7 +55,8 @@ const parseMerchantParam = (merchantParam1) => {
   };
 };
 
-const toUpperSafe = (value) => (value == null ? null : value.toString().toUpperCase());
+const toUpperSafe = (value) =>
+  value == null ? null : value.toString().toUpperCase();
 
 const parseCcavEncryptedResponse = (encResp) => {
   const md5 = crypto.createHash("md5").update(process.env.WORKING_KEY).digest();
@@ -221,7 +222,8 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
     const challanUpdateBase = {
       track_id: result.tracking_id || challan.track_id || null,
       order_id: result.order_id || challan.order_id || null,
-      paymentmode: toUpperSafe(result.payment_mode) || challan.paymentmode || null,
+      paymentmode:
+        toUpperSafe(result.payment_mode) || challan.paymentmode || null,
       transaction_date: new Date(),
       bank_name: result.bank_ref_no || challan.bank_name || null,
       order_status: result.order_status || null,
@@ -259,11 +261,45 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
           data: {
             ...challanUpdateBase,
             paymentstatus: "PAID",
+            deletedAt: null,
+            deletedById: null,
           },
         });
+
+        // Handle refinery_sale status update for refinery VAT payments
+        const refineryMarker = (challan.remark || "").toString();
+        const isRefineryVatPayment = refineryMarker.startsWith("REFINERY_SALE_VAT#");
+
+        if (isRefineryVatPayment) {
+          const markerParts = refineryMarker.split("#");
+          const markerInvoiceNo = markerParts[1] || "";
+          const markerRefineryId = parseInt(markerParts[2] || "0", 10);
+          const markerSellerTinId = parseInt(markerParts[3] || "0", 10);
+
+          if (markerInvoiceNo && markerRefineryId > 0 && markerSellerTinId > 0) {
+            await prisma.refinery_sale.updateMany({
+              where: {
+                invoice_number: markerInvoiceNo,
+                refineryId: markerRefineryId,
+                seller_tin_numberId: markerSellerTinId,
+                refinery_status: "SALE",
+                deletedAt: null,
+                deletedById: null,
+                status: "ACTIVE",
+              },
+              data: {
+                refinery_status: "VATPAID",
+                updatedById: challan.createdById,
+              },
+            });
+          }
+        }
       }
     } else if (statusGroup === "pending") {
-      if (intent && ["CREATED", "INITIATED", "EXPIRED"].includes(intent.status)) {
+      if (
+        intent &&
+        ["CREATED", "INITIATED", "EXPIRED"].includes(intent.status)
+      ) {
         await prisma.payment_intent.update({
           where: { id: intent.id },
           data: {
@@ -280,10 +316,16 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
           data: {
             ...challanUpdateBase,
             paymentstatus: "PENDING",
+            deletedAt: null,
+            deletedById: null,
           },
         });
       }
-    } else if (statusGroup === "cancelled" || statusGroup === "failed" || statusGroup === "refunded") {
+    } else if (
+      statusGroup === "cancelled" ||
+      statusGroup === "failed" ||
+      statusGroup === "refunded"
+    ) {
       if (intent && intent.status !== "SUCCESS") {
         await prisma.payment_intent.update({
           where: { id: intent.id },
@@ -358,7 +400,9 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
           paymentstatus: "FAILED",
           order_status: result.order_status || "FAILED",
           failure_message: "Payment validation failed: AMOUNT_MISMATCH",
-          status_message: result.status_message || "Amount mismatch in reconciliation callback.",
+          status_message:
+            result.status_message ||
+            "Amount mismatch in reconciliation callback.",
         },
       });
     }

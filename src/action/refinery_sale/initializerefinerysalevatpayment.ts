@@ -115,9 +115,53 @@ const InitializeRefinerySaleVatPayment = async (
     const vatAmount = vatTotal.toFixed(2);
     const challanRemark = `REFINERY_SALE_VAT#${targetSale.invoice_number}#${targetSale.refineryId}#${targetSale.seller_tin_numberId}#${targetSale.id}`;
 
+    // Get current date to determine month and year
+    const currentDate = new Date();
+    const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0"); // 01-12
+    const currentYear = String(currentDate.getFullYear());
+
+    // Check if a return already exists for current month/year
+    let existingReturn = await prisma.returns_01.findFirst({
+      where: {
+        dvat04Id: currentDvatId,
+        year: currentYear,
+        month: currentMonth,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    let returnId: number;
+
+    // If return doesn't exist, create a new one
+    if (!existingReturn) {
+      const returnRemark = `AUTO_REFINERY_SALE_VAT#${currentYear}#${currentMonth}`;
+      const newReturn = await prisma.returns_01.create({
+        data: {
+          rr_number: ``,
+          return_type: "ORIGINAL",
+          year: currentYear,
+          month: currentMonth,
+          dvat04Id: currentDvatId,
+          file_status: "ACTIVE",
+          remarks: returnRemark,
+          status: "ACTIVE",
+          createdById: currentUserId,
+          updatedById: currentUserId,
+          filing_datetime: new Date(),
+        },
+      });
+      returnId = newReturn.id;
+    } else {
+      returnId = existingReturn.id;
+    }
+
     const created = await prisma.challan.create({
       data: {
         dvatid: currentDvatId,
+        returnid: returnId,
         cpin: cpinGenerator(),
         vat: vatAmount,
         interest: "0",

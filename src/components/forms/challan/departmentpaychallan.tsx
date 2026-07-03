@@ -156,13 +156,13 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
     const challan_response = await CreateChallan({
       dvatid: dvatdata.id,
       returnid: returnIdToUse,
-      latefees: data.latefees.toString(),
+      penalty: data.latefees.toString(),
       vat: data.vat.toString(),
       interest: data.interest.toString(),
       others: data.others ?? "0",
       reason: "MONTHLYPAYMENT",
       total_tax_amount: getTotalAmount().toString(),
-      penalty: data.penalty.toString(),
+      latefees: data.penalty.toString(),
       remark: data.remark,
     });
 
