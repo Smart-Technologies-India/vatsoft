@@ -5,6 +5,7 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { customAlphabet } from "nanoid";
 import { errorToString } from "@/utils/methods";
+import { Quarter } from "@prisma/client";
 
 interface InitializeRefinerySaleVatPaymentPayload {
   id: number;
@@ -135,6 +136,36 @@ const InitializeRefinerySaleVatPayment = async (
 
     let returnId: number;
 
+    const monthsnames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const quarters: Record<string, Quarter> = {
+      April: Quarter.QUARTER1,
+      May: Quarter.QUARTER1,
+      June: Quarter.QUARTER1,
+      July: Quarter.QUARTER2,
+      August: Quarter.QUARTER2,
+      September: Quarter.QUARTER2,
+      October: Quarter.QUARTER3,
+      November: Quarter.QUARTER3,
+      December: Quarter.QUARTER3,
+      January: Quarter.QUARTER4,
+      February: Quarter.QUARTER4,
+      March: Quarter.QUARTER4,
+    };
+
     // If return doesn't exist, create a new one
     if (!existingReturn) {
       const returnRemark = `AUTO_REFINERY_SALE_VAT#${currentYear}#${currentMonth}`;
@@ -143,7 +174,8 @@ const InitializeRefinerySaleVatPayment = async (
           rr_number: ``,
           return_type: "ORIGINAL",
           year: currentYear,
-          month: currentMonth,
+          month: monthsnames[parseInt(currentMonth) - 1],
+          quarter: quarters[monthsnames[parseInt(currentMonth) - 1]],
           dvat04Id: currentDvatId,
           file_status: "ACTIVE",
           remarks: returnRemark,

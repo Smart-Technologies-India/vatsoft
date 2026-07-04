@@ -5,12 +5,12 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
 import {
   commodity_master,
-  daily_purchase,
+  refinery_sale,
   tin_number_master,
 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
-export type CompletedDailyPurchaseRow = daily_purchase & {
+export type CompletedDailyPurchaseRow = refinery_sale & {
   commodity_master: commodity_master;
   seller_tin_number: tin_number_master;
 };
@@ -18,6 +18,7 @@ export type CompletedDailyPurchaseRow = daily_purchase & {
 export interface CompletedDailyPurchaseView {
   invoiceNumber: string;
   invoiceDate: Date;
+  cstPurchase: string;
   rows: CompletedDailyPurchaseRow[];
 }
 
@@ -27,8 +28,9 @@ const GetCompletedDailyPurchaseView = async (
   const functionname = GetCompletedDailyPurchaseView.name;
 
   try {
+    const currentUserId = await getCurrentRefineryId();
     const currentRefineryId = await getCurrentRefineryId();
-    if (!currentRefineryId) {
+    if (!currentRefineryId || !currentUserId) {
       return {
         status: false,
         data: null,
@@ -64,9 +66,15 @@ const GetCompletedDailyPurchaseView = async (
         status: "ACTIVE",
       },
       select: {
+        cst_purchase: true,
         invoice_number: true,
         invoice_date: true,
         seller_tin_numberId: true,
+        seller_tin_number: {
+          select: {
+            tin_number: true,
+          },
+        },
       },
     });
 
@@ -77,12 +85,14 @@ const GetCompletedDailyPurchaseView = async (
       });
     }
 
-    const rows = await prisma.daily_purchase.findMany({
+    // Retrieve all completed refinery_sale records for this invoice
+    const rows = await prisma.refinery_sale.findMany({
       where: {
+        refineryId: refinery.id,
         invoice_number: targetSale.invoice_number,
         invoice_date: targetSale.invoice_date,
-        dvat04Id: targetSale.seller_tin_numberId,
-        seller_tin_numberId: refinery.tin_master_id,
+        seller_tin_numberId: targetSale.seller_tin_numberId,
+        refinery_status: "COMPLETED",
         deletedAt: null,
         status: "ACTIVE",
       },
@@ -95,12 +105,20 @@ const GetCompletedDailyPurchaseView = async (
       },
     });
 
+    if (!rows || rows.length === 0) {
+      return createResponse({
+        message: "No completed sale records found for this invoice.",
+        functionname,
+      });
+    }
+
     return createResponse({
       functionname,
-      message: "Completed daily purchase view loaded.",
+      message: "Completed sale records loaded.",
       data: {
         invoiceNumber: targetSale.invoice_number,
         invoiceDate: targetSale.invoice_date,
+        cstPurchase: targetSale.cst_purchase ?? "0",
         rows,
       },
     });

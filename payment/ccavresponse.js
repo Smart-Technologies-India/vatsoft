@@ -443,6 +443,7 @@ export const postRes = (request, response) => {
             transaction_date: new Date().toISOString(),
             paymentmode: "ONLINE",
             bank_name: originalChallan.bank_name,
+            remark: originalChallan.remark,
           },
         });
         redirectChallanId = createdChallan.id;
@@ -543,8 +544,8 @@ export const postRes = (request, response) => {
               bene_bank: result.bene_bank,
               bene_branch: result.bene_branch,
               trans_fee: result.trans_fee,
-              deletedAt:null,
-              deletedById:null,
+              deletedAt: null,
+              deletedById: null,
             },
           });
         } catch (e) {
@@ -623,7 +624,6 @@ export const postRes = (request, response) => {
           })();
 
           return;
-
         } catch (e) {
           console.log(e);
         }
@@ -668,7 +668,8 @@ export const postRes = (request, response) => {
           });
 
           const refineryMarker = (challan.remark || "").toString();
-          const isRefineryVatPayment = refineryMarker.startsWith("REFINERY_SALE_VAT#");
+          const isRefineryVatPayment =
+            refineryMarker.startsWith("REFINERY_SALE_VAT#");
 
           if (isRefineryVatPayment) {
             const markerParts = refineryMarker.split("#");
@@ -676,7 +677,11 @@ export const postRes = (request, response) => {
             const markerRefineryId = parseInt(markerParts[2] || "0", 10);
             const markerSellerTinId = parseInt(markerParts[3] || "0", 10);
 
-            if (markerInvoiceNo && markerRefineryId > 0 && markerSellerTinId > 0) {
+            if (
+              markerInvoiceNo &&
+              markerRefineryId > 0 &&
+              markerSellerTinId > 0
+            ) {
               await prisma.refinery_sale.updateMany({
                 where: {
                   invoice_number: markerInvoiceNo,
@@ -716,7 +721,8 @@ export const postRes = (request, response) => {
             try {
               const get_rr_number = (returnRecord) => {
                 const rr_no =
-                  returnRecord?.dvat04?.tinNumber?.toString().slice(-4) || "0000";
+                  returnRecord?.dvat04?.tinNumber?.toString().slice(-4) ||
+                  "0000";
                 const today = new Date();
                 const month = ("0" + (today.getMonth() + 1)).slice(-2);
                 const day = ("0" + today.getDate()).slice(-2);
@@ -799,7 +805,9 @@ export const postRes = (request, response) => {
                       },
                       data: {
                         rr_number: get_rr_number(quarterlyReturn),
-                        paymentmode: result.payment_mode.toString().toUpperCase(),
+                        paymentmode: result.payment_mode
+                          .toString()
+                          .toUpperCase(),
                         transaction_date: new Date().toISOString(),
                         track_id: result.tracking_id,
                         bank_name: result.bank_ref_no,
@@ -947,6 +955,7 @@ export const postRes = (request, response) => {
             transaction_date: new Date().toISOString(),
             paymentmode: "ONLINE",
             bank_name: originalChallan.bank_name,
+            remark: originalChallan.remark,
           },
         });
         redirectChallanId = createdChallan.id;

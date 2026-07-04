@@ -1765,6 +1765,7 @@ model refinery_sale {
   tax_percent         String
   amount              String
   vatamount           String
+   cst_purchase        String?
   is_dvat_31          Boolean           @default(false)
   is_local            Boolean           @default(false)
   is_accept           Boolean           @default(false)

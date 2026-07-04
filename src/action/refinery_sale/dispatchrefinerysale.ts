@@ -192,6 +192,22 @@ const DispatchRefinerySale = async (
       dispatchRows.map((row) => [row.saleId, row.quantity]),
     );
 
+    // Get seller's DVAT04 record for creating daily purchases
+    const sellerDvat = await prisma.dvat04.findFirst({
+      where: {
+        tin_master_id: targetSale.seller_tin_numberId,
+        deletedAt: null,
+        status: "APPROVED",
+      },
+    });
+
+    if (!sellerDvat) {
+      return createResponse({
+        message: "Seller DVAT 04 not found.",
+        functionname,
+      });
+    }
+
     await prisma.$transaction(async (tx) => {
       for (const row of vatPaidRows) {
         const dispatchQuantity = quantityBySaleId.get(row.id) || row.quantity;
@@ -221,6 +237,7 @@ const DispatchRefinerySale = async (
             invoice_number: payload.invoice_number,
             invoice_date: parsedInvoiceDate,
             vehicle_number: payload.vehicle_number,
+            cst_purchase: payload.cstpurchase,
             updatedById: currentUserId,
             updatedAt: new Date(),
             quantity: dispatchQuantity,
@@ -274,7 +291,7 @@ const DispatchRefinerySale = async (
         amount_unit: rowAmountUnit.toFixed(2),
         invoice_date: parsedInvoiceDate,
         invoice_number: payload.invoice_number,
-        dvatid: targetSale.seller_tin_numberId,
+        dvatid: sellerDvat.id,
         quantity: rowQuantity,
         vatamount: rowVatAmount.toFixed(2),
         commodityid: row.commodityMasterId,

@@ -760,7 +760,7 @@ const ChallanData = () => {
                   <p className="text-xs text-gray-500">Return Period</p>
                   <p className="text-sm font-medium text-gray-900">
                     {challanData?.returns_01
-                      ? `${monthNames[parseInt(challanData.returns_01.month ?? "0") - 1] ?? challanData.returns_01.quarter}  ${challanData.returns_01.year}`
+                      ? `${challanData.returns_01.month ?? challanData.returns_01.quarter}  ${challanData.returns_01.year}`
                       : "N/A"}
                   </p>
                 </div>

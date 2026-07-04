@@ -254,65 +254,135 @@ export default function DispatchPage() {
             x
           </button>
         </div>
+        {currentWorkflowStatus !== "COMPLETED" ? (
+          <>
+            <div className="border border-gray-200 rounded-lg overflow-hidden mb-5">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50">
+                    <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                      Product Name
+                    </TableHead>
+                    <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                      Litres
+                    </TableHead>
+                    <TableHead className="text-center p-2 text-xs font-medium text-gray-700 w-60">
+                      Dispatch Kilo Liter
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invoice.rows.map((row, index) => (
+                    <TableRow key={row.id} className="border-b w-60">
+                      <TableCell className="text-center p-2 text-xs">
+                        {row.commodity_master.product_name}
+                        <input
+                          type="hidden"
+                          {...register(`lineItems.${index}.saleId` as const, {
+                            valueAsNumber: true,
+                          })}
+                          value={row.id}
+                        />
+                      </TableCell>
+                      <TableCell className="text-center p-2 text-xs">
+                        {row.quantity.toLocaleString("en-IN")}
+                      </TableCell>
+                      <TableCell className="p-2 text-xs">
+                        <input
+                          type="number"
+                          // step="0.001"
+                          min="0"
+                          {...register(`lineItems.${index}.kiloLiter` as const)}
+                          className="h-8 w-full rounded border border-gray-300 px-2 text-xs outline-none focus:border-blue-500"
+                          placeholder="kL"
+                          disabled={!canDispatch || submitting}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-        <div className="border border-gray-200 rounded-lg overflow-hidden mb-5">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-50">
-                <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
-                  Product Name
-                </TableHead>
-                <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
-                  Litres
-                </TableHead>
-                {currentWorkflowStatus !== "COMPLETED" && (
-                  <TableHead className="text-center p-2 text-xs font-medium text-gray-700 w-60">
-                    Dispatch Kilo Liter
-                  </TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invoice.rows.map((row, index) => (
-                <TableRow key={row.id} className="border-b w-60">
-                  <TableCell className="text-center p-2 text-xs">
-                    {row.commodity_master.product_name}
-                    {currentWorkflowStatus !== "COMPLETED" && (
-                      <input
-                        type="hidden"
-                        {...register(`lineItems.${index}.saleId` as const, {
-                          valueAsNumber: true,
-                        })}
-                        value={row.id}
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center p-2 text-xs">
-                    {row.quantity.toLocaleString("en-IN")}
-                  </TableCell>
-                  {currentWorkflowStatus !== "COMPLETED" && (
-                    <TableCell className="p-2 text-xs">
-                      <input
-                        type="number"
-                        // step="0.001"
-                        min="0"
-                        {...register(`lineItems.${index}.kiloLiter` as const)}
-                        className="h-8 w-full rounded border border-gray-300 px-2 text-xs outline-none focus:border-blue-500"
-                        placeholder="kL"
-                        disabled={!canDispatch || submitting}
-                      />
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+            {/* Dealer Details Card */}
+            <div className="border border-gray-200 rounded-lg p-4 mb-5 bg-blue-50">
+              <div className="text-sm font-semibold text-gray-800 mb-3">
+                Dealer Details
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Dealer Name</div>
+                  <div className="text-sm font-medium text-gray-800">
+                    {invoice.buyer.name_of_dealer}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">TIN Number</div>
+                  <div className="text-sm font-medium text-gray-800">
+                    {invoice.buyer.tin_number}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <> </>
+        )}
 
         {currentWorkflowStatus === "COMPLETED" ? (
           <div className="border border-gray-200 rounded-lg p-4 mb-6 bg-gray-50">
+            <div className="mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">
+                    Invoice Number
+                  </div>
+                  <div className="text-sm font-semibold text-gray-800">
+                    {completedPurchaseView?.invoiceNumber}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Invoice Date</div>
+                  <div className="text-sm font-semibold text-gray-800">
+                    {completedPurchaseView?.invoiceDate
+                      ? format(
+                          new Date(completedPurchaseView.invoiceDate),
+                          "dd/MM/yyyy",
+                        )
+                      : "-"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">CST Purchase</div>
+                  <div className="text-sm font-semibold text-gray-800">
+                    {completedPurchaseView?.cstPurchase}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4 mb-4">
+              <div className="text-sm font-semibold text-gray-800 mb-3">
+                Dealer Details
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Dealer Name</div>
+                  <div className="text-sm font-medium text-gray-800">
+                    {invoice.buyer.name_of_dealer}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">TIN Number</div>
+                  <div className="text-sm font-medium text-gray-800">
+                    {invoice.buyer.tin_number}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="text-sm font-semibold text-gray-800 mb-3">
-              Completed Purchase View
+              Completed Sale Items
             </div>
             {completedPurchaseView?.rows?.length ? (
               <div className="overflow-x-auto">
@@ -323,16 +393,14 @@ export default function DispatchPage() {
                         Product
                       </TableHead>
                       <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
-                        Quantity
+                        Quantity (L)
+                      </TableHead>
+
+                      <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                        Vehicle
                       </TableHead>
                       <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
-                        Tax %
-                      </TableHead>
-                      <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
-                        Amount
-                      </TableHead>
-                      <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
-                        Tax
+                        Status
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -346,13 +414,12 @@ export default function DispatchPage() {
                           {row.quantity.toLocaleString("en-IN")}
                         </TableCell>
                         <TableCell className="text-center p-2 text-xs">
-                          {row.tax_percent}%
+                          {row.vehicle_number || "-"}
                         </TableCell>
                         <TableCell className="text-center p-2 text-xs">
-                          {formatCurrency(row.amount)}
-                        </TableCell>
-                        <TableCell className="text-center p-2 text-xs">
-                          {formatCurrency(row.vatamount)}
+                          <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
+                            {row.refinery_status}
+                          </span>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -361,8 +428,7 @@ export default function DispatchPage() {
               </div>
             ) : (
               <div className="text-xs text-gray-500">
-                Daily purchase details are not available for this completed
-                invoice.
+                No completed sale records found for this invoice.
               </div>
             )}
           </div>
@@ -387,7 +453,7 @@ export default function DispatchPage() {
                   />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 mb-1">Purchaser</div>
+                  <div className="text-xs text-gray-500 mb-1">Dealer Name</div>
                   <div className="text-sm font-semibold text-gray-800 py-1.5">
                     {invoice.buyer.name_of_dealer}
                   </div>
@@ -395,6 +461,12 @@ export default function DispatchPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">TIN Number</div>
+                  <div className="text-sm font-semibold text-gray-800 py-1.5">
+                    {invoice.buyer.tin_number}
+                  </div>
+                </div>
                 <div>
                   <MultiSelect<DispatchFormValues>
                     name="vehicleNumber"

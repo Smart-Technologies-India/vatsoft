@@ -46,7 +46,8 @@ const AcceptTallyPurchase = async (
 
     const entries = records.map((record) => {
       const taxPercent = record.tax_percent;
-      const totalInvoice = parseFloat(record.amount) + parseFloat(record.vatamount);
+      const totalInvoice =
+        parseFloat(record.amount) + parseFloat(record.vatamount);
       const taxableValue = totalInvoice / (1 + parseFloat(taxPercent) / 100);
       const vatValue = totalInvoice - taxableValue;
 
@@ -81,13 +82,13 @@ const AcceptTallyPurchase = async (
       });
     }
 
-    await prisma.tally_purchase.updateMany({
+    await prisma.tally_purchase.deleteMany({
       where: { id: { in: records.map((record) => record.id) } },
-      data: { is_accept: true },
     });
 
     return createResponse({
-      message: "Tally purchase records accepted and converted to daily purchase successfully.",
+      message:
+        "Tally purchase records accepted and converted to daily purchase successfully.",
       functionname,
       data: true,
     });

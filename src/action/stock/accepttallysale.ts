@@ -78,7 +78,8 @@ const AcceptTallySale = async (
 
     for (const record of records) {
       const required = requiredByCommodity.get(record.commodity_masterId) ?? 0;
-      const available = availableByCommodity.get(record.commodity_masterId) ?? 0;
+      const available =
+        availableByCommodity.get(record.commodity_masterId) ?? 0;
 
       if (required > available) {
         return createResponse({
@@ -134,13 +135,12 @@ const AcceptTallySale = async (
         });
       }
 
-      await prisma.tally_sale.updateMany({
+      await prisma.tally_sale.deleteMany({
         where: {
           id: { in: chunkRecords.map((record) => record.id) },
           status: "ACTIVE",
           is_converted: false,
         },
-        data: { is_converted: true },
       });
     }
 
