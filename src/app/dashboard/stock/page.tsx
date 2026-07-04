@@ -868,14 +868,15 @@ const CommodityMaster = () => {
                 )} */}
 
                 {/* Common Buttons */}
-                <Button
-                  size="small"
-                  type="primary"
-                  onClick={() => setAddBox(true)}
-                >
-                  Add Purchase
-                </Button>
-
+                {dvatdata?.commodity != "RESTAURANT" && (
+                  <Button
+                    size="small"
+                    type="primary"
+                    onClick={() => setAddBox(true)}
+                  >
+                    Add Purchase
+                  </Button>
+                )}
                 <Button
                   size="small"
                   type="default"

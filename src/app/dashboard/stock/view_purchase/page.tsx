@@ -190,7 +190,12 @@ const DocumentWiseDetails = () => {
       skip: number;
       take: number;
       search: string;
-      sortBy: "invoice_number" | "invoice_date" | "trade_name" | "tin_number" | "invoice_value";
+      sortBy:
+        | "invoice_number"
+        | "invoice_date"
+        | "trade_name"
+        | "tin_number"
+        | "invoice_value";
       order: "asc" | "desc";
       startDate: string;
       endDate: string;
@@ -1279,8 +1284,8 @@ const DocumentWiseDetails = () => {
   const handleAcceptGroupAll = async () => {
     if (!selectedGroup || !dvatdata) return;
 
-    const pendingRecords = selectedGroup.records.filter(
-      (record) => canAcceptRecord(record),
+    const pendingRecords = selectedGroup.records.filter((record) =>
+      canAcceptRecord(record),
     );
 
     if (pendingRecords.length === 0) return;
@@ -1567,7 +1572,11 @@ const DocumentWiseDetails = () => {
                             )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        ₹{(parseFloat(record.vatamount) + parseFloat(record.amount)).toFixed(2)}
+                        ₹
+                        {(
+                          parseFloat(record.vatamount) +
+                          parseFloat(record.amount)
+                        ).toFixed(2)}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.tax_percent}%
@@ -1632,9 +1641,7 @@ const DocumentWiseDetails = () => {
                 </div>
               </div>
             </div>
-            {selectedGroup.records.some(
-              (r) => canAcceptRecord(r),
-            ) && (
+            {selectedGroup.records.some((r) => canAcceptRecord(r)) && (
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   disabled={isGroupAcceptLoading}
@@ -1805,7 +1812,8 @@ const DocumentWiseDetails = () => {
               <div className="mt-3 rounded border border-amber-200 bg-white p-2.5 text-xs text-slate-700">
                 <p>Status: {finalizeProgress.statusText}</p>
                 <p>
-                  Uploaded: {finalizeProgress.processed} / {finalizeProgress.total}
+                  Uploaded: {finalizeProgress.processed} /{" "}
+                  {finalizeProgress.total}
                 </p>
                 <div className="mt-2 h-2 w-full overflow-hidden rounded bg-slate-200">
                   <div
@@ -2324,426 +2332,426 @@ const DocumentWiseDetails = () => {
           )}
 
           <div className="bg-white rounded shadow-sm border p-3">
-              {/* Search, Sort, and Filter Controls */}
-              <div className="mb-4 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-8 gap-3 items-end">
-                  <div className="xl:col-span-2">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Search
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Search by invoice number, trade name, or TIN..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Sort By
-                    </label>
-                    <select
-                      value={sortField}
-                      onChange={(e) => setSortField(e.target.value as any)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="invoice_date">Invoice Date</option>
-                      <option value="invoice_number">Invoice Number</option>
-                      <option value="trade_name">Trade Name</option>
-                      <option value="tin_number">TIN Number</option>
-                      <option value="invoice_value">Invoice Value</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Order
-                    </label>
-                    <select
-                      value={sortOrder}
-                      onChange={(e) =>
-                        setSortOrder(e.target.value as "asc" | "desc")
-                      }
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="asc">Ascending</option>
-                      <option value="desc">Descending</option>
-                    </select>
-                  </div>
-
-                  <div className="xl:col-span-2">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Month
-                    </label>
-                    <input
-                      type="month"
-                      value={selectedPeriod}
-                      onChange={(e) => setSelectedPeriod(e.target.value)}
-                      min="2026-04"
-                      max={maxSelectableMonth}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Accept Status
-                    </label>
-                    <select
-                      value={acceptStatusFilter}
-                      onChange={(e) =>
-                        setAcceptStatusFilter(e.target.value as any)
-                      }
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="all">All</option>
-                      <option value="pending">Pending</option>
-                      <option value="accepted">Accepted</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <button
-                      onClick={() => {
-                        setSearchTerm("");
-                        setSelectedPeriod("");
-                        setDateFilter({ startDate: "", endDate: "" });
-                        setAcceptStatusFilter("all");
-                        setSortField("invoice_date");
-                        setSortOrder("desc");
-                      }}
-                      className="w-full px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-300 transition-colors"
-                    >
-                      Clear Filters
-                    </button>
-                  </div>
-                </div>
-
-                <p className="text-[11px] text-gray-500">
-                  Month filter allowed from April 2026 to current month.
-                </p>
-
-                {/* Results Count */}
-                <div className="text-xs text-gray-600">
-                  Showing {dailyPurchase.length} of {pagination.total} filtered record(s)
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50 border-b">
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Count
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Invoice No.
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Invoice Date
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Trade Name
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        TIN Number
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Invoice Value (₹)
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        VAT Amount
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Taxable Value (₹)
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dailyPurchase.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8">
-                          <p className="text-gray-500 text-sm">
-                            No purchase records match your filters.
-                          </p>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      dailyPurchase.map(
-                        (group: GroupedDailyPurchase, index: number) => (
-                          <TableRow
-                            key={index}
-                            className={
-                              group.hasPendingAcceptable
-                                ? "border-b bg-red-50 hover:bg-red-100"
-                                : "border-b hover:bg-gray-50"
-                            }
-                          >
-                            <TableCell className="p-2 text-center text-xs">
-                              <button
-                                onClick={() => {
-                                  setSelectedGroup(group);
-                                  setIsGroupModalOpen(true);
-                                }}
-                                className="text-blue-600 hover:text-blue-800 underline"
-                              >
-                                {group.count} items
-                              </button>
-                              {/* {group.count > 1 ? () : (<span>{group.count}</span>)} */}
-                            </TableCell>
-                            <TableCell className="p-2 text-center text-xs">
-                              {group.invoice_number}
-                            </TableCell>
-                            <TableCell className="p-2 text-center text-xs">
-                              {formateDate(group.invoice_date)}
-                            </TableCell>
-                            <TableCell className="p-2 text-center text-xs">
-                              {group.seller_tin_number.name_of_dealer}
-                            </TableCell>
-                            <TableCell className="p-2 text-center text-xs">
-                              {group.seller_tin_number.tin_number}
-                            </TableCell>
-                            <TableCell className="p-2 text-center text-xs">
-                              ₹{group.totalInvoiceValue.toFixed(2)}
-                            </TableCell>
-                            <TableCell className="p-2 text-center text-xs">
-                              ₹{group.totalVatAmount.toFixed(2)}
-                            </TableCell>
-                            <TableCell className="p-2 text-center text-xs">
-                              ₹{group.totalTaxableValue.toFixed(2)}
-                            </TableCell>
-                            <TableCell className="p-2 text-center">
-                              <Popover
-                                content={
-                                  <div className="flex flex-col gap-2">
-                                    {group.count > 1 && (
-                                      <button
-                                        onClick={() => {
-                                          setSelectedGroup(group);
-                                          setIsGroupModalOpen(true);
-                                          handelClose(index);
-                                        }}
-                                        className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded"
-                                      >
-                                        View
-                                      </button>
-                                    )}
-                                    {group.count === 1 &&
-                                      !(
-                                        group.seller_tin_number.tin_number.startsWith(
-                                          "25",
-                                        ) ||
-                                        group.seller_tin_number.tin_number.startsWith(
-                                          "26",
-                                        )
-                                      ) && (
-                                        <>
-                                          <button
-                                            onClick={() => {
-                                              setDeleteRecord(
-                                                group.records[0].id,
-                                              );
-                                              setDeleteBox(true);
-                                              loadDeleteImpact(
-                                                group.records[0].id,
-                                              );
-                                              handelClose(index);
-                                            }}
-                                            className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded"
-                                          >
-                                            Delete
-                                          </button>
-                                          <button
-                                            onClick={() => {
-                                              router.push(
-                                                `/dashboard/stock/edit_purchase/${encryptURLData(
-                                                  group.records[0].id.toString(),
-                                                )}`,
-                                              );
-                                              handelClose(index);
-                                            }}
-                                            className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded"
-                                          >
-                                            Update
-                                          </button>
-                                        </>
-                                      )}
-                                    {group.count === 1 &&
-                                      (group.seller_tin_number.tin_number.startsWith(
-                                        "25",
-                                      ) ||
-                                        group.seller_tin_number.tin_number.startsWith(
-                                          "26",
-                                        )) &&
-                                      canAcceptRecord(group.records[0]) && (
-                                        <>
-                                          <button
-                                            onClick={async () => {
-                                              await handleAcceptSingleRecord(
-                                                group.records[0],
-                                              );
-                                              handelClose(index);
-                                            }}
-                                            disabled={isSingleAcceptLoading}
-                                            className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded disabled:opacity-60"
-                                          >
-                                            {isSingleAcceptLoading
-                                              ? "Accepting..."
-                                              : "Accept"}
-                                          </button>
-                                          <button
-                                            onClick={async () => {
-                                              Modal.confirm({
-                                                title: "Confirm Reject",
-                                                content:
-                                                  "This will reject this purchase record and cannot be undone.",
-                                                okText: "Reject",
-                                                cancelText: "Cancel",
-                                                okButtonProps: {
-                                                  danger: true,
-                                                },
-                                                onOk: async () => {
-                                                  await handleRejectSingleRecord(
-                                                    group.records[0],
-                                                  );
-                                                  handelClose(index);
-                                                },
-                                              });
-                                            }}
-                                            disabled={isSingleRejectLoading}
-                                            className="text-sm bg-white border hover:border-red-500 hover:text-red-600 text-gray-700 py-1 px-3 rounded disabled:opacity-60"
-                                          >
-                                            {isSingleRejectLoading
-                                              ? "Rejecting..."
-                                              : "Reject"}
-                                          </button>
-                                        </>
-                                      )}
-                                    <button
-                                      onClick={() => {
-                                        setCreditNoteGroup(group);
-                                        setCreditNoteBox(true);
-                                        handelClose(index);
-                                      }}
-                                      className="text-sm bg-white border hover:border-green-500 hover:text-green-600 text-gray-700 py-1 px-3 rounded"
-                                    >
-                                      Credit Note
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setDebitNoteGroup(group);
-                                        setDebitNoteBox(true);
-                                        handelClose(index);
-                                      }}
-                                      className="text-sm bg-white border hover:border-amber-500 hover:text-amber-600 text-gray-700 py-1 px-3 rounded"
-                                    >
-                                      Debit Note
-                                    </button>
-                                  </div>
-                                }
-                                title="Actions"
-                                trigger="click"
-                                open={!!openPopovers[index]}
-                                onOpenChange={(newOpen) =>
-                                  handleOpenChange(newOpen, index)
-                                }
-                              >
-                                <button className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded">
-                                  Actions
-                                </button>
-                              </Popover>
-
-                              <Modal
-                                title="Confirm Deletion"
-                                open={deletebox}
-                                footer={null}
-                              >
-                                <p className="mb-4">
-                                  Are you sure you want to delete this purchase
-                                  entry?
-                                </p>
-                                <p className="mb-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-                                  Warning: Linked credit/debit note entries in
-                                  return entry will also be deleted when
-                                  description of goods matches this purchase
-                                  URN.
-                                  <br />
-                                  {isDeleteImpactLoading
-                                    ? "Checking linked notes..."
-                                    : `Credit Notes: ${deleteImpact.creditNoteCount}, Debit Notes: ${deleteImpact.debitNoteCount}, Total linked entries: ${deleteImpact.totalLinkedCount}`}
-                                </p>
-                                <div className="flex gap-2 justify-end">
-                                  <button
-                                    className="py-1 px-4 border rounded text-sm"
-                                    onClick={() => {
-                                      setDeleteBox(false);
-                                      setDeleteRecord(null);
-                                      setDeleteImpact({
-                                        creditNoteCount: 0,
-                                        debitNoteCount: 0,
-                                        totalLinkedCount: 0,
-                                      });
-                                    }}
-                                  >
-                                    Cancel
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      if (deleteRecord != null) {
-                                        delete_purchase_entry(deleteRecord);
-                                      }
-                                    }}
-                                    className="py-1 px-4 bg-rose-500 hover:bg-rose-600 text-white rounded text-sm"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </Modal>
-                            </TableCell>
-                          </TableRow>
-                        ),
-                      )
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Pagination */}
-              <div className="px-3 py-2 border-t bg-gray-50">
-                <div className="lg:hidden">
-                  <Pagination
-                    align="center"
-                    current={Math.floor(pagination.skip / pagination.take) + 1}
-                    pageSize={pagination.take}
-                    onChange={onChangePageCount}
-                    showSizeChanger
-                    total={pagination.total}
-                    showTotal={(total: number) => `Total ${total} items`}
+            {/* Search, Sort, and Filter Controls */}
+            <div className="mb-4 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-8 gap-3 items-end">
+                <div className="xl:col-span-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Search
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Search by invoice number, trade name, or TIN..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                <div className="hidden lg:block">
-                  <Pagination
-                    showQuickJumper
-                    align="center"
-                    current={Math.floor(pagination.skip / pagination.take) + 1}
-                    pageSize={pagination.take}
-                    onChange={onChangePageCount}
-                    showSizeChanger
-                    pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                    total={pagination.total}
-                    responsive={true}
-                    showTotal={(total: number, range: number[]) =>
-                      `${range[0]}-${range[1]} of ${total} items`
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Sort By
+                  </label>
+                  <select
+                    value={sortField}
+                    onChange={(e) => setSortField(e.target.value as any)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="invoice_date">Invoice Date</option>
+                    <option value="invoice_number">Invoice Number</option>
+                    <option value="trade_name">Trade Name</option>
+                    <option value="tin_number">TIN Number</option>
+                    <option value="invoice_value">Invoice Value</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Order
+                  </label>
+                  <select
+                    value={sortOrder}
+                    onChange={(e) =>
+                      setSortOrder(e.target.value as "asc" | "desc")
                     }
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                  </select>
+                </div>
+
+                <div className="xl:col-span-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Month
+                  </label>
+                  <input
+                    type="month"
+                    value={selectedPeriod}
+                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                    min="2026-04"
+                    max={maxSelectableMonth}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Accept Status
+                  </label>
+                  <select
+                    value={acceptStatusFilter}
+                    onChange={(e) =>
+                      setAcceptStatusFilter(e.target.value as any)
+                    }
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="accepted">Accepted</option>
+                  </select>
+                </div>
+
+                <div>
+                  <button
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSelectedPeriod("");
+                      setDateFilter({ startDate: "", endDate: "" });
+                      setAcceptStatusFilter("all");
+                      setSortField("invoice_date");
+                      setSortOrder("desc");
+                    }}
+                    className="w-full px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-300 transition-colors"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-gray-500">
+                Month filter allowed from April 2026 to current month.
+              </p>
+
+              {/* Results Count */}
+              <div className="text-xs text-gray-600">
+                Showing {dailyPurchase.length} of {pagination.total} filtered
+                record(s)
               </div>
             </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50 border-b">
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Count
+                    </TableHead>
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Invoice No.
+                    </TableHead>
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Invoice Date
+                    </TableHead>
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Trade Name
+                    </TableHead>
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      TIN Number
+                    </TableHead>
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Invoice Value (₹)
+                    </TableHead>
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      VAT Amount
+                    </TableHead>
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Taxable Value (₹)
+                    </TableHead>
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Actions
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dailyPurchase.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8">
+                        <p className="text-gray-500 text-sm">
+                          No purchase records match your filters.
+                        </p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    dailyPurchase.map(
+                      (group: GroupedDailyPurchase, index: number) => (
+                        <TableRow
+                          key={index}
+                          className={
+                            group.hasPendingAcceptable
+                              ? "border-b bg-red-50 hover:bg-red-100"
+                              : "border-b hover:bg-gray-50"
+                          }
+                        >
+                          <TableCell className="p-2 text-center text-xs">
+                            <button
+                              onClick={() => {
+                                setSelectedGroup(group);
+                                setIsGroupModalOpen(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 underline"
+                            >
+                              {group.count} items
+                            </button>
+                            {/* {group.count > 1 ? () : (<span>{group.count}</span>)} */}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {group.invoice_number}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {formateDate(group.invoice_date)}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {group.seller_tin_number.name_of_dealer}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {group.seller_tin_number.tin_number}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            ₹{group.totalInvoiceValue.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            ₹{group.totalVatAmount.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            ₹{group.totalTaxableValue.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="p-2 text-center">
+                            <Popover
+                              content={
+                                <div className="flex flex-col gap-2">
+                                  {group.count > 1 && (
+                                    <button
+                                      onClick={() => {
+                                        setSelectedGroup(group);
+                                        setIsGroupModalOpen(true);
+                                        handelClose(index);
+                                      }}
+                                      className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded"
+                                    >
+                                      View
+                                    </button>
+                                  )}
+                                  {group.count === 1 &&
+                                    !(
+                                      group.seller_tin_number.tin_number.startsWith(
+                                        "25",
+                                      ) ||
+                                      group.seller_tin_number.tin_number.startsWith(
+                                        "26",
+                                      )
+                                    ) && (
+                                      <>
+                                        <button
+                                          onClick={() => {
+                                            setDeleteRecord(
+                                              group.records[0].id,
+                                            );
+                                            setDeleteBox(true);
+                                            loadDeleteImpact(
+                                              group.records[0].id,
+                                            );
+                                            handelClose(index);
+                                          }}
+                                          className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded"
+                                        >
+                                          Delete
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            router.push(
+                                              `/dashboard/stock/edit_purchase/${encryptURLData(
+                                                group.records[0].id.toString(),
+                                              )}`,
+                                            );
+                                            handelClose(index);
+                                          }}
+                                          className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded"
+                                        >
+                                          Update
+                                        </button>
+                                      </>
+                                    )}
+                                  {group.count === 1 &&
+                                    (group.seller_tin_number.tin_number.startsWith(
+                                      "25",
+                                    ) ||
+                                      group.seller_tin_number.tin_number.startsWith(
+                                        "26",
+                                      )) &&
+                                    canAcceptRecord(group.records[0]) && (
+                                      <>
+                                        <button
+                                          onClick={async () => {
+                                            await handleAcceptSingleRecord(
+                                              group.records[0],
+                                            );
+                                            handelClose(index);
+                                          }}
+                                          disabled={isSingleAcceptLoading}
+                                          className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded disabled:opacity-60"
+                                        >
+                                          {isSingleAcceptLoading
+                                            ? "Accepting..."
+                                            : "Accept"}
+                                        </button>
+                                        <button
+                                          onClick={async () => {
+                                            Modal.confirm({
+                                              title: "Confirm Reject",
+                                              content:
+                                                "This will reject this purchase record and cannot be undone.",
+                                              okText: "Reject",
+                                              cancelText: "Cancel",
+                                              okButtonProps: {
+                                                danger: true,
+                                              },
+                                              onOk: async () => {
+                                                await handleRejectSingleRecord(
+                                                  group.records[0],
+                                                );
+                                                handelClose(index);
+                                              },
+                                            });
+                                          }}
+                                          disabled={isSingleRejectLoading}
+                                          className="text-sm bg-white border hover:border-red-500 hover:text-red-600 text-gray-700 py-1 px-3 rounded disabled:opacity-60"
+                                        >
+                                          {isSingleRejectLoading
+                                            ? "Rejecting..."
+                                            : "Reject"}
+                                        </button>
+                                      </>
+                                    )}
+                                  <button
+                                    onClick={() => {
+                                      setCreditNoteGroup(group);
+                                      setCreditNoteBox(true);
+                                      handelClose(index);
+                                    }}
+                                    className="text-sm bg-white border hover:border-green-500 hover:text-green-600 text-gray-700 py-1 px-3 rounded"
+                                  >
+                                    Credit Note
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setDebitNoteGroup(group);
+                                      setDebitNoteBox(true);
+                                      handelClose(index);
+                                    }}
+                                    className="text-sm bg-white border hover:border-amber-500 hover:text-amber-600 text-gray-700 py-1 px-3 rounded"
+                                  >
+                                    Debit Note
+                                  </button>
+                                </div>
+                              }
+                              title="Actions"
+                              trigger="click"
+                              open={!!openPopovers[index]}
+                              onOpenChange={(newOpen) =>
+                                handleOpenChange(newOpen, index)
+                              }
+                            >
+                              <button className="text-sm bg-white border hover:border-blue-500 hover:text-blue-600 text-gray-700 py-1 px-3 rounded">
+                                Actions
+                              </button>
+                            </Popover>
+
+                            <Modal
+                              title="Confirm Deletion"
+                              open={deletebox}
+                              footer={null}
+                            >
+                              <p className="mb-4">
+                                Are you sure you want to delete this purchase
+                                entry?
+                              </p>
+                              <p className="mb-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                                Warning: Linked credit/debit note entries in
+                                return entry will also be deleted when
+                                description of goods matches this purchase URN.
+                                <br />
+                                {isDeleteImpactLoading
+                                  ? "Checking linked notes..."
+                                  : `Credit Notes: ${deleteImpact.creditNoteCount}, Debit Notes: ${deleteImpact.debitNoteCount}, Total linked entries: ${deleteImpact.totalLinkedCount}`}
+                              </p>
+                              <div className="flex gap-2 justify-end">
+                                <button
+                                  className="py-1 px-4 border rounded text-sm"
+                                  onClick={() => {
+                                    setDeleteBox(false);
+                                    setDeleteRecord(null);
+                                    setDeleteImpact({
+                                      creditNoteCount: 0,
+                                      debitNoteCount: 0,
+                                      totalLinkedCount: 0,
+                                    });
+                                  }}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (deleteRecord != null) {
+                                      delete_purchase_entry(deleteRecord);
+                                    }
+                                  }}
+                                  className="py-1 px-4 bg-rose-500 hover:bg-rose-600 text-white rounded text-sm"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </Modal>
+                          </TableCell>
+                        </TableRow>
+                      ),
+                    )
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination */}
+            <div className="px-3 py-2 border-t bg-gray-50">
+              <div className="lg:hidden">
+                <Pagination
+                  align="center"
+                  current={Math.floor(pagination.skip / pagination.take) + 1}
+                  pageSize={pagination.take}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  total={pagination.total}
+                  showTotal={(total: number) => `Total ${total} items`}
+                />
+              </div>
+              <div className="hidden lg:block">
+                <Pagination
+                  showQuickJumper
+                  align="center"
+                  current={Math.floor(pagination.skip / pagination.take) + 1}
+                  pageSize={pagination.take}
+                  onChange={onChangePageCount}
+                  showSizeChanger
+                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                  total={pagination.total}
+                  responsive={true}
+                  showTotal={(total: number, range: number[]) =>
+                    `${range[0]}-${range[1]} of ${total} items`
+                  }
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 

@@ -104,7 +104,11 @@ const AddPaymentSubmit = async (
         throw new Error("Something went wrong! Unable to update");
       }
 
-      if (updateresponse.dvat04.compositionScheme) {
+      // Check if quarterly filing
+      const isQuarterlyFiling =
+        updateresponse.dvat04?.frequencyFilings === "QUARTERLY";
+
+      if (updateresponse.dvat04.compositionScheme || isQuarterlyFiling) {
         const monthsToUpdate = getMonthGroup(updateresponse.month ?? "");
         await prisma.return_filing.updateMany({
           where: {

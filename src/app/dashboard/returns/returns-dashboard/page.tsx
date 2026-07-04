@@ -422,11 +422,19 @@ const ReturnDashboard = () => {
 
           // const last_next_month = monthNames.indexOf(lastmonth) + 1;
 
-          const last_next_month = isfail
-            ? monthNames.indexOf(lastmonth)
-            : monthNames.indexOf(lastmonth) + 1 == 12
-              ? 0
-              : monthNames.indexOf(lastmonth) + 1;
+          // For quarterly filing: check lastPending first, don't advance if unfiled
+          let last_next_month: number;
+          if (response.data.frequencyFilings === "QUARTERLY" && isfail) {
+            // Quarterly filing with unfiled return: stay on that quarter's last month
+            last_next_month = monthNames.indexOf(lastmonth);
+          } else {
+            // Monthly filing or filed quarterly: advance to next month
+            last_next_month = isfail
+              ? monthNames.indexOf(lastmonth)
+              : monthNames.indexOf(lastmonth) + 1 == 12
+                ? 0
+                : monthNames.indexOf(lastmonth) + 1;
+          }
 
           if (["January", "February"].includes(lastmonth)) {
             lastyear = (parseInt(lastyear) - 1).toString();
@@ -967,11 +975,12 @@ const ReturnDashboard = () => {
       quarter: quarter,
       seller_tin_numberId: 1,
       year: getNewYear(year, period),
+      frequencyFilings: davtdata?.frequencyFilings ?? "MONTHLY",
     });
 
     if (response.status) {
       toast.success(response.message);
-      await search(year, period);
+      await search(year, period, davtdata?.frequencyFilings);
     } else {
       toast.error(response.message);
     }
@@ -1055,10 +1064,22 @@ const ReturnDashboard = () => {
         onOk={submitNil}
         onCancel={() => setNilModalOpen(false)}
       >
-        <p>
-          Do you want to submit Nil details for
-          {nilForm ? ` ${getNilFormName(nilForm)}` : " this form"}?
-        </p>
+        <div className="space-y-3">
+          <p>
+            Do you want to submit Nil details for
+            {nilForm ? ` ${getNilFormName(nilForm)}` : " this form"}?
+          </p>
+          {davtdata?.frequencyFilings === "QUARTERLY" && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm font-semibold text-yellow-800">
+                ⚠️ Quarterly Filing Notice
+              </p>
+              <p className="text-xs text-yellow-700 mt-1">
+                You are declaring NIL filing for all 3 months in this quarter.
+              </p>
+            </div>
+          )}
+        </div>
       </Modal>
       <main className="p-3 bg-gray-50">
         <div className="max-w-7xl mx-auto">

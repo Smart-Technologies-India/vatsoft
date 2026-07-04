@@ -458,7 +458,6 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     setFuelTotalInvoiceValue("");
     await props.init();
     await init();
-    setIsAddMoreMode(true);
   };
 
   const addNew = async (data: DailyPurchaseMasterForm) => {
