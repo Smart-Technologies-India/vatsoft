@@ -28,6 +28,7 @@ interface AddPaymentPayload {
   challan_vat: string;
   challan_interest: string;
   challan_penalty: string;
+  challan_other?: string;
   challan_total_tax_amount: string;
   pending_cash?: string;
 }
@@ -76,38 +77,15 @@ const AddPayment = async (
       if (!isExist) {
         throw new Error("Invalid Id, try again");
       }
-      const monthsToUpdate = getTargetMonths(
-        isExist.month ?? "",
-        isExist.dvat04.frequencyFilings === "QUARTERLY",
-      );
-      const isQuarterlyFiling =
-        isExist.dvat04.frequencyFilings === "QUARTERLY";
 
-      const returnIdsToUpdate = await prisma.returns_01.findMany({
-        where: {
-          dvat04Id: isExist.dvat04Id,
-          year: isExist.year,
-          month: { in: monthsToUpdate },
-          deletedAt: null,
-          deletedById: null,
-          status: "ACTIVE",
-          OR: [{ return_type: "REVISED" }, { return_type: "ORIGINAL" }],
-        },
-        select: {
-          id: true,
-        },
-      });
-
+      // For new component logic: component calls this separately for each return with already-determined values
+      // Just update the specific return, don't divide or find other quarterly returns
       const transactionDate = addPrismaDatabaseDate(new Date()).toISOString();
       const filingDate = new Date();
 
-      if (returnIdsToUpdate.length === 0) {
-        throw new Error("Something went wrong! Unable to update");
-      }
-
-      await prisma.returns_01.updateMany({
+      await prisma.returns_01.update({
         where: {
-          id: { in: returnIdsToUpdate.map((record) => record.id) },
+          id: payload.id,
         },
         data: {
           bank_name: payload.bank_name,
@@ -116,10 +94,7 @@ const AddPayment = async (
           transaction_date: transactionDate,
           paymentmode: "ONLINE",
           rr_number: payload.rr_number,
-          penalty: getQuarterlyDistributedAmount(
-            payload.penalty,
-            isQuarterlyFiling,
-          ),
+          penalty: payload.penalty,
           filing_datetime: filingDate,
           challan_number: cpin,
           ...(payload.pending_payment && {
@@ -128,18 +103,9 @@ const AddPayment = async (
           ...(payload.pending_cash && {
             cash_payment: payload.pending_cash,
           }),
-          interest: getQuarterlyDistributedAmount(
-            payload.interestamount,
-            isQuarterlyFiling,
-          ),
-          vatamount: getQuarterlyDistributedAmount(
-            payload.vatamount,
-            isQuarterlyFiling,
-          ),
-          total_tax_amount: getQuarterlyDistributedAmount(
-            payload.totaltaxamount,
-            isQuarterlyFiling,
-          ),
+          interest: payload.interestamount,
+          vatamount: payload.vatamount,
+          total_tax_amount: payload.totaltaxamount,
           status: "PAID",
         },
       });
@@ -156,6 +122,12 @@ const AddPayment = async (
       if (!updateresponse) {
         throw new Error("Something went wrong! Unable to update");
       }
+
+      // Get monthly targets for filing status update (still needed for quarterly months)
+      const monthsToUpdate = getTargetMonths(
+        updateresponse.month ?? "",
+        updateresponse.dvat04.frequencyFilings === "QUARTERLY",
+      );
 
       const isComp = updateresponse.dvat04.compositionScheme ?? false;
 
@@ -458,7 +430,7 @@ const AddPayment = async (
           vat: payload.challan_vat,
           latefees: "0",
           interest: payload.challan_interest,
-          others: "0",
+          others: payload.challan_other ?? "0",
           penalty: payload.challan_penalty,
           createdById: isExist.createdById,
           expire_date: today,

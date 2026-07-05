@@ -1,17 +1,20 @@
-import { CategoryOfEntry, DvatType, NaturePurchase, PurchaseType, returns_entry, SaleOfInterstate } from "@prisma/client";
-
-
+import {
+  CategoryOfEntry,
+  DvatType,
+  NaturePurchase,
+  PurchaseType,
+  returns_entry,
+  SaleOfInterstate,
+} from "@prisma/client";
 
 interface PercentageOutput {
   increase: string;
   decrease: string;
 }
 
-
 interface InterStateTradeProps {
   returnsentrys: returns_entry[];
 }
-
 
 const InterStateTrade = (props: InterStateTradeProps) => {
   const get10_1 = (dvattype: DvatType): PercentageOutput => {
@@ -342,7 +345,8 @@ const InterStateTrade = (props: InterStateTradeProps) => {
               parseFloat(get10_4(DvatType.DVAT_31_A).increase) +
               parseFloat(get10_6(DvatType.DVAT_31_A).increase) +
               parseFloat(get10_7(DvatType.DVAT_31_A).increase) +
-              parseFloat(get10_8(DvatType.DVAT_31_A).increase) 
+              parseFloat(get10_8(DvatType.DVAT_31_A).increase) +
+              parseFloat(get10_6_1(DvatType.DVAT_31_A).increase)
             ).toFixed(2)}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
@@ -353,7 +357,8 @@ const InterStateTrade = (props: InterStateTradeProps) => {
               parseFloat(get10_4(DvatType.DVAT_30_A).increase) +
               parseFloat(get10_6(DvatType.DVAT_30_A).increase) +
               parseFloat(get10_7(DvatType.DVAT_30_A).increase) +
-              parseFloat(get10_8(DvatType.DVAT_30_A).increase)
+              parseFloat(get10_8(DvatType.DVAT_30_A).increase) +
+              parseFloat(get10_6_1(DvatType.DVAT_30_A).increase)
             ).toFixed(2)}
           </td>
         </tr>
@@ -361,6 +366,5 @@ const InterStateTrade = (props: InterStateTradeProps) => {
     </table>
   );
 };
-
 
 export default InterStateTrade;

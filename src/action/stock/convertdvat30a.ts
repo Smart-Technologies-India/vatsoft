@@ -212,6 +212,69 @@ const ConvertDvat30A = async (
       throw new Error("No eligible unpaid return found.");
     }
 
+    // For quarterly filing, delete NIL entries from all 3 months' returns
+    // For normal filing, delete NIL entries from the single return
+    if (dvat04.frequencyFilings === "QUARTERLY") {
+      const quarterForMonth = getQuarter(returnInvoice.month || "");
+      const quarterMonthsMap: Record<string, string[]> = {
+        QUARTER1: ["April", "May", "June"],
+        QUARTER2: ["July", "August", "September"],
+        QUARTER3: ["October", "November", "December"],
+        QUARTER4: ["January", "February", "March"],
+      };
+
+      const quarterMonths = quarterMonthsMap[quarterForMonth] || [];
+
+      // Find all returns for all 3 months in this quarter
+      const allQuarterlyReturns = await prisma.returns_01.findMany({
+        where: {
+          year: returnInvoice.year,
+          month: { in: quarterMonths },
+          dvat04Id: payload.dvatid,
+          deletedAt: null,
+          deletedById: null,
+        },
+      });
+
+      // Delete NIL entries for all quarterly returns
+      if (allQuarterlyReturns.length > 0) {
+        await prisma.returns_entry.updateMany({
+          where: {
+            returns_01Id: { in: allQuarterlyReturns.map((r) => r.id) },
+            isnil: true,
+            deletedAt: null,
+          },
+          data: {
+            deletedAt: new Date(),
+            deletedById: currentUserId,
+          },
+        });
+      }
+    } else {
+      // For normal monthly filing, delete NIL entries only for this return
+      const nilEntries = await prisma.returns_entry.findMany({
+        where: {
+          returns_01Id: returnInvoice.id,
+          isnil: true,
+          deletedAt: null,
+        },
+      });
+
+      if (nilEntries.length > 0) {
+        await prisma.returns_entry.updateMany({
+          where: {
+            returns_01Id: returnInvoice.id,
+            isnil: true,
+            deletedAt: null,
+          },
+          data: {
+            deletedAt: new Date(),
+            deletedById: currentUserId,
+          },
+        });
+      }
+    }
+
     const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstunvxyz", 12);
     const totalRows = data_to_create.length;
     const totalChunks = Math.ceil(totalRows / chunkSize);

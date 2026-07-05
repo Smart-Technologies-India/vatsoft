@@ -12,18 +12,18 @@ import {
 import type { InputRef, RadioChangeEvent } from "antd";
 import { Radio } from "antd";
 import { useEffect, useRef, useState } from "react";
-import type { Dayjs } from "dayjs";
 
 import { cform, dvat04 } from "@prisma/client";
-import { capitalcase, encryptURLData } from "@/utils/methods";
+import { encryptURLData } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
-import GetUserCform from "@/action/cform/getusercform";
+import GetRefineryCform from "@/action/refinery_cform/getrefineryform";
+import GetCurrentRefinery from "@/action/refinery/getcurrentrefinery";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
 
-const TrackAppliation = () => {
+const RefineryCformStatus = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
@@ -51,42 +51,38 @@ const TrackAppliation = () => {
     setSeachOption(e.target.value);
   };
 
-  const [searchDate, setSearchDate] = useState<
-    [Dayjs | null, Dayjs | null] | null
-  >(null);
-
-  const onChangeDate = (
-    dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string],
-  ) => {
-    setSearchDate(dates);
-  };
-
   const [cformData, setCformData] = useState<Array<cform>>([]);
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 
   const init = async () => {
     setLoading(true);
-    const dvat_response = await GetUserDvat04();
+    const refinery_response = await GetCurrentRefinery();
+    if (refinery_response.status && refinery_response.data?.tinNumber) {
+      const refinery_tin = refinery_response.data.tinNumber;
 
-    if (dvat_response.data && dvat_response.status) {
-      setDvatData(dvat_response.data);
-      const cform_data = await GetUserCform({
-        dvatid: dvat_response.data.id,
+      const cform_data = await GetRefineryCform({
+        tin: refinery_tin,
         take: 10,
         skip: 0,
       });
 
-      if (cform_data.status && cform_data.data.result) {
+      if (cform_data.status && cform_data.data?.result) {
         setCformData(cform_data.data.result);
         setPaginatin({
           skip: cform_data.data.skip,
           take: cform_data.data.take,
           total: cform_data.data.total,
         });
+        if (tinRef.current?.input) {
+          tinRef.current.input.value = refinery_tin;
+        }
+        setSearch(true);
       }
     }
-
+    const dvat_response = await GetUserDvat04();
+    if (dvat_response.data && dvat_response.status) {
+      setDvatData(dvat_response.data);
+    }
     setLoading(false);
   };
   useEffect(() => {
@@ -98,23 +94,36 @@ const TrackAppliation = () => {
         return router.push("/");
       }
       setUserid(authResponse.data);
-      const dvat_response = await GetUserDvat04();
 
+      const dvat_response = await GetUserDvat04();
       if (dvat_response.data && dvat_response.status) {
         setDvatData(dvat_response.data);
-        const cform_data = await GetUserCform({
-          dvatid: dvat_response.data.id,
+      }
+
+      // Get current refinery's TIN number
+      const refinery_response = await GetCurrentRefinery();
+      if (refinery_response.status && refinery_response.data?.tinNumber) {
+        const refinery_tin = refinery_response.data.tinNumber;
+
+        // Automatically load C-forms for current refinery's TIN
+        const cform_data = await GetRefineryCform({
+          tin: refinery_tin,
           take: 10,
           skip: 0,
         });
 
-        if (cform_data.status && cform_data.data.result) {
+        if (cform_data.status && cform_data.data?.result) {
           setCformData(cform_data.data.result);
           setPaginatin({
             skip: cform_data.data.skip,
             take: cform_data.data.take,
             total: cform_data.data.total,
           });
+          // Set search state to show we're filtering by refinery TIN
+          if (tinRef.current?.input) {
+            tinRef.current.input.value = refinery_tin;
+          }
+          setSearch(true);
         }
       }
 
@@ -123,73 +132,23 @@ const TrackAppliation = () => {
     init();
   }, [userid]);
 
-  const get_years = (month: string, year: string): string => {
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    const monthIndex = monthNames.indexOf(capitalcase(month));
-    const yearNum = parseInt(year, 10);
-
-    // If the month is between September (index 8) and March (index 2), return year-year+1
-    if (monthIndex >= 8) {
-      // September to December
-      return `${yearNum}-${yearNum + 1}`;
-    } else {
-      // January to April
-      return `${yearNum - 1}-${yearNum}`;
-    }
-  };
-
-  const get_month = (composition: boolean, month: string): string => {
-    if (composition) {
-      if (["January", "February", "March"].includes(capitalcase(month))) {
-        return "March";
-      } else if (["April", "May", "June"].includes(capitalcase(month))) {
-        return "June";
-      } else if (["July", "August", "September"].includes(capitalcase(month))) {
-        return "September";
-      } else if (
-        ["October", "November", "December"].includes(capitalcase(month))
-      ) {
-        return "December";
-      } else {
-        return "March";
-      }
-    } else {
-      return month;
-    }
-  };
-
   const tinRef = useRef<InputRef>(null);
   const nameRef = useRef<InputRef>(null);
 
   const tinsearch = async () => {
-    if (!dvatdata) return;
     if (
       tinRef.current?.input?.value == undefined ||
       tinRef.current?.input?.value == null ||
       tinRef.current?.input?.value == ""
     ) {
-      return toast.error("Enter Purchaser TIN number");
+      return toast.error("Enter Seller TIN number");
     }
-    const search_response = await GetUserCform({
-      dvatid: dvatdata.id,
+    const search_response = await GetRefineryCform({
       tin: tinRef.current?.input?.value,
       take: 10,
       skip: 0,
     });
-    if (search_response.status && search_response.data.result) {
+    if (search_response.status && search_response.data?.result) {
       setCformData(search_response.data.result);
       setPaginatin({
         skip: search_response.data.skip,
@@ -201,34 +160,10 @@ const TrackAppliation = () => {
   };
 
   const namesearch = async () => {
-    if (!dvatdata) return;
-
-    if (
-      nameRef.current?.input?.value == undefined ||
-      nameRef.current?.input?.value == null ||
-      nameRef.current?.input?.value == ""
-    ) {
-      return toast.error("Enter Purchaser Name");
-    }
-    const search_response = await GetUserCform({
-      name: nameRef.current?.input?.value,
-      dvatid: dvatdata.id,
-      take: 10,
-      skip: 0,
-    });
-    if (search_response.status && search_response.data.result) {
-      setCformData(search_response.data.result);
-      setPaginatin({
-        skip: search_response.data.skip,
-        take: search_response.data.take,
-        total: search_response.data.total,
-      });
-      setSearch(true);
-    }
+    toast.info("Search by seller name is only available when filtering by TIN");
   };
 
   const onChangePageCount = async (page: number, pagesize: number) => {
-    if (!dvatdata) return;
     if (isSearch) {
       if (searchOption == SearchOption.TIN) {
         if (
@@ -236,38 +171,14 @@ const TrackAppliation = () => {
           tinRef.current?.input?.value == null ||
           tinRef.current?.input?.value == ""
         ) {
-          return toast.error("Enter Purchaser TIN number");
+          return toast.error("Enter Seller TIN number");
         }
-        const search_response = await GetUserCform({
-          dvatid: dvatdata.id,
+        const search_response = await GetRefineryCform({
           tin: tinRef.current?.input?.value,
-          take: 10,
-          skip: 0,
+          take: pagesize,
+          skip: pagesize * (page - 1),
         });
-        if (search_response.status && search_response.data.result) {
-          setCformData(search_response.data.result);
-          setPaginatin({
-            skip: search_response.data.skip,
-            take: search_response.data.take,
-            total: search_response.data.total,
-          });
-          setSearch(true);
-        }
-      } else if (searchOption == SearchOption.NAME) {
-        if (
-          nameRef.current?.input?.value == undefined ||
-          nameRef.current?.input?.value == null ||
-          nameRef.current?.input?.value == ""
-        ) {
-          return toast.error("Enter Purchaser Name");
-        }
-        const search_response = await GetUserCform({
-          name: nameRef.current?.input?.value,
-          dvatid: dvatdata.id,
-          take: 10,
-          skip: 0,
-        });
-        if (search_response.status && search_response.data.result) {
+        if (search_response.status && search_response.data?.result) {
           setCformData(search_response.data.result);
           setPaginatin({
             skip: search_response.data.skip,
@@ -278,13 +189,13 @@ const TrackAppliation = () => {
         }
       }
     } else {
-      const cform_data = await GetUserCform({
-        dvatid: dvatdata.id,
+      const cform_data = await GetRefineryCform({
+        tin: tinRef.current?.input?.value || "",
         take: pagesize,
         skip: pagesize * (page - 1),
       });
 
-      if (cform_data.status && cform_data.data.result) {
+      if (cform_data.status && cform_data.data?.result) {
         setCformData(cform_data.data.result);
         setPaginatin({
           skip: cform_data.data.skip,
@@ -323,7 +234,7 @@ const TrackAppliation = () => {
         "Dec",
       ];
       const month = monthNames[date.getMonth()];
-      const year = date.getFullYear().toString().slice(-2); // Get last two digits of year
+      const year = date.getFullYear().toString().slice(-2);
       return `${month} ${year}`;
     };
 
@@ -350,10 +261,10 @@ const TrackAppliation = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <div className="w-1.5 h-8 bg-linear-to-b from-blue-500 to-indigo-600 rounded-full"></div>
-                Track C-Form
+                Refinery C-Form
               </h1>
               <p className="text-sm text-gray-500 mt-2 ml-4">
-                View and track all your C-Form declarations
+                View and manage your Refinery C-Form declarations
               </p>
             </div>
           </div>
@@ -367,7 +278,7 @@ const TrackAppliation = () => {
               }}
               type="error"
               showIcon
-              description="There is no C-Form."
+              description="There is no Refinery C-Form."
             />
           </div>
         )}
@@ -391,7 +302,7 @@ const TrackAppliation = () => {
                       <span className="text-sm">TIN Number</span>
                     </Radio>
                     <Radio value={SearchOption.NAME}>
-                      <span className="text-sm">Purchaser Name</span>
+                      <span className="text-sm">Seller Name</span>
                     </Radio>
                   </Radio.Group>
                 </div>
@@ -405,7 +316,7 @@ const TrackAppliation = () => {
                             maxLength={11}
                             className="max-w-xs"
                             ref={tinRef}
-                            placeholder="Enter Purchaser TIN Number"
+                            placeholder="Enter Seller TIN Number"
                             disabled={isSearch}
                           />
 
@@ -435,7 +346,7 @@ const TrackAppliation = () => {
                           <Input
                             className="max-w-xs"
                             ref={nameRef}
-                            placeholder="Enter Purchaser Name"
+                            placeholder="Enter Seller Name"
                             disabled={isSearch}
                           />
 
@@ -472,20 +383,26 @@ const TrackAppliation = () => {
                   <TableHeader>
                     <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100">
                       <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        ARN
+                        SR No
                       </TableHead>
                       <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
                         C-Form Type
                       </TableHead>
                       <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        Form Period
+                        Period
                       </TableHead>
                       <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
                         TIN Number
                       </TableHead>
 
                       <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        Purchaser Name
+                        Seller Name
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
+                        Amount
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
+                        Action
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -497,14 +414,9 @@ const TrackAppliation = () => {
                           className="hover:bg-blue-50 transition-colors"
                         >
                           <TableCell className="border border-gray-200 text-center p-3">
-                            <Link
-                              href={`/dashboard/cform/${encryptURLData(
-                                val.id.toString(),
-                              )}`}
-                              className="text-blue-500 hover:text-blue-700 font-medium hover:underline"
-                            >
+                            <span className="font-medium text-gray-900">
                               {val.sr_no}
-                            </Link>
+                            </span>
                           </TableCell>
                           <TableCell className="border border-gray-200 text-center p-3 text-gray-700">
                             {val.cform_type}
@@ -517,6 +429,19 @@ const TrackAppliation = () => {
                           </TableCell>
                           <TableCell className="border border-gray-200 text-center p-3 text-gray-700">
                             {val.seller_name}
+                          </TableCell>
+                          <TableCell className="border border-gray-200 text-center p-3 font-medium text-gray-900">
+                            ₹{parseFloat(val.amount ?? "0").toFixed(2)}
+                          </TableCell>
+                          <TableCell className="border border-gray-200 text-center p-3">
+                            <Link
+                              href={`/dashboard/refinery/c_form/view/${encryptURLData(
+                                val.id.toString(),
+                              )}`}
+                              className="text-blue-500 hover:text-blue-700 font-medium hover:underline"
+                            >
+                              View
+                            </Link>
                           </TableCell>
                         </TableRow>
                       );
@@ -561,4 +486,4 @@ const TrackAppliation = () => {
   );
 };
 
-export default TrackAppliation;
+export default RefineryCformStatus;

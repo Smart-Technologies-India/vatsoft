@@ -377,71 +377,6 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     };
   };
 
-  const getValue = () => {
-    return (
-      parseFloat(getInvoicePercentage("0").decrease) +
-      parseFloat(getInvoicePercentage("1").decrease) +
-      parseFloat(getInvoicePercentage("2").decrease) +
-      parseFloat(getInvoicePercentage("3").decrease) +
-      parseFloat(getInvoicePercentage("4").decrease) +
-      parseFloat(getInvoicePercentage("5").decrease) +
-      parseFloat(getInvoicePercentage("6").decrease) +
-      parseFloat(getInvoicePercentage("12.5").decrease) +
-      parseFloat(getInvoicePercentage("12.75").decrease) +
-      parseFloat(getInvoicePercentage("13.5").decrease) +
-      parseFloat(getInvoicePercentage("15").decrease) +
-      parseFloat(getInvoicePercentage("20").decrease) +
-      parseFloat(getSaleOfPercentage("4").decrease) +
-      parseFloat(getSaleOfPercentage("5").decrease) +
-      parseFloat(getSaleOfPercentage("12.5").decrease) +
-      parseFloat(get4_6().decrease) +
-      parseFloat(get4_7().decrease) -
-      parseFloat(get4_9().decrease) -
-      (parseFloat(get5_1().decrease) +
-        parseFloat(get5_2().decrease) +
-        (parseFloat(getCreditNote().decrease) -
-          parseFloat(getDebitNote().decrease) -
-          parseFloat(getGoodsReturnsNote().decrease))) +
-      (((parseFloat(getInvoicePercentage("0").decrease) +
-        parseFloat(getInvoicePercentage("1").decrease) +
-        parseFloat(getInvoicePercentage("2").decrease) +
-        parseFloat(getInvoicePercentage("3").decrease) +
-        parseFloat(getInvoicePercentage("4").decrease) +
-        parseFloat(getInvoicePercentage("5").decrease) +
-        parseFloat(getInvoicePercentage("6").decrease) +
-        parseFloat(getInvoicePercentage("12.5").decrease) +
-        parseFloat(getInvoicePercentage("12.75").decrease) +
-        parseFloat(getInvoicePercentage("13.5").decrease) +
-        parseFloat(getInvoicePercentage("15").decrease) +
-        parseFloat(getInvoicePercentage("20").decrease) +
-        parseFloat(getSaleOfPercentage("4").decrease) +
-        parseFloat(getSaleOfPercentage("5").decrease) +
-        parseFloat(getSaleOfPercentage("12.5").decrease) +
-        parseFloat(get4_6().decrease) +
-        parseFloat(get4_7().decrease) -
-        parseFloat(get4_9().decrease) -
-        (parseFloat(get5_1().decrease) +
-          parseFloat(get5_2().decrease) +
-          (parseFloat(getCreditNote().decrease) -
-            parseFloat(getDebitNote().decrease) -
-            parseFloat(getGoodsReturnsNote().decrease)))) *
-        0.15) /
-        365) *
-        DiffDays +
-      lateFees +
-      0 -
-      0
-    );
-  };
-
-  const isPayment = (): boolean => {
-    let res: boolean =
-      props.return01.rr_number == null ||
-      props.return01.rr_number == undefined ||
-      props.return01.rr_number == "";
-    return res == false;
-  };
-
   const getR6_1 = (): number =>
     parseFloat(getInvoicePercentage("0").decrease) +
     parseFloat(getInvoicePercentage("1").decrease) +
@@ -799,7 +734,9 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
       parseFloat(getProcessedGoods().decrease);
 
     const val = total - adjustAmount() - otherPayments;
-    return val;
+    // return val;
+    return isNegative(val) ? Math.abs(val) : 0;
+
   };
 
   return (

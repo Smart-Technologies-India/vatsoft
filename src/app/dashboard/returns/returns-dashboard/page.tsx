@@ -16,6 +16,7 @@ import {
   returns_entry,
 } from "@prisma/client";
 import getPdfReturn from "@/action/return/getpdfreturn";
+import getQuarterlyReturn from "@/action/return/getquarterlyreturn";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { toast } from "react-toastify";
 import { encryptURLData, formateDate, generatePDF } from "@/utils/methods";
@@ -24,6 +25,7 @@ import CreateReturnRevised from "@/action/return/createreturnrevised";
 import GetUserLastPandingReturn from "@/action/return/userlastpandingreturn";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import AddNil from "@/action/return/addnil";
+import ValidatePreviewData from "@/action/return/validatepreviewdata";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -187,40 +189,41 @@ const ReturnDashboard = () => {
       }
     }
 
-    const returnformsresponse = await getPdfReturn({
-      year: fetchYear,
-      month: period,
-    });
-
     let mergedEntries: returns_entry[] = [];
 
-    if (returnformsresponse.status && returnformsresponse.data) {
-      setReturn01(returnformsresponse.data.returns_01);
-      mergedEntries = [...returnformsresponse.data.returns_entry];
-    } else {
-      setReturn01(null);
-    }
-
     if (isQuarterlyFiling) {
+      // For quarterly filing, use the dedicated action to fetch all 3 months
       const effectiveQuarter = getQuarterForMonth(period) ?? quarter;
-      const quarterMonths = getQuarterMonths(effectiveQuarter).filter(
-        (month) => month !== period,
+      const quarterlyResponse = await getQuarterlyReturn(
+        year,
+        effectiveQuarter,
       );
 
-      const quarterResponses = await Promise.all(
-        quarterMonths.map((month) =>
-          getPdfReturn({
-            year: getNewYear(year, month),
-            month,
-          }),
-        ),
-      );
+      console.log("Quarterly Response:", quarterlyResponse);
+      console.log("Quarterly Response Data:", effectiveQuarter);
 
-      quarterResponses.forEach((response) => {
-        if (response.status && response.data) {
-          mergedEntries.push(...response.data.returns_entry);
-        }
+      if (quarterlyResponse.status && quarterlyResponse.data) {
+        // For quarterly filing, use the first return from the array
+        // (represents the aggregated quarterly return)
+        const firstReturn = quarterlyResponse.data.returns_01[0] ?? null;
+        setReturn01(firstReturn);
+        mergedEntries = quarterlyResponse.data.returns_entry;
+      } else {
+        setReturn01(null);
+      }
+    } else {
+      // For non-quarterly (normal) filing, keep existing logic - fetch only the selected period
+      const returnformsresponse = await getPdfReturn({
+        year: fetchYear,
+        month: period,
       });
+
+      if (returnformsresponse.status && returnformsresponse.data) {
+        setReturn01(returnformsresponse.data.returns_01);
+        mergedEntries = [...returnformsresponse.data.returns_entry];
+      } else {
+        setReturn01(null);
+      }
     }
 
     setReturns_entryData(mergedEntries);
@@ -500,7 +503,6 @@ const ReturnDashboard = () => {
       label: `${currentFY}-${(currentFY + 1).toString().slice(-2)}`,
     });
 
-
     return periodValues;
   };
 
@@ -743,6 +745,10 @@ const ReturnDashboard = () => {
   );
 
   const [isAccept, setIsAccept] = useState<boolean>(false);
+  const [validationErrorOpen, setValidationErrorOpen] =
+    useState<boolean>(false);
+  const [validationErrorMessage, setValidationErrorMessage] =
+    useState<string>("");
 
   const nilSubmit = () => {
     if (!isAccept) {
@@ -986,6 +992,52 @@ const ReturnDashboard = () => {
     }
   };
 
+  const handlePreviewClick = async () => {
+    if (!year || !period) {
+      toast.error("Please select the return period.");
+      return;
+    }
+
+    // Validate pending records
+    const validationResponse = await ValidatePreviewData(
+      period,
+      year,
+      davtdata?.id ?? "",
+      davtdata?.frequencyFilings,
+    );
+
+    if (!validationResponse.status) {
+      setValidationErrorMessage(validationResponse.message);
+      setValidationErrorOpen(true);
+      return;
+    }
+
+    // If validation passes, proceed with existing logic
+    if (isanynil()) {
+      setNilBox(true);
+    } else {
+      if (davtdata?.compositionScheme) {
+        router.push(
+          `/dashboard/returns/returns-dashboard/previewcomposition/${encryptURLData(
+            userid.toString(),
+          )}?form=30A&year=${getNewYear(
+            year!,
+            period!,
+          )}&quarter=${quarter}&month=${period}`,
+        );
+      } else {
+        router.push(
+          `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+            userid.toString(),
+          )}?form=30A&year=${getNewYear(
+            year!,
+            period!,
+          )}&quarter=${quarter}&month=${period}`,
+        );
+      }
+    }
+  };
+
   return (
     <>
       <Modal title="Confirmation" open={rrbox} footer={null} closeIcon={false}>
@@ -1081,6 +1133,33 @@ const ReturnDashboard = () => {
           )}
         </div>
       </Modal>
+      <Modal
+        title="Validation Error"
+        open={validationErrorOpen}
+        onCancel={() => setValidationErrorOpen(false)}
+        footer={[
+          <button
+            key="close"
+            className="py-1 px-4 border text-gray-700 text-sm rounded hover:bg-gray-50"
+            onClick={() => setValidationErrorOpen(false)}
+          >
+            Close
+          </button>,
+        ]}
+      >
+        <div className="space-y-3">
+          <div className="p-3 bg-red-50 border border-red-200 rounded">
+            <p className="text-sm font-semibold text-red-800">⚠️ Pending Records Found</p>
+            <p className="text-xs text-red-700 mt-2 whitespace-pre-wrap">
+              {validationErrorMessage}
+            </p>
+          </div>
+          <p className="text-xs text-gray-600">
+            Please process all pending records through the &quot;Add Record&quot; buttons
+            before generating the preview.
+          </p>
+        </div>
+      </Modal>
       <main className="p-3 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
@@ -1106,23 +1185,25 @@ const ReturnDashboard = () => {
                   Pay Challan
                 </button>
               )}
-              {isSearch && !ispayment() && davtdata?.commodity == "MANUFACTURER" && (
-                <button
-                  className="py-1 px-4 border text-white text-lg font-semibold bg-blue-500 rounded-lg cursor-pointer"
-                  onClick={() => {
-                    if (return01 == null) {
+              {isSearch &&
+                !ispayment() &&
+                davtdata?.commodity == "MANUFACTURER" && (
+                  <button
+                    className="py-1 px-4 border text-white text-lg font-semibold bg-blue-500 rounded-lg cursor-pointer"
+                    onClick={() => {
+                      if (return01 == null) {
+                        router.push(
+                          `/dashboard/returns/returns-dashboard/pay_cst?form=30A&year=${getNewYear(year!, period!)}&quarter=${quarter}&month=${period}`,
+                        );
+                      }
                       router.push(
-                        `/dashboard/returns/returns-dashboard/pay_cst?form=30A&year=${getNewYear(year!, period!)}&quarter=${quarter}&month=${period}`,
+                        `/dashboard/returns/returns-dashboard/pay_cst/${encryptURLData(return01!.id.toString())}`,
                       );
-                    }
-                    router.push(
-                      `/dashboard/returns/returns-dashboard/pay_cst/${encryptURLData(return01!.id.toString())}`,
-                    );
-                  }}
-                >
-                  Pay CST
-                </button>
-              )}
+                    }}
+                  >
+                    Pay CST
+                  </button>
+                )}
             </div>
             <Marquee className="bg-yellow-50 border border-yellow-200 mt-2 text-xs rounded px-2 py-1">
               This banner would be used for official updates and notifications.
@@ -1569,40 +1650,14 @@ const ReturnDashboard = () => {
                       <>
                         {davtdata?.compositionScheme ? (
                           <button
-                            onClick={() => {
-                              if (isanynil()) {
-                                setNilBox(true);
-                              } else {
-                                router.push(
-                                  `/dashboard/returns/returns-dashboard/previewcomposition/${encryptURLData(
-                                    userid.toString(),
-                                  )}?form=30A&year=${getNewYear(
-                                    year!,
-                                    period!,
-                                  )}&quarter=${quarter}&month=${period}`,
-                                );
-                              }
-                            }}
+                            onClick={handlePreviewClick}
                             className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
                           >
                             Preview for DVAT-17
                           </button>
                         ) : (
                           <button
-                            onClick={() => {
-                              if (isanynil()) {
-                                setNilBox(true);
-                              } else {
-                                router.push(
-                                  `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                                    userid.toString(),
-                                  )}?form=30A&year=${getNewYear(
-                                    year!,
-                                    period!,
-                                  )}&quarter=${quarter}&month=${period}`,
-                                );
-                              }
-                            }}
+                            onClick={handlePreviewClick}
                             className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
                           >
                             Preview for DVAT-16

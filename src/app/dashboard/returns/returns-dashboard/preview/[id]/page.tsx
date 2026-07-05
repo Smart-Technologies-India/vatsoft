@@ -64,6 +64,9 @@ const Dvat16ReturnPreview = () => {
     (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
   >();
 
+  const [quarterlyReturns, setQuarterlyReturns] = useState<
+    (returns_01 & { dvat04: dvat04 & { registration: registration[] } })[]
+  >([]);
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
   const [paidChallans, setPaidChallans] = useState<challan[]>([]);
   const [payment, setPayment] = useState<boolean>(false);
@@ -244,6 +247,10 @@ const Dvat16ReturnPreview = () => {
         const isQuarterlyFiling =
           selectedReturn.dvat04?.frequencyFilings === "QUARTERLY";
 
+        let allQuarterlyReturns: (returns_01 & {
+          dvat04: dvat04 & { registration: registration[] };
+        })[] = [selectedReturn];
+
         if (isQuarterlyFiling) {
           const effectiveQuarter = getQuarterForMonth(month);
           const quarterMonths = effectiveQuarter
@@ -264,11 +271,13 @@ const Dvat16ReturnPreview = () => {
           quarterResponses.forEach((quarterResponse: any) => {
             if (quarterResponse.status && quarterResponse.data) {
               mergedEntries.push(...quarterResponse.data.returns_entry);
+              allQuarterlyReturns.push(quarterResponse.data.returns_01);
             }
           });
         }
 
         setReturn01(selectedReturn);
+        setQuarterlyReturns(allQuarterlyReturns);
         serReturns_entryData(mergedEntries);
 
         const dvat_30: boolean =
@@ -310,6 +319,7 @@ const Dvat16ReturnPreview = () => {
         }
       } else {
         setReturn01(null);
+        setQuarterlyReturns([]);
         serReturns_entryData([]);
         // setAllNil(false);
         setPaidChallans([]);
@@ -408,24 +418,68 @@ const Dvat16ReturnPreview = () => {
     const penaltyBalance = penalty - paidpenaltyamount;
     const interestBalance = interest - paidinterestamount;
 
-    const response = await AddPaymentSubmit({
-      id: return01.id ?? 0,
-      rr_number: get_rr_number(),
-      pending_payment: Math.abs(pendingpayment()).toFixed(2),
-      pending_cash: (
-        Math.abs(pendingcashone()) + Math.abs(pendingcashtwo())
-      ).toFixed(2),
-      penalty: penalty.toFixed(2),
-      vatamount: vat.toFixed(2),
-      interestamount: interest.toFixed(2),
-      totaltaxamount: (vat + interest + penalty).toFixed(2),
-    });
+    // Generate RR number once to use for all returns
+    const rrNumber = get_rr_number();
 
-    if (!response.status) return toast.error(response.message);
-    toast.success(response.message);
-    setPaymentSubmitBox(false);
+    // For quarterly filing, update all 3 returns; for monthly, update only the selected return
+    const returnsToUpdate = return01.dvat04?.frequencyFilings === "QUARTERLY"
+      ? quarterlyReturns
+      : [return01];
 
-    router.push(`/dashboard/returns/returns-dashboard`);
+    try {
+      for (let i = 0; i < returnsToUpdate.length; i++) {
+        const returnToUpdate = returnsToUpdate[i];
+        const isLastReturn = i === returnsToUpdate.length - 1;
+
+        // For quarterly: use 0 values for first two returns, actual values for last return
+        // For monthly: always use actual values
+        const submitPenalty =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : penalty.toFixed(2);
+        const submitInterest =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : interest.toFixed(2);
+        const submitVat =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : vat.toFixed(2);
+        const submitTotal =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : (vat + interest + penalty).toFixed(2);
+
+        // Only create challan for the last return; for first 2 returns, only update with zero values
+        if (isLastReturn || return01.dvat04?.frequencyFilings !== "QUARTERLY") {
+          const response = await AddPaymentSubmit({
+            id: returnToUpdate.id ?? 0,
+            rr_number: rrNumber,
+            pending_payment: Math.abs(pendingpayment()).toFixed(2),
+            pending_cash: (
+              Math.abs(pendingcashone()) + Math.abs(pendingcashtwo())
+            ).toFixed(2),
+            penalty: submitPenalty,
+            vatamount: submitVat,
+            interestamount: submitInterest,
+            totaltaxamount: submitTotal,
+          });
+
+          if (!response.status) {
+            toast.error(response.message);
+            setPaymentSubmitBox(false);
+            return;
+          }
+        }
+      }
+
+      toast.success("Return(s) submitted successfully");
+      setPaymentSubmitBox(false);
+      router.push(`/dashboard/returns/returns-dashboard`);
+    } catch (error) {
+      toast.error("Error submitting return(s)");
+      setPaymentSubmitBox(false);
+    }
   };
 
   const generatePDF = async (path: string) => {

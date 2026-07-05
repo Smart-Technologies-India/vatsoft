@@ -221,7 +221,8 @@ const Sidebar = (props: SidebarProps) => {
               path={path}
               pathcheck={"/dashboard/stock"}
               collapsed={isCollapsed}
-            />          </>
+            />{" "}
+          </>
         )}
 
         {[
@@ -331,6 +332,15 @@ const Sidebar = (props: SidebarProps) => {
               name="Dealer Master"
               path={path}
               pathcheck={"/dashboard/refinery/dealer_master"}
+              collapsed={isCollapsed}
+            />
+
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentCalendar12Regular className="w-5 h-5" />}
+              name="C Form"
+              path={path}
+              pathcheck={"/dashboard/refinery/c_form"}
               collapsed={isCollapsed}
             />
           </>

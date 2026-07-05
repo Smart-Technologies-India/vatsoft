@@ -71,6 +71,10 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
   >();
 
+  const [quarterlyReturns, setQuarterlyReturns] = useState<
+    (returns_01 & { dvat04: dvat04 & { registration: registration[] } })[]
+  >([]);
+
   const [lateFees, setLateFees] = useState<number>(0);
   // const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>(
@@ -161,6 +165,9 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
         if (entry_response.status && entry_response.data) {
           let mergedEntries: returns_entry[] = [...entry_response.data];
+          let allQuarterlyReturns: (returns_01 & {
+            dvat04: dvat04 & { registration: registration[] };
+          })[] = [returns_response.data];
 
           const isQuarterlyFiling =
             returns_response.data.dvat04?.frequencyFilings === "QUARTERLY";
@@ -191,13 +198,16 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
             quarterResponses.forEach((quarterResponse: any) => {
               if (quarterResponse.status && quarterResponse.data) {
                 mergedEntries.push(...quarterResponse.data.returns_entry);
+                allQuarterlyReturns.push(quarterResponse.data.returns_01);
               }
             });
-
-            mergedEntries = Array.from(
-              new Map(mergedEntries.map((entry) => [entry.id, entry])).values(),
-            );
           }
+
+          setQuarterlyReturns(allQuarterlyReturns);
+
+          mergedEntries = Array.from(
+            new Map(mergedEntries.map((entry) => [entry.id, entry])).values(),
+          );
 
           serReturns_entryData(mergedEntries);
         }
@@ -362,34 +372,104 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
       }
 
       const paymentBreakdown = getNetPayableBreakdown();
+      // Generate RR number once to use for all returns
+      const rrNumber = get_rr_number();
 
-      const response = await AddPayment({
-        id: return01.id,
-        bank_name: "NIL",
-        track_id: "NIL",
-        transaction_id: "NIL",
-        rr_number: get_rr_number(),
-        pending_payment: Math.abs(pendingpayment()).toFixed(2),
-        pending_cash: (
-          Math.abs(pendingcashone()) + Math.abs(pendingcashtwo())
-        ).toFixed(2),
-        penalty: paymentBreakdown.penalty.toFixed(0),
-        interestamount: paymentBreakdown.interestamount.toFixed(0),
-        totaltaxamount: paymentBreakdown.totaltaxamount.toFixed(0),
-        vatamount: paymentBreakdown.vatamount.toFixed(0),
+      // For quarterly filing, update all 3 returns; for monthly, update only the selected return
+      const returnsToUpdate =
+        return01.dvat04?.frequencyFilings === "QUARTERLY"
+          ? quarterlyReturns
+          : [return01];
 
-        challan_vat: remaingVat.toFixed(0),
-        challan_interest: remainingInterest.toFixed(0),
-        challan_penalty: remainingPenalty.toFixed(0),
-        challan_total_tax_amount: (
-          remaingVat +
-          remainingInterest +
-          remainingPenalty
-        ).toFixed(0),
-      });
+      for (let i = 0; i < returnsToUpdate.length; i++) {
+        const returnToUpdate = returnsToUpdate[i];
+        const isLastReturn = i === returnsToUpdate.length - 1;
 
-      if (!response.status) return toast.error(response.message);
-      toast.success(response.message);
+        // For quarterly: use 0 values for first two returns, actual values for last return
+        // For monthly: always use actual values
+        const submitPenalty =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : paymentBreakdown.penalty.toFixed(0);
+        const submitInterest =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : paymentBreakdown.interestamount.toFixed(0);
+        const submitVat =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : paymentBreakdown.vatamount.toFixed(0);
+        const submitTotal =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : paymentBreakdown.totaltaxamount.toFixed(0);
+        const submitChallanVat =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : remaingVat.toFixed(0);
+        const submitChallanInterest =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : remainingInterest.toFixed(0);
+        const submitChallanPenalty =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : remainingPenalty.toFixed(0);
+        const submitChallanOther =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : isNegative(pendingcashtwo())
+              ? Math.abs(pendingcashtwo()).toFixed(0)
+              : "0";
+
+        const submitPendingPayment =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : Math.abs(pendingpayment()).toFixed(2);
+        const submitPendingCash =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : (isNegative(pendingcashone()) ? Math.abs(pendingcashone()) : 0) +
+              (isNegative(pendingcashtwo())
+                ? Math.abs(pendingcashtwo())
+                : 0
+              ).toFixed(2);
+
+        // Only create challan for the last return; for first 2 returns, only update with zero values
+        if (isLastReturn || return01.dvat04?.frequencyFilings !== "QUARTERLY") {
+          const response = await AddPayment({
+            id: returnToUpdate.id,
+            bank_name: "NIL",
+            track_id: "NIL",
+            transaction_id: "NIL",
+            rr_number: rrNumber,
+            pending_payment: submitPendingPayment,
+            pending_cash: submitPendingCash,
+            penalty: submitPenalty,
+            interestamount: submitInterest,
+            totaltaxamount: submitTotal,
+            vatamount: submitVat,
+
+            challan_vat: submitChallanVat,
+            challan_interest: submitChallanInterest,
+            challan_penalty: submitChallanPenalty,
+            challan_other: submitChallanOther,
+            challan_total_tax_amount: (
+              parseFloat(submitChallanVat) +
+              parseFloat(submitChallanInterest) +
+              parseFloat(submitChallanPenalty) +
+              parseFloat(submitChallanOther)
+            ).toFixed(0),
+          });
+
+          if (!response.status) {
+            toast.error(response.message);
+            return;
+          }
+        }
+      }
+
+      toast.success("Return(s) submitted successfully");
       router.push("/dashboard/returns/returns-dashboard");
     } finally {
       setIsFileReturnProcessing(false);
@@ -401,6 +481,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
     setIsOnlineProcessing(true);
     try {
+      // Check last payment on first return only
       const lastPayment = await CheckLastPayment({
         id: return01.id ?? 0,
       });
@@ -417,40 +498,116 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
       const paymentBreakdown = getNetPayableBreakdown();
 
-      const response = await AddPaymentOnline({
-        id: return01.id,
-        // rr_number: get_rr_number(),
-        penalty: paymentBreakdown.penalty.toFixed(0),
-        pending_payment: Math.abs(pendingpayment()).toFixed(2),
-        pending_cash: (
-          Math.abs(pendingcashone()) + Math.abs(pendingcashtwo())
-        ).toFixed(2),
-        interestamount: paymentBreakdown.interestamount.toFixed(0),
-        totaltaxamount: paymentBreakdown.totaltaxamount.toFixed(0),
-        vatamount: paymentBreakdown.vatamount.toFixed(0),
+      // For quarterly filing, update all 3 returns; for monthly, update only the selected return
+      const returnsToUpdate =
+        return01.dvat04?.frequencyFilings === "QUARTERLY"
+          ? quarterlyReturns
+          : [return01];
 
-        challan_vat: remaingVat.toFixed(0),
-        challan_interest: remainingInterest.toFixed(0),
-        challan_penalty: remainingPenalty.toFixed(0),
-        challan_total_tax_amount: (
-          remaingVat +
-          remainingInterest +
-          remainingPenalty
-        ).toFixed(0),
-      });
+      let finalOrderId: string | undefined;
 
-      if (!response.status) {
-        toast.error(response.message);
-        return;
+      for (let i = 0; i < returnsToUpdate.length; i++) {
+        const returnToUpdate = returnsToUpdate[i];
+        const isLastReturn = i === returnsToUpdate.length - 1;
+
+        // For quarterly: use 0 values for first two returns, actual values for last return
+        // For monthly: always use actual values
+        const submitPenalty =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : paymentBreakdown.penalty.toFixed(0);
+        const submitInterest =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : paymentBreakdown.interestamount.toFixed(0);
+        const submitVat =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : paymentBreakdown.vatamount.toFixed(0);
+        const submitTotal =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : paymentBreakdown.totaltaxamount.toFixed(0);
+        const submitChallanVat =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : remaingVat.toFixed(0);
+        const submitChallanInterest =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : remainingInterest.toFixed(0);
+        const submitChallanPenalty =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : remainingPenalty.toFixed(0);
+        const submitChallanOther =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : isNegative(pendingcashtwo())
+              ? Math.abs(pendingcashtwo()).toFixed(0)
+              : "0";
+
+        const submitPendingPayment =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : Math.abs(pendingpayment()).toFixed(2);
+        const submitPendingCash =
+          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+            ? "0"
+            : (
+                (isNegative(pendingcashone())
+                  ? Math.abs(pendingcashone())
+                  : 0) +
+                (isNegative(pendingcashtwo()) ? Math.abs(pendingcashtwo()) : 0)
+              ).toFixed(2);
+
+        console.log("pendingcashone", pendingcashone());
+        console.log("pendingcashtwo", pendingcashtwo());
+        console.log("submitPendingCash", submitPendingCash);
+
+        // Only create challan for the last return; for first 2 returns, only update with zero values
+        if (isLastReturn || return01.dvat04?.frequencyFilings !== "QUARTERLY") {
+          const response = await AddPaymentOnline({
+            id: returnToUpdate.id,
+            penalty: submitPenalty,
+            pending_payment: submitPendingPayment,
+            pending_cash: submitPendingCash,
+            interestamount: submitInterest,
+            totaltaxamount: submitTotal,
+            vatamount: submitVat,
+
+            challan_vat: submitChallanVat,
+            challan_interest: submitChallanInterest,
+            challan_penalty: submitChallanPenalty,
+            challan_other: submitChallanOther,
+            challan_total_tax_amount: (
+              parseFloat(submitChallanVat) +
+              parseFloat(submitChallanInterest) +
+              parseFloat(submitChallanPenalty) +
+              parseFloat(submitChallanOther)
+            ).toFixed(0),
+          });
+
+          if (!response.status) {
+            toast.error(response.message);
+            return;
+          }
+
+          // Store order_id from last return (for redirect)
+          if (isLastReturn && response.data?.order_id) {
+            finalOrderId = response.data.order_id;
+          }
+        }
       }
-      if (!response.data?.order_id) {
+
+      if (!finalOrderId && return01.dvat04?.frequencyFilings === "QUARTERLY") {
         toast.error("Unable to initialize payment session.");
         return;
       }
 
-      router.push(
-        `/payamount?pi=${encodeURIComponent(response.data.order_id)}`,
-      );
+      if (finalOrderId) {
+        router.push(`/payamount?pi=${encodeURIComponent(finalOrderId)}`);
+      }
     } finally {
       setIsOnlineProcessing(false);
     }
