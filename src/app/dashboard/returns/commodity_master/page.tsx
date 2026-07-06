@@ -79,7 +79,8 @@ const CommodityMasterPage = () => {
       userCommodityType === "OIDC" ||
       userCommodityType === "MANUFACTURER" ||
       userCommodityType === "WHOLESALER" ||
-      userCommodityType === "OTHER"
+      userCommodityType === "OTHER" ||
+      userCommodityType === "RESTAURANT"
     ) {
       return commodityList.filter((item) => item.product_type === "LIQUOR");
     }
@@ -117,7 +118,8 @@ const CommodityMasterPage = () => {
     userCommodityType === "OIDC" ||
     userCommodityType === "MANUFACTURER" ||
     userCommodityType === "WHOLESALER" ||
-    userCommodityType === "OTHER";
+    userCommodityType === "OTHER" || 
+    userCommodityType === "RESTAURANT";
   const isFuelUser = userCommodityType === "FUEL";
   const pageTitle = isLiquorUser
     ? "Liquor Commodity Master"
