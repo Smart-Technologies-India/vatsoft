@@ -13,7 +13,7 @@ import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import prisma from "../../../prisma/database";
 
 interface GetDvatByOfficePayload {
-  selectOffice: SelectOffice;
+  selectOffice?: SelectOffice;
 }
 
 const GetDvatByOffice = async (
@@ -38,7 +38,7 @@ const GetDvatByOffice = async (
       where: {
         deletedAt: null,
         deletedBy: null,
-        selectOffice: payload.selectOffice,
+        ...(payload.selectOffice && { selectOffice: payload.selectOffice }),
         OR: [
           {
             status: "PENDINGPROCESSING",

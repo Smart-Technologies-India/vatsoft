@@ -1125,9 +1125,9 @@ const CommodityMaster = () => {
                 <TableHead className="text-center text-xs">
                   New Stock (Bottle)
                 </TableHead>
-                <TableHead className="text-center text-xs">
+                {/* <TableHead className="text-center text-xs">
                   Difference (Bottle)
-                </TableHead>
+                </TableHead> */}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1160,7 +1160,7 @@ const CommodityMaster = () => {
                       <TableCell className="text-center text-xs font-semibold text-emerald-700">
                         {formatBottleDisplay(row.newStockBottle)}
                       </TableCell>
-                      <TableCell
+                      {/* <TableCell
                         className={`text-center text-xs font-semibold ${
                           row.differenceBottle < 0
                             ? "text-red-600"
@@ -1175,7 +1175,7 @@ const CommodityMaster = () => {
                           : row.differenceBottle > 0
                             ? " ↑"
                             : ""}
-                      </TableCell>
+                      </TableCell> */}
                     </TableRow>
                   ))
               )}

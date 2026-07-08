@@ -74,28 +74,37 @@ const RegistrationStatus = () => {
         setUser(userresponse.data);
 
         const response = await GetDvatByOffice({
-          selectOffice: userresponse.data.selectOffice!,
+          selectOffice: userresponse.data.role === "ADMIN" ? undefined : userresponse.data.selectOffice!,
         });
 
         if (response.data && response.status) {
-          // setData(response.data);
-
-          // short data according to this status order
+          // For ADMIN, only show APPROVED status
+          // For others, sort data according to this status order:
           // 1 - VERIFICATION
           // 2 - PENDINGPROCESSING
           // 3 - APPROVED
 
-          const verification = response.data.filter(
-            (val) => val.status == "VERIFICATION",
-          );
-          const pendingprocessing = response.data.filter(
-            (val) => val.status == "PENDINGPROCESSING",
-          );
-          const approved = response.data.filter(
-            (val) => val.status == "APPROVED",
-          );
+          let filteredData = response.data;
 
-          setData([...verification, ...pendingprocessing, ...approved]);
+          if (userresponse.data.role === "ADMIN") {
+            filteredData = response.data.filter(
+              (val) => val.status === "APPROVED",
+            );
+          } else {
+            const verification = response.data.filter(
+              (val) => val.status == "VERIFICATION",
+            );
+            const pendingprocessing = response.data.filter(
+              (val) => val.status == "PENDINGPROCESSING",
+            );
+            const approved = response.data.filter(
+              (val) => val.status == "APPROVED",
+            );
+
+            filteredData = [...verification, ...pendingprocessing, ...approved];
+          }
+
+          setData(filteredData);
         }
       }
     };
@@ -267,8 +276,7 @@ const RegistrationStatus = () => {
         id: "action",
         header: "Action",
         cell: ({ row }) => (
-          <div className="flex items-center justify-center">
-            {/* {row.original.first_stock.length > 0 ? ( */}
+          <div className="flex items-center justify-center gap-2">
             <button
               type="button"
               className="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
@@ -280,9 +288,21 @@ const RegistrationStatus = () => {
                 )
               }
             >
-              View
+              View Details
             </button>
-            {/* ) : null} */}
+            <button
+              type="button"
+              className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+              onClick={() =>
+                router.push(
+                  `/dashboard/registration_status/view-stock/${encryptURLData(
+                    row.original.id.toString(),
+                  )}`,
+                )
+              }
+            >
+              View Stock
+            </button>
           </div>
         ),
       },

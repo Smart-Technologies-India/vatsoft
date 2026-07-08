@@ -899,7 +899,6 @@ const Dvat16ReturnPreview = () => {
         : lateFees
       : getR7() + (isNegative(lateFees) ? 0 : lateFees);
   };
-  // net payable amount end here
 
   return (
     <>
@@ -1135,7 +1134,7 @@ const Dvat16ReturnPreview = () => {
 
             {!payment && (
               <>
-                {getNetPayable() < 0 ? (
+                {getNetPayable() <= 0 ? (
                   <>
                     <Button
                       type="primary"
