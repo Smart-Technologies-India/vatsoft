@@ -3,6 +3,7 @@
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUser from "@/action/user/getuser";
+import CheckStockUpdateSnapshot from "@/action/stock/checkstockupdatesnapshot";
 import DashboardCards from "@/components/dashboard/cards/dashboardcard";
 import { Dvat04Commodity, user } from "@prisma/client";
 import { useRouter } from "next/navigation";
@@ -14,6 +15,7 @@ const Page = () => {
   const [userid, setUserid] = useState<number>(0);
   const [user, setUser] = useState<user>();
   const [commodity, setCommodity] = useState<Dvat04Commodity | null>(null);
+  const [hasSnapshotData, setHasSnapshotData] = useState<boolean>(false);
 
   useEffect(() => {
     const init = async () => {
@@ -34,6 +36,12 @@ const Page = () => {
       const dvatResponse = await GetUserDvat04();
       if (dvatResponse.status && dvatResponse.data) {
         setCommodity(dvatResponse.data.commodity);
+
+        // Check if stock update snapshot data exists
+        const snapshotResponse = await CheckStockUpdateSnapshot({
+          dvatid: dvatResponse.data.id,
+        });
+        setHasSnapshotData(snapshotResponse.exists);
       }
     };
     init();
@@ -119,7 +127,7 @@ const Page = () => {
                 }
                 link="/dashboard/user_service/breakage"
               />
-              {commodity === "RESTAURANT" && (
+              {commodity === "RESTAURANT" && !hasSnapshotData && (
                 <DashboardCards
                   title="PCS to mL"
                   description="Convert PCS to mL for accurate measurements."

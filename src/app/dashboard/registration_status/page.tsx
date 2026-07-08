@@ -284,32 +284,47 @@ const RegistrationStatus = () => {
         id: "action",
         header: "Action",
         cell: ({ row }) => (
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex flex-col items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                className="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+                onClick={() =>
+                  router.push(
+                    `/dashboard/registration_status/first-stock/${encryptURLData(
+                      row.original.id.toString(),
+                    )}`,
+                  )
+                }
+              >
+                View Details
+              </button>
+              <button
+                type="button"
+                className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+                onClick={() =>
+                  router.push(
+                    `/dashboard/registration_status/view-stock/${encryptURLData(
+                      row.original.id.toString(),
+                    )}`,
+                  )
+                }
+              >
+                View Stock
+              </button>
+            </div>
             <button
               type="button"
-              className="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+              className="rounded-md bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700"
               onClick={() =>
                 router.push(
-                  `/dashboard/registration_status/first-stock/${encryptURLData(
+                  `/dashboard/registration_status/view-returns/${encryptURLData(
                     row.original.id.toString(),
                   )}`,
                 )
               }
             >
-              View Details
-            </button>
-            <button
-              type="button"
-              className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
-              onClick={() =>
-                router.push(
-                  `/dashboard/registration_status/view-stock/${encryptURLData(
-                    row.original.id.toString(),
-                  )}`,
-                )
-              }
-            >
-              View Stock
+              View Returns
             </button>
           </div>
         ),

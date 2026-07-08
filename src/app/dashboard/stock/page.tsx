@@ -1,6 +1,7 @@
 "use client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetAllStock from "@/action/stock/getallstock";
+import CheckStockUpdateSnapshot from "@/action/stock/checkstockupdatesnapshot";
 import { AddMaterialProvider } from "@/components/forms/addmaterial/addmaterial";
 import { CreateStockProvider } from "@/components/forms/createstock/createstock";
 import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
@@ -69,6 +70,7 @@ const CommodityMaster = () => {
 
   const [stocks, setStocks] = useState<StockRow[]>([]);
   const [isLoading, setLoading] = useState<boolean>(true);
+  const [hasSnapshotData, setHasSnapshotData] = useState<boolean>(false);
 
   const [commodityMaster, setCommodityMaster] = useState<
     Array<commodity_master>
@@ -97,6 +99,10 @@ const CommodityMaster = () => {
       });
       return;
     }
+
+    // Check stock update snapshot data
+    const snapshotResponse = await CheckStockUpdateSnapshot({ dvatid: dvatId });
+    setHasSnapshotData(snapshotResponse.exists);
 
     const totalStocks = initialStockResponse.data.total ?? 0;
 
@@ -255,13 +261,25 @@ const CommodityMaster = () => {
               ? "Litres"
               : "Quantity"
             : "Crate",
-        cell: ({ row }) =>
-          quantityCount == "pcs"
-            ? row.original.quantity
-            : showCrates(
-                row.original.quantity,
-                row.original.commodity_master.crate_size,
-              ),
+        cell: ({ row }) => {
+          if (quantityCount !== "pcs") {
+            return showCrates(
+              row.original.quantity,
+              row.original.commodity_master.crate_size,
+            );
+          }
+          // If snapshot data exists, show in format "X bottle Y mL"
+          if (hasSnapshotData) {
+            const packSize = Number(row.original.commodity_master.pack_size);
+            if (!Number.isFinite(packSize) || packSize <= 0) {
+              return row.original.quantity;
+            }
+            const bottles = Math.floor(row.original.quantity / packSize);
+            const remainingMl = row.original.quantity % packSize;
+            return `${bottles} bottle ${remainingMl} mL`;
+          }
+          return row.original.quantity;
+        },
       },
       ...(isRestaurantCommodity
         ? [
@@ -269,6 +287,10 @@ const CommodityMaster = () => {
               id: "ml",
               header: "mL",
               accessorFn: (row: StockRow) => {
+                // If snapshot data exists, use quantity directly; otherwise multiply by pack_size
+                if (hasSnapshotData) {
+                  return row.quantity;
+                }
                 const packSize = Number(row.commodity_master.pack_size);
                 if (!Number.isFinite(packSize) || packSize <= 0) {
                   return null;
@@ -276,13 +298,17 @@ const CommodityMaster = () => {
                 return Number(row.quantity) * packSize;
               },
               cell: ({ row }: { row: { original: StockRow } }) => {
+                // If snapshot data exists, use quantity directly; otherwise multiply by pack_size
+                if (hasSnapshotData) {
+                  return row.original.quantity.toFixed(0);
+                }
                 const packSize = Number(
                   row.original.commodity_master.pack_size,
                 );
                 if (!Number.isFinite(packSize) || packSize <= 0) {
                   return "-";
                 }
-                return Number(row.original.quantity) * packSize;
+                return (Number(row.original.quantity) * packSize).toFixed(0);
               },
             } as ColumnDef<StockRow>,
           ]
@@ -294,7 +320,7 @@ const CommodityMaster = () => {
         cell: ({ row }) => row.original.commodity_master.description || "-",
       },
     ],
-    [dvatdata?.commodity, isRestaurantCommodity, quantityCount],
+    [dvatdata?.commodity, isRestaurantCommodity, quantityCount, hasSnapshotData],
   );
 
   const table = useReactTable({
