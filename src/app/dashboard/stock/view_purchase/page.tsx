@@ -1599,6 +1599,10 @@ const DocumentWiseDetails = () => {
                               Pending
                             </span>
                           )
+                        ) : record.is_accept ? (
+                          <span className="text-xs text-gray-400">
+                            Accepted
+                          </span>
                         ) : (
                           <button
                             onClick={() => {

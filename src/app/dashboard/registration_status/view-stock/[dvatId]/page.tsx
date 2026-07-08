@@ -151,21 +151,18 @@ export default function ViewStock() {
         ),
       },
       {
-        accessorKey: "actualStock",
+        accessorFn: (row) =>
+          row.firstStockCount +
+          row.purchaseCount -
+          row.saleCount -
+          row.stockCount,
         header: "Actual Stock",
         cell: ({ row }) => (
           <span className="text-sm text-gray-900 text-center">
             {row.original.firstStockCount +
               row.original.purchaseCount -
               row.original.saleCount -
-              row.original.stockCount ==
-            0
-              ? 0
-              : row.original.firstStockCount +
-                row.original.purchaseCount -
-                row.original.saleCount -
-                row.original.stockCount +
-                row.original.stockCount}
+              row.original.stockCount}
           </span>
         ),
       },
@@ -191,7 +188,11 @@ export default function ViewStock() {
         return true;
       }
 
-      return [row.original.itemCode, row.original.itemName]
+      return [
+        String(row.original.id),
+        row.original.itemCode,
+        row.original.itemName,
+      ]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(searchValue));
     },

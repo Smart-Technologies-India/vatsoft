@@ -175,6 +175,7 @@ const DealerRegistrationTypeChangePage = () => {
 
       const reportResponse = await GetDvatByOffice({
         selectOffice: userResponse.data.selectOffice,
+        userRole: userResponse.data.role,
       });
 
       if (!reportResponse.status || !reportResponse.data) {
@@ -183,7 +184,7 @@ const DealerRegistrationTypeChangePage = () => {
         return;
       }
 
-      const approvedDealers = reportResponse.data.filter(
+      const approvedDealers = reportResponse.data.data.filter(
         (dealer) => dealer.status === "APPROVED",
       );
 

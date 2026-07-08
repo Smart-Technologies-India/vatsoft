@@ -144,7 +144,6 @@ const RefinerySalesPage = () => {
         setDeleteModalState((prev) => ({ ...prev, isDeleting: false }));
       }
     } catch (error) {
-      console.error("Delete error:", error);
       toast.error("An error occurred while deleting refinery sale.");
       setDeleteModalState((prev) => ({ ...prev, isDeleting: false }));
     }

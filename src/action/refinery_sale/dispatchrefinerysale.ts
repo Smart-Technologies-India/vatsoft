@@ -304,6 +304,7 @@ const DispatchRefinerySale = async (
         is_against_iform: false,
         is_against_e1form: false,
         is_export: false,
+        is_accept: true,
       });
 
       if (!stockResponse.status) {

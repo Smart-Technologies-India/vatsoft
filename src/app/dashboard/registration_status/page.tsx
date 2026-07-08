@@ -56,7 +56,14 @@ const RegistrationStatus = () => {
     Record<number, string>
   >({});
   const [savingMobileId, setSavingMobileId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+  const [userRole, setUserRole] = useState<string | undefined>();
+  const [userOffice, setUserOffice] = useState<any>();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  // Initialize user and fetch data on mount
   useEffect(() => {
     const init = async () => {
       const authResponse = await getAuthenticatedUserId();
@@ -72,44 +79,45 @@ const RegistrationStatus = () => {
 
       if (userresponse.data && userresponse.status) {
         setUser(userresponse.data);
-
-        const response = await GetDvatByOffice({
-          selectOffice: userresponse.data.role === "ADMIN" ? undefined : userresponse.data.selectOffice!,
-        });
-
-        if (response.data && response.status) {
-          // For ADMIN, only show APPROVED status
-          // For others, sort data according to this status order:
-          // 1 - VERIFICATION
-          // 2 - PENDINGPROCESSING
-          // 3 - APPROVED
-
-          let filteredData = response.data;
-
-          if (userresponse.data.role === "ADMIN") {
-            filteredData = response.data.filter(
-              (val) => val.status === "APPROVED",
-            );
-          } else {
-            const verification = response.data.filter(
-              (val) => val.status == "VERIFICATION",
-            );
-            const pendingprocessing = response.data.filter(
-              (val) => val.status == "PENDINGPROCESSING",
-            );
-            const approved = response.data.filter(
-              (val) => val.status == "APPROVED",
-            );
-
-            filteredData = [...verification, ...pendingprocessing, ...approved];
-          }
-
-          setData(filteredData);
-        }
+        setUserRole(userresponse.data.role);
+        setUserOffice(
+          userresponse.data.role === "ADMIN"
+            ? undefined
+            : userresponse.data.selectOffice,
+        );
       }
     };
     init();
   }, [userid, router]);
+
+  // Fetch data when page, pageSize, or globalFilter changes
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!userRole) return;
+
+      setIsLoading(true);
+      try {
+        const response = await GetDvatByOffice({
+          selectOffice: userOffice,
+          userRole,
+          page: currentPage,
+          pageSize,
+          search: globalFilter,
+        });
+
+        if (response.data && response.status) {
+          setData(response.data.data);
+          setTotalRecords(response.data.total);
+        }
+      } catch (error) {
+        toast.error("Failed to fetch data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentPage, pageSize, globalFilter, userRole, userOffice]);
 
   const startMobileEdit = useCallback((row: RegistrationStatusRow) => {
     setEditingMobileById((prev) => ({
@@ -346,12 +354,6 @@ const RegistrationStatus = () => {
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
   });
 
   const dvatStatusFilterValue =
@@ -383,7 +385,61 @@ const RegistrationStatus = () => {
                 </p>
               </div>
               <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg font-medium">
-                {data.length} {data.length === 1 ? "Dealer" : "Dealers"}
+                {totalRecords} {totalRecords === 1 ? "Dealer" : "Dealers"}
+              </div>
+            </div>
+          </div>
+
+          {/* Search and Filter Card */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
+                <Input
+                  value={globalFilter}
+                  onChange={(event) => setGlobalFilter(event.target.value)}
+                  placeholder="Search by TIN, trade name, or contact"
+                  className="bg-white"
+                />
+                {"ADMIN" != userRole && (
+                  <>
+                    <select
+                      value={dvatStatusFilterValue}
+                      onChange={(event) =>
+                        table
+                          .getColumn("dvatStatus")
+                          ?.setFilterValue(event.target.value || undefined)
+                      }
+                      className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="">All DVAT Status</option>
+                      <option value="SUBMITTED">Submitted</option>
+                      <option value="PENDING">Pending</option>
+                    </select>
+                    <select
+                      value={stockStatusFilterValue}
+                      onChange={(event) =>
+                        table
+                          .getColumn("stockStatus")
+                          ?.setFilterValue(event.target.value || undefined)
+                      }
+                      className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="">All Stock Status</option>
+                      <option value="SUBMITTED">Submitted</option>
+                      <option value="PENDING">Pending</option>
+                    </select>
+                  </>
+                )}
+              </div>
+              <div className="text-sm text-gray-600">
+                {isLoading ? (
+                  <span>Loading...</span>
+                ) : (
+                  <>
+                    Showing {data.length} of {totalRecords} records | Page{" "}
+                    {currentPage} of {Math.ceil(totalRecords / pageSize) || 1}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -414,51 +470,6 @@ const RegistrationStatus = () => {
               </div>
             ) : (
               <>
-                <div className="border-b border-gray-200 bg-gray-50/70 p-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
-                      <Input
-                        value={globalFilter}
-                        onChange={(event) =>
-                          setGlobalFilter(event.target.value)
-                        }
-                        placeholder="Search by TIN, trade name, or contact"
-                        className="bg-white"
-                      />
-                      <select
-                        value={dvatStatusFilterValue}
-                        onChange={(event) =>
-                          table
-                            .getColumn("dvatStatus")
-                            ?.setFilterValue(event.target.value || undefined)
-                        }
-                        className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        <option value="">All DVAT Status</option>
-                        <option value="SUBMITTED">Submitted</option>
-                        <option value="PENDING">Pending</option>
-                      </select>
-                      <select
-                        value={stockStatusFilterValue}
-                        onChange={(event) =>
-                          table
-                            .getColumn("stockStatus")
-                            ?.setFilterValue(event.target.value || undefined)
-                        }
-                        className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        <option value="">All Stock Status</option>
-                        <option value="SUBMITTED">Submitted</option>
-                        <option value="PENDING">Pending</option>
-                      </select>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Showing {table.getFilteredRowModel().rows.length} matching
-                      records
-                    </div>
-                  </div>
-                </div>
-
                 <div className="overflow-x-auto">
                   <Table className="border-0">
                     <TableHeader>
@@ -542,48 +553,63 @@ const RegistrationStatus = () => {
 
                 <div className="flex flex-col gap-3 border-t border-gray-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm text-gray-600">
-                    Page {table.getState().pagination.pageIndex + 1} of{" "}
-                    {table.getPageCount() || 1}
+                    Page {currentPage} of{" "}
+                    {Math.ceil(totalRecords / pageSize) || 1}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <select
-                      value={table.getState().pagination.pageSize}
-                      onChange={(event) =>
-                        table.setPageSize(Number(event.target.value))
-                      }
-                      className="flex h-9 rounded-md border border-input bg-white px-2 text-sm"
+                      value={pageSize}
+                      onChange={(event) => {
+                        const newPageSize = Number(event.target.value);
+                        setPageSize(newPageSize);
+                        setCurrentPage(1);
+                      }}
+                      disabled={isLoading}
+                      className="flex h-9 rounded-md border border-input bg-white px-2 text-sm disabled:opacity-50"
                     >
-                      {[10, 20, 50].map((pageSize) => (
-                        <option key={pageSize} value={pageSize}>
-                          {pageSize} / page
+                      {[10, 20, 50].map((size) => (
+                        <option key={size} value={size}>
+                          {size} / page
                         </option>
                       ))}
                     </select>
                     <button
                       className="rounded-md border border-gray-300 p-2 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      onClick={() => table.firstPage()}
-                      disabled={!table.getCanPreviousPage()}
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1 || isLoading}
                     >
                       <MaterialSymbolsKeyboardDoubleArrowLeft className="h-4 w-4" />
                     </button>
                     <button
                       className="rounded-md border border-gray-300 p-2 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      onClick={() => table.previousPage()}
-                      disabled={!table.getCanPreviousPage()}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1 || isLoading}
                     >
                       <CharmChevronLeft className="h-4 w-4" />
                     </button>
                     <button
                       className="rounded-md border border-gray-300 p-2 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      onClick={() => table.nextPage()}
-                      disabled={!table.getCanNextPage()}
+                      onClick={() =>
+                        setCurrentPage((p) =>
+                          Math.min(Math.ceil(totalRecords / pageSize), p + 1),
+                        )
+                      }
+                      disabled={
+                        currentPage >= Math.ceil(totalRecords / pageSize) ||
+                        isLoading
+                      }
                     >
                       <CharmChevronRight className="h-4 w-4" />
                     </button>
                     <button
                       className="rounded-md border border-gray-300 p-2 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      onClick={() => table.lastPage()}
-                      disabled={!table.getCanNextPage()}
+                      onClick={() =>
+                        setCurrentPage(Math.ceil(totalRecords / pageSize))
+                      }
+                      disabled={
+                        currentPage >= Math.ceil(totalRecords / pageSize) ||
+                        isLoading
+                      }
                     >
                       <MaterialSymbolsKeyboardDoubleArrowRight className="h-4 w-4" />
                     </button>

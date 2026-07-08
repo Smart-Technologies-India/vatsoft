@@ -121,17 +121,40 @@ const InitializeRefinerySaleVatPayment = async (
     const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0"); // 01-12
     const currentYear = String(currentDate.getFullYear());
 
+ 
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
     // Check if a return already exists for current month/year
     let existingReturn = await prisma.returns_01.findFirst({
       where: {
         dvat04Id: currentDvatId,
         year: currentYear,
-        month: currentMonth,
+        month: months[parseInt(currentMonth) - 1],
         deletedAt: null,
       },
       select: {
         id: true,
       },
+    });
+
+    console.log("Existing return check:", existingReturn);
+    console.log("Existing return check:", {
+      dvat04Id: currentDvatId,
+      year: currentYear,
+      month: currentMonth,
+      deletedAt: null,
     });
 
     let returnId: number;

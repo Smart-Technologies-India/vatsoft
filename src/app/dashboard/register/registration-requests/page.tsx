@@ -71,7 +71,7 @@ const RegistrationRequests = () => {
         });
 
         if (response.data && response.status) {
-          const approved = response.data.filter(
+          const approved = response.data.data.filter(
             (val) => val.status == "APPROVED",
           );
 

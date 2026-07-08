@@ -17,7 +17,7 @@ interface GetAllCommodityMasterPayload {
 }
 
 const GetAllCommodityMaster = async (
-  payload: GetAllCommodityMasterPayload
+  payload: GetAllCommodityMasterPayload,
 ): Promise<PaginationResponse<commodity_master[] | null>> => {
   const functionname: string = GetAllCommodityMaster.name;
 
@@ -51,6 +51,9 @@ const GetAllCommodityMaster = async (
           description: {
             contains: searchTerm,
           },
+        },
+        {
+          id: parseInt(searchTerm),
         },
       ];
     }

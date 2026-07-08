@@ -72,7 +72,7 @@ const CommodityMaster = () => {
         setLoading(false);
       }
     },
-    [searchTerm, selectedProductType]
+    [searchTerm, selectedProductType],
   );
 
   // Fetch all product types for the filter dropdown
@@ -88,8 +88,10 @@ const CommodityMaster = () => {
           new Set(
             response.data.result
               .map((item) => item.product_type as string | null)
-              .filter((type): type is string => type !== null && type !== undefined)
-          )
+              .filter(
+                (type): type is string => type !== null && type !== undefined,
+              ),
+          ),
         ).sort();
         setAllProductTypes(types);
       }
@@ -115,12 +117,9 @@ const CommodityMaster = () => {
   }, [router, fetchAllProductTypes, fetchCommodities]);
 
   // When search or filter changes, reset to page 1
-  const handleSearchChange = useCallback(
-    (value: string) => {
-      setSearchTerm(value);
-    },
-    []
-  );
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+  }, []);
 
   const handleProductTypeChange = useCallback((value: string) => {
     setSelectedProductType(value);
@@ -149,7 +148,7 @@ const CommodityMaster = () => {
   };
 
   const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
-    {}
+    {},
   );
 
   const handleOpenChange = (newOpen: boolean, index: number) => {
@@ -168,7 +167,7 @@ const CommodityMaster = () => {
 
   const handleCloseAll = () => {
     setOpenPopovers((prev) =>
-      Object.fromEntries(Object.keys(prev).map((key) => [key, false]))
+      Object.fromEntries(Object.keys(prev).map((key) => [key, false])),
     );
   };
 
@@ -182,7 +181,7 @@ const CommodityMaster = () => {
         toast.success(delete_commodity.message);
         await fetchCommodities(
           Math.floor(pagination.skip / pagination.take) + 1,
-          pagination.take
+          pagination.take,
         );
       } else {
         toast.error(delete_commodity.message);
@@ -229,7 +228,7 @@ const CommodityMaster = () => {
           init={() =>
             fetchCommodities(
               Math.floor(pagination.skip / pagination.take) + 1,
-              pagination.take
+              pagination.take,
             )
           }
         />
@@ -245,6 +244,12 @@ const CommodityMaster = () => {
         <p className="text-lg text-left">Product Info</p>
         <Table className="mt-2">
           <TableBody>
+            <TableRow>
+              <TableCell className="whitespace-nowrap text-left p-2 border">
+                Id
+              </TableCell>
+              <TableCell className="text-left p-2 border">{comm?.id}</TableCell>
+            </TableRow>
             <TableRow>
               <TableCell className="whitespace-nowrap text-left p-2 border">
                 Product Name
@@ -380,19 +385,22 @@ const CommodityMaster = () => {
                 <TableHeader>
                   <TableRow className="bg-gray-50 border-b">
                     <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700">
+                      Id
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700">
                       Product Name
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700">
-                      Product Type
+                      Pcs/Crate
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700">
                       MRP
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700">
-                      Sale Price
+                      Pack Type
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700">
-                      Taxable At
+                      Pack Size
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center p-3 font-semibold text-gray-700 w-52">
                       Action
@@ -418,21 +426,27 @@ const CommodityMaster = () => {
                     </TableRow>
                   ) : (
                     commodty.map((val: commodity_master, index: number) => (
-                      <TableRow key={val.id} className="hover:bg-gray-50 border-b">
+                      <TableRow
+                        key={val.id}
+                        className="hover:bg-gray-50 border-b"
+                      >
+                        <TableCell className="p-3 text-center text-sm">
+                          {val.id}
+                        </TableCell>
                         <TableCell className="p-3 text-center text-sm">
                           {val.product_name}
                         </TableCell>
                         <TableCell className="p-3 text-center text-sm">
-                          {val.product_type}
+                          {val.crate_size}
                         </TableCell>
                         <TableCell className="p-3 text-center text-sm">
                           {val.mrp}
                         </TableCell>
                         <TableCell className="p-3 text-center text-sm">
-                          {val.sale_price}
+                          {val.pack_type}
                         </TableCell>
                         <TableCell className="p-3 text-center text-sm">
-                          {val.taxable_at}%
+                          {val.pack_size}
                         </TableCell>
                         <TableCell className="p-3 text-center">
                           <div className="flex gap-2 justify-center">
@@ -475,7 +489,7 @@ const CommodityMaster = () => {
                                           val.id,
                                           val.status == Status.ACTIVE
                                             ? Status.INACTIVE
-                                            : Status.ACTIVE
+                                            : Status.ACTIVE,
                                         );
                                       }}
                                     >

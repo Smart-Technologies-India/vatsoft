@@ -17,6 +17,7 @@ interface CreateDailyPurchasePayload {
   is_against_iform?: boolean;
   is_against_e1form?: boolean;
   is_export?: boolean;
+  is_accept?: boolean;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -26,7 +27,7 @@ import prisma from "../../../prisma/database";
 import { customAlphabet } from "nanoid";
 
 const CreateDailyPurchase = async (
-  payload: CreateDailyPurchasePayload
+  payload: CreateDailyPurchasePayload,
 ): Promise<ApiResponseType<stock | null>> => {
   const functionname: string = CreateDailyPurchase.name;
 
@@ -99,6 +100,7 @@ const CreateDailyPurchase = async (
           is_against_iform: payload.is_against_iform ?? false,
           is_against_e1form: payload.is_against_e1form ?? false,
           is_export: payload.is_export ?? false,
+          is_accept: payload.is_accept ?? false,
           urn_number: ref_no,
         },
         include: {
@@ -108,7 +110,7 @@ const CreateDailyPurchase = async (
 
       if (!commodity_master) {
         throw new Error(
-          "Something went wrong. Unable to create daily purchase."
+          "Something went wrong. Unable to create daily purchase.",
         );
       }
 
