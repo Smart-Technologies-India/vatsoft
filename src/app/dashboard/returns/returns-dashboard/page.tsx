@@ -1602,10 +1602,12 @@ const ReturnDashboard = () => {
                           disabled={isDownload}
                           onClick={async () => {
                             try {
+                              const previewPath = davtdata?.compositionScheme
+                                ? "previewcomposition"
+                                : "preview";
+
                               await generatePDF(
-                                `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                                  "11",
-                                )}/${encryptURLData(
+                                `/dashboard/returns/returns-dashboard/${previewPath}/${encryptURLData(
                                   return01!.dvat04Id.toString(),
                                 )}?form=30A&year=${getNewYear(
                                   year!,

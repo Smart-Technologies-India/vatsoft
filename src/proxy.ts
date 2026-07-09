@@ -11,6 +11,7 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("dashboard/", request.url));
   } else if (
     pathname.startsWith("/dashboard/returns/returns-dashboard/preview") ||
+    pathname.startsWith("/dashboard/returns/returns-dashboard/previewcomposition") ||
     pathname.startsWith("/dashboard/payments/saved-challan/") ||
     pathname.startsWith("/dashboard/register/pdfview/") ||
     pathname.startsWith("/dashboard/returns/dvat24") ||
@@ -30,7 +31,6 @@ export default async function proxy(request: NextRequest) {
       "ADMIN",
       "VATOFFICER",
       "VATOFFICER_DNH",
-      // "ASST_VAT_OFFICER",
       "COMMISSIONER",
       "DY_COMMISSIONER",
       "JOINT_COMMISSIONER",

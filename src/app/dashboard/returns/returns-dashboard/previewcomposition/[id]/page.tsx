@@ -33,7 +33,9 @@ import CheckPayment from "@/action/return/checkpayment";
 import CheckLastPayment from "@/action/return/checklastpayment";
 import GetUser from "@/action/user/getuser";
 import AddPaymentSubmit from "@/action/return/addpaymentsubmit";
+import GetReturnChallans from "@/action/return/getreturnchallans";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { challan } from "@prisma/client";
 
 interface PercentageOutput {
   increase: string;
@@ -56,13 +58,13 @@ const Dvat16ReturnPreview = () => {
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
   const [payment, setPayment] = useState<boolean>(false);
   const [paymentSubmitBox, setPaymentSubmitBox] = useState<boolean>(false);
+  const [challans, setChallans] = useState<challan[]>([]);
   const searchparam = useSearchParams();
   const [user, setUser] = useState<user | null>();
   const [isAllNil, setAllNil] = useState<boolean>(false);
   const [lateFees, setLateFees] = useState<number>(0);
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
   const [InterestDiffDays, setInterestDiffDays] = useState<number>(0);
-  const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
 
   const getQuarterForMonth = (month: string): Quarter | undefined => {
     const monthToQuarterMap: { [key: string]: Quarter } = {
@@ -103,6 +105,9 @@ const Dvat16ReturnPreview = () => {
 
   useEffect(() => {
     const init = async () => {
+      const yearParam: string = searchparam.get("year") ?? "";
+      const monthParam: string = searchparam.get("month") ?? "";
+
       const authResponse = await getAuthenticatedUserId();
       if (!authResponse.status || !authResponse.data) {
         toast.error(authResponse.message);
@@ -114,12 +119,10 @@ const Dvat16ReturnPreview = () => {
       if (user_response.status && user_response.data) {
         setUser(user_response.data);
       }
-      const year: string = searchparam.get("year") ?? "";
-      const month: string = searchparam.get("month") ?? "";
 
       const returnformsresponse = await getPdfReturn({
-        year: year,
-        month: month,
+        year: yearParam,
+        month: monthParam,
       });
 
       const monthNames = [
@@ -147,17 +150,17 @@ const Dvat16ReturnPreview = () => {
           selectedReturn.dvat04?.frequencyFilings === "QUARTERLY";
 
         if (isQuarterlyFiling) {
-          const effectiveQuarter = getQuarterForMonth(month);
+          const effectiveQuarter = getQuarterForMonth(monthParam);
           const quarterMonths = effectiveQuarter
             ? getQuarterMonths(effectiveQuarter).filter(
-                (quarterMonth) => quarterMonth !== month,
+                (quarterMonth) => quarterMonth !== monthParam,
               )
             : [];
 
           const quarterResponses = await Promise.all(
             quarterMonths.map((quarterMonth) =>
               getPdfReturn({
-                year: getNewYear(year, quarterMonth),
+                year: getNewYear(yearParam, quarterMonth),
                 month: quarterMonth,
               }),
             ),
@@ -196,24 +199,56 @@ const Dvat16ReturnPreview = () => {
 
         setAllNil(dvat_30 && dvat_30a && dvat_31 && dvat_31a);
 
+        const year: string = searchparam.get("year") ?? "";
+        let targetYear = parseInt(year || selectedReturn.year);
+
         const currentDate = new Date();
 
-        // Get the month index from the month name
-        let monthIndex = monthNames.indexOf(
-          returnformsresponse.data.returns_01.month!,
-        );
+        const monthNames = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
 
-        // Check if it's December (index 11) and increment year if needed
-        let newYear = parseInt(year);
-        if (monthIndex === 11) {
-          newYear += 1;
-          monthIndex = 0; // Set month to January
+        // Get the month index from the month name
+        let monthIndex = monthNames.indexOf(selectedReturn.month!);
+
+        if (selectedReturn.dvat04.compositionScheme) {
+          if (
+            ["January", "February", "March"].includes(selectedReturn.month!)
+          ) {
+            monthIndex = 3; // April
+          } else if (["April", "May", "June"].includes(selectedReturn.month!)) {
+            monthIndex = 6; // July
+          } else if (
+            ["July", "August", "September"].includes(selectedReturn.month!)
+          ) {
+            monthIndex = 9; // October
+          } else {
+            monthIndex = 0; // January
+            targetYear += 1;
+          }
         } else {
-          monthIndex += 1; // Otherwise, just increment the month
+          // Check if it's December (index 11) and increment year if needed
+          if (monthIndex === 11) {
+            targetYear += 1;
+            monthIndex = 0; // Set month to January
+          } else {
+            monthIndex += 1; // Otherwise, just increment the month
+          }
         }
 
-        const diff_days = getDaysBetweenDates(
-          new Date(parseInt(selectedReturn.year), monthIndex, 16),
+        const pdiff_days = getDaysBetweenDates(
+          new Date(targetYear, monthIndex, 29),
           currentDate,
         );
         if (
@@ -221,14 +256,26 @@ const Dvat16ReturnPreview = () => {
           selectedReturn.rr_number == undefined ||
           selectedReturn.rr_number == ""
         ) {
-          setLateFees(Math.min(100 * diff_days, 1000000));
+          setLateFees(
+            Math.min(100 * (isNegative(pdiff_days) ? 0 : pdiff_days), 10000),
+          );
         }
 
         const payment_response = await CheckPayment({
-          id: selectedReturn.id ?? 0,
+          id: selectedReturn.id,
         });
+
         if (payment_response.status && payment_response.data) {
           setPayment(payment_response.data);
+        }
+
+        // Fetch all challans for this return
+        const challans_response = await GetReturnChallans({
+          returnId: selectedReturn.id,
+        });
+
+        if (challans_response.status && challans_response.data) {
+          setChallans(challans_response.data);
         }
       } else {
         setReturn01(null);
@@ -236,7 +283,7 @@ const Dvat16ReturnPreview = () => {
         setAllNil(false);
       }
 
-      const currentMonthIndex = monthNames.indexOf(month);
+      const currentMonthIndex = monthNames.indexOf(monthParam);
 
       if (currentMonthIndex === -1) {
       } else {
@@ -247,7 +294,10 @@ const Dvat16ReturnPreview = () => {
         const lastMonth: string = monthNames[lastMonthIndex];
 
         const lastmonthdata = await getPdfReturn({
-          year: month == "January" ? (parseInt(year) - 1).toString() : year,
+          year:
+            monthParam == "January"
+              ? (parseInt(yearParam) - 1).toString()
+              : yearParam,
           month: lastMonth,
         });
 
@@ -258,7 +308,6 @@ const Dvat16ReturnPreview = () => {
     };
     init();
   }, [searchparam, userid]);
-
 
   useEffect(() => {
     if (return01 == null) return;
@@ -311,11 +360,11 @@ const Dvat16ReturnPreview = () => {
     );
     setInterestDiffDays(idiff_days);
 
-    const pdiff_days = getDaysBetweenDates(
-      new Date(targetYear, monthIndex, 29),
-      currentDate,
-    );
-    setPenaltyDiffDays(pdiff_days);
+    // const pdiff_days = getDaysBetweenDates(
+    //   new Date(targetYear, monthIndex, 29),
+    //   currentDate,
+    // );
+    // setPenaltyDiffDays(pdiff_days);
   }, [return01]);
 
   const get_rr_number = (): string => {
@@ -351,8 +400,39 @@ const Dvat16ReturnPreview = () => {
   const onSubmitPayment = async () => {
     if (return01 == null) return toast.error("There is not return from here");
 
+    let submitReturnIds: number[] = [return01.id];
+
+    // For composition scheme, get all three months of the quarter
+    if (return01.dvat04?.compositionScheme) {
+      const effectiveQuarter = getQuarterForMonth(return01.month!);
+      const quarterMonths = effectiveQuarter
+        ? getQuarterMonths(effectiveQuarter)
+        : [];
+
+      if (quarterMonths.length > 0) {
+        const yearParam: string = searchparam.get("year") ?? return01.year;
+        submitReturnIds = [];
+
+        // Fetch return ID for each month in the quarter
+        for (const quarterMonth of quarterMonths) {
+          const quarterMonthReturnResponse = await getPdfReturn({
+            year: getNewYear(yearParam, quarterMonth),
+            month: quarterMonth,
+          });
+
+          if (
+            quarterMonthReturnResponse.status &&
+            quarterMonthReturnResponse.data?.returns_01
+          ) {
+            submitReturnIds.push(quarterMonthReturnResponse.data.returns_01.id);
+          }
+        }
+      }
+    }
+
+    // Check last payment for the first return
     const lastPayment = await CheckLastPayment({
-      id: return01.id ?? 0,
+      id: submitReturnIds[0] ?? 0,
     });
     if (!lastPayment.status) {
       toast.error(lastPayment.message);
@@ -366,166 +446,44 @@ const Dvat16ReturnPreview = () => {
       return;
     }
 
-    // const response = await AddSubmitPayment({
-    //   id: return01.id ?? 0,
-    //   rr_number: get_rr_number(),
-    //   penalty: lateFees.toString(),
-    // });
-
-    const pending_payment =
-      parseFloat(getInvoicePercentage("0").decrease) +
-      parseFloat(getInvoicePercentage("1").decrease) +
-      parseFloat(getInvoicePercentage("2").decrease) +
-      parseFloat(getInvoicePercentage("3").decrease) +
-      parseFloat(getInvoicePercentage("4").decrease) +
-      parseFloat(getInvoicePercentage("5").decrease) +
-      parseFloat(getInvoicePercentage("6").decrease) +
-      parseFloat(getInvoicePercentage("12.5").decrease) +
-      parseFloat(getInvoicePercentage("12.75").decrease) +
-      parseFloat(getInvoicePercentage("13.5").decrease) +
-      parseFloat(getInvoicePercentage("15").decrease) +
-      parseFloat(getInvoicePercentage("20").decrease) +
-      parseFloat(getSaleOfPercentage("4").decrease) +
-      parseFloat(getSaleOfPercentage("5").decrease) +
-      parseFloat(getSaleOfPercentage("12.5").decrease) +
-      parseFloat(get4_6().decrease) +
-      parseFloat(get4_7().decrease) -
-      parseFloat(get4_9().decrease) -
-      (parseFloat(get5_1().decrease) +
-        parseFloat(get5_2().decrease) +
-        (parseFloat(getCreditNote().decrease) -
-          parseFloat(getDebitNote().decrease) -
-          parseFloat(getGoodsReturnsNote().decrease))) +
-      (isNegative(
-        (((parseFloat(getInvoicePercentage("0").decrease) +
-          parseFloat(getInvoicePercentage("1").decrease) +
-          parseFloat(getInvoicePercentage("2").decrease) +
-          parseFloat(getInvoicePercentage("3").decrease) +
-          parseFloat(getInvoicePercentage("4").decrease) +
-          parseFloat(getInvoicePercentage("5").decrease) +
-          parseFloat(getInvoicePercentage("6").decrease) +
-          parseFloat(getInvoicePercentage("12.5").decrease) +
-          parseFloat(getInvoicePercentage("12.75").decrease) +
-          parseFloat(getInvoicePercentage("13.5").decrease) +
-          parseFloat(getInvoicePercentage("15").decrease) +
-          parseFloat(getInvoicePercentage("20").decrease) +
-          parseFloat(getSaleOfPercentage("4").decrease) +
-          parseFloat(getSaleOfPercentage("5").decrease) +
-          parseFloat(getSaleOfPercentage("12.5").decrease) +
-          parseFloat(get4_6().decrease) +
-          parseFloat(get4_7().decrease) -
-          parseFloat(get4_9().decrease) -
-          (parseFloat(get5_1().decrease) +
-            parseFloat(get5_2().decrease) +
-            (parseFloat(getCreditNote().decrease) -
-              parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease)))) *
-          0.15) /
-          365) *
-          InterestDiffDays,
-      )
-        ? 0
-        : (((parseFloat(getInvoicePercentage("0").decrease) +
-            parseFloat(getInvoicePercentage("1").decrease) +
-            parseFloat(getInvoicePercentage("2").decrease) +
-            parseFloat(getInvoicePercentage("3").decrease) +
-            parseFloat(getInvoicePercentage("4").decrease) +
-            parseFloat(getInvoicePercentage("5").decrease) +
-            parseFloat(getInvoicePercentage("6").decrease) +
-            parseFloat(getInvoicePercentage("12.5").decrease) +
-            parseFloat(getInvoicePercentage("12.75").decrease) +
-            parseFloat(getInvoicePercentage("13.5").decrease) +
-            parseFloat(getInvoicePercentage("15").decrease) +
-            parseFloat(getInvoicePercentage("20").decrease) +
-            parseFloat(getSaleOfPercentage("4").decrease) +
-            parseFloat(getSaleOfPercentage("5").decrease) +
-            parseFloat(getSaleOfPercentage("12.5").decrease) +
-            parseFloat(get4_6().decrease) +
-            parseFloat(get4_7().decrease) -
-            parseFloat(get4_9().decrease) -
-            (parseFloat(get5_1().decrease) +
-              parseFloat(get5_2().decrease) +
-              (parseFloat(getCreditNote().decrease) -
-                parseFloat(getDebitNote().decrease) -
-                parseFloat(getGoodsReturnsNote().decrease)))) *
-            0.15) /
-            365) *
-          InterestDiffDays) +
-      (isNegative(lateFees) ? 0 : lateFees) +
-      0 -
-      0;
-
-    const interestamount = isNegative(
-      (((parseFloat(getInvoicePercentage("0").decrease) +
-        parseFloat(getInvoicePercentage("1").decrease) +
-        parseFloat(getInvoicePercentage("2").decrease) +
-        parseFloat(getInvoicePercentage("3").decrease) +
-        parseFloat(getInvoicePercentage("4").decrease) +
-        parseFloat(getInvoicePercentage("5").decrease) +
-        parseFloat(getInvoicePercentage("6").decrease) +
-        parseFloat(getInvoicePercentage("12.5").decrease) +
-        parseFloat(getInvoicePercentage("12.75").decrease) +
-        parseFloat(getInvoicePercentage("13.5").decrease) +
-        parseFloat(getInvoicePercentage("15").decrease) +
-        parseFloat(getInvoicePercentage("20").decrease) +
-        parseFloat(getSaleOfPercentage("4").decrease) +
-        parseFloat(getSaleOfPercentage("5").decrease) +
-        parseFloat(getSaleOfPercentage("12.5").decrease) +
-        parseFloat(get4_6().decrease) +
-        parseFloat(get4_7().decrease) -
-        parseFloat(get4_9().decrease) -
-        (parseFloat(get5_1().decrease) +
-          parseFloat(get5_2().decrease) +
-          (parseFloat(getCreditNote().decrease) -
-            parseFloat(getDebitNote().decrease) -
-            parseFloat(getGoodsReturnsNote().decrease)))) *
-        0.15) /
-        365) *
-        InterestDiffDays,
-    )
-      ? 0
-      : (((parseFloat(getInvoicePercentage("0").decrease) +
-          parseFloat(getInvoicePercentage("1").decrease) +
-          parseFloat(getInvoicePercentage("2").decrease) +
-          parseFloat(getInvoicePercentage("3").decrease) +
-          parseFloat(getInvoicePercentage("4").decrease) +
-          parseFloat(getInvoicePercentage("5").decrease) +
-          parseFloat(getInvoicePercentage("6").decrease) +
-          parseFloat(getInvoicePercentage("12.5").decrease) +
-          parseFloat(getInvoicePercentage("12.75").decrease) +
-          parseFloat(getInvoicePercentage("13.5").decrease) +
-          parseFloat(getInvoicePercentage("15").decrease) +
-          parseFloat(getInvoicePercentage("20").decrease) +
-          parseFloat(getSaleOfPercentage("4").decrease) +
-          parseFloat(getSaleOfPercentage("5").decrease) +
-          parseFloat(getSaleOfPercentage("12.5").decrease) +
-          parseFloat(get4_6().decrease) +
-          parseFloat(get4_7().decrease) -
-          parseFloat(get4_9().decrease) -
-          (parseFloat(get5_1().decrease) +
-            parseFloat(get5_2().decrease) +
-            (parseFloat(getCreditNote().decrease) -
-              parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease)))) *
-          0.15) /
-          365) *
-        InterestDiffDays;
-
-    const response = await AddPaymentSubmit({
-      id: return01.id ?? 0,
+    // Prepare payment details
+    const paymentDetails = {
       rr_number: get_rr_number(),
-      penalty: lateFees.toString(),
-      pending_payment: pending_payment.toFixed(2),
-      vatamount: "0",
-      interestamount: interestamount.toFixed(2),
-      totaltaxamount: pending_payment.toFixed(2),
-    });
+      penalty: isNegative(lateFees) ? "0" : lateFees.toString(),
+      pending_payment: "0",
+      vatamount: getInvoicePercentage("1").decrease,
+      interestamount: isNegative(getR6_2a()) ? "0" : getR6_2a().toFixed(2),
+      totaltaxamount: (
+        parseFloat(getInvoicePercentage("1").decrease) +
+        (isNegative(getR6_2a()) ? 0 : getR6_2a()) +
+        (isNegative(lateFees) ? 0 : lateFees)
+      ).toFixed(2),
+    };
 
-    if (!response.status) return toast.error(response.message);
-    toast.success(response.message);
-    setPaymentSubmitBox(false);
+    // Submit payment to all months with same details
+    let firstResponse: any = null;
+    for (const returnId of submitReturnIds) {
+      const response = await AddPaymentSubmit({
+        id: returnId,
+        ...paymentDetails,
+      });
 
-    router.push(`/dashboard/returns/returns-dashboard`);
+      if (!response.status) {
+        toast.error(response.message);
+        setPaymentSubmitBox(false);
+        return;
+      }
+
+      if (!firstResponse) {
+        firstResponse = response;
+      }
+    }
+
+    if (firstResponse) {
+      toast.success(firstResponse.message);
+      setPaymentSubmitBox(false);
+      router.push(`/dashboard/returns/returns-dashboard`);
+    }
   };
 
   const generatePDF = async (path: string) => {
@@ -834,6 +792,154 @@ const Dvat16ReturnPreview = () => {
     };
   };
 
+  const calculateInterest = (
+    totalDue: number,
+    dueDate: Date,
+    payments: challan[],
+    annualRate = 15,
+    asOfDate: Date = new Date(),
+  ): number => {
+    if (!Number.isFinite(totalDue) || totalDue <= 0) return 0;
+
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const normalizeDate = (dateInput: Date | string): Date => {
+      const date = new Date(dateInput);
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    };
+
+    const getDaysDiff = (fromDate: Date, toDate: Date): number => {
+      const startUtc = Date.UTC(
+        fromDate.getFullYear(),
+        fromDate.getMonth(),
+        fromDate.getDate(),
+      );
+      const endUtc = Date.UTC(
+        toDate.getFullYear(),
+        toDate.getMonth(),
+        toDate.getDate(),
+      );
+      const diff = Math.floor((endUtc - startUtc) / dayMs);
+      return Math.max(0, diff);
+    };
+
+    const sortedPayments = payments
+      .map((payment) => {
+        const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
+        const paymentAmount =
+          parseFloat(payment.vat ?? "0") +
+          parseFloat(payment.penalty ?? "0") +
+          parseFloat(payment.interest ?? "0");
+
+        if (
+          !paymentDateRaw ||
+          !Number.isFinite(paymentAmount) ||
+          paymentAmount <= 0
+        ) {
+          return null;
+        }
+
+        return {
+          amount: paymentAmount,
+          date: normalizeDate(paymentDateRaw),
+        };
+      })
+      .filter(
+        (payment): payment is { amount: number; date: Date } =>
+          payment !== null,
+      )
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    const effectiveAsOfDate = normalizeDate(asOfDate);
+    let outstanding = totalDue;
+    let anchorDate = normalizeDate(dueDate);
+    let interest = 0;
+
+    for (let i = 0; i < sortedPayments.length; i++) {
+      const payment = sortedPayments[i];
+      if (payment.date > effectiveAsOfDate) {
+        break;
+      }
+
+      if (payment.date <= anchorDate) {
+        outstanding = Math.max(0, outstanding - payment.amount);
+
+        if (outstanding <= 0) {
+          break;
+        }
+        continue;
+      }
+
+      if (payment.date > anchorDate && outstanding > 0) {
+        const days = getDaysDiff(anchorDate, payment.date);
+        const intervalInterest =
+          (outstanding * annualRate * days) / (100 * 365);
+        interest += intervalInterest;
+      }
+
+      outstanding = Math.max(0, outstanding - payment.amount);
+      anchorDate = payment.date;
+
+      if (outstanding <= 0) {
+        break;
+      }
+    }
+
+    if (outstanding > 0 && effectiveAsOfDate > anchorDate) {
+      const days = getDaysDiff(anchorDate, effectiveAsOfDate);
+      const finalInterest = (outstanding * annualRate * days) / (100 * 365);
+      interest += finalInterest;
+    }
+
+    return interest;
+  };
+
+  const getInterestDueDate = (
+    year: string,
+    month: string,
+    isComp: boolean = false,
+  ): Date => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    let monthIndex = monthNames.indexOf(month);
+    let computedYear = parseInt(year);
+
+    if (isComp) {
+      if (["January", "February", "March"].includes(month)) {
+        monthIndex = 3;
+      } else if (["April", "May", "June"].includes(month)) {
+        monthIndex = 6;
+      } else if (["July", "August", "September"].includes(month)) {
+        monthIndex = 9;
+      } else {
+        monthIndex = 0;
+        computedYear += 1;
+      }
+    } else {
+      if (monthIndex === 11) {
+        computedYear += 1;
+        monthIndex = 0;
+      } else {
+        monthIndex += 1;
+      }
+    }
+
+    return new Date(computedYear, monthIndex, 15);
+  };
+
   const getR6_1 = (): number =>
     parseFloat(getInvoicePercentage("0").decrease) +
     parseFloat(getInvoicePercentage("1").decrease) +
@@ -860,44 +966,39 @@ const Dvat16ReturnPreview = () => {
         parseFloat(getGoodsReturnsNote().decrease) -
         parseFloat(lastmonthdue)));
 
-  const getR6_2a = (): number =>
-    (((parseFloat(getInvoicePercentage("0").decrease) +
-      parseFloat(getInvoicePercentage("1").decrease) +
-      parseFloat(getInvoicePercentage("2").decrease) +
-      parseFloat(getInvoicePercentage("3").decrease) +
-      parseFloat(getInvoicePercentage("4").decrease) +
-      parseFloat(getInvoicePercentage("5").decrease) +
-      parseFloat(getInvoicePercentage("6").decrease) +
-      parseFloat(getInvoicePercentage("12.5").decrease) +
-      parseFloat(getInvoicePercentage("12.75").decrease) +
-      parseFloat(getInvoicePercentage("13.5").decrease) +
-      parseFloat(getInvoicePercentage("15").decrease) +
-      parseFloat(getInvoicePercentage("20").decrease) +
-      parseFloat(getSaleOfPercentage("4").decrease) +
-      parseFloat(getSaleOfPercentage("5").decrease) +
-      parseFloat(getSaleOfPercentage("12.5").decrease) +
-      parseFloat(get4_6().decrease) +
-      parseFloat(get4_7().decrease) -
-      parseFloat(get4_9().decrease) -
-      (parseFloat(get5_1().decrease) +
-        parseFloat(get5_2().decrease) +
-        (parseFloat(getCreditNote().decrease) -
-          parseFloat(getDebitNote().decrease) -
-          parseFloat(getGoodsReturnsNote().decrease) -
-          parseFloat(lastmonthdue)))) *
-      0.15) /
-      365) *
-    InterestDiffDays;
+  const getR6_2a = (): number => {
+    if (!return01?.month) return 0;
+
+    const year: string = searchparam.get("year") ?? return01.year;
+    const dueDate = getInterestDueDate(
+      year,
+      return01.month,
+      return01.dvat04?.compositionScheme ? true : false,
+    );
+    const paidChallans = challans || [];
+    const interest = calculateInterest(getR6_1(), dueDate, paidChallans, 15);
+    return isNegative(interest) ? 0 : interest;
+  };
 
   const getR7 = (): number =>
     getR6_1() + (isNegative(getR6_2a()) ? 0 : getR6_2a());
 
   const getNetPayable = (): number => {
-    return isNegative(getR7())
-      ? isNegative(lateFees)
-        ? 0
-        : lateFees
-      : getR7() + (isNegative(lateFees) ? 0 : lateFees);
+    const outputTax = parseFloat(getInvoicePercentage("1").decrease);
+    const taxPaid =
+      challans && challans.length > 0
+        ? challans.reduce(
+            (sum, challan) => sum + parseFloat(challan.total_tax_amount || "0"),
+            0,
+          )
+        : 0;
+    const balancePayable = outputTax - taxPaid;
+    const interestAmount = isNegative(getR6_2a()) ? 0 : getR6_2a();
+    const penalties = isNegative(lateFees) ? 0 : lateFees;
+
+    return isNegative(balancePayable)
+      ? penalties + interestAmount
+      : balancePayable + penalties + interestAmount;
   };
 
   return (
@@ -1010,9 +1111,10 @@ const Dvat16ReturnPreview = () => {
               return01={return01}
               lastMonthDue={lastmonthdue}
               iscomp={return01.dvat04.compositionScheme ? true : false}
+              challans={challans}
             />
 
-            {payment && (
+            {challans && challans.length > 0 && (
               <>
                 <h1 className="text-center font-semibold text-sm mt-4">
                   Payment Details
@@ -1038,27 +1140,61 @@ const Dvat16ReturnPreview = () => {
                     </tr>
                   </thead>
                   <tbody className="w-full">
-                    <tr className="w-full">
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {return01?.paymentmode}
-                      </td>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {return01?.transaction_id}
-                      </td>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {formatDateTime(
-                          getPrismaDatabaseDate(
-                            new Date(return01?.transaction_date!),
-                          ),
-                        )}
-                      </td>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {return01?.bank_name}
-                      </td>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {return01?.total_tax_amount}
-                      </td>
-                    </tr>
+                    {challans && challans.length > 0 ? (
+                      <>
+                        {challans.map((challan, index) => (
+                          <tr key={index} className="w-full">
+                            <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                              {challan.paymentmode || "-"}
+                            </td>
+                            <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                              {challan.track_id || challan.order_id || "-"}
+                            </td>
+                            <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                              {challan.transaction_date
+                                ? formatDateTime(
+                                    getPrismaDatabaseDate(
+                                      new Date(challan.transaction_date),
+                                    ),
+                                  )
+                                : "-"}
+                            </td>
+                            <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                              {challan.bank_name || "-"}
+                            </td>
+                            <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                              {challan.vat || "0"}
+                            </td>
+                          </tr>
+                        ))}
+                        {/* <tr className="w-full bg-gray-100">
+                          <td
+                            colSpan={4}
+                            className="border border-black px-2 leading-4 text-[0.6rem] font-semibold text-right"
+                          >
+                            Total Tax Paid:
+                          </td>
+                          <td className="border border-black px-2 leading-4 text-[0.6rem] font-semibold">
+                            {(
+                              challans.reduce(
+                                (sum, challan) =>
+                                  sum + parseFloat(challan.vat || "0"),
+                                0,
+                              ) || 0
+                            ).toFixed(2)}
+                          </td>
+                        </tr> */}
+                      </>
+                    ) : (
+                      <tr className="w-full">
+                        <td
+                          colSpan={5}
+                          className="border border-black px-2 leading-4 text-[0.6rem] text-center"
+                        >
+                          No payment details available
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </>
@@ -1117,9 +1253,7 @@ const Dvat16ReturnPreview = () => {
                   return;
                 }
                 await generatePDF(
-                  `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                    "1",
-                  )}/${encryptURLData(
+                  `/dashboard/returns/returns-dashboard/previewcomposition//${encryptURLData(
                     return01.dvat04Id.toString(),
                   )}?year=${year}&month=${month}&sidebar=no`,
                 );
@@ -1134,7 +1268,7 @@ const Dvat16ReturnPreview = () => {
 
             {!payment && (
               <>
-                {getNetPayable() <= 0 ? (
+                {getNetPayable() < 1 ? (
                   <>
                     <Button
                       type="primary"
@@ -1188,12 +1322,11 @@ interface ReturnTableProps {
   return01: returns_01;
   lastMonthDue: string;
   iscomp: boolean;
+  challans?: challan[];
 }
 
 const ReturnTable = (props: ReturnTableProps) => {
   const [lateFees, setLateFees] = useState<number>(0);
-  const [InterestDiffDays, setInterestDiffDays] = useState<number>(0);
-  const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
   const searchparam = useSearchParams();
 
   useEffect(() => {
@@ -1243,24 +1376,19 @@ const ReturnTable = (props: ReturnTableProps) => {
       }
     }
 
-    const idiff_days = getDaysBetweenDates(
-      new Date(targetYear, monthIndex, 16),
-      currentDate,
-    );
-    setInterestDiffDays(idiff_days);
-
     const pdiff_days = getDaysBetweenDates(
       new Date(targetYear, monthIndex, 29),
       currentDate,
     );
-    setPenaltyDiffDays(pdiff_days);
 
     if (
       props.return01.rr_number == null ||
       props.return01.rr_number == undefined ||
       props.return01.rr_number == ""
     ) {
-      setLateFees(Math.min(100 * pdiff_days, 1000000));
+      setLateFees(
+        Math.min(100 * (isNegative(pdiff_days) ? 0 : pdiff_days), 10000),
+      );
     }
   }, []);
 
@@ -1528,6 +1656,154 @@ const ReturnTable = (props: ReturnTableProps) => {
     };
   };
 
+  const calculateInterest = (
+    totalDue: number,
+    dueDate: Date,
+    payments: challan[],
+    annualRate = 15,
+    asOfDate: Date = new Date(),
+  ): number => {
+    if (!Number.isFinite(totalDue) || totalDue <= 0) return 0;
+
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const normalizeDate = (dateInput: Date | string): Date => {
+      const date = new Date(dateInput);
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    };
+
+    const getDaysDiff = (fromDate: Date, toDate: Date): number => {
+      const startUtc = Date.UTC(
+        fromDate.getFullYear(),
+        fromDate.getMonth(),
+        fromDate.getDate(),
+      );
+      const endUtc = Date.UTC(
+        toDate.getFullYear(),
+        toDate.getMonth(),
+        toDate.getDate(),
+      );
+      const diff = Math.floor((endUtc - startUtc) / dayMs);
+      return Math.max(0, diff);
+    };
+
+    const sortedPayments = payments
+      .map((payment) => {
+        const paymentDateRaw = payment.transaction_date ?? payment.createdAt;
+        const paymentAmount =
+          parseFloat(payment.vat ?? "0") +
+          parseFloat(payment.penalty ?? "0") +
+          parseFloat(payment.interest ?? "0");
+
+        if (
+          !paymentDateRaw ||
+          !Number.isFinite(paymentAmount) ||
+          paymentAmount <= 0
+        ) {
+          return null;
+        }
+
+        return {
+          amount: paymentAmount,
+          date: normalizeDate(paymentDateRaw),
+        };
+      })
+      .filter(
+        (payment): payment is { amount: number; date: Date } =>
+          payment !== null,
+      )
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    const effectiveAsOfDate = normalizeDate(asOfDate);
+    let outstanding = totalDue;
+    let anchorDate = normalizeDate(dueDate);
+    let interest = 0;
+
+    for (let i = 0; i < sortedPayments.length; i++) {
+      const payment = sortedPayments[i];
+      if (payment.date > effectiveAsOfDate) {
+        break;
+      }
+
+      if (payment.date <= anchorDate) {
+        outstanding = Math.max(0, outstanding - payment.amount);
+
+        if (outstanding <= 0) {
+          break;
+        }
+        continue;
+      }
+
+      if (payment.date > anchorDate && outstanding > 0) {
+        const days = getDaysDiff(anchorDate, payment.date);
+        const intervalInterest =
+          (outstanding * annualRate * days) / (100 * 365);
+        interest += intervalInterest;
+      }
+
+      outstanding = Math.max(0, outstanding - payment.amount);
+      anchorDate = payment.date;
+
+      if (outstanding <= 0) {
+        break;
+      }
+    }
+
+    if (outstanding > 0 && effectiveAsOfDate > anchorDate) {
+      const days = getDaysDiff(anchorDate, effectiveAsOfDate);
+      const finalInterest = (outstanding * annualRate * days) / (100 * 365);
+      interest += finalInterest;
+    }
+
+    return interest;
+  };
+
+  const getInterestDueDate = (
+    year: string,
+    month: string,
+    isComp: boolean = false,
+  ): Date => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    let monthIndex = monthNames.indexOf(month);
+    let computedYear = parseInt(year);
+
+    if (isComp) {
+      if (["January", "February", "March"].includes(month)) {
+        monthIndex = 3;
+      } else if (["April", "May", "June"].includes(month)) {
+        monthIndex = 6;
+      } else if (["July", "August", "September"].includes(month)) {
+        monthIndex = 9;
+      } else {
+        monthIndex = 0;
+        computedYear += 1;
+      }
+    } else {
+      if (monthIndex === 11) {
+        computedYear += 1;
+        monthIndex = 0;
+      } else {
+        monthIndex += 1;
+      }
+    }
+
+    return new Date(computedYear, monthIndex, 15);
+  };
+
   const getR6_1 = (): number =>
     parseFloat(getInvoicePercentage("0").decrease) +
     parseFloat(getInvoicePercentage("1").decrease) +
@@ -1554,39 +1830,18 @@ const ReturnTable = (props: ReturnTableProps) => {
         parseFloat(getGoodsReturnsNote().decrease) -
         parseFloat(props.lastMonthDue)));
 
-  const getR6_2a = (): number =>
-    (((parseFloat(getInvoicePercentage("0").decrease) +
-      parseFloat(getInvoicePercentage("1").decrease) +
-      parseFloat(getInvoicePercentage("2").decrease) +
-      parseFloat(getInvoicePercentage("3").decrease) +
-      parseFloat(getInvoicePercentage("4").decrease) +
-      parseFloat(getInvoicePercentage("5").decrease) +
-      parseFloat(getInvoicePercentage("6").decrease) +
-      parseFloat(getInvoicePercentage("12.5").decrease) +
-      parseFloat(getInvoicePercentage("12.75").decrease) +
-      parseFloat(getInvoicePercentage("13.5").decrease) +
-      parseFloat(getInvoicePercentage("15").decrease) +
-      parseFloat(getInvoicePercentage("20").decrease) +
-      parseFloat(getSaleOfPercentage("4").decrease) +
-      parseFloat(getSaleOfPercentage("5").decrease) +
-      parseFloat(getSaleOfPercentage("12.5").decrease) +
-      parseFloat(get4_6().decrease) +
-      parseFloat(get4_7().decrease) -
-      parseFloat(get4_9().decrease) -
-      (parseFloat(get5_1().decrease) +
-        parseFloat(get5_2().decrease) +
-        (parseFloat(getCreditNote().decrease) -
-          parseFloat(getDebitNote().decrease) -
-          parseFloat(getGoodsReturnsNote().decrease) -
-          parseFloat(props.lastMonthDue)))) *
-      0.15) /
-      365) *
-    InterestDiffDays;
-  const getR6_2acomp = (): number => {
-    const salesAmount = parseFloat(getInvoicePercentage("1").decrease);
-    const interest = ((salesAmount * 0.15) / 365) * InterestDiffDays;
+  const getR6_2a = (): number => {
+    if (!props.return01?.month) return 0;
 
-    return interest;
+    const year: string = searchparam.get("year") ?? props.return01.year;
+    const dueDate = getInterestDueDate(
+      year,
+      props.return01.month,
+      props.iscomp,
+    );
+    const paidChallans = props.challans || [];
+    const interest = calculateInterest(getR6_1(), dueDate, paidChallans, 15);
+    return isNegative(interest) ? 0 : interest;
   };
 
   const getR7 = (): number =>
@@ -1624,7 +1879,14 @@ const ReturnTable = (props: ReturnTableProps) => {
             6. Tax Paid
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            0
+            {(props.challans && props.challans.length > 0
+              ? props.challans.reduce(
+                  (sum, challan) =>
+                    sum + parseFloat(challan.total_tax_amount || "0"),
+                  0,
+                )
+              : 0
+            ).toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -1640,7 +1902,16 @@ const ReturnTable = (props: ReturnTableProps) => {
             8. Balance Payable or Refundable (5-6-7)
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {getInvoicePercentage("1").decrease}
+            {(
+              parseFloat(getInvoicePercentage("1").decrease) -
+              (props.challans && props.challans.length > 0
+                ? props.challans.reduce(
+                    (sum, challan) =>
+                      sum + parseFloat(challan.total_tax_amount || "0"),
+                    0,
+                  )
+                : 0)
+            ).toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -1648,10 +1919,7 @@ const ReturnTable = (props: ReturnTableProps) => {
             9. Add:Interest, penalty or other Govt. dues
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
-            {(
-              (isNegative(lateFees) ? 0 : lateFees) +
-              (isNegative(getR6_2acomp()) ? 0 : getR6_2acomp())
-            ).toFixed(2)}
+            {(getR6_2a() + lateFees).toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -1660,9 +1928,16 @@ const ReturnTable = (props: ReturnTableProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem] w-[50%]">
             {(
-              parseFloat(getInvoicePercentage("1").decrease) +
+              parseFloat(getInvoicePercentage("1").decrease) -
+              (props.challans && props.challans.length > 0
+                ? props.challans.reduce(
+                    (sum, challan) =>
+                      sum + parseFloat(challan.total_tax_amount || "0"),
+                    0,
+                  )
+                : 0) +
               (isNegative(lateFees) ? 0 : lateFees) +
-              (isNegative(getR6_2acomp()) ? 0 : getR6_2acomp())
+              (isNegative(getR6_2a()) ? 0 : getR6_2a())
             ).toFixed(2)}
           </td>
         </tr>

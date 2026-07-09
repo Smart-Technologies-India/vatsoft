@@ -32,5 +32,16 @@ const CreateChallanSchema = object({
   remark: optional(string()),
 });
 
+// Schema for Department Payment CST Form (only requires CST amount)
+const CreateChallanCSTSchema = object({
+  reason: enum_(ChallanReason, "Select the Challan Reason."),
+  others: pipe(
+    string("CST amount is required."),
+    minLength(1, "CST amount is required.")
+  ),
+  remark: optional(string()),
+});
+
 type CreateChallanForm = InferInput<typeof CreateChallanSchema>;
-export { CreateChallanSchema, type CreateChallanForm };
+type CreateChallanCSTForm = InferInput<typeof CreateChallanCSTSchema>;
+export { CreateChallanSchema, CreateChallanCSTSchema, type CreateChallanForm, type CreateChallanCSTForm };

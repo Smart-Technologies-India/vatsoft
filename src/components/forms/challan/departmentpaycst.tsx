@@ -14,7 +14,7 @@ import { valibotResolver } from "@hookform/resolvers/valibot";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { CreateChallanForm, CreateChallanSchema } from "@/schema/challan";
+import { CreateChallanCSTSchema, CreateChallanCSTForm } from "@/schema/challan";
 import { ToWords } from "to-words";
 import { capitalcase, encryptURLData, onFormError } from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
@@ -38,8 +38,8 @@ type DepartmentPayCSTProviderProps = {
 export const DepartmentPayCSTProvider = (
   props: DepartmentPayCSTProviderProps,
 ) => {
-  const methods = useForm<CreateChallanForm>({
-    resolver: valibotResolver(CreateChallanSchema),
+  const methods = useForm<CreateChallanCSTForm>({
+    resolver: valibotResolver(CreateChallanCSTSchema),
     defaultValues: {
       reason: "MONTHLYPAYMENT",
     },
@@ -71,7 +71,7 @@ const PayChallanPage = (props: DepartmentPayCSTProviderProps) => {
     handleSubmit,
     watch,
     formState: { isSubmitting },
-  } = useFormContext<CreateChallanForm>();
+  } = useFormContext<CreateChallanCSTForm>();
 
   useEffect(() => {
     const loadData = async () => {
@@ -112,14 +112,11 @@ const PayChallanPage = (props: DepartmentPayCSTProviderProps) => {
 
     reset({
       reason: "MONTHLYPAYMENT",
-      interest: "0",
-      latefees: "0",
-      penalty: "0",
       others: "0",
     });
-  }, [props.returnId, props.returnContext]);
+  }, [props.returnId, props.returnContext, reset]);
 
-  const onSubmit = async (data: CreateChallanForm) => {
+  const onSubmit = async (data: CreateChallanCSTForm) => {
     if (dvatdata == null) {
       return toast.error("Return DVAT not found.");
     }
@@ -156,13 +153,13 @@ const PayChallanPage = (props: DepartmentPayCSTProviderProps) => {
     const challan_response = await CreateChallan({
       dvatid: dvatdata.id,
       returnid: returnIdToUse,
-      latefees: data.latefees.toString(),
-      vat: data.vat.toString(),
-      interest: data.interest.toString(),
+      latefees: "0",
+      vat: "0",
+      interest: "0",
       others: data.others ?? "0",
       reason: "MONTHLYPAYMENT",
       total_tax_amount: getTotalAmount().toString(),
-      penalty: data.penalty.toString(),
+      penalty: "0",
       remark: data.remark,
     });
 
@@ -178,19 +175,8 @@ const PayChallanPage = (props: DepartmentPayCSTProviderProps) => {
   };
 
   const getTotalAmount = (): number => {
-    const vat = parseFloat(watch("vat"));
-    const interest = parseFloat(watch("interest"));
-    const latefees = parseFloat(watch("latefees"));
-    const penalty = parseFloat(watch("penalty"));
     const others = parseFloat(watch("others") ?? "0");
-
-    const total: number =
-      (isNaN(vat) ? 0 : vat) +
-      (isNaN(interest) ? 0 : interest) +
-      (isNaN(latefees) ? 0 : latefees) +
-      (isNaN(penalty) ? 0 : penalty) +
-      (isNaN(others) ? 0 : others);
-
+    const total: number = isNaN(others) ? 0 : others;
     return total;
   };
 
@@ -292,7 +278,7 @@ const PayChallanPage = (props: DepartmentPayCSTProviderProps) => {
               <TableRow>
                 <TableCell className="text-left p-2 border">CST</TableCell>
                 <TableCell className="text-center p-2 border">
-                  <TaxtInput<CreateChallanForm>
+                  <TaxtInput<CreateChallanCSTForm>
                     name="others"
                     required={true}
                     numdes={true}
@@ -330,7 +316,7 @@ const PayChallanPage = (props: DepartmentPayCSTProviderProps) => {
             <Separator />
             <div className="mt-2"></div>
 
-            <TaxtAreaInput<CreateChallanForm>
+            <TaxtAreaInput<CreateChallanCSTForm>
               name="remark"
               title="Remark"
               required={false}

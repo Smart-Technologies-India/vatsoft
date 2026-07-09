@@ -320,7 +320,12 @@ const CommodityMaster = () => {
         cell: ({ row }) => row.original.commodity_master.description || "-",
       },
     ],
-    [dvatdata?.commodity, isRestaurantCommodity, quantityCount, hasSnapshotData],
+    [
+      dvatdata?.commodity,
+      isRestaurantCommodity,
+      quantityCount,
+      hasSnapshotData,
+    ],
   );
 
   const table = useReactTable({
@@ -830,7 +835,7 @@ const CommodityMaster = () => {
               {/* Controls Section */}
               <div className="flex flex-wrap gap-2 items-center">
                 {/* Quantity Toggle for Non-Fuel */}
-                {dvatdata?.commodity != "FUEL" && (
+                {(dvatdata?.commodity != "FUEL" && !isRestaurantCommodity) && (
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-600">View:</span>
                     <Radio.Group

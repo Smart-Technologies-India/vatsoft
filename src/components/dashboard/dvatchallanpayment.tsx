@@ -11,7 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { Button, Radio } from "antd";
+import { Button } from "antd";
 import { ToWords } from "to-words";
 import {
   capitalcase,
@@ -37,18 +37,12 @@ import {
   SaleOfInterstate,
   user,
 } from "@prisma/client";
-import { valibotResolver } from "@hookform/resolvers/valibot";
-import { useForm } from "react-hook-form";
-import {
-  SubmitPaymentFormCopy,
-  SubmitPaymentSchemaCopy,
-} from "@/schema/subtmitpayment";
+
 import AddPayment from "@/action/return/addpayment";
 import CheckLastPayment from "@/action/return/checklastpayment";
 import GetReturn01 from "@/action/return/getreturn";
 import getReturnEntry from "@/action/return/getreturnentry";
 import GetUser from "@/action/user/getuser";
-import { CheckboxGroupProps } from "antd/es/checkbox";
 import getPdfReturn from "@/action/return/getpdfreturn";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import AddPaymentOnline from "@/action/return/addpaymentonline";

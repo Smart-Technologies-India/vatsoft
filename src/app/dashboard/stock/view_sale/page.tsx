@@ -808,10 +808,10 @@ const DocumentWiseDetails = () => {
       return toast.error("DVAT not found.");
     }
 
-    // const eligibility = canGenerateDvat31();
-    // if (!eligibility.allowed) {
-    //   return toast.error(eligibility.message);
-    // }
+    const eligibility = canGenerateDvat31();
+    if (!eligibility.allowed) {
+      return toast.error(eligibility.message);
+    }
 
     const baselineProgressResponse = await GetDvat31Progress({
       dvatid: dvatdata.id,

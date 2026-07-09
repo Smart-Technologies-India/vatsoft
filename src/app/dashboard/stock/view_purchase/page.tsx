@@ -8,6 +8,7 @@ import DeletePurchase from "@/action/stock/deletepurchase";
 import GetPurchaseDeleteImpact from "@/action/stock/getpurchasedeleteimpact";
 import RejectAllPendingPurchase from "@/action/stock/rejectallpendingpurchase";
 import RejectPurchase from "@/action/stock/rejectpurchase";
+import CheckStockUpdateSnapshot from "@/action/stock/checkstockupdatesnapshot";
 import GetUserDailyPurchase, {
   DailyPurchaseSummary,
   GroupedDailyPurchase,
@@ -151,6 +152,10 @@ const DocumentWiseDetails = () => {
   const thinkingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chatListRef = useRef<HTMLDivElement | null>(null);
 
+  const [stockSnapshotExists, setStockSnapshotExists] = useState<boolean>(false);
+  const [isStockSnapshotAcceptLoading, setIsStockSnapshotAcceptLoading] =
+    useState<boolean>(false);
+
   const purchaseChatOptions = [
     {
       question: "How do I add a purchase invoice?",
@@ -273,6 +278,17 @@ const DocumentWiseDetails = () => {
 
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);
+        
+        // Check if stock_update_snapshot exists for this DVAT
+        if (dvat_response.data.commodity === "RESTAURANT") {
+          const snapshotResponse = await CheckStockUpdateSnapshot({
+            dvatid: dvat_response.data.id,
+          });
+          setStockSnapshotExists(
+            snapshotResponse.exists && snapshotResponse.count > 0,
+          );
+        }
+
         await fetchPurchasePage({
           dvatid: dvat_response.data.id,
           skip: 0,
@@ -1445,6 +1461,91 @@ const DocumentWiseDetails = () => {
     }
   };
 
+  const handleAcceptSnapshotSingle = async (
+    record: GroupedDailyPurchase["records"][number],
+  ) => {
+    if (!dvatdata) {
+      toast.error("DVAT not found.");
+      return;
+    }
+
+    setIsSingleAcceptLoading(true);
+
+    // Convert quantity from pieces to ML (1 piece = 1000 ML for restaurant)
+    const quantityInML = record.quantity * 1000;
+
+    const response = await AcceptSale({
+      commodityid: record.commodity_master.id,
+      createdById: userid,
+      dvatid: dvatdata.id,
+      quantity: quantityInML, // ML quantity
+      puchaseid: record.id,
+      urn: record.urn_number ?? "",
+    });
+
+    setIsSingleAcceptLoading(false);
+
+    if (response.status && response.data) {
+      markRecordAccepted(record.id);
+      toast.success(
+        `Purchase record accepted. Quantity converted: ${record.quantity} pcs → ${quantityInML} ML`,
+      );
+      await init();
+    } else {
+      toast.error(response.message);
+    }
+  };
+
+  const handleAcceptSnapshotAll = async () => {
+    if (!dvatdata) {
+      toast.error("DVAT not found.");
+      return;
+    }
+
+    setIsStockSnapshotAcceptLoading(true);
+    let successCount = 0;
+    let failedCount = 0;
+    let totalMLConverted = 0;
+
+    const acceptableRecords = dailyPurchase.flatMap((group) =>
+      group.records.filter((record) => canAcceptRecord(record)),
+    );
+
+    for (const record of acceptableRecords) {
+      // Convert quantity from pieces to ML (1 piece = 1000 ML for restaurant)
+      const quantityInML = record.quantity * 1000;
+      totalMLConverted += quantityInML;
+
+      const response = await AcceptSale({
+        commodityid: record.commodity_master.id,
+        createdById: userid,
+        dvatid: dvatdata.id,
+        quantity: quantityInML, // ML quantity
+        puchaseid: record.id,
+        urn: record.urn_number ?? "",
+      });
+
+      if (response.status && response.data) {
+        successCount += 1;
+        markRecordAccepted(record.id);
+      } else {
+        failedCount += 1;
+      }
+    }
+
+    setIsStockSnapshotAcceptLoading(false);
+
+    if (successCount > 0) {
+      toast.success(
+        `${successCount} record(s) accepted. Total converted: ${totalMLConverted} ML`,
+      );
+      await init();
+    }
+    if (failedCount > 0) {
+      toast.error(`${failedCount} record(s) could not be accepted.`);
+    }
+  };
+
   const hasPendingAcceptable = dailyPurchase.some((group) =>
     group.records.some((record) => canAcceptRecord(record)),
   );
@@ -1648,11 +1749,18 @@ const DocumentWiseDetails = () => {
             {selectedGroup.records.some((r) => canAcceptRecord(r)) && (
               <div className="mt-4 flex justify-end gap-2">
                 <button
-                  disabled={isGroupAcceptLoading}
-                  onClick={handleAcceptGroupAll}
+                  disabled={isGroupAcceptLoading || isStockSnapshotAcceptLoading}
+                  onClick={
+                    stockSnapshotExists &&
+                    dvatdata?.commodity === "RESTAURANT"
+                      ? handleAcceptSnapshotAll
+                      : handleAcceptGroupAll
+                  }
                   className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
                 >
-                  {isGroupAcceptLoading ? "Accepting..." : "Accept All"}
+                  {isGroupAcceptLoading || isStockSnapshotAcceptLoading
+                    ? "Accepting..."
+                    : "Accept All"}
                 </button>
                 <button
                   disabled={isGroupRejectLoading}
@@ -2222,6 +2330,30 @@ const DocumentWiseDetails = () => {
                             </>
                           )}
 
+                          {stockSnapshotExists &&
+                            dvatdata?.commodity === "RESTAURANT" && (
+                              <>
+                                <div className="border-t pt-2 mt-2">
+                                  <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                    Stock Snapshot Actions
+                                  </p>
+                                </div>
+                                <Button
+                                  size="small"
+                                  block
+                                  type="primary"
+                                  danger
+                                  loading={isStockSnapshotAcceptLoading}
+                                  onClick={() => {
+                                    setToolbarActionsOpen(false);
+                                    handleAcceptSnapshotAll();
+                                  }}
+                                >
+                                  Accept All (ML Conversion)
+                                </Button>
+                              </>
+                            )}
+
                           {!hidePurchaseManagementActions && (
                             <DownloadPurchaseSample
                               commodity={dvatdata?.commodity ?? "OTHER"}
@@ -2597,9 +2729,19 @@ const DocumentWiseDetails = () => {
                                       <>
                                         <button
                                           onClick={async () => {
-                                            await handleAcceptSingleRecord(
-                                              group.records[0],
-                                            );
+                                            if (
+                                              stockSnapshotExists &&
+                                              dvatdata?.commodity ===
+                                                "RESTAURANT"
+                                            ) {
+                                              await handleAcceptSnapshotSingle(
+                                                group.records[0],
+                                              );
+                                            } else {
+                                              await handleAcceptSingleRecord(
+                                                group.records[0],
+                                              );
+                                            }
                                             handelClose(index);
                                           }}
                                           disabled={isSingleAcceptLoading}

@@ -831,6 +831,15 @@ const CommodityMaster = () => {
     return `${intBottles} bottle${intBottles !== 1 ? "s" : ""}`;
   };
 
+  const formatQuantityAsBottlesAndML = (
+    mlValue: number,
+    packSize: number,
+  ): string => {
+    const bottles = Math.floor(mlValue / packSize);
+    const remainingML = mlValue % packSize;
+    return `${bottles} bottle${bottles !== 1 ? "s" : ""} ${remainingML.toFixed(0)} mL`;
+  };
+
   const handleSubmitUpdates = async () => {
     if (uploadedEntries.length === 0) {
       toast.error("No updates to apply.");
@@ -865,6 +874,7 @@ const CommodityMaster = () => {
       setUploadedEntries([]);
       setCurrentModalPage(1);
       await init();
+      return router.push("/dashboard/stock");
     } catch (error) {
       toast.error("Error applying updates");
     } finally {
@@ -1119,12 +1129,14 @@ const CommodityMaster = () => {
                 <TableHead className="text-left text-xs">
                   Product Name
                 </TableHead>
+
                 <TableHead className="text-center text-xs">
-                  Old Stock (Bottle)
+                  New Quantity (Pcs)
                 </TableHead>
                 <TableHead className="text-center text-xs">
-                  New Stock (Bottle)
+                  New Stock (mL)
                 </TableHead>
+
                 {/* <TableHead className="text-center text-xs">
                   Difference (Bottle)
                 </TableHead> */}
@@ -1134,7 +1146,7 @@ const CommodityMaster = () => {
               {stockDiffRows.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={dvatdata?.commodity === "RESTAURANT" ? 7 : 5}
                     className="p-4 text-center text-sm text-gray-500"
                   >
                     No stock differences available.
@@ -1154,28 +1166,16 @@ const CommodityMaster = () => {
                       <TableCell className="text-left text-xs">
                         {row.productName}
                       </TableCell>
-                      <TableCell className="text-center text-xs">
-                        {formatBottleDisplay(row.oldQuantity)}
+
+                      <TableCell className="text-center text-xs font-semibold text-emerald-700">
+                        {formatQuantityAsBottlesAndML(
+                          row.newQuantity,
+                          row.packSize,
+                        )}
                       </TableCell>
                       <TableCell className="text-center text-xs font-semibold text-emerald-700">
-                        {formatBottleDisplay(row.newStockBottle)}
+                        {row.newQuantity.toFixed(0)} mL
                       </TableCell>
-                      {/* <TableCell
-                        className={`text-center text-xs font-semibold ${
-                          row.differenceBottle < 0
-                            ? "text-red-600"
-                            : row.differenceBottle > 0
-                              ? "text-emerald-600"
-                              : "text-gray-600"
-                        }`}
-                      >
-                        {formatBottleDisplay(Math.abs(row.differenceBottle))}
-                        {row.differenceBottle < 0
-                          ? " ↓"
-                          : row.differenceBottle > 0
-                            ? " ↑"
-                            : ""}
-                      </TableCell> */}
                     </TableRow>
                   ))
               )}
