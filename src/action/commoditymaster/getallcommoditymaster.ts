@@ -13,6 +13,7 @@ interface GetAllCommodityMasterPayload {
   take: number;
   skip: number;
   searchTerm?: string;
+  searchType?: "all" | "name" | "description" | "type";
   productType?: string;
 }
 
@@ -41,21 +42,36 @@ const GetAllCommodityMaster = async (
     // Add search filter if provided - search only in text fields
     if (payload.searchTerm && payload.searchTerm.trim().length > 0) {
       const searchTerm = payload.searchTerm.trim();
-      whereClause.OR = [
-        {
-          product_name: {
-            contains: searchTerm,
+      const searchType = payload.searchType || "all";
+
+      if (searchType === "name") {
+        whereClause.product_name = {
+          contains: searchTerm,
+        };
+      } else if (searchType === "description") {
+        whereClause.description = {
+          contains: searchTerm,
+        };
+      } else if (searchType === "type") {
+        whereClause.product_type = {
+          contains: searchTerm,
+        };
+      } else {
+        // Default: search in all fields
+        whereClause.OR = [
+          {
+            product_name: {
+              contains: searchTerm,
+            },
           },
-        },
-        {
-          description: {
-            contains: searchTerm,
+          {
+            description: {
+              contains: searchTerm,
+            },
           },
-        },
-        {
-          id: parseInt(searchTerm),
-        },
-      ];
+          ...(parseInt(searchTerm) && !isNaN(parseInt(searchTerm)) ? [{ id: parseInt(searchTerm) }] : []),
+        ];
+      }
     }
 
     // Add product type filter if provided - but only if not searching

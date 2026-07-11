@@ -95,6 +95,11 @@ const Page = () => {
                 link={`/dashboard/returns/cform-status`}
               />
               <DashboardCards
+                title="FFORM"
+                description="Check your FFORM status and ensure all filings meet regulatory requirements."
+                link={`/dashboard/returns/fform-status`}
+              />
+              <DashboardCards
                 title="Commodity Master"
                 description="Download and view commodity master data."
                 link={`/dashboard/returns/commodity_master`}

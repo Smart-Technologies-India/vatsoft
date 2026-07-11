@@ -68,7 +68,7 @@ const Sidebar = (props: SidebarProps) => {
       }
     };
     init();
-  }, [userid]);
+  }, [userid, router]);
 
   return (
     <div
@@ -341,6 +341,14 @@ const Sidebar = (props: SidebarProps) => {
               name="C Form"
               path={path}
               pathcheck={"/dashboard/refinery/c_form"}
+              collapsed={isCollapsed}
+            />
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentCalendar12Regular className="w-5 h-5" />}
+              name="Credit/Debit Note"
+              path={path}
+              pathcheck={"/dashboard/refinery/credit_debit_note"}
               collapsed={isCollapsed}
             />
           </>

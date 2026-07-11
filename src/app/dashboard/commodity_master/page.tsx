@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { commodity_master, Status } from "@prisma/client";
-import { Button, Drawer, Pagination, Popover, Input, Select } from "antd";
+import { Button, Drawer, Pagination, Popover, Input, Select, Radio } from "antd";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
@@ -34,6 +34,7 @@ const CommodityMaster = () => {
   const [commodty, setCommodity] = useState<commodity_master[]>([]);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchType, setSearchType] = useState<"all" | "name" | "description" | "type">("all");
   const [selectedProductType, setSelectedProductType] = useState<string>("all");
   const [open, setOpen] = useState(false);
   const [comm, setComm] = useState<commodity_master | null>(null);
@@ -49,6 +50,7 @@ const CommodityMaster = () => {
           take: pageSize,
           skip,
           searchTerm: searchTerm.trim(),
+          searchType,
           productType: selectedProductType,
         });
 
@@ -72,7 +74,7 @@ const CommodityMaster = () => {
         setLoading(false);
       }
     },
-    [searchTerm, selectedProductType],
+    [searchTerm, searchType, selectedProductType],
   );
 
   // Fetch all product types for the filter dropdown
@@ -131,7 +133,7 @@ const CommodityMaster = () => {
       fetchCommodities(1, pagination.take);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, selectedProductType, fetchCommodities, pagination.take]);
+  }, [searchTerm, searchType, selectedProductType, fetchCommodities, pagination.take]);
 
   const showDrawer = async (id: number) => {
     try {
@@ -357,9 +359,20 @@ const CommodityMaster = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             {/* Search and Filter */}
             <div className="p-4 border-b bg-gray-50">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Search by:
+                </label>
+                <Radio.Group value={searchType} onChange={(e) => setSearchType(e.target.value)} className="flex gap-4 flex-wrap">
+                  <Radio value="all">All Fields</Radio>
+                  <Radio value="name">Product Name</Radio>
+                  <Radio value="description">Description</Radio>
+                  <Radio value="type">Product Type</Radio>
+                </Radio.Group>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <Input
-                  placeholder="Search by product name, type or description"
+                  placeholder={`Search by ${searchType === "all" ? "name, type or description" : searchType}`}
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="md:col-span-2"

@@ -20,7 +20,7 @@ interface AddSubmitPaymentPayload {
 }
 
 const AddSubmitPayment = async (
-  payload: AddSubmitPaymentPayload
+  payload: AddSubmitPaymentPayload,
 ): Promise<ApiResponseType<returns_01 | null>> => {
   const functionname: string = AddSubmitPayment.name;
   try {
@@ -181,7 +181,7 @@ const AddSubmitPayment = async (
           group.entries.map((entry) => ({
             ...entry,
             amount: group.totalAmount.toString(), // Overwrite or add the total amount
-          }))
+          })),
         );
 
         const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
@@ -209,10 +209,7 @@ const AddSubmitPayment = async (
                 office_of_issue: isExist.dvat04.selectOffice,
                 date_of_issue: dates.toDate,
                 valid_date: isExist.dvat04.certificateDate!,
-                sr_no: getsrno(
-                  isExist.dvat04.selectOffice!,
-                  lastOfficeSerial,
-                ),
+                sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial),
                 seller_address: val.seller_tin_number.state ?? "",
                 seller_name: val.seller_tin_number.name_of_dealer ?? "",
                 seller_tin_no: val.seller_tin_number.tin_number ?? "",
@@ -222,8 +219,8 @@ const AddSubmitPayment = async (
                 status: "ACTIVE",
                 createdById: isExist.createdById,
               },
-            })
-          )
+            }),
+          ),
         );
 
         // Step 2: Add entries to `cform_returns` table
@@ -237,7 +234,7 @@ const AddSubmitPayment = async (
 
           if (!cformId) {
             throw new Error(
-              `CForm entry for group ${groupIndex} was not created`
+              `CForm entry for group ${groupIndex} was not created`,
             );
           }
 
@@ -257,6 +254,139 @@ const AddSubmitPayment = async (
           if (!response) {
             throw new Error(`CForm return entry was not created`);
           }
+        }
+      }
+
+      // fform start here
+      const monthsToUpdate = getMonthGroup(isExist.month ?? "");
+
+      // step 1 : get all entry
+      const returnEntry = await prisma.returns_entry.findMany({
+        where: {
+          dvat_type: DvatType.DVAT_30_A,
+          category_of_entry: CategoryOfEntry.INVOICE,
+          purchase_type: PurchaseType.STOCK_TRANSFER,
+          status: "ACTIVE",
+          deletedAt: null,
+          deletedById: null,
+          returns_01: {
+            dvat04Id: isExist.dvat04Id,
+            year:
+              isExist.month == "March"
+                ? (parseInt(isExist.year) + 1).toString()
+                : isExist.year,
+            month: { in: monthsToUpdate },
+          },
+        },
+        include: {
+          seller_tin_number: true,
+        },
+      });
+
+      // step 2 : get all entry
+      const groupedData = returnEntry.reduce<
+        Record<
+          number,
+          {
+            seller_tin_numberId: number;
+            totalAmount: number;
+            entries: typeof returnEntry;
+          }
+        >
+      >((acc, entry) => {
+        const sellerId = entry.seller_tin_numberId;
+        const amount = parseFloat(entry.total_invoice_number || "0");
+
+        if (!acc[sellerId]) {
+          acc[sellerId] = {
+            seller_tin_numberId: sellerId,
+            totalAmount: 0,
+            entries: [],
+          };
+        }
+
+        acc[sellerId].totalAmount += amount;
+        acc[sellerId].entries.push(entry);
+
+        return acc;
+      }, {});
+
+      const flatData = Object.values(groupedData).flatMap((group) =>
+        group.entries.map((entry) => ({
+          ...entry,
+          amount: group.totalAmount.toString(), // Overwrite or add the total amount
+        })),
+      );
+
+      const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
+
+      const lastfform = await prisma.fform.findFirst({
+        where: {
+          status: "ACTIVE",
+          office_of_issue: isExist.dvat04.selectOffice,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      const lastOfficeSerial = lastfform
+        ? parseInt(lastfform.sr_no.split("/").pop() ?? "0", 10) || 0
+        : 0;
+
+      const fformResponses = await Promise.all(
+        flatData.map((val: any, index: number) =>
+          prisma.fform.create({
+            data: {
+              amount: val.amount.toFixed(2),
+              dvat04Id: isExist.dvat04Id,
+              office_of_issue: isExist.dvat04.selectOffice,
+              date_of_issue: dates.toDate,
+              valid_date: isExist.dvat04.certificateDate!,
+              sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial),
+              seller_address: val.seller_tin_number.state ?? "",
+              seller_name: val.seller_tin_number.name_of_dealer ?? "",
+              seller_tin_no: val.seller_tin_number.tin_number ?? "",
+              fform_type: ReturnType.ORIGINAL,
+              from_period: dates.fromDate,
+              to_period: dates.toDate,
+              status: "ACTIVE",
+              createdById: isExist.createdById,
+            },
+          }),
+        ),
+      );
+
+      // Step 2: Add entries to `fform_returns` table
+      const fformReturnsEntries: {
+        fformId: number;
+        returns_entryId: number;
+      }[] = [];
+
+      Object.values(groupedData).forEach((group, groupIndex) => {
+        const fformId = fformResponses[groupIndex]?.id; // Ensure the ID is resolved
+
+        if (!fformId) {
+          throw new Error(
+            `FForm entry for group ${groupIndex} was not created`,
+          );
+        }
+
+        group.entries.forEach((entry) => {
+          fformReturnsEntries.push({
+            fformId,
+            returns_entryId: entry.id,
+          });
+        });
+      });
+
+      // Step 3: Insert `fform_returns` entries in bulk
+      if (fformReturnsEntries.length > 0) {
+        const response = await prisma.fform_returns.createMany({
+          data: fformReturnsEntries,
+        });
+        if (!response) {
+          throw new Error(`FForm return entry was not created`);
         }
       }
 
@@ -298,7 +428,7 @@ const getMonthGroup = (currentMonth: string): string[] => {
 
 function getFromDateAndToDate(
   year: string,
-  month: string
+  month: string,
 ): { fromDate: string; toDate: string } {
   const monthNames = [
     "January",
@@ -342,23 +472,20 @@ function getFromDateAndToDate(
   };
 }
 
-const getsrno = (
-  selectOffice: SelectOffice,
-  last: number,
-): string => {
+const getsrno = (selectOffice: SelectOffice, last: number): string => {
   let pre =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
       ? "DNH"
       : selectOffice == SelectOffice.DAMAN
-      ? "DD"
-      : "DIU";
+        ? "DD"
+        : "DIU";
 
   let value1 =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
       ? "01"
       : selectOffice == SelectOffice.DAMAN
-      ? "02"
-      : "03";
+        ? "02"
+        : "03";
 
   return `${pre}/${value1}/C/${last + 1}`;
 };

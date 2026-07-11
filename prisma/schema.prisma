@@ -51,6 +51,9 @@ model user {
   cform_createdBy                 cform[]                 @relation("cform_createdBy")
   cform_deletedBy                 cform[]                 @relation("cform_deletedBy")
   cform_updatedBy                 cform[]                 @relation("cform_updatedBy")
+  fform_createdBy                 fform[]                 @relation("fform_createdBy")
+  fform_deletedBy                 fform[]                 @relation("fform_deletedBy")
+  fform_updatedBy                 fform[]                 @relation("fform_updatedBy")
   challan_createdBy               challan[]               @relation("challan_createdBy")
   challan_deletedBy               challan[]               @relation("challan_deletedBy")
   challan_updatedBy               challan[]               @relation("challan_updatedBy")
@@ -160,20 +163,24 @@ model user {
   return_due_createdBy                 return_due[]                @relation("return_due_createdBy")
   return_due_updatedBy                 return_due[]                @relation("return_due_updatedBy")
 
-  refinery_createdBy       refinery[]       @relation("refinery_createdBy")
-  refinery_updatedBy       refinery[]       @relation("refinery_updatedBy")
-  refinery_deletedBy       refinery[]       @relation("refinery_deletedBy")
-  refinery_sale_createdBy  refinery_sale[]  @relation("refinery_sale_createdBy")
-  refinery_sale_updatedBy  refinery_sale[]  @relation("refinery_sale_updatedBy")
-  refinery_sale_deletedBy  refinery_sale[]  @relation("refinery_sale_deletedBy")
-  refinery_price_createdBy refinery_price[] @relation("refinery_price_createdBy")
-  refinery_price_updatedBy refinery_price[] @relation("refinery_price_updatedBy")
-  refinery_price_deletedBy refinery_price[] @relation("refinery_price_deletedBy")
+  refinery_createdBy        refinery[]                 @relation("refinery_createdBy")
+  refinery_updatedBy        refinery[]                 @relation("refinery_updatedBy")
+  refinery_deletedBy        refinery[]                 @relation("refinery_deletedBy")
+  refinery_sale_createdBy   refinery_sale[]            @relation("refinery_sale_createdBy")
+  refinery_sale_updatedBy   refinery_sale[]            @relation("refinery_sale_updatedBy")
+  refinery_sale_deletedBy   refinery_sale[]            @relation("refinery_sale_deletedBy")
+  refinery_price_createdBy  refinery_price[]           @relation("refinery_price_createdBy")
+  refinery_price_updatedBy  refinery_price[]           @relation("refinery_price_updatedBy")
+  refinery_price_deletedBy  refinery_price[]           @relation("refinery_price_deletedBy")
   refinery_sale_change_logs refinery_sale_change_log[] @relation("refinery_sale_change_logs_createdBy")
 
   refinery_dealer_createdBy refinery_dealer[] @relation("refinery_dealer_createdBy")
   refinery_dealer_updatedBy refinery_dealer[] @relation("refinery_dealer_updatedBy")
   refinery_dealer_deletedBy refinery_dealer[] @relation("refinery_dealer_deletedBy")
+
+  creditdebitnote_createdBy creditdebitnote[] @relation("creditdebitnote_createdBy")
+  creditdebitnote_updatedBy creditdebitnote[] @relation("creditdebitnote_updatedBy")
+  creditdebitnote_deletedBy creditdebitnote[] @relation("creditdebitnote_deletedBy")
 }
 
 model change {
@@ -331,6 +338,7 @@ model dvat04 {
   annexure1                       annexure1[]
   annexure2                       annexure2[]
   cform                           cform[]
+  fform                           fform[]
   challan                         challan[]
   composition                     composition[]
   daily_purchase                  daily_purchase[]
@@ -365,6 +373,7 @@ model dvat04 {
   notification                    notification[]
   refineryDealers                 refinery_dealer[]
   refineryPrices                  refinery_price[]
+  creditdebitnotes                creditdebitnote[]
 
   @@index([createdById], map: "dvat04_createdById_fkey")
   @@index([deletedById], map: "dvat04_deletedById_fkey")
@@ -548,25 +557,26 @@ model state {
 }
 
 model tin_number_master {
-  id             Int              @id @default(autoincrement())
-  tin_number     String
-  name_of_dealer String
-  state          String?
-  status         Status           @default(ACTIVE)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  deletedAt      DateTime?
-  daily_purchase daily_purchase[]
-  daily_sale     daily_sale[]
-  dvat04         dvat04[]
-  edit_purchase  edit_purchase[]
-  edit_sale      edit_sale[]
-  returns_entry  returns_entry[]
-  tally_purchase tally_purchase[]
-  tally_sale     tally_sale[]
-  refineries     refinery[]
-  refinerySales  refinery_sale[]
+  id                     Int                        @id @default(autoincrement())
+  tin_number             String
+  name_of_dealer         String
+  state                  String?
+  status                 Status                     @default(ACTIVE)
+  createdAt              DateTime                   @default(now())
+  updatedAt              DateTime                   @updatedAt
+  deletedAt              DateTime?
+  daily_purchase         daily_purchase[]
+  daily_sale             daily_sale[]
+  dvat04                 dvat04[]
+  edit_purchase          edit_purchase[]
+  edit_sale              edit_sale[]
+  returns_entry          returns_entry[]
+  tally_purchase         tally_purchase[]
+  tally_sale             tally_sale[]
+  refineries             refinery[]
+  refinerySales          refinery_sale[]
   refinerySaleChangeLogs refinery_sale_change_log[]
+  creditdebitnotes       creditdebitnote[]
 }
 
 model returns_01 {
@@ -648,6 +658,7 @@ model returns_entry {
   deletedAt              DateTime?
   deletedById            Int?
   cfrom_returns          cform_returns[]
+  fform_returns          fform_returns[]
   commodity_master       commodity_master?     @relation(fields: [commodity_masterId], references: [id])
   createdBy              user                  @relation("returns_entry_createdBy", fields: [createdById], references: [id])
   deletedBy              user?                 @relation("returns_entry_deletedBy", fields: [deletedById], references: [id])
@@ -921,9 +932,9 @@ model return_filing {
 }
 
 model commodity_master {
-  id                           Int                     @id @default(autoincrement())
+  id                           Int                        @id @default(autoincrement())
   product_name                 String
-  product_type                 Dvat04Commodity?        @default(OTHER)
+  product_type                 Dvat04Commodity?           @default(OTHER)
   pack_size                    String?
   mrp                          String
   sale_price                   String
@@ -935,26 +946,26 @@ model commodity_master {
   group                        String?
   display_group                DisplayGroup?
   oidc_code                    String?
-  pack_type                    PackType?               @default(BOTTLE)
+  pack_type                    PackType?                  @default(BOTTLE)
   oidc_crate_sale_price        String?
   oidc_crate_purchase_price    String?
-  crate_size                   Int                     @default(0)
+  crate_size                   Int                        @default(0)
   dn_oidc_code                 String?
   dn_oidc_crate_sale_price     String?
   dn_oidc_crate_purchase_price String?
   du_oidc_code                 String?
   du_oidc_crate_sale_price     String?
   du_oidc_crate_purchase_price String?
-  status                       Status                  @default(ACTIVE)
-  createdAt                    DateTime                @default(now())
+  status                       Status                     @default(ACTIVE)
+  createdAt                    DateTime                   @default(now())
   createdById                  Int
-  updatedAt                    DateTime                @updatedAt
+  updatedAt                    DateTime                   @updatedAt
   updatedById                  Int?
   deletedAt                    DateTime?
   deletedById                  Int?
-  createdBy                    user                    @relation("commodity_master_createdBy", fields: [createdById], references: [id])
-  deletedBy                    user?                   @relation("commodity_master_deletedBy", fields: [deletedById], references: [id])
-  updatedBy                    user?                   @relation("commodity_master_updatedBy", fields: [updatedById], references: [id])
+  createdBy                    user                       @relation("commodity_master_createdBy", fields: [createdById], references: [id])
+  deletedBy                    user?                      @relation("commodity_master_deletedBy", fields: [deletedById], references: [id])
+  updatedBy                    user?                      @relation("commodity_master_updatedBy", fields: [updatedById], references: [id])
   daily_purchase               daily_purchase[]
   daily_sale                   daily_sale[]
   edit_manufacturer            edit_manufacturer[]
@@ -972,6 +983,7 @@ model commodity_master {
   refinerySales                refinery_sale[]
   refineryPrices               refinery_price[]
   refinerySaleChangeLogs       refinery_sale_change_log[]
+  creditdebitnotes             creditdebitnote[]
 
   @@index([createdById], map: "commodity_master_createdById_fkey")
   @@index([deletedById], map: "commodity_master_deletedById_fkey")
@@ -1221,25 +1233,25 @@ model daily_purchase {
 }
 
 model stock {
-  id                 Int              @id @default(autoincrement())
-  dvat04Id           Int
-  commodity_masterId Int
-  quantity           Int
-  description        String?
-  remark             String?
-  status             Status           @default(ACTIVE)
-  createdAt          DateTime         @default(now())
-  createdById        Int
-  updatedAt          DateTime         @updatedAt
-  updatedById        Int?
-  deletedAt          DateTime?
-  deletedById        Int?
-  commodity_master   commodity_master @relation(fields: [commodity_masterId], references: [id])
-  createdBy          user             @relation("stock_createdBy", fields: [createdById], references: [id])
-  deletedBy          user?            @relation("stock_deletedBy", fields: [deletedById], references: [id])
-  dvat04             dvat04           @relation(fields: [dvat04Id], references: [id])
+  id                    Int                     @id @default(autoincrement())
+  dvat04Id              Int
+  commodity_masterId    Int
+  quantity              Int
+  description           String?
+  remark                String?
+  status                Status                  @default(ACTIVE)
+  createdAt             DateTime                @default(now())
+  createdById           Int
+  updatedAt             DateTime                @updatedAt
+  updatedById           Int?
+  deletedAt             DateTime?
+  deletedById           Int?
+  commodity_master      commodity_master        @relation(fields: [commodity_masterId], references: [id])
+  createdBy             user                    @relation("stock_createdBy", fields: [createdById], references: [id])
+  deletedBy             user?                   @relation("stock_deletedBy", fields: [deletedById], references: [id])
+  dvat04                dvat04                  @relation(fields: [dvat04Id], references: [id])
   stock_update_snapshot stock_update_snapshot[]
-  updatedBy          user?            @relation("stock_updatedBy", fields: [updatedById], references: [id])
+  updatedBy             user?                   @relation("stock_updatedBy", fields: [updatedById], references: [id])
 
   @@index([commodity_masterId], map: "stock_commodity_masterId_fkey")
   @@index([createdById], map: "stock_createdById_fkey")
@@ -1556,6 +1568,50 @@ model cform_returns {
   @@index([returns_entryId], map: "cform_returns_returns_entryId_fkey")
 }
 
+model fform {
+  id              Int             @id @default(autoincrement())
+  dvat04Id        Int
+  office_of_issue SelectOffice?   @default(Dadra_Nagar_Haveli)
+  date_of_issue   DateTime
+  valid_date      DateTime
+  sr_no           String
+  seller_tin_no   String
+  seller_name     String
+  seller_address  String
+  amount          String
+  fform_type      ReturnType      @default(ORIGINAL)
+  from_period     DateTime
+  to_period       DateTime
+  status          Status          @default(ACTIVE)
+  createdAt       DateTime        @default(now())
+  createdById     Int
+  updatedAt       DateTime        @updatedAt
+  updatedById     Int?
+  deletedAt       DateTime?
+  deletedById     Int?
+  createdBy       user            @relation("fform_createdBy", fields: [createdById], references: [id])
+  deletedBy       user?           @relation("fform_deletedBy", fields: [deletedById], references: [id])
+  dvat04          dvat04          @relation(fields: [dvat04Id], references: [id])
+  updatedBy       user?           @relation("fform_updatedBy", fields: [updatedById], references: [id])
+  fform_returns   fform_returns[]
+
+  @@index([createdById], map: "fform_createdById_fkey")
+  @@index([deletedById], map: "fform_deletedById_fkey")
+  @@index([dvat04Id], map: "fform_dvat04Id_fkey")
+  @@index([updatedById], map: "fform_updatedById_fkey")
+}
+
+model fform_returns {
+  id              Int           @id @default(autoincrement())
+  fformId         Int
+  returns_entryId Int
+  fform           fform         @relation(fields: [fformId], references: [id])
+  returns_entry   returns_entry @relation(fields: [returns_entryId], references: [id])
+
+  @@index([fformId], map: "fform_returns_fformId_fkey")
+  @@index([returns_entryId], map: "fform_returns_returns_entryId_fkey")
+}
+
 model tally_purchase {
   id                  Int               @id @default(autoincrement())
   dvat04Id            Int
@@ -1686,36 +1742,36 @@ enum company {
 }
 
 model refinery {
-  id              Int               @id @default(autoincrement())
-  password        String?
-  temppass        String?
-  tinNumber       String?
-  tin_master_id   Int               @default(1)
-  createdById     Int?
-  name            String?
-  tradename       String?
-  pan             String?
-  gst             String?
-  address         String?
-  city            String?
-  pincode         String?
-  company         company?          @default(HPCL)
-  contact_one     String?
-  contact_two     String?
-  email           String?
-  status          DvatStatus        @default(NONE)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  updatedById     Int?
-  deletedAt       DateTime?
-  deletedById     Int?
-  tin_master      tin_number_master @relation(fields: [tin_master_id], references: [id])
-  createdBy       user?             @relation("refinery_createdBy", fields: [createdById], references: [id])
-  updatedBy       user?             @relation("refinery_updatedBy", fields: [updatedById], references: [id])
-  deletedBy       user?             @relation("refinery_deletedBy", fields: [deletedById], references: [id])
-  refinerySales   refinery_sale[]
-  refineryPrices  refinery_price[]
-  refineryDealers refinery_dealer[]
+  id                      Int                        @id @default(autoincrement())
+  password                String?
+  temppass                String?
+  tinNumber               String?
+  tin_master_id           Int                        @default(1)
+  createdById             Int?
+  name                    String?
+  tradename               String?
+  pan                     String?
+  gst                     String?
+  address                 String?
+  city                    String?
+  pincode                 String?
+  company                 company?                   @default(HPCL)
+  contact_one             String?
+  contact_two             String?
+  email                   String?
+  status                  DvatStatus                 @default(NONE)
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
+  updatedById             Int?
+  deletedAt               DateTime?
+  deletedById             Int?
+  tin_master              tin_number_master          @relation(fields: [tin_master_id], references: [id])
+  createdBy               user?                      @relation("refinery_createdBy", fields: [createdById], references: [id])
+  updatedBy               user?                      @relation("refinery_updatedBy", fields: [updatedById], references: [id])
+  deletedBy               user?                      @relation("refinery_deletedBy", fields: [deletedById], references: [id])
+  refinerySales           refinery_sale[]
+  refineryPrices          refinery_price[]
+  refineryDealers         refinery_dealer[]
   refinerySaleChangesFrom refinery_sale_change_log[] @relation("refinery_sale_change_log_old_refinery")
   refinerySaleChangesTo   refinery_sale_change_log[] @relation("refinery_sale_change_log_new_refinery")
 
@@ -1753,73 +1809,73 @@ enum RefineryStatus {
 }
 
 model refinery_sale {
-  id                  Int               @id @default(autoincrement())
-  refineryId          Int
-  invoice_number      String
-  temp_invoice_number String?
-  invoice_date        DateTime
-  commodity_masterId  Int
-  seller_tin_numberId Int
-  amount_unit         String
-  quantity            Int
-  tax_percent         String
-  amount              String
-  vatamount           String
-   cst_purchase        String?
-  is_dvat_31          Boolean           @default(false)
-  is_local            Boolean           @default(false)
-  is_accept           Boolean           @default(false)
-  urn_number          String?
-  batch_name          String?
-  is_against_cform    Boolean           @default(false)
-  is_against_fform    Boolean           @default(false)
-  is_export           Boolean           @default(false)
-  vehicle_number      String?
-  Shipment_time       DateTime?
-  refinery_status     RefineryStatus?   @default(SALE)
-  status              Status            @default(ACTIVE)
-  createdAt           DateTime          @default(now())
-  createdById         Int
-  updatedAt           DateTime          @updatedAt
-  updatedById         Int?
-  deletedAt           DateTime?
-  deletedById         Int?
-  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
-  createdBy           user              @relation("refinery_sale_createdBy", fields: [createdById], references: [id])
-  deletedBy           user?             @relation("refinery_sale_deletedBy", fields: [deletedById], references: [id])
-  refinery            refinery          @relation(fields: [refineryId], references: [id])
-  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
-  updatedBy           user?             @relation("refinery_sale_updatedBy", fields: [updatedById], references: [id])
+  id                     Int                        @id @default(autoincrement())
+  refineryId             Int
+  invoice_number         String
+  temp_invoice_number    String?
+  invoice_date           DateTime
+  commodity_masterId     Int
+  seller_tin_numberId    Int
+  amount_unit            String
+  quantity               Int
+  tax_percent            String
+  amount                 String
+  vatamount              String
+  cst_purchase           String?
+  is_dvat_31             Boolean                    @default(false)
+  is_local               Boolean                    @default(false)
+  is_accept              Boolean                    @default(false)
+  urn_number             String?
+  batch_name             String?
+  is_against_cform       Boolean                    @default(false)
+  is_against_fform       Boolean                    @default(false)
+  is_export              Boolean                    @default(false)
+  vehicle_number         String?
+  Shipment_time          DateTime?
+  refinery_status        RefineryStatus?            @default(SALE)
+  status                 Status                     @default(ACTIVE)
+  createdAt              DateTime                   @default(now())
+  createdById            Int
+  updatedAt              DateTime                   @updatedAt
+  updatedById            Int?
+  deletedAt              DateTime?
+  deletedById            Int?
+  commodity_master       commodity_master           @relation(fields: [commodity_masterId], references: [id])
+  createdBy              user                       @relation("refinery_sale_createdBy", fields: [createdById], references: [id])
+  deletedBy              user?                      @relation("refinery_sale_deletedBy", fields: [deletedById], references: [id])
+  refinery               refinery                   @relation(fields: [refineryId], references: [id])
+  seller_tin_number      tin_number_master          @relation(fields: [seller_tin_numberId], references: [id])
+  updatedBy              user?                      @relation("refinery_sale_updatedBy", fields: [updatedById], references: [id])
   refinerySaleChangeLogs refinery_sale_change_log[]
 }
 
 model refinery_sale_change_log {
-  id                    Int               @id @default(autoincrement())
-  refinery_sale_id      Int
-  old_refinery_id       Int
-  new_refinery_id       Int
-  old_stock             Int
-  new_stock             Int
-  old_stock_after       Int
-  new_stock_after       Int
-  commodity_master_id   Int
-  seller_tin_number_id  Int
-  invoice_number        String
-  invoice_date          DateTime
-  quantity              Int
-  amount_unit           String
+  id                     Int               @id @default(autoincrement())
+  refinery_sale_id       Int
+  old_refinery_id        Int
+  new_refinery_id        Int
+  old_stock              Int
+  new_stock              Int
+  old_stock_after        Int
+  new_stock_after        Int
+  commodity_master_id    Int
+  seller_tin_number_id   Int
+  invoice_number         String
+  invoice_date           DateTime
+  quantity               Int
+  amount_unit            String
   refinery_status_before RefineryStatus?
   refinery_status_after  RefineryStatus?
-  change_source         String            @default("MANUAL_SWITCH")
-  change_note           String?
-  createdAt             DateTime          @default(now())
-  createdById           Int?
-  refinerySale          refinery_sale     @relation(fields: [refinery_sale_id], references: [id])
-  oldRefinery           refinery          @relation("refinery_sale_change_log_old_refinery", fields: [old_refinery_id], references: [id])
-  newRefinery           refinery          @relation("refinery_sale_change_log_new_refinery", fields: [new_refinery_id], references: [id])
-  commodityMaster       commodity_master  @relation(fields: [commodity_master_id], references: [id])
-  sellerTinNumber       tin_number_master @relation(fields: [seller_tin_number_id], references: [id])
-  createdBy             user?             @relation("refinery_sale_change_logs_createdBy", fields: [createdById], references: [id])
+  change_source          String            @default("MANUAL_SWITCH")
+  change_note            String?
+  createdAt              DateTime          @default(now())
+  createdById            Int?
+  refinerySale           refinery_sale     @relation(fields: [refinery_sale_id], references: [id])
+  oldRefinery            refinery          @relation("refinery_sale_change_log_old_refinery", fields: [old_refinery_id], references: [id])
+  newRefinery            refinery          @relation("refinery_sale_change_log_new_refinery", fields: [new_refinery_id], references: [id])
+  commodityMaster        commodity_master  @relation(fields: [commodity_master_id], references: [id])
+  sellerTinNumber        tin_number_master @relation(fields: [seller_tin_number_id], references: [id])
+  createdBy              user?             @relation("refinery_sale_change_logs_createdBy", fields: [createdById], references: [id])
 
   @@index([refinery_sale_id], map: "refinery_sale_change_log_refinery_sale_id_fkey")
   @@index([old_refinery_id], map: "refinery_sale_change_log_old_refinery_id_fkey")
@@ -1856,6 +1912,39 @@ model refinery_price {
   @@index([createdById], map: "refinery_price_createdById_fkey")
   @@index([updatedById], map: "refinery_price_updatedById_fkey")
   @@index([deletedById], map: "refinery_price_deletedById_fkey")
+}
+
+model creditdebitnote {
+  id                  Int               @id @default(autoincrement())
+  dvat04Id            Int
+  dvat04              dvat04            @relation(fields: [dvat04Id], references: [id])
+  invoice_number      String
+  invoice_date        DateTime
+  commodity_masterId  Int
+  seller_tin_numberId Int
+  vatamount           String
+  amount              String
+  invoice_amount      String
+  tax_percent         String
+  amount_unit         String
+  quantity            Int
+  is_purchase         Boolean           @default(false)
+  is_credit           Boolean           @default(false)
+  is_goods_returned   Boolean           @default(false)
+  creditnote_no       String
+  creditnote_date     DateTime
+  status              Status            @default(ACTIVE)
+  createdAt           DateTime          @default(now())
+  createdById         Int
+  updatedAt           DateTime          @updatedAt
+  updatedById         Int?
+  deletedAt           DateTime?
+  deletedById         Int?
+  commodity_master    commodity_master  @relation(fields: [commodity_masterId], references: [id])
+  createdBy           user              @relation("creditdebitnote_createdBy", fields: [createdById], references: [id])
+  deletedBy           user?             @relation("creditdebitnote_deletedBy", fields: [deletedById], references: [id])
+  seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
+  updatedBy           user?             @relation("creditdebitnote_updatedBy", fields: [updatedById], references: [id])
 }
 
 enum NotificationType {
