@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentDvatId } from "@/lib/auth";
+import { getCurrentDvatId, getCurrentRefineryId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import {
   creditdebitnote,
@@ -23,18 +23,31 @@ const GetCurrentDvatCreditDebitNotes = async (): Promise<
   const functionname: string = GetCurrentDvatCreditDebitNotes.name;
 
   try {
-    const currentDvatId = await getCurrentDvatId();
-    if (!currentDvatId) {
+    const currentRefineryId = await getCurrentRefineryId();
+    if (!currentRefineryId) {
       return createResponse({
-        message: "DVAT ID not found.",
+        message: "Refinery ID not found.",
         functionname,
         data: [],
       });
     }
 
+    const refinery = await prisma.refinery.findUnique({
+      where: { id: currentRefineryId },
+    });
+
+    if (!refinery) {
+      return createResponse({
+        message: "Refinery not found.",
+        functionname,
+        data: [],
+      });
+    }
+
+
     const notes = await prisma.creditdebitnote.findMany({
       where: {
-        dvat04Id: currentDvatId,
+        seller_tin_numberId: refinery.tin_master_id,
         deletedAt: null,
       },
       include: {
@@ -48,9 +61,10 @@ const GetCurrentDvatCreditDebitNotes = async (): Promise<
     });
 
     return createResponse({
-      message: notes.length === 0
-        ? "No credit/debit notes found."
-        : "Credit/debit notes retrieved successfully.",
+      message:
+        notes.length === 0
+          ? "No credit/debit notes found."
+          : "Credit/debit notes retrieved successfully.",
       functionname,
       data: notes,
     });

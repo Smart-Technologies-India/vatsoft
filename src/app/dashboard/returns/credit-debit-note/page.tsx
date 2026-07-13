@@ -1,8 +1,8 @@
 "use client";
 
-import GetCurrentDvatCreditDebitNotes, {
-  CurrentDvatCreditDebitNote,
-} from "@/action/creditdebitnote/getcurrentdvatcreditdebitnotes";
+import GetDvatCreditDebitNotes, {
+  DvatCreditDebitNote,
+} from "@/action/creditdebitnote/getdvatcreditdebitnotes";
 import DeleteCreditDebitNote from "@/action/creditdebitnote/deletecreditdebitnote";
 import {
   Table,
@@ -15,7 +15,7 @@ import {
 import { Button, Spin, Modal, Tabs } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import AddCreditDebitNote from "@/components/creditdebitnote/addcreditdebitnote";
+import AddDvatCreditDebitNote from "@/components/creditdebitnote/adddvatcreditdebitnote";
 
 const formatDate = (value: Date | string) => {
   return new Intl.DateTimeFormat("en-GB", {
@@ -26,7 +26,22 @@ const formatDate = (value: Date | string) => {
 };
 
 const formatCurrency = (value: number) => {
-  return Number.isFinite(value) ? value.toFixed(2) : "0.00";
+  if (!Number.isFinite(value)) return "₹0.00";
+
+  const formatted = value.toFixed(2);
+  const parts = formatted.split(".");
+  const integerPart = parts[0];
+  const decimalPart = parts[1];
+
+  // Format integer part in Indian format (e.g., 1,22,23,340)
+  const lastThree = integerPart.substring(integerPart.length - 3);
+  const otherNumbers = integerPart.substring(0, integerPart.length - 3);
+  const indianFormat =
+    otherNumbers === ""
+      ? lastThree
+      : otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + lastThree;
+
+  return `₹${indianFormat}.${decimalPart}`;
 };
 
 const getStatusColor = (status: string) => {
@@ -37,11 +52,44 @@ const getStatusColor = (status: string) => {
   return statusColorMap[status] || { bg: "bg-gray-100", text: "text-gray-800" };
 };
 
+const getNoteType = (
+  note: DvatCreditDebitNote,
+): "credit" | "debit" | "sale" | "purchase-return" => {
+  if (note.isInverted) {
+    // When inverted: current user is the buyer
+    // If is_credit is true, show as debit note
+    // If is_purchase is true, show as sale
+    if (note.is_credit) {
+      return "debit";
+    } else {
+      return "credit";
+    }
+    if (note.is_purchase) {
+      return "sale";
+    }
+  } else {
+    // When not inverted: current user is the seller
+    // Show as is
+    if (note.is_credit) {
+      return "credit";
+    } else {
+      return "debit";
+    }
+    if (note.is_purchase) {
+      return "purchase-return";
+    }
+  }
+  return "credit";
+};
+
 const CreditDebitNotePage = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [notes, setNotes] = useState<CurrentDvatCreditDebitNote[]>([]);
+  const [notes, setNotes] = useState<DvatCreditDebitNote[]>([]);
+  const [selectedTab, setSelectedTab] = useState<"1" | "2" | "3">("1");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [drawerMode, setDrawerMode] = useState<"credit" | "debit" | "goods-return">("credit");
+  const [drawerMode, setDrawerMode] = useState<
+    "credit" | "debit" | "goods-return"
+  >("credit");
   const [deleteModalState, setDeleteModalState] = useState<{
     open: boolean;
     noteId: number | null;
@@ -55,7 +103,7 @@ const CreditDebitNotePage = () => {
   const loadNotes = async () => {
     setIsLoading(true);
     try {
-      const response = await GetCurrentDvatCreditDebitNotes();
+      const response = await GetDvatCreditDebitNotes();
       if (!response.status || !response.data) {
         setNotes([]);
         toast.info(response.message || "No credit/debit notes found.");
@@ -87,7 +135,9 @@ const CreditDebitNotePage = () => {
           isDeleting: false,
         });
 
-        toast.success(response.message || "Credit/Debit note deleted successfully.");
+        toast.success(
+          response.message || "Credit/Debit note deleted successfully.",
+        );
         await loadNotes();
       } else {
         toast.error(response.message || "Failed to delete credit/debit note.");
@@ -120,19 +170,19 @@ const CreditDebitNotePage = () => {
   }, []);
 
   const creditNotes = useMemo(() => {
-    return notes.filter((note) => note.is_credit && !note.is_goods_returned);
+    return notes.filter((note) => getNoteType(note) === "credit");
   }, [notes]);
 
   const debitNotes = useMemo(() => {
-    return notes.filter((note) => !note.is_credit && !note.is_goods_returned);
+    return notes.filter((note) => getNoteType(note) === "debit");
   }, [notes]);
 
   const goodsReturnNotes = useMemo(() => {
     return notes.filter((note) => note.is_goods_returned);
   }, [notes]);
 
-  const totals = useMemo(() => {
-    return notes.reduce(
+  const calculateTotals = (notesList: DvatCreditDebitNote[]) => {
+    return notesList.reduce(
       (acc, note) => {
         const taxable = Number.parseFloat(note.amount || "0");
         const vat = Number.parseFloat(note.vatamount || "0");
@@ -143,14 +193,41 @@ const CreditDebitNotePage = () => {
       },
       { taxableValue: 0, vatAmount: 0, invoiceValue: 0 },
     );
-  }, [notes]);
+  };
+
+  const creditTotals = useMemo(
+    () => calculateTotals(creditNotes),
+    [creditNotes],
+  );
+  const debitTotals = useMemo(
+    () => calculateTotals(debitNotes),
+    [debitNotes],
+  );
+  const goodsReturnTotals = useMemo(
+    () => calculateTotals(goodsReturnNotes),
+    [goodsReturnNotes],
+  );
+
+  const tabTotals = useMemo(() => {
+    if (selectedTab === "1") return creditTotals;
+    if (selectedTab === "2") return debitTotals;
+    if (selectedTab === "3") return goodsReturnTotals;
+    return { taxableValue: 0, vatAmount: 0, invoiceValue: 0 };
+  }, [selectedTab, creditTotals, debitTotals, goodsReturnTotals]);
+
+  const tabNotes = useMemo(() => {
+    if (selectedTab === "1") return creditNotes;
+    if (selectedTab === "2") return debitNotes;
+    if (selectedTab === "3") return goodsReturnNotes;
+    return [];
+  }, [selectedTab, creditNotes, debitNotes, goodsReturnNotes]);
 
   const openDrawer = (mode: "credit" | "debit" | "goods-return") => {
     setDrawerMode(mode);
     setIsDrawerOpen(true);
   };
 
-  const renderTable = (tableNotes: CurrentDvatCreditDebitNote[]) => {
+  const renderTable = (tableNotes: DvatCreditDebitNote[]) => {
     if (isLoading) {
       return (
         <div className="bg-white rounded shadow-sm border p-8 flex justify-center">
@@ -161,16 +238,14 @@ const CreditDebitNotePage = () => {
 
     if (tableNotes.length === 0) {
       return (
-        <div className="bg-white p-12 text-center">
-          <p className="text-gray-500">
-            No notes found for current DVAT.
-          </p>
+        <div className="bg-white  p-12 text-center">
+          <p className="text-gray-500">No notes found for current DVAT.</p>
         </div>
       );
     }
 
     return (
-      <div className="bg-white">
+      <div className="bg-white p-3">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -287,20 +362,13 @@ const CreditDebitNotePage = () => {
             </h1>
             <div className="grow"></div>
             <div className="flex gap-2">
-              <Button
-                type="primary"
-                onClick={() => openDrawer("credit")}
-              >
+              <Button type="primary" onClick={() => openDrawer("credit")}>
                 Add Credit Note
               </Button>
-              <Button
-                onClick={() => openDrawer("debit")}
-              >
+              <Button onClick={() => openDrawer("debit")}>
                 Add Debit Note
               </Button>
-              <Button
-                onClick={() => openDrawer("goods-return")}
-              >
+              <Button onClick={() => openDrawer("goods-return")}>
                 Goods Return
               </Button>
             </div>
@@ -310,33 +378,33 @@ const CreditDebitNotePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
             <p className="text-xs text-gray-600 mb-1">Total Notes</p>
-            <p className="text-lg font-medium text-gray-900">
-              {notes.length}
-            </p>
+            <p className="text-lg font-medium text-gray-900">{tabNotes.length}</p>
           </div>
           <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
             <p className="text-xs text-gray-600 mb-1">Total VAT Amount</p>
             <p className="text-lg font-medium text-gray-900">
-              {formatCurrency(totals.vatAmount)}
+              {formatCurrency(tabTotals.vatAmount)}
             </p>
           </div>
           <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
             <p className="text-xs text-gray-600 mb-1">Total Invoice Value</p>
             <p className="text-lg font-medium text-gray-900">
-              {formatCurrency(totals.invoiceValue)}
+              {formatCurrency(tabTotals.invoiceValue)}
             </p>
           </div>
         </div>
 
-        <AddCreditDebitNote
+        <AddDvatCreditDebitNote
           open={isDrawerOpen}
           onClose={() => setIsDrawerOpen(false)}
           onCreated={loadNotes}
           mode={drawerMode}
         />
 
-        <div className="bg-white rounded shadow-sm border px-4">
+        <div className="bg-white rounded shadow-sm border px-6">
           <Tabs
+            activeKey={selectedTab}
+            onChange={(key) => setSelectedTab(key as "1" | "2" | "3")}
             items={[
               {
                 key: "1",
@@ -367,7 +435,8 @@ const CreditDebitNotePage = () => {
           onOk={handleDeleteConfirm}
         >
           <p>
-            Are you sure you want to delete this credit/debit note? This action cannot be undone.
+            Are you sure you want to delete this credit/debit note? This action
+            cannot be undone.
           </p>
         </Modal>
       </div>

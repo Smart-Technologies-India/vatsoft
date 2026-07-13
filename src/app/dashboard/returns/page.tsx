@@ -104,6 +104,11 @@ const Page = () => {
                 description="Download and view commodity master data."
                 link={`/dashboard/returns/commodity_master`}
               />
+              <DashboardCards
+                title="Credit/Debit Notes"
+                description="Manage credit and debit notes for your VAT records."
+                link={`/dashboard/returns/credit-debit-note`}
+              />
             </>
           )}
         </div>

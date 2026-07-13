@@ -131,6 +131,95 @@ const TurnOver = (props: TurnOverProps) => {
       decrease,
     };
   };
+
+  const getSalesDebitNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getGoodsReturns = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getSaleCanceled = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.SALE_CANCELLED &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getSalesCreditNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
       <tbody className="w-full">
@@ -396,7 +485,11 @@ const TurnOver = (props: TurnOverProps) => {
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
-              parseFloat(get4_9().decrease) - parseFloat(props.lastMonthCash)
+              parseFloat(getSalesDebitNote().decrease) -
+              (parseFloat(getGoodsReturns().decrease) +
+                parseFloat(getSaleCanceled().decrease) +
+                parseFloat(props.lastMonthCash) +
+                parseFloat(getSalesCreditNote().decrease))
             ).toFixed(2)}
           </td>
         </tr>
@@ -427,8 +520,12 @@ const TurnOver = (props: TurnOverProps) => {
               parseFloat(getSaleOfPercentage("12.5").decrease) +
               parseFloat(get4_6().decrease) +
               parseFloat(get4_7().decrease) -
-              parseFloat(get4_9().decrease) - 
-              parseFloat(props.lastMonthCash)
+              parseFloat(get4_9().decrease) +
+              (parseFloat(getSalesDebitNote().decrease) -
+                (parseFloat(getGoodsReturns().decrease) +
+                  parseFloat(getSaleCanceled().decrease) +
+                  parseFloat(props.lastMonthCash) +
+                  parseFloat(getSalesCreditNote().decrease)))
             ).toFixed(2)}
           </td>
         </tr>

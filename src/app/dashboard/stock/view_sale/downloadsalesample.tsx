@@ -283,11 +283,11 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const instructionsSheet = XLSX.utils.json_to_sheet(instructionsRows);
     const commoditySheet = XLSX.utils.json_to_sheet(commoditySheetRows);
-    commoditySheet["!protect"] = {
-      password: "P@ssw0rd#8421",
-      selectLockedCells: true,
-      selectUnlockedCells: true,
-    };
+    // commoditySheet["!protect"] = {
+    //   password: "P@ssw0rd#8421",
+    //   selectLockedCells: true,
+    //   selectUnlockedCells: true,
+    // };
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, instructionsSheet, "Instructions");
     XLSX.utils.book_append_sheet(workbook, commoditySheet, "Commodity");

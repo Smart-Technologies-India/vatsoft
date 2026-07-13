@@ -62,6 +62,50 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
     };
   };
 
+  const getSalesDebitNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getSalesCreditNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
   const searchparam = useSearchParams();
 
   return (
@@ -166,35 +210,36 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
           </td>
         </tr>
         <tr className="w-full">
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            Other adjustments(against credit note for sales)
+          </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
-          </td>
-          <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {getSalesCreditNote().decrease}
           </td>
         </tr>
         <tr className="w-full">
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            Other adjustments(against debit note for sales)
+          </td>
+          <td className="border border-black px-2 leading-4 text-[0.6rem]">
+            {getSalesDebitNote().decrease}
+          </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
-          <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
-          </td>
-          <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
-          </td>
         </tr>
         <tr className="w-full">
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             Total
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {getSalesDebitNote().decrease}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
               parseFloat(getGoodsReturns().decrease) +
               parseFloat(getSaleCanceled().decrease) +
-              parseFloat(props.lastMonthCash)
+              parseFloat(props.lastMonthCash) +
+              parseFloat(getSalesCreditNote().decrease)
             ).toFixed(2)}
           </td>
         </tr>
@@ -207,10 +252,11 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {(
-              0 -
+              parseFloat(getSalesDebitNote().decrease) -
               (parseFloat(getGoodsReturns().decrease) +
                 parseFloat(getSaleCanceled().decrease) +
-                parseFloat(props.lastMonthCash))
+                parseFloat(props.lastMonthCash) +
+                parseFloat(getSalesCreditNote().decrease))
             ).toFixed(2)}
           </td>
         </tr>

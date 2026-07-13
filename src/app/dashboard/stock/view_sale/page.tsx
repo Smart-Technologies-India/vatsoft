@@ -874,7 +874,6 @@ const DocumentWiseDetails = () => {
         }, 1500);
       }
 
-
       const response = await ConvertDvat31({
         createdById: userid,
         dvatid: dvatdata.id,
@@ -1790,6 +1789,20 @@ const DocumentWiseDetails = () => {
                             </Button>
                           )}
 
+                          <Button
+                            size="small"
+                            block
+                            type="default"
+                            onClick={() => {
+                              setToolbarActionsOpen(false);
+                              router.push(
+                                "/dashboard/stock/view_generated_invoice",
+                              );
+                            }}
+                          >
+                            Generated Invoices
+                          </Button>
+
                           <DownloadSaleSample
                             commodity={dvatdata?.commodity ?? "OTHER"}
                             setToolbarActionsOpen={setToolbarActionsOpen}
@@ -1965,16 +1978,6 @@ const DocumentWiseDetails = () => {
                     Clear Filters
                   </button>
                 </div>
-              </div>
-
-              <p className="text-[11px] text-gray-500">
-                Month filter allowed from April 2026 to current month.
-              </p>
-
-              {/* Results Count */}
-              <div className="text-xs text-gray-600">
-                Showing {dailySale.length} of {pagination.total} filtered
-                record(s)
               </div>
             </div>
 

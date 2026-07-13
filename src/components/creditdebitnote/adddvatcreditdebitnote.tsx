@@ -1,16 +1,17 @@
 "use client";
 
-import CreateCreditDebitNote from "@/action/creditdebitnote/createcreditdebitnote";
+import CreateDvatCreditDebitNote from "@/action/creditdebitnote/createdvatcreditdebitnote";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
-import GetRefineryDealerTinNumbers from "@/action/refinery/getrefinerydealerrinnumbers";
 import { MultiSelect } from "@/components/forms/inputfields/multiselect";
 import { TaxtInput } from "@/components/forms/inputfields/textinput";
 import { DateSelect } from "@/components/forms/inputfields/dateselect";
-import { commodity_master, tin_number_master } from "@prisma/client";
+import { commodity_master, dvat04 } from "@prisma/client";
 import { Button, Drawer } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { toast } from "react-toastify";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
+import GetAllDvat04 from "@/action/dvat/getalldvat";
 
 type CreditDebitNoteFormValues = {
   invoice_number: string;
@@ -30,7 +31,7 @@ type CreditDebitNoteFormValues = {
   creditnote_date: string;
 };
 
-type AddCreditDebitNoteProps = {
+type AddDvatCreditDebitNoteProps = {
   open: boolean;
   onClose: () => void;
   onCreated?: () => void;
@@ -41,14 +42,15 @@ const formatCurrency = (value: number) => {
   return Number.isFinite(value) ? value.toFixed(2) : "0.00";
 };
 
-const AddCreditDebitNote = ({
+const AddDvatCreditDebitNote = ({
   open,
   onClose,
   onCreated,
   mode = "credit",
-}: AddCreditDebitNoteProps) => {
+}: AddDvatCreditDebitNoteProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tinNumbers, setTinNumbers] = useState<tin_number_master[]>([]);
+  const [dvatData, setDvatData] = useState<dvat04>();
+  const [allDvatData, setAllDvatData] = useState<dvat04[]>([]);
   const [commodities, setCommodities] = useState<commodity_master[]>([]);
   const [noteMode, setNoteMode] = useState<"credit" | "debit" | "goods-return">(
     mode,
@@ -66,7 +68,7 @@ const AddCreditDebitNote = ({
       amount: "0",
       vatamount: "0",
       invoice_amount: "0",
-      is_purchase: mode === "goods-return" ? "true" : "false",
+      is_purchase: "false",
       is_credit: mode === "credit" ? "true" : "false",
       is_goods_returned: mode === "goods-return" ? "true" : "false",
       creditnote_no: "",
@@ -83,7 +85,7 @@ const AddCreditDebitNote = ({
   const selectedCommodityId = watch("commodity_master_id");
   const quantity = parseFloat(watch("quantity") || "0");
 
-  // Set tax_percent from commodity and calculate amount_unit
+  // Set tax_percent from commodity
   useEffect(() => {
     if (selectedCommodityId) {
       const commodity = commodities.find(
@@ -119,7 +121,7 @@ const AddCreditDebitNote = ({
       amount: "0",
       vatamount: "0",
       invoice_amount: "0",
-      is_purchase: noteMode === "goods-return" ? "true" : "false",
+      is_purchase: "false",
       is_credit: noteMode === "credit" ? "true" : "false",
       is_goods_returned: noteMode === "goods-return" ? "true" : "false",
       creditnote_no: "",
@@ -137,30 +139,33 @@ const AddCreditDebitNote = ({
   };
 
   useEffect(() => {
-    const loadDrawerData = async () => {
-      const [tinResponse, commodityResponse] = await Promise.all([
-        GetRefineryDealerTinNumbers(),
-        AllCommodityMaster({}),
-      ]);
+    const init = async () => {
+      const dvatResponse = await GetUserDvat04();
+      if (dvatResponse.status && dvatResponse.data) {
+        setDvatData(dvatResponse.data);
 
-      if (tinResponse.status && tinResponse.data) {
-        setTinNumbers(tinResponse.data);
+        const commodityResponse = await AllCommodityMaster({});
+        if (commodityResponse.status && commodityResponse.data) {
+          if (dvatResponse.data.commodity == "FUEL") {
+            setCommodities(
+              commodityResponse.data.filter((c) => c.product_type == "FUEL"),
+            );
+          } else if (dvatResponse.data.commodity == "LIQUOR") {
+            setCommodities(
+              commodityResponse.data.filter(
+                (c) => c.product_type == "RESTAURANT",
+              ),
+            );
+          }
+        }
       }
-
-      if (commodityResponse.status && commodityResponse.data) {
-        // Filter to only show commodities with IDs 1, 2, 748, 749
-        const filteredCommodities = commodityResponse.data.filter((commodity) =>
-          [1, 2, 748, 749].includes(commodity.id),
-        );
-        setCommodities(filteredCommodities);
+      const allDvatResponse = await GetAllDvat04({});
+      if (allDvatResponse.status && allDvatResponse.data) {
+        setAllDvatData(allDvatResponse.data);
       }
     };
-
-    if (open) {
-      resetForm();
-      void loadDrawerData();
-    }
-  }, [open, resetForm]);
+    init();
+  }, []);
 
   const commodityOptions = useMemo(() => {
     return commodities.map((commodity) => ({
@@ -169,12 +174,12 @@ const AddCreditDebitNote = ({
     }));
   }, [commodities]);
 
-  const tinOptions = useMemo(() => {
-    return tinNumbers.map((tin) => ({
-      value: tin.tin_number.toString(),
-      label: `${tin.tin_number} - ${tin.name_of_dealer}`,
+  const dvatOptions = useMemo(() => {
+    return allDvatData.map((dvat) => ({
+      value: dvat.id.toString(),
+      label: `${dvat.tinNumber} - ${dvat.tradename}`,
     }));
-  }, [tinNumbers]);
+  }, [allDvatData]);
 
   const handleCreateNote = async (data: CreditDebitNoteFormValues) => {
     if (!data.commodity_master_id) {
@@ -212,9 +217,8 @@ const AddCreditDebitNote = ({
 
     setIsSubmitting(true);
 
-
     try {
-      const payload = {
+      const response = await CreateDvatCreditDebitNote({
         invoice_number: data.invoice_number,
         invoice_date: parsedInvoiceDate,
         commodity_master_id: Number.parseInt(data.commodity_master_id, 10),
@@ -230,9 +234,7 @@ const AddCreditDebitNote = ({
         is_goods_returned: data.is_goods_returned === "true",
         creditnote_no: data.creditnote_no,
         creditnote_date: parsedCreditNoteDate,
-      };
-
-      const response = await CreateCreditDebitNote(payload);
+      });
 
       if (response.status) {
         toast.success(
@@ -296,15 +298,14 @@ const AddCreditDebitNote = ({
             />
           </div>
 
-          <div className="space-y-1">
-            <MultiSelect<CreditDebitNoteFormValues>
-              name="seller_tin_number_id"
-              title="Seller TIN Number"
-              placeholder="Select seller"
-              required={true}
-              options={tinOptions}
-            />
-          </div>
+          {/* Hidden field for seller_tin_number_id */}
+          <MultiSelect<CreditDebitNoteFormValues>
+            name="seller_tin_number_id"
+            title="Seller TIN Number"
+            placeholder="Select seller"
+            required={true}
+            options={dvatOptions}
+          />
 
           <div className="space-y-1">
             <TaxtInput<CreditDebitNoteFormValues>
@@ -395,4 +396,4 @@ const AddCreditDebitNote = ({
   );
 };
 
-export default AddCreditDebitNote;
+export default AddDvatCreditDebitNote;

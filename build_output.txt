@@ -1,0 +1,216 @@
+
+> vatsoft@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.1 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Γ£ô Compiled successfully in 13.6s
+  Running TypeScript ...
+  Collecting page data using 35 workers ...
+  Generating static pages using 35 workers (0/152) ...
+  Generating static pages using 35 workers (38/152) 
+  Generating static pages using 35 workers (76/152) 
+  Generating static pages using 35 workers (114/152) 
+Γ£ô Generating static pages using 35 workers (152/152) in 1485.5ms
+  Finalizing page optimization ...
+
+Route (app)
+Γöî Γùï /
+Γö£ Γùï /_not-found
+Γö£ Γùï /admin
+Γö£ ╞Æ /api/dailypurchase
+Γö£ ╞Æ /api/dailysale
+Γö£ ╞Æ /api/getcommodity
+Γö£ ╞Æ /api/getpdf
+Γö£ Γùï /contact
+Γö£ Γùï /dashboard
+Γö£ Γùï /dashboard/admin_missing_invoice
+Γö£ Γùï /dashboard/annual-return
+Γö£ ╞Æ /dashboard/cform/[id]
+Γö£ Γùï /dashboard/changepassword
+Γö£ Γùï /dashboard/commodity_master
+Γö£ Γùï /dashboard/dealer_compliance
+Γö£ Γùï /dashboard/demo/returntable
+Γö£ Γùï /dashboard/demo/supplier_details
+Γö£ ╞Æ /dashboard/fform/[id]
+Γö£ Γùï /dashboard/file_returns
+Γö£ Γùï /dashboard/help_tax
+Γö£ Γùï /dashboard/help_tax/about
+Γö£ Γùï /dashboard/help_tax/contact
+Γö£ Γùï /dashboard/help_tax/faq
+Γö£ Γùï /dashboard/help_tax/news
+Γö£ ╞Æ /dashboard/new-registration/[dvatid]/anx1
+Γö£ ╞Æ /dashboard/new-registration/[dvatid]/anx2
+Γö£ ╞Æ /dashboard/new-registration/[dvatid]/anx3
+Γö£ ╞Æ /dashboard/new-registration/[dvatid]/dvat1
+Γö£ ╞Æ /dashboard/new-registration/[dvatid]/dvat2
+Γö£ ╞Æ /dashboard/new-registration/[dvatid]/dvat3
+Γö£ ╞Æ /dashboard/new-registration/[dvatid]/registeruser
+Γö£ Γùï /dashboard/new-registration/registeruser
+Γö£ Γùï /dashboard/notice-and-order
+Γö£ Γùï /dashboard/notifications
+Γö£ Γùï /dashboard/payments
+Γö£ Γùï /dashboard/payments/challan-history
+Γö£ Γùï /dashboard/payments/department-challan-history
+Γö£ Γùï /dashboard/payments/department-refunds-history
+Γö£ Γùï /dashboard/payments/department-saved-challan
+Γö£ Γùï /dashboard/payments/grievance-against-payment
+Γö£ Γùï /dashboard/payments/refunds
+Γö£ Γùï /dashboard/payments/refunds-history
+Γö£ ╞Æ /dashboard/payments/refunds/[id]
+Γö£ Γùï /dashboard/payments/saved-challan
+Γö£ ╞Æ /dashboard/payments/saved-challan/[id]
+Γö£ Γùï /dashboard/paymentstatus
+Γö£ Γùï /dashboard/refinery_purchase
+Γö£ Γùï /dashboard/refinery_sales
+Γö£ ╞Æ /dashboard/refinery_sales/view/[id]
+Γö£ Γùï /dashboard/refinery/c_form
+Γö£ ╞Æ /dashboard/refinery/c_form/view/[id]
+Γö£ Γùï /dashboard/refinery/credit_debit_note
+Γö£ Γùï /dashboard/refinery/dealer_master
+Γö£ Γùï /dashboard/refinery/price_master
+Γö£ Γùï /dashboard/refinery/sale
+Γö£ ╞Æ /dashboard/refinery/sale/dispatch/[id]
+Γö£ Γùï /dashboard/register
+Γö£ ╞Æ /dashboard/register/[dvat04]/preview
+Γö£ ╞Æ /dashboard/register/[dvat04]/preview/[userid]
+Γö£ ╞Æ /dashboard/register/[dvat04]/register
+Γö£ Γùï /dashboard/register/add-stock
+Γö£ Γùï /dashboard/register/applicatin_for_filing_clarification
+Γö£ Γùï /dashboard/register/composition-levy
+Γö£ ╞Æ /dashboard/register/composition-levy/[id]
+Γö£ Γùï /dashboard/register/department-track-application-status
+Γö£ Γùï /dashboard/register/new-user
+Γö£ ╞Æ /dashboard/register/pdfview/[dvatid]/[userid]
+Γö£ Γùï /dashboard/register/product-requests
+Γö£ Γùï /dashboard/register/registration-requests
+Γö£ Γùï /dashboard/register/track-application-status
+Γö£ Γùï /dashboard/register/track-application-status/openingstock
+Γö£ Γùï /dashboard/register/without-composition-levy
+Γö£ Γùï /dashboard/registration_status
+Γö£ ╞Æ /dashboard/registration_status/first-stock/[id]
+Γö£ ╞Æ /dashboard/registration_status/view-returns/[dvatId]
+Γö£ ╞Æ /dashboard/registration_status/view-stock/[dvatId]
+Γö£ Γùï /dashboard/reports
+Γö£ Γùï /dashboard/reports/admin_review/timelinesummary
+Γö£ Γùï /dashboard/reports/commodity_reports/districtwise
+Γö£ Γùï /dashboard/reports/commodity_reports/liquor
+Γö£ Γùï /dashboard/reports/commodity_reports/petroleum
+Γö£ Γùï /dashboard/reports/commodity_reports/sales_growth
+Γö£ Γùï /dashboard/reports/dealer_behavior/dealer_type_revenue
+Γö£ Γùï /dashboard/reports/dealer_behavior/dealers_consistently_compliant
+Γö£ Γùï /dashboard/reports/dealer_behavior/improved_compliance
+Γö£ Γùï /dashboard/reports/dealer_behavior/new_dealers
+Γö£ Γùï /dashboard/reports/dealer_behavior/top_revenue_dealers
+Γö£ Γùï /dashboard/reports/defaulter_reports/afterdeathline
+Γö£ Γùï /dashboard/reports/defaulter_reports/dealer_registration_type_change
+Γö£ Γùï /dashboard/reports/defaulter_reports/defaulter_analysis
+Γö£ Γùï /dashboard/reports/defaulter_reports/demand_penalty
+Γö£ Γùï /dashboard/reports/defaulter_reports/inactive_dealers
+Γö£ Γùï /dashboard/reports/defaulter_reports/penalty_collected
+Γö£ Γùï /dashboard/reports/revenue_reports/category_wise
+Γö£ Γùï /dashboard/reports/revenue_reports/district_wise
+Γö£ Γùï /dashboard/reports/revenue_reports/monthly_revenue
+Γö£ Γùï /dashboard/reports/revenue_reports/yearly_comparison
+Γö£ Γùï /dashboard/returns
+Γö£ Γùï /dashboard/returns/cform-status
+Γö£ Γùï /dashboard/returns/commodity_master
+Γö£ Γùï /dashboard/returns/credit-debit-note
+Γö£ Γùï /dashboard/returns/department-cform-status
+Γö£ Γùï /dashboard/returns/department-dvat10
+Γö£ Γùï /dashboard/returns/department-dvat24
+Γö£ Γùï /dashboard/returns/department-dvat24a
+Γö£ Γùï /dashboard/returns/department-pending-return
+Γö£ ╞Æ /dashboard/returns/department-pending-return/[id]
+Γö£ ╞Æ /dashboard/returns/department-pending-return/notice/[id]
+Γö£ Γùï /dashboard/returns/department-return-date
+Γö£ Γùï /dashboard/returns/department-track-return-status
+Γö£ Γùï /dashboard/returns/dvat10
+Γö£ Γùï /dashboard/returns/dvat24
+Γö£ Γùï /dashboard/returns/dvat24a
+Γö£ Γùï /dashboard/returns/fform-status
+Γö£ Γùï /dashboard/returns/returns-dashboard
+Γö£ Γùï /dashboard/returns/returns-dashboard/invoices
+Γö£ Γùï /dashboard/returns/returns-dashboard/invoices/bluckupload
+Γö£ Γùï /dashboard/returns/returns-dashboard/invoices/document-wise-details
+Γö£ Γùï /dashboard/returns/returns-dashboard/invoices/document-wise-details/details
+Γö£ Γùï /dashboard/returns/returns-dashboard/inward-supplies
+Γö£ Γùï /dashboard/returns/returns-dashboard/inward-supplies/add-record-30
+Γö£ Γùï /dashboard/returns/returns-dashboard/inward-supplies/add-record-30/update
+Γö£ Γùï /dashboard/returns/returns-dashboard/inward-supplies/add-record-30A
+Γö£ Γùï /dashboard/returns/returns-dashboard/inward-supplies/add-record-30A/update
+Γö£ Γùï /dashboard/returns/returns-dashboard/inward-supplies/oidc-sale
+Γö£ Γùï /dashboard/returns/returns-dashboard/outward-supplies
+Γö£ Γùï /dashboard/returns/returns-dashboard/outward-supplies/add-record-31
+Γö£ Γùï /dashboard/returns/returns-dashboard/outward-supplies/add-record-31/update
+Γö£ Γùï /dashboard/returns/returns-dashboard/outward-supplies/add-record-31A
+Γö£ Γùï /dashboard/returns/returns-dashboard/outward-supplies/add-record-31A/update
+Γö£ Γùï /dashboard/returns/returns-dashboard/pay_challan
+Γö£ ╞Æ /dashboard/returns/returns-dashboard/pay_challan/[id]
+Γö£ Γùï /dashboard/returns/returns-dashboard/pay_cst
+Γö£ ╞Æ /dashboard/returns/returns-dashboard/pay_cst/[id]
+Γö£ Γùï /dashboard/returns/returns-dashboard/preview
+Γö£ ╞Æ /dashboard/returns/returns-dashboard/preview/[id]
+Γö£ ╞Æ /dashboard/returns/returns-dashboard/preview/[id]/[dvatid]
+Γö£ ╞Æ /dashboard/returns/returns-dashboard/preview/[id]/challan-payment
+Γö£ ╞Æ /dashboard/returns/returns-dashboard/preview/[id]/download-challan
+Γö£ ╞Æ /dashboard/returns/returns-dashboard/previewcomposition/[id]
+Γö£ ╞Æ /dashboard/returns/returns-dashboard/purchase_sale_report/[id]
+Γö£ Γùï /dashboard/returns/track-return-status
+Γö£ ╞Æ /dashboard/returns/user-cform/[id]
+Γö£ Γùï /dashboard/returns/user-pending-return
+Γö£ ╞Æ /dashboard/returns/user-stock/[id]
+Γö£ Γùï /dashboard/returns/view-filed-returns
+Γö£ Γùï /dashboard/send-notification
+Γö£ Γùï /dashboard/stock
+Γö£ ╞Æ /dashboard/stock/edit_manufacturer/[id]
+Γö£ ╞Æ /dashboard/stock/edit_purchase/[id]
+Γö£ ╞Æ /dashboard/stock/edit_sale/[id]
+Γö£ Γùï /dashboard/stock/manufacturer_purchase
+Γö£ Γùï /dashboard/stock/tally_purchase
+Γö£ Γùï /dashboard/stock/tally_sale
+Γö£ Γùï /dashboard/stock/view_generated_invoice
+Γö£ Γùï /dashboard/stock/view_purchase
+Γö£ Γùï /dashboard/stock/view_sale
+Γö£ Γùï /dashboard/test/add_purchase
+Γö£ Γùï /dashboard/test/add_sale
+Γö£ Γùï /dashboard/test/first_stock
+Γö£ Γùï /dashboard/user_service
+Γö£ Γùï /dashboard/user_service/breakage
+Γö£ Γùï /dashboard/user_service/breakage/pcstoml
+Γö£ Γùï /dashboard/user_service/department_hsncode
+Γö£ Γùï /dashboard/user_service/department_paractitioner
+Γö£ Γùï /dashboard/user_service/department-notice_order
+Γö£ Γùï /dashboard/user_service/holiday-list
+Γö£ Γùï /dashboard/user_service/hsn_code
+Γö£ Γùï /dashboard/user_service/missing_invoice
+Γö£ Γùï /dashboard/user_service/notice_order
+Γö£ Γùï /dashboard/user_service/paractitioner
+Γö£ Γùï /dashboard/user_service/pcstoml
+Γö£ Γùï /dashboard/user_service/profile
+Γö£ Γùï /dashboard/user_service/reverse_invoice
+Γö£ Γùï /dashboard/user_service/reverse_sale_invoice
+Γö£ Γùï /dec
+Γö£ Γùï /genpass
+Γö£ Γùï /home
+Γö£ Γùï /login
+Γö£ Γùï /news
+Γö£ Γùï /payment/fail
+Γö£ Γùï /payment/success
+Γö£ Γùï /payment/test
+Γö£ Γùï /policy
+Γö£ Γùï /refinery
+Γö£ Γùï /register
+Γöö Γùï /verify
+
+
+╞Æ Proxy (Middleware)
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

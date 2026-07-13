@@ -1,4 +1,11 @@
-import { CategoryOfEntry, DvatType, InputTaxCredit, NaturePurchase, NaturePurchaseOption, returns_entry } from "@prisma/client";
+import {
+  CategoryOfEntry,
+  DvatType,
+  InputTaxCredit,
+  NaturePurchase,
+  NaturePurchaseOption,
+  returns_entry,
+} from "@prisma/client";
 import { useSearchParams } from "next/navigation";
 
 interface PercentageOutput {
@@ -159,7 +166,6 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
     };
   };
 
-
   return (
     <table border={1} className="w-5/6 mx-auto mt-4">
       <tbody className="w-full">
@@ -243,10 +249,10 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-         {(
+            {(
               parseFloat(getCreditNote().decrease) -
               parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease) +
+              parseFloat(getGoodsReturnsNote().decrease) -
               parseFloat(props.lastMonthDue)
             ).toFixed(2)}
           </td>
@@ -274,6 +280,5 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
     </table>
   );
 };
-
 
 export default R1TurnOverOfPurchase;

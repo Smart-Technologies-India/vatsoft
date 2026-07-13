@@ -593,13 +593,108 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
   const paidpenaltyamount = props.paidChallans.reduce((total, challan) => {
     return total + parseFloat(challan.penalty);
   }, 0);
-
+  const getSalesDebitNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getGoodsReturns = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getSaleCanceled = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.SALE_CANCELLED &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getSalesCreditNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
   const getNetPayable = (): number => {
     const penalty = isNegative(lateFees) ? 0 : lateFees;
     const interest = isNegative(getR6_2a()) ? 0 : getR6_2a();
     const vat = getR6_1();
 
-    const totalpaid = paidvatamount + paidinterestamount + paidpenaltyamount;
+    const totalpaid =
+      paidvatamount +
+      paidinterestamount +
+      paidpenaltyamount -
+      (parseFloat(getSalesDebitNote().decrease) -
+        (parseFloat(getGoodsReturns().decrease) +
+          parseFloat(getSaleCanceled().decrease) +
+          parseFloat(props.lastMonthCash) +
+          parseFloat(getSalesCreditNote().decrease)));
 
     return isNegative(interest + vat)
       ? penalty - totalpaid
@@ -736,7 +831,6 @@ const THEBALANCE1 = (props: THEBALANCEProps) => {
     const val = total - adjustAmount() - otherPayments;
     // return val;
     return isNegative(val) ? Math.abs(val) : 0;
-
   };
 
   return (

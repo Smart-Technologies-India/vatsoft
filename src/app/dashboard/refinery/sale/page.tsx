@@ -34,6 +34,7 @@ import { toast } from "react-toastify";
 import { formatDate } from "date-fns";
 import { enc } from "crypto-js";
 import { encryptURLData } from "@/utils/methods";
+import * as XLSX from "xlsx";
 
 type RefinerySaleWithRelations = refinery_sale & {
   commodity_master: commodity_master;
@@ -321,6 +322,88 @@ const RefinerySalePage = () => {
     }
   };
 
+  const downloadSaleReport = () => {
+    if (saleEntries.length === 0) {
+      toast.info("No sale data available to download.");
+      return;
+    }
+
+    try {
+      // Group entries by invoice number
+      const invoiceGroups: Record<string, typeof saleEntries> = {};
+      saleEntries.forEach(entry => {
+        if (!invoiceGroups[entry.invoice_number]) {
+          invoiceGroups[entry.invoice_number] = [];
+        }
+        invoiceGroups[entry.invoice_number].push(entry);
+      });
+
+      // Prepare data for Excel export with all item details
+      let srNo = 1;
+      const reportData = Object.values(invoiceGroups).flatMap((invoiceItems) => {
+        return invoiceItems.map((entry, itemIndex) => {
+          let cstValue = "";
+          
+          // Only show CST on first item of each invoice
+          if (itemIndex === 0) {
+            if (entry.refinery_status === "COMPLETED") {
+              cstValue = formatCurrency(Number(entry.cst_purchase || 0));
+            } else if (entry.refinery_status === "VATPAID") {
+              cstValue = "0";
+            } else {
+              cstValue = "N/A";
+            }
+          }
+          // For remaining items in same invoice, CST is blank
+          
+          return {
+            "Sr. No.": srNo++,
+            "Invoice No.": entry.invoice_number,
+            "Invoice Date": formatDate(new Date(entry.invoice_date), "dd/MM/yyyy"),
+            "Purchaser TIN": entry.seller_tin_number.tin_number,
+            "Purchaser Name": entry.seller_tin_number.name_of_dealer,
+            "Product Name": entry.commodity_master.product_name,
+            "Quantity": formatQuantity(Number(entry.quantity || 0)),
+            "CST Purchase (₹)": cstValue,
+            "Status": entry.refinery_status || "SALE",
+            "Created Date": formatDateTime(new Date(entry.createdAt)),
+          };
+        });
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(reportData);
+
+      // Set column widths
+      const columnWidths = [
+        { wch: 8 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 18 },
+      ];
+      worksheet["!cols"] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sale Report");
+
+      // Generate Excel file and trigger download
+      const fileName = `Refinery_Sale_Report_${formatDate(new Date(), "ddMMyyyyHHmmss")}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      toast.success("Sale report downloaded successfully.");
+    } catch (error) {
+      toast.error("Failed to download sale report.");
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -359,6 +442,13 @@ const RefinerySalePage = () => {
                 <option value="DISPATCH">DISPATCH</option>
                 <option value="COMPLETED">COMPLETED</option>
               </select>
+              <Button
+                type="primary"
+                onClick={downloadSaleReport}
+                className="h-9"
+              >
+                Download Report
+              </Button>
             </div>
           </div>
         </div>

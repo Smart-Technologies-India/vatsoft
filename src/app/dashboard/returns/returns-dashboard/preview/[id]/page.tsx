@@ -422,9 +422,10 @@ const Dvat16ReturnPreview = () => {
     const rrNumber = get_rr_number();
 
     // For quarterly filing, update all 3 returns; for monthly, update only the selected return
-    const returnsToUpdate = return01.dvat04?.frequencyFilings === "QUARTERLY"
-      ? quarterlyReturns
-      : [return01];
+    const returnsToUpdate =
+      return01.dvat04?.frequencyFilings === "QUARTERLY"
+        ? quarterlyReturns
+        : [return01];
 
     try {
       for (let i = 0; i < returnsToUpdate.length; i++) {
@@ -791,6 +792,95 @@ const Dvat16ReturnPreview = () => {
     };
   };
 
+  const getSalesDebitNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getGoodsReturns = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getSaleCanceled = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.SALE_CANCELLED &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getSalesCreditNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = (returns_entryData ?? []).filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+
   const getR6_1 = (): number =>
     parseFloat(getInvoicePercentage("0").decrease) +
     parseFloat(getInvoicePercentage("1").decrease) +
@@ -816,7 +906,12 @@ const Dvat16ReturnPreview = () => {
         parseFloat(getCreditNote().decrease) -
         parseFloat(getGoodsReturnsNote().decrease) +
         parseFloat(lastmonthdue) +
-        parseFloat(lastmonthcash)));
+        parseFloat(lastmonthcash))) +
+    (parseFloat(getSalesDebitNote().decrease) -
+      (parseFloat(getGoodsReturns().decrease) +
+        parseFloat(getSaleCanceled().decrease) +
+        parseFloat(lastmonthcash) +
+        parseFloat(getSalesCreditNote().decrease)));
 
   const calculateInterest = (
     totalDue: number,

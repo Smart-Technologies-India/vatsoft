@@ -84,6 +84,33 @@ const isAprilOrMay2026 = (inputDate: Date | string): boolean => {
   return year === 2026 && (month === 3 || month === 4);
 };
 
+type SortField =
+  | "invoice_number"
+  | "invoice_date"
+  | "trade_name"
+  | "tin_number"
+  | "invoice_value";
+type SortOrder = "asc" | "desc" | null;
+
+const SortIcon = ({
+  sortField: currentSortField,
+  field,
+  sortOrder,
+}: {
+  sortField: SortField;
+  field: SortField;
+  sortOrder: SortOrder;
+}) => {
+  if (currentSortField !== field) {
+    return <span className="text-gray-300 text-xs">↕</span>;
+  }
+  return sortOrder === "asc" ? (
+    <span className="text-xs">▲</span>
+  ) : sortOrder === "desc" ? (
+    <span className="text-xs">▼</span>
+  ) : null;
+};
+
 const DocumentWiseDetails = () => {
   const router = useRouter();
 
@@ -152,7 +179,8 @@ const DocumentWiseDetails = () => {
   const thinkingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chatListRef = useRef<HTMLDivElement | null>(null);
 
-  const [stockSnapshotExists, setStockSnapshotExists] = useState<boolean>(false);
+  const [stockSnapshotExists, setStockSnapshotExists] =
+    useState<boolean>(false);
   const [isStockSnapshotAcceptLoading, setIsStockSnapshotAcceptLoading] =
     useState<boolean>(false);
 
@@ -278,7 +306,7 @@ const DocumentWiseDetails = () => {
 
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);
-        
+
         // Check if stock_update_snapshot exists for this DVAT
         if (dvat_response.data.commodity === "RESTAURANT") {
           const snapshotResponse = await CheckStockUpdateSnapshot({
@@ -446,7 +474,7 @@ const DocumentWiseDetails = () => {
       skip: pagesize * (page - 1),
       search: searchTerm,
       sortBy: sortField,
-      order: sortOrder,
+      order: sortOrder || "desc",
       startDate: dateFilter.startDate,
       endDate: dateFilter.endDate,
       acceptFilter: acceptStatusFilter,
@@ -952,7 +980,7 @@ const DocumentWiseDetails = () => {
     | "tin_number"
     | "invoice_value"
   >("invoice_date");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<{
     startDate: string;
@@ -965,6 +993,22 @@ const DocumentWiseDetails = () => {
   const isRestaurantCommodity = useMemo(() => {
     return String(dvatdata?.commodity ?? "") === "RESTAURANT";
   }, [dvatdata?.commodity]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Toggle sort order
+      const newOrder =
+        sortOrder === "asc" ? "desc" : sortOrder === "desc" ? null : "asc";
+      setSortOrder(newOrder);
+      if (newOrder === null) {
+        setSortField("invoice_date");
+        setSortOrder("desc");
+      }
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
 
   const canAcceptRecord = useCallback(
     (record: GroupedDailyPurchase["records"][number]) => {
@@ -982,7 +1026,8 @@ const DocumentWiseDetails = () => {
 
       return isAprilOrMay2026(record.invoice_date);
     },
-    [isRestaurantCommodity],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   useEffect(() => {
@@ -1004,7 +1049,7 @@ const DocumentWiseDetails = () => {
           take: pagination.take,
           search: searchTerm,
           sortBy: sortField,
-          order: sortOrder,
+          order: sortOrder || "desc",
           startDate: dateFilter.startDate,
           endDate: dateFilter.endDate,
           acceptFilter: acceptStatusFilter,
@@ -1050,6 +1095,22 @@ const DocumentWiseDetails = () => {
       endDate: formatDateInputValue(endDate),
     });
   }, [selectedPeriod]);
+
+  useEffect(() => {
+    if (!dvatdata) return;
+
+    fetchPurchasePage({
+      dvatid: dvatdata.id,
+      skip: 0,
+      take: pagination.take,
+      search: searchTerm,
+      sortBy: sortField,
+      order: sortOrder || "desc",
+      startDate: dateFilter.startDate,
+      endDate: dateFilter.endDate,
+      acceptFilter: acceptStatusFilter,
+    });
+  }, [sortField, sortOrder]);
 
   const downloadDailyPurchaseReport = async () => {
     if (!dvatdata) {
@@ -1471,8 +1532,8 @@ const DocumentWiseDetails = () => {
 
     setIsSingleAcceptLoading(true);
 
-    // Convert quantity from pieces to ML (1 piece = 1000 ML for restaurant)
-    const quantityInML = record.quantity * 1000;
+    // Convert quantity from pieces to ML (1 piece = pack_size ML)
+    const quantityInML = record.quantity * parseInt(record.commodity_master.pack_size ?? "0", 10);
 
     const response = await AcceptSale({
       commodityid: record.commodity_master.id,
@@ -1497,8 +1558,8 @@ const DocumentWiseDetails = () => {
   };
 
   const handleAcceptSnapshotAll = async () => {
-    if (!dvatdata) {
-      toast.error("DVAT not found.");
+    if (!dvatdata || !selectedGroup) {
+      toast.error("DVAT or group not found.");
       return;
     }
 
@@ -1507,13 +1568,13 @@ const DocumentWiseDetails = () => {
     let failedCount = 0;
     let totalMLConverted = 0;
 
-    const acceptableRecords = dailyPurchase.flatMap((group) =>
-      group.records.filter((record) => canAcceptRecord(record)),
+    const acceptableRecords = selectedGroup.records.filter((record) =>
+      canAcceptRecord(record),
     );
 
     for (const record of acceptableRecords) {
-      // Convert quantity from pieces to ML (1 piece = 1000 ML for restaurant)
-      const quantityInML = record.quantity * 1000;
+      // Convert quantity from pieces to ML (1 piece = pack_size ML)
+      const quantityInML = record.quantity * parseInt(record.commodity_master.pack_size??"0", 10);
       totalMLConverted += quantityInML;
 
       const response = await AcceptSale({
@@ -1540,6 +1601,8 @@ const DocumentWiseDetails = () => {
         `${successCount} record(s) accepted. Total converted: ${totalMLConverted} ML`,
       );
       await init();
+      setIsGroupModalOpen(false);
+      setSelectedGroup(null);
     }
     if (failedCount > 0) {
       toast.error(`${failedCount} record(s) could not be accepted.`);
@@ -1749,10 +1812,11 @@ const DocumentWiseDetails = () => {
             {selectedGroup.records.some((r) => canAcceptRecord(r)) && (
               <div className="mt-4 flex justify-end gap-2">
                 <button
-                  disabled={isGroupAcceptLoading || isStockSnapshotAcceptLoading}
+                  disabled={
+                    isGroupAcceptLoading || isStockSnapshotAcceptLoading
+                  }
                   onClick={
-                    stockSnapshotExists &&
-                    dvatdata?.commodity === "RESTAURANT"
+                    stockSnapshotExists && dvatdata?.commodity === "RESTAURANT"
                       ? handleAcceptSnapshotAll
                       : handleAcceptGroupAll
                   }
@@ -2290,6 +2354,20 @@ const DocumentWiseDetails = () => {
                             </Button>
                           )}
 
+                          <Button
+                            size="small"
+                            block
+                            type="default"
+                            onClick={() => {
+                              setToolbarActionsOpen(false);
+                              router.push(
+                                "/dashboard/stock/view_converted_purchase",
+                              );
+                            }}
+                          >
+                            View Generated Invoices
+                          </Button>
+
                           {hasPendingAcceptable && (
                             <>
                               <Button
@@ -2330,7 +2408,7 @@ const DocumentWiseDetails = () => {
                             </>
                           )}
 
-                          {stockSnapshotExists &&
+                          {/* {stockSnapshotExists &&
                             dvatdata?.commodity === "RESTAURANT" && (
                               <>
                                 <div className="border-t pt-2 mt-2">
@@ -2352,7 +2430,7 @@ const DocumentWiseDetails = () => {
                                   Accept All (ML Conversion)
                                 </Button>
                               </>
-                            )}
+                            )} */}
 
                           {!hidePurchaseManagementActions && (
                             <DownloadPurchaseSample
@@ -2506,12 +2584,13 @@ const DocumentWiseDetails = () => {
                     Order
                   </label>
                   <select
-                    value={sortOrder}
+                    value={sortOrder || ""}
                     onChange={(e) =>
-                      setSortOrder(e.target.value as "asc" | "desc")
+                      setSortOrder((e.target.value || null) as SortOrder)
                     }
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
+                    <option value="">Default</option>
                     <option value="asc">Ascending</option>
                     <option value="desc">Descending</option>
                   </select>
@@ -2564,16 +2643,6 @@ const DocumentWiseDetails = () => {
                   </button>
                 </div>
               </div>
-
-              <p className="text-[11px] text-gray-500">
-                Month filter allowed from April 2026 to current month.
-              </p>
-
-              {/* Results Count */}
-              <div className="text-xs text-gray-600">
-                Showing {dailyPurchase.length} of {pagination.total} filtered
-                record(s)
-              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -2583,20 +2652,60 @@ const DocumentWiseDetails = () => {
                     <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                       Count
                     </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Invoice No.
+                    <TableHead
+                      className="text-center p-2 font-medium text-gray-700 text-xs cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort("invoice_number")}
+                    >
+                      Invoice No.{" "}
+                      <SortIcon
+                        sortField={sortField}
+                        field="invoice_number"
+                        sortOrder={sortOrder}
+                      />
                     </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Invoice Date
+                    <TableHead
+                      className="text-center p-2 font-medium text-gray-700 text-xs cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort("invoice_date")}
+                    >
+                      Invoice Date{" "}
+                      <SortIcon
+                        sortField={sortField}
+                        field="invoice_date"
+                        sortOrder={sortOrder}
+                      />
                     </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Trade Name
+                    <TableHead
+                      className="text-center p-2 font-medium text-gray-700 text-xs cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort("trade_name")}
+                    >
+                      Trade Name{" "}
+                      <SortIcon
+                        sortField={sortField}
+                        field="trade_name"
+                        sortOrder={sortOrder}
+                      />
                     </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      TIN Number
+                    <TableHead
+                      className="text-center p-2 font-medium text-gray-700 text-xs cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort("tin_number")}
+                    >
+                      TIN Number{" "}
+                      <SortIcon
+                        sortField={sortField}
+                        field="tin_number"
+                        sortOrder={sortOrder}
+                      />
                     </TableHead>
-                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                      Invoice Value (₹)
+                    <TableHead
+                      className="text-center p-2 font-medium text-gray-700 text-xs cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort("invoice_value")}
+                    >
+                      Invoice Value (₹){" "}
+                      <SortIcon
+                        sortField={sortField}
+                        field="invoice_value"
+                        sortOrder={sortOrder}
+                      />
                     </TableHead>
                     <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                       VAT Amount

@@ -378,33 +378,151 @@ const NetTax = (props: NetTaxProps) => {
       decrease,
     };
   };
+  const getSalesDebitNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getGoodsReturns = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getSaleCanceled = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.SALE_CANCELLED &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
+  const getSalesCreditNote = (): PercentageOutput => {
+    let increase: string = "0";
+    let decrease: string = "0";
+    const output: returns_entry[] = props.returnsentrys.filter(
+      (val: returns_entry) =>
+        val.dvat_type == DvatType.DVAT_31 &&
+        val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
+        val.sale_of == SaleOf.GOODS_TAXABLE,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = (
+        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+      ).toFixed(2);
+      decrease = (
+        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+      ).toFixed(2);
+    }
+    return {
+      increase,
+      decrease,
+    };
+  };
 
-  const getR6_1 = (): number =>
-    parseFloat(getInvoicePercentage("0").decrease) +
-    parseFloat(getInvoicePercentage("1").decrease) +
-    parseFloat(getInvoicePercentage("2").decrease) +
-    parseFloat(getInvoicePercentage("3").decrease) +
-    parseFloat(getInvoicePercentage("4").decrease) +
-    parseFloat(getInvoicePercentage("5").decrease) +
-    parseFloat(getInvoicePercentage("6").decrease) +
-    parseFloat(getInvoicePercentage("12.5").decrease) +
-    parseFloat(getInvoicePercentage("12.75").decrease) +
-    parseFloat(getInvoicePercentage("13.5").decrease) +
-    parseFloat(getInvoicePercentage("15").decrease) +
-    parseFloat(getInvoicePercentage("20").decrease) +
-    parseFloat(getSaleOfPercentage("4").decrease) +
-    parseFloat(getSaleOfPercentage("5").decrease) +
-    parseFloat(getSaleOfPercentage("12.5").decrease) +
-    parseFloat(get4_6().decrease) +
-    parseFloat(get4_7().decrease) -
-    parseFloat(get4_9().decrease) -
-    (parseFloat(get5_1().decrease) +
+  const getR6_1 = (): number => {
+    const value_4_8 =
+      parseFloat(getInvoicePercentage("0").decrease) +
+      parseFloat(getInvoicePercentage("1").decrease) +
+      parseFloat(getInvoicePercentage("2").decrease) +
+      parseFloat(getInvoicePercentage("3").decrease) +
+      parseFloat(getInvoicePercentage("4").decrease) +
+      parseFloat(getInvoicePercentage("5").decrease) +
+      parseFloat(getInvoicePercentage("6").decrease) +
+      parseFloat(getInvoicePercentage("12.5").decrease) +
+      parseFloat(getInvoicePercentage("12.75").decrease) +
+      parseFloat(getInvoicePercentage("13.5").decrease) +
+      parseFloat(getInvoicePercentage("15").decrease) +
+      parseFloat(getInvoicePercentage("20").decrease) +
+      parseFloat(getSaleOfPercentage("4").decrease) +
+      parseFloat(getSaleOfPercentage("5").decrease) +
+      parseFloat(getSaleOfPercentage("12.5").decrease) +
+      parseFloat(get4_6().decrease) +
+      parseFloat(get4_7().decrease) -
+      parseFloat(get4_9().decrease);
+
+    const value_1_2 =
+      parseFloat(getSalesDebitNote().decrease) -
+      (parseFloat(getGoodsReturns().decrease) +
+        parseFloat(getSaleCanceled().decrease) +
+        parseFloat(props.lastMonthCash) +
+        parseFloat(getSalesCreditNote().decrease));
+
+    const value_5_6 =
+      parseFloat(get5_1().decrease) +
       parseFloat(get5_2().decrease) +
-      (parseFloat(getDebitNote().decrease) -
-        parseFloat(getCreditNote().decrease) -
-        parseFloat(getGoodsReturnsNote().decrease) +
-        parseFloat(props.lastMonthDue) +
-        parseFloat(props.lastMonthCash)));
+      (parseFloat(getCreditNote().decrease) -
+        parseFloat(getDebitNote().decrease) -
+        parseFloat(getGoodsReturnsNote().decrease));
+
+    return (
+      value_4_8 +
+      value_1_2 -
+      value_5_6 +
+      parseFloat(props.lastMonthDue) +
+      parseFloat(props.lastMonthCash)
+    );
+
+    // parseFloat(get5_1().decrease) +
+    //   parseFloat(get5_2().decrease) +
+    //   (parseFloat(getDebitNote().decrease) -
+    //     parseFloat(getCreditNote().decrease) -
+    //     parseFloat(getGoodsReturnsNote().decrease)) +
+    //   (parseFloat(props.lastMonthDue) + parseFloat(props.lastMonthCash)) +
+    //   (parseFloat(getSalesDebitNote().decrease) -
+    //     (parseFloat(getGoodsReturns().decrease) +
+    //       parseFloat(getSaleCanceled().decrease) +
+    //       parseFloat(props.lastMonthCash) +
+    //       parseFloat(getSalesCreditNote().decrease)));
+    // return 0;
+  };
 
   const calculateInterest = (
     totalDue: number,

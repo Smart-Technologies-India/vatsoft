@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentRefineryId, getCurrentUserId } from "@/lib/auth";
+import { getCurrentDvatId, getCurrentUserId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import {
   creditdebitnote,
@@ -15,12 +15,13 @@ import {
   InputTaxCredit,
   NaturePurchaseOption,
   NaturePurchase,
+  SaleOf,
 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import { errorToString } from "@/utils/methods";
 import { customAlphabet } from "nanoid";
 
-interface CreateCreditDebitNotePayload {
+interface CreateDvatCreditDebitNotePayload {
   invoice_number: string;
   invoice_date: Date;
   commodity_master_id: number;
@@ -45,16 +46,16 @@ type CreditDebitNoteWithRelations = creditdebitnote & {
   seller_tin_number: tin_number_master;
 };
 
-const CreateCreditDebitNote = async (
-  payload: CreateCreditDebitNotePayload,
+const CreateDvatCreditDebitNote = async (
+  payload: CreateDvatCreditDebitNotePayload,
 ): Promise<ApiResponseType<CreditDebitNoteWithRelations | null>> => {
-  const functionname: string = CreateCreditDebitNote.name;
+  const functionname: string = CreateDvatCreditDebitNote.name;
 
   try {
     const currentUserId = await getCurrentUserId();
-    const currentRefineryId = await getCurrentRefineryId();
+    const currentDvatId = await getCurrentDvatId();
 
-    if (!currentUserId || !currentRefineryId) {
+    if (!currentUserId || !currentDvatId) {
       return createResponse({
         message: "Not authenticated. Please login.",
         functionname,
@@ -101,19 +102,38 @@ const CreateCreditDebitNote = async (
       });
     }
 
-    // Validate dvat exists
+    // Get current DVAT record
     const dvat04 = await prisma.dvat04.findFirst({
       where: {
-        tinNumber: payload.seller_tin_number_id.toString(),
+        id: currentDvatId,
         status: "APPROVED",
         deletedAt: null,
         deletedById: null,
+      },
+      include: {
+        tin_master: true,
       },
     });
 
     if (!dvat04) {
       return createResponse({
-        message: "Selected TIN number not found in Dvat.",
+        message: "DVAT profile not found.",
+        functionname,
+      });
+    }
+
+    // Validate that the seller_tin_number_id belongs to this DVAT
+    const tinNumber = await prisma.tin_number_master.findFirst({
+      where: {
+        id: payload.seller_tin_number_id,
+        status: "ACTIVE",
+        deletedAt: null,
+      },
+    });
+
+    if (!tinNumber) {
+      return createResponse({
+        message: "Selected TIN number not found.",
         functionname,
       });
     }
@@ -162,25 +182,14 @@ const CreateCreditDebitNote = async (
       });
     }
 
-    const refinery = await prisma.refinery.findFirst({
-      where: { deletedAt: null, id: currentRefineryId },
-    });
-
-    if (!refinery) {
-      return createResponse({
-        message: "No refinery profile found.",
-        functionname,
-      });
-    }
-
     // Create the credit/debit note
     const note = await prisma.creditdebitnote.create({
       data: {
-        dvat04Id: dvat04.id,
+        dvat04Id: payload.seller_tin_number_id,
         invoice_number: payload.invoice_number.trim(),
         invoice_date: invoiceDate,
         commodity_masterId: payload.commodity_master_id,
-        seller_tin_numberId: refinery.tin_master_id,
+        seller_tin_numberId: currentDvatId,
         quantity: payload.quantity,
         amount_unit: payload.amount_unit,
         tax_percent: payload.tax_percent,
@@ -223,7 +232,7 @@ const CreateCreditDebitNote = async (
       where: {
         deletedAt: null,
         deletedById: null,
-        dvat04Id: dvat04.id,
+        dvat04Id: currentDvatId,
         year: year.toString(),
         month: month,
       },
@@ -237,7 +246,7 @@ const CreateCreditDebitNote = async (
           quarter: getQuarter(month) as Quarter,
           filing_datetime: new Date(),
           file_status: Status.ACTIVE,
-          dvat04Id: dvat04.id,
+          dvat04Id: currentDvatId,
           year: year.toString(),
           month: month,
           status: "ACTIVE",
@@ -264,18 +273,89 @@ const CreateCreditDebitNote = async (
     await prisma.returns_entry.create({
       data: {
         returns_01Id: returncheck.id,
+        dvat_type: DvatType.DVAT_31,
+        status: Status.ACTIVE,
+        createdById: currentUserId,
+        urn_number: nanoid(),
+        sale_of: SaleOf.GOODS_TAXABLE,
+        invoice_date: creditnoteDate,
+        invoice_number: payload.creditnote_no.trim(),
+        seller_tin_numberId: payload.seller_tin_number_id,
+        category_of_entry: payload.is_goods_returned
+          ? CategoryOfEntry.GOODS_RETURNED
+          : payload.is_credit
+            ? CategoryOfEntry.CREDIT_NOTE
+            : CategoryOfEntry.DEBIT_NOTE,
+        total_invoice_number: (
+          parseFloat(payload.amount) + parseFloat(payload.vatamount)
+        ).toFixed(2),
+        commodity_masterId: payload.commodity_master_id,
+        input_tax_credit: InputTaxCredit.ITC_ELIGIBLE,
+        place_of_supply: 25,
+        tax_percent: payload.tax_percent,
+        amount: payload.amount,
+        vatamount: payload.vatamount,
+        remarks: "",
+        quantity: payload.quantity,
+        description_of_goods: commodity.product_name,
+      },
+    });
+
+    let returnchecksale = await prisma.returns_01.findFirst({
+      where: {
+        deletedAt: null,
+        deletedById: null,
+        dvat04Id: payload.seller_tin_number_id,
+        year: year.toString(),
+        month: month,
+      },
+    });
+
+    if (!returnchecksale) {
+      returnchecksale = await prisma.returns_01.create({
+        data: {
+          return_type: ReturnType.ORIGINAL,
+          rr_number: "",
+          quarter: getQuarter(month) as Quarter,
+          filing_datetime: new Date(),
+          file_status: Status.ACTIVE,
+          dvat04Id: payload.seller_tin_number_id,
+          year: year.toString(),
+          month: month,
+          status: "ACTIVE",
+          createdById: currentUserId,
+        },
+      });
+    }
+
+    // delete nil entry
+    await prisma.returns_entry.updateMany({
+      where: {
+        returns_01Id: returnchecksale.id,
+        isnil: true,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
+        deletedById: currentUserId,
+      },
+    });
+
+    await prisma.returns_entry.create({
+      data: {
+        returns_01Id: returnchecksale.id,
         dvat_type: DvatType.DVAT_30,
         status: Status.ACTIVE,
         createdById: currentUserId,
         urn_number: nanoid(),
         invoice_date: creditnoteDate,
         invoice_number: payload.creditnote_no.trim(),
-        seller_tin_numberId: refinery.tin_master_id,
+        seller_tin_numberId: currentDvatId,
         category_of_entry: payload.is_goods_returned
           ? CategoryOfEntry.GOODS_RETURNED
           : payload.is_credit
-            ? CategoryOfEntry.CREDIT_NOTE
-            : CategoryOfEntry.DEBIT_NOTE,
+            ? CategoryOfEntry.DEBIT_NOTE
+            : CategoryOfEntry.CREDIT_NOTE,
         total_invoice_number: (
           parseFloat(payload.amount) + parseFloat(payload.vatamount)
         ).toFixed(2),
@@ -307,7 +387,7 @@ const CreateCreditDebitNote = async (
   }
 };
 
-export default CreateCreditDebitNote;
+export default CreateDvatCreditDebitNote;
 
 const getQuarter = (month: string): string => {
   // Define the mapping of months to quarters
