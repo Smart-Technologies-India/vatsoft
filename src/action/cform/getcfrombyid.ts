@@ -1,7 +1,7 @@
 "use server";
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import { errorToString } from "@/utils/methods";
-import { cform } from "@prisma/client";
+import { cform, dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import { ApiResponseType, createResponse } from "@/models/response";
 interface GetUserCformPayload {
@@ -9,8 +9,8 @@ interface GetUserCformPayload {
 }
 
 const GetCformById = async (
-  payload: GetUserCformPayload
-): Promise<ApiResponseType<cform | null>> => {
+  payload: GetUserCformPayload,
+): Promise<ApiResponseType<(cform & { dvat04: dvat04 }) | null>> => {
   const functionname: string = GetCformById.name;
 
   try {
@@ -31,6 +31,9 @@ const GetCformById = async (
         deletedById: null,
         status: "ACTIVE",
         id: payload.id,
+      },
+      include: {
+        dvat04: true,
       },
     });
 

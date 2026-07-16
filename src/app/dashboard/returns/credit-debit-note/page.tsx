@@ -283,9 +283,9 @@ const CreditDebitNotePage = () => {
                 <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                   Status
                 </TableHead>
-                <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                {/* <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                   Action
-                </TableHead>
+                </TableHead> */}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -331,7 +331,7 @@ const CreditDebitNotePage = () => {
                         {note.status}
                       </span>
                     </TableCell>
-                    <TableCell className="text-center p-2 text-xs">
+                    {/* <TableCell className="text-center p-2 text-xs">
                       <div className="flex gap-1 justify-center">
                         <Button
                           size="small"
@@ -341,7 +341,7 @@ const CreditDebitNotePage = () => {
                           Delete
                         </Button>
                       </div>
-                    </TableCell>
+                    </TableCell> */}
                   </TableRow>
                 );
               })}

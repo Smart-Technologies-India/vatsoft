@@ -7,6 +7,7 @@ import {
   returns_entry,
 } from "@prisma/client";
 import { useSearchParams } from "next/navigation";
+import { S2adjustment } from "./vatcalculation";
 
 interface PercentageOutput {
   increase: string;
@@ -16,84 +17,87 @@ interface PercentageOutput {
 interface S2AdjustmentOfTaxProps {
   returnsentrys: returns_entry[];
   lastMonthDue: string;
-  lastMonthCash: string;
 }
 
 const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
-  const getCreditNote = (): PercentageOutput => {
-    let increase: string = "0";
-    let decrease: string = "0";
-    const output: returns_entry[] = props.returnsentrys.filter(
-      (val: returns_entry) =>
-        val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
-        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
-          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
-    );
-    for (let i = 0; i < output.length; i++) {
-      increase = (
-        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
-      ).toFixed(2);
-      decrease = (
-        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
-      ).toFixed(2);
-    }
-    return {
-      increase,
-      decrease,
-    };
-  };
-  const getDebitNote = (): PercentageOutput => {
-    let increase: string = "0";
-    let decrease: string = "0";
-    const output: returns_entry[] = props.returnsentrys.filter(
-      (val: returns_entry) =>
-        // val.dvat_type == DvatType.DVAT_30 &&
-        val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
-        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
-          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
-    );
-    for (let i = 0; i < output.length; i++) {
-      increase = (
-        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
-      ).toFixed(2);
-      decrease = (
-        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
-      ).toFixed(2);
-    }
-    return {
-      increase,
-      decrease,
-    };
-  };
-  const getGoodsReturnsNote = (): PercentageOutput => {
-    let increase: string = "0";
-    let decrease: string = "0";
-    const output: returns_entry[] = props.returnsentrys.filter(
-      (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_30 &&
-        val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
-        (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
-          val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-        val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
-        val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
-    );
-    for (let i = 0; i < output.length; i++) {
-      increase = (
-        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
-      ).toFixed(2);
-      decrease = (
-        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
-      ).toFixed(2);
-    }
-    return {
-      increase,
-      decrease,
-    };
-  };
+  const s2adjustment = new S2adjustment(
+    props.returnsentrys,
+    parseFloat(props.lastMonthDue),
+  );
+  // const getCreditNote = (): PercentageOutput => {
+  //   let increase: string = "0";
+  //   let decrease: string = "0";
+  //   const output: returns_entry[] = props.returnsentrys.filter(
+  //     (val: returns_entry) =>
+  //       val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
+  //       (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+  //         val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+  //       val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+  //       val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
+  //   );
+  //   for (let i = 0; i < output.length; i++) {
+  //     increase = (
+  //       parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+  //     ).toFixed(2);
+  //     decrease = (
+  //       parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+  //     ).toFixed(2);
+  //   }
+  //   return {
+  //     increase,
+  //     decrease,
+  //   };
+  // };
+  // const getDebitNote = (): PercentageOutput => {
+  //   let increase: string = "0";
+  //   let decrease: string = "0";
+  //   const output: returns_entry[] = props.returnsentrys.filter(
+  //     (val: returns_entry) =>
+  //       // val.dvat_type == DvatType.DVAT_30 &&
+  //       val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
+  //       (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+  //         val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+  //       val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+  //       val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
+  //   );
+  //   for (let i = 0; i < output.length; i++) {
+  //     increase = (
+  //       parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+  //     ).toFixed(2);
+  //     decrease = (
+  //       parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+  //     ).toFixed(2);
+  //   }
+  //   return {
+  //     increase,
+  //     decrease,
+  //   };
+  // };
+  // const getGoodsReturnsNote = (): PercentageOutput => {
+  //   let increase: string = "0";
+  //   let decrease: string = "0";
+  //   const output: returns_entry[] = props.returnsentrys.filter(
+  //     (val: returns_entry) =>
+  //       val.dvat_type == DvatType.DVAT_30 &&
+  //       val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
+  //       (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
+  //         val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
+  //       val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE &&
+  //       val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS,
+  //   );
+  //   for (let i = 0; i < output.length; i++) {
+  //     increase = (
+  //       parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+  //     ).toFixed(2);
+  //     decrease = (
+  //       parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+  //     ).toFixed(2);
+  //   }
+  //   return {
+  //     increase,
+  //     decrease,
+  //   };
+  // };
   const searchparam = useSearchParams();
 
   return (
@@ -123,18 +127,16 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
             Tax credit carried forward from previous tax period
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
-          </td>
-          <td className="border border-black px-2 leading-4 text-[0.6rem]">
             {searchparam.get("month") == "April" ? "0" : props.lastMonthDue}
           </td>
+          <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
         </tr>
         <tr className="w-full">
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
             Receipt of debit notes from the seller [Section 10(1)]
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {getCreditNote().decrease}
+            {s2adjustment.getCreditNote().decrease}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
         </tr>
@@ -144,7 +146,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {getDebitNote().decrease}
+            {s2adjustment.getDebitNote().decrease}
           </td>
         </tr>
         <tr className="w-full">
@@ -153,7 +155,7 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {getGoodsReturnsNote().decrease}
+            {s2adjustment.getGoodsReturnsNote().decrease}
           </td>
         </tr>
         <tr className="w-full">
@@ -277,14 +279,18 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
             Total
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {getCreditNote().decrease}
+            {/* {(
+              parseFloat(getCreditNote().decrease) +
+              parseFloat(props.lastMonthDue)
+            ).toFixed(2)} */}
+            {s2adjustment.total_C()}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {(
+            {/* {(
               parseFloat(getDebitNote().decrease) +
-              parseFloat(getGoodsReturnsNote().decrease) +
-              parseFloat(props.lastMonthDue)
-            ).toFixed(2)}
+              parseFloat(getGoodsReturnsNote().decrease)
+            ).toFixed(2)} */}
+            {s2adjustment.total_D()}
           </td>
         </tr>
         <tr className="w-full">
@@ -295,12 +301,13 @@ const S2AdjustmentOfTax = (props: S2AdjustmentOfTaxProps) => {
             S2.2 Total net Increase/(decrease)in Output Tax (C-D)
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {(
+            {/* {(
               parseFloat(getCreditNote().decrease) -
               parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease) -
+              parseFloat(getGoodsReturnsNote().decrease) +
               parseFloat(props.lastMonthDue)
-            ).toFixed(2)}
+            ).toFixed(2)} */}
+            {s2adjustment.total()}
           </td>
         </tr>
       </tbody>

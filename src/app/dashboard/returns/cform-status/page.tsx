@@ -181,7 +181,7 @@ const TrackAppliation = () => {
       tinRef.current?.input?.value == null ||
       tinRef.current?.input?.value == ""
     ) {
-      return toast.error("Enter Purchaser TIN number");
+      return toast.error("Enter Terminal TIN number");
     }
     const search_response = await GetUserCform({
       dvatid: dvatdata.id,
@@ -208,7 +208,7 @@ const TrackAppliation = () => {
       nameRef.current?.input?.value == null ||
       nameRef.current?.input?.value == ""
     ) {
-      return toast.error("Enter Purchaser Name");
+      return toast.error("Enter Terminal Name");
     }
     const search_response = await GetUserCform({
       name: nameRef.current?.input?.value,
@@ -236,7 +236,7 @@ const TrackAppliation = () => {
           tinRef.current?.input?.value == null ||
           tinRef.current?.input?.value == ""
         ) {
-          return toast.error("Enter Purchaser TIN number");
+          return toast.error("Enter Terminal TIN number");
         }
         const search_response = await GetUserCform({
           dvatid: dvatdata.id,
@@ -259,7 +259,7 @@ const TrackAppliation = () => {
           nameRef.current?.input?.value == null ||
           nameRef.current?.input?.value == ""
         ) {
-          return toast.error("Enter Purchaser Name");
+          return toast.error("Enter Terminal Name");
         }
         const search_response = await GetUserCform({
           name: nameRef.current?.input?.value,
@@ -343,220 +343,228 @@ const TrackAppliation = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
-        {/* Header Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <div className="w-1.5 h-8 bg-linear-to-b from-blue-500 to-indigo-600 rounded-full"></div>
-                Track C-Form
-              </h1>
-              <p className="text-sm text-gray-500 mt-2 ml-4">
-                View and track all your C-Form declarations
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {cformData.length == 0 && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <Alert
-              style={{
-                borderRadius: "0.5rem",
-              }}
-              type="error"
-              showIcon
-              description="There is no C-Form."
-            />
-          </div>
-        )}
-
-        {cformData.length != 0 && (
-          <>
-            {/* Search Section Card */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
-              <div className="flex flex-col md:flex-row gap-4 md:items-center">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    Search by:
-                  </span>
-                  <Radio.Group
-                    onChange={onChange}
-                    value={searchOption}
-                    disabled={isSearch}
-                    className="flex gap-2"
-                  >
-                    <Radio value={SearchOption.TIN}>
-                      <span className="text-sm">TIN Number</span>
-                    </Radio>
-                    <Radio value={SearchOption.NAME}>
-                      <span className="text-sm">Purchaser Name</span>
-                    </Radio>
-                  </Radio.Group>
-                </div>
-
-                {(() => {
-                  switch (searchOption) {
-                    case SearchOption.TIN:
-                      return (
-                        <div className="flex gap-2 flex-1">
-                          <Input
-                            maxLength={11}
-                            className="max-w-xs"
-                            ref={tinRef}
-                            placeholder="Enter Purchaser TIN Number"
-                            disabled={isSearch}
-                          />
-
-                          {isSearch ? (
-                            <Button
-                              onClick={init}
-                              type="primary"
-                              className="bg-blue-500 hover:bg-blue-600"
-                            >
-                              Reset
-                            </Button>
-                          ) : (
-                            <Button
-                              onClick={tinsearch}
-                              type="primary"
-                              className="bg-blue-500 hover:bg-blue-600"
-                            >
-                              Search
-                            </Button>
-                          )}
-                        </div>
-                      );
-
-                    case SearchOption.NAME:
-                      return (
-                        <div className="flex gap-2 flex-1">
-                          <Input
-                            className="max-w-xs"
-                            ref={nameRef}
-                            placeholder="Enter Purchaser Name"
-                            disabled={isSearch}
-                          />
-
-                          {isSearch ? (
-                            <Button
-                              onClick={init}
-                              type="primary"
-                              className="bg-blue-500 hover:bg-blue-600"
-                            >
-                              Reset
-                            </Button>
-                          ) : (
-                            <Button
-                              onClick={namesearch}
-                              type="primary"
-                              className="bg-blue-500 hover:bg-blue-600"
-                            >
-                              Search
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    default:
-                      return null;
-                  }
-                })()}
+      <main className="p-3 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+            <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+              <div>
+                <h1 className="text-lg font-medium text-gray-900">
+                  Track C-Form
+                </h1>
+                <p className="text-xs text-gray-500 mt-1">
+                  View and track all your C-Form declarations and submissions
+                </p>
               </div>
+              <div className="grow"></div>
+              {isSearch && (
+                <Button
+                  size="small"
+                  type="default"
+                  onClick={init}
+                >
+                  Clear Filter
+                </Button>
+              )}
             </div>
+          </div>
 
-            {/* Results Table Card */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table className="border-0">
-                  <TableHeader>
-                    <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100">
-                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        ARN
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        C-Form Type
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        Form Period
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        TIN Number
-                      </TableHead>
+          {cformData.length == 0 && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <Alert
+                type="info"
+                showIcon
+                message="No C-Forms Found"
+                description="There are no C-Form declarations available."
+              />
+            </div>
+          )}
 
-                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        Purchaser Name
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cformData.map((val: cform, index: number) => {
-                      return (
+          {cformData.length != 0 && (
+            <>
+              {/* Search and Filter Card */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-3">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                      Search by:
+                    </span>
+                    <Radio.Group
+                      onChange={onChange}
+                      value={searchOption}
+                      disabled={isSearch}
+                      className="flex gap-4"
+                    >
+                      <Radio value={SearchOption.TIN}>
+                        <span className="text-sm">TIN Number</span>
+                      </Radio>
+                      <Radio value={SearchOption.NAME}>
+                        <span className="text-sm">Terminal Name</span>
+                      </Radio>
+                    </Radio.Group>
+                  </div>
+
+                  <div className="flex gap-2 items-end flex-wrap">
+                    {(() => {
+                      switch (searchOption) {
+                        case SearchOption.TIN:
+                          return (
+                            <div className="flex gap-2 flex-1 min-w-[250px]">
+                              <Input
+                                size="small"
+                                maxLength={11}
+                                ref={tinRef}
+                                placeholder="Enter Terminal TIN Number"
+                                disabled={isSearch}
+                              />
+                              {isSearch ? (
+                                <Button
+                                  size="small"
+                                  onClick={init}
+                                  type="primary"
+                                >
+                                  Reset
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="small"
+                                  onClick={tinsearch}
+                                  type="primary"
+                                >
+                                  Search
+                                </Button>
+                              )}
+                            </div>
+                          );
+
+                        case SearchOption.NAME:
+                          return (
+                            <div className="flex gap-2 flex-1 min-w-[250px]">
+                              <Input
+                                size="small"
+                                ref={nameRef}
+                                placeholder="Enter Terminal Name"
+                                disabled={isSearch}
+                              />
+                              {isSearch ? (
+                                <Button
+                                  size="small"
+                                  onClick={init}
+                                  type="primary"
+                                >
+                                  Reset
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="small"
+                                  onClick={namesearch}
+                                  type="primary"
+                                >
+                                  Search
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        default:
+                          return null;
+                      }
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Results Table Card */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="text-center border border-gray-200 p-3 text-xs font-semibold text-gray-700 whitespace-nowrap">
+                          ARN
+                        </TableHead>
+                        <TableHead className="text-center border border-gray-200 p-3 text-xs font-semibold text-gray-700 whitespace-nowrap">
+                          C-Form Type
+                        </TableHead>
+                        <TableHead className="text-center border border-gray-200 p-3 text-xs font-semibold text-gray-700 whitespace-nowrap">
+                          Form Period
+                        </TableHead>
+                        <TableHead className="text-center border border-gray-200 p-3 text-xs font-semibold text-gray-700 whitespace-nowrap">
+                          TIN Number
+                        </TableHead>
+                        <TableHead className="text-center border border-gray-200 p-3 text-xs font-semibold text-gray-700 whitespace-nowrap">
+                          Terminal Name
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {cformData.map((val: cform, index: number) => (
                         <TableRow
                           key={index}
-                          className="hover:bg-blue-50 transition-colors"
+                          className="hover:bg-gray-50 transition-colors"
                         >
-                          <TableCell className="border border-gray-200 text-center p-3">
+                          <TableCell className="border border-gray-200 text-center p-3 text-xs">
                             <Link
                               href={`/dashboard/cform/${encryptURLData(
                                 val.id.toString(),
                               )}`}
-                              className="text-blue-500 hover:text-blue-700 font-medium hover:underline"
+                              className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
                             >
                               {val.sr_no}
                             </Link>
                           </TableCell>
-                          <TableCell className="border border-gray-200 text-center p-3 text-gray-700">
+                          <TableCell className="border border-gray-200 text-center p-3 text-xs text-gray-700">
                             {val.cform_type}
                           </TableCell>
-                          <TableCell className="border border-gray-200 text-center p-3 text-gray-700">
+                          <TableCell className="border border-gray-200 text-center p-3 text-xs text-gray-700">
                             {getMonthRange(val.to_period)}
                           </TableCell>
-                          <TableCell className="border border-gray-200 text-center p-3 font-medium text-gray-900">
+                          <TableCell className="border border-gray-200 text-center p-3 text-xs font-medium text-gray-900">
                             {val.seller_tin_no}
                           </TableCell>
-                          <TableCell className="border border-gray-200 text-center p-3 text-gray-700">
+                          <TableCell className="border border-gray-200 text-center p-3 text-xs text-gray-700">
                             {val.seller_name}
                           </TableCell>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
 
-              {/* Pagination Section */}
-              <div className="bg-gray-50 border-t border-gray-200 p-4">
-                <div className="lg:hidden">
-                  <Pagination
-                    align="center"
-                    defaultCurrent={1}
-                    onChange={onChangePageCount}
-                    showSizeChanger
-                    total={pagination.total}
-                    showTotal={(total: number) => `Total ${total} items`}
-                  />
-                </div>
-                <div className="hidden lg:block">
-                  <Pagination
-                    showQuickJumper
-                    align="center"
-                    defaultCurrent={1}
-                    onChange={onChangePageCount}
-                    showSizeChanger
-                    pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                    total={pagination.total}
-                    responsive={true}
-                    showTotal={(total: number, range: number[]) =>
-                      `${range[0]}-${range[1]} of ${total} items`
-                    }
-                  />
+                {/* Pagination Section */}
+                <div className="bg-gray-50 border-t border-gray-200 p-3">
+                  <div className="lg:hidden">
+                    <Pagination
+                      align="center"
+                      defaultCurrent={1}
+                      onChange={onChangePageCount}
+                      showSizeChanger
+                      size="small"
+                      total={pagination.total}
+                      showTotal={(total: number) => `Total ${total} items`}
+                    />
+                  </div>
+                  <div className="hidden lg:block">
+                    <Pagination
+                      showQuickJumper
+                      align="center"
+                      defaultCurrent={1}
+                      onChange={onChangePageCount}
+                      showSizeChanger
+                      pageSizeOptions={[10, 20, 50, 100]}
+                      total={pagination.total}
+                      responsive={true}
+                      size="small"
+                      showTotal={(total: number, range: number[]) =>
+                        `${range[0]}-${range[1]} of ${total} items`
+                      }
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </>
-        )}
-      </div>
+            </>
+          )}
+        </div>
+      </main>
     </>
   );
 };

@@ -66,6 +66,17 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
     props.returnId,
   );
 
+  const getQuarterMonths = (selectedQuarter: Quarter): string[] => {
+    const quarterMonthsMap: Record<Quarter, string[]> = {
+      QUARTER1: ["April", "May", "June"],
+      QUARTER2: ["July", "August", "September"],
+      QUARTER3: ["October", "November", "December"],
+      QUARTER4: ["January", "February", "March"],
+    };
+
+    return quarterMonthsMap[selectedQuarter] ?? [];
+  };
+
   const {
     reset,
     handleSubmit,
@@ -85,11 +96,21 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
           return;
         }
 
-        setDvatData(returnResponse.data.dvat04);
+        const dvatRecord = returnResponse.data.dvat04;
+        setDvatData(dvatRecord);
 
-        const period = returnResponse.data.month
-          ? `${returnResponse.data.month} ${returnResponse.data.year}`
-          : `${returnResponse.data.quarter} ${returnResponse.data.year}`;
+        let period: string;
+        const isQuarterlyFiling =
+          dvatRecord?.frequencyFilings?.toUpperCase() === "QUARTERLY";
+
+        if (returnResponse.data.month) {
+          period = `${returnResponse.data.month} ${returnResponse.data.year}`;
+        } else if (isQuarterlyFiling && returnResponse.data.quarter) {
+          const quarterMonths = getQuarterMonths(returnResponse.data.quarter);
+          period = `${quarterMonths.join(", ")} ${returnResponse.data.year}`;
+        } else {
+          period = `${returnResponse.data.quarter} ${returnResponse.data.year}`;
+        }
         setReturnPeriod(period);
         return;
       }
@@ -102,9 +123,19 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
 
       setDvatData(dvatResponse.data);
       if (props.returnContext) {
-        setReturnPeriod(
-          `${props.returnContext.month} ${props.returnContext.year}`,
-        );
+        const isQuarterlyFiling =
+          dvatResponse.data?.frequencyFilings?.toUpperCase() === "QUARTERLY";
+
+        if (isQuarterlyFiling && props.returnContext.quarter) {
+          const quarterMonths = getQuarterMonths(props.returnContext.quarter);
+          setReturnPeriod(
+            `${quarterMonths.join(", ")} ${props.returnContext.year}`,
+          );
+        } else if (props.returnContext.month) {
+          setReturnPeriod(
+            `${props.returnContext.month} ${props.returnContext.year}`,
+          );
+        }
       }
     };
 
@@ -117,7 +148,7 @@ const PayChallanPage = (props: DepartmentPayChallanProviderProps) => {
       penalty: "0",
       others: "0",
     });
-  }, [props.returnId, props.returnContext]);
+  }, [props.returnId, props.returnContext, reset]);
 
   const onSubmit = async (data: CreateChallanForm) => {
     if (dvatdata == null) {

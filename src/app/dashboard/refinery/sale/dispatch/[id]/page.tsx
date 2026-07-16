@@ -7,6 +7,7 @@ import GetCompletedDailyPurchaseView, {
   CompletedDailyPurchaseView,
 } from "@/action/refinery_sale/getcompleteddailypurchaseview";
 import DispatchRefinerySale from "@/action/refinery_sale/dispatchrefinerysale";
+import UpdateCompletedInvoice from "@/action/refinery_sale/updatecompletedinvoice";
 import { DateSelect } from "@/components/forms/inputfields/dateselect";
 import { MultiSelect } from "@/components/forms/inputfields/multiselect";
 import { TaxtInput } from "@/components/forms/inputfields/textinput";
@@ -33,6 +34,12 @@ type DispatchFormValues = {
     saleId: number;
     kiloLiter: string;
   }>;
+  cstpurchase: string;
+};
+
+type EditFormValues = {
+  invoiceNumber: string;
+  invoiceDate: string;
   cstpurchase: string;
 };
 
@@ -84,6 +91,8 @@ export default function DispatchPage() {
   const [tankerOptions, setTankerOptions] = useState<string[]>([]);
   const [completedPurchaseView, setCompletedPurchaseView] =
     useState<CompletedDailyPurchaseView | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const methods = useForm<DispatchFormValues>({
     defaultValues: {
@@ -95,7 +104,16 @@ export default function DispatchPage() {
     },
   });
 
+  const editMethods = useForm<EditFormValues>({
+    defaultValues: {
+      invoiceNumber: "",
+      invoiceDate: "",
+      cstpurchase: "",
+    },
+  });
+
   const { handleSubmit, register, reset } = methods;
+  const { handleSubmit: handleEditSubmit, register: editRegister, reset: editReset } = editMethods;
 
   const currentWorkflowStatus = useMemo(() => {
     return deriveWorkflowStatus(invoice?.rows || []);
@@ -133,6 +151,13 @@ export default function DispatchPage() {
           const completedResponse = await GetCompletedDailyPurchaseView(id);
           if (completedResponse.status && completedResponse.data) {
             setCompletedPurchaseView(completedResponse.data);
+            
+            // Initialize edit form with completed invoice data
+            editReset({
+              invoiceNumber: completedResponse.data.invoiceNumber,
+              invoiceDate: new Date(completedResponse.data.invoiceDate).toISOString(),
+              cstpurchase: completedResponse.data.cstPurchase,
+            });
           } else {
             setCompletedPurchaseView(null);
           }
@@ -147,7 +172,7 @@ export default function DispatchPage() {
     };
 
     void loadInvoice();
-  }, [id, reset]);
+  }, [id, reset, editReset]);
 
   const handleApproveRelease = async (data: DispatchFormValues) => {
     if (!canDispatch) {
@@ -219,6 +244,67 @@ export default function DispatchPage() {
       toast.error(res.message || "Failed to dispatch.");
       setSubmitting(false);
     }
+  };
+
+  const handleEditInvoice = async (data: EditFormValues) => {
+    if (!data.invoiceNumber.trim()) {
+      toast.error("Invoice Number is required.");
+      return;
+    }
+    if (!data.invoiceDate) {
+      toast.error("Invoice Date is required.");
+      return;
+    }
+    if (!data.cstpurchase.trim()) {
+      toast.error("CST Purchase value is required.");
+      return;
+    }
+
+    const parsedInvoiceDate = new Date(data.invoiceDate);
+    if (Number.isNaN(parsedInvoiceDate.getTime())) {
+      toast.error("Invoice Date is invalid.");
+      return;
+    }
+
+    const cstPurchaseValue = Number.parseFloat(data.cstpurchase);
+    if (!Number.isFinite(cstPurchaseValue) || cstPurchaseValue <= 0) {
+      toast.error("CST Purchase value must be greater than 0.");
+      return;
+    }
+
+    setIsUpdating(true);
+
+    const res = await UpdateCompletedInvoice({
+      id,
+      invoice_number: data.invoiceNumber,
+      invoice_date: format(parsedInvoiceDate, "dd/MM/yyyy"),
+      cst_purchase: data.cstpurchase,
+    });
+
+    if (res.status) {
+      toast.success("Invoice updated successfully.");
+      setIsEditMode(false);
+      
+      // Reload the data
+      const reloadRes = await GetVatpaidInvoiceById(id);
+      if (reloadRes.status && reloadRes.data) {
+        setInvoice(reloadRes.data);
+        
+        const completedResponse = await GetCompletedDailyPurchaseView(id);
+        if (completedResponse.status && completedResponse.data) {
+          setCompletedPurchaseView(completedResponse.data);
+          editReset({
+            invoiceNumber: completedResponse.data.invoiceNumber,
+            invoiceDate: new Date(completedResponse.data.invoiceDate).toISOString(),
+            cstpurchase: completedResponse.data.cstPurchase,
+          });
+        }
+      }
+    } else {
+      toast.error(res.message || "Failed to update invoice.");
+    }
+    
+    setIsUpdating(false);
   };
 
   if (loading) {
@@ -331,105 +417,176 @@ export default function DispatchPage() {
 
         {currentWorkflowStatus === "COMPLETED" ? (
           <div className="border border-gray-200 rounded-lg p-4 mb-6 bg-gray-50">
-            <div className="mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">
-                    Invoice Number
-                  </div>
-                  <div className="text-sm font-semibold text-gray-800">
-                    {completedPurchaseView?.invoiceNumber}
-                  </div>
+            {!isEditMode ? (
+              <>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-sm font-semibold text-gray-800">
+                    Completed Invoice Details
+                  </h2>
+                  <button
+                    onClick={() => setIsEditMode(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded"
+                  >
+                    Edit
+                  </button>
                 </div>
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">Invoice Date</div>
-                  <div className="text-sm font-semibold text-gray-800">
-                    {completedPurchaseView?.invoiceDate
-                      ? format(
-                          new Date(completedPurchaseView.invoiceDate),
-                          "dd/MM/yyyy",
-                        )
-                      : "-"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">CST Purchase</div>
-                  <div className="text-sm font-semibold text-gray-800">
-                    {completedPurchaseView?.cstPurchase}
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <div className="border-t pt-4 mb-4">
-              <div className="text-sm font-semibold text-gray-800 mb-3">
-                Dealer Details
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">Dealer Name</div>
-                  <div className="text-sm font-medium text-gray-800">
-                    {invoice.buyer.name_of_dealer}
+                <div className="mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">
+                        Invoice Number
+                      </div>
+                      <div className="text-sm font-semibold text-gray-800">
+                        {completedPurchaseView?.invoiceNumber}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Invoice Date</div>
+                      <div className="text-sm font-semibold text-gray-800">
+                        {completedPurchaseView?.invoiceDate
+                          ? format(
+                              new Date(completedPurchaseView.invoiceDate),
+                              "dd/MM/yyyy",
+                            )
+                          : "-"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">CST Purchase</div>
+                      <div className="text-sm font-semibold text-gray-800">
+                        {completedPurchaseView?.cstPurchase}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">TIN Number</div>
-                  <div className="text-sm font-medium text-gray-800">
-                    {invoice.buyer.tin_number}
+
+                <div className="border-t pt-4 mb-4">
+                  <div className="text-sm font-semibold text-gray-800 mb-3">
+                    Dealer Details
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Dealer Name</div>
+                      <div className="text-sm font-medium text-gray-800">
+                        {invoice.buyer.name_of_dealer}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">TIN Number</div>
+                      <div className="text-sm font-medium text-gray-800">
+                        {invoice.buyer.tin_number}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="text-sm font-semibold text-gray-800 mb-3">
-              Completed Sale Items
-            </div>
-            {completedPurchaseView?.rows?.length ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-white">
-                      <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
-                        Product
-                      </TableHead>
-                      <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
-                        Quantity (L)
-                      </TableHead>
+                <div className="text-sm font-semibold text-gray-800 mb-3">
+                  Completed Sale Items
+                </div>
+                {completedPurchaseView?.rows?.length ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-white">
+                          <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                            Product
+                          </TableHead>
+                          <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                            Quantity (L)
+                          </TableHead>
 
-                      <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
-                        Vehicle
-                      </TableHead>
-                      <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
-                        Status
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {completedPurchaseView.rows.map((row) => (
-                      <TableRow key={row.id} className="bg-white border-b">
-                        <TableCell className="text-center p-2 text-xs">
-                          {row.commodity_master.product_name}
-                        </TableCell>
-                        <TableCell className="text-center p-2 text-xs">
-                          {row.quantity.toLocaleString("en-IN")}
-                        </TableCell>
-                        <TableCell className="text-center p-2 text-xs">
-                          {row.vehicle_number || "-"}
-                        </TableCell>
-                        <TableCell className="text-center p-2 text-xs">
-                          <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
-                            {row.refinery_status}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                          <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                            Vehicle
+                          </TableHead>
+                          <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                            Status
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {completedPurchaseView.rows.map((row) => (
+                          <TableRow key={row.id} className="bg-white border-b">
+                            <TableCell className="text-center p-2 text-xs">
+                              {row.commodity_master.product_name}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-xs">
+                              {row.quantity.toLocaleString("en-IN")}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-xs">
+                              {row.vehicle_number || "-"}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-xs">
+                              <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
+                                {row.refinery_status}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-500">
+                    No completed sale records found for this invoice.
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="text-xs text-gray-500">
-                No completed sale records found for this invoice.
-              </div>
+              <FormProvider {...editMethods}>
+                <form onSubmit={handleEditSubmit(handleEditInvoice)}>
+                  <div className="mb-4">
+                    <h2 className="text-sm font-semibold text-gray-800 mb-4">
+                      Edit Invoice Details
+                    </h2>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+                    <div>
+                      <TaxtInput<EditFormValues>
+                        name="invoiceNumber"
+                        title="Invoice Number"
+                        required={true}
+                      />
+                    </div>
+                    <div>
+                      <DateSelect<EditFormValues>
+                        name="invoiceDate"
+                        title="Invoice Date"
+                        placeholder="Select Invoice Date"
+                        required={true}
+                        format="DD/MM/YYYY"
+                      />
+                    </div>
+                    <div>
+                      <TaxtInput<EditFormValues>
+                        name="cstpurchase"
+                        title="CST Purchase"
+                        required={true}
+                        numdes={true}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      disabled={isUpdating}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium px-6 py-2 rounded"
+                    >
+                      {isUpdating ? "Updating..." : "Update"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditMode(false)}
+                      disabled={isUpdating}
+                      className="bg-gray-300 hover:bg-gray-400 disabled:opacity-60 text-gray-800 text-sm font-medium px-6 py-2 rounded"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </FormProvider>
             )}
           </div>
         ) : (

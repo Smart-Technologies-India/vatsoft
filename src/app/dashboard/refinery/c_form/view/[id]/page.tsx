@@ -20,8 +20,10 @@ const CFROM = () => {
   const idString = Array.isArray(id) ? id[0] : id;
   const cformid: number = parseInt(decryptURLData(idString, router));
 
-  const [cformdata, setCformdata] = useState<cform | null>(null);
-  const [refinerydata, setRefineryData] = useState<any>(null);
+  const [cformdata, setCformdata] = useState<
+    (cform & { dvat04: dvat04 }) | null
+  >(null);
+  // const [refinerydata, setRefineryData] = useState<any>(null);
 
   // const current_user_id: number = parseInt(getCookie("id") ?? "0");
   const [isLoading, setLoading] = useState<boolean>(true);
@@ -41,11 +43,11 @@ const CFROM = () => {
 
       if (cform_response.data && cform_response.status) {
         setCformdata(cform_response.data);
-        const refinery_response = await GetCurrentRefinery();
+        // const refinery_response = await GetCurrentRefinery();
 
-        if (refinery_response.data && refinery_response.status) {
-          setRefineryData(refinery_response.data);
-        }
+        // if (refinery_response.data && refinery_response.status) {
+        //   setRefineryData(refinery_response.data);
+        // }
 
         const cform_entry_respone = await GetCformEntry({
           id: cform_response.data.id,
@@ -104,7 +106,7 @@ const CFROM = () => {
     init();
   }, []);
 
-  const PAGE_SIZE = 35;
+  const PAGE_SIZE = 20;
 
   // Helper function to chunk the data
   function chunkArray<T>(array: T[], size: number): T[][] {
@@ -227,8 +229,8 @@ const CFROM = () => {
                         Name of the purchasing dealer
                       </td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {refinerydata
-                          ? refinerydata.tradename || refinerydata.name
+                        {cformdata?.dvat04
+                          ? cformdata.dvat04.tradename || cformdata.dvat04.name
                           : ""}
                       </td>
                     </tr>
@@ -237,7 +239,7 @@ const CFROM = () => {
                         to whom issued along with his RC NO
                       </td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {refinerydata && refinerydata.tinNumber}
+                        {cformdata?.dvat04 && cformdata?.dvat04.tinNumber}
                       </td>
                     </tr>
                     <tr className="w-full">
@@ -298,10 +300,10 @@ const CFROM = () => {
 
                 <p className="text-left w-5/6 mx-auto mt-4 text-xs leading-6">
                   Name and address of the purchasing dealer in full:{" "}
-                  {refinerydata
-                    ? refinerydata.tradename || refinerydata.name
+                  {cformdata?.dvat04
+                    ? cformdata.dvat04.tradename || cformdata.dvat04.name
                     : ""}
-                  ,{refinerydata ? refinerydata.address : ""}
+                  ,{cformdata?.dvat04 ? cformdata.dvat04.address : ""}
                 </p>
                 <p className="text-left w-5/6 mx-auto text-xs leading-6">
                   Date .............
@@ -375,18 +377,18 @@ const CFROM = () => {
                   <table border={1} className="w-5/6 mx-auto mt-6">
                     <tbody className="w-full">
                       <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Office of Issue
                         </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Dept. of VAT – Dadra and Nagar Haveli
                         </td>
                       </tr>
                       <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Date of Issue :
                         </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           {formateDate(new Date()).replaceAll("-", "/")}
                         </td>
                       </tr>
@@ -548,8 +550,8 @@ const CFROM = () => {
                         Name of the purchasing dealer
                       </td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {refinerydata
-                          ? refinerydata.tradename || refinerydata.name
+                        {cformdata?.dvat04
+                          ? cformdata.dvat04.tradename || cformdata.dvat04.name
                           : ""}
                       </td>
                     </tr>
@@ -558,7 +560,9 @@ const CFROM = () => {
                         to whom issued along with his RC NO
                       </td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {refinerydata && refinerydata.tinNumber}
+                        {cformdata?.dvat04
+                          ? cformdata.dvat04.tradename || cformdata.dvat04.name
+                          : ""}
                       </td>
                     </tr>
                     <tr className="w-full">
@@ -619,10 +623,10 @@ const CFROM = () => {
 
                 <p className="text-left w-5/6 mx-auto mt-4 text-xs leading-6">
                   Name and address of the purchasing dealer in full:{" "}
-                  {refinerydata
-                    ? refinerydata.tradename || refinerydata.name
+                  {cformdata?.dvat04
+                    ? cformdata.dvat04.tradename || cformdata.dvat04.name
                     : ""}
-                  ,{refinerydata ? refinerydata.address : ""}
+                  ,{cformdata?.dvat04 ? cformdata.dvat04.address : ""}
                 </p>
                 <p className="text-left w-5/6 mx-auto text-xs leading-6">
                   Date .............
@@ -695,18 +699,18 @@ const CFROM = () => {
                   <table border={1} className="w-5/6 mx-auto mt-6">
                     <tbody className="w-full">
                       <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Office of Issue
                         </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Dept. of VAT – Dadra and Nagar Haveli
                         </td>
                       </tr>
                       <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Date of Issue :
                         </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           {formateDate(new Date()).replaceAll("-", "/")}
                         </td>
                       </tr>
@@ -868,8 +872,8 @@ const CFROM = () => {
                         Name of the purchasing dealer
                       </td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {refinerydata
-                          ? refinerydata.tradename || refinerydata.name
+                        {cformdata?.dvat04
+                          ? cformdata.dvat04.tradename || cformdata.dvat04.name
                           : ""}
                       </td>
                     </tr>
@@ -878,7 +882,9 @@ const CFROM = () => {
                         to whom issued along with his RC NO
                       </td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {refinerydata && refinerydata.tinNumber}
+                        {cformdata?.dvat04
+                          ? cformdata.dvat04.tradename || cformdata.dvat04.name
+                          : ""}
                       </td>
                     </tr>
                     <tr className="w-full">
@@ -939,10 +945,10 @@ const CFROM = () => {
 
                 <p className="text-left w-5/6 mx-auto mt-4 text-xs leading-6">
                   Name and address of the purchasing dealer in full:{" "}
-                  {refinerydata
-                    ? refinerydata.tradename || refinerydata.name
+                  {cformdata?.dvat04
+                    ? cformdata.dvat04.tradename || cformdata.dvat04.name
                     : ""}
-                  ,{refinerydata ? refinerydata.address : ""}
+                  ,{cformdata?.dvat04 ? cformdata.dvat04.address : ""}
                 </p>
                 <p className="text-left w-5/6 mx-auto text-xs leading-6">
                   Date .............
@@ -1013,18 +1019,18 @@ const CFROM = () => {
                   <table border={1} className="w-5/6 mx-auto mt-6">
                     <tbody className="w-full">
                       <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Office of Issue
                         </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Dept. of VAT – Dadra and Nagar Haveli
                         </td>
                       </tr>
                       <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Date of Issue :
                         </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           {formateDate(new Date()).replaceAll("-", "/")}
                         </td>
                       </tr>
@@ -1103,96 +1109,6 @@ const CFROM = () => {
               </div>
             ))}
 
-            {/* part three end here */}
-
-            {/* <div className="bg-white p-8 shadow h-[1123px] w-[794px] mx-auto">
-          <div className="border border-black p-2 h-full w-full">
-            <table border={1} className="w-5/6 mx-auto mt-6">
-              <tbody className="w-full">
-                <tr className="w-full">
-                  <td className="px-2 leading-4 py-1  text-sm w-[50%]">
-                    Office of Issue
-                  </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    Dept. of VAT – Dadra and Nagar Haveli
-                  </td>
-                </tr>
-                <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    Date of Issue :
-                  </td>
-                  <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    {formateDate(new Date(return01?.createdAt!))}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <table border={1} className="w-5/6 mx-auto mt-6">
-              <thead>
-                <tr>
-                  <td
-                    className="border border-black text-sm text-center"
-                    colSpan={7}
-                  >
-                    INVOICE DETAILS
-                  </td>
-                </tr>
-              </thead>
-              <tbody className="w-full">
-                <tr className="w-full">
-                  <td className="px-2 leading-4 py-1 border border-black  text-sm w-[14%]">
-                    SI.No
-                  </td>
-                  <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                    Inv. No
-                  </td>
-                  <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                    Inv.Date
-                  </td>
-                  <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
-                    Commodity Desc.
-                  </td>
-                  <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                    Inv. Valuse(Rs)
-                  </td>
-                  <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                    Purpose
-                  </td>
-                  <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
-                    Pur.Ord.No./Date
-                  </td>
-                </tr>
-                {(returns_entryData ?? []).map(
-                  (val: returns_entry, index: number) => (
-                    <tr key={index} className="w-full">
-                      <td className="px-2 leading-4 py-1 border border-black  text-sm w-[14%]">
-                        {index + 1}
-                      </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                        {val.invoice_number}
-                      </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                        {formateDate(new Date(val.invoice_date))}
-                      </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
-                        {val.description_of_goods}
-                      </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                        {val.total_invoice_number}
-                      </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
-                        {val.remarks}
-                      </td>
-                      <td className="px-2 leading-4 py-1 border border-black text-sm w-[15%]">
-                        {formateDate(new Date(val.invoice_date))}
-                      </td>
-                    </tr>
-                  )
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div> */}
             <div className="flex justify-center mt-6">
               <Button
                 className="hidden-print bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 text-white px-8 py-2 h-auto rounded-lg font-medium shadow-md hover:shadow-lg transition-all"

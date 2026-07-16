@@ -1140,7 +1140,6 @@ const Dvat16ReturnPreview = () => {
             <S2AdjustmentOfTax
               returnsentrys={returns_entryData ?? []}
               lastMonthDue={lastmonthdue}
-              lastMonthCash={lastmonthcash}
             />
             {/* page 2 end here */}
 

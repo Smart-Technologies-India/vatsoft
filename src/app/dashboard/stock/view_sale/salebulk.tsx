@@ -23,6 +23,7 @@ import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
 
 import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
+import GetUnacceptedSales from "@/action/stock/getunacceptedsales";
 
 interface SaleBulkUploadProps {
   setToolbarActionsOpen: (open: boolean) => void;
@@ -341,17 +342,27 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     }
 
     const entries = tabledata.map((row) => {
-      const taxPercent = isManufacturerBulkUpload
-        ? row.sale_type === "CFORM"
-          ? "2"
-          : row.sale_type === "REGULAR"
-            ? "20"
-            : "0"
-        : row.sale_type === "CFORM"
-          ? "2"
-          : row.sale_type === "REGULAR"
-            ? (row.tax_percent ?? "0")
-            : "0";
+      // Determine tax percent based on composition scheme
+      let taxPercent: string;
+      
+      if (dvatdata?.compositionScheme) {
+        // If composition scheme is true, use 1% for all sales
+        taxPercent = "1";
+      } else {
+        // Otherwise use regular logic
+        taxPercent = isManufacturerBulkUpload
+          ? row.sale_type === "CFORM"
+            ? "2"
+            : row.sale_type === "REGULAR"
+              ? "20"
+              : "0"
+          : row.sale_type === "CFORM"
+            ? "2"
+            : row.sale_type === "REGULAR"
+              ? (row.tax_percent ?? "0")
+              : "0";
+      }
+
       const totalInvoice = Number(row.total_invoice_value);
       const taxableValue = (totalInvoice / (100 + Number(taxPercent))) * 100;
       const vatValue = totalInvoice - taxableValue;
@@ -441,6 +452,60 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
   const getPeriodKey = (year: string | number, month: string) =>
     `${year}-${month}`;
+
+  const handleDownloadUnacceptedSales = async () => {
+    if (!dvatdata) {
+      toast.error("DVAT data not found");
+      return;
+    }
+
+    try {
+      const response = await GetUnacceptedSales({ dvatid: dvatdata.id });
+
+      if (!response.status || !response.data) {
+        toast.error(response.message);
+        return;
+      }
+
+      if (response.data.length === 0) {
+        toast.info("No unaccepted sales found");
+        return;
+      }
+
+      // Create worksheet data
+      const worksheetData = [
+        ["Trade Name", "TIN Number", "Contact", "Pending Invoices"],
+        ...response.data.map((row) => [
+          row.seller_trade_name,
+          row.seller_tin_number,
+          row.seller_contact,
+          row.pending_invoice_count,
+        ]),
+      ];
+
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Unaccepted Sales");
+
+      // Set column widths
+      worksheet["!cols"] = [
+        { wch: 30 }, // Trade Name
+        { wch: 15 }, // TIN Number
+        { wch: 20 }, // Contact
+        { wch: 18 }, // Pending Invoices
+      ];
+
+      const fileName = `unaccepted_sales_${new Date().getTime()}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      toast.success(
+        `Downloaded ${response.data.length} seller(s) with pending invoices`
+      );
+    } catch (error) {
+      toast.error("Failed to download unaccepted sales");
+      console.error(error);
+    }
+  };
 
   const handleSheetChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -1621,17 +1686,31 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         />
       </div>
 
-      <Button
-        size="small"
-        block
-        type="primary"
-        onClick={() => {
-          props.setToolbarActionsOpen(false);
-          sheetRef.current?.click();
-        }}
-      >
-        Bulk Upload
-      </Button>
+      <div className="space-y-2">
+        <Button
+          size="small"
+          block
+          type="primary"
+          onClick={() => {
+            props.setToolbarActionsOpen(false);
+            sheetRef.current?.click();
+          }}
+        >
+          Bulk Upload
+        </Button>
+
+        {(dvatdata?.commodity === "MANUFACTURER" ||
+          dvatdata?.commodity === "WHOLESALER") && (
+          <Button
+            size="small"
+            block
+            type="default"
+            onClick={handleDownloadUnacceptedSales}
+          >
+            Unaccepted Sales
+          </Button>
+        )}
+      </div>
     </>
   );
 };

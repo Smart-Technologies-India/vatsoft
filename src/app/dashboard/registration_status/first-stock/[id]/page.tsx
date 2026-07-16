@@ -412,7 +412,7 @@ const RegistrationStatusFirstStockPage = () => {
               onChange={(value) => setSelectedCommodityId(value)}
               options={modalCommodityOptions.map((item) => ({
                 value: item.id,
-                label: item.product_name,
+                label: `(${item.id}) ${item.product_name}`,
               }))}
               filterOption={(input, option) =>
                 String(option?.label ?? "")
@@ -423,7 +423,7 @@ const RegistrationStatusFirstStockPage = () => {
             {selectedCommodity ? (
               <div className="mt-2 p-2 bg-gray-50 border rounded text-xs text-gray-700 space-y-1">
                 <div>
-                  <span className="font-medium">PET Type:</span>{" "}
+                  <span className="font-medium">Pack Type:</span>{" "}
                   {selectedCommodity.pack_type || "N/A"}
                 </div>
                 <div>

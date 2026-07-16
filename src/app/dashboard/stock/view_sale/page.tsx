@@ -23,7 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { encryptURLData, formateDate } from "@/utils/methods";
-import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
+import { dvat04 } from "@prisma/client";
 import {
   Button,
   Drawer,
@@ -1272,7 +1272,7 @@ const DocumentWiseDetails = () => {
                         ₹{parseFloat(record.amount).toFixed(2)}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {record.tax_percent}%
+                        {dvatdata?.compositionScheme ? "1" : record.tax_percent}%
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {parseFloat(record.vatamount).toFixed(2)}

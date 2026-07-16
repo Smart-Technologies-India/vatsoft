@@ -5,6 +5,7 @@ import {
   SaleOf,
 } from "@prisma/client";
 import { useSearchParams } from "next/navigation";
+import { S1adjustment } from "./vatcalculation";
 
 interface PercentageOutput {
   increase: string;
@@ -17,95 +18,99 @@ interface S1_1AdjustmentProps {
 }
 
 const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
-  const getGoodsReturns = (): PercentageOutput => {
-    let increase: string = "0";
-    let decrease: string = "0";
-    const output: returns_entry[] = props.returnsentrys.filter(
-      (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31 &&
-        val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
-        val.sale_of == SaleOf.GOODS_TAXABLE,
-    );
-    for (let i = 0; i < output.length; i++) {
-      increase = (
-        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
-      ).toFixed(2);
-      decrease = (
-        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
-      ).toFixed(2);
-    }
-    return {
-      increase,
-      decrease,
-    };
-  };
-  const getSaleCanceled = (): PercentageOutput => {
-    let increase: string = "0";
-    let decrease: string = "0";
-    const output: returns_entry[] = props.returnsentrys.filter(
-      (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31 &&
-        val.category_of_entry == CategoryOfEntry.SALE_CANCELLED &&
-        val.sale_of == SaleOf.GOODS_TAXABLE,
-    );
-    for (let i = 0; i < output.length; i++) {
-      increase = (
-        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
-      ).toFixed(2);
-      decrease = (
-        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
-      ).toFixed(2);
-    }
-    return {
-      increase,
-      decrease,
-    };
-  };
+  const s1adjustment = new S1adjustment(
+    props.returnsentrys,
+    parseFloat(props.lastMonthCash),
+  );
+  // const getGoodsReturns = (): PercentageOutput => {
+  //   let increase: string = "0";
+  //   let decrease: string = "0";
+  //   const output: returns_entry[] = props.returnsentrys.filter(
+  //     (val: returns_entry) =>
+  //       val.dvat_type == DvatType.DVAT_31 &&
+  //       val.category_of_entry == CategoryOfEntry.GOODS_RETURNED &&
+  //       val.sale_of == SaleOf.GOODS_TAXABLE,
+  //   );
+  //   for (let i = 0; i < output.length; i++) {
+  //     increase = (
+  //       parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+  //     ).toFixed(2);
+  //     decrease = (
+  //       parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+  //     ).toFixed(2);
+  //   }
+  //   return {
+  //     increase,
+  //     decrease,
+  //   };
+  // };
+  // const getSaleCanceled = (): PercentageOutput => {
+  //   let increase: string = "0";
+  //   let decrease: string = "0";
+  //   const output: returns_entry[] = props.returnsentrys.filter(
+  //     (val: returns_entry) =>
+  //       val.dvat_type == DvatType.DVAT_31 &&
+  //       val.category_of_entry == CategoryOfEntry.SALE_CANCELLED &&
+  //       val.sale_of == SaleOf.GOODS_TAXABLE,
+  //   );
+  //   for (let i = 0; i < output.length; i++) {
+  //     increase = (
+  //       parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+  //     ).toFixed(2);
+  //     decrease = (
+  //       parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+  //     ).toFixed(2);
+  //   }
+  //   return {
+  //     increase,
+  //     decrease,
+  //   };
+  // };
 
-  const getSalesDebitNote = (): PercentageOutput => {
-    let increase: string = "0";
-    let decrease: string = "0";
-    const output: returns_entry[] = props.returnsentrys.filter(
-      (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31 &&
-        val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
-        val.sale_of == SaleOf.GOODS_TAXABLE,
-    );
-    for (let i = 0; i < output.length; i++) {
-      increase = (
-        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
-      ).toFixed(2);
-      decrease = (
-        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
-      ).toFixed(2);
-    }
-    return {
-      increase,
-      decrease,
-    };
-  };
-  const getSalesCreditNote = (): PercentageOutput => {
-    let increase: string = "0";
-    let decrease: string = "0";
-    const output: returns_entry[] = props.returnsentrys.filter(
-      (val: returns_entry) =>
-        val.dvat_type == DvatType.DVAT_31 &&
-        val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
-        val.sale_of == SaleOf.GOODS_TAXABLE,
-    );
-    for (let i = 0; i < output.length; i++) {
-      increase = (
-        parseFloat(increase) + parseFloat(output[i].amount ?? "0")
-      ).toFixed(2);
-      decrease = (
-        parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
-      ).toFixed(2);
-    }
-    return {
-      increase,
-      decrease,
-    };
-  };
+  // const getSalesDebitNote = (): PercentageOutput => {
+  //   let increase: string = "0";
+  //   let decrease: string = "0";
+  //   const output: returns_entry[] = props.returnsentrys.filter(
+  //     (val: returns_entry) =>
+  //       val.dvat_type == DvatType.DVAT_31 &&
+  //       val.category_of_entry == CategoryOfEntry.DEBIT_NOTE &&
+  //       val.sale_of == SaleOf.GOODS_TAXABLE,
+  //   );
+  //   for (let i = 0; i < output.length; i++) {
+  //     increase = (
+  //       parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+  //     ).toFixed(2);
+  //     decrease = (
+  //       parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+  //     ).toFixed(2);
+  //   }
+  //   return {
+  //     increase,
+  //     decrease,
+  //   };
+  // };
+  // const getSalesCreditNote = (): PercentageOutput => {
+  //   let increase: string = "0";
+  //   let decrease: string = "0";
+  //   const output: returns_entry[] = props.returnsentrys.filter(
+  //     (val: returns_entry) =>
+  //       val.dvat_type == DvatType.DVAT_31 &&
+  //       val.category_of_entry == CategoryOfEntry.CREDIT_NOTE &&
+  //       val.sale_of == SaleOf.GOODS_TAXABLE,
+  //   );
+  //   for (let i = 0; i < output.length; i++) {
+  //     increase = (
+  //       parseFloat(increase) + parseFloat(output[i].amount ?? "0")
+  //     ).toFixed(2);
+  //     decrease = (
+  //       parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
+  //     ).toFixed(2);
+  //   }
+  //   return {
+  //     increase,
+  //     decrease,
+  //   };
+  // };
   const searchparam = useSearchParams();
 
   return (
@@ -136,7 +141,7 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {getGoodsReturns().decrease}
+            {s1adjustment.getGoodsReturns().decrease}
           </td>
         </tr>
         <tr className="w-full">
@@ -167,7 +172,7 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {getSaleCanceled().decrease}
+            {s1adjustment.getSaleCanceled().decrease}
           </td>
         </tr>
         <tr className="w-full">
@@ -215,7 +220,7 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {getSalesCreditNote().decrease}
+            {s1adjustment.getSalesCreditNote().decrease}
           </td>
         </tr>
         <tr className="w-full">
@@ -223,7 +228,7 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
             Other adjustments(against debit note for sales)
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {getSalesDebitNote().decrease}
+            {s1adjustment.getSalesDebitNote().decrease}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
         </tr>
@@ -232,15 +237,16 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
             Total
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {getSalesDebitNote().decrease}
+            {s1adjustment.getSalesDebitNote().decrease}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {(
+            {/* {(
               parseFloat(getGoodsReturns().decrease) +
               parseFloat(getSaleCanceled().decrease) +
               parseFloat(props.lastMonthCash) +
               parseFloat(getSalesCreditNote().decrease)
-            ).toFixed(2)}
+            ).toFixed(2)} */}
+            {s1adjustment.total()}
           </td>
         </tr>
         <tr className="w-full">
@@ -251,13 +257,14 @@ const S1_1Adjustment = (props: S1_1AdjustmentProps) => {
             S1.2 Total net Increase/(decrease)in Output Tax (A-B)
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {(
+            {/* {(
               parseFloat(getSalesDebitNote().decrease) -
               (parseFloat(getGoodsReturns().decrease) +
                 parseFloat(getSaleCanceled().decrease) +
                 parseFloat(props.lastMonthCash) +
                 parseFloat(getSalesCreditNote().decrease))
-            ).toFixed(2)}
+            ).toFixed(2)} */}
+            {s1adjustment.totalNetPayable()}
           </td>
         </tr>
       </tbody>

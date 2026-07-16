@@ -1,7 +1,7 @@
 "use client";
 
 import GetChallan, { ChallanWithReturn } from "@/action/challan/getchallan";
-import { dvat04, user } from "@prisma/client";
+import { dvat04, user, Quarter } from "@prisma/client";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -133,6 +133,17 @@ const ChallanData = () => {
 
   const isPrintMode = searchParams.get("sidebar") === "no";
 
+  const getQuarterMonths = (selectedQuarter: Quarter | undefined): string[] => {
+    const quarterMonthsMap: Record<Quarter, string[]> = {
+      QUARTER1: ["April", "May", "June"],
+      QUARTER2: ["July", "August", "September"],
+      QUARTER3: ["October", "November", "December"],
+      QUARTER4: ["January", "February", "March"],
+    };
+
+    return selectedQuarter ? quarterMonthsMap[selectedQuarter] ?? [] : [];
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -142,9 +153,18 @@ const ChallanData = () => {
 
   /* ─── PRINT / PDF LAYOUT ─────────────────────────────────── */
   if (isPrintMode) {
-    const returnPeriod = challanData?.returns_01
-      ? `${challanData.returns_01.month ?? challanData.returns_01.quarter} ${challanData.returns_01.year}`
-      : "N/A";
+    let returnPeriod = "N/A";
+
+    if (challanData?.returns_01) {
+      const isQuarterlyFiling =
+        dvat?.frequencyFilings?.toUpperCase() === "QUARTERLY";
+ if (isQuarterlyFiling && challanData.returns_01.quarter) {
+        const quarterMonths = getQuarterMonths(challanData.returns_01.quarter);
+        returnPeriod = `${quarterMonths.join(", ")} ${challanData.returns_01.year}`;
+      } else {
+        returnPeriod = `${challanData.returns_01.quarter} ${challanData.returns_01.year}`;
+      }
+    }
 
     return (
       <>
@@ -759,9 +779,18 @@ const ChallanData = () => {
                 <div>
                   <p className="text-xs text-gray-500">Return Period</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {challanData?.returns_01
-                      ? `${challanData.returns_01.month ?? challanData.returns_01.quarter}  ${challanData.returns_01.year}`
-                      : "N/A"}
+                    {challanData?.returns_01 ? (() => {
+                      const isQuarterlyFiling =
+                        dvat?.frequencyFilings?.toUpperCase() === "QUARTERLY";
+                       if (isQuarterlyFiling && challanData.returns_01.quarter) {
+                        const quarterMonths = getQuarterMonths(
+                          challanData.returns_01.quarter,
+                        );
+                        return `${quarterMonths.join(", ")} ${challanData.returns_01.year}`;
+                      } else {
+                        return `${challanData.returns_01.quarter} ${challanData.returns_01.year}`;
+                      }
+                    })() : "N/A"}
                   </p>
                 </div>
               </div>
