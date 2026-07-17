@@ -256,7 +256,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
       }
 
       if (challan.paymentstatus !== "PAID") {
-        await prisma.challan.update({
+        const paidchallan = await prisma.challan.update({
           where: { id: challan.id },
           data: {
             ...challanUpdateBase,
@@ -266,9 +266,23 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
           },
         });
 
+        await prisma.challan.updateMany({
+          where: {
+            cpin: paidchallan.cpin,
+            paymentstatus: { not: "PAID" },
+            deletedAt: null,
+            deletedById: null,
+          },
+          data: {
+            deletedAt: new Date().toISOString(),
+            deletedById: 1,
+          },
+        });
+
         // Handle refinery_sale status update for refinery VAT payments
         const refineryMarker = (challan.remark || "").toString();
-        const isRefineryVatPayment = refineryMarker.startsWith("REFINERY_SALE_VAT#");
+        const isRefineryVatPayment =
+          refineryMarker.startsWith("REFINERY_SALE_VAT#");
 
         if (isRefineryVatPayment) {
           const markerParts = refineryMarker.split("#");
@@ -276,7 +290,11 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
           const markerRefineryId = parseInt(markerParts[2] || "0", 10);
           const markerSellerTinId = parseInt(markerParts[3] || "0", 10);
 
-          if (markerInvoiceNo && markerRefineryId > 0 && markerSellerTinId > 0) {
+          if (
+            markerInvoiceNo &&
+            markerRefineryId > 0 &&
+            markerSellerTinId > 0
+          ) {
             await prisma.refinery_sale.updateMany({
               where: {
                 invoice_number: markerInvoiceNo,
@@ -346,6 +364,8 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
           data: {
             ...challanUpdateBase,
             paymentstatus: "FAILED",
+            deletedAt: new Date().toISOString(),
+            deletedById: 1,
             failure_message:
               result.failure_message ||
               result.status_message ||
@@ -398,6 +418,8 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
         data: {
           ...challanUpdateBase,
           paymentstatus: "FAILED",
+          deletedAt: new Date().toISOString(),
+          deletedById: 1,
           order_status: result.order_status || "FAILED",
           failure_message: "Payment validation failed: AMOUNT_MISMATCH",
           status_message:

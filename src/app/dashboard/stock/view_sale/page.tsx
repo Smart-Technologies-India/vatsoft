@@ -1272,7 +1272,8 @@ const DocumentWiseDetails = () => {
                         ₹{parseFloat(record.amount).toFixed(2)}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {dvatdata?.compositionScheme ? "1" : record.tax_percent}%
+                        {dvatdata?.compositionScheme ? "1" : record.tax_percent}
+                        %
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {parseFloat(record.vatamount).toFixed(2)}
@@ -1750,7 +1751,8 @@ const DocumentWiseDetails = () => {
                           Sale Actions
                         </p>
                         <div className="mt-2 flex flex-col gap-2">
-                          {dvatdata?.commodity === "OIDC" && (
+                          {(dvatdata?.commodity === "OIDC" ||
+                            [84, 542].includes(dvatdata?.id ?? 0)) && (
                             <Button
                               size="small"
                               block

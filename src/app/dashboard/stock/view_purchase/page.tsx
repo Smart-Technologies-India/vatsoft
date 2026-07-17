@@ -1533,7 +1533,8 @@ const DocumentWiseDetails = () => {
     setIsSingleAcceptLoading(true);
 
     // Convert quantity from pieces to ML (1 piece = pack_size ML)
-    const quantityInML = record.quantity * parseInt(record.commodity_master.pack_size ?? "0", 10);
+    const quantityInML =
+      record.quantity * parseInt(record.commodity_master.pack_size ?? "0", 10);
 
     const response = await AcceptSale({
       commodityid: record.commodity_master.id,
@@ -1574,7 +1575,9 @@ const DocumentWiseDetails = () => {
 
     for (const record of acceptableRecords) {
       // Convert quantity from pieces to ML (1 piece = pack_size ML)
-      const quantityInML = record.quantity * parseInt(record.commodity_master.pack_size??"0", 10);
+      const quantityInML =
+        record.quantity *
+        parseInt(record.commodity_master.pack_size ?? "0", 10);
       totalMLConverted += quantityInML;
 
       const response = await AcceptSale({
@@ -2317,7 +2320,8 @@ const DocumentWiseDetails = () => {
                           Purchase Actions
                         </p>
                         <div className="mt-2 flex flex-col gap-2">
-                          {dvatdata?.commodity === "OIDC" && (
+                          {(dvatdata?.commodity === "OIDC" ||
+                            [84, 542].includes(dvatdata?.id ?? 0)) && (
                             <Button
                               size="small"
                               block

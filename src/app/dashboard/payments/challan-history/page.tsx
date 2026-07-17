@@ -22,7 +22,6 @@ import UpdateChallanStatus from "@/action/challan/updatechallanstatus";
 import { encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
-import SearchChallan from "@/action/challan/searchchallan";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
@@ -95,8 +94,9 @@ const ChallanHistory = () => {
         dvatid: dvat.data.id,
         take: 10,
         skip: 0,
+        excludeCreatedExpired: true,
       });
-      if (challan_resposne.data && challan_resposne.data.result) {
+      if (challan_resposne.data?.result) {
         setChallanData(challan_resposne.data.result);
         setPaginatin({
           skip: challan_resposne.data.skip,
@@ -127,8 +127,9 @@ const ChallanHistory = () => {
           dvatid: dvat.data.id,
           take: 10,
           skip: 0,
+          excludeCreatedExpired: true,
         });
-        if (challan_resposne.data && challan_resposne.data.result) {
+        if (challan_resposne.data?.result) {
           setChallanData(challan_resposne.data.result);
           setPaginatin({
             skip: challan_resposne.data.skip,
@@ -151,14 +152,14 @@ const ChallanHistory = () => {
     ) {
       return toast.error("Enter cpin");
     }
-    const search_response = await SearchChallan({
-      dvatid: dvatdata?.id,
+    const search_response = await GetUserChallan({
+      dvatid: dvatdata?.id!,
       cpin: cpinRef.current?.input?.value,
-      dept: dvatdata?.selectOffice!,
       take: 10,
       skip: 0,
+      excludeCreatedExpired: true,
     });
-    if (search_response.status && search_response.data.result) {
+    if (search_response.status && search_response.data?.result) {
       setChallanData(search_response.data.result);
       setPaginatin({
         skip: search_response.data.skip,
@@ -174,15 +175,15 @@ const ChallanHistory = () => {
       return toast.error("Select state date and end date");
     }
 
-    const search_response = await SearchChallan({
-      dvatid: dvatdata?.id,
+    const search_response = await GetUserChallan({
+      dvatid: dvatdata?.id!,
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
-      dept: dvatdata?.selectOffice!,
       take: 10,
       skip: 0,
+      excludeCreatedExpired: true,
     });
-    if (search_response.status && search_response.data.result) {
+    if (search_response.status && search_response.data?.result) {
       setChallanData(search_response.data.result);
       setPaginatin({
         skip: search_response.data.skip,
@@ -203,15 +204,15 @@ const ChallanHistory = () => {
         ) {
           return toast.error("Enter cpin");
         }
-        const search_response = await SearchChallan({
-          dvatid: dvatdata?.id,
+        const search_response = await GetUserChallan({
+          dvatid: dvatdata?.id!,
           cpin: cpinRef.current?.input?.value,
-          dept: dvatdata?.selectOffice!,
           take: pagesize,
           skip: pagesize * (page - 1),
+          excludeCreatedExpired: true,
         });
 
-        if (search_response.status && search_response.data.result) {
+        if (search_response.status && search_response.data?.result) {
           setChallanData(search_response.data.result);
           setPaginatin({
             skip: search_response.data.skip,
@@ -225,16 +226,16 @@ const ChallanHistory = () => {
           return toast.error("Select state date and end date");
         }
 
-        const search_response = await SearchChallan({
-          dvatid: dvatdata?.id,
+        const search_response = await GetUserChallan({
+          dvatid: dvatdata?.id!,
           fromdate: searchDate[0]?.toDate(),
           todate: searchDate[1]?.toDate(),
-          dept: dvatdata?.selectOffice!,
           take: pagesize,
           skip: pagesize * (page - 1),
+          excludeCreatedExpired: true,
         });
 
-        if (search_response.status && search_response.data.result) {
+        if (search_response.status && search_response.data?.result) {
           setChallanData(search_response.data.result);
           setPaginatin({
             skip: search_response.data.skip,
@@ -249,8 +250,9 @@ const ChallanHistory = () => {
         dvatid: dvatdata!.id,
         take: pagesize,
         skip: pagesize * (page - 1),
+        excludeCreatedExpired: true,
       });
-      if (challan_resposne.status && challan_resposne.data.result) {
+      if (challan_resposne.status && challan_resposne.data?.result) {
         setChallanData(challan_resposne.data.result);
         setPaginatin({
           skip: challan_resposne.data.skip,
@@ -270,28 +272,7 @@ const ChallanHistory = () => {
     return Number.isFinite(expiry) && expiry >= Date.now();
   };
 
-  const isCreatedAndExpired = (challan: UserChallanWithReturn) => {
-    if (challan.paymentstatus !== "CREATED") {
-      return false;
-    }
-
-    const expiry = new Date(challan.expire_date).getTime();
-    return Number.isFinite(expiry) && expiry < Date.now();
-  };
-
-  const isZeroTotalTaxAmount = (challan: UserChallanWithReturn) => {
-    const parsedAmount = Number(
-      String(challan.total_tax_amount ?? "")
-        .replace(/,/g, "")
-        .trim(),
-    );
-
-    return Number.isFinite(parsedAmount) && parsedAmount === 0;
-  };
-
-  const visibleChallanData = challanData.filter(
-    (challan) => !isCreatedAndExpired(challan) && !isZeroTotalTaxAmount(challan),
-  );
+  const visibleChallanData = challanData;
 
   const fetchOrderStatus = async (orderNo: string) => {
     const query = new URLSearchParams();
