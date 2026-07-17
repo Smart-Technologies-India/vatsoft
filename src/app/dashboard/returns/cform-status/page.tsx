@@ -374,7 +374,7 @@ const TrackAppliation = () => {
               <Alert
                 type="info"
                 showIcon
-                message="No C-Forms Found"
+                title="No C-Forms Found"
                 description="There are no C-Form declarations available."
               />
             </div>

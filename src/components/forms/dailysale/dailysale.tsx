@@ -125,7 +125,13 @@ const DailySale = (props: DailySaleProviderProps) => {
 
     if (response.status && response.data) {
       setDvatdata(response.data);
-      setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
+      if (response.data.commodity === "OIDC") {
+        setQuantityCount("crate");
+      } else if (response.data.commodity === "RESTAURANT") {
+        setQuantityCount("ml");
+      } else {
+        setQuantityCount("pcs");
+      }
 
       const commodity_resposen = await GetUserCommodity({
         dvatid: response.data.id,
@@ -168,7 +174,13 @@ const DailySale = (props: DailySaleProviderProps) => {
 
       if (response.status && response.data) {
         setDvatdata(response.data);
-        setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
+        if (response.data.commodity === "OIDC") {
+          setQuantityCount("crate");
+        } else if (response.data.commodity === "RESTAURANT") {
+          setQuantityCount("ml");
+        } else {
+          setQuantityCount("pcs");
+        }
 
         const commodity_resposen = await GetUserCommodity({
           dvatid: response.data.id,
@@ -379,8 +391,8 @@ const DailySale = (props: DailySaleProviderProps) => {
 
     const shouldValidateMrp = davtdata?.commodity !== "WHOLESALER";
 
-    if (shouldValidateMrp && quantityCount == "pcs") {
-      // pcs
+    if (shouldValidateMrp && (quantityCount == "pcs" || quantityCount == "ml")) {
+      // pcs or ml
 
       if (davtdata?.commodity == "OIDC") {
         if (
@@ -391,6 +403,26 @@ const DailySale = (props: DailySaleProviderProps) => {
             liquoreOIDCAmount * 0.5
         ) {
           return toast.error("Sale amount can not be less than MRP.");
+        }
+      } else if (davtdata?.commodity == "RESTAURANT" && quantityCount == "ml") {
+        // For RESTAURANT in mL, compare per mL price
+        if (
+          isLiquore &&
+          commoditymaster.pack_size &&
+          Number(commoditymaster.pack_size) > 0 &&
+          commoditymaster.crate_size &&
+          Number(commoditymaster.crate_size) > 0
+        ) {
+          // liquoreDealerAmount is crate price, divide by crate_size then pack_size to get per-mL price
+          const mrpPerMl = (liquoreDealerAmount / Number(commoditymaster.crate_size) / Number(commoditymaster.pack_size)) * 0.9;
+          if (
+            (parseFloat(data.amount_unit) *
+              (100 + parseFloat(isComp ? "1" : getSelectedTaxRate()))) /
+              100 <
+              mrpPerMl
+          ) {
+            return toast.error("Sale amount can not be less than MRP.");
+          }
         }
       } else {
         if (
@@ -403,7 +435,38 @@ const DailySale = (props: DailySaleProviderProps) => {
           return toast.error("Sale amount can not be less than MRP.");
         }
       }
-    } else {
+    } else if (shouldValidateMrp) {
+      if (davtdata?.commodity == "OIDC") {
+        if (
+          isLiquore &&
+          parseFloat(data.amount_unit) < liquoreOIDCAmount * 0.5
+        ) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      } else if (davtdata?.commodity == "RESTAURANT" && quantityCount == "ml") {
+        // For RESTAURANT in mL (crate mode doesn't apply)
+        if (
+          isLiquore &&
+          commoditymaster.pack_size &&
+          Number(commoditymaster.pack_size) > 0 &&
+          commoditymaster.crate_size &&
+          Number(commoditymaster.crate_size) > 0
+        ) {
+          // liquoreDealerAmount is crate price, divide by crate_size then pack_size to get per-mL price
+          const mrpPerMl = (liquoreDealerAmount / Number(commoditymaster.crate_size) / Number(commoditymaster.pack_size)) * 0.9;
+          if (parseFloat(data.amount_unit) < mrpPerMl) {
+            return toast.error("Sale amount can not be less than MRP.");
+          }
+        }
+      } else {
+        if (
+          isLiquore &&
+          parseFloat(data.amount_unit) <
+            liquoreDealerAmount * commoditymaster.crate_size
+        ) {
+          return toast.error("Sale amount can not be less than MRP.");
+        }
+      }
     }
 
     const quantityamount =
@@ -413,7 +476,11 @@ const DailySale = (props: DailySaleProviderProps) => {
         ? quantityCount == "crate"
           ? parseInt(data.quantity) * commoditymaster.crate_size
           : parseInt(data.quantity)
-        : parseInt(data.quantity);
+        : davtdata?.commodity == "RESTAURANT" && quantityCount == "ml"
+          ? commoditymaster.pack_size && Number(commoditymaster.pack_size) > 0
+            ? Math.round((parseInt(data.quantity) / Number(commoditymaster.pack_size)) * 100) / 100
+            : parseInt(data.quantity)
+          : parseInt(data.quantity);
 
     const amount_unit: string =
       davtdata?.commodity == "OIDC" ||
@@ -424,7 +491,11 @@ const DailySale = (props: DailySaleProviderProps) => {
               2,
             )
           : data.amount_unit
-        : data.amount_unit;
+        : davtdata?.commodity == "RESTAURANT" && quantityCount == "ml"
+          ? commoditymaster.pack_size && Number(commoditymaster.pack_size) > 0
+            ? (parseFloat(data.amount_unit) * Number(commoditymaster.pack_size)).toFixed(2)
+            : data.amount_unit
+          : data.amount_unit;
 
     const date = new Date(
       new Date(data.invoice_date).toISOString().split("T")[0],
@@ -433,7 +504,7 @@ const DailySale = (props: DailySaleProviderProps) => {
 
     // Use MANUFACTURER action for MANUFACTURER commodity, otherwise use regular action
     const stock_response =
-      davtdata?.commodity === "MANUFACTURER"
+      davtdata?.commodity === "MANUFACTURER" || [821, 35].includes(davtdata?.id)
         ? await CreateDailySaleManufacturer({
             amount_unit: amount_unit,
             invoice_date: date,
@@ -531,8 +602,8 @@ const DailySale = (props: DailySaleProviderProps) => {
 
     const shouldValidateMrp = davtdata?.commodity !== "WHOLESALER";
 
-    if (shouldValidateMrp && quantityCount == "pcs") {
-      // pcs
+    if (shouldValidateMrp && (quantityCount == "pcs" || quantityCount == "ml")) {
+      // pcs or ml
 
       if (davtdata?.commodity == "OIDC") {
         if (
@@ -543,6 +614,26 @@ const DailySale = (props: DailySaleProviderProps) => {
             liquoreOIDCAmount * 0.5
         ) {
           return toast.error("Sale amount can not be less than MRP.");
+        }
+      } else if (davtdata?.commodity == "RESTAURANT" && quantityCount == "ml") {
+        // For RESTAURANT in mL, compare per mL price
+        if (
+          isLiquore &&
+          commoditymaster.pack_size &&
+          Number(commoditymaster.pack_size) > 0 &&
+          commoditymaster.crate_size &&
+          Number(commoditymaster.crate_size) > 0
+        ) {
+          // liquoreDealerAmount is crate price, divide by crate_size then pack_size to get per-mL price
+          const mrpPerMl = (liquoreDealerAmount / Number(commoditymaster.crate_size) / Number(commoditymaster.pack_size)) * 0.9;
+          if (
+            (parseFloat(data.amount_unit) *
+              (100 + parseFloat(isComp ? "1" : getSelectedTaxRate()))) /
+              100 <
+              mrpPerMl
+          ) {
+            return toast.error("Sale amount can not be less than MRP.");
+          }
         }
       } else {
         if (
@@ -563,6 +654,21 @@ const DailySale = (props: DailySaleProviderProps) => {
         ) {
           return toast.error("Sale amount can not be less than MRP.");
         }
+      } else if (davtdata?.commodity == "RESTAURANT" && quantityCount == "ml") {
+        // For RESTAURANT in mL (crate mode doesn't apply)
+        if (
+          isLiquore &&
+          commoditymaster.pack_size &&
+          Number(commoditymaster.pack_size) > 0 &&
+          commoditymaster.crate_size &&
+          Number(commoditymaster.crate_size) > 0
+        ) {
+          // liquoreDealerAmount is crate price, divide by crate_size then pack_size to get per-mL price
+          const mrpPerMl = (liquoreDealerAmount / Number(commoditymaster.crate_size) / Number(commoditymaster.pack_size)) * 0.9;
+          if (parseFloat(data.amount_unit) < mrpPerMl) {
+            return toast.error("Sale amount can not be less than MRP.");
+          }
+        }
       } else {
         if (
           isLiquore &&
@@ -581,7 +687,11 @@ const DailySale = (props: DailySaleProviderProps) => {
         ? quantityCount == "crate"
           ? parseInt(data.quantity) * commoditymaster.crate_size
           : parseInt(data.quantity)
-        : parseInt(data.quantity);
+        : davtdata?.commodity == "RESTAURANT" && quantityCount == "ml"
+          ? commoditymaster.pack_size && Number(commoditymaster.pack_size) > 0
+            ? Math.round((parseInt(data.quantity) / Number(commoditymaster.pack_size)) * 100) / 100
+            : parseInt(data.quantity)
+          : parseInt(data.quantity);
 
     const amount_unit: string =
       davtdata?.commodity == "OIDC" ||
@@ -592,7 +702,11 @@ const DailySale = (props: DailySaleProviderProps) => {
               2,
             )
           : data.amount_unit
-        : data.amount_unit;
+        : davtdata?.commodity == "RESTAURANT" && quantityCount == "ml"
+          ? commoditymaster.pack_size && Number(commoditymaster.pack_size) > 0
+            ? (parseFloat(data.amount_unit) * Number(commoditymaster.pack_size)).toFixed(2)
+            : data.amount_unit
+          : data.amount_unit;
 
     const date = new Date(
       new Date(data.invoice_date).toISOString().split("T")[0],
@@ -601,7 +715,7 @@ const DailySale = (props: DailySaleProviderProps) => {
 
     // Use MANUFACTURER action for MANUFACTURER commodity, otherwise use regular action
     const stock_response =
-      davtdata?.commodity === "MANUFACTURER"
+      davtdata?.commodity === "MANUFACTURER" || [821, 35].includes(davtdata?.id)
         ? await CreateDailySaleManufacturer({
             amount_unit: amount_unit,
             invoice_date: date,
@@ -855,11 +969,21 @@ const DailySale = (props: DailySaleProviderProps) => {
         <div className="mt-2">
           <TaxtInput<DailySaleForm>
             title={
-              davtdata?.commodity == "FUEL" ? "Quantity (Litre)" : "Quantity"
+              davtdata?.commodity == "FUEL"
+                ? "Quantity (Litre)"
+                : davtdata?.commodity == "RESTAURANT"
+                  ? "Quantity (mL)"
+                  : "Quantity"
             }
             required={true}
             name="quantity"
-            placeholder="Enter Quantity"
+            placeholder={
+              davtdata?.commodity == "FUEL"
+                ? "Enter Quantity in Litre"
+                : davtdata?.commodity == "RESTAURANT"
+                  ? "Enter Quantity in mL"
+                  : "Enter Quantity"
+            }
             onlynumber={true}
           />
         </div>
@@ -883,11 +1007,14 @@ const DailySale = (props: DailySaleProviderProps) => {
 
         {(davtdata?.commodity == "OIDC" ||
           davtdata?.commodity == "MANUFACTURER" ||
-          davtdata?.commodity == "WHOLESALER") &&
+          davtdata?.commodity == "WHOLESALER" ||
+          davtdata?.commodity == "RESTAURANT") &&
           commoditymaster != null && (
             <div className="flex mt-2 gap-2 items-center">
               <div className="p-1 rounded grow text-center bg-gray-100">
-                {commoditymaster.crate_size} Pcs/Crate
+                {davtdata?.commodity == "RESTAURANT"
+                  ? `${commoditymaster.pack_size} mL/Pack`
+                  : `${commoditymaster.crate_size} Pcs/Crate`}
               </div>
               <Radio.Group
                 size="small"
@@ -895,12 +1022,25 @@ const DailySale = (props: DailySaleProviderProps) => {
                 value={quantityCount}
                 optionType="button"
               >
-                <Radio.Button className="w-20 text-center" value="crate">
-                  Crate
-                </Radio.Button>
-                <Radio.Button className="w-20 text-center" value="pcs">
-                  Pcs
-                </Radio.Button>
+                {davtdata?.commodity == "RESTAURANT" ? (
+                  <>
+                    <Radio.Button className="w-20 text-center" value="ml">
+                      mL
+                    </Radio.Button>
+                    <Radio.Button className="w-20 text-center" value="pcs">
+                      Pack
+                    </Radio.Button>
+                  </>
+                ) : (
+                  <>
+                    <Radio.Button className="w-20 text-center" value="crate">
+                      Crate
+                    </Radio.Button>
+                    <Radio.Button className="w-20 text-center" value="pcs">
+                      Pcs
+                    </Radio.Button>
+                  </>
+                )}
               </Radio.Group>
             </div>
           )}
@@ -908,22 +1048,26 @@ const DailySale = (props: DailySaleProviderProps) => {
           <div className="mt-2">
             <TaxtInput<DailySaleForm>
               placeholder={
-                (davtdata?.commodity == "OIDC" ||
-                  davtdata?.commodity == "MANUFACTURER" ||
-                  davtdata?.commodity == "WHOLESALER") &&
-                quantityCount == "crate"
-                  ? "Enter Crate amount (Sale price including VAT)"
-                  : "Enter Net amount/unit (Sale price including VAT)"
+                davtdata?.commodity == "RESTAURANT" && quantityCount == "ml"
+                  ? "Enter mL amount (Sale price including VAT)"
+                  : (davtdata?.commodity == "OIDC" ||
+                      davtdata?.commodity == "MANUFACTURER" ||
+                      davtdata?.commodity == "WHOLESALER") &&
+                    quantityCount == "crate"
+                    ? "Enter Crate amount (Sale price including VAT)"
+                    : "Enter Net amount/unit (Sale price including VAT)"
               }
               name="amount_unit"
               required={true}
               title={
-                (davtdata?.commodity == "OIDC" ||
-                  davtdata?.commodity == "MANUFACTURER" ||
-                  davtdata?.commodity == "WHOLESALER") &&
-                quantityCount == "crate"
-                  ? "Enter Crate amount (Sale price including VAT)"
-                  : "Enter Net amount/unit (Sale price including VAT)"
+                davtdata?.commodity == "RESTAURANT" && quantityCount == "ml"
+                  ? "Enter mL amount (Sale price including VAT)"
+                  : (davtdata?.commodity == "OIDC" ||
+                      davtdata?.commodity == "MANUFACTURER" ||
+                      davtdata?.commodity == "WHOLESALER") &&
+                    quantityCount == "crate"
+                    ? "Enter Crate amount (Sale price including VAT)"
+                    : "Enter Net amount/unit (Sale price including VAT)"
               }
               numdes={true}
             />

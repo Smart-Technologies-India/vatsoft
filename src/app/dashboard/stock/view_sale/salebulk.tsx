@@ -296,7 +296,11 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     // OIDC users sell LIQUOR-typed products.
     // MANUFACTURER and WHOLESALER use their own product type
     // so the commodity lookup finds the correct crate_size for quantity conversion.
-    if (dvatdata?.commodity === "OIDC" || isManufacturerBulkUpload || dvatdata?.commodity === "RESTAURANT") {
+    if (
+      dvatdata?.commodity === "OIDC" ||
+      isManufacturerBulkUpload ||
+      dvatdata?.commodity === "RESTAURANT"
+    ) {
       return "LIQUOR";
     }
     return dvatdata?.commodity;
@@ -344,7 +348,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     const entries = tabledata.map((row) => {
       // Determine tax percent based on composition scheme
       let taxPercent: string;
-      
+
       if (dvatdata?.compositionScheme) {
         // If composition scheme is true, use 1% for all sales
         taxPercent = "1";
@@ -414,9 +418,10 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           currentChunk,
         }));
 
-        const response = isManufacturerBulkUpload
-          ? await CreateMultiDailySaleManufacturer({ entries: chunk })
-          : await CreateMultiDailySale({ entries: chunk });
+        const response =
+          isManufacturerBulkUpload || [821, 35].includes(dvatdata.id)
+            ? await CreateMultiDailySaleManufacturer({ entries: chunk })
+            : await CreateMultiDailySale({ entries: chunk });
 
         if (!response.status) {
           toast.error(response.message);
@@ -499,7 +504,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       XLSX.writeFile(workbook, fileName);
 
       toast.success(
-        `Downloaded ${response.data.length} seller(s) with pending invoices`
+        `Downloaded ${response.data.length} seller(s) with pending invoices`,
       );
     } catch (error) {
       toast.error("Failed to download unaccepted sales");
@@ -589,9 +594,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               "total_invoice_value",
             ]),
           ),
-          normalizeText(
-            readSheetField(row, ["Pcs/mL", "pcs/ml", "pcs_ml"]),
-          ),
+          normalizeText(readSheetField(row, ["Pcs/mL", "pcs/ml", "pcs_ml"])),
         ].join("|");
 
         groupedData[key] = (groupedData[key] ?? 0) + 1;
@@ -903,9 +906,9 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                         ? Number(selectedCommodity.pack_size)
                         : 1)
                     : 0
-              : Number.isFinite(parsedQuantity)
-                ? parsedQuantity
-                : 0;
+                : Number.isFinite(parsedQuantity)
+                  ? parsedQuantity
+                  : 0;
 
           if (
             commodityType === "RESTAURANT" &&
@@ -1104,9 +1107,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
           const skipMrpValidationForManufacturerTypes =
             commodityType === "MANUFACTURER" &&
-            ["FFORM", "IFORM", "H_EXPORT", "E1", "EXPORT"].includes(
-              saleType,
-            );
+            ["FFORM", "IFORM", "H_EXPORT", "E1", "EXPORT"].includes(saleType);
 
           if (
             !skipMrpValidationForManufacturerTypes &&
@@ -1131,8 +1132,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                 ? normalizedQuantity / packSize
                 : normalizedQuantity;
 
-            const minUnitPrice =
-             mrp / crateSize;
+            const minUnitPrice = mrp / crateSize;
             const pricePerUnit = total_invoice_value / comparisonQuantity;
 
             if (
@@ -1430,7 +1430,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       ? 13
       : dvatdata?.commodity === "RESTAURANT"
         ? 12
-      : 11;
+        : 11;
 
   return (
     <>
@@ -1615,7 +1615,11 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                           {val.quantity}
                         </TableCell>
                         <TableCell className="p-2 border text-center">
-                          {val.pcs_ml === null ? "-" : val.pcs_ml ? "true" : "false"}
+                          {val.pcs_ml === null
+                            ? "-"
+                            : val.pcs_ml
+                              ? "true"
+                              : "false"}
                         </TableCell>
                       </>
                     ) : (

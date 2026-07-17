@@ -134,6 +134,12 @@ const CFROM = () => {
             margin: 5mm 5mm 5mm 5mm;
           }
           @media print {
+            .no-print {
+              display: none !important;
+            }
+            .hidden-print {
+              display: none !important;
+            }
             table {
               page-break-inside: avoid;
             }
@@ -151,7 +157,7 @@ const CFROM = () => {
       </style>
       <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
         {/* Header Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4 no-print">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">

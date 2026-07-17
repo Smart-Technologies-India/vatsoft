@@ -117,15 +117,8 @@ const CreateDailySale = async (
       },
     });
 
-    // if (isdata) {
-    //   if (isdata.invoice_date.getMonth() != payload.invoice_date.getMonth()) {
-    //     return createResponse({
-    //       message:
-    //         "Kindly convert pending invoice from daily purchase to DVAT 31 A",
-    //       functionname,
-    //     });
-    //   }
-    // }
+
+
 
     const result = await prisma.$transaction(async (prisma) => {
       const purchaser_response = await prisma.tin_number_master.findFirst({
