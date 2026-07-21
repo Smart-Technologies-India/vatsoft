@@ -126,7 +126,13 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     if (response.status && response.data) {
       setDvatdata(response.data);
 
-      setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
+      if (response.data.commodity === "OIDC") {
+        setQuantityCount("crate");
+      } else if (response.data.commodity === "RESTAURANT") {
+        setQuantityCount("ml");
+      } else {
+        setQuantityCount("pcs");
+      }
       const commodity_resposen = await AllCommodityMaster({});
       if (commodity_resposen.status && commodity_resposen.data) {
         setCommodityMaster(
@@ -161,7 +167,13 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
       if (response.status && response.data) {
         setDvatdata(response.data);
 
-        setQuantityCount(response.data.commodity == "OIDC" ? "crate" : "pcs");
+        if (response.data.commodity === "OIDC") {
+          setQuantityCount("crate");
+        } else if (response.data.commodity === "RESTAURANT") {
+          setQuantityCount("ml");
+        } else {
+          setQuantityCount("pcs");
+        }
         const commodity_resposen = await AllCommodityMaster({});
         if (commodity_resposen.status && commodity_resposen.data) {
           setCommodityMaster(

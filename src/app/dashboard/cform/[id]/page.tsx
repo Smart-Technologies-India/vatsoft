@@ -410,18 +410,21 @@ const CFROM = () => {
                   <table border={1} className="w-5/6 mx-auto mt-6">
                     <tbody className="w-full">
                       <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Office of Issue
                         </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
-                          Dept. of VAT – Dadra and Nagar Haveli
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
+                          Dept. of VAT -{" "}
+                          {cformdata?.office_of_issue == "Dadra_Nagar_Haveli"
+                            ? "Dadra and Nagar Haveli"
+                            : cformdata?.office_of_issue}
                         </td>
                       </tr>
                       <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Date of Issue :
                         </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           {formateDate(new Date()).replaceAll("-", "/")}
                         </td>
                       </tr>
@@ -447,10 +450,10 @@ const CFROM = () => {
                         className="w-full"
                         style={{ pageBreakInside: "avoid" }}
                       >
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
-                          SI.No
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                          No.
                         </td>
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[18%]">
                           Inv. No
                         </td>
                         <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
@@ -475,10 +478,10 @@ const CFROM = () => {
                           className="w-full"
                           style={{ pageBreakInside: "avoid" }}
                         >
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
                             {pageIndex * PAGE_SIZE + index + 1}
                           </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[18%]">
                             {val.invoice_number}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
@@ -737,18 +740,21 @@ const CFROM = () => {
                   <table border={1} className="w-5/6 mx-auto mt-6">
                     <tbody className="w-full">
                       <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Office of Issue
                         </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
-                          Dept. of VAT – Dadra and Nagar Haveli
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
+                          Dept. of VAT -{" "}
+                          {cformdata?.office_of_issue == "Dadra_Nagar_Haveli"
+                            ? "Dadra and Nagar Haveli"
+                            : cformdata?.office_of_issue}
                         </td>
                       </tr>
                       <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Date of Issue :
                         </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           {formateDate(new Date()).replaceAll("-", "/")}
                         </td>
                       </tr>
@@ -774,10 +780,10 @@ const CFROM = () => {
                         className="w-full"
                         style={{ pageBreakInside: "avoid" }}
                       >
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
-                          SI.No
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                          No.
                         </td>
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[18%]">
                           Inv. No
                         </td>
                         <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
@@ -802,10 +808,10 @@ const CFROM = () => {
                           className="w-full"
                           style={{ pageBreakInside: "avoid" }}
                         >
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
                             {pageIndex * PAGE_SIZE + index + 1}
                           </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[18%]">
                             {val.invoice_number}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
@@ -1062,18 +1068,21 @@ const CFROM = () => {
                   <table border={1} className="w-5/6 mx-auto mt-6">
                     <tbody className="w-full">
                       <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Office of Issue
                         </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
-                          Dept. of VAT – Dadra and Nagar Haveli
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
+                          Dept. of VAT -{" "}
+                          {cformdata?.office_of_issue == "Dadra_Nagar_Haveli"
+                            ? "Dadra and Nagar Haveli"
+                            : cformdata?.office_of_issue}
                         </td>
                       </tr>
                       <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           Date of Issue :
                         </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%]">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
                           {formateDate(new Date()).replaceAll("-", "/")}
                         </td>
                       </tr>
@@ -1099,10 +1108,10 @@ const CFROM = () => {
                         className="w-full"
                         style={{ pageBreakInside: "avoid" }}
                       >
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
-                          SI.No
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                          No.
                         </td>
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[18%]">
                           Inv. No
                         </td>
                         <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
@@ -1127,10 +1136,10 @@ const CFROM = () => {
                           className="w-full"
                           style={{ pageBreakInside: "avoid" }}
                         >
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
                             {pageIndex * PAGE_SIZE + index + 1}
                           </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[18 %]">
                             {val.invoice_number}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
@@ -1174,7 +1183,10 @@ const CFROM = () => {
                     Office of Issue
                   </td>
                   <td className="px-2 leading-4 py-1 text-sm w-[50%]">
-                    Dept. of VAT – Dadra and Nagar Haveli
+                    Dept. of VAT -{" "}
+                          {cformdata?.office_of_issue == "Dadra_Nagar_Haveli"
+                            ? "Dadra and Nagar Haveli"
+                            : cformdata?.office_of_issue}
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -1201,7 +1213,7 @@ const CFROM = () => {
               <tbody className="w-full">
                 <tr className="w-full">
                   <td className="px-2 leading-4 py-1 border border-black  text-sm w-[14%]">
-                    SI.No
+                    No.
                   </td>
                   <td className="px-2 leading-4 py-1 border border-black text-sm w-[14%]">
                     Inv. No
