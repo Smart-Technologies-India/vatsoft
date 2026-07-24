@@ -33,9 +33,19 @@ export const payamount = async (request, response) => {
         include: {
           dvat: {
             select: {
+              tinNumber: true,
               tradename: true,
               email: true,
               contact_one: true,
+              selectOffice: true,
+              frequencyFilings: true,
+            },
+          },
+          returns_01: {
+            select: {
+              year: true,
+              quarter: true,
+              month: true,
             },
           },
         },
@@ -76,9 +86,37 @@ export const payamount = async (request, response) => {
   const billingEmail = challan.dvat?.email || "support@dddnhvat.com";
   const billingMobile = (challan.dvat?.contact_one || "").replace(/\D/g, "").slice(-10) || "0000000000";
 
+  const tinnumber = challan.dvat?.tinNumber || "0000000000";
+  const tradename = challan.dvat?.tradename || "VAT Dealer";
+  const office = challan.dvat?.selectOffice || "";
+  
+  // Get return period
+  const returnPeriod = challan.returns_01 ? (() => {
+    const quarterMap = {
+      QUARTER1: "April-June",
+      QUARTER2: "July-September",
+      QUARTER3: "October-December",
+      QUARTER4: "January-March",
+    };
+    
+    if (challan.dvat?.frequencyFilings === "QUARTERLY") {
+      const quarterStr = quarterMap[challan.returns_01.quarter] || challan.returns_01.quarter;
+      return `${quarterStr} ${challan.returns_01.year}`;
+    } else {
+      const monthStr = challan.returns_01.month || "";
+      return monthStr ? `${monthStr} ${challan.returns_01.year}` : "Period Not Available";
+    }
+  })() : "Period Not Available";
+  
+  // merchant_param1: purpose (challan_id_dvat_id_return_id_payment_type)
+  // merchant_param2: tin number
+  // merchant_param3: tradename 
+  // merchant_param4: office
+  // merchant_param5: return period (april-june 2026 / may 2026) 
+
   response.writeHead(200, { "Content-Type": "text/html" });
   response.write(
-    `<html><head><style>@import url(https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap);body{font-family:Roboto,sans-serif}</style></head><body><div style="width:100%;height:100vh;background-color:#eee;display:grid;place-items:center"><h1>LOADING...</h1></div><form method="POST" name="customerData" action="/ccavRequestHandler"><table width="40%" height="100" align="center"><input type="hidden" name="merchant_id" id="merchant_id" value="${escapeHtml(process.env.MERCHANT_ID)}"> <input type="hidden" name="billing_country" value="India"> <input type="hidden" name="billing_state" value="DN"> <input type="hidden" name="cancel_url" value="https://dddnhvat.com/ccavResponseHandler"> <input type="hidden" name="redirect_url" value="https://dddnhvat.com/ccavResponseHandler"> <input type="hidden" name="language" id="language" value="EN"> <input type="hidden" name="billing_zip" value="396220"> <input type="hidden" name="order_id" value="${escapeHtml(activeIntent.gateway_order_id || "")}" id="order_id"> <input type="hidden" name="currency" value="INR"> <input type="hidden" name="amount" value="${escapeHtml(activeIntent.expected_amount || "0")}" id="amount"> <input type="hidden" name="merchant_param1" value="${escapeHtml(purpose)}" id="purpose"> <input type="hidden" name="billing_name" value="${escapeHtml(billingName)}" id="name"> <input type="hidden" name="billing_email" value="${escapeHtml(billingEmail)}" id="email"> <input type="hidden" name="billing_tel" value="${escapeHtml(billingMobile)}" id="mobile"> <input type="hidden" name="billing_address" value="Silvassa"> <input type="hidden" name="billing_city" value="Silvassa"><tr style="visibility:hidden"><td></td><td><input type="submit" value="Checkout" id="submit"></td></tr></table></form><script>window.addEventListener("load", function(){setTimeout(function(){document.getElementById("submit").click();}, 500);});</script></body></html>`,
+    `<html><head><style>@import url(https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap);body{font-family:Roboto,sans-serif}</style></head><body><div style="width:100%;height:100vh;background-color:#eee;display:grid;place-items:center"><h1>LOADING...</h1></div><form method="POST" name="customerData" action="/ccavRequestHandler"><table width="40%" height="100" align="center"><input type="hidden" name="merchant_id" id="merchant_id" value="${escapeHtml(process.env.MERCHANT_ID)}"> <input type="hidden" name="billing_country" value="India"> <input type="hidden" name="billing_state" value="DN"> <input type="hidden" name="cancel_url" value="https://dddnhvat.com/ccavResponseHandler"> <input type="hidden" name="redirect_url" value="https://dddnhvat.com/ccavResponseHandler"> <input type="hidden" name="language" id="language" value="EN"> <input type="hidden" name="billing_zip" value="396220"> <input type="hidden" name="order_id" value="${escapeHtml(activeIntent.gateway_order_id || "")}" id="order_id"> <input type="hidden" name="currency" value="INR"> <input type="hidden" name="amount" value="${escapeHtml(activeIntent.expected_amount || "0")}" id="amount"> <input type="hidden" name="merchant_param1" value="${escapeHtml(purpose)}" id="purpose"> <input type="hidden" name="merchant_param2" value="${escapeHtml(tinnumber)}" id="tinnumber"> <input type="hidden" name="merchant_param3" value="${escapeHtml(tradename)}" id="tradename"> <input type="hidden" name="merchant_param4" value="${escapeHtml(office)}" id="office"> <input type="hidden" name="merchant_param5" value="${escapeHtml(returnPeriod)}" id="returnPeriod"> <input type="hidden" name="billing_name" value="${escapeHtml(billingName)}" id="name"> <input type="hidden" name="billing_email" value="${escapeHtml(billingEmail)}" id="email"> <input type="hidden" name="billing_tel" value="${escapeHtml(billingMobile)}" id="mobile"> <input type="hidden" name="billing_address" value="Silvassa"> <input type="hidden" name="billing_city" value="Silvassa"><tr style="visibility:hidden"><td></td><td><input type="submit" value="Checkout" id="submit"></td></tr></table></form><script>window.addEventListener("load", function(){setTimeout(function(){document.getElementById("submit").click();}, 500);});</script></body></html>`,
   );
   response.end();
 };

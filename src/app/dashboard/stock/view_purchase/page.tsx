@@ -1318,11 +1318,16 @@ const DocumentWiseDetails = () => {
         currentInvoice: record.invoice_number,
       }));
 
+      // Convert quantity from pieces to ML for restaurant commodity (1 piece = pack_size ML)
+      const quantityToUse = isRestaurantCommodity
+        ? record.quantity * parseInt(record.commodity_master.pack_size ?? "0", 10)
+        : record.quantity;
+
       const response = await AcceptSale({
         commodityid: record.commodity_master.id,
         createdById: userid,
         dvatid: dvatdata.id,
-        quantity: record.quantity,
+        quantity: quantityToUse,
         puchaseid: record.id,
         urn: record.urn_number ?? "",
       });

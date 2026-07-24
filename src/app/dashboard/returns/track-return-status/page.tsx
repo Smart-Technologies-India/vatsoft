@@ -242,6 +242,49 @@ const TrackAppliation = () => {
     await fetchPaymentData(0, 10);
   };
 
+  const getFilteredPaymentData = (): returns_01[] => {
+    // Group by ARN (rr_number)
+    const grouped = new Map<string, returns_01[]>();
+    
+    for (const payment of paymentData) {
+      const arn = payment.rr_number || "";
+      if (!grouped.has(arn)) {
+        grouped.set(arn, []);
+      }
+      grouped.get(arn)!.push(payment);
+    }
+
+    // Filter based on quarterly vs monthly
+    const filtered: returns_01[] = [];
+    
+    for (const [_arn, group] of grouped.entries()) {
+      if (group.length > 1) {
+        // Multiple records with same ARN = Quarterly filing
+        // Sort by month and keep only the last month
+        const quarterMonthMap: Record<string, number> = {
+          "January": 1, "February": 2, "March": 3,
+          "April": 4, "May": 5, "June": 6,
+          "July": 7, "August": 8, "September": 9,
+          "October": 10, "November": 11, "December": 12,
+        };
+        
+        const quarterEndMonths = { "Q1": 6, "Q2": 9, "Q3": 12, "Q4": 3 };
+        const lastGroup = group.sort((a, b) => {
+          const monthA = quarterMonthMap[a.month!] || 0;
+          const monthB = quarterMonthMap[b.month!] || 0;
+          return monthB - monthA;
+        })[0];
+        
+        filtered.push(lastGroup);
+      } else {
+        // Single record = Monthly filing, show it
+        filtered.push(group[0]);
+      }
+    }
+    
+    return filtered;
+  };
+
   const onChangePageCount = async (page: number, pagesize: number) => {
     await fetchPaymentData(pagesize * (page - 1), pagesize);
   };
@@ -464,7 +507,7 @@ const TrackAppliation = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paymentData.map((val: returns_01, index: number) => {
+              {getFilteredPaymentData().map((val: returns_01, index: number) => {
                 return (
                   <TableRow key={index} className="hover:bg-blue-50 transition-colors">
                     <TableCell className="border text-center p-3">

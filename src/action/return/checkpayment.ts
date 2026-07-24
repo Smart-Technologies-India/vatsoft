@@ -25,7 +25,6 @@ const CheckPayment = async (
       } as any;
     }
 
-    console.log("CheckPayment payload", typeof payload.id);
     const isExist = await prisma.returns_01.findFirst({
       where: {
         id: payload.id,

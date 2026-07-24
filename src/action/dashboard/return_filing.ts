@@ -73,8 +73,8 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
             const year = month.year().toString();
             const monthName = month.format("MMMM");
 
-            // Determine the due date based on the compositionScheme
-            const dueDate = dvat.compositionScheme
+            // Determine the due date based on the frequencyFilings
+            const dueDate = dvat.frequencyFilings === "QUARTERLY"
               ? GetCompDueDate(year, monthName).toDate()
               : month.add(1, "month").date(due_date_of_month).toDate();
 

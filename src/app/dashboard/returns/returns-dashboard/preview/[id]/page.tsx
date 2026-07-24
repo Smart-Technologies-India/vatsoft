@@ -440,9 +440,19 @@ const Dvat16ReturnPreview = () => {
         : [return01];
 
     try {
+      // Determine the last month of the quarter
+      const effectiveQuarter = getQuarterForMonth(return01.month ?? "");
+      const quarterlyFilingMonths = return01.dvat04?.frequencyFilings === "QUARTERLY" && effectiveQuarter
+        ? getQuarterMonths(effectiveQuarter)
+        : [];
+      const lastMonthOfQuarter = quarterlyFilingMonths[quarterlyFilingMonths.length - 1];
+
       for (let i = 0; i < returnsToUpdate.length; i++) {
         const returnToUpdate = returnsToUpdate[i];
-        const isLastReturn = i === returnsToUpdate.length - 1;
+        // Check if this return's month is the actual last month of the quarter
+        const isLastReturn = return01.dvat04?.frequencyFilings === "QUARTERLY"
+          ? returnToUpdate.month === lastMonthOfQuarter
+          : true;
 
         // For quarterly: use 0 values for first two returns, actual values for last return
         // For monthly: always use actual values
@@ -484,6 +494,23 @@ const Dvat16ReturnPreview = () => {
             vatamount: submitVat,
             interestamount: submitInterest,
             totaltaxamount: submitTotal,
+          });
+
+          if (!response.status) {
+            toast.error(response.message);
+            setPaymentSubmitBox(false);
+            return;
+          }
+        }else{
+           const response = await AddPaymentSubmit({
+            id: returnToUpdate.id,
+            rr_number: rrNumber,
+            pending_payment: "0",
+            pending_cash: "0",
+            penalty: "0",
+            vatamount: "0",
+            interestamount: "0",
+            totaltaxamount: "0",
           });
 
           if (!response.status) {
