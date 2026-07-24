@@ -340,7 +340,7 @@ const AddPaymentSubmit = async (
       const flatData = Object.values(groupedData).flatMap((group) =>
         group.entries.map((entry) => ({
           ...entry,
-          amount: group.totalAmount.toString(), // Overwrite or add the total amount
+          amount: group.totalAmount, // Overwrite or add the total amount
         })),
       );
 
