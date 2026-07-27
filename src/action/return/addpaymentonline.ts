@@ -381,7 +381,7 @@ const AddPaymentOnline = async (
               date_of_issue: new Date(
                 dates.toDate.split("-").reverse().join("-"),
               ),
-              valid_date: isExist.dvat04.certificateDate!,
+              valid_date: isExist.dvat04.certificateDate ?? new Date(),
               sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial),
               seller_address: val.seller_tin_number.state ?? "",
               seller_name: val.seller_tin_number.name_of_dealer ?? "",

@@ -53,15 +53,22 @@ const ReversePurchaseAccept = async (
           deletedAt: null,
           status: "ACTIVE",
         },
+        include: {
+          commodity_master: true,
+        },
       });
 
       if (!stockRow) {
         throw new Error("Stock row not found for this commodity.");
       }
 
-      if (stockRow.quantity < purchase.quantity) {
+      const packSize = parseFloat(stockRow.commodity_master?.pack_size || "1");
+      const requiredPcs = Math.ceil(purchase.quantity / packSize);
+
+      if (stockRow.quantity < requiredPcs) {
+        const availableQuantity = stockRow.quantity * packSize;
         throw new Error(
-          `Insufficient stock to reverse. Available: ${stockRow.quantity}, Required: ${purchase.quantity}.`,
+          `Insufficient stock to reverse. Available: ${availableQuantity}, Required: ${purchase.quantity}.`,
         );
       }
 
@@ -70,7 +77,7 @@ const ReversePurchaseAccept = async (
           id: stockRow.id,
         },
         data: {
-          quantity: stockRow.quantity - purchase.quantity,
+          quantity: stockRow.quantity - requiredPcs,
           updatedById: payload.updatedById,
         },
       });

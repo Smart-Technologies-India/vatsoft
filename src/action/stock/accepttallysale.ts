@@ -66,10 +66,16 @@ const AcceptTallySale = async (
         dvat04Id: payload.dvatid,
         commodity_masterId: { in: commodityIds },
       },
+      include: {
+        commodity_master: true,
+      },
     });
 
     const availableByCommodity = new Map<number, number>();
+    const packSizeByCommodity = new Map<number, number>();
     for (const row of stockRows) {
+      const packSize = parseFloat(row.commodity_master?.pack_size || "1");
+      packSizeByCommodity.set(row.commodity_masterId, packSize);
       availableByCommodity.set(
         row.commodity_masterId,
         (availableByCommodity.get(row.commodity_masterId) ?? 0) + row.quantity,
@@ -78,12 +84,14 @@ const AcceptTallySale = async (
 
     for (const record of records) {
       const required = requiredByCommodity.get(record.commodity_masterId) ?? 0;
-      const available =
-        availableByCommodity.get(record.commodity_masterId) ?? 0;
+      const availablePcs = availableByCommodity.get(record.commodity_masterId) ?? 0;
+      const packSize = packSizeByCommodity.get(record.commodity_masterId) ?? 1;
+      const requiredPcs = Math.ceil(required / packSize);
 
-      if (required > available) {
+      if (requiredPcs > availablePcs) {
+        const availableQuantity = availablePcs * packSize;
         return createResponse({
-          message: `Insufficient stock for "${record.commodity_master.product_name}". Available: ${available}, Required: ${required}.`,
+          message: `Insufficient stock for "${record.commodity_master.product_name}". Available: ${availableQuantity}, Required: ${required}.`,
           functionname,
         });
       }

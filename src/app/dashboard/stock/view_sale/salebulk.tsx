@@ -1246,9 +1246,11 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         });
         if (stockResponse.status && stockResponse.data?.result) {
           const stockMap: { [commodityId: number]: number } = {};
+          const packSizeMap: { [commodityId: number]: number } = {};
           for (const s of stockResponse.data.result) {
             stockMap[s.commodity_masterId] =
               (stockMap[s.commodity_masterId] ?? 0) + s.quantity;
+            packSizeMap[s.commodity_masterId] = parseFloat(s.commodity_master?.pack_size || "1");
           }
 
           // Sum quantities per item_code across rows with valid item codes
@@ -1262,15 +1264,19 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
           parsedRows.forEach((row) => {
             if (row.item_code > 0) {
-              const available = stockMap[row.item_code] ?? 0;
+              const availablePcs = stockMap[row.item_code] ?? 0;
+              const packSize = packSizeMap[row.item_code] ?? 1;
               const totalRequested = uploadQuantityMap[row.item_code] ?? 0;
-              if (totalRequested > available) {
+              const requiredPcs = Math.ceil(totalRequested / packSize);
+              
+              if (requiredPcs > availablePcs) {
+                const availableQuantity = availablePcs * packSize;
                 if (!row.errorname.includes("* Insufficient stock")) {
                   row.error = true;
                   row.errorname = row.errorname
                     ? row.errorname +
-                      `\n* Insufficient stock (available: ${available})`
-                    : `* Insufficient stock (available: ${available})`;
+                      `\n* Insufficient stock (available: ${availableQuantity})`
+                    : `* Insufficient stock (available: ${availableQuantity})`;
                 }
               }
             }

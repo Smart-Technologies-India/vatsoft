@@ -45,11 +45,6 @@ import {
   TheBalance,
 } from "@/components/dvatreturn/vatcalculation";
 
-interface PercentageOutput {
-  increase: string;
-  decrease: string;
-}
-
 const Dvat16ReturnPreview = () => {
   const router = useRouter();
 
@@ -263,6 +258,7 @@ const Dvat16ReturnPreview = () => {
 
           // Reset to empty and rebuild with all quarter months in order
           allQuarterlyReturns = [];
+          mergedEntries = [];
 
           quarterResponses.forEach((quarterResponse: any) => {
             if (quarterResponse.status && quarterResponse.data) {

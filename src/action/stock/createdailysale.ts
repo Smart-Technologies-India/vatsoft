@@ -194,15 +194,23 @@ const CreateDailySale = async (
           dvat04Id: daily_sale_response.dvat04Id,
           commodity_masterId: daily_sale_response.commodity_masterId,
         },
+        include: {
+          commodity_master: true,
+        },
       });
 
       if (!isexist) {
         throw new Error("Stock does not exist.");
       }
 
-      if (payload.quantity > isexist.quantity) {
+      // Convert requested quantity to pcs using pack_size
+      const packSize = parseFloat(isexist.commodity_master?.pack_size || "1");
+      const quantityInPcs = Math.ceil(payload.quantity / packSize);
+
+      if (quantityInPcs > isexist.quantity) {
+        const availableQuantity = isexist.quantity * packSize;
         throw new Error(
-          `Insufficient stock. You requested ${payload.quantity}, but only ${isexist.quantity} is available.`,
+          `Insufficient stock. You requested ${payload.quantity}, but only ${availableQuantity} is available.`,
         );
       }
 
@@ -211,7 +219,7 @@ const CreateDailySale = async (
           id: isexist.id,
         },
         data: {
-          quantity: isexist.quantity - payload.quantity,
+          quantity: isexist.quantity - quantityInPcs,
         },
       });
 
