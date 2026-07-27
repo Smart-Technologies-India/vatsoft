@@ -612,27 +612,27 @@ export class InterState {
 
   total_dvat_30_A = (): number => {
     return (
-      this.get10_1(DvatType.DVAT_30_A).decrease +
-      this.get10_2(DvatType.DVAT_30_A).decrease +
-      this.get10_3(DvatType.DVAT_30_A).decrease +
-      this.get10_4(DvatType.DVAT_30_A).decrease +
-      this.get10_6(DvatType.DVAT_30_A).decrease +
-      this.get10_7(DvatType.DVAT_30_A).decrease +
-      this.get10_8(DvatType.DVAT_30_A).decrease +
-      this.get10_6_1(DvatType.DVAT_30_A).decrease
+      this.get10_1(DvatType.DVAT_30_A).increase +
+      this.get10_2(DvatType.DVAT_30_A).increase +
+      this.get10_3(DvatType.DVAT_30_A).increase +
+      this.get10_4(DvatType.DVAT_30_A).increase +
+      this.get10_6(DvatType.DVAT_30_A).increase +
+      this.get10_7(DvatType.DVAT_30_A).increase +
+      this.get10_8(DvatType.DVAT_30_A).increase +
+      this.get10_6_1(DvatType.DVAT_30_A).increase
     );
   };
 
   total_dvat_31_A = (): number => {
     return (
-      this.get10_1(DvatType.DVAT_31_A).decrease +
-      this.get10_2(DvatType.DVAT_31_A).decrease +
-      this.get10_3(DvatType.DVAT_31_A).decrease +
-      this.get10_4(DvatType.DVAT_31_A).decrease +
-      this.get10_6(DvatType.DVAT_31_A).decrease +
-      this.get10_7(DvatType.DVAT_31_A).decrease +
-      this.get10_8(DvatType.DVAT_31_A).decrease +
-      this.get10_6_1(DvatType.DVAT_31_A).decrease
+      this.get10_1(DvatType.DVAT_31_A).increase +
+      this.get10_2(DvatType.DVAT_31_A).increase +
+      this.get10_3(DvatType.DVAT_31_A).increase +
+      this.get10_4(DvatType.DVAT_31_A).increase +
+      this.get10_6(DvatType.DVAT_31_A).increase +
+      this.get10_7(DvatType.DVAT_31_A).increase +
+      this.get10_8(DvatType.DVAT_31_A).increase +
+      this.get10_6_1(DvatType.DVAT_31_A).increase
     );
   };
 }

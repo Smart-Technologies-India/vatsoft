@@ -6,7 +6,6 @@ import {
   NaturePurchaseOption,
   returns_entry,
 } from "@prisma/client";
-import { useSearchParams } from "next/navigation";
 import { R5Turnover } from "./vatcalculation";
 
 interface PercentageOutput {
@@ -24,78 +23,6 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
     props.returnsentrys,
     parseFloat(props.lastMonthDue),
   );
-  // const get5_1 = (): PercentageOutput => {
-  //   let increase: string = "0";
-  //   let decrease: string = "0";
-  //   const output: returns_entry[] = props.returnsentrys.filter(
-  //     (val: returns_entry) =>
-  //       val.dvat_type == DvatType.DVAT_30 &&
-  //       val.category_of_entry == CategoryOfEntry.INVOICE &&
-  //       val.nature_purchase == NaturePurchase.CAPITAL_GOODS &&
-  //       val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-  //       val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
-  //   );
-  //   for (let i = 0; i < output.length; i++) {
-  //     increase = (
-  //       parseFloat(increase) + parseFloat(output[i].amount ?? "0")
-  //     ).toFixed(2);
-  //     decrease = (
-  //       parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
-  //     ).toFixed(2);
-  //   }
-  //   return {
-  //     increase,
-  //     decrease,
-  //   };
-  // };
-  // const get5_2 = (): PercentageOutput => {
-  //   let increase: string = "0";
-  //   let decrease: string = "0";
-  //   const output: returns_entry[] = props.returnsentrys.filter(
-  //     (val: returns_entry) =>
-  //       val.dvat_type == DvatType.DVAT_30 &&
-  //       val.category_of_entry == CategoryOfEntry.INVOICE &&
-  //       val.nature_purchase == NaturePurchase.OTHER_GOODS &&
-  //       val.nature_purchase_option == NaturePurchaseOption.REGISTER_DEALERS &&
-  //       val.input_tax_credit == InputTaxCredit.ITC_ELIGIBLE,
-  //   );
-  //   for (let i = 0; i < output.length; i++) {
-  //     increase = (
-  //       parseFloat(increase) + parseFloat(output[i].amount ?? "0")
-  //     ).toFixed(2);
-  //     decrease = (
-  //       parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
-  //     ).toFixed(2);
-  //   }
-  //   return {
-  //     increase,
-  //     decrease,
-  //   };
-  // };
-  // const get5_3 = (): PercentageOutput => {
-  //   let increase: string = "0";
-  //   let decrease: string = "0";
-  //   const output: returns_entry[] = props.returnsentrys.filter(
-  //     (val: returns_entry) =>
-  //       val.dvat_type == DvatType.DVAT_30 &&
-  //       val.category_of_entry == CategoryOfEntry.INVOICE &&
-  //       (val.nature_purchase == NaturePurchase.OTHER_GOODS ||
-  //         val.nature_purchase == NaturePurchase.CAPITAL_GOODS) &&
-  //       val.input_tax_credit == InputTaxCredit.ITC_NOT_ELIGIBLE,
-  //   );
-  //   for (let i = 0; i < output.length; i++) {
-  //     increase = (
-  //       parseFloat(increase) + parseFloat(output[i].amount ?? "0")
-  //     ).toFixed(2);
-  //     decrease = (
-  //       parseFloat(decrease) + parseFloat(output[i].vatamount ?? "0")
-  //     ).toFixed(2);
-  //   }
-  //   return {
-  //     increase,
-  //     decrease,
-  //   };
-  // };
 
   const getCreditNote = (): PercentageOutput => {
     let increase: string = "0";

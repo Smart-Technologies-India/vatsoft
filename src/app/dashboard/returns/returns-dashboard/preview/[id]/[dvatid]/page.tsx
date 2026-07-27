@@ -10,17 +10,13 @@ import {
 } from "@/utils/methods";
 
 import {
-  CategoryOfEntry,
   challan,
   dvat04,
   DvatType,
-  InputTaxCredit,
-  NaturePurchase,
-  NaturePurchaseOption,
+  Quarter,
   registration,
   returns_01,
   returns_entry,
-  SaleOf,
   SelectOffice,
   user,
 } from "@prisma/client";
@@ -28,9 +24,6 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button, Modal } from "antd";
 import { toast } from "react-toastify";
-import CheckPayment from "@/action/return/checkpayment";
-import AddSubmitPayment from "@/action/return/addsubmitpayment";
-import CheckLastPayment from "@/action/return/checklastpayment";
 import GetUser from "@/action/user/getuser";
 import getDepartmentPdfReturn from "@/action/return/getdepartmentpdfreturn";
 import getPdfReturnDownload from "@/action/return/getpdfreturndownload";
@@ -73,14 +66,47 @@ const Dvat16ReturnPreview = () => {
 
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
   const [paidChallans, setPaidChallans] = useState<challan[]>([]);
-  // const [payment, setPayment] = useState<boolean>(false);
-  // const [paymentSubmitBox, setPaymentSubmitBox] = useState<boolean>(false);
   const searchparam = useSearchParams();
   const [user, setUser] = useState<user | null>();
-  // const [isAllNil, setAllNil] = useState<boolean>(false);
-  // const [lateFees, setLateFees] = useState<number>(0);
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
   const [lastmonthcash, setLastMonthCash] = useState<string>("0");
+
+  const getQuarterForMonth = (month: string): Quarter | undefined => {
+    const monthToQuarterMap: { [key: string]: Quarter } = {
+      January: Quarter.QUARTER4,
+      February: Quarter.QUARTER4,
+      March: Quarter.QUARTER4,
+      April: Quarter.QUARTER1,
+      May: Quarter.QUARTER1,
+      June: Quarter.QUARTER1,
+      July: Quarter.QUARTER2,
+      August: Quarter.QUARTER2,
+      September: Quarter.QUARTER2,
+      October: Quarter.QUARTER3,
+      November: Quarter.QUARTER3,
+      December: Quarter.QUARTER3,
+    };
+
+    return monthToQuarterMap[month] || undefined;
+  };
+
+  const getQuarterMonths = (selectedQuarter: Quarter): string[] => {
+    const quarterMonthsMap: Record<Quarter, string[]> = {
+      QUARTER1: ["April", "May", "June"],
+      QUARTER2: ["July", "August", "September"],
+      QUARTER3: ["October", "November", "December"],
+      QUARTER4: ["January", "February", "March"],
+    };
+
+    return quarterMonthsMap[selectedQuarter] ?? [];
+  };
+
+  const getNewYear = (year: string, month: string): string => {
+    if (["January", "February", "March"].includes(month)) {
+      return (parseInt(year) + 1).toString();
+    }
+    return year;
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -122,36 +148,79 @@ const Dvat16ReturnPreview = () => {
       ];
 
       if (returnformsresponse.status && returnformsresponse.data) {
-        setReturn01(returnformsresponse.data.returns_01);
-        serReturns_entryData(returnformsresponse.data.returns_entry);
+        const selectedReturn = returnformsresponse.data.returns_01;
 
         const challanResponse = await GetPaidChallanByReturnId({
-          returnid: returnformsresponse.data.returns_01.id,
+          returnid: selectedReturn.id,
         });
         if (challanResponse.status && challanResponse.data) {
           setPaidChallans(challanResponse.data);
         } else {
           setPaidChallans([]);
         }
+
+        const isQuarterlyFiling =
+          selectedReturn.dvat04?.frequencyFilings === "QUARTERLY";
+
+        let mergedEntries: returns_entry[] = [];
+
+        if (isQuarterlyFiling) {
+          const effectiveQuarter = getQuarterForMonth(month);
+          const quarterMonths = effectiveQuarter
+            ? getQuarterMonths(effectiveQuarter)
+            : [];
+
+          // Fetch all quarterly months
+          const quarterResponses = await Promise.all(
+            quarterMonths.map((quarterMonth) =>
+              getDepartmentPdfReturn({
+                year: getNewYear(year, quarterMonth),
+                month: quarterMonth,
+                userid: userid,
+                dvatid: dvat,
+                selectOffice: user_response.data?.selectOffice as SelectOffice,
+              }),
+            ),
+          );
+
+          // Collect all quarterly entries in order
+          quarterResponses.forEach((quarterResponse: any) => {
+            if (quarterResponse.status && quarterResponse.data) {
+              // Add all entries from this quarter month
+              mergedEntries.push(...quarterResponse.data.returns_entry);
+            }
+          });
+
+          // If no quarterly data found, use only current month
+          if (mergedEntries.length === 0) {
+            mergedEntries = [...returnformsresponse.data.returns_entry];
+          }
+        } else {
+          // For non-quarterly, use only current month data
+          mergedEntries = [...returnformsresponse.data.returns_entry];
+        }
+
+        setReturn01(selectedReturn);
+        serReturns_entryData(mergedEntries);
         // setUser(returnformsresponse.data.returns_01.createdBy);
 
         const dvat_30: boolean =
-          returnformsresponse.data.returns_entry.filter(
+          mergedEntries.filter(
             (val: returns_entry) =>
               val.dvat_type == DvatType.DVAT_30 && val.isnil == true,
           ).length > 0;
         const dvat_30a: boolean =
-          returnformsresponse.data.returns_entry.filter(
+          mergedEntries.filter(
             (val: returns_entry) =>
               val.dvat_type == DvatType.DVAT_30_A && val.isnil == true,
           ).length > 0;
         const dvat_31: boolean =
-          returnformsresponse.data.returns_entry.filter(
+          mergedEntries.filter(
             (val: returns_entry) =>
               val.dvat_type == DvatType.DVAT_31 && val.isnil == true,
           ).length > 0;
         const dvat_31a: boolean =
-          returnformsresponse.data.returns_entry.filter(
+          mergedEntries.filter(
             (val: returns_entry) =>
               val.dvat_type == DvatType.DVAT_31_A && val.isnil == true,
           ).length > 0;
@@ -184,20 +253,6 @@ const Dvat16ReturnPreview = () => {
           ),
           currentDate,
         );
-        // if (
-        //   returnformsresponse.data.returns_01.rr_number == null ||
-        //   returnformsresponse.data.returns_01.rr_number == undefined ||
-        //   returnformsresponse.data.returns_01.rr_number == ""
-        // ) {
-        // setLateFees(Math.min(100 * diff_days, 10000));
-        // }
-
-        // const payment_response = await CheckPayment({
-        //   id: returnformsresponse.data.returns_01.id ?? 0,
-        // });
-        // if (payment_response.status && payment_response.data) {
-        //   setPayment(payment_response.data);
-        // }
       } else {
         setReturn01(null);
         serReturns_entryData([]);
@@ -235,45 +290,6 @@ const Dvat16ReturnPreview = () => {
     init();
   }, [searchparam, userid]);
 
-  // const get_rr_number = (): string => {
-  //   const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
-  //   const today = new Date();
-  //   const month = ("0" + (today.getMonth() + 1)).slice(-2);
-  //   const day = ("0" + today.getDate()).slice(-2);
-  //   const return_id = parseInt(return01?.id.toString() ?? "0") + 4000;
-
-  //   return `${rr_no}${month}${day}${return_id}`;
-  // };
-
-  // const onSubmitPayment = async () => {
-  //   if (return01 == null) return toast.error("There is not return from here");
-
-  //   const lastPayment = await CheckLastPayment({
-  //     id: return01.id ?? 0,
-  //   });
-  //   if (!lastPayment.status) {
-  //     toast.error(lastPayment.message);
-  //     setPaymentSubmitBox(false);
-  //     return;
-  //   }
-
-  //   if (lastPayment.data == false) {
-  //     toast.error(lastPayment.message);
-  //     setPaymentSubmitBox(false);
-  //     return;
-  //   }
-
-  //   const response = await AddSubmitPayment({
-  //     id: return01.id ?? 0,
-  //     rr_number: get_rr_number(),
-  //     penalty: lateFees.toString(),
-  //   });
-
-  //   if (!response.status) return toast.error(response.message);
-  //   toast.success(response.message);
-  //   setPaymentSubmitBox(false);
-  // };
-
   const generatePDF = async () => {
     setDownload(true);
     try {
@@ -302,7 +318,7 @@ const Dvat16ReturnPreview = () => {
 
       // Trigger print once the page is loaded.
       printWindow.onload = () => {
-        setTimeout(openPrintDialog, 600);
+        setTimeout(openPrintDialog, 1500);
       };
 
       // Fallback in case onload doesn't fire as expected.
@@ -348,34 +364,13 @@ const Dvat16ReturnPreview = () => {
           }
         `}
       </style>
-      {/* <Modal
-        title="Confirmation"
-        open={paymentSubmitBox}
-        footer={null}
-        closeIcon={false}
-      >
-        <p>Are you sure you want to submit the return?</p>
-        <div className="flex  gap-2 mt-2">
-          <div className="grow"></div>
-          <button
-            className="py-1 rounded-md border px-4 text-sm text-gray-600"
-            onClick={() => {
-              setPaymentSubmitBox(false);
-            }}
-          >
-            Close
-          </button>
-          <button
-            onClick={onSubmitPayment}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
-          >
-            Submit
-          </button>
-        </div>
-      </Modal> */}
+
       {return01 && (
         <section className="px-5 relative mainpdf" id="mainpdf">
-          <main className="bg-white p-4 w-full xl:w-5/6 mx-auto" style={{ marginTop: 0 }}>
+          <main
+            className="bg-white p-4 w-full xl:w-5/6 mx-auto"
+            style={{ marginTop: 0 }}
+          >
             {/* page 1 start here */}
 
             {/* header 1 start from here */}

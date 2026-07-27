@@ -374,6 +374,8 @@ model dvat04 {
   refineryDealers                 refinery_dealer[]
   refineryPrices                  refinery_price[]
   creditdebitnotes                creditdebitnote[]
+  interestWorkings                interest_working[]
+  returns01Works                  returns_01_work[]
 
   @@index([createdById], map: "dvat04_createdById_fkey")
   @@index([deletedById], map: "dvat04_deletedById_fkey")
@@ -580,15 +582,15 @@ model tin_number_master {
 }
 
 model returns_01 {
-  id                Int             @id @default(autoincrement())
+  id                Int                @id @default(autoincrement())
   rr_number         String
-  return_type       ReturnType      @default(ORIGINAL)
+  return_type       ReturnType         @default(ORIGINAL)
   year              String
-  quarter           Quarter         @default(QUARTER1)
+  quarter           Quarter            @default(QUARTER1)
   month             String?
   dvat04Id          Int
   filing_datetime   DateTime
-  file_status       Status          @default(ACTIVE)
+  file_status       Status             @default(ACTIVE)
   vatamount         String?
   interest          String?
   penalty           String?
@@ -599,25 +601,27 @@ model returns_01 {
   transaction_id    String?
   bank_name         String?
   track_id          String?
-  compositionScheme Boolean?        @default(false)
+  compositionScheme Boolean?           @default(false)
   remarks           String?
-  status            ReturnStatus    @default(DUE)
+  status            ReturnStatus       @default(DUE)
   challan_number    String?
   pending_payment   String?
   cash_payment      String?
-  createdAt         DateTime        @default(now())
+  createdAt         DateTime           @default(now())
   createdById       Int
-  updatedAt         DateTime        @updatedAt
+  updatedAt         DateTime           @updatedAt
   updatedById       Int?
   deletedAt         DateTime?
   deletedById       Int?
   order_notice      order_notice[]
-  createdBy         user            @relation("returns_01_createdBy", fields: [createdById], references: [id])
-  deletedBy         user?           @relation("returns_01_deletedBy", fields: [deletedById], references: [id])
-  dvat04            dvat04          @relation(fields: [dvat04Id], references: [id])
-  updatedBy         user?           @relation("returns_01_updatedBy", fields: [updatedById], references: [id])
+  createdBy         user               @relation("returns_01_createdBy", fields: [createdById], references: [id])
+  deletedBy         user?              @relation("returns_01_deletedBy", fields: [deletedById], references: [id])
+  dvat04            dvat04             @relation(fields: [dvat04Id], references: [id])
+  updatedBy         user?              @relation("returns_01_updatedBy", fields: [updatedById], references: [id])
   returns_entry     returns_entry[]
   challans          challan[]
+  interestWorkings  interest_working[]
+  returns01Works    returns_01_work[]
 
   @@index([createdById], map: "returns_01_createdById_fkey")
   @@index([deletedById], map: "returns_01_deletedById_fkey")
@@ -729,21 +733,22 @@ model challan {
   bene_bank        String?
   bene_branch      String?
   trans_fee        String?
-  reason           ChallanReason    @default(MONTHLYPAYMENT)
-  remark           String?          @db.MediumText
-  paymentstatus    PaymentStatus    @default(PENDING)
+  reason           ChallanReason      @default(MONTHLYPAYMENT)
+  remark           String?            @db.MediumText
+  paymentstatus    PaymentStatus      @default(PENDING)
   expire_date      DateTime
-  createdAt        DateTime         @default(now())
+  createdAt        DateTime           @default(now())
   createdById      Int
-  updatedAt        DateTime         @updatedAt
+  updatedAt        DateTime           @updatedAt
   updatedById      Int?
   deletedAt        DateTime?
   deletedById      Int?
-  createdBy        user             @relation("challan_createdBy", fields: [createdById], references: [id])
-  deletedBy        user?            @relation("challan_deletedBy", fields: [deletedById], references: [id])
-  updatedBy        user?            @relation("challan_updatedBy", fields: [updatedById], references: [id])
+  createdBy        user               @relation("challan_createdBy", fields: [createdById], references: [id])
+  deletedBy        user?              @relation("challan_deletedBy", fields: [deletedById], references: [id])
+  updatedBy        user?              @relation("challan_updatedBy", fields: [updatedById], references: [id])
   order_notice     order_notice[]
   payment_intents  payment_intent[]
+  interestWorkings interest_working[]
 
   @@index([createdById], map: "challan_createdById_fkey")
   @@index([deletedById], map: "challan_deletedById_fkey")
@@ -1945,6 +1950,69 @@ model creditdebitnote {
   deletedBy           user?             @relation("creditdebitnote_deletedBy", fields: [deletedById], references: [id])
   seller_tin_number   tin_number_master @relation(fields: [seller_tin_numberId], references: [id])
   updatedBy           user?             @relation("creditdebitnote_updatedBy", fields: [updatedById], references: [id])
+}
+
+model interest_working {
+  id                 Int        @id @default(autoincrement())
+  returnId           Int
+  return             returns_01 @relation(fields: [returnId], references: [id])
+  dvatId             Int
+  dvat04             dvat04     @relation(fields: [dvatId], references: [id])
+  challanId          Int
+  challan            challan    @relation(fields: [challanId], references: [id])
+  month              String?
+  due_date           DateTime?
+  outstanding_before Decimal?   @db.Decimal(10, 0)
+  days_late          Int?
+  interest           Decimal?   @db.Decimal(10, 0)
+  payment_date       DateTime?
+  amount             Decimal?   @db.Decimal(10, 0)
+  status             Status     @default(ACTIVE)
+}
+
+enum ReturnWorkStatus {
+  SOLVED
+  SMARTISSUE
+  DEPTISSUE
+  VERIFY
+}
+
+model returns_01_work {
+  id                     Int              @id @default(autoincrement())
+  returnId               Int
+  return                 returns_01       @relation(fields: [returnId], references: [id])
+  dvatId                 Int
+  dvat04                 dvat04           @relation(fields: [dvatId], references: [id])
+  month                  String?
+  filed                  Boolean?         @default(false)
+  tinNumber              String?
+  tradeName              String?
+  selectOffice           SelectOffice?
+  commodity              String?
+  vatamount              String?
+  interest               String?
+  penalty                String?
+  other_charge           String?
+  total_tax_amount       String?
+  R4_8                   Decimal?         @db.Decimal(10, 0)
+  R4_9                   Decimal?         @db.Decimal(10, 0)
+  R4_10                  Decimal?         @db.Decimal(10, 0)
+  R5_4                   Decimal?         @db.Decimal(10, 0)
+  R5_5                   Decimal?         @db.Decimal(10, 0)
+  R5_6                   Decimal?         @db.Decimal(10, 0)
+  R6_1_balance_payable   Decimal?         @db.Decimal(10, 0)
+  R6_INTEREST            Decimal?         @db.Decimal(10, 0)
+  R6_penalty             Decimal?         @db.Decimal(10, 0)
+  R7_total_payable       Decimal?         @db.Decimal(10, 0)
+  RPAID_vat              Decimal?         @db.Decimal(10, 0)
+  RPAID_interest         Decimal?         @db.Decimal(10, 0)
+  RPAID_penalty          Decimal?         @db.Decimal(10, 0)
+  RPAID_others           Decimal?         @db.Decimal(10, 0)
+  RPAID_total            Decimal?         @db.Decimal(10, 0)
+  excess_cash_next_month Decimal?         @db.Decimal(10, 0)
+  excess_itc_next_month  Decimal?         @db.Decimal(10, 0)
+  status                 ReturnWorkStatus @default(VERIFY)
+  remark                 String?          @db.LongText
 }
 
 enum NotificationType {
