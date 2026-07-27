@@ -298,11 +298,11 @@ const CreditDebitNotePage = () => {
               >
                 Add Debit Note
               </Button>
-              <Button
+              {/* <Button
                 onClick={() => openDrawer("goods-return")}
               >
                 Goods Return
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>

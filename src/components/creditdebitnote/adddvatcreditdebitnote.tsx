@@ -150,10 +150,10 @@ const AddDvatCreditDebitNote = ({
             setCommodities(
               commodityResponse.data.filter((c) => c.product_type == "FUEL"),
             );
-          } else if (dvatResponse.data.commodity == "LIQUOR") {
+          } else {
             setCommodities(
               commodityResponse.data.filter(
-                (c) => c.product_type == "RESTAURANT",
+                (c) => c.product_type == "LIQUOR",
               ),
             );
           }
