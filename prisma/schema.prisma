@@ -1978,13 +1978,14 @@ enum ReturnWorkStatus {
 }
 
 model returns_01_work {
-  id                     Int              @id @default(autoincrement())
+  id                     Int               @id @default(autoincrement())
   returnId               Int
-  return                 returns_01       @relation(fields: [returnId], references: [id])
+  return                 returns_01        @relation(fields: [returnId], references: [id])
   dvatId                 Int
-  dvat04                 dvat04           @relation(fields: [dvatId], references: [id])
+  dvat04                 dvat04            @relation(fields: [dvatId], references: [id])
   month                  String?
-  filed                  Boolean?         @default(false)
+  frequency              FrequencyFilings?
+  filed                  Boolean?          @default(false)
   tinNumber              String?
   tradeName              String?
   selectOffice           SelectOffice?
@@ -1994,25 +1995,25 @@ model returns_01_work {
   penalty                String?
   other_charge           String?
   total_tax_amount       String?
-  R4_8                   Decimal?         @db.Decimal(10, 0)
-  R4_9                   Decimal?         @db.Decimal(10, 0)
-  R4_10                  Decimal?         @db.Decimal(10, 0)
-  R5_4                   Decimal?         @db.Decimal(10, 0)
-  R5_5                   Decimal?         @db.Decimal(10, 0)
-  R5_6                   Decimal?         @db.Decimal(10, 0)
-  R6_1_balance_payable   Decimal?         @db.Decimal(10, 0)
-  R6_INTEREST            Decimal?         @db.Decimal(10, 0)
-  R6_penalty             Decimal?         @db.Decimal(10, 0)
-  R7_total_payable       Decimal?         @db.Decimal(10, 0)
-  RPAID_vat              Decimal?         @db.Decimal(10, 0)
-  RPAID_interest         Decimal?         @db.Decimal(10, 0)
-  RPAID_penalty          Decimal?         @db.Decimal(10, 0)
-  RPAID_others           Decimal?         @db.Decimal(10, 0)
-  RPAID_total            Decimal?         @db.Decimal(10, 0)
-  excess_cash_next_month Decimal?         @db.Decimal(10, 0)
-  excess_itc_next_month  Decimal?         @db.Decimal(10, 0)
-  status                 ReturnWorkStatus @default(VERIFY)
-  remark                 String?          @db.LongText
+  R4_8                   Decimal?          @db.Decimal(10, 0)
+  R4_9                   Decimal?          @db.Decimal(10, 0)
+  R4_10                  Decimal?          @db.Decimal(10, 0)
+  R5_4                   Decimal?          @db.Decimal(10, 0)
+  R5_5                   Decimal?          @db.Decimal(10, 0)
+  R5_6                   Decimal?          @db.Decimal(10, 0)
+  R6_1_balance_payable   Decimal?          @db.Decimal(10, 0)
+  R6_INTEREST            Decimal?          @db.Decimal(10, 0)
+  R6_penalty             Decimal?          @db.Decimal(10, 0)
+  R7_total_payable       Decimal?          @db.Decimal(10, 0)
+  RPAID_vat              Decimal?          @db.Decimal(10, 0)
+  RPAID_interest         Decimal?          @db.Decimal(10, 0)
+  RPAID_penalty          Decimal?          @db.Decimal(10, 0)
+  RPAID_others           Decimal?          @db.Decimal(10, 0)
+  RPAID_total            Decimal?          @db.Decimal(10, 0)
+  excess_cash_next_month Decimal?          @db.Decimal(10, 0)
+  excess_itc_next_month  Decimal?          @db.Decimal(10, 0)
+  status                 ReturnWorkStatus  @default(VERIFY)
+  remark                 String?           @db.LongText
 }
 
 enum NotificationType {

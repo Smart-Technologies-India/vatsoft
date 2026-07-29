@@ -26,7 +26,6 @@ import CheckPayment from "@/action/return/checkpayment";
 import CheckLastPayment from "@/action/return/checklastpayment";
 import GetUser from "@/action/user/getuser";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import GetPaidChallanByReturnId from "@/action/challan/getpaidchallanbyreturnid";
 
 import TurnOver from "@/components/dvatreturn/1_turnver";
 import R1TurnOverOfPurchase from "@/components/dvatreturn/2_turnoverofpurchase";
@@ -44,6 +43,7 @@ import {
   NetTaxCalculation,
   TheBalance,
 } from "@/components/dvatreturn/vatcalculation";
+import GetReturnChallans from "@/action/return/getreturnchallans";
 
 const Dvat16ReturnPreview = () => {
   const router = useRouter();
@@ -223,8 +223,8 @@ const Dvat16ReturnPreview = () => {
           ...returnformsresponse.data.returns_entry,
         ];
 
-        const challanResponse = await GetPaidChallanByReturnId({
-          returnid: selectedReturn.id,
+        const challanResponse = await GetReturnChallans({
+          returnId: selectedReturn.id,
         });
 
         if (challanResponse.status && challanResponse.data) {

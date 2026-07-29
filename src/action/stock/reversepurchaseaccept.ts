@@ -40,6 +40,9 @@ const ReversePurchaseAccept = async (
           is_accept: true,
           is_dvat_30a: false,
         },
+        include: {
+          dvat04: true,
+        },
       });
 
       if (!purchase) {
@@ -63,10 +66,13 @@ const ReversePurchaseAccept = async (
       }
 
       const packSize = parseFloat(stockRow.commodity_master?.pack_size || "1");
-      const requiredPcs = Math.ceil(purchase.quantity / packSize);
+      const requiredPcs =
+        purchase.dvat04.commodity == "RESTAURANT"
+          ? Math.ceil(purchase.quantity * packSize)
+          : purchase.quantity;
 
       if (stockRow.quantity < requiredPcs) {
-        const availableQuantity = stockRow.quantity * packSize;
+        const availableQuantity = stockRow.quantity;
         throw new Error(
           `Insufficient stock to reverse. Available: ${availableQuantity}, Required: ${purchase.quantity}.`,
         );

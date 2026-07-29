@@ -34,7 +34,7 @@ import CheckLastPayment from "@/action/return/checklastpayment";
 import GetUser from "@/action/user/getuser";
 import AddPaymentSubmit from "@/action/return/addpaymentsubmit";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import GetPaidChallanByReturnId from "@/action/challan/getpaidchallanbyreturnid";
+
 
 import TurnOver from "@/components/dvatreturn/1_turnver";
 import R1TurnOverOfPurchase from "@/components/dvatreturn/2_turnoverofpurchase";
@@ -46,6 +46,7 @@ import S1_1Adjustment from "@/components/dvatreturn/7_s1adjustment";
 import S2AdjustmentOfTax from "@/components/dvatreturn/8_s2adjustment";
 import CentralSales from "@/components/dvatreturn/9_centralsales";
 import FORM_DVAT_16 from "@/components/dvatreturn/10_fromdvat16";
+import GetReturnChallans from "@/action/return/getreturnchallans";
 
 interface PercentageOutput {
   increase: string;
@@ -232,8 +233,8 @@ const Dvat16ReturnPreview = () => {
           ...returnformsresponse.data.returns_entry,
         ];
 
-        const challanResponse = await GetPaidChallanByReturnId({
-          returnid: selectedReturn.id,
+        const challanResponse = await GetReturnChallans({
+          returnId: selectedReturn.id,
         });
 
         if (challanResponse.status && challanResponse.data) {

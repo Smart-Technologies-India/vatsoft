@@ -32,6 +32,7 @@ const CreateDailySale = async (
 ): Promise<ApiResponseType<stock | null>> => {
   const functionname: string = CreateDailySale.name;
 
+  console.log("CreateDailySale payload:", payload);
   try {
     const currentUserId = await getCurrentUserId();
     const currentDvatId = await getCurrentDvatId();
@@ -117,9 +118,6 @@ const CreateDailySale = async (
       },
     });
 
-
-
-
     const result = await prisma.$transaction(async (prisma) => {
       const purchaser_response = await prisma.tin_number_master.findFirst({
         where: {
@@ -203,14 +201,9 @@ const CreateDailySale = async (
         throw new Error("Stock does not exist.");
       }
 
-      // Convert requested quantity to pcs using pack_size
-      const packSize = parseFloat(isexist.commodity_master?.pack_size || "1");
-      const quantityInPcs = Math.ceil(payload.quantity / packSize);
-
-      if (quantityInPcs > isexist.quantity) {
-        const availableQuantity = isexist.quantity * packSize;
+      if (payload.quantity > isexist.quantity) {
         throw new Error(
-          `Insufficient stock. You requested ${payload.quantity}, but only ${availableQuantity} is available.`,
+          `Insufficient stock. You requested ${payload.quantity}, but only ${isexist.quantity} is available.`,
         );
       }
 
@@ -219,7 +212,7 @@ const CreateDailySale = async (
           id: isexist.id,
         },
         data: {
-          quantity: isexist.quantity - quantityInPcs,
+          quantity: isexist.quantity - payload.quantity,
         },
       });
 

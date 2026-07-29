@@ -84,10 +84,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {/* {(
-              parseFloat(get5_1().decrease) + parseFloat(get5_2().decrease)
-            ).toFixed(2)} */}
-            {r5Turnover.get5_4()}
+            {r5Turnover.get5_4().toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -100,14 +97,7 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {/* {(
-              parseFloat(getCreditNote().decrease) -
-              parseFloat(getDebitNote().decrease) -
-              parseFloat(getGoodsReturnsNote().decrease) +
-              parseFloat(props.lastMonthDue)
-            ).toFixed(2)} */}
-
-            {r5Turnover.get5_5()}
+            {r5Turnover.get5_5().toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -119,14 +109,6 @@ const R1TurnOverOfPurchase = (props: R1TurnOverOfPurchaseProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {/* {(
-              parseFloat(get5_1().decrease) +
-              parseFloat(get5_2().decrease) +
-              (parseFloat(getCreditNote().decrease) -
-                parseFloat(getDebitNote().decrease) -
-                parseFloat(getGoodsReturnsNote().decrease) +
-                parseFloat(props.lastMonthDue))
-            ).toFixed(2)} */}
             {r5Turnover.get5_6().toFixed(2)}
           </td>
         </tr>

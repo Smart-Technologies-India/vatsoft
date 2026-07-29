@@ -263,15 +263,7 @@ const TurnOver = (props: TurnOverProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {/* {(
-              parseFloat(getSalesDebitNote().decrease) -
-              (parseFloat(getGoodsReturns().decrease) +
-                parseFloat(getSaleCanceled().decrease) +
-                parseFloat(props.lastMonthCash) +
-                parseFloat(getSalesCreditNote().decrease))
-            ).toFixed(2)} */}
-
-            {r4Turnover.get4_9()}
+            {r4Turnover.get4_9().toFixed(2)}
           </td>
         </tr>
         <tr className="w-full">
@@ -283,15 +275,7 @@ const TurnOver = (props: TurnOverProps) => {
           </td>
 
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            {/* {(
-              r4Turnover.get4_8() +
-              (parseFloat(getSalesDebitNote().decrease) -
-                (parseFloat(getGoodsReturns().decrease) +
-                  parseFloat(getSaleCanceled().decrease) +
-                  parseFloat(props.lastMonthCash) +
-                  parseFloat(getSalesCreditNote().decrease)))
-            ).toFixed(2)} */}
-            {r4Turnover.get4_10()}
+            {r4Turnover.get4_10().toFixed(2)}
           </td>
         </tr>
       </tbody>
