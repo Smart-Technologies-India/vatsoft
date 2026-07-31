@@ -1979,8 +1979,8 @@ enum ReturnWorkStatus {
 
 model returns_01_work {
   id                     Int               @id @default(autoincrement())
-  returnId               Int
-  return                 returns_01        @relation(fields: [returnId], references: [id])
+  returnId               Int?
+  return                 returns_01?       @relation(fields: [returnId], references: [id])
   dvatId                 Int
   dvat04                 dvat04            @relation(fields: [dvatId], references: [id])
   month                  String?
