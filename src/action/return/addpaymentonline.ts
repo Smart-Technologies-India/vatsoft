@@ -297,7 +297,7 @@ const AddPaymentOnline = async (
       // fform start here
       const monthsToUpdatefform = getMonthGroup(isExist.month ?? "");
 
-      // step 1 : get all entry
+      // step 1 : get all entry grouped by month
       const returnEntry = await prisma.returns_entry.findMany({
         where: {
           dvat_type: DvatType.DVAT_30_A,
@@ -317,43 +317,46 @@ const AddPaymentOnline = async (
         },
         include: {
           seller_tin_number: true,
+          returns_01: {
+            select: {
+              month: true,
+              year: true,
+            },
+          },
         },
       });
 
-      // step 2 : get all entry
-      const groupedData = returnEntry.reduce<
+      // step 2 : group by month (not by seller)
+      const groupedByMonth = returnEntry.reduce<
         Record<
-          number,
+          string,
           {
-            seller_tin_numberId: number;
-            totalAmount: number;
+            month: string;
+            year: string;
             entries: typeof returnEntry;
+            totalAmount: number;
           }
         >
       >((acc, entry) => {
-        const sellerId = entry.seller_tin_numberId;
+        const month = entry.returns_01.month ?? "";
+        const year = entry.returns_01.year;
+        const key = `${year}-${month}`;
         const amount = parseFloat(entry.total_invoice_number || "0");
 
-        if (!acc[sellerId]) {
-          acc[sellerId] = {
-            seller_tin_numberId: sellerId,
-            totalAmount: 0,
+        if (!acc[key]) {
+          acc[key] = {
+            month,
+            year,
             entries: [],
+            totalAmount: 0,
           };
         }
 
-        acc[sellerId].totalAmount += amount;
-        acc[sellerId].entries.push(entry);
+        acc[key].totalAmount += amount;
+        acc[key].entries.push(entry);
 
         return acc;
       }, {});
-
-      const flatData = Object.values(groupedData).flatMap((group) =>
-        group.entries.map((entry) => ({
-          ...entry,
-          amount: group.totalAmount.toString(), // Overwrite or add the total amount
-        })),
-      );
 
       const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
 
@@ -371,21 +374,29 @@ const AddPaymentOnline = async (
         ? parseInt(lastfform.sr_no.split("/").pop() ?? "0", 10) || 0
         : 0;
 
+      // Create one fform per month
       const fformResponses = await Promise.all(
-        flatData.map((val: any, index: number) =>
-          prisma.fform.create({
+        Object.values(groupedByMonth).map((monthGroup, index) => {
+          const representativeEntry = monthGroup.entries[0];
+          return prisma.fform.create({
             data: {
-              amount: val.amount.toFixed(2),
+              amount: monthGroup.totalAmount.toFixed(2),
               dvat04Id: isExist.dvat04Id,
               office_of_issue: isExist.dvat04.selectOffice,
               date_of_issue: new Date(
                 dates.toDate.split("-").reverse().join("-"),
               ),
               valid_date: isExist.dvat04.certificateDate ?? new Date(),
-              sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial),
-              seller_address: val.seller_tin_number.state ?? "",
-              seller_name: val.seller_tin_number.name_of_dealer ?? "",
-              seller_tin_no: val.seller_tin_number.tin_number ?? "",
+              sr_no: getsrno(
+                isExist.dvat04.selectOffice!,
+                lastOfficeSerial,
+                index,
+              ),
+              seller_address: representativeEntry.seller_tin_number.state ?? "",
+              seller_name:
+                representativeEntry.seller_tin_number.name_of_dealer ?? "",
+              seller_tin_no:
+                representativeEntry.seller_tin_number.tin_number ?? "",
               fform_type: ReturnType.ORIGINAL,
               from_period: new Date(
                 dates.fromDate.split("-").reverse().join("-"),
@@ -396,26 +407,26 @@ const AddPaymentOnline = async (
               status: "ACTIVE",
               createdById: isExist.createdById,
             },
-          }),
-        ),
+          });
+        }),
       );
 
-      // Step 2: Add entries to `fform_returns` table
+      // Link entries by month
       const fformReturnsEntries: {
         fformId: number;
         returns_entryId: number;
       }[] = [];
 
-      Object.values(groupedData).forEach((group, groupIndex) => {
-        const fformId = fformResponses[groupIndex]?.id; // Ensure the ID is resolved
+      Object.values(groupedByMonth).forEach((monthGroup, groupIndex) => {
+        const fformId = fformResponses[groupIndex]?.id;
 
         if (!fformId) {
           throw new Error(
-            `FForm entry for group ${groupIndex} was not created`,
+            `FForm entry for month ${monthGroup.month} was not created`,
           );
         }
 
-        group.entries.forEach((entry) => {
+        monthGroup.entries.forEach((entry) => {
           fformReturnsEntries.push({
             fformId,
             returns_entryId: entry.id,
@@ -423,7 +434,7 @@ const AddPaymentOnline = async (
         });
       });
 
-      // Step 3: Insert `fform_returns` entries in bulk
+      // Insert `fform_returns` entries in bulk
       if (fformReturnsEntries.length > 0) {
         const response = await prisma.fform_returns.createMany({
           data: fformReturnsEntries,
@@ -614,7 +625,7 @@ function getFromDateAndToDate(
   };
 }
 
-const getsrno = (selectOffice: SelectOffice, last: number): string => {
+const getsrno = (selectOffice: SelectOffice, last: number, offset: number = 0): string => {
   let pre =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
       ? "DNH"
@@ -629,5 +640,5 @@ const getsrno = (selectOffice: SelectOffice, last: number): string => {
         ? "02"
         : "03";
 
-  return `${pre}/${value1}/C/${last + 1}`;
+  return `${pre}/${value1}/C/${last + offset + 1}`;
 };

@@ -1,7 +1,7 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { dvat04, SelectOffice } from "@prisma/client";
+import { dvat04, SelectOffice, FrequencyFilings } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import {
   createPaginationResponse,
@@ -20,6 +20,10 @@ interface DeptPendingReturnPayload {
   dept?: SelectOffice;
   arnnumber?: string;
   tradename?: string;
+  frequencyFilings?: string;
+  compositionScheme?: boolean;
+  fromdate?: Date;
+  todate?: Date;
   skip: number;
   take: number;
 }
@@ -40,40 +44,88 @@ const DeptPendingReturn = async (
       } as any;
     }
 
-    const dvat04response = await prisma.return_filing.findMany({
+    // Build return_filing where clause with date filters if provided
+    let returnFilingWhere: any = {
+      deletedAt: null,
+      deletedBy: null,
+    };
+
+    if (payload.fromdate || payload.todate) {
+      returnFilingWhere.due_date = {};
+      if (payload.fromdate) {
+        returnFilingWhere.due_date.gte = payload.fromdate;
+      }
+      if (payload.todate) {
+        returnFilingWhere.due_date.lte = payload.todate;
+      }
+    }
+
+    const dvatRecords = await prisma.dvat04.findMany({
       where: {
+        ...(payload.dept && { selectOffice: payload.dept }),
+        ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
+        ...(payload.frequencyFilings && { frequencyFilings: payload.frequencyFilings as FrequencyFilings }),
+        ...(payload.compositionScheme !== undefined && { compositionScheme: payload.compositionScheme }),
+        ...(payload.tradename && {
+          OR: [
+            { tradename: { contains: payload.tradename } },
+            { name: { contains: payload.tradename } },
+          ],
+        }),
         deletedAt: null,
         deletedBy: null,
-        dvat: {
-          ...(payload.dept && { selectOffice: payload.dept }),
-          ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
-          ...(payload.tradename && {
-            OR: [
-              { tradename: { contains: payload.tradename } },
-              { name: { contains: payload.tradename } },
-            ],
-          }),
-          deletedAt: null,
-          deletedBy: null,
-        },
       },
       include: {
-        dvat: true,
-      },
-      orderBy: {
-        createdAt: "asc",
+        return_filing: {
+          where: returnFilingWhere,
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
       },
     });
 
-
-    if (!dvat04response)
+    if (!dvatRecords || dvatRecords.length === 0)
       return createPaginationResponse({
         message: "There is no returns data",
         functionname,
       });
 
+    let resMap = new Map<number, ResponseType>(); // Track dvat04 by ID
+    const currentDate = new Date();
+
+    for (let i = 0; i < dvatRecords.length; i++) {
+      const currentDvat = dvatRecords[i];
+      let lastfiling = "N/A";
+      let pending = 0;
+
+      // Process return_filing records for this dvat
+      for (let j = 0; j < currentDvat.return_filing.length; j++) {
+        const filing = currentDvat.return_filing[j];
+        const filingStatus = filing.filing_status;
+        const currentLastFiling = `${filing.month}-${filing.year}`;
+        const dueDate = filing.due_date ? new Date(filing.due_date) : null;
+
+        if (filingStatus) {
+          lastfiling = currentLastFiling;
+        } else if (dueDate && dueDate < currentDate) {
+          pending += 1;
+        }
+      }
+
+      resMap.set(currentDvat.id, {
+        dvat04: currentDvat,
+        lastfiling,
+        pending,
+        notice: 0,
+      });
+    }
+
+    // Fetch notice count for the filtered dvat records
+    const dvatIds = Array.from(resMap.keys());
     const notice = await prisma.order_notice.findMany({
       where: {
+        dvatid: { in: dvatIds },
         deletedAt: null,
         deletedBy: null,
         status: "PENDING",
@@ -81,47 +133,6 @@ const DeptPendingReturn = async (
         // form_type: "DVAT10",
       },
     });
-
-
-    let resMap = new Map<number, ResponseType>(); // Track dvat04 by ID
-    const currentDate = new Date();
-
-    for (let i = 0; i < dvat04response.length; i++) {
-      const currentDvat: dvat04 = dvat04response[i].dvat;
-      const filingStatus: boolean = dvat04response[i].filing_status;
-      const currentLastFiling: string = `${dvat04response[i].month}-${dvat04response[i].year}`;
-      const dueDate: Date | null = dvat04response[i].due_date
-        ? new Date(dvat04response[i].due_date!)
-        : null;
-
-      if (currentDvat) {
-        if (resMap.has(currentDvat.id)) {
-          // If dvat already exists
-          let existingData: ResponseType = resMap.get(
-            currentDvat.id
-          ) as ResponseType;
-
-          if (existingData) {
-            if (!filingStatus && dueDate && dueDate < currentDate) {
-              // Increase pending count if filing_status is false
-
-              existingData.pending += 1;
-            } else if (filingStatus) {
-              // Update lastfiling if filing_status is true and lastfiling is newer
-              existingData.lastfiling = currentLastFiling;
-            }
-          }
-        } else {
-          // If dvat does not exist, create a new entry
-          resMap.set(currentDvat.id, {
-            dvat04: currentDvat,
-            lastfiling: filingStatus ? currentLastFiling : "N/A",
-            pending: !filingStatus && dueDate && dueDate < currentDate ? 1 : 0,
-            notice: 0,
-          });
-        }
-      }
-    }
 
 
 

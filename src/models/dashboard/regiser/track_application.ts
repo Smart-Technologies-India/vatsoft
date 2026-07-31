@@ -9,6 +9,10 @@ export type TrackApplilcationStatusType = {
     firstName: string | null;
     lastName: string | null;
   };
+  dvat?: {
+    tinNumber: string;
+    tradename: string | null;
+  };
   arn: string;
 };
 
@@ -25,4 +29,10 @@ export type DvatTrackApplicationStatusType = {
   compositionScheme: boolean | null;
   status: DvatStatus;
   createdAt: Date;
+  tinNumber?: string;
+  tradename?: string | null;
+  dvat04?: {
+    tinNumber: string;
+    tradename: string | null;
+  };
 };

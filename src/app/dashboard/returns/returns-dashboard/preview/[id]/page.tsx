@@ -490,16 +490,6 @@ const Dvat16ReturnPreview = () => {
 
         // Only create challan for the last return; for first 2 returns, only update with zero values
         if (isLastReturn || return01.dvat04?.frequencyFilings !== "QUARTERLY") {
-          console.log({
-            id: returnToUpdate.id ?? 0,
-            rr_number: rrNumber,
-            pending_payment: pending_payment.toFixed(2),
-            pending_cash: pending_cash.toFixed(2),
-            penalty: submitPenalty,
-            vatamount: submitVat,
-            interestamount: submitInterest,
-            totaltaxamount: submitTotal,
-          });
           const response = await AddPaymentSubmit({
             id: returnToUpdate.id ?? 0,
             rr_number: rrNumber,

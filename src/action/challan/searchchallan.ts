@@ -42,6 +42,8 @@ interface SearchChallanPayload {
   cpin?: string;
   fromdate?: Date;
   todate?: Date;
+  transactionFromDate?: Date;
+  transactionToDate?: Date;
   dept?: SelectOffice;
   paymentstatus?: PaymentStatus;
   excludePaid?: boolean;
@@ -138,6 +140,10 @@ const buildWhere = (payload: SearchChallanPayload) => {
     ...(payload.fromdate &&
       payload.todate && {
         createdAt: { gte: payload.fromdate, lte: payload.todate },
+      }),
+    ...(payload.transactionFromDate &&
+      payload.transactionToDate && {
+        transaction_date: { gte: payload.transactionFromDate, lte: payload.transactionToDate },
       }),
     ...(andConditions.length > 0 && { AND: andConditions }),
   };

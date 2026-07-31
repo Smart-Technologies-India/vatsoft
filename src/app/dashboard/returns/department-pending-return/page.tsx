@@ -1,6 +1,5 @@
 "use client";
 
-import { Button as ShButton } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,25 +9,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
-import { Radio, Button, Input, Pagination, Alert } from "antd";
+import { Radio, Button, Input, Pagination, Alert, Drawer } from "antd";
 import { useEffect, useRef, useState } from "react";
 
 import type { Dayjs } from "dayjs";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
 
 import { dvat04, user } from "@prisma/client";
 import DeptPendingReturn from "@/action/dvat/deptpendingreturn";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import SearchDeptPendingReturn from "@/action/dvat/searchdeptpendingreturn";
 import GetUser from "@/action/user/getuser";
 import Link from "next/link";
 import { encryptURLData } from "@/utils/methods";
@@ -60,6 +49,8 @@ const TrackAppliation = () => {
   enum SearchOption {
     TIN,
     NAME,
+    COMPOSITION,
+    FREQUENCY_FILINGS,
   }
   const [searchOption, setSeachOption] = useState<SearchOption>(
     SearchOption.TIN,
@@ -71,6 +62,10 @@ const TrackAppliation = () => {
 
   const arnRef = useRef<InputRef>(null);
   const nameRef = useRef<InputRef>(null);
+  const [compositionFilter, setCompositionFilter] = useState<string>("");
+  const [frequencyFilingsFilter, setFrequencyFilingsFilter] =
+    useState<string>("");
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 
   const [searchDate, setSearchDate] = useState<
     [Dayjs | null, Dayjs | null] | null
@@ -85,7 +80,7 @@ const TrackAppliation = () => {
 
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
 
-  const [user, setUpser] = useState<user | null>(null);
+  const [user, setUpser] = useState<user>();
 
   const init = async () => {
     const userrespone = await GetUser({ id: userid });
@@ -150,6 +145,7 @@ const TrackAppliation = () => {
   }, [userid]);
 
   const arnsearch = async () => {
+    if (!user) return toast.error("User not found. Please login again.");
     if (
       arnRef.current?.input?.value == undefined ||
       arnRef.current?.input?.value == null ||
@@ -157,8 +153,9 @@ const TrackAppliation = () => {
     ) {
       return toast.error("Enter arn number");
     }
-    const search_response = await SearchDeptPendingReturn({
+    const search_response = await DeptPendingReturn({
       arnnumber: arnRef.current?.input?.value,
+      dept: user.selectOffice ?? "DIU",
       take: 10,
       skip: 0,
     });
@@ -175,11 +172,14 @@ const TrackAppliation = () => {
   };
 
   const datesearch = async () => {
+    if (!user) return toast.error("User not found. Please login again.");
+
     if (searchDate == null || searchDate.length <= 1) {
       return toast.error("Select state date and end date");
     }
 
-    const search_response = await SearchDeptPendingReturn({
+    const search_response = await DeptPendingReturn({
+      dept: user.selectOffice ?? "DIU",
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
       take: 10,
@@ -197,6 +197,8 @@ const TrackAppliation = () => {
   };
 
   const namesearch = async () => {
+    if (!user) return toast.error("User not found. Please login again.");
+
     if (
       nameRef.current?.input?.value == undefined ||
       nameRef.current?.input?.value == null ||
@@ -204,7 +206,8 @@ const TrackAppliation = () => {
     ) {
       return toast.error("Enter TIN Number");
     }
-    const search_response = await SearchDeptPendingReturn({
+    const search_response = await DeptPendingReturn({
+      dept: user?.selectOffice ?? "DIU",
       tradename: nameRef.current?.input?.value,
       take: 10,
       skip: 0,
@@ -219,7 +222,55 @@ const TrackAppliation = () => {
       setSearch(true);
     }
   };
+
+  const frequencyFilingsearch = async () => {
+    if (!user) return toast.error("User not found. Please login again.");
+
+    if (frequencyFilingsFilter === "") {
+      return toast.error("Select a Frequency Filings option");
+    }
+    const search_response = await DeptPendingReturn({
+      dept: user?.selectOffice ?? "DIU",
+      frequencyFilings: frequencyFilingsFilter,
+      take: 10,
+      skip: 0,
+    });
+    if (search_response.status && search_response.data.result) {
+      setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      setSearch(true);
+    }
+  };
+
+  const compositionsearch = async () => {
+    if (!user) return toast.error("User not found. Please login again.");
+
+    if (compositionFilter === "") {
+      return toast.error("Select a Composition option");
+    }
+    const search_response = await DeptPendingReturn({
+      dept: user?.selectOffice ?? "DIU",
+      compositionScheme: compositionFilter === "true",
+      take: 10,
+      skip: 0,
+    });
+    if (search_response.status && search_response.data.result) {
+      setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      setSearch(true);
+    }
+  };
   const onChangePageCount = async (page: number, pagesize: number) => {
+    if (!user) return toast.error("User not found. Please login again.");
+
     if (isSearch) {
       if (searchOption == SearchOption.TIN) {
         if (
@@ -229,7 +280,8 @@ const TrackAppliation = () => {
         ) {
           return toast.error("Enter arn number");
         }
-        const search_response = await SearchDeptPendingReturn({
+        const search_response = await DeptPendingReturn({
+          dept: user.selectOffice ?? "DIU",
           arnnumber: arnRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -252,8 +304,49 @@ const TrackAppliation = () => {
         ) {
           return toast.error("Enter TIN Number");
         }
-        const search_response = await SearchDeptPendingReturn({
+        const search_response = await DeptPendingReturn({
+          dept: user.selectOffice ?? "DIU",
           tradename: nameRef.current?.input?.value,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setDvatData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.COMPOSITION) {
+        if (compositionFilter === "") {
+          return toast.error("Select a Composition option");
+        }
+        const search_response = await DeptPendingReturn({
+          dept: user.selectOffice ?? "DIU",
+          compositionScheme: compositionFilter === "true",
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setDvatData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.FREQUENCY_FILINGS) {
+        if (frequencyFilingsFilter === "") {
+          return toast.error("Select a Frequency Filings option");
+        }
+        const search_response = await DeptPendingReturn({
+          dept: user.selectOffice ?? "DIU",
+          frequencyFilings: frequencyFilingsFilter,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -270,7 +363,7 @@ const TrackAppliation = () => {
       }
     } else {
       const payment_data = await DeptPendingReturn({
-        dept: user!.selectOffice!,
+        dept: user.selectOffice ?? "DIU",
         take: pagesize,
         skip: pagesize * (page - 1),
       });
@@ -300,95 +393,90 @@ const TrackAppliation = () => {
             <p>Track Pending Return</p>
             <div className="grow"></div>
 
-            <Drawer>
-              <DrawerTrigger>Info</DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader className="px-0 py-2">
-                  <DrawerTitle>
-                    <p className="w-5/6 mx-auto">Meaning of status</p>
-                  </DrawerTitle>
-                </DrawerHeader>
-                <Table className="border mt-2 w-5/6 mx-auto">
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Pending for Processing
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application filed successfully. Pending with Tax Officer
-                        for Processing.*
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Pending for Clarification
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Notice for seeking clarification issued by officer. File
-                        Clarification within 7 working days of date of notice on
-                        portal.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Clarification filed-Pending for Order
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Clarification filed successfully by Applicant. Pending
-                        with Tax Officer for Order.*
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Clarification not filed Pending for Order
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Clarification not filed by the Applicant. Pending with
-                        Tax Officer for Rejection.*
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Approved
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application is Approved. Registration ID and possward
-                        emailed to Applicant.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Rejected
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application is Rejected by tax officer.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Withdrawn
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application is withdrawn by the Applicant/Tax payer.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Cancelled on Request of Taxpayer
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Registration is cancelled on request to taxpayer.
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+            <Button type="primary" onClick={() => setDrawerOpen(true)}>
+              Info
+            </Button>
 
-                <DrawerFooter>
-                  <DrawerClose>
-                    <ShButton variant="outline">Close</ShButton>
-                  </DrawerClose>
-                </DrawerFooter>
-              </DrawerContent>
+            <Drawer
+              placement="bottom"
+              title="Meaning of status"
+              onClose={() => setDrawerOpen(false)}
+              open={drawerOpen}
+            >
+              <Table className="border">
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="text-left w-60 p-2">
+                      Pending for Processing
+                    </TableCell>
+                    <TableCell className="text-left p-2">
+                      Application filed successfully. Pending with Tax Officer
+                      for Processing.*
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left w-60 p-2">
+                      Pending for Clarification
+                    </TableCell>
+                    <TableCell className="text-left p-2">
+                      Notice for seeking clarification issued by officer. File
+                      Clarification within 7 working days of date of notice on
+                      portal.
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left w-60 p-2">
+                      Clarification filed-Pending for Order
+                    </TableCell>
+                    <TableCell className="text-left p-2">
+                      Clarification filed successfully by Applicant. Pending
+                      with Tax Officer for Order.*
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left w-60 p-2">
+                      Clarification not filed Pending for Order
+                    </TableCell>
+                    <TableCell className="text-left p-2">
+                      Clarification not filed by the Applicant. Pending with Tax
+                      Officer for Rejection.*
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left w-60 p-2">
+                      Approved
+                    </TableCell>
+                    <TableCell className="text-left p-2">
+                      Application is Approved. Registration ID and possward
+                      emailed to Applicant.
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left w-60 p-2">
+                      Rejected
+                    </TableCell>
+                    <TableCell className="text-left p-2">
+                      Application is Rejected by tax officer.
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left w-60 p-2">
+                      Withdrawn
+                    </TableCell>
+                    <TableCell className="text-left p-2">
+                      Application is withdrawn by the Applicant/Tax payer.
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-left w-60 p-2">
+                      Cancelled on Request of Taxpayer
+                    </TableCell>
+                    <TableCell className="text-left p-2">
+                      Registration is cancelled on request to taxpayer.
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </Drawer>
           </div>
           <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
@@ -399,6 +487,10 @@ const TrackAppliation = () => {
             >
               <Radio value={SearchOption.TIN}>TIN</Radio>
               <Radio value={SearchOption.NAME}>Trade Name</Radio>
+              <Radio value={SearchOption.COMPOSITION}>Composition</Radio>
+              <Radio value={SearchOption.FREQUENCY_FILINGS}>
+                Frequency Filings
+              </Radio>
             </Radio.Group>
             {(() => {
               switch (searchOption) {
@@ -446,6 +538,60 @@ const TrackAppliation = () => {
                     </div>
                   );
 
+                case SearchOption.COMPOSITION:
+                  return (
+                    <div className="flex gap-2">
+                      <select
+                        value={compositionFilter}
+                        onChange={(e) => setCompositionFilter(e.target.value)}
+                        disabled={isSearch}
+                        className="w-60 px-3 py-1 border border-gray-300 rounded"
+                      >
+                        <option value="">Select Composition Type</option>
+                        <option value="true">Composition</option>
+                        <option value="false">Regular</option>
+                      </select>
+
+                      {isSearch ? (
+                        <Button onClick={init} type="primary">
+                          Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={compositionsearch} type="primary">
+                          Search
+                        </Button>
+                      )}
+                    </div>
+                  );
+
+                case SearchOption.FREQUENCY_FILINGS:
+                  return (
+                    <div className="flex gap-2">
+                      <select
+                        value={frequencyFilingsFilter}
+                        onChange={(e) =>
+                          setFrequencyFilingsFilter(e.target.value)
+                        }
+                        disabled={isSearch}
+                        className="w-60 px-3 py-1 border border-gray-300 rounded"
+                      >
+                        <option value="">Select Frequency</option>
+                        <option value="MONTHLY">Monthly</option>
+                        <option value="QUARTERLY">Quarterly</option>
+                      </select>
+
+                      {isSearch ? (
+                        <Button onClick={init} type="primary">
+                          Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={frequencyFilingsearch} type="primary">
+                          Search
+                        </Button>
+                      )}
+                    </div>
+                  );
+
                 default:
                   return null;
               }
@@ -482,6 +628,9 @@ const TrackAppliation = () => {
                       Last Filing Period
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center border p-2">
+                      Frequency Filings
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
                       Pending Returns
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center border p-2">
@@ -507,6 +656,9 @@ const TrackAppliation = () => {
                         </TableCell>
                         <TableCell className="border text-center p-2">
                           {val.lastfiling}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          {val.dvat04.frequencyFilings}
                         </TableCell>
                         <TableCell className="border text-center p-2">
                           {val.pending}

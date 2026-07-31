@@ -1,6 +1,10 @@
 "use server";
 interface DvatTrackApplicationStatusPayload {
   dept: SelectOffice;
+  searchArn?: string;
+  searchTradeName?: string;
+  take?: number;
+  skip?: number;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -14,21 +18,36 @@ const DvatTrackApplicationStatus = async (
 ): Promise<ApiResponseType<Array<DvatTrackApplicationStatusType> | null>> => {
   const functionname: string = DvatTrackApplicationStatus.name;
   try {
-    const dvat04response = await prisma.dvat04.findMany({
-      where: {
-        selectOffice: payload.dept,
-        NOT: [
-          {
-            status: "NONE",
-          },
-          {
-            status: "VERIFICATION",
-          },
-        ],
-        deletedAt: null,
-        deletedById: null,
-      },
+    const where: any = {
+      selectOffice: payload.dept,
+      NOT: [
+        {
+          status: "NONE",
+        },
+        {
+          status: "VERIFICATION",
+        },
+      ],
+      deletedAt: null,
+      deletedById: null,
+    };
 
+    if (payload.searchArn) {
+      where.tempregistrationnumber = {
+        contains: payload.searchArn,
+        mode: "insensitive",
+      };
+    }
+
+    if (payload.searchTradeName) {
+      where.tinNumber = {
+        contains: payload.searchTradeName,
+        mode: "insensitive",
+      };
+    }
+
+    const dvat04response = await prisma.dvat04.findMany({
+      where,
       select: {
         id: true,
         tempregistrationnumber: true,
@@ -36,6 +55,8 @@ const DvatTrackApplicationStatus = async (
         status: true,
         compositionScheme: true,
         createdAt: true,
+        tinNumber: true,
+        tradename: true,
         registration: {
           select: {
             dept_user: {
@@ -47,6 +68,8 @@ const DvatTrackApplicationStatus = async (
           },
         },
       },
+      take: payload.take || 10,
+      skip: payload.skip || 0,
     });
 
     if (!dvat04response) {

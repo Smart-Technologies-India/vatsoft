@@ -14,6 +14,7 @@ import { Radio, DatePicker } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import { user } from "@prisma/client";
 import { formateDate } from "@/utils/methods";
 import { toast } from "react-toastify";
@@ -28,6 +29,7 @@ import SearchChallan, {
   type SearchChallanWithRelations,
 } from "@/action/challan/searchchallan";
 import GetDeptChallanSummary from "@/action/challan/getdeptchallansummary";
+import * as XLSX from "xlsx";
 // import GetAllChallan from "@/action/challan/getallchallan";
 
 type GroupedChallan = DepartmentChallanWithRelations | SearchChallanWithRelations;
@@ -55,6 +57,7 @@ const ChallanHistory = () => {
   const [id, setId] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
+  const [isMonthFiltered, setIsMonthFiltered] = useState<boolean>(false);
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -78,6 +81,10 @@ const ChallanHistory = () => {
 
   const onChange = (e: RadioChangeEvent) => {
     setSeachOption(e.target.value);
+    setSearch(false);
+    setIsMonthFiltered(false);
+    setChallanData([]);
+    setPaginatin({ take: 10, skip: 0, total: 0 });
   };
 
   const cpinRef = useRef<InputRef>(null);
@@ -86,6 +93,10 @@ const ChallanHistory = () => {
   const [searchDate, setSearchDate] = useState<
     [Dayjs | null, Dayjs | null] | null
   >(null);
+
+  const [monthYearFilter, setMonthYearFilter] = useState<Dayjs | null>(
+    dayjs("2026-04-01")
+  );
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
@@ -112,6 +123,253 @@ const ChallanHistory = () => {
   const parseAmount = (value: string | null | undefined) =>
     Number.parseFloat(value ?? "0") || 0;
 
+  const fetchAllSearchResults = async (): Promise<GroupedChallan[]> => {
+    try {
+      let response;
+      
+      if (isMonthFiltered && searchDate) {
+        // Fetch all month-filtered results
+        response = await SearchChallan({
+          transactionFromDate: searchDate[0]?.toDate(),
+          transactionToDate: searchDate[1]?.toDate(),
+          dept: user?.selectOffice!,
+          paymentstatus: "PAID",
+          take: 10000,
+          skip: 0,
+        });
+      } else if (isSearch) {
+        // Fetch all results for current search option
+        if (searchOption === SearchOption.CPIN) {
+          response = await SearchChallan({
+            cpin: cpinRef.current?.input?.value,
+            dept: user?.selectOffice!,
+            paymentstatus: "PAID",
+            take: 10000,
+            skip: 0,
+          });
+        } else if (searchOption === SearchOption.TIN_TRADE) {
+          response = await SearchChallan({
+            searchText: tinTradeRef.current?.input?.value,
+            dept: user?.selectOffice!,
+            paymentstatus: "PAID",
+            take: 10000,
+            skip: 0,
+          });
+        } else if (searchOption === SearchOption.DATE) {
+          if (searchDate) {
+            response = await SearchChallan({
+              fromdate: searchDate[0]?.toDate(),
+              todate: searchDate[1]?.toDate(),
+              dept: user?.selectOffice!,
+              paymentstatus: "PAID",
+              take: 10000,
+              skip: 0,
+            });
+          }
+        }
+      } else {
+        // Fetch all default department challans
+        response = await GetDeptChallan({
+          dept: user?.selectOffice!,
+          paymentstatus: "PAID",
+          take: 10000,
+          skip: 0,
+        });
+      }
+
+      if (response && response.status && response.data.result) {
+        // Filter out records with zero total tax amount
+        return response.data.result.filter(
+          (item) => parseAmount(item.total_tax_amount) !== 0
+        );
+      }
+      return [];
+    } catch (error) {
+      toast.error("Error fetching all records");
+      return [];
+    }
+  };
+
+  const exportToExcel = async (fileName: string) => {
+    try {
+      toast.loading("Exporting data...");
+      const allResults = await fetchAllSearchResults();
+
+      if (allResults.length === 0) {
+        toast.error("No data to export");
+        return;
+      }
+
+      // Flatten the data to individual challans with all details, filtering out zero amounts
+      const worksheetData = allResults
+        .filter((challan) => parseAmount(challan.total_tax_amount) !== 0)
+        .map((challan) => {
+          const returnInfo =
+            (challan.returnid != null ? returnDetailsMap[challan.returnid] : null) ??
+            challan.returns_01;
+
+          const returnPeriod =
+            returnInfo && (returnInfo.month || returnInfo.quarter)
+              ? `${returnInfo.month || returnInfo.quarter} ${returnInfo.year}`
+              : "-";
+
+          return {
+            "TIN Number": challan.dvat.tinNumber,
+            "Trade Name": challan.dvat.tradename ?? "-",
+            "Return Period": returnPeriod,
+            "CPIN": challan.cpin,
+            "Reason": challan.reason,
+            "Payment Mode": challan.paymentmode ?? "-",
+            "Status": challan.paymentstatus,
+            "VAT": parseAmount(challan.vat),
+            "Interest": parseAmount(challan.interest),
+            "Penalty": parseAmount(challan.penalty),
+            "Late Fees": parseAmount(challan.latefees),
+            "Others": parseAmount(challan.others),
+            "Total Amount": challan.total_tax_amount,
+            "Transaction Date": challan.transaction_date
+              ? formateDate(new Date(challan.transaction_date))
+              : "-",
+          };
+        });
+
+      if (worksheetData.length === 0) {
+        toast.dismiss();
+        toast.error("No data to export after filtering");
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 15 }, // TIN Number
+        { wch: 20 }, // Trade Name
+        { wch: 15 }, // Return Period
+        { wch: 12 }, // CPIN
+        { wch: 15 }, // Reason
+        { wch: 15 }, // Payment Mode
+        { wch: 12 }, // Status
+        { wch: 12 }, // VAT
+        { wch: 12 }, // Interest
+        { wch: 12 }, // Penalty
+        { wch: 12 }, // Late Fees
+        { wch: 12 }, // Others
+        { wch: 15 }, // Total Amount
+        { wch: 18 }, // Transaction Date
+      ];
+      worksheet["!cols"] = columnWidths;
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "All Challans");
+      XLSX.writeFile(workbook, `${fileName}.xlsx`);
+      toast.dismiss();
+      toast.success(`Exported ${worksheetData.length} records to Excel successfully`);
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Error exporting data");
+    }
+  };
+
+  const exportBreakupToExcel = (group: ChallanGroup | null) => {
+    if (!group || !summaryTotals) return;
+
+    // Filter out items with zero amount from the breakup
+    const filteredChallans = group.challans.filter(
+      (item) => parseAmount(item.total_tax_amount) !== 0
+    );
+
+    if (filteredChallans.length === 0) {
+      toast.error("No data to export in breakup");
+      return;
+    }
+
+    const returnInfo =
+      (group.returnId != null ? returnDetailsMap[group.returnId] : null) ??
+      group.returnInfo;
+
+    const returnPeriod =
+      returnInfo && (returnInfo.month || returnInfo.quarter)
+        ? `${returnInfo.month || returnInfo.quarter} ${returnInfo.year}`
+        : "-";
+
+    const breakupData = filteredChallans.map((item) => ({
+      "TIN Number": group.dvat.tinNumber,
+      "Trade Name": group.dvat.tradename ?? "-",
+      "Return Period": returnPeriod,
+      "CPIN": item.cpin,
+      "Reason": item.reason,
+      "Payment Mode": item.paymentmode ?? "-",
+      "Status": item.paymentstatus,
+      "VAT": parseAmount(item.vat),
+      "Interest": parseAmount(item.interest),
+      "Penalty": parseAmount(item.penalty),
+      "Late Fees": parseAmount(item.latefees),
+      "Others": parseAmount(item.others),
+      "Total": parseAmount(item.total_tax_amount),
+      "Transaction Date": item.transaction_date
+        ? formateDate(new Date(item.transaction_date))
+        : "-",
+    }));
+
+    const summarySheet = XLSX.utils.json_to_sheet([
+      {
+        "TIN Number": group.dvat.tinNumber,
+        "Trade Name": group.dvat.tradename ?? "-",
+        "Return Period": returnPeriod,
+        "VAT": summaryTotals.vat,
+        "Interest": summaryTotals.interest,
+        "Penalty": summaryTotals.penalty,
+        "Late Fees": summaryTotals.latefees,
+        "Others": summaryTotals.others,
+        "Grand Total": summaryTotals.total,
+      },
+    ]);
+
+    const breakupSheet = XLSX.utils.json_to_sheet(breakupData);
+
+    // Set column widths
+    const summaryColumns = [
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 15 },
+    ];
+    summarySheet["!cols"] = summaryColumns;
+
+    const breakupColumns = [
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 15 },
+      { wch: 18 },
+    ];
+    breakupSheet["!cols"] = breakupColumns;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
+    XLSX.utils.book_append_sheet(workbook, breakupSheet, "Breakup");
+    XLSX.writeFile(
+      workbook,
+      `Challan-Breakup-${group.dvat.tinNumber}-${dayjs().format("YYYY-MM-DD")}.xlsx`
+    );
+    toast.success("Breakup data exported to Excel successfully");
+  };
+
   const getReturnPeriodLabel = (group: ChallanGroup) => {
     const returnInfo =
       (group.returnId != null ? returnDetailsMap[group.returnId] : null) ??
@@ -126,7 +384,12 @@ const ChallanHistory = () => {
   const groupedChallanData = useMemo(() => {
     const groups = new Map<string, ChallanGroup>();
 
-    challanData.forEach((item) => {
+    // Filter out items with zero total tax amount
+    const filteredData = challanData.filter(
+      (item) => parseAmount(item.total_tax_amount) !== 0
+    );
+
+    filteredData.forEach((item) => {
       const key = item.returnid != null ? `return-${item.returnid}` : `challan-${item.id}`;
       const existing = groups.get(key);
 
@@ -146,7 +409,12 @@ const ChallanHistory = () => {
       });
     });
 
-    return Array.from(groups.values());
+    // Filter out groups with zero total amount
+    const filteredGroups = Array.from(groups.values()).filter(
+      (group) => group.totalAmount !== 0
+    );
+
+    return filteredGroups;
   }, [challanData]);
 
   const getLatestTransactionDate = (group: ChallanGroup) => {
@@ -255,6 +523,7 @@ const ChallanHistory = () => {
         });
       }
       setSearch(false);
+      setIsMonthFiltered(false);
       setLoading(false);
     }
   };
@@ -371,7 +640,25 @@ const ChallanHistory = () => {
   };
 
   const onChangePageCount = async (page: number, pagesize: number) => {
-    if (isSearch) {
+    if (isMonthFiltered && monthYearFilter && searchDate) {
+      const search_response = await SearchChallan({
+        transactionFromDate: searchDate[0]?.toDate(),
+        transactionToDate: searchDate[1]?.toDate(),
+        dept: user?.selectOffice!,
+        paymentstatus: "PAID",
+        take: pagesize,
+        skip: pagesize * (page - 1),
+      });
+
+      if (search_response.status && search_response.data.result) {
+        setChallanData(search_response.data.result);
+        setPaginatin({
+          skip: search_response.data.skip,
+          take: search_response.data.take,
+          total: search_response.data.total,
+        });
+      }
+    } else if (isSearch) {
       if (searchOption == SearchOption.CPIN) {
         if (
           cpinRef.current?.input?.value == undefined ||
@@ -495,7 +782,75 @@ const ChallanHistory = () => {
     <>
       <div className="p-2">
         <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white">Challan History</div>
+          <div className="bg-blue-500 p-2 text-white flex justify-between items-center">
+            <span>Challan History</span>
+            <Button
+              type="primary"
+              onClick={async () => {
+                exportToExcel(`Challan-History-${dayjs().format("YYYY-MM-DD")}`);
+              }}
+            >
+              📥 Download Excel
+            </Button>
+          </div>
+
+          {/* Month/Year Filter */}
+          <div className="p-2 bg-gray-50 flex gap-2 items-center flex-wrap">
+            <label className="text-sm font-medium">Filter by Month/Year (Transaction Date):</label>
+            <DatePicker
+              picker="month"
+              value={monthYearFilter}
+              onChange={(date) => {
+                setMonthYearFilter(date);
+                if (date) {
+                  const startOfMonth = date.startOf("month").toDate();
+                  const endOfMonth = date.endOf("month").toDate();
+                  setSearchDate([date.startOf("month"), date.endOf("month")]);
+                }
+              }}
+              placeholder="Select month and year"
+              format="MMMM YYYY"
+            />
+            <Button
+              type="primary"
+              onClick={async () => {
+                if (monthYearFilter && searchDate) {
+                  try {
+                    const search_response = await SearchChallan({
+                      transactionFromDate: searchDate[0]?.toDate(),
+                      transactionToDate: searchDate[1]?.toDate(),
+                      dept: user?.selectOffice!,
+                      paymentstatus: "PAID",
+                      take: 10,
+                      skip: 0,
+                    });
+                    if (search_response.status && search_response.data.result) {
+                      setChallanData(search_response.data.result);
+                      setPaginatin({
+                        skip: search_response.data.skip,
+                        take: search_response.data.take,
+                        total: search_response.data.total,
+                      });
+                      setSearch(true);
+                      setIsMonthFiltered(true);
+                      toast.success(`Found ${search_response.data.total} records for ${monthYearFilter.format("MMMM YYYY")}`);
+                    } else {
+                      toast.error("No records found for selected month");
+                      setChallanData([]);
+                      setIsMonthFiltered(false);
+                    }
+                  } catch (error) {
+                    toast.error("Error searching records");
+                    setIsMonthFiltered(false);
+                  }
+                } else {
+                  toast.error("Please select a month and year");
+                }
+              }}
+            >
+              Search by Month
+            </Button>
+          </div>
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 p-2">
@@ -720,7 +1075,24 @@ const ChallanHistory = () => {
           setIsBreakupModalOpen(false);
           setSelectedGroup(null);
         }}
-        footer={null}
+        footer={[
+          <Button
+            key="download"
+            type="primary"
+            onClick={() => exportBreakupToExcel(selectedGroup)}
+          >
+            📥 Download Breakup
+          </Button>,
+          <Button
+            key="close"
+            onClick={() => {
+              setIsBreakupModalOpen(false);
+              setSelectedGroup(null);
+            }}
+          >
+            Close
+          </Button>,
+        ]}
         width={1100}
       >
         {selectedGroup && summaryTotals && (

@@ -29,7 +29,6 @@ import getDepartmentPdfReturn from "@/action/return/getdepartmentpdfreturn";
 import getPdfReturnDownload from "@/action/return/getpdfreturndownload";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
-
 import TurnOver from "@/components/dvatreturn/1_turnver";
 import R1TurnOverOfPurchase from "@/components/dvatreturn/2_turnoverofpurchase";
 import NetTax from "@/components/dvatreturn/3_nettax";
@@ -155,6 +154,7 @@ const Dvat16ReturnPreview = () => {
           returnId: selectedReturn.id,
         });
         if (challanResponse.status && challanResponse.data) {
+          console.log("challanResponse", challanResponse);
           setPaidChallans(challanResponse.data);
         } else {
           setPaidChallans([]);
@@ -578,61 +578,61 @@ const Dvat16ReturnPreview = () => {
               </tbody>
             </table>
             <FORM_DVAT_16 returnsentrys={returns_entryData ?? []} />
-            <h1 className="text-center font-semibold text-sm mt-4">
-              Payment Details
-            </h1>
-            <table border={1} className="w-5/6 mx-auto mt-2">
-              <thead className="w-full">
-                <tr className="w-full">
-                  <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                    Payment Mode
-                  </th>
-                  <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                    Ref. No
-                  </th>
-                  <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                    Payment Date
-                  </th>
-                  <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                    Bank Name
-                  </th>
-                  <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
-                    Amount
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="w-full">
-                {(paidChallans.length > 0 ? paidChallans : []).map(
-                  (challan, index) => (
-                    <tr className="w-full" key={challan.id ?? index}>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {challan.paymentmode ?? "-"}
-                      </td>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {challan.track_id ??
-                          challan.order_id ??
-                          challan.cpin ??
-                          "-"}
-                      </td>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {formatDateTime(
-                          getPrismaDatabaseDate(
-                            new Date(
-                              challan.transaction_date ?? challan.createdAt,
-                            ),
-                          ),
-                        )}
-                      </td>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {challan.bank_name ?? "-"}
-                      </td>
-                      <td className="border border-black px-2 leading-4 text-[0.6rem]">
-                        {challan.total_tax_amount}
-                      </td>
+            {paidChallans.length > 0 && (
+              <>
+                <h1 className="text-center font-semibold text-sm mt-4">
+                  Payment Details
+                </h1>
+                <table border={1} className="w-5/6 mx-auto mt-2">
+                  <thead className="w-full">
+                    <tr className="w-full">
+                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                        Payment Mode
+                      </th>
+                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                        Ref. No
+                      </th>
+                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                        Payment Date
+                      </th>
+                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                        Bank Name
+                      </th>
+                      <th className="border border-black px-2 leading-4 text-[0.6rem] w-[20%] text-left">
+                        Amount
+                      </th>
                     </tr>
-                  ),
-                )}
-                {paidChallans.length === 0 && (
+                  </thead>
+                  <tbody className="w-full">
+                    {paidChallans.map((challan, index) => (
+                      <tr className="w-full" key={challan.id ?? index}>
+                        <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                          {challan.paymentmode ?? "-"}
+                        </td>
+                        <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                          {challan.track_id ??
+                            challan.order_id ??
+                            challan.cpin ??
+                            "-"}
+                        </td>
+                        <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                          {formatDateTime(
+                            getPrismaDatabaseDate(
+                              new Date(
+                                challan.transaction_date ?? challan.createdAt,
+                              ),
+                            ),
+                          )}
+                        </td>
+                        <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                          {challan.bank_name ?? "-"}
+                        </td>
+                        <td className="border border-black px-2 leading-4 text-[0.6rem]">
+                          {challan.total_tax_amount}
+                        </td>
+                      </tr>
+                    ))}
+                    {/* {paidChallans.length === 0 && (
                   <tr className="w-full">
                     <td className="border border-black px-2 leading-4 text-[0.6rem]">
                       {return01?.paymentmode}
@@ -654,9 +654,11 @@ const Dvat16ReturnPreview = () => {
                       {return01?.total_tax_amount}
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                )} */}
+                  </tbody>
+                </table>
+              </>
+            )}
           </main>
           <div className="h-20"></div>
           <div className="p-2 shadow bg-white fixed bottom-0 right-0 flex gap-4 items-center hidden-print">

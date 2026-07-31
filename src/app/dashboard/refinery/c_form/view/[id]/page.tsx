@@ -407,10 +407,10 @@ const CFROM = () => {
                     </thead>
                     <tbody className="w-full">
                       <tr className="w-full">
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
-                          SI.No
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                          No.
                         </td>
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[18%]">
                           Inv. No
                         </td>
                         <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
@@ -431,10 +431,10 @@ const CFROM = () => {
                       </tr>
                       {pageData.map((val: returns_entry, index) => (
                         <tr key={index} className="w-full">
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
                             {pageIndex * PAGE_SIZE + index + 1}
                           </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[18%]">
                             {val.invoice_number}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">

@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { Button as ShButton } from "@/components/ui/button";
+
 import {
   Table,
   TableBody,
@@ -19,17 +19,10 @@ import {
   Pagination,
   Select,
   Alert,
+  Drawer,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+
 import { user } from "@prisma/client";
 import { encryptURLData, formateDate } from "@/utils/methods";
 import GetUser from "@/action/user/getuser";
@@ -52,6 +45,8 @@ enum DataType {
 interface TableData {
   id: number;
   arn: string;
+  tinNumber: string;
+  tradeName: string;
   type: DataType;
   description: string;
   submissionDate: string;
@@ -62,6 +57,7 @@ interface TableData {
 const TrackAppliation = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -76,9 +72,10 @@ const TrackAppliation = () => {
   enum SearchOption {
     ARN,
     TYPE,
+    TRADENAME,
   }
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.ARN
+    SearchOption.ARN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -86,7 +83,9 @@ const TrackAppliation = () => {
   };
 
   const [isSearch, setSearch] = useState<boolean>(false);
+  const [searchTotal, setSearchTotal] = useState<number>(0);
   const arnRef = useRef<InputRef>(null);
+  const tradeNameRef = useRef<InputRef>(null);
   const [type, setType] = useState<DataType | null>(null);
 
   const onFormType = (value: string) => {
@@ -101,19 +100,43 @@ const TrackAppliation = () => {
     ) {
       return toast.error("Enter arn number");
     }
-    const search_response = data.filter(
-      (val) => val.arn === arnRef.current?.input?.value
-    );
-    if (search_response.length > 0) {
-      setShowData(search_response);
-      setPaginatin({
-        take: search_response.length,
+
+    const userresponse = await GetUser({
+      id: userid,
+    });
+
+    if (userresponse.data && userresponse.status) {
+      const response = await DvatTrackApplicationStatus({
+        dept: userresponse.data.selectOffice!,
+        searchArn: arnRef.current?.input?.value,
+        take: 10,
         skip: 0,
-        total: data.length,
       });
-      setSearch(true);
-    } else {
-      toast.error("No record found");
+
+      if (response.data && response.status && response.data.length > 0) {
+        const tableData: TableData[] = response.data.map((val) => ({
+          id: val.id,
+          arn: val.tempregistrationnumber ?? "",
+          tinNumber: val.tinNumber ?? "-",
+          tradeName: val.tradename ?? "-",
+          type: DataType.DVAT04,
+          description: "Application For new Registration",
+          submissionDate: formateDate(new Date(val.createdAt)),
+          status: val.status,
+          assignedTo: `${val.registration[0].dept_user.firstName} - ${val.registration[0].dept_user.lastName}`,
+        }));
+
+        setShowData(tableData);
+        setSearchTotal(10); // Server should return total count
+        setPaginatin({
+          take: 10,
+          skip: 0,
+          total: 10,
+        });
+        setSearch(true);
+      } else {
+        toast.error("No record found");
+      }
     }
   };
 
@@ -125,15 +148,64 @@ const TrackAppliation = () => {
     const search_response = data.filter((val) => val.type === type);
 
     if (search_response.length > 0) {
-      setShowData(search_response);
+      setShowData(search_response.slice(0, 10));
+      setSearchTotal(search_response.length);
       setPaginatin({
-        take: search_response.length,
+        take: 10,
         skip: 0,
-        total: data.length,
+        total: search_response.length,
       });
       setSearch(true);
     } else {
       toast.error("No record found");
+    }
+  };
+
+  const tradeNameSearch = async () => {
+    if (
+      tradeNameRef.current?.input?.value == undefined ||
+      tradeNameRef.current?.input?.value == null ||
+      tradeNameRef.current?.input?.value == ""
+    ) {
+      return toast.error("Enter trade name");
+    }
+
+    const userresponse = await GetUser({
+      id: userid,
+    });
+
+    if (userresponse.data && userresponse.status) {
+      const response = await DvatTrackApplicationStatus({
+        dept: userresponse.data.selectOffice!,
+        searchTradeName: tradeNameRef.current?.input?.value,
+        take: 10,
+        skip: 0,
+      });
+
+      if (response.data && response.status && response.data.length > 0) {
+        const tableData: TableData[] = response.data.map((val) => ({
+          id: val.id,
+          arn: val.tempregistrationnumber ?? "",
+          tinNumber: val.tinNumber ?? "-",
+          tradeName: val.tradename ?? "-",
+          type: DataType.DVAT04,
+          description: "Application For new Registration",
+          submissionDate: formateDate(new Date(val.createdAt)),
+          status: val.status,
+          assignedTo: `${val.registration[0].dept_user.firstName} - ${val.registration[0].dept_user.lastName}`,
+        }));
+
+        setShowData(tableData);
+        setSearchTotal(10);
+        setPaginatin({
+          take: 10,
+          skip: 0,
+          total: 10,
+        });
+        setSearch(true);
+      } else {
+        toast.error("No record found");
+      }
     }
   };
 
@@ -148,31 +220,45 @@ const TrackAppliation = () => {
           return toast.error("Enter arn number");
         }
 
-        const search_response = data.filter(
-          (val) => val.arn === arnRef.current?.input?.value
-        );
+        const userresponse = await GetUser({
+          id: userid,
+        });
 
-        if (search_response.length > 0) {
-          setShowData(
-            search_response.slice(pagesize * (page - 1), pagesize * page)
-          );
-          setPaginatin({
-            skip: pagesize * (page - 1),
+        if (userresponse.data && userresponse.status) {
+          const response = await DvatTrackApplicationStatus({
+            dept: userresponse.data.selectOffice!,
+            searchArn: arnRef.current?.input?.value,
             take: pagesize,
-            total: search_response.length,
+            skip: pagesize * (page - 1),
           });
-          setSearch(true);
+
+          if (response.data && response.status) {
+            const tableData: TableData[] = response.data.map((val) => ({
+              id: val.id,
+              arn: val.tempregistrationnumber ?? "",
+              tinNumber: val.tinNumber ?? "-",
+              tradeName: val.tradename ?? "-",
+              type: DataType.DVAT04,
+              description: "Application For new Registration",
+              submissionDate: formateDate(new Date(val.createdAt)),
+              status: val.status,
+              assignedTo: `${val.registration[0].dept_user.firstName} - ${val.registration[0].dept_user.lastName}`,
+            }));
+
+            setShowData(tableData);
+            setPaginatin({
+              skip: pagesize * (page - 1),
+              take: pagesize,
+              total: searchTotal,
+            });
+          }
         }
       } else if (searchOption == SearchOption.TYPE) {
-        if (type == null) {
-          return toast.error("Select Type.");
-        }
-
         const search_response = data.filter((val) => val.type === type);
 
         if (search_response.length > 0) {
           setShowData(
-            search_response.slice(pagesize * (page - 1), pagesize * page)
+            search_response.slice(pagesize * (page - 1), pagesize * page),
           );
           setPaginatin({
             skip: pagesize * (page - 1),
@@ -180,6 +266,48 @@ const TrackAppliation = () => {
             total: search_response.length,
           });
           setSearch(true);
+        }
+      } else if (searchOption == SearchOption.TRADENAME) {
+        if (
+          tradeNameRef.current?.input?.value == undefined ||
+          tradeNameRef.current?.input?.value == null ||
+          tradeNameRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter trade name");
+        }
+
+        const userresponse = await GetUser({
+          id: userid,
+        });
+
+        if (userresponse.data && userresponse.status) {
+          const response = await DvatTrackApplicationStatus({
+            dept: userresponse.data.selectOffice!,
+            searchTradeName: tradeNameRef.current?.input?.value,
+            take: pagesize,
+            skip: pagesize * (page - 1),
+          });
+
+          if (response.data && response.status) {
+            const tableData: TableData[] = response.data.map((val) => ({
+              id: val.id,
+              arn: val.tempregistrationnumber ?? "",
+              tinNumber: val.tinNumber ?? "-",
+              tradeName: val.tradename ?? "-",
+              type: DataType.DVAT04,
+              description: "Application For new Registration",
+              submissionDate: formateDate(new Date(val.createdAt)),
+              status: val.status,
+              assignedTo: `${val.registration[0].dept_user.firstName} - ${val.registration[0].dept_user.lastName}`,
+            }));
+
+            setShowData(tableData);
+            setPaginatin({
+              skip: pagesize * (page - 1),
+              take: pagesize,
+              total: searchTotal,
+            });
+          }
         }
       }
     } else {
@@ -201,7 +329,7 @@ const TrackAppliation = () => {
     Array<DvatTrackApplicationStatusType>
   >([]);
   const [compdata, setCompData] = useState<Array<TrackApplilcationStatusType>>(
-    []
+    [],
   );
 
   const [data, setData] = useState<TableData[]>([]);
@@ -232,6 +360,8 @@ const TrackAppliation = () => {
           data.push({
             id: val.id,
             arn: val.tempregistrationnumber ?? "",
+            tinNumber: val.dvat04?.tinNumber ?? "-",
+            tradeName: val.dvat04?.tradename ?? "-",
             type: DataType.DVAT04,
             description: "Application For new Registration",
             submissionDate: formateDate(new Date(val.createdAt)),
@@ -249,6 +379,8 @@ const TrackAppliation = () => {
         data.push({
           id: val.id,
           arn: val.arn,
+          tinNumber: val.dvat?.tinNumber ?? "-",
+          tradeName: val.dvat?.tradename ?? "-",
           type: DataType.COMPOSITION,
           description: val.compositionScheme
             ? "Migration to composition Scheme"
@@ -260,7 +392,9 @@ const TrackAppliation = () => {
       });
     }
 
-    data.sort((a, b) => statusSortPriority(a.status) - statusSortPriority(b.status));
+    data.sort(
+      (a, b) => statusSortPriority(a.status) - statusSortPriority(b.status),
+    );
 
     setData(data);
     setShowData(data.slice(0, pagination.take));
@@ -296,6 +430,8 @@ const TrackAppliation = () => {
             .map((val) => ({
               id: val.id,
               arn: val.tempregistrationnumber ?? "",
+              tinNumber: val.dvat04?.tinNumber ?? "-",
+              tradeName: val.dvat04?.tradename ?? "-",
               type: DataType.DVAT04,
               description: "Application For new Registration",
               submissionDate: formateDate(new Date(val.createdAt)),
@@ -306,8 +442,8 @@ const TrackAppliation = () => {
               a.status === "PENDINGPROCESSING"
                 ? -1
                 : b.status === "PENDINGPROCESSING"
-                ? 1
-                : 0
+                  ? 1
+                  : 0,
             );
 
           data.push(...sortedData);
@@ -321,6 +457,8 @@ const TrackAppliation = () => {
           data.push({
             id: val.id,
             arn: val.arn,
+            tinNumber: val.dvat?.tinNumber ?? "-",
+            tradeName: val.dvat?.tradename ?? "-",
             type: DataType.COMPOSITION,
             description: val.compositionScheme
               ? "Migration to composition Scheme"
@@ -356,101 +494,97 @@ const TrackAppliation = () => {
     <>
       <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white flex">
+          <div className="bg-blue-500 p-2 text-white flex justify-between items-center">
             <p>Track Application Status</p>
-            <div className="grow"></div>
-
-            <Drawer>
-              <DrawerTrigger>Info</DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader className="px-0 py-2">
-                  <DrawerTitle>
-                    <p className="w-5/6 mx-auto">Meaning of status</p>
-                  </DrawerTitle>
-                </DrawerHeader>
-                <Table className="border mt-2 w-5/6 mx-auto">
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Pending for Processing
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application filed successfully. Pending with Tax Officer
-                        for Processing.*
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Pending for Clarification
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Notice for seeking clarification issued by officer. File
-                        Clarification within 7 working days of date of notice on
-                        portal.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Clarification filed-Pending for Order
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Clarification filed successfully by Applicant. Pending
-                        with Tax Officer for Order.*
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Clarification not filed Pending for Order
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Clarification not filed by the Applicant. Pending with
-                        Tax Officer for Rejection.*
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Approved
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application is Approved. Registration ID and possward
-                        emailed to Applicant.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Rejected
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application is Rejected by tax officer.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Withdrawn
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Application is withdrawn by the Applicant/Tax payer.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-left w-60 p-2">
-                        Cancelled on Request of Taxpayer
-                      </TableCell>
-                      <TableCell className="text-left p-2">
-                        Registration is cancelled on request to taxpayer.
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-
-                <DrawerFooter>
-                  <DrawerClose>
-                    <ShButton variant="outline">Close</ShButton>
-                  </DrawerClose>
-                </DrawerFooter>
-              </DrawerContent>
-            </Drawer>
+            <Button
+              type="primary"
+              onClick={() => setIsDrawerOpen(true)}
+            >
+              ℹ️ Info
+            </Button>
           </div>
+
+          <Drawer
+            title="Meaning of status"
+            onClose={() => setIsDrawerOpen(false)}
+            open={isDrawerOpen}
+            width={1000}
+          >
+            <Table className="border">
+              <TableBody>
+                <TableRow>
+                  <TableCell className="text-left w-60 p-2">
+                    Pending for Processing
+                  </TableCell>
+                  <TableCell className="text-left p-2">
+                    Application filed successfully. Pending with Tax Officer
+                    for Processing.*
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="text-left w-60 p-2">
+                    Pending for Clarification
+                  </TableCell>
+                  <TableCell className="text-left p-2">
+                    Notice for seeking clarification issued by officer. File
+                    Clarification within 7 working days of date of notice on
+                    portal.
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="text-left w-60 p-2">
+                    Clarification filed-Pending for Order
+                  </TableCell>
+                  <TableCell className="text-left p-2">
+                    Clarification filed successfully by Applicant. Pending
+                    with Tax Officer for Order.*
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="text-left w-60 p-2">
+                    Clarification not filed Pending for Order
+                  </TableCell>
+                  <TableCell className="text-left p-2">
+                    Clarification not filed by the Applicant. Pending with
+                    Tax Officer for Rejection.*
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="text-left w-60 p-2">
+                    Approved
+                  </TableCell>
+                  <TableCell className="text-left p-2">
+                    Application is Approved. Registration ID and possward
+                    emailed to Applicant.
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="text-left w-60 p-2">
+                    Rejected
+                  </TableCell>
+                  <TableCell className="text-left p-2">
+                    Application is Rejected by tax officer.
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="text-left w-60 p-2">
+                    Withdrawn
+                  </TableCell>
+                  <TableCell className="text-left p-2">
+                    Application is withdrawn by the Applicant/Tax payer.
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="text-left w-60 p-2">
+                    Cancelled on Request of Taxpayer
+                  </TableCell>
+                  <TableCell className="text-left p-2">
+                    Registration is cancelled on request to taxpayer.
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </Drawer>
 
           <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
             <Radio.Group
@@ -460,6 +594,7 @@ const TrackAppliation = () => {
             >
               <Radio value={SearchOption.ARN}>ARN</Radio>
               <Radio value={SearchOption.TYPE}>Form Type</Radio>
+              <Radio value={SearchOption.TRADENAME}>Trade Name</Radio>
             </Radio.Group>
 
             {(() => {
@@ -521,6 +656,29 @@ const TrackAppliation = () => {
                       )}
                     </div>
                   );
+
+                case SearchOption.TRADENAME:
+                  return (
+                    <div className="flex gap-2">
+                      <Input
+                        className="w-60"
+                        ref={tradeNameRef}
+                        placeholder={"Enter Trade Name"}
+                        disabled={isSearch}
+                      />
+
+                      {isSearch ? (
+                        <Button onClick={init} type="primary">
+                          Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={tradeNameSearch} type="primary">
+                          Search
+                        </Button>
+                      )}
+                    </div>
+                  );
+
                 default:
                   return null;
               }
@@ -545,6 +703,12 @@ const TrackAppliation = () => {
                       ARN
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center border">
+                      TIN Number
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border">
+                      Trade Name
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border">
                       Form No.
                     </TableHead>
                     <TableHead className="text-center border">
@@ -567,7 +731,7 @@ const TrackAppliation = () => {
                           {val.type === DataType.DVAT04 ? (
                             <Link
                               href={`/dashboard/register/${encryptURLData(
-                                val.id.toString()
+                                val.id.toString(),
                               )}/preview/${encryptURLData(val.id.toString())}`}
                               className="text-blue-500"
                             >
@@ -583,6 +747,12 @@ const TrackAppliation = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-center border">
+                          {val.tinNumber}
+                        </TableCell>
+                        <TableCell className="text-center border">
+                          {val.tradeName}
+                        </TableCell>
+                        <TableCell className="text-center border">
                           {val.type === DataType.DVAT04 ? "VAT-04" : "COMP"}
                         </TableCell>
                         <TableCell className="text-center border">
@@ -594,11 +764,13 @@ const TrackAppliation = () => {
                         <TableCell className="text-center border">
                           <span
                             className={`px-2 py-1 rounded text-xs font-medium ${
-                              val.status === "PENDING" || val.status === "PENDINGPROCESSING"
+                              val.status === "PENDING" ||
+                              val.status === "PENDINGPROCESSING"
                                 ? "bg-yellow-100 text-yellow-800"
-                                : val.status === "COMPLETED" || val.status === "APPROVED"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-700"
+                                : val.status === "COMPLETED" ||
+                                    val.status === "APPROVED"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-700"
                             }`}
                           >
                             {val.status}
