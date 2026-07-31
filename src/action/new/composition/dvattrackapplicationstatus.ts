@@ -10,8 +10,8 @@ interface DvatTrackApplicationStatusPayload {
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../../prisma/database";
-import { dvat04, registration, SelectOffice, user } from "@prisma/client";
 import { DvatTrackApplicationStatusType } from "@/models/dashboard/regiser/track_application";
+import { SelectOffice } from "@prisma/client";
 
 const DvatTrackApplicationStatus = async (
   payload: DvatTrackApplicationStatusPayload
@@ -81,7 +81,7 @@ const DvatTrackApplicationStatus = async (
 
     return {
       status: true,
-      data: dvat04response,
+      data: dvat04response as DvatTrackApplicationStatusType[],
       message: "dvat04 data get successfully",
       functionname: "GetAllDvat",
     };

@@ -63,7 +63,7 @@ const TrackApplilcationStatus = async (
         ? "Composition Get successfully"
         : "Unable to get composition.",
       functionname: functionname,
-      data: composition_response ?? null,
+      data: (composition_response ?? null) as TrackApplilcationStatusType[] | null,
     });
   } catch (e) {
     return createResponse({
