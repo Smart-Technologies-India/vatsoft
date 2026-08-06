@@ -106,7 +106,7 @@ const CFROM = () => {
     init();
   }, []);
 
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 10;
 
   // Helper function to chunk the data
   function chunkArray<T>(array: T[], size: number): T[][] {

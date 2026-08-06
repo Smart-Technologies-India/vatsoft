@@ -11,7 +11,7 @@ import { DateSelect } from "../inputfields/dateselect";
 import { toast } from "react-toastify";
 import { Button, Input, InputRef } from "antd";
 import { ToWords } from "to-words";
-import { decryptURLData, onFormError } from "@/utils/methods";
+import { decryptURLData, encryptURLData, onFormError } from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { dvat04, returns_01, user } from "@prisma/client";
 import SearchTinNumber from "@/action/dvat/searchtin";
@@ -258,10 +258,12 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
       remark: data.remark,
     });
 
-    if (dvat24_response.status) {
+    if (dvat24_response.status && dvat24_response.data) {
       toast.success("DVAT 24 created successfully");
       reset({});
-      router.push("/dashboard/returns/department-track-return-status");
+      router.push(
+        `/dashboard/returns/department-pending-return/notice/${encryptURLData(dvatdata.id.toString())}`,
+      );
     } else {
       toast.error(dvat24_response.message);
     }

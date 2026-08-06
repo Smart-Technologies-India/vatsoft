@@ -20,7 +20,12 @@ import { DateSelect } from "../inputfields/dateselect";
 import { toast } from "react-toastify";
 import { Button, Input, InputRef } from "antd";
 import { ToWords } from "to-words";
-import { capitalcase, decryptURLData, onFormError } from "@/utils/methods";
+import {
+  capitalcase,
+  decryptURLData,
+  encryptURLData,
+  onFormError,
+} from "@/utils/methods";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import { dvat04, returns_01, user } from "@prisma/client";
 import SearchTinNumber from "@/action/dvat/searchtin";
@@ -131,6 +136,7 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
 
   const onSubmit = async (data: CreateDvat24AForm) => {
     if (!return01Data) return toast.error("Return 01 not found");
+    if (!dvatdata) return toast.error("DVAT data not found");
 
     const dvat24_response = await CreateDvat24A({
       due_date: fixDate(new Date(data.due_date)),
@@ -146,10 +152,12 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
       returns_01Id: return01Data.id,
     });
 
-    if (dvat24_response.status) {
+    if (dvat24_response.status && dvat24_response.data) {
       toast.success("DVAT 24 created successfully");
       reset({});
-      router.push("/dashboard/returns/department-track-return-status");
+      router.push(
+        `/dashboard/returns/department-pending-return/notice/${encryptURLData(dvatdata.id.toString())}`,
+      );
     } else {
       toast.error(dvat24_response.message);
     }

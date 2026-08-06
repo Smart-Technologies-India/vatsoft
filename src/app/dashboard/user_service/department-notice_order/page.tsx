@@ -16,12 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { FormType, order_notice, user } from "@prisma/client";
-import {
-  capitalcase,
-  encryptURLData,
-  formateDate,
-  generatePDF,
-} from "@/utils/methods";
+import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import GetUser from "@/action/user/getuser";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
@@ -49,11 +44,12 @@ const SupplierDetails = () => {
     TYPE,
     DATE,
     TIN,
+    TRADENAME,
     ORDER,
   }
 
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.TYPE
+    SearchOption.TYPE,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -66,7 +62,7 @@ const SupplierDetails = () => {
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    dateStrings: [string, string],
   ) => {
     setSearchDate(dates);
   };
@@ -110,6 +106,33 @@ const SupplierDetails = () => {
     const search_response = await SearchNoticeOrder({
       dept: user?.selectOffice!,
       tin: tinRef.current?.input?.value,
+      take: 10,
+      skip: 0,
+    });
+    if (search_response.status && search_response.data.result) {
+      setNoticeData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      setSearch(true);
+    }
+  };
+
+  const tradeRef = useRef<InputRef>(null);
+
+  const tradesearch = async () => {
+    if (
+      tradeRef.current?.input?.value == undefined ||
+      tradeRef.current?.input?.value == null ||
+      tradeRef.current?.input?.value == ""
+    ) {
+      return toast.error("Enter Trade Name");
+    }
+    const search_response = await SearchNoticeOrder({
+      dept: user?.selectOffice!,
+      tradename: tradeRef.current?.input?.value,
       take: 10,
       skip: 0,
     });
@@ -309,6 +332,30 @@ const SupplierDetails = () => {
           });
           setSearch(true);
         }
+      } else if (searchOption == SearchOption.TRADENAME) {
+        if (
+          tradeRef.current?.input?.value == undefined ||
+          tradeRef.current?.input?.value == null ||
+          tradeRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter Trade Name");
+        }
+        const search_response = await SearchNoticeOrder({
+          dept: user?.selectOffice!,
+          tradename: tradeRef.current?.input?.value,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setNoticeData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
       } else if (searchOption == SearchOption.ORDER) {
         if (
           orderRef.current?.input?.value == undefined ||
@@ -363,28 +410,17 @@ const SupplierDetails = () => {
     }
   };
   const downloadNoticeOrder = async (type: FormType, id: number) => {
-    switch (type) {
-      case FormType.DVAT10:
-        await generatePDF(
-          `/dashboard/returns/dvat10?id=${encryptURLData(
-            id.toString()
-          )}&sidebar=no`
-        );
-        break;
-      case FormType.DVAT24:
-        await generatePDF(
-          `/dashboard/returns/dvat24?id=${encryptURLData(
-            id.toString()
-          )}&sidebar=no`
-        );
-        break;
-      case FormType.DVAT24A:
-        await generatePDF(
-          `/dashboard/returns/dvat24a?id=${encryptURLData(
-            id.toString()
-          )}&sidebar=no`
-        );
-        break;
+    // Open the notice template in a new window and print to PDF
+    const noticeUrl = `/dashboard/returns/notice-template?id=${encryptURLData(id.toString())}&sidebar=no`;
+    const window_ref = window.open(noticeUrl, "_blank");
+
+    if (window_ref) {
+      // Wait for the page to load, then trigger print dialog
+      window_ref.addEventListener("load", () => {
+        setTimeout(() => {
+          window_ref.print();
+        }, 3000);
+      });
     }
   };
 
@@ -396,12 +432,44 @@ const SupplierDetails = () => {
     );
   return (
     <>
+      <style>{`
+        @media print {
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          body {
+            font-family: Arial, sans-serif;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-hide {
+            display: none !important;
+          }
+          table {
+            font-size: 11px;
+            line-height: 1.3;
+          }
+          td, th {
+            padding: 4px;
+          }
+          tr {
+            page-break-inside: avoid;
+          }
+        }
+        @page {
+          size: A4 landscape;
+          margin: 10mm;
+        }
+      `}</style>
       <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white">
             List of Notices & Orders issued by Authorities
           </div>
-          <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
+          <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center no-print">
             <Radio.Group
               onChange={onChange}
               value={searchOption}
@@ -411,6 +479,7 @@ const SupplierDetails = () => {
               <Radio value={SearchOption.TYPE}>Type</Radio>
               <Radio value={SearchOption.DATE}>Period</Radio>
               <Radio value={SearchOption.TIN}>TIN Number</Radio>
+              <Radio value={SearchOption.TRADENAME}>Trade Name</Radio>
               <Radio value={SearchOption.ORDER}>Notice/Demand Order Id</Radio>
             </Radio.Group>
             {(() => {
@@ -493,6 +562,27 @@ const SupplierDetails = () => {
                       )}
                     </div>
                   );
+                case SearchOption.TRADENAME:
+                  return (
+                    <div className="flex gap-2">
+                      <Input
+                        className="w-60"
+                        ref={tradeRef}
+                        placeholder={"Enter Trade Name"}
+                        disabled={isSearch}
+                      />
+
+                      {isSearch ? (
+                        <Button onClick={init} type="primary">
+                          Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={tradesearch} type="primary">
+                          Search
+                        </Button>
+                      )}
+                    </div>
+                  );
                 case SearchOption.ORDER:
                   return (
                     <div className="flex gap-2">
@@ -538,6 +628,12 @@ const SupplierDetails = () => {
                   <TableRow className="bg-gray-100">
                     <TableHead className="">Notice/Demand Order Id</TableHead>
                     <TableHead className="whitespace-nowrap text-center border p-2">
+                      Trade Name
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
+                      TIN Number
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
                       Issued By
                     </TableHead>
                     <TableHead className="text-center border p-2">
@@ -567,12 +663,27 @@ const SupplierDetails = () => {
                   {noticeData.map((val: order_notice, index: number) => (
                     <TableRow key={index}>
                       <TableCell className="text-center border p-2">
-                        <Link
+                        {/* <Link
                           href={getLink(val.form_type, val.id)}
                           className="text-blue-500"
                         >
                           {val.ref_no.toUpperCase()}
-                        </Link>
+                        </Link> */}
+                        <button
+                          title="Download Notice as PDF"
+                          className="inline-flex items-center justify-center p-2 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-all duration-200 cursor-pointer"
+                          onClick={async () => {
+                            await downloadNoticeOrder(val.form_type, val.id);
+                          }}
+                        >
+                          {val.ref_no.toUpperCase()}
+                        </button>
+                      </TableCell>
+                      <TableCell className="text-center border p-2">
+                        {(val as any).dvat?.tradename || "-"}
+                      </TableCell>
+                      <TableCell className="text-center border p-2">
+                        {(val as any).dvat?.tinNumber || "-"}
                       </TableCell>
                       <TableCell className="text-center whitespace-nowrap  border p-2">
                         System Generated
@@ -596,12 +707,15 @@ const SupplierDetails = () => {
                         {capitalcase(val.status)}
                       </TableCell>
                       <TableCell className="text-center text-blue-500 border p-2">
-                        <MdiDownload
-                          className="cursor-pointer"
+                        <button
+                          title="Download Notice as PDF"
+                          className="inline-flex items-center justify-center p-2 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-all duration-200 cursor-pointer"
                           onClick={async () => {
                             await downloadNoticeOrder(val.form_type, val.id);
                           }}
-                        />
+                        >
+                          <MdiDownload className="w-5 h-5" />
+                        </button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -610,7 +724,7 @@ const SupplierDetails = () => {
             </>
           )}
           <div className="mt-2"></div>
-          <div className="lg:hidden">
+          <div className="lg:hidden no-print">
             <Pagination
               align="center"
               defaultCurrent={1}
@@ -620,7 +734,7 @@ const SupplierDetails = () => {
               showTotal={(total: number) => `Total ${total} items`}
             />
           </div>
-          <div className="hidden lg:block">
+          <div className="hidden lg:block no-print">
             <Pagination
               showQuickJumper
               align="center"

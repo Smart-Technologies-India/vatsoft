@@ -1,14 +1,10 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { dvat04, SelectOffice, FrequencyFilings } from "@prisma/client";
+import { dvat04, FrequencyFilings, SelectOffice } from "@prisma/client";
 import prisma from "../../../prisma/database";
-import {
-  createPaginationResponse,
-  PaginationResponse,
-} from "@/models/response";
-
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
+
 interface ResponseType {
   dvat04: dvat04;
   lastfiling: string;
@@ -16,7 +12,7 @@ interface ResponseType {
   notice: number;
 }
 
-interface DeptPendingReturnPayload {
+interface GetAllPendingReturnPayload {
   dept?: SelectOffice;
   arnnumber?: string;
   tradename?: string;
@@ -24,24 +20,24 @@ interface DeptPendingReturnPayload {
   compositionScheme?: boolean;
   fromdate?: Date;
   todate?: Date;
-  skip: number;
-  take: number;
 }
 
-const DeptPendingReturn = async (
-  payload: DeptPendingReturnPayload
-): Promise<PaginationResponse<Array<ResponseType> | null>> => {
-  const functionname: string = DeptPendingReturn.name;
+const GetAllPendingReturn = async (
+  payload: GetAllPendingReturnPayload,
+): Promise<{
+  status: boolean;
+  data?: Array<ResponseType>;
+  message: string;
+}> => {
   try {
     const currentUserId = await getCurrentUserId();
     const currentDvatId = await getCurrentDvatId();
+
     if (!currentUserId || !currentDvatId) {
       return {
         status: false,
-        data: null,
         message: "Not authenticated. Please login.",
-        functionname: "DeptPendingReturn",
-      } as any;
+      };
     }
 
     // Build return_filing where clause with date filters if provided
@@ -62,10 +58,16 @@ const DeptPendingReturn = async (
 
     const dvatRecords = await prisma.dvat04.findMany({
       where: {
-        ...(payload.dept && { selectOffice: payload.dept }),
+        ...(payload.dept && {
+          selectOffice: payload.dept ?? SelectOffice.Dadra_Nagar_Haveli,
+        }),
         ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
-        ...(payload.frequencyFilings && { frequencyFilings: payload.frequencyFilings as FrequencyFilings }),
-        ...(payload.compositionScheme !== undefined && { compositionScheme: payload.compositionScheme }),
+        ...(payload.frequencyFilings && {
+          frequencyFilings: payload.frequencyFilings as FrequencyFilings,
+        }),
+        ...(payload.compositionScheme !== undefined && {
+          compositionScheme: payload.compositionScheme,
+        }),
         ...(payload.tradename && {
           OR: [
             { tradename: { contains: payload.tradename } },
@@ -85,13 +87,15 @@ const DeptPendingReturn = async (
       },
     });
 
-    if (!dvatRecords || dvatRecords.length === 0)
-      return createPaginationResponse({
+    if (!dvatRecords || dvatRecords.length === 0) {
+      return {
+        status: true,
+        data: [],
         message: "There is no returns data",
-        functionname,
-      });
+      };
+    }
 
-    let resMap = new Map<number, ResponseType>(); // Track dvat04 by ID
+    let resMap = new Map<number, ResponseType>();
     const currentDate = new Date();
 
     for (let i = 0; i < dvatRecords.length; i++) {
@@ -99,7 +103,6 @@ const DeptPendingReturn = async (
       let lastfiling = "N/A";
       let pending = 0;
 
-      // Process return_filing records for this dvat
       for (let j = 0; j < currentDvat.return_filing.length; j++) {
         const filing = currentDvat.return_filing[j];
         const filingStatus = filing.filing_status;
@@ -130,23 +133,20 @@ const DeptPendingReturn = async (
         deletedBy: null,
         status: "PENDING",
         notice_order_type: "NOTICE",
-        // form_type: "DVAT10",
       },
     });
-
-
 
     interface NoticeType {
       dvat04id: number;
       notice_count: number;
     }
 
-    let noticeMap = new Map<number, NoticeType>(); // Track dvat04 by ID
+    let noticeMap = new Map<number, NoticeType>();
 
     for (let i = 0; i < notice.length; i++) {
       if (noticeMap.has(notice[i].dvatid)) {
         let existingData: NoticeType = noticeMap.get(
-          notice[i].dvatid
+          notice[i].dvatid,
         ) as NoticeType;
         existingData.notice_count += 1;
       } else {
@@ -157,18 +157,16 @@ const DeptPendingReturn = async (
       }
     }
 
-
-
     const notice_count = Array.from(noticeMap.values());
 
     // Convert Map to an array and filter out records with pending = 0
     const res: ResponseType[] = Array.from(resMap.values()).filter(
-      (val: ResponseType) => val.pending !== 0
+      (val: ResponseType) => val.pending !== 0,
     );
 
     res.forEach((response) => {
       const matchingNotice = notice_count.find(
-        (notice) => notice.dvat04id === response.dvat04.id
+        (notice) => notice.dvat04id === response.dvat04.id,
       );
 
       if (matchingNotice) {
@@ -176,22 +174,19 @@ const DeptPendingReturn = async (
       }
     });
 
-    const paginatedData = res.sort((a, b) => b.pending - a.pending).slice(payload.skip, payload.skip + payload.take);
+    const allData = res.sort((a, b) => b.pending - a.pending);
 
-    return createPaginationResponse({
-      message: "Pending returns data get successfully",
-      functionname,
-      data: paginatedData,
-      skip: payload.skip,
-      take: payload.take,
-      total: res.length ?? 0,
-    });
-  } catch (e) {
-    return createPaginationResponse({
-      message: errorToString(e),
-      functionname,
-    });
+    return {
+      status: true,
+      data: allData,
+      message: "All pending returns data retrieved successfully",
+    };
+  } catch (error) {
+    return {
+      status: false,
+      message: errorToString(error),
+    };
   }
 };
 
-export default DeptPendingReturn;
+export default GetAllPendingReturn;

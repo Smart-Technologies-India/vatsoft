@@ -22,6 +22,9 @@ import GetUser from "@/action/user/getuser";
 import Link from "next/link";
 import { encryptURLData } from "@/utils/methods";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import GetAllPendingReturn from "@/action/dvat/getallpendingreturn";
+import { MdiDownload } from "@/components/icons";
+import * as XLSX from "xlsx";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -268,6 +271,89 @@ const TrackAppliation = () => {
       setSearch(true);
     }
   };
+  const handleDownloadExcel = async () => {
+    try {
+      toast.loading("Preparing Excel file...");
+
+      // Build search parameters based on current search
+      const searchParams: any = {
+        dept: user?.selectOffice,
+      };
+
+      if (isSearch) {
+        if (searchOption === SearchOption.TIN && arnRef.current?.input?.value) {
+          searchParams.arnnumber = arnRef.current.input.value;
+        } else if (
+          searchOption === SearchOption.NAME &&
+          nameRef.current?.input?.value
+        ) {
+          searchParams.tradename = nameRef.current.input.value;
+        } else if (
+          searchOption === SearchOption.COMPOSITION &&
+          compositionFilter
+        ) {
+          searchParams.compositionScheme = compositionFilter === "true";
+        } else if (
+          searchOption === SearchOption.FREQUENCY_FILINGS &&
+          frequencyFilingsFilter
+        ) {
+          searchParams.frequencyFilings = frequencyFilingsFilter;
+        }
+      }
+
+      // Fetch all data
+      const response = await GetAllPendingReturn(searchParams);
+
+      if (!response.status || !response.data) {
+        toast.dismiss();
+        toast.error(response.message || "Failed to fetch data");
+        return;
+      }
+
+      // Prepare data for Excel
+      const excelData = response.data.map((item: ResponseType) => ({
+        "TIN Number": item.dvat04.tinNumber,
+        "Trade Name": item.dvat04.tradename,
+        "Dealer Name": item.dvat04.name,
+        Composition: item.dvat04.compositionScheme ? "Yes" : "No",
+        "Frequency Filings": item.dvat04.frequencyFilings,
+        "Last Filing Period": item.lastfiling,
+        "Pending Returns": item.pending,
+        Notice: item.notice,
+      }));
+
+      // Create Excel workbook
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Pending Returns");
+
+      // Set column widths
+      const columnWidths = [
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 15 },
+        { wch: 10 },
+      ];
+      worksheet["!cols"] = columnWidths;
+
+      // Download file
+      XLSX.writeFile(workbook, `Pending_Returns_${new Date().getTime()}.xlsx`);
+
+      toast.dismiss();
+      toast.success(
+        `Successfully exported ${excelData.length} records to Excel`,
+      );
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Error downloading file");
+      console.error("Download error:", error);
+    }
+  };
+
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (!user) return toast.error("User not found. Please login again.");
 
@@ -596,6 +682,14 @@ const TrackAppliation = () => {
                   return null;
               }
             })()}
+            <Button
+              type="primary"
+              icon={<MdiDownload className="w-4 h-4" />}
+              onClick={handleDownloadExcel}
+              className="flex items-center gap-2"
+            >
+              Download as Excel
+            </Button>
           </div>
 
           {dvatData.length == 0 ? (
@@ -612,6 +706,7 @@ const TrackAppliation = () => {
             </>
           ) : (
             <>
+              {/* Table Section */}
               <Table className="border mt-2">
                 <TableHeader>
                   <TableRow className="bg-gray-100">

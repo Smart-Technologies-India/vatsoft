@@ -16,6 +16,7 @@ interface SearchNoticeOrderPayload {
   dept?: SelectOffice;
   form_type?: FormType;
   tin?: string;
+  tradename?: string;
   order?: string;
   dvatid?: number;
   skip: number;
@@ -53,6 +54,11 @@ const SearchNoticeOrder = async (
                 contains: payload.tin,
               },
             }),
+            ...(payload.tradename && {
+              tradename: {
+                contains: payload.tradename,
+              },
+            }),
             deletedAt: null,
             deletedById: null,
           },
@@ -70,6 +76,14 @@ const SearchNoticeOrder = async (
               },
             }),
         },
+        include: {
+          dvat: {
+            select: {
+              tinNumber: true,
+              tradename: true,
+            },
+          },
+        },
         skip: payload.skip,
         take: payload.take,
       }),
@@ -84,6 +98,11 @@ const SearchNoticeOrder = async (
             ...(payload.tin && {
               tinNumber: {
                 contains: payload.tin,
+              },
+            }),
+            ...(payload.tradename && {
+              tradename: {
+                contains: payload.tradename,
               },
             }),
             deletedAt: null,

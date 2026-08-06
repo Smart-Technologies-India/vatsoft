@@ -558,12 +558,21 @@ const SupplierDetails = () => {
                   {noticeData.map((val: order_notice, index: number) => (
                     <TableRow key={index}>
                       <TableCell className="text-center border p-2">
-                        <Link
+                        {/* <Link
                           href={getLink(val.form_type, val.id)}
                           className="text-blue-500"
                         >
                           {val.ref_no.toUpperCase()}
-                        </Link>
+                        </Link> */}
+                        <button
+                          title="Download Notice as PDF"
+                          className="inline-flex items-center justify-center p-2 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-all duration-200 cursor-pointer"
+                          onClick={async () => {
+                            await downloadNoticeOrder(val.form_type, val.id);
+                          }}
+                        >
+                          {val.ref_no.toUpperCase()}
+                        </button>
                       </TableCell>
                       <TableCell className="text-center whitespace-nowrap  border p-2">
                         {val.createdById == 1

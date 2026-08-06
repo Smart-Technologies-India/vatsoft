@@ -1233,11 +1233,12 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       }
 
       // Cross-row check: stock availability per item_code.
-      // Manufacturer-style uploads and special DVAT IDs should bypass stock validation.
+      // Manufacturer-style uploads, special DVAT IDs, and RESTAURANT commodity should bypass stock validation.
       if (
         dvatdata &&
         !isManufacturerBulkUpload &&
-        !manufacturerBulkUploadDvatIds.has(dvatdata.id)
+        !manufacturerBulkUploadDvatIds.has(dvatdata.id) &&
+        dvatdata.commodity !== "RESTAURANT"
       ) {
         const stockResponse = await GetAllStock({
           dvatid: dvatdata.id,
@@ -1246,11 +1247,9 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         });
         if (stockResponse.status && stockResponse.data?.result) {
           const stockMap: { [commodityId: number]: number } = {};
-          const packSizeMap: { [commodityId: number]: number } = {};
           for (const s of stockResponse.data.result) {
             stockMap[s.commodity_masterId] =
               (stockMap[s.commodity_masterId] ?? 0) + s.quantity;
-            packSizeMap[s.commodity_masterId] = parseFloat(s.commodity_master?.pack_size || "1");
           }
 
           // Sum quantities per item_code across rows with valid item codes
@@ -1265,18 +1264,15 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           parsedRows.forEach((row) => {
             if (row.item_code > 0) {
               const availablePcs = stockMap[row.item_code] ?? 0;
-              const packSize = packSizeMap[row.item_code] ?? 1;
               const totalRequested = uploadQuantityMap[row.item_code] ?? 0;
-              const requiredPcs = Math.ceil(totalRequested / packSize);
               
-              if (requiredPcs > availablePcs) {
-                const availableQuantity = availablePcs * packSize;
+              if (totalRequested > availablePcs) {
                 if (!row.errorname.includes("* Insufficient stock")) {
                   row.error = true;
                   row.errorname = row.errorname
                     ? row.errorname +
-                      `\n* Insufficient stock (available: ${availableQuantity})`
-                    : `* Insufficient stock (available: ${availableQuantity})`;
+                      `\n* Insufficient stock (available: ${availablePcs}, required: ${totalRequested})`
+                    : `* Insufficient stock (available: ${availablePcs}, required: ${totalRequested})`;
                 }
               }
             }

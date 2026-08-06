@@ -141,7 +141,7 @@ const ChallanData = () => {
       QUARTER4: ["January", "February", "March"],
     };
 
-    return selectedQuarter ? quarterMonthsMap[selectedQuarter] ?? [] : [];
+    return selectedQuarter ? (quarterMonthsMap[selectedQuarter] ?? []) : [];
   };
 
   if (isLoading)
@@ -158,7 +158,7 @@ const ChallanData = () => {
     if (challanData?.returns_01) {
       const isQuarterlyFiling =
         dvat?.frequencyFilings?.toUpperCase() === "QUARTERLY";
- if (isQuarterlyFiling && challanData.returns_01.quarter) {
+      if (isQuarterlyFiling && challanData.returns_01.quarter) {
         const quarterMonths = getQuarterMonths(challanData.returns_01.quarter);
         returnPeriod = `${quarterMonths.join(", ")} ${challanData.returns_01.year}`;
       } else {
@@ -779,18 +779,24 @@ const ChallanData = () => {
                 <div>
                   <p className="text-xs text-gray-500">Return Period</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {challanData?.returns_01 ? (() => {
-                      const isQuarterlyFiling =
-                        dvat?.frequencyFilings?.toUpperCase() === "QUARTERLY";
-                       if (isQuarterlyFiling && challanData.returns_01.quarter) {
-                        const quarterMonths = getQuarterMonths(
-                          challanData.returns_01.quarter,
-                        );
-                        return `${quarterMonths.join(", ")} ${challanData.returns_01.year}`;
-                      } else {
-                        return `${challanData.returns_01.quarter} ${challanData.returns_01.year}`;
-                      }
-                    })() : "N/A"}
+                    {challanData?.returns_01
+                      ? (() => {
+                          const isQuarterlyFiling =
+                            dvat?.frequencyFilings?.toUpperCase() ===
+                            "QUARTERLY";
+                          if (
+                            isQuarterlyFiling &&
+                            challanData.returns_01.quarter
+                          ) {
+                            const quarterMonths = getQuarterMonths(
+                              challanData.returns_01.quarter,
+                            );
+                            return `${quarterMonths.join(", ")} ${challanData.returns_01.year}`;
+                          } else {
+                            return `${challanData.returns_01.month} ${challanData.returns_01.year}`;
+                          }
+                        })()
+                      : "N/A"}
                   </p>
                 </div>
               </div>

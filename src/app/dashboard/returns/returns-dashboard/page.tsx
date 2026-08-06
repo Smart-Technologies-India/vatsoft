@@ -627,10 +627,11 @@ const ReturnDashboard = () => {
 
     const quarterMonths = quarterMonthsMap[quarter];
 
+
     for (const month of quarterMonths) {
       // Current year condition
       if (selectedYear === currentYear) {
-        if (month < currentMonth) {
+        if (month <= currentMonth) {
           periods.push({
             value: monthNames[month],
             label: monthNames[month],

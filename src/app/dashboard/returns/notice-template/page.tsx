@@ -1,100 +1,59 @@
 "use client";
-import GetNotice from "@/action/notice_order/getnotice";
-import {
-  decryptURLData,
-} from "@/utils/methods";
-import {
-  dvat04,
-  Dvat24Reason,
-  order_notice,
-  returns_01,
-  user,
-} from "@prisma/client";
-import { Button } from "antd";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import GetUser from "@/action/user/getuser";
+import { decryptURLData, formateDate } from "@/utils/methods";
+import GetNotice from "@/action/notice_order/getnotice";
+import { Button } from "antd";
 import { MdiDownload } from "@/components/icons";
-import { formateDate } from "@/utils/methods";
+import { toast } from "react-toastify";
 
-type ResponseType = {
-  user: user;
-  dvat: dvat04;
-  return01: returns_01 | null;
-  notice: order_notice;
-};
-
-const Dvat10Page = () => {
+const NoticeTemplate = () => {
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const searchParam = useSearchParams();
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [data, setData] = useState<ResponseType | null>(null);
+  const idParam: string = searchParams.get("id") ?? "0";
+  const noticeId: string = decryptURLData(idParam, router);
+  const [noticeData, setNoticeData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const init = async () => {
-      const authResponse = await getAuthenticatedUserId();
-      if (!authResponse.status || !authResponse.data) {
+    const fetchNotice = async () => {
+      if (!noticeId) {
         setTimeout(() => {
-          setIsLoading(false);
-          router.back();
+          setLoading(false);
+          toast.error("No Notice found.");
         }, 1000);
         return;
       }
-
-      const idParam = searchParam.get("id");
-      if (!idParam) {
-        setTimeout(() => {
-          setIsLoading(false);
-          router.back();
-        }, 1000);
-        return;
+      const response = await GetNotice({ id: parseInt(noticeId) });
+      if (response.status) {
+        setNoticeData(response.data);
+      } else {
+        toast.error(response.message || "Failed to get notice.");
       }
 
-      const id: string = decryptURLData(idParam, router);
-      if (!id) {
-        setTimeout(() => {
-          setIsLoading(false);
-          router.back();
-        }, 1000);
-        return;
-      }
-
-      const response = await GetNotice({
-        id: parseInt(id),
-      });
-
-      if (response.status && response.data) {
-        setData({
-          dvat: response.data.dvat,
-          notice: response.data.notice,
-          return01: response.data.return01,
-          user: response.data.user,
-        });
-      }
-
+      // Add 1000ms delay before hiding loading
       setTimeout(() => {
-        setIsLoading(false);
+        setLoading(false);
       }, 1000);
     };
-    init();
-  }, [router, searchParam]);
+
+    fetchNotice();
+  }, [noticeId]);
+
+  if (loading) return <div className="p-8">Loading...</div>;
+  if (!noticeData) return <div className="p-8">Notice not found</div>;
+
+  const notice = noticeData.notice;
+  const dvatInfo = noticeData.dvat;
 
   const handleDownload = () => {
     window.print();
   };
 
-  if (isLoading || data == null) {
-    return <div className="p-8">Loading...</div>;
-  }
-
-  const notice = data.notice;
-  const dvatInfo = data.dvat;
-
   return (
     <div>
       <style>{`
-        @media print {
+     @media print {
           * {
             margin: 0;
             padding: 0;
@@ -204,7 +163,6 @@ const Dvat10Page = () => {
           </p>
           <p className="text-sm print:text-xs">Silvassa - 396230.</p>
         </div>
-
         {/* Notice Info */}
         <div className="flex justify-between mb-2 print:mb-1 text-sm print:text-xs">
           <div>
@@ -300,10 +258,10 @@ const Dvat10Page = () => {
               </p>
               <p className="font-bold text-sm print:text-xs">Silvassa.</p>
             </div>
+
+            {/* Recipient Address */}
           </div>
         </div>
-
-        {/* Recipient Address */}
         <div className="mt-3 print:mt-2 text-sm print:text-xs space-y-1 print:space-y-0">
           <p>
             <span className="font-bold">To</span>
@@ -340,4 +298,4 @@ const Dvat10Page = () => {
   );
 };
 
-export default Dvat10Page;
+export default NoticeTemplate;

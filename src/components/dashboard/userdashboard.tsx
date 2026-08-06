@@ -31,6 +31,7 @@ import { toast } from "react-toastify";
 import CheckFirstStock from "@/action/firststock/checkfirststock";
 import GetPendingAcceptCount from "@/action/stock/getpendingacceptcount";
 import GetFromDvat from "@/action/registration/getfromdvat";
+import GetPendingNoticeCount from "@/action/notice_order/getpendingnoticecount";
 import { dvat04, user } from "@prisma/client";
 import { useRouter } from "next/navigation";
 
@@ -44,6 +45,7 @@ const UserDashboard = () => {
   const [isProfileCompletd, setIsProfileCompleted] = useState<boolean>(false);
   const [hasFirstStock, setHasFirstStock] = useState<boolean>(false);
   const [pendingAcceptCount, setPendingAcceptCount] = useState<number>(0);
+  const [pendingNoticeCount, setPendingNoticeCount] = useState<number>(0);
 
   useEffect(() => {
     const init = async () => {
@@ -88,6 +90,11 @@ const UserDashboard = () => {
         });
         if (pendingCountResponse.status) {
           setPendingAcceptCount(pendingCountResponse.data);
+        }
+
+        const pendingNoticeResponse = await GetPendingNoticeCount();
+        if (pendingNoticeResponse.status && pendingNoticeResponse.data) {
+          setPendingNoticeCount(pendingNoticeResponse.data);
         }
       }
       setLoading(false);
@@ -219,6 +226,9 @@ const UserDashboard = () => {
                     <FluentNotePin20Regular className="text-slate-600 text-xl" />
                   }
                   link="/dashboard/user_service/notice_order"
+                  badge={
+                    pendingNoticeCount > 0 ? pendingNoticeCount : undefined
+                  }
                 />
                 <ButtonCard
                   title="Notifications"
@@ -233,6 +243,14 @@ const UserDashboard = () => {
                     acceptance. Please review and accept them to ensure accurate
                     records and compliance. You can find these in the Daily
                     Purchase section.
+                  </div>
+                )}
+                {pendingNoticeCount > 0 && (
+                  <div className="col-span-2 bg-yellow-400/50 rounded-lg border border-yellow-500 text-yellow-700 text-center text-sm font-medium px-3 py-2">
+                    You have {pendingNoticeCount} pending notice(s) or order(s)
+                    with upcoming due date(s). Please review and take necessary
+                    action to ensure compliance. You can find these in the
+                    Notice(s) and Order(s) section.
                   </div>
                 )}
               </div>

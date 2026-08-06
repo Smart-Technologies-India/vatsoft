@@ -18,10 +18,13 @@ import { dvat04, returns_01, user } from "@prisma/client";
 import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import SearchReturnPayment from "@/action/return/searchreturnpayment";
+import GetAllReturnPayment from "@/action/return/getallreturnpayment";
 import { toast } from "react-toastify";
 import GetUser from "@/action/user/getuser";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import { MdiDownload } from "@/components/icons";
+import * as XLSX from "xlsx";
 
 const TrackAppliation = () => {
   const router = useRouter();
@@ -117,15 +120,14 @@ const TrackAppliation = () => {
     const yearNum = parseInt(year, 10);
 
     // If the month is between September (index 8) and March (index 2), return year-year+1
-  
-    if(monthIndex >= 0 && monthIndex <= 2) {
+
+    if (monthIndex >= 0 && monthIndex <= 2) {
       // January to March
       return `${yearNum - 1}-${yearNum.toString().slice(-2)}`;
     } else {
       // April to December
       return `${yearNum}-${(yearNum + 1).toString().slice(-2)}`;
     }
-
   };
 
   const get_month = (composition: boolean, month: string): string => {
@@ -386,6 +388,94 @@ const TrackAppliation = () => {
   const currentPage =
     pagination.take > 0 ? Math.floor(pagination.skip / pagination.take) + 1 : 1;
 
+  const handleDownloadExcel = async () => {
+    try {
+      toast.loading("Preparing Excel file...");
+
+      // Build search parameters based on current search
+      const searchParams: any = {
+        dept: user?.selectOffice,
+      };
+
+      if (isSearch) {
+        if (searchOption === SearchOption.ARN && arnRef.current?.input?.value) {
+          searchParams.rr_number = arnRef.current.input.value;
+        } else if (searchOption === SearchOption.RETURN && searchDate) {
+          searchParams.fromdate = searchDate[0]?.toDate();
+          searchParams.todate = searchDate[1]?.toDate();
+        } else if (
+          searchOption === SearchOption.TIN &&
+          tinRef.current?.input?.value
+        ) {
+          searchParams.tin = tinRef.current.input.value;
+        } else if (
+          searchOption === SearchOption.TRADE &&
+          tradeRef.current?.input?.value
+        ) {
+          searchParams.trade = tradeRef.current.input.value;
+        }
+      }
+
+      // Fetch all data
+      const response = await GetAllReturnPayment(searchParams);
+
+      if (!response.status || !response.data) {
+        toast.dismiss();
+        toast.error(response.message || "Failed to fetch data");
+        return;
+      }
+
+      // Prepare data for Excel
+      const excelData = response.data.map((item: any) => ({
+        ARN: item.rr_number,
+        "Return Type": item.return_type,
+        "Financial Year": get_years(
+          new Date(item.transaction_date).toLocaleString("en-US", {
+            month: "long",
+          }),
+          item.year,
+        ),
+        "Tax Period": item.month,
+        "Date of Filing": formateDate(new Date(item.transaction_date)),
+        "Filing Type": item.compositionScheme ? "COMP" : "REG",
+        "TIN Number": item.dvat04.tinNumber,
+        "Trade Name": item.dvat04.tradename,
+        "Dealer Name": item.dvat04.name,
+      }));
+
+      // Create Excel workbook
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Return Status");
+
+      // Set column widths
+      const columnWidths = [
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 18 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 20 },
+      ];
+      worksheet["!cols"] = columnWidths;
+
+      // Download file
+      XLSX.writeFile(workbook, `Return_Status_${new Date().getTime()}.xlsx`);
+
+      toast.dismiss();
+      toast.success(
+        `Successfully exported ${excelData.length} records to Excel`,
+      );
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Error downloading file");
+      console.error("Download error:", error);
+    }
+  };
+
   return (
     <>
       <main className="min-h-screen bg-gray-50 p-4">
@@ -514,6 +604,14 @@ const TrackAppliation = () => {
                     return null;
                 }
               })()}
+              <Button
+                type="primary"
+                icon={<MdiDownload className="w-4 h-4" />}
+                onClick={handleDownloadExcel}
+                className="flex items-center gap-2"
+              >
+                Download as Excel
+              </Button>
             </div>
           </div>
 
@@ -531,6 +629,8 @@ const TrackAppliation = () => {
             </div>
           ) : (
             <>
+              {/* Download Button */}
+
               {/* Table Section */}
               <div className="p-6">
                 <Table className="border border-gray-200 rounded-lg overflow-hidden">
