@@ -1,9 +1,10 @@
 "use client";
 
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUser from "@/action/user/getuser";
 import DashboardCards from "@/components/dashboard/cards/dashboardcard";
-import { user } from "@prisma/client";
+import { Dvat04Commodity, user } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -12,6 +13,8 @@ const Page = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
   const [user, setUser] = useState<user>();
+
+  const [commodity, setCommodity] = useState<Dvat04Commodity | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -27,6 +30,11 @@ const Page = () => {
       });
       if (userresponse.status && userresponse.data) {
         setUser(userresponse.data);
+      }
+
+      const dvatResponse = await GetUserDvat04();
+      if (dvatResponse.status && dvatResponse.data) {
+        setCommodity(dvatResponse.data.commodity);
       }
     };
     init();
@@ -68,7 +76,6 @@ const Page = () => {
                 description="Change return date."
                 link="/dashboard/returns/department-return-date"
               />
-              
             </>
           )}
           {["USER"].includes(user?.role!) && (
@@ -90,25 +97,32 @@ const Page = () => {
                 link={`/dashboard/returns/user-pending-return`}
               />
               <DashboardCards
-                title="CFORM"
-                description="Check your CFORM status and ensure all filings meet regulatory requirements."
-                link={`/dashboard/returns/cform-status`}
-              />
-              <DashboardCards
-                title="FFORM"
-                description="Check your FFORM status and ensure all filings meet regulatory requirements."
-                link={`/dashboard/returns/fform-status`}
-              />
-              <DashboardCards
                 title="Commodity Master"
                 description="Download and view commodity master data."
                 link={`/dashboard/returns/commodity_master`}
               />
-              <DashboardCards
-                title="Credit/Debit Notes"
-                description="Manage credit and debit notes for your VAT records."
-                link={`/dashboard/returns/credit-debit-note`}
-              />
+              {["FUEL", "OIDC", "MANUFACTURER", "WHOLESALER"].includes(
+                commodity ?? "",
+              ) && (
+                <>
+                  <DashboardCards
+                    title="CFORM"
+                    description="Check your CFORM status and ensure all filings meet regulatory requirements."
+                    link={`/dashboard/returns/cform-status`}
+                  />
+                  <DashboardCards
+                    title="FFORM"
+                    description="Check your FFORM status and ensure all filings meet regulatory requirements."
+                    link={`/dashboard/returns/fform-status`}
+                  />
+
+                  <DashboardCards
+                    title="Credit/Debit Notes"
+                    description="Manage credit and debit notes for your VAT records."
+                    link={`/dashboard/returns/credit-debit-note`}
+                  />
+                </>
+              )}
             </>
           )}
         </div>

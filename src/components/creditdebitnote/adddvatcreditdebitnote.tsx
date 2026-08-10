@@ -1,11 +1,13 @@
 "use client";
 
 import CreateDvatCreditDebitNote from "@/action/creditdebitnote/createdvatcreditdebitnote";
+import CreateInterstateCreditDebitNote from "@/action/creditdebitnote/createinterstatecreditdebitnote";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
+import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import { MultiSelect } from "@/components/forms/inputfields/multiselect";
 import { TaxtInput } from "@/components/forms/inputfields/textinput";
 import { DateSelect } from "@/components/forms/inputfields/dateselect";
-import { commodity_master, dvat04 } from "@prisma/client";
+import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
 import { Button, Drawer } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
@@ -35,7 +37,7 @@ type AddDvatCreditDebitNoteProps = {
   open: boolean;
   onClose: () => void;
   onCreated?: () => void;
-  mode?: "credit" | "debit" | "goods-return";
+  mode?: "credit" | "debit" | "goods-return" | "interstate-credit" | "interstate-debit";
 };
 
 const formatCurrency = (value: number) => {
@@ -51,10 +53,13 @@ const AddDvatCreditDebitNote = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dvatData, setDvatData] = useState<dvat04>();
   const [allDvatData, setAllDvatData] = useState<dvat04[]>([]);
+  const [allTinNumberData, setAllTinNumberData] = useState<tin_number_master[]>([]);
   const [commodities, setCommodities] = useState<commodity_master[]>([]);
-  const [noteMode, setNoteMode] = useState<"credit" | "debit" | "goods-return">(
+  const [noteMode, setNoteMode] = useState<"credit" | "debit" | "goods-return" | "interstate-credit" | "interstate-debit">(
     mode,
   );
+
+  const isInterstate = noteMode === "interstate-credit" || noteMode === "interstate-debit";
 
   const methods = useForm<CreditDebitNoteFormValues>({
     defaultValues: {
@@ -122,7 +127,7 @@ const AddDvatCreditDebitNote = ({
       vatamount: "0",
       invoice_amount: "0",
       is_purchase: "false",
-      is_credit: noteMode === "credit" ? "true" : "false",
+      is_credit: (noteMode === "credit" || noteMode === "interstate-credit") ? "true" : "false",
       is_goods_returned: noteMode === "goods-return" ? "true" : "false",
       creditnote_no: "",
       creditnote_date: "",
@@ -163,6 +168,11 @@ const AddDvatCreditDebitNote = ({
       if (allDvatResponse.status && allDvatResponse.data) {
         setAllDvatData(allDvatResponse.data);
       }
+      
+      const allTinNumberResponse = await getAllTinNumberMaster();
+      if (allTinNumberResponse.status && allTinNumberResponse.data) {
+        setAllTinNumberData(allTinNumberResponse.data);
+      }
     };
     init();
   }, []);
@@ -175,11 +185,23 @@ const AddDvatCreditDebitNote = ({
   }, [commodities]);
 
   const dvatOptions = useMemo(() => {
-    return allDvatData.map((dvat) => ({
-      value: dvat.id.toString(),
-      label: `${dvat.tinNumber} - ${dvat.tradename}`,
-    }));
-  }, [allDvatData]);
+    if (isInterstate) {
+      // For interstate modes, use tin_number_master data excluding 25 and 26
+      const filtered = allTinNumberData.filter(
+        (tin) => tin.tin_number && !tin.tin_number.startsWith("25") && !tin.tin_number.startsWith("26")
+      );
+      return filtered.map((tin) => ({
+        value: tin.id.toString(),
+        label: `${tin.tin_number || ""} - ${tin.name_of_dealer}`,
+      }));
+    } else {
+      // For regular modes, use dvat04 data
+      return allDvatData.map((dvat) => ({
+        value: dvat.id.toString(),
+        label: `${dvat.tinNumber || ""} - ${dvat.tradename}`,
+      }));
+    }
+  }, [allDvatData, allTinNumberData, isInterstate]);
 
   const handleCreateNote = async (data: CreditDebitNoteFormValues) => {
     if (!data.commodity_master_id) {
@@ -218,23 +240,45 @@ const AddDvatCreditDebitNote = ({
     setIsSubmitting(true);
 
     try {
-      const response = await CreateDvatCreditDebitNote({
-        invoice_number: data.invoice_number,
-        invoice_date: parsedInvoiceDate,
-        commodity_master_id: Number.parseInt(data.commodity_master_id, 10),
-        seller_tin_number_id: Number.parseInt(data.seller_tin_number_id, 10),
-        quantity: Number.parseInt(data.quantity || "0", 10),
-        amount_unit: data.amount_unit,
-        tax_percent: data.tax_percent,
-        amount: data.amount,
-        vatamount: data.vatamount,
-        invoice_amount: data.invoice_amount,
-        is_purchase: data.is_purchase === "true",
-        is_credit: data.is_credit === "true",
-        is_goods_returned: data.is_goods_returned === "true",
-        creditnote_no: data.creditnote_no,
-        creditnote_date: parsedCreditNoteDate,
-      });
+      let response;
+
+      if (isInterstate) {
+        // Use interstate action
+        response = await CreateInterstateCreditDebitNote({
+          invoice_number: data.invoice_number,
+          invoice_date: parsedInvoiceDate,
+          commodity_master_id: Number.parseInt(data.commodity_master_id, 10),
+          seller_tin_number_id: Number.parseInt(data.seller_tin_number_id, 10),
+          quantity: Number.parseInt(data.quantity || "0", 10),
+          amount_unit: data.amount_unit,
+          tax_percent: data.tax_percent,
+          amount: data.amount,
+          vatamount: data.vatamount,
+          invoice_amount: data.invoice_amount,
+          is_credit: noteMode === "interstate-credit" ? true : false,
+          creditnote_no: data.creditnote_no,
+          creditnote_date: parsedCreditNoteDate,
+        });
+      } else {
+        // Use regular action
+        response = await CreateDvatCreditDebitNote({
+          invoice_number: data.invoice_number,
+          invoice_date: parsedInvoiceDate,
+          commodity_master_id: Number.parseInt(data.commodity_master_id, 10),
+          seller_tin_number_id: Number.parseInt(data.seller_tin_number_id, 10),
+          quantity: Number.parseInt(data.quantity || "0", 10),
+          amount_unit: data.amount_unit,
+          tax_percent: data.tax_percent,
+          amount: data.amount,
+          vatamount: data.vatamount,
+          invoice_amount: data.invoice_amount,
+          is_purchase: data.is_purchase === "true",
+          is_credit: data.is_credit === "true",
+          is_goods_returned: data.is_goods_returned === "true",
+          creditnote_no: data.creditnote_no,
+          creditnote_date: parsedCreditNoteDate,
+        });
+      }
 
       if (response.status) {
         toast.success(
@@ -257,6 +301,8 @@ const AddDvatCreditDebitNote = ({
     credit: "Add Credit Note",
     debit: "Add Debit Note",
     "goods-return": "Add Goods Return",
+    "interstate-credit": "Add Inter State Credit Note",
+    "interstate-debit": "Add Inter State Debit Note",
   };
 
   return (

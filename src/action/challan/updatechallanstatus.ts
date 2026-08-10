@@ -1,6 +1,6 @@
 "use server";
+import axios from "axios";
 import prisma from "../../../prisma/database";
-
 
 export type UpdateChallanStatusParams = {
   challanId: number;
@@ -87,7 +87,7 @@ export default async function UpdateChallanStatus(
       updateData.failure_message = params.failureMessage;
     }
 
-    if(params.tracking_id !== undefined) {
+    if (params.tracking_id !== undefined) {
       updateData.track_id = params.tracking_id;
     }
 
@@ -113,7 +113,20 @@ export default async function UpdateChallanStatus(
     const updated = await prisma.challan.update({
       where: { id: params.challanId },
       data: updateData,
+      include: {
+        dvat: true,
+      },
     });
+
+    if (isSuccessfulPayment) {
+      const encodedMessage = encodeURIComponent(
+        `Payment of ₹ ${updated.total_tax_amount} has been successfully received. Transaction ID: ${updated.track_id}. -VAT DDD.`,
+      );
+
+      await axios.get(
+        `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${updated.dvat.contact_one}&message=${encodedMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1777178635621857685`,
+      );
+    }
 
     return {
       status: true,

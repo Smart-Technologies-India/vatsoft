@@ -4,6 +4,7 @@ import { decrypt } from "./ccavutil.js";
 import qs from "querystring";
 import prisma from "../prisma/database.js";
 import { validateIntentCallbackSecurity } from "./payment-validation.js";
+import axios from "axios";
 
 const sendReturnFiledSmsByIds = async ({ dvatId, returnId }) => {
   const parsedDvatId = parseInt(dvatId?.toString() || "0", 10);
@@ -521,7 +522,7 @@ export const postRes = (request, response) => {
 
       if (type == "NEWREGISTRATION") {
         try {
-          await prisma.challan.update({
+          const res = await prisma.challan.update({
             where: {
               id: parseInt(challanid),
             },
@@ -547,7 +548,18 @@ export const postRes = (request, response) => {
               deletedAt: null,
               deletedById: null,
             },
+            include: {
+              dvat: true,
+            },
           });
+
+          const encodedMessage = encodeURIComponent(
+            `Payment of ₹ ${res.total_tax_amount} has been successfully received. Transaction ID: ${res.track_id}. -VAT DDD.`,
+          );
+
+          await axios.get(
+            `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${res.dvat.contact_one}&message=${encodedMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1777178635621857685`,
+          );
         } catch (e) {
           console.log(e);
         }
@@ -584,7 +596,17 @@ export const postRes = (request, response) => {
               deletedAt: null,
               deletedById: null,
             },
+            include: {
+              dvat: true,
+            },
           });
+          const encodedMessage = encodeURIComponent(
+            `Payment of ₹ ${challan.total_tax_amount} has been successfully received. Transaction ID: ${challan.track_id}. -VAT DDD.`,
+          );
+
+          await axios.get(
+            `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${challan.dvat.contact_one}&message=${encodedMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1777178635621857685`,
+          );
 
           const htmlcode = renderReceiptHtml({
             statusTitle: "Transaction Successful",
@@ -665,7 +687,17 @@ export const postRes = (request, response) => {
               deletedAt: null,
               deletedById: null,
             },
+            include: {
+              dvat: true,
+            },
           });
+          const encodedMessage = encodeURIComponent(
+            `Payment of ₹ ${challan.total_tax_amount} has been successfully received. Transaction ID: ${challan.track_id}. -VAT DDD.`,
+          );
+
+          await axios.get(
+            `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${challan.dvat.contact_one}&message=${encodedMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1777178635621857685`,
+          );
 
           const refineryMarker = (challan.remark || "").toString();
           const isRefineryVatPayment =

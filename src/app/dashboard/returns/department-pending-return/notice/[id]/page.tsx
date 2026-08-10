@@ -26,6 +26,7 @@ import {
 import Link from "next/link";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
 import { useParams, useRouter } from "next/navigation";
+import SendSMSNotice from "@/action/sms/noticesms";
 const { RangePicker } = DatePicker;
 
 const SupplierDetails = () => {
@@ -602,13 +603,21 @@ const SupplierDetails = () => {
                       <TableCell className="text-center border p-2">
                         {capitalcase(val.status)}
                       </TableCell>
-                      <TableCell className="text-center text-blue-500 border p-2">
+                      <TableCell className="text-center text-blue-500 border p-2 flex gap-2 items-center justify-center">
                         <MdiDownload
                           className="cursor-pointer"
                           onClick={async () => {
                             await downloadNoticeOrder(val.form_type, val.id);
                           }}
                         />
+                        <Button
+                          size="small"
+                          onClick={async () => {
+                           await SendSMSNotice();
+                          }}
+                        >
+                          SMS
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

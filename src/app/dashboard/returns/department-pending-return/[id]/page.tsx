@@ -265,7 +265,7 @@ const ShopView = () => {
             <p className="text-xs text-gray-500 leading-4">
               Applicant Name <br />
               <span className="text-sm text-gray-900 font-medium">
-                {user?.firstName}-{user?.lastName}
+                {dvatData?.name}
               </span>
             </p>
           </div>

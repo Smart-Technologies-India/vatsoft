@@ -1245,7 +1245,7 @@ const InlineLoginForm = () => {
             <Button
               onClick={sendTinOtp}
               disabled={isSendingTinOtp || !isTinValid}
-              className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none hover:bg-[#16448b]!"
+              className="w-full bg-[#0f2f67] text-white text-sm h-8 rounded-none border-none"
             >
               {isSendingTinOtp ? "Sending OTP..." : "Send OTP"}
             </Button>

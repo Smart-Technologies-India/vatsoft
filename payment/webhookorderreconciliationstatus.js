@@ -3,6 +3,7 @@ import qs from "querystring";
 import { decrypt } from "./ccavutil.js";
 import prisma from "../prisma/database.js";
 import { isAmountMatched } from "./payment-validation.js";
+import axios from "axios";
 
 const normalizeOrderStatus = (status) =>
   (status || "").toString().trim().toLowerCase().replace(/\s+/g, " ");
@@ -264,7 +265,18 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
             deletedAt: null,
             deletedById: null,
           },
+          include: {
+            dvat: true,
+          },
         });
+
+        const encodedMessage = encodeURIComponent(
+          `Payment of ₹ ${paidchallan.total_tax_amount} has been successfully received. Transaction ID: ${paidchallan.track_id}. -VAT DDD.`,
+        );
+
+        await axios.get(
+          `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${paidchallan.dvat.contact_one}&message=${encodedMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1777178635621857685`,
+        );
 
         await prisma.challan.updateMany({
           where: {

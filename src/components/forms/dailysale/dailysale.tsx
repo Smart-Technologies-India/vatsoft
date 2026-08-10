@@ -249,8 +249,11 @@ const DailySale = (props: DailySaleProviderProps) => {
       if (recipient_vat_no && (recipient_vat_no ?? "").length < 2) {
         if (recipient_vat_no.length >= 11) {
           toast.dismiss();
-          // toast.error("Invalid DVAT no.");
-          setTinBox(true);
+          if (recipient_vat_no.startsWith("25") || recipient_vat_no.startsWith("26")) {
+            toast.error("Wrong TIN number");
+          } else {
+            setTinBox(true);
+          }
         }
         setTinData(null);
         return;
@@ -264,8 +267,11 @@ const DailySale = (props: DailySaleProviderProps) => {
         setTinData(tinresponse.data);
       } else {
         if ((recipient_vat_no ?? "").length >= 11) {
-          // toast.error("Invalid DVAT no.");
-          setTinBox(true);
+          if (recipient_vat_no.startsWith("25") || recipient_vat_no.startsWith("26")) {
+            toast.error("Wrong TIN number");
+          } else {
+            setTinBox(true);
+          }
         }
         setTinData(null);
       }

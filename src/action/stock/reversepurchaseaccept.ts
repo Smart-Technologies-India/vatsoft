@@ -98,6 +98,18 @@ const ReversePurchaseAccept = async (
         },
       });
 
+      const updateSale = await tx.daily_sale.updateMany({
+        where: {
+          urn_number: purchase.urn_number,
+          deletedAt: null,
+          deletedById: null,
+        },
+        data: {
+          is_accept: false,
+          updatedById: payload.updatedById,
+        },
+      });
+
       return updatedPurchase;
     });
 

@@ -88,7 +88,7 @@ const CreditDebitNotePage = () => {
   const [selectedTab, setSelectedTab] = useState<"1" | "2" | "3">("1");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<
-    "credit" | "debit" | "goods-return"
+    "credit" | "debit" | "goods-return" | "interstate-credit" | "interstate-debit"
   >("credit");
   const [deleteModalState, setDeleteModalState] = useState<{
     open: boolean;
@@ -222,7 +222,7 @@ const CreditDebitNotePage = () => {
     return [];
   }, [selectedTab, creditNotes, debitNotes, goodsReturnNotes]);
 
-  const openDrawer = (mode: "credit" | "debit" | "goods-return") => {
+  const openDrawer = (mode: "credit" | "debit" | "goods-return" | "interstate-credit" | "interstate-debit") => {
     setDrawerMode(mode);
     setIsDrawerOpen(true);
   };
@@ -367,6 +367,12 @@ const CreditDebitNotePage = () => {
               </Button>
               <Button onClick={() => openDrawer("debit")}>
                 Add Debit Note
+              </Button>
+              <Button onClick={() => openDrawer("interstate-credit")}>
+                Add Inter State Credit Note
+              </Button>
+              <Button onClick={() => openDrawer("interstate-debit")}>
+                Add Inter State Debit Note
               </Button>
               {/* <Button onClick={() => openDrawer("goods-return")}>
                 Goods Return

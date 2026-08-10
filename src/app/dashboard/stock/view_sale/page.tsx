@@ -3,6 +3,7 @@ import ConvertDvat31 from "@/action/stock/convertdvat31";
 import GetDvat31Progress from "@/action/stock/getdvat31progress";
 import AcceptSaleWithoutDvat from "@/action/stock/acceptsalewithoutdvat";
 import AcceptSaleForPendingProcess from "@/action/stock/acceptsaleforpendingprocess";
+import AutoAcceptSaleByDays from "@/action/stock/autoacceptsalebydays";
 import DeleteSale from "@/action/stock/deletesale";
 import GetSaleDeleteImpact from "@/action/stock/getsaledeleteimpact";
 import GetUserDailySale, {
@@ -780,6 +781,23 @@ const DocumentWiseDetails = () => {
     async (): Promise<boolean> => {
       if (!dvatdata) return false;
 
+      // First, try to auto-accept eligible sales (older than 12 days)
+      const autoAcceptResponse = await AutoAcceptSaleByDays({
+        startDate: new Date(dateFilter.startDate || new Date(new Date().setMonth(new Date().getMonth() - 1))),
+        endDate: new Date(dateFilter.endDate || new Date()),
+      });
+
+      if (autoAcceptResponse.status && autoAcceptResponse.data) {
+        if (autoAcceptResponse.data.acceptedCount > 0) {
+          toast.success(
+            `Auto-accepted ${autoAcceptResponse.data.acceptedCount} pending sales that are older than 12 days.`,
+          );
+          // Reload data to reflect changes
+          await init();
+        }
+      }
+
+      // Then check for remaining pending sales
       const pendingResponse = await GetUserDailySaleFiltered({
         dvatid: dvatdata.id,
         skip: 0,
