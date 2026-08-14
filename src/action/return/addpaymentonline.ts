@@ -215,6 +215,7 @@ const AddPaymentOnline = async (
 
         const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
 
+        // Get the last form (cform or fform) created for this office to determine serial number
         const lastcform = await prisma.cform.findFirst({
           where: {
             status: "ACTIVE",
@@ -225,63 +226,93 @@ const AddPaymentOnline = async (
           },
         });
 
-        const lastOfficeSerial = lastcform
+        const lastfformForSerial = await prisma.fform.findFirst({
+          where: {
+            status: "ACTIVE",
+            office_of_issue: isExist.dvat04.selectOffice,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        // Get the highest serial number from both cform and fform
+        const cformSerial = lastcform
           ? parseInt(lastcform.sr_no.split("/").pop() ?? "0", 10) || 0
           : 0;
+        const fformSerial = lastfformForSerial
+          ? parseInt(lastfformForSerial.sr_no.split("/").pop() ?? "0", 10) || 0
+          : 0;
+        const lastOfficeSerial = Math.max(cformSerial, fformSerial);
 
-        const cformResponses = await Promise.all(
-          Object.values(groupedData).map((group, index) => {
-            const representativeEntry = group.entries[0]; // Pick one entry to extract seller info
+        // Create a Map to track seller ID to cform ID
+        const sellerToCformMap = new Map<number, number>();
+        let cformSrNoCounter = 0;
 
-            return prisma.cform.create({
-              data: {
-                amount: group.totalAmount.toFixed(2),
-                dvat04Id: isExist.dvat04Id,
-                office_of_issue: isExist.dvat04.selectOffice,
-                date_of_issue: new Date(),
-                valid_date: isExist.dvat04.certificateDate!,
-                sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial),
-                seller_address:
-                  representativeEntry.seller_tin_number.state ?? "",
-                seller_name:
-                  representativeEntry.seller_tin_number.name_of_dealer ?? "",
-                seller_tin_no:
-                  representativeEntry.seller_tin_number.tin_number ?? "",
-                cform_type: ReturnType.ORIGINAL,
-                from_period: new Date(
-                  dates.fromDate.split("-").reverse().join("-"),
-                ),
-                to_period: new Date(
-                  dates.toDate.split("-").reverse().join("-"),
-                ),
-                status: "ACTIVE",
-                createdById: isExist.createdById,
-              },
-            });
-          }),
-        );
+        // Create cforms for each seller
+        for (const [sellerId, group] of Object.entries(groupedData)) {
+          const sellerIdNum = parseInt(sellerId, 10);
+          const representativeEntry = group.entries[0]; // Pick one entry to extract seller info
+
+          const cformResponse = await prisma.cform.create({
+            data: {
+              amount: group.totalAmount.toFixed(2),
+              dvat04Id: isExist.dvat04Id,
+              office_of_issue: isExist.dvat04.selectOffice,
+              date_of_issue: new Date(),
+              valid_date: isExist.dvat04.certificateDate!,
+              sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial, cformSrNoCounter++),
+              seller_address:
+                representativeEntry.seller_tin_number.state ?? "",
+              seller_name:
+                representativeEntry.seller_tin_number.name_of_dealer ?? "",
+              seller_tin_no:
+                representativeEntry.seller_tin_number.tin_number ?? "",
+              cform_type: ReturnType.ORIGINAL,
+              from_period: new Date(
+                dates.fromDate.split("-").reverse().join("-"),
+              ),
+              to_period: new Date(
+                dates.toDate.split("-").reverse().join("-"),
+              ),
+              status: "ACTIVE",
+              createdById: isExist.createdById,
+            },
+          });
+
+          // Store the mapping of seller ID to cform ID
+          sellerToCformMap.set(sellerIdNum, cformResponse.id);
+        }
 
         const cformReturnsEntries: Array<{
           cformId: number;
           returns_entryId: number;
         }> = [];
 
-        Object.values(groupedData).forEach((group, groupIndex) => {
-          const cform = cformResponses[groupIndex];
+        for (const [sellerId, group] of Object.entries(groupedData)) {
+          const sellerIdNum = parseInt(sellerId, 10);
+          const cformId = sellerToCformMap.get(sellerIdNum);
 
-          if (!cform || !cform.id) {
+          if (!cformId) {
             throw new Error(
-              `CForm entry for group ${groupIndex} was not created`,
+              `CForm entry for seller ${sellerIdNum} was not created`,
             );
           }
 
           group.entries.forEach((entry) => {
+            // Verify entry belongs to the correct seller
+            if (entry.seller_tin_numberId !== sellerIdNum) {
+              throw new Error(
+                `Entry ${entry.id} belongs to seller ${entry.seller_tin_numberId}, but expected ${sellerIdNum}`,
+              );
+            }
+
             cformReturnsEntries.push({
-              cformId: cform.id,
+              cformId,
               returns_entryId: entry.id,
             });
           });
-        });
+        }
 
         // Step 3: Insert `cform_returns` entries in bulk
         if (cformReturnsEntries.length > 0) {
@@ -321,6 +352,7 @@ const AddPaymentOnline = async (
             select: {
               month: true,
               year: true,
+              dvat04Id: true,
             },
           },
         },
@@ -360,7 +392,8 @@ const AddPaymentOnline = async (
 
       const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
 
-      const lastfform = await prisma.fform.findFirst({
+      // Get the last form (cform or fform) created for this office to determine serial number
+      const lastcformForFform = await prisma.cform.findFirst({
         where: {
           status: "ACTIVE",
           office_of_issue: isExist.dvat04.selectOffice,
@@ -370,46 +403,66 @@ const AddPaymentOnline = async (
         },
       });
 
-      const lastOfficeSerial = lastfform
-        ? parseInt(lastfform.sr_no.split("/").pop() ?? "0", 10) || 0
-        : 0;
+      const lastfformForFform = await prisma.fform.findFirst({
+        where: {
+          status: "ACTIVE",
+          office_of_issue: isExist.dvat04.selectOffice,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
-      // Create one fform per month
-      const fformResponses = await Promise.all(
-        Object.values(groupedByMonth).map((monthGroup, index) => {
-          const representativeEntry = monthGroup.entries[0];
-          return prisma.fform.create({
-            data: {
-              amount: monthGroup.totalAmount.toFixed(2),
-              dvat04Id: isExist.dvat04Id,
-              office_of_issue: isExist.dvat04.selectOffice,
-              date_of_issue: new Date(
-                dates.toDate.split("-").reverse().join("-"),
-              ),
-              valid_date: isExist.dvat04.certificateDate ?? new Date(),
-              sr_no: getsrno(
-                isExist.dvat04.selectOffice!,
-                lastOfficeSerial,
-                index,
-              ),
-              seller_address: representativeEntry.seller_tin_number.state ?? "",
-              seller_name:
-                representativeEntry.seller_tin_number.name_of_dealer ?? "",
-              seller_tin_no:
-                representativeEntry.seller_tin_number.tin_number ?? "",
-              fform_type: ReturnType.ORIGINAL,
-              from_period: new Date(
-                dates.fromDate.split("-").reverse().join("-"),
-              ),
-              to_period: new Date(
-                dates.toDate.split("-").reverse().join("-"),
-              ),
-              status: "ACTIVE",
-              createdById: isExist.createdById,
-            },
-          });
-        }),
-      );
+      // Get the highest serial number from both cform and fform
+      const cformSerialForFform = lastcformForFform
+        ? parseInt(lastcformForFform.sr_no.split("/").pop() ?? "0", 10) || 0
+        : 0;
+      const fformSerialForFform = lastfformForFform
+        ? parseInt(lastfformForFform.sr_no.split("/").pop() ?? "0", 10) || 0
+        : 0;
+      const lastOfficeSerial = Math.max(cformSerialForFform, fformSerialForFform);
+
+      // Create a Map to track month key to fform ID
+      const monthToFformMap = new Map<string, number>();
+      let srNoCounter = 0;
+
+      // Create fforms for each month
+      for (const [monthKey, monthGroup] of Object.entries(groupedByMonth)) {
+        const representativeEntry = monthGroup.entries[0];
+        const fformResponse = await prisma.fform.create({
+          data: {
+            amount: monthGroup.totalAmount.toFixed(2),
+            dvat04Id: isExist.dvat04Id,
+            office_of_issue: isExist.dvat04.selectOffice,
+            date_of_issue: new Date(
+              dates.toDate.split("-").reverse().join("-"),
+            ),
+            valid_date: isExist.dvat04.certificateDate ?? new Date(),
+            sr_no: getsrno(
+              isExist.dvat04.selectOffice!,
+              lastOfficeSerial,
+              srNoCounter++,
+            ),
+            seller_address: representativeEntry.seller_tin_number.state ?? "",
+            seller_name:
+              representativeEntry.seller_tin_number.name_of_dealer ?? "",
+            seller_tin_no:
+              representativeEntry.seller_tin_number.tin_number ?? "",
+            fform_type: ReturnType.ORIGINAL,
+            from_period: new Date(
+              dates.fromDate.split("-").reverse().join("-"),
+            ),
+            to_period: new Date(
+              dates.toDate.split("-").reverse().join("-"),
+            ),
+            status: "ACTIVE",
+            createdById: isExist.createdById,
+          },
+        });
+
+        // Store the mapping of month key to fform ID
+        monthToFformMap.set(monthKey, fformResponse.id);
+      }
 
       // Link entries by month
       const fformReturnsEntries: {
@@ -417,22 +470,29 @@ const AddPaymentOnline = async (
         returns_entryId: number;
       }[] = [];
 
-      Object.values(groupedByMonth).forEach((monthGroup, groupIndex) => {
-        const fformId = fformResponses[groupIndex]?.id;
+      for (const [monthKey, monthGroup] of Object.entries(groupedByMonth)) {
+        const fformId = monthToFformMap.get(monthKey);
 
         if (!fformId) {
           throw new Error(
-            `FForm entry for month ${monthGroup.month} was not created`,
+            `FForm entry for month ${monthKey} was not created`,
           );
         }
 
         monthGroup.entries.forEach((entry) => {
+          // Verify entry belongs to the correct DVAT
+          if (entry.returns_01.dvat04Id !== isExist.dvat04Id) {
+            throw new Error(
+              `Entry ${entry.id} belongs to DVAT ${entry.returns_01.dvat04Id}, but expected ${isExist.dvat04Id}`,
+            );
+          }
+
           fformReturnsEntries.push({
             fformId,
             returns_entryId: entry.id,
           });
         });
-      });
+      }
 
       // Insert `fform_returns` entries in bulk
       if (fformReturnsEntries.length > 0) {
