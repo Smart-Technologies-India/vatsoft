@@ -5,6 +5,7 @@ import AcceptSaleWithoutDvat from "@/action/stock/acceptsalewithoutdvat";
 import AcceptSaleForPendingProcess from "@/action/stock/acceptsaleforpendingprocess";
 import AutoAcceptSaleByDays from "@/action/stock/autoacceptsalebydays";
 import DeleteSale from "@/action/stock/deletesale";
+import DeleteSaleItem from "@/action/stock/deletesaleitem";
 import GetSaleDeleteImpact from "@/action/stock/getsaledeleteimpact";
 import GetUserDailySale, {
   DailySaleSummary,
@@ -70,6 +71,18 @@ const formatMonthInputValue = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   return `${year}-${month}`;
+};
+
+// Indian number formatting function (e.g., 344234 -> 3,44,234)
+const formatIndianNumber = (num: number): string => {
+  if (!Number.isFinite(num)) return "0";
+  const numStr = Math.floor(num).toString();
+  if (numStr.length <= 3) return numStr;
+  
+  const lastThree = numStr.slice(-3);
+  const remaining = numStr.slice(0, -3);
+  const withCommas = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+  return `${withCommas},${lastThree}`;
 };
 
 const DocumentWiseDetails = () => {
@@ -1005,6 +1018,41 @@ const DocumentWiseDetails = () => {
   const [debitNoteGroup, setDebitNoteGroup] = useState<GroupedDailySale | null>(
     null,
   );
+  const [isDeleteItemLoading, setIsDeleteItemLoading] = useState<boolean>(false);
+  const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
+
+  const handleDeleteSaleItem = async (recordId: number) => {
+    if (!selectedGroup) return;
+
+    setIsDeleteItemLoading(true);
+    setDeleteItemId(recordId);
+    try {
+      const response = await DeleteSaleItem({ id: recordId });
+      if (response.status) {
+        toast.success("Sale item deleted and stock reversed successfully.");
+        // Refresh the modal data
+        if (selectedGroup) {
+          const updatedRecords = selectedGroup.records.filter(
+            (r) => r.id !== recordId,
+          );
+          setSelectedGroup({
+            ...selectedGroup,
+            records: updatedRecords,
+            count: updatedRecords.length,
+          });
+        }
+        await init();
+      } else {
+        toast.error(response.message || "Failed to delete item.");
+      }
+    } catch (error) {
+      toast.error("Error deleting sale item.");
+      console.error(error);
+    } finally {
+      setIsDeleteItemLoading(false);
+      setDeleteItemId(null);
+    }
+  };
 
   const delete_sale_entry = async (ids: number[]) => {
     if (ids.length === 0) {
@@ -1183,7 +1231,7 @@ const DocumentWiseDetails = () => {
 
   const formatAmount = (value: number | string | null | undefined): string => {
     const numericValue = typeof value === "number" ? value : Number(value ?? 0);
-    return Number.isFinite(numericValue) ? numericValue.toFixed(2) : "0.00";
+    return Number.isFinite(numericValue) ? formatIndianNumber(numericValue) : "0";
   };
 
   if (isLoading)
@@ -1287,60 +1335,82 @@ const DocumentWiseDetails = () => {
                             )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        ₹{parseFloat(record.amount).toFixed(2)}
+                        ₹{formatIndianNumber(parseFloat(record.amount))}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {dvatdata?.compositionScheme ? "1" : record.tax_percent}
                         %
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {parseFloat(record.vatamount).toFixed(2)}
+                        {formatIndianNumber(parseFloat(record.vatamount))}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.amount
-                          ? (
+                          ? formatIndianNumber(
                               parseFloat(record.amount) +
                               parseFloat(record.vatamount)
-                            ).toFixed(2)
-                          : "0.00"}
+                            )
+                          : "0"}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        {canManualAcceptSale(
-                          record.seller_tin_number.tin_number,
-                        ) ? (
-                          record.is_accept ? (
-                            <span className="text-xs text-gray-400">
-                              Accepted
-                            </span>
+                        <div className="flex flex-col gap-1">
+                          {/* Delete Button - Only for specific TIN IDs */}
+                          {[1, 2, 821].includes(
+                            record.seller_tin_number.id,
+                          ) &&
+                            !record.is_accept && (
+                              <button
+                                onClick={() => {
+                                  handleDeleteSaleItem(record.id);
+                                }}
+                                disabled={
+                                  isDeleteItemLoading && deleteItemId === record.id
+                                }
+                                className="text-xs bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white py-1 px-2 rounded"
+                              >
+                                {isDeleteItemLoading && deleteItemId === record.id
+                                  ? "Deleting..."
+                                  : "Delete"}
+                              </button>
+                            )}
+                          {/* Accept or Edit Button */}
+                          {/* {canManualAcceptSale(
+                            record.seller_tin_number.tin_number,
+                          ) ? (
+                            record.is_accept ? (
+                              <span className="text-xs text-gray-400">
+                                Accepted
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  handleAcceptSingleRecord(record);
+                                }}
+                                disabled={isSingleAcceptLoading}
+                                className="text-xs bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1 px-3 rounded"
+                              >
+                                {isSingleAcceptLoading
+                                  ? "Accepting..."
+                                  : "Accept"}
+                              </button>
+                            )
+                          ) : record.is_accept ? (
+                            "NA"
                           ) : (
                             <button
                               onClick={() => {
-                                handleAcceptSingleRecord(record);
+                                route.push(
+                                  `/dashboard/stock/edit_sale/${encryptURLData(
+                                    record.id.toString(),
+                                  )}`,
+                                );
                               }}
-                              disabled={isSingleAcceptLoading}
-                              className="text-xs bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1 px-3 rounded"
+                              className="text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded"
                             >
-                              {isSingleAcceptLoading
-                                ? "Accepting..."
-                                : "Accept"}
+                              Edit
                             </button>
-                          )
-                        ) : record.is_accept ? (
-                          "NA"
-                        ) : (
-                          <button
-                            onClick={() => {
-                              route.push(
-                                `/dashboard/stock/edit_sale/${encryptURLData(
-                                  record.id.toString(),
-                                )}`,
-                              );
-                            }}
-                            className="text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded"
-                          >
-                            Edit
-                          </button>
-                        )}
+                          )} */}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1352,19 +1422,19 @@ const DocumentWiseDetails = () => {
                 <div>
                   <p className="text-xs text-gray-600">Total Taxable Value</p>
                   <p className="font-semibold">
-                    {formatAmount(selectedGroup.totalTaxableValue)}
+                    {formatIndianNumber(selectedGroup.totalTaxableValue)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Total VAT Amount</p>
                   <p className="font-semibold">
-                    {selectedGroup.totalVatAmount.toFixed(2)}
+                    {formatIndianNumber(selectedGroup.totalVatAmount)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Total Invoice Value</p>
                   <p className="font-semibold">
-                    {formatAmount(selectedGroup.totalInvoiceValue)}
+                    {formatIndianNumber(selectedGroup.totalInvoiceValue)}
                   </p>
                 </div>
               </div>
@@ -1621,7 +1691,7 @@ const DocumentWiseDetails = () => {
                           {row.quantity}
                         </TableCell>
                         <TableCell className="border text-center text-xs">
-                          {row.invoice_value.toFixed(2)}
+                          {formatIndianNumber(row.invoice_value)}
                         </TableCell>
                       </TableRow>
                     )),
@@ -1891,7 +1961,7 @@ const DocumentWiseDetails = () => {
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Tax</p>
               <p className="text-lg font-medium text-gray-900">
-                {cardSummary.totalVatAmount.toFixed(2)}
+                {formatIndianNumber(cardSummary.totalVatAmount)}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
@@ -2078,13 +2148,13 @@ const DocumentWiseDetails = () => {
                           {group.seller_tin_number.tin_number}
                         </TableCell>
                         <TableCell className="p-2 text-center text-xs">
-                          {group.totalTaxableValue.toFixed(2)}
+                          {formatIndianNumber(group.totalTaxableValue)}
                         </TableCell>
                         <TableCell className="p-2 text-center text-xs">
-                          {group.totalVatAmount.toFixed(2)}
+                          {formatIndianNumber(group.totalVatAmount)}
                         </TableCell>
                         <TableCell className="p-2 text-center text-xs">
-                          {group.totalInvoiceValue.toFixed(2)}
+                          {formatIndianNumber(group.totalInvoiceValue)}
                         </TableCell>
                         <TableCell className="p-2 text-center text-xs">
                           <Popover

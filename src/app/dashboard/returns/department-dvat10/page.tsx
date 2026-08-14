@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { toast } from "react-toastify";
 
-const CreateDvat24 = async () => {
+const CreateDvat10 = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
   useEffect(() => {
@@ -35,4 +35,4 @@ const CreateDvat24 = async () => {
   );
 };
 
-export default CreateDvat24;
+export default CreateDvat10;

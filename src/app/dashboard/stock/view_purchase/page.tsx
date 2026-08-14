@@ -84,6 +84,18 @@ const isAprilOrMay2026 = (inputDate: Date | string): boolean => {
   return year === 2026 && (month === 3 || month === 4);
 };
 
+// Indian number formatting function (e.g., 344234 -> 3,44,234)
+const formatIndianNumber = (num: number): string => {
+  if (!Number.isFinite(num)) return "0";
+  const numStr = Math.floor(num).toString();
+  if (numStr.length <= 3) return numStr;
+  
+  const lastThree = numStr.slice(-3);
+  const remaining = numStr.slice(0, -3);
+  const withCommas = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+  return `${withCommas},${lastThree}`;
+};
+
 type SortField =
   | "invoice_number"
   | "invoice_date"
@@ -1745,19 +1757,19 @@ const DocumentWiseDetails = () => {
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         ₹
-                        {(
+                        {formatIndianNumber(
                           parseFloat(record.vatamount) +
                           parseFloat(record.amount)
-                        ).toFixed(2)}
+                        )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.tax_percent}%
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        ₹{record.vatamount}
+                        ₹{formatIndianNumber(parseFloat(record.vatamount))}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
-                        ₹{record.amount}
+                        ₹{formatIndianNumber(parseFloat(record.amount))}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {record.seller_tin_number.tin_number.startsWith("25") ||
@@ -1800,19 +1812,19 @@ const DocumentWiseDetails = () => {
                 <div>
                   <p className="text-xs text-gray-600">Total Taxable Value</p>
                   <p className="font-semibold">
-                    ₹{selectedGroup.totalTaxableValue.toFixed(2)}
+                    ₹{formatIndianNumber(selectedGroup.totalTaxableValue)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Total VAT Amount</p>
                   <p className="font-semibold">
-                    ₹{selectedGroup.totalVatAmount.toFixed(2)}
+                    ₹{formatIndianNumber(selectedGroup.totalVatAmount)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Total Invoice Value</p>
                   <p className="font-semibold">
-                    ₹{selectedGroup.totalInvoiceValue.toFixed(2)}
+                    ₹{formatIndianNumber(selectedGroup.totalInvoiceValue)}
                   </p>
                 </div>
               </div>
@@ -2231,7 +2243,7 @@ const DocumentWiseDetails = () => {
                           {row.quantity}
                         </TableCell>
                         <TableCell className="border text-center text-xs">
-                          {row.invoice_value.toFixed(2)}
+                          {formatIndianNumber(row.invoice_value)}
                         </TableCell>
                       </TableRow>
                     )),
@@ -2526,21 +2538,21 @@ const DocumentWiseDetails = () => {
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Invoice Value</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹{cardSummary.totalInvoiceValue.toFixed(2)}
+                ₹{formatIndianNumber(cardSummary.totalInvoiceValue)}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Tax</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹{cardSummary.totalVatAmount.toFixed(2)}
+                ₹{formatIndianNumber(cardSummary.totalVatAmount)}
               </p>
             </div>
 
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Taxable Value</p>
               <p className="text-lg font-medium text-gray-900">
-                ₹{cardSummary.totalTaxableValue.toFixed(2)}
+                ₹{formatIndianNumber(cardSummary.totalTaxableValue)}
               </p>
             </div>
           </div>
@@ -2772,13 +2784,13 @@ const DocumentWiseDetails = () => {
                             {group.seller_tin_number.tin_number}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
-                            ₹{group.totalInvoiceValue.toFixed(2)}
+                            ₹{formatIndianNumber(group.totalInvoiceValue)}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
-                            ₹{group.totalVatAmount.toFixed(2)}
+                            ₹{formatIndianNumber(group.totalVatAmount)}
                           </TableCell>
                           <TableCell className="p-2 text-center text-xs">
-                            ₹{group.totalTaxableValue.toFixed(2)}
+                            ₹{formatIndianNumber(group.totalTaxableValue)}
                           </TableCell>
                           <TableCell className="p-2 text-center">
                             <Popover

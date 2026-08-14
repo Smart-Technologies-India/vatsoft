@@ -19,6 +19,7 @@ import { Button, Input, Modal, Pagination, Select } from "antd";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx";
 import { SortingState } from "@tanstack/react-table";
 
 type DailyPurchaseFilteredSummary = {
@@ -66,6 +67,18 @@ const formatAmount = (value: number | string | null | undefined): string => {
   return `₹${indianFormat}.${decimalPart}`;
 };
 
+// Indian number formatting function (e.g., 344234 -> 3,44,234)
+const formatIndianNumber = (num: number): string => {
+  if (!Number.isFinite(num)) return "0";
+  const numStr = Math.floor(num).toString();
+  if (numStr.length <= 3) return numStr;
+  
+  const lastThree = numStr.slice(-3);
+  const remaining = numStr.slice(0, -3);
+  const withCommas = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+  return `${withCommas},${lastThree}`;
+};
+
 const SortIcon = ({ isSorted }: { isSorted: false | "asc" | "desc" }) => {
   if (isSorted === false) {
     return <span className="text-gray-300 text-xs">↕</span>;
@@ -110,8 +123,95 @@ const ViewConvertedPurchase = () => {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] =
     useState<GroupedDailyPurchase | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const initializedRef = useRef(false);
+
+  const handleDownloadExcel = async () => {
+    if (!dvatdata?.id) {
+      toast.error("DVAT data not loaded.");
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      // Fetch all records with a large take value
+      const response = await GetConvertedPurchase({
+        dvatid: dvatdata.id,
+        skip: 0,
+        take: 10000, // Fetch up to 10000 records
+        searchTerm,
+        sortField: (sortField || "invoice_date") as
+          | "invoice_number"
+          | "invoice_date"
+          | "trade_name"
+          | "tin_number"
+          | "invoice_value",
+        sortOrder: sortOrder || "desc",
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+      });
+
+      if (!response.status || !response.data.result || response.data.result.length === 0) {
+        toast.warning("No data to download.");
+        setIsDownloading(false);
+        return;
+      }
+
+      // Flatten all records from all invoices
+      let srNo = 1;
+      const data: any[] = [];
+      
+      response.data.result.forEach((group) => {
+        group.records.forEach((record) => {
+          data.push({
+            "Sr. No.": srNo++,
+            "Invoice No.": group.invoice_number,
+            "Invoice Date": formateDate(group.invoice_date),
+            "Seller": group.seller_tin_number.name_of_dealer,
+            "TIN": group.seller_tin_number.tin_number,
+            "Product Name": record.commodity_master.product_name,
+            "Item ID": record.commodity_master.id,
+            "Quantity": record.quantity,
+            "Taxable Value": Number(record.amount).toFixed(2),
+            "Tax %": record.tax_percent,
+            "VAT Amount": Number(record.vatamount).toFixed(2),
+            "Invoice Value": (Number(record.amount) + Number(record.vatamount)).toFixed(2),
+          });
+        });
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Items");
+      
+      // Set column widths
+      const colWidths = [
+        { wch: 8 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 25 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 15 },
+      ];
+      worksheet["!cols"] = colWidths;
+
+      const fileName = `Converted_Purchase_Items_${new Date().toISOString().split("T")[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      toast.success(`Excel file downloaded successfully! (${data.length} items)`);
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download Excel file.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const fetchConvertedPurchase = useCallback(
     async ({
@@ -138,6 +238,31 @@ const ViewConvertedPurchase = () => {
       startDate: string;
       endDate: string;
     }) => {
+      // If period is selected, fetch all data for accurate summary
+      if (startDate && endDate) {
+        const allResponse = await GetConvertedPurchase({
+          dvatid,
+          skip: 0,
+          take: 10000, // Fetch all data for summary
+          searchTerm: search,
+          sortField: sortBy,
+          sortOrder: order,
+          startDate,
+          endDate,
+        });
+
+        if (allResponse.status && allResponse.data.result) {
+          const summary = allResponse.data.summary as
+            | DailyPurchaseFilteredSummary
+            | undefined;
+          setOverallSummary(summary?.overallSummary ?? DEFAULT_PURCHASE_SUMMARY);
+          setFilteredSummary(
+            summary?.filteredSummary ?? DEFAULT_PURCHASE_SUMMARY,
+          );
+        }
+      }
+
+      // Now fetch paginated data for table display
       const response = await GetConvertedPurchase({
         dvatid,
         skip,
@@ -151,13 +276,16 @@ const ViewConvertedPurchase = () => {
 
       if (response.status && response.data.result) {
         setConvertedPurchase(response.data.result);
-        const summary = response.data.summary as
-          | DailyPurchaseFilteredSummary
-          | undefined;
-        setOverallSummary(summary?.overallSummary ?? DEFAULT_PURCHASE_SUMMARY);
-        setFilteredSummary(
-          summary?.filteredSummary ?? DEFAULT_PURCHASE_SUMMARY,
-        );
+        if (!startDate || !endDate) {
+          // Only update summary if no period filter (for initial load)
+          const summary = response.data.summary as
+            | DailyPurchaseFilteredSummary
+            | undefined;
+          setOverallSummary(summary?.overallSummary ?? DEFAULT_PURCHASE_SUMMARY);
+          setFilteredSummary(
+            summary?.filteredSummary ?? DEFAULT_PURCHASE_SUMMARY,
+          );
+        }
       }
 
       return response;
@@ -175,7 +303,7 @@ const ViewConvertedPurchase = () => {
         await fetchConvertedPurchase({
           dvatid: dvat_response.data.id,
           skip: 0,
-          take: 25,
+          take: 10000,
           search: "",
           sortBy: "invoice_date",
           order: "desc",
@@ -604,6 +732,26 @@ const ViewConvertedPurchase = () => {
                       }}
                     >
                       Clear Filters
+                    </Button>
+                  )}
+                  {selectedPeriod ? (
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={handleDownloadExcel}
+                      loading={isDownloading}
+                      disabled={convertedPurchase.length === 0 || isDownloading}
+                    >
+                      📥 Download Excel (All Pages)
+                    </Button>
+                  ) : (
+                    <Button
+                      size="small"
+                      type="default"
+                      disabled
+                      title="Please select a month to download"
+                    >
+                      📥 Download Excel (Select Month)
                     </Button>
                   )}
                 </div>

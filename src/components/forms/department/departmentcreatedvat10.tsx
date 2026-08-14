@@ -18,7 +18,6 @@ import SearchTinNumber from "@/action/dvat/searchtin";
 import { CreateDvat10Schema, CreateDvat10Form } from "@/schema/dvat10";
 import dayjs from "dayjs";
 import CreateDvat10 from "@/action/notice_order/createdvat10";
-import { DateRangeSelect } from "../inputfields/daterangeselect";
 import utc from "dayjs/plugin/utc";
 
 dayjs.extend(utc);
@@ -247,11 +246,18 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
   const onSubmit = async (data: CreateDvat10Form) => {
     if (!dvatdata) return toast.error("User Dvat not found");
 
+    // Create dates from year and month
+    const fromMonthIndex = monthNames.indexOf(data.tax_period_from_month);
+    const toMonthIndex = monthNames.indexOf(data.tax_period_to_month);
+    
+    const fromDate = new Date(parseInt(data.tax_period_from_year), fromMonthIndex, 1);
+    const toDate = new Date(parseInt(data.tax_period_to_year), toMonthIndex + 1, 0); // Last day of month
+
     const dvat24_response = await CreateDvat10({
       dvatid: dvatdata?.id,
       createdby: props.userid,
-      tax_period_from: fixDate(new Date(data.tax_period[0])),
-      tax_period_to: fixDate(new Date(data.tax_period[1])),
+      tax_period_from: fixDate(fromDate),
+      tax_period_to: fixDate(toDate),
       due_date: fixDate(new Date(data.due_date)),
       issuedId: props.userid,
       officerId: props.userid,
@@ -389,21 +395,82 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
                 />
               </div>
               <div className="grow"></div>
-              <div className=" mt-2">
-                <p className="text-sm font-normal text-center">
+              <div className="col-span-2 mt-2">
+                <p className="text-sm font-normal mb-3">
                   Tax Period From - To
                 </p>
-                {/* <p className="text-sm font-medium  text-center">
-                  {dayjs(new Date(periodData?.form!)).format("DD/MM/YYYY")} -{" "}
-                  {dayjs(new Date(periodData?.to!)).format("DD/MM/YYYY")}
-                </p> */}
-                <DateRangeSelect<CreateDvat10Form>
-                  name="tax_period"
-                  required={true}
-                  title="Tax Period"
-                  placeholder={["Start Date", "End Date"]}
-                  format={"DD/MM/YYYY"}
-                />
+                <div className="grid grid-cols-4 gap-2">
+                  <div>
+                    <MultiSelect<CreateDvat10Form>
+                      placeholder="From Year"
+                      name="tax_period_from_year"
+                      required={true}
+                      title="From Year"
+                      options={[
+                        { value: (new Date().getFullYear() - 2).toString(), label: (new Date().getFullYear() - 2).toString() },
+                        { value: (new Date().getFullYear() - 1).toString(), label: (new Date().getFullYear() - 1).toString() },
+                        { value: new Date().getFullYear().toString(), label: new Date().getFullYear().toString() },
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <MultiSelect<CreateDvat10Form>
+                      placeholder="From Month"
+                      name="tax_period_from_month"
+                      required={true}
+                      title="From Month"
+                      options={[
+                        { value: "January", label: "January" },
+                        { value: "February", label: "February" },
+                        { value: "March", label: "March" },
+                        { value: "April", label: "April" },
+                        { value: "May", label: "May" },
+                        { value: "June", label: "June" },
+                        { value: "July", label: "July" },
+                        { value: "August", label: "August" },
+                        { value: "September", label: "September" },
+                        { value: "October", label: "October" },
+                        { value: "November", label: "November" },
+                        { value: "December", label: "December" },
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <MultiSelect<CreateDvat10Form>
+                      placeholder="To Year"
+                      name="tax_period_to_year"
+                      required={true}
+                      title="To Year"
+                      options={[
+                        { value: (new Date().getFullYear() - 2).toString(), label: (new Date().getFullYear() - 2).toString() },
+                        { value: (new Date().getFullYear() - 1).toString(), label: (new Date().getFullYear() - 1).toString() },
+                        { value: new Date().getFullYear().toString(), label: new Date().getFullYear().toString() },
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <MultiSelect<CreateDvat10Form>
+                      placeholder="To Month"
+                      name="tax_period_to_month"
+                      required={true}
+                      title="To Month"
+                      options={[
+                        { value: "January", label: "January" },
+                        { value: "February", label: "February" },
+                        { value: "March", label: "March" },
+                        { value: "April", label: "April" },
+                        { value: "May", label: "May" },
+                        { value: "June", label: "June" },
+                        { value: "July", label: "July" },
+                        { value: "August", label: "August" },
+                        { value: "September", label: "September" },
+                        { value: "October", label: "October" },
+                        { value: "November", label: "November" },
+                        { value: "December", label: "December" },
+                      ]}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 

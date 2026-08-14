@@ -130,6 +130,22 @@ const TrackAppliation = () => {
     }
   };
 
+  const getQuarterMonths = (quarter: number | null | undefined): string => {
+    if (!quarter) return "";
+    switch (quarter) {
+      case 1:
+        return "Jan-Mar";
+      case 2:
+        return "Apr-Jun";
+      case 3:
+        return "Jul-Sep";
+      case 4:
+        return "Oct-Dec";
+      default:
+        return "";
+    }
+  };
+
   const get_month = (composition: boolean, month: string): string => {
     if (composition) {
       if (["January", "February", "March"].includes(capitalcase(month))) {
@@ -149,6 +165,30 @@ const TrackAppliation = () => {
       return month;
     }
   };
+
+  // Filter payment data to show only one quarterly return per DVAT when frequencyFilings is QUARTERLY
+  const filteredPaymentData = paymentData.reduce(
+    (
+      acc: Array<returns_01 & { dvat04: dvat04 }>,
+      current: returns_01 & { dvat04: dvat04 },
+    ) => {
+      // If frequencyFilings is not QUARTERLY, include the record
+      if (current.dvat04.frequencyFilings !== "QUARTERLY") {
+        acc.push(current);
+      } else {
+        // For QUARTERLY, check if we already have this DVAT
+        const dvat04IdExists = acc.some(
+          (item) => item.dvat04Id === current.dvat04Id,
+        );
+        // If not, add it (this will be the first/latest quarterly return for this DVAT)
+        if (!dvat04IdExists) {
+          acc.push(current);
+        }
+      }
+      return acc;
+    },
+    [],
+  );
 
   const [isSearch, setSearch] = useState<boolean>(false);
   const arnRef = useRef<InputRef>(null);
@@ -425,23 +465,48 @@ const TrackAppliation = () => {
         return;
       }
 
+      // Apply same filtering logic for quarterly returns
+      const filteredForExport = response.data.reduce(
+        (acc: any[], current: any) => {
+          if (current.dvat04.frequencyFilings !== "QUARTERLY") {
+            acc.push(current);
+          } else {
+            const dvat04IdExists = acc.some(
+              (item) => item.dvat04Id === current.dvat04Id,
+            );
+            if (!dvat04IdExists) {
+              acc.push(current);
+            }
+          }
+          return acc;
+        },
+        [],
+      );
+
       // Prepare data for Excel
-      const excelData = response.data.map((item: any) => ({
-        ARN: item.rr_number,
-        "Return Type": item.return_type,
-        "Financial Year": get_years(
-          new Date(item.transaction_date).toLocaleString("en-US", {
-            month: "long",
-          }),
-          item.year,
-        ),
-        "Tax Period": item.month,
-        "Date of Filing": formateDate(new Date(item.transaction_date)),
-        "Filing Type": item.compositionScheme ? "COMP" : "REG",
-        "TIN Number": item.dvat04.tinNumber,
-        "Trade Name": item.dvat04.tradename,
-        "Dealer Name": item.dvat04.name,
-      }));
+      const excelData = filteredForExport.map((item: any) => {
+        const isQuarterly = item.dvat04.frequencyFilings === "QUARTERLY";
+        const taxPeriodDisplay = isQuarterly
+          ? getQuarterMonths(item.quarter)
+          : item.month;
+
+        return {
+          ARN: item.rr_number,
+          "Return Type": item.return_type,
+          "Financial Year": get_years(
+            new Date(item.transaction_date).toLocaleString("en-US", {
+              month: "long",
+            }),
+            item.year,
+          ),
+          "Tax Period": taxPeriodDisplay,
+          "Date of Filing": formateDate(new Date(item.transaction_date)),
+          "Filing Type": item.compositionScheme ? "COMP" : "REG",
+          "TIN Number": item.dvat04.tinNumber,
+          "Trade Name": item.dvat04.tradename,
+          "Dealer Name": item.dvat04.name,
+        };
+      });
 
       // Create Excel workbook
       const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -615,7 +680,7 @@ const TrackAppliation = () => {
             </div>
           </div>
 
-          {paymentData.length == 0 ? (
+          {filteredPaymentData.length == 0 ? (
             <div className="p-6">
               <Alert
                 style={{
@@ -666,8 +731,14 @@ const TrackAppliation = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paymentData.map(
+                    {filteredPaymentData.map(
                       (val: returns_01 & { dvat04: dvat04 }, index: number) => {
+                        const isQuarterly =
+                          val.dvat04.frequencyFilings === "QUARTERLY";
+                        const taxPeriodDisplay = isQuarterly
+                          ? val.quarter
+                          : val.month;
+
                         return (
                           <TableRow
                             key={index}
@@ -702,16 +773,7 @@ const TrackAppliation = () => {
                               )}
                             </TableCell>
                             <TableCell className="border text-center p-3 text-gray-900">
-                              {/* {get_month(
-                                val.compositionScheme ?? false,
-                                new Date(val.transaction_date!).toLocaleString(
-                                  "en-US",
-                                  {
-                                    month: "short",
-                                  }
-                                )
-                              )} */}
-                              {val.month}
+                              {taxPeriodDisplay}
                             </TableCell>
                             <TableCell className="border text-center p-3 text-gray-900">
                               {formateDate(new Date(val.transaction_date!))}

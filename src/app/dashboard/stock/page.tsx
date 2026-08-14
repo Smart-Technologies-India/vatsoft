@@ -52,6 +52,18 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 type StockRow = stock & { commodity_master: commodity_master };
 
+// Indian number formatting function (e.g., 34423 -> 3,44,23)
+const formatIndianNumber = (num: number): string => {
+  if (!Number.isFinite(num)) return "0";
+  const numStr = Math.floor(num).toString();
+  if (numStr.length <= 3) return numStr;
+  
+  const lastThree = numStr.slice(-3);
+  const remaining = numStr.slice(0, -3);
+  const withCommas = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+  return `${withCommas},${lastThree}`;
+};
+
 const CommodityMaster = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
@@ -272,13 +284,13 @@ const CommodityMaster = () => {
           if (hasSnapshotData) {
             const packSize = Number(row.original.commodity_master.pack_size);
             if (!Number.isFinite(packSize) || packSize <= 0) {
-              return row.original.quantity;
+              return formatIndianNumber(row.original.quantity);
             }
             const bottles = Math.floor(row.original.quantity / packSize);
             const remainingMl = row.original.quantity % packSize;
-            return `${bottles} bottle ${remainingMl} mL`;
+            return `${formatIndianNumber(bottles)} bottle ${formatIndianNumber(remainingMl)} mL`;
           }
-          return row.original.quantity;
+          return formatIndianNumber(row.original.quantity);
         },
       },
       ...(isRestaurantCommodity
@@ -300,7 +312,7 @@ const CommodityMaster = () => {
               cell: ({ row }: { row: { original: StockRow } }) => {
                 // If snapshot data exists, use quantity directly; otherwise multiply by pack_size
                 if (hasSnapshotData) {
-                  return row.original.quantity.toFixed(0);
+                  return formatIndianNumber(row.original.quantity);
                 }
                 const packSize = Number(
                   row.original.commodity_master.pack_size,
@@ -308,7 +320,7 @@ const CommodityMaster = () => {
                 if (!Number.isFinite(packSize) || packSize <= 0) {
                   return "-";
                 }
-                return (Number(row.original.quantity) * packSize).toFixed(0);
+                return formatIndianNumber(Number(row.original.quantity) * packSize);
               },
             } as ColumnDef<StockRow>,
           ]
@@ -835,7 +847,7 @@ const CommodityMaster = () => {
               {/* Controls Section */}
               <div className="flex flex-wrap gap-2 items-center">
                 {/* Quantity Toggle for Non-Fuel */}
-                {(dvatdata?.commodity != "FUEL" && !isRestaurantCommodity) && (
+                {dvatdata?.commodity != "FUEL" && !isRestaurantCommodity && (
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-600">View:</span>
                     <Radio.Group

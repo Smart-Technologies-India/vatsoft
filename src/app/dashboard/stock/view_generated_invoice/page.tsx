@@ -26,6 +26,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx";
 
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
@@ -188,10 +189,11 @@ const GeneratedInvoicePage = () => {
     async (startDate?: string, endDate?: string) => {
       if (!dvatdata?.id) return;
 
+      // Fetch all records (up to 10000) to calculate correct summary
       const generatedResponse = await GetGeneratedInvoices({
         dvatid: dvatdata.id,
         skip: 0,
-        take: pagination.take,
+        take: 10000, // Fetch all data to get accurate summary
         searchTerm,
         sortField: sortOrder ? sortField : undefined,
         sortOrder: sortOrder || undefined,
@@ -203,12 +205,7 @@ const GeneratedInvoicePage = () => {
         generatedResponse.status &&
         generatedResponse.data.result
       ) {
-        setGeneratedInvoices(generatedResponse.data.result);
-        setPaginatin((prev) => ({
-          ...prev,
-          skip: 0,
-          total: generatedResponse.data.total,
-        }));
+        // Calculate summary from all fetched data
         const summary = generatedResponse.data.summary as
           | DailySaleFilteredSummary
           | undefined;
@@ -218,6 +215,27 @@ const GeneratedInvoicePage = () => {
         setFilteredSaleSummary(
           summary?.filteredSummary ?? DEFAULT_SALE_SUMMARY,
         );
+
+        // Now fetch with current pagination size to display on table
+        const paginatedResponse = await GetGeneratedInvoices({
+          dvatid: dvatdata.id,
+          skip: 0,
+          take: pagination.take,
+          searchTerm,
+          sortField: sortOrder ? sortField : undefined,
+          sortOrder: sortOrder || undefined,
+          startDate: startDate || dateFilter.startDate,
+          endDate: endDate || dateFilter.endDate,
+        });
+
+        if (paginatedResponse.status && paginatedResponse.data.result) {
+          setGeneratedInvoices(paginatedResponse.data.result);
+          setPaginatin((prev) => ({
+            ...prev,
+            skip: 0,
+            total: paginatedResponse.data.total,
+          }));
+        }
       }
     },
     [dvatdata?.id, pagination.take, searchTerm, sortField, sortOrder, dateFilter.startDate, dateFilter.endDate],
@@ -300,6 +318,89 @@ const GeneratedInvoicePage = () => {
       return () => clearTimeout(timer);
     }
   }, [selectedPeriod, dvatdata?.id, init]);
+
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadExcel = async () => {
+    if (!dvatdata?.id) {
+      toast.error("DVAT data not loaded.");
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      // Fetch all records with a large take value
+      const response = await GetGeneratedInvoices({
+        dvatid: dvatdata.id,
+        skip: 0,
+        take: 10000, // Fetch up to 10000 records
+        searchTerm,
+        sortField: sortOrder ? sortField : undefined,
+        sortOrder: sortOrder || undefined,
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+      });
+
+      if (!response.status || !response.data.result || response.data.result.length === 0) {
+        toast.warning("No data to download.");
+        setIsDownloading(false);
+        return;
+      }
+
+      // Flatten all records from all invoices
+      let srNo = 1;
+      const data: any[] = [];
+      
+      response.data.result.forEach((group) => {
+        group.records.forEach((record) => {
+          data.push({
+            "Sr. No.": srNo++,
+            "Invoice No.": group.invoice_number,
+            "Invoice Date": formateDate(group.invoice_date),
+            "Seller": group.seller_tin_number.name_of_dealer,
+            "TIN": group.seller_tin_number.tin_number,
+            "Product Name": record.commodity_master.product_name,
+            "Item ID": record.commodity_master.id,
+            "Quantity": record.quantity,
+            "Taxable Value": Number(record.amount).toFixed(2),
+            "Tax %": record.tax_percent,
+            "VAT Amount": Number(record.vatamount).toFixed(2),
+            "Invoice Value": (Number(record.amount) + Number(record.vatamount)).toFixed(2),
+          });
+        });
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Invoice Items");
+      
+      // Set column widths
+      const colWidths = [
+        { wch: 8 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 25 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 15 },
+      ];
+      worksheet["!cols"] = colWidths;
+
+      const fileName = `Invoice_Items_${new Date().toISOString().split("T")[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      toast.success(`Excel file downloaded successfully! (${data.length} items)`);
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download Excel file.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (!dvatdata?.id) return;
@@ -626,6 +727,26 @@ const GeneratedInvoicePage = () => {
                       }}
                     >
                       Clear Filters
+                    </Button>
+                  )}
+                  {selectedPeriod ? (
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={handleDownloadExcel}
+                      loading={isDownloading}
+                      disabled={generatedInvoices.length === 0 || isDownloading}
+                    >
+                      📥 Download Excel (All Pages)
+                    </Button>
+                  ) : (
+                    <Button
+                      size="small"
+                      type="default"
+                      disabled
+                      title="Please select a month to download"
+                    >
+                      📥 Download Excel (Select Month)
                     </Button>
                   )}
                 </div>

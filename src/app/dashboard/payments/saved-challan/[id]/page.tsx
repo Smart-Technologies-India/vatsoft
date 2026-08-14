@@ -162,7 +162,7 @@ const ChallanData = () => {
         const quarterMonths = getQuarterMonths(challanData.returns_01.quarter);
         returnPeriod = `${quarterMonths.join(", ")} ${challanData.returns_01.year}`;
       } else {
-        returnPeriod = `${challanData.returns_01.quarter} ${challanData.returns_01.year}`;
+        returnPeriod = `${challanData.returns_01.month} ${challanData.returns_01.year}`;
       }
     }
 

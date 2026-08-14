@@ -17,12 +17,10 @@ import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { FormType, order_notice, user } from "@prisma/client";
 import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
-import Link from "next/link";
 import GetUser from "@/action/user/getuser";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
-const { RangePicker } = DatePicker;
 
 const SupplierDetails = () => {
   const router = useRouter();
@@ -66,6 +64,25 @@ const SupplierDetails = () => {
   ) => {
     setSearchDate(dates);
   };
+
+  const [periodYear, setPeriodYear] = useState<string | null>(null);
+  const [periodMonth, setPeriodMonth] = useState<string | null>(null);
+
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
   const orderRef = useRef<InputRef>(null);
 
   const ordersearch = async () => {
@@ -171,14 +188,14 @@ const SupplierDetails = () => {
   };
 
   const datesearch = async () => {
-    if (searchDate == null || searchDate.length <= 1) {
-      return toast.error("Select state date and end date");
+    if (periodYear == null || periodMonth == null) {
+      return toast.error("Select year and month");
     }
 
     const search_response = await SearchNoticeOrder({
       dept: user?.selectOffice!,
-      fromdate: searchDate[0]?.toDate(),
-      todate: searchDate[1]?.toDate(),
+      period_year: periodYear,
+      period_month: periodMonth,
       take: 10,
       skip: 0,
     });
@@ -195,6 +212,8 @@ const SupplierDetails = () => {
 
   const init = async () => {
     setLoading(true);
+    setPeriodYear(null);
+    setPeriodMonth(null);
 
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
@@ -227,6 +246,7 @@ const SupplierDetails = () => {
 
   const [noticeData, setNoticeData] = useState<order_notice[]>([]);
   const [user, setUpser] = useState<user | null>(null);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
 
   useEffect(() => {
     const init = async () => {
@@ -286,15 +306,14 @@ const SupplierDetails = () => {
           setSearch(true);
         }
       } else if (searchOption == SearchOption.DATE) {
-        if (searchDate == null || searchDate.length <= 1) {
-          return toast.error("Select state date and end date");
+        if (periodYear == null || periodMonth == null) {
+          return toast.error("Select year and month");
         }
 
         const search_response = await SearchNoticeOrder({
           dept: user?.selectOffice!,
-
-          fromdate: searchDate[0]?.toDate(),
-          todate: searchDate[1]?.toDate(),
+          period_year: periodYear,
+          period_month: periodMonth,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -424,6 +443,169 @@ const SupplierDetails = () => {
     }
   };
 
+  const downloadAsExcel = async () => {
+    try {
+      setIsDownloading(true);
+      const { utils, writeFile } = await import("xlsx");
+
+      let allData: any[] = [];
+      let currentSkip = 0;
+      const pageSize = 100;
+      let hasMore = true;
+
+      // Fetch all data based on current search criteria
+      while (hasMore) {
+        let search_response: any = null;
+
+        if (isSearch) {
+          if (searchOption === SearchOption.TYPE) {
+            if (formtype == null) {
+              toast.error("Select Type.");
+              return;
+            }
+            search_response = await SearchNoticeOrder({
+              dept: user?.selectOffice!,
+              form_type: formtype,
+              take: pageSize,
+              skip: currentSkip,
+            });
+          } else if (searchOption === SearchOption.DATE) {
+            if (periodYear == null || periodMonth == null) {
+              toast.error("Select year and month");
+              return;
+            }
+            search_response = await SearchNoticeOrder({
+              dept: user?.selectOffice!,
+              period_year: periodYear,
+              period_month: periodMonth,
+              take: pageSize,
+              skip: currentSkip,
+            });
+          } else if (searchOption === SearchOption.TIN) {
+            if (
+              tinRef.current?.input?.value == undefined ||
+              tinRef.current?.input?.value == null ||
+              tinRef.current?.input?.value == ""
+            ) {
+              toast.error("Enter TIN number");
+              return;
+            }
+            search_response = await SearchNoticeOrder({
+              dept: user?.selectOffice!,
+              tin: tinRef.current?.input?.value,
+              take: pageSize,
+              skip: currentSkip,
+            });
+          } else if (searchOption === SearchOption.TRADENAME) {
+            if (
+              tradeRef.current?.input?.value == undefined ||
+              tradeRef.current?.input?.value == null ||
+              tradeRef.current?.input?.value == ""
+            ) {
+              toast.error("Enter Trade Name");
+              return;
+            }
+            search_response = await SearchNoticeOrder({
+              dept: user?.selectOffice!,
+              tradename: tradeRef.current?.input?.value,
+              take: pageSize,
+              skip: currentSkip,
+            });
+          } else if (searchOption === SearchOption.ORDER) {
+            if (
+              orderRef.current?.input?.value == undefined ||
+              orderRef.current?.input?.value == null ||
+              orderRef.current?.input?.value == ""
+            ) {
+              toast.error("Enter Notice/Order id number");
+              return;
+            }
+            search_response = await SearchNoticeOrder({
+              dept: user?.selectOffice!,
+              order: orderRef.current?.input?.value,
+              take: pageSize,
+              skip: currentSkip,
+            });
+          }
+        } else {
+          search_response = await SearchNoticeOrder({
+            dept: user?.selectOffice!,
+            take: pageSize,
+            skip: currentSkip,
+          });
+        }
+
+        if (
+          search_response &&
+          search_response.status &&
+          search_response.data.result &&
+          search_response.data.result.length > 0
+        ) {
+          allData = allData.concat(search_response.data.result);
+          currentSkip += pageSize;
+
+          if (
+            search_response.data.result.length < pageSize ||
+            currentSkip >= search_response.data.total
+          ) {
+            hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
+      }
+
+      // Format data for Excel
+      const excelData = allData.map((val: any) => ({
+        "Order Id": val.ref_no.toUpperCase(),
+        "Trade Name": val.dvat?.tradename || "-",
+        "TIN Number": val.dvat?.tinNumber || "-",
+        Period: val.returns_01
+          ? `${val.returns_01.month} ${val.returns_01.year}`
+          : "-",
+        "Issued By": "System Generated",
+        Type: capitalcase(val.notice_order_type),
+        Description: val.form_type,
+        "Date of Issuance": formateDate(val.issue_date),
+        "Due Date": formateDate(val.due_date),
+        "Amount of Demand": val.amount || "-",
+        Status: capitalcase(val.status),
+      }));
+
+      // Create worksheet and workbook
+      const ws = utils.json_to_sheet(excelData);
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, ws, "Notices & Orders");
+
+      // Set column widths
+      ws["!cols"] = [
+        { wch: 15 },
+        { wch: 25 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 18 },
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 15 },
+        { wch: 18 },
+        { wch: 15 },
+      ];
+
+      // Download the file
+      writeFile(
+        wb,
+        `Notices_Orders_${new Date().getTime()}.xlsx`
+      );
+      toast.success("Downloaded successfully!");
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download file");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -466,8 +648,16 @@ const SupplierDetails = () => {
       `}</style>
       <div className="p-3 py-2">
         <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white">
-            List of Notices & Orders issued by Authorities
+          <div className="bg-blue-500 p-2 text-white flex justify-between items-center">
+            <span>List of Notices & Orders issued by Authorities</span>
+            <button
+              onClick={downloadAsExcel}
+              disabled={isDownloading || noticeData.length === 0}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded flex items-center gap-2 text-sm"
+            >
+              <MdiDownload className="w-4 h-4" />
+              {isDownloading ? "Downloading..." : "Download Excel"}
+            </button>
           </div>
           <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center no-print">
             <Radio.Group
@@ -477,7 +667,7 @@ const SupplierDetails = () => {
               disabled={isSearch}
             >
               <Radio value={SearchOption.TYPE}>Type</Radio>
-              <Radio value={SearchOption.DATE}>Period</Radio>
+              <Radio value={SearchOption.DATE}>Tax Period</Radio>
               <Radio value={SearchOption.TIN}>TIN Number</Radio>
               <Radio value={SearchOption.TRADENAME}>Trade Name</Radio>
               <Radio value={SearchOption.ORDER}>Notice/Demand Order Id</Radio>
@@ -526,10 +716,39 @@ const SupplierDetails = () => {
 
                 case SearchOption.DATE:
                   return (
-                    <div className="flex gap-2">
-                      <RangePicker
-                        onChange={onChangeDate}
+                    <div className="flex gap-2 items-center">
+                      <Select
+                        style={{ width: 150 }}
+                        placeholder="Select Year"
+                        onChange={(value) => setPeriodYear(value)}
+                        value={periodYear}
                         disabled={isSearch}
+                        options={[
+                          { value: (new Date().getFullYear() - 2).toString(), label: (new Date().getFullYear() - 2).toString() },
+                          { value: (new Date().getFullYear() - 1).toString(), label: (new Date().getFullYear() - 1).toString() },
+                          { value: new Date().getFullYear().toString(), label: new Date().getFullYear().toString() },
+                        ]}
+                      />
+                      <Select
+                        style={{ width: 150 }}
+                        placeholder="Select Month"
+                        onChange={(value) => setPeriodMonth(value)}
+                        value={periodMonth}
+                        disabled={isSearch}
+                        options={[
+                          { value: "January", label: "January" },
+                          { value: "February", label: "February" },
+                          { value: "March", label: "March" },
+                          { value: "April", label: "April" },
+                          { value: "May", label: "May" },
+                          { value: "June", label: "June" },
+                          { value: "July", label: "July" },
+                          { value: "August", label: "August" },
+                          { value: "September", label: "September" },
+                          { value: "October", label: "October" },
+                          { value: "November", label: "November" },
+                          { value: "December", label: "December" },
+                        ]}
                       />
                       <Button type="primary" onClick={datesearch}>
                         Search
@@ -634,6 +853,9 @@ const SupplierDetails = () => {
                       TIN Number
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center border p-2">
+                      Period
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
                       Issued By
                     </TableHead>
                     <TableHead className="text-center border p-2">
@@ -684,6 +906,11 @@ const SupplierDetails = () => {
                       </TableCell>
                       <TableCell className="text-center border p-2">
                         {(val as any).dvat?.tinNumber || "-"}
+                      </TableCell>
+                      <TableCell className="text-center whitespace-nowrap  border p-2">
+                        {(val as any).returns_01 
+                          ? `${(val as any).returns_01.month} ${(val as any).returns_01.year}` 
+                          : "-"}
                       </TableCell>
                       <TableCell className="text-center whitespace-nowrap  border p-2">
                         System Generated

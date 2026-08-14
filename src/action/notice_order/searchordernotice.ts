@@ -13,6 +13,8 @@ interface SearchNoticeOrderPayload {
   userid?: number;
   fromdate?: Date;
   todate?: Date;
+  period_year?: string;
+  period_month?: string;
   dept?: SelectOffice;
   form_type?: FormType;
   tin?: string;
@@ -68,19 +70,24 @@ const SearchNoticeOrder = async (
             },
           }),
           ...(payload.form_type && { form_type: payload.form_type }),
-          ...(payload.fromdate &&
-            payload.todate && {
-              issue_date: {
-                gte: payload.fromdate,
-                lte: payload.todate,
-              },
-            }),
+          ...(payload.period_year && payload.period_month && {
+            returns_01: {
+              year: payload.period_year,
+              month: payload.period_month,
+            },
+          }),
         },
         include: {
           dvat: {
             select: {
               tinNumber: true,
               tradename: true,
+            },
+          },
+          returns_01: {
+            select: {
+              year: true,
+              month: true,
             },
           },
         },
@@ -114,13 +121,12 @@ const SearchNoticeOrder = async (
             },
           }),
           ...(payload.form_type && { form_type: payload.form_type }),
-          ...(payload.fromdate &&
-            payload.todate && {
-              issue_date: {
-                gte: payload.fromdate,
-                lte: payload.todate,
-              },
-            }),
+          ...(payload.period_year && payload.period_month && {
+            returns_01: {
+              year: payload.period_year,
+              month: payload.period_month,
+            },
+          }),
         },
       }),
     ]);
