@@ -94,13 +94,13 @@ const FFROM = () => {
               desc.includes("petrol") ||
               desc.includes("high speed diesel")
             ) {
-              entry.description_of_goods = "MS HSD";
+              entry.description_of_goods = "MS/HSD";
             } else if (desc.includes("additives") || desc.includes("oil")) {
               entry.description_of_goods = "Lubricant";
             } else if (desc.includes("cng") || desc.includes("png")) {
               entry.description_of_goods = "NG";
             } else {
-              entry.description_of_goods = "IMFL";
+              entry.description_of_goods = "IMFL/BEER";
             }
           }
 
