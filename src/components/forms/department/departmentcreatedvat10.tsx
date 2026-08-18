@@ -208,12 +208,63 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
     { value: "NOTCOMPLYRETURN", label: "NOTCOMPLYRETURN" },
   ];
 
+  // Quarter to months mapping
+  type Quarter = "QUARTER1" | "QUARTER2" | "QUARTER3" | "QUARTER4";
+  const quarterMonthsMap: Record<Quarter, string[]> = {
+    QUARTER1: ["April", "May", "June"],
+    QUARTER2: ["July", "August", "September"],
+    QUARTER3: ["October", "November", "December"],
+    QUARTER4: ["January", "February", "March"],
+  };
+
+  // Generate available years and months from April 2026 to current date
+  const getAvailableYearsAndMonths = () => {
+    const startDate = new Date(2026, 3, 1); // April 2026 (month is 0-indexed)
+    const currentDate = new Date();
+    const years: string[] = [];
+    const months: string[] = [];
+
+    // Generate years
+    for (
+      let year = startDate.getFullYear();
+      year <= currentDate.getFullYear();
+      year++
+    ) {
+      years.push(year.toString());
+    }
+
+    // Generate months for current year
+    for (let month = 0; month < monthNames.length; month++) {
+      const date = new Date(currentDate.getFullYear(), month, 1);
+      // Include months from April onwards if current year, otherwise all months
+      if (currentDate.getFullYear() > startDate.getFullYear()) {
+        months.push(monthNames[month]);
+      } else if (month >= 3) {
+        // April is at index 3
+        if (
+          month < currentDate.getMonth() ||
+          month === currentDate.getMonth()
+        ) {
+          months.push(monthNames[month]);
+        }
+      }
+    }
+
+    return { years, months };
+  };
+
+  const { years: availableYears, months: availableMonths } =
+    getAvailableYearsAndMonths();
+
   const {
     reset,
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
   } = useFormContext<CreateDvat10Form>();
+
+  // Watch for frequency changes
+  const frequencyFilings = dvatdata?.frequencyFilings;
 
   const fixDate = (value: Date | string): Date => {
     if (!value) return new Date(NaN);
@@ -246,12 +297,28 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
   const onSubmit = async (data: CreateDvat10Form) => {
     if (!dvatdata) return toast.error("User Dvat not found");
 
-    // Create dates from year and month
-    const fromMonthIndex = monthNames.indexOf(data.tax_period_from_month);
-    const toMonthIndex = monthNames.indexOf(data.tax_period_to_month);
-    
-    const fromDate = new Date(parseInt(data.tax_period_from_year), fromMonthIndex, 1);
-    const toDate = new Date(parseInt(data.tax_period_to_year), toMonthIndex + 1, 0); // Last day of month
+    let fromDate: Date;
+    let toDate: Date;
+
+    const year = parseInt(data.tax_period_year);
+
+    if (frequencyFilings === "MONTHLY") {
+      // For MONTHLY: from date = 5th, to date = 25th of selected month
+      const monthIndex = monthNames.indexOf(data.tax_period_month || "");
+      fromDate = new Date(year, monthIndex, 5);
+      toDate = new Date(year, monthIndex, 25);
+    } else {
+      // For QUARTERLY: from date = 5th of first month, to date = 25th of last month
+      const quarter = (data.tax_period_quarter || "QUARTER1") as Quarter;
+      const quarterMonths = quarterMonthsMap[quarter];
+      const firstMonthIndex = monthNames.indexOf(quarterMonths[0]);
+      const lastMonthIndex = monthNames.indexOf(
+        quarterMonths[quarterMonths.length - 1],
+      );
+
+      fromDate = new Date(year, firstMonthIndex, 5);
+      toDate = new Date(year, lastMonthIndex, 25);
+    }
 
     const dvat24_response = await CreateDvat10({
       dvatid: dvatdata?.id,
@@ -396,81 +463,73 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
               </div>
               <div className="grow"></div>
               <div className="col-span-2 mt-2">
-                <p className="text-sm font-normal mb-3">
-                  Tax Period From - To
-                </p>
-                <div className="grid grid-cols-4 gap-2">
-                  <div>
-                    <MultiSelect<CreateDvat10Form>
-                      placeholder="From Year"
-                      name="tax_period_from_year"
-                      required={true}
-                      title="From Year"
-                      options={[
-                        { value: (new Date().getFullYear() - 2).toString(), label: (new Date().getFullYear() - 2).toString() },
-                        { value: (new Date().getFullYear() - 1).toString(), label: (new Date().getFullYear() - 1).toString() },
-                        { value: new Date().getFullYear().toString(), label: new Date().getFullYear().toString() },
-                      ]}
-                    />
+                <p className="text-sm font-normal mb-3">Tax Period From - To</p>
+                {frequencyFilings === "MONTHLY" ? (
+                  // MONTHLY: Show Year and Month (2 fields)
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <MultiSelect<CreateDvat10Form>
+                        placeholder="Select Month"
+                        name="tax_period_month"
+                        required={true}
+                        title="Month"
+                        options={availableMonths.map((month) => ({
+                          value: month,
+                          label: month,
+                        }))}
+                      />
+                    </div>
+                    <div>
+                      <MultiSelect<CreateDvat10Form>
+                        placeholder="Select Year"
+                        name="tax_period_year"
+                        required={true}
+                        title="Year"
+                        options={availableYears.map((year) => ({
+                          value: year,
+                          label: year,
+                        }))}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <MultiSelect<CreateDvat10Form>
-                      placeholder="From Month"
-                      name="tax_period_from_month"
-                      required={true}
-                      title="From Month"
-                      options={[
-                        { value: "January", label: "January" },
-                        { value: "February", label: "February" },
-                        { value: "March", label: "March" },
-                        { value: "April", label: "April" },
-                        { value: "May", label: "May" },
-                        { value: "June", label: "June" },
-                        { value: "July", label: "July" },
-                        { value: "August", label: "August" },
-                        { value: "September", label: "September" },
-                        { value: "October", label: "October" },
-                        { value: "November", label: "November" },
-                        { value: "December", label: "December" },
-                      ]}
-                    />
+                ) : frequencyFilings === "QUARTERLY" ? (
+                  // QUARTERLY: Show Year and Quarter (2 fields)
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <MultiSelect<CreateDvat10Form>
+                        placeholder="Select Quarter"
+                        name="tax_period_quarter"
+                        required={true}
+                        title="Quarter"
+                        options={[
+                          { value: "QUARTER1", label: "Q1 (April - June)" },
+                          { value: "QUARTER2", label: "Q2 (July - September)" },
+                          {
+                            value: "QUARTER3",
+                            label: "Q3 (October - December)",
+                          },
+                          { value: "QUARTER4", label: "Q4 (January - March)" },
+                        ]}
+                      />
+                    </div>
+                    <div>
+                      <MultiSelect<CreateDvat10Form>
+                        placeholder="Select Year"
+                        name="tax_period_year"
+                        required={true}
+                        title="Year"
+                        options={availableYears.map((year) => ({
+                          value: year,
+                          label: year,
+                        }))}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <MultiSelect<CreateDvat10Form>
-                      placeholder="To Year"
-                      name="tax_period_to_year"
-                      required={true}
-                      title="To Year"
-                      options={[
-                        { value: (new Date().getFullYear() - 2).toString(), label: (new Date().getFullYear() - 2).toString() },
-                        { value: (new Date().getFullYear() - 1).toString(), label: (new Date().getFullYear() - 1).toString() },
-                        { value: new Date().getFullYear().toString(), label: new Date().getFullYear().toString() },
-                      ]}
-                    />
-                  </div>
-                  <div>
-                    <MultiSelect<CreateDvat10Form>
-                      placeholder="To Month"
-                      name="tax_period_to_month"
-                      required={true}
-                      title="To Month"
-                      options={[
-                        { value: "January", label: "January" },
-                        { value: "February", label: "February" },
-                        { value: "March", label: "March" },
-                        { value: "April", label: "April" },
-                        { value: "May", label: "May" },
-                        { value: "June", label: "June" },
-                        { value: "July", label: "July" },
-                        { value: "August", label: "August" },
-                        { value: "September", label: "September" },
-                        { value: "October", label: "October" },
-                        { value: "November", label: "November" },
-                        { value: "December", label: "December" },
-                      ]}
-                    />
-                  </div>
-                </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    Unable to determine filing frequency
+                  </p>
+                )}
               </div>
             </div>
 

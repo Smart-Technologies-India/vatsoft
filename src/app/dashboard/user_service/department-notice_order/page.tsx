@@ -15,7 +15,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
-import { FormType, order_notice, user } from "@prisma/client";
+import { FormType, FrequencyFilings, order_notice, user } from "@prisma/client";
 import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
 import GetUser from "@/action/user/getuser";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
@@ -82,6 +82,65 @@ const SupplierDetails = () => {
     "November",
     "December",
   ];
+
+  // Generate available years and months from April 2026 to current date
+  const getAvailableYearsAndMonths = () => {
+    const startDate = new Date(2026, 3, 1); // April 2026 (month is 0-indexed)
+    const currentDate = new Date();
+    const years: string[] = [];
+    const months: string[] = [];
+
+    // Generate years
+    for (let year = startDate.getFullYear(); year <= currentDate.getFullYear(); year++) {
+      years.push(year.toString());
+    }
+
+    // Generate months for current year
+    for (let month = 0; month < monthNames.length; month++) {
+      // Include months from April onwards if current year, otherwise all months
+      if (currentDate.getFullYear() > startDate.getFullYear()) {
+        months.push(monthNames[month]);
+      } else if (month >= 3) {
+        // April is at index 3
+        if (
+          month < currentDate.getMonth() ||
+          (month === currentDate.getMonth())
+        ) {
+          months.push(monthNames[month]);
+        }
+      }
+    }
+
+    return { years, months };
+  };
+
+  const { years: availableYears, months: availableMonths } =
+    getAvailableYearsAndMonths();
+
+  // Format period based on frequencyFilings
+  const formatPeriod = (
+    taxPeriodFrom: Date | null,
+    taxPeriodTo: Date | null,
+    frequencyFilings: FrequencyFilings,
+  ): string => {
+    if (!taxPeriodFrom || !taxPeriodTo) return "-";
+
+    const fromDate = new Date(taxPeriodFrom);
+    const toDate = new Date(taxPeriodTo);
+    const fromMonth = monthNames[fromDate.getMonth()];
+    const toMonth = monthNames[toDate.getMonth()];
+    const fromYear = fromDate.getFullYear();
+    const toYear = toDate.getFullYear();
+    if (frequencyFilings === "MONTHLY") {
+      // Format: "Apr 2026"
+      return `${fromMonth.substring(0, 3)} ${fromYear}`;
+    } else if (frequencyFilings === "QUARTERLY") {
+      // Format: "Apr-Jun 2026"
+      return `${fromMonth.substring(0, 3)}-${toMonth.substring(0, 3)} ${fromYear}`;
+    }
+
+    return "-";
+  };
 
   const orderRef = useRef<InputRef>(null);
 
@@ -194,8 +253,8 @@ const SupplierDetails = () => {
 
     const search_response = await SearchNoticeOrder({
       dept: user?.selectOffice!,
-      period_year: periodYear,
-      period_month: periodMonth,
+      tax_period_year: periodYear,
+      tax_period_month: periodMonth,
       take: 10,
       skip: 0,
     });
@@ -267,6 +326,7 @@ const SupplierDetails = () => {
           take: pagination.take,
           skip: pagination.skip,
         });
+        console.log("Notice Response:", notice_response);
         if (notice_response.status && notice_response.data.result) {
           setNoticeData(notice_response.data.result);
           setPaginatin({
@@ -312,8 +372,8 @@ const SupplierDetails = () => {
 
         const search_response = await SearchNoticeOrder({
           dept: user?.selectOffice!,
-          period_year: periodYear,
-          period_month: periodMonth,
+          tax_period_year: periodYear,
+          tax_period_month: periodMonth,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -476,8 +536,8 @@ const SupplierDetails = () => {
             }
             search_response = await SearchNoticeOrder({
               dept: user?.selectOffice!,
-              period_year: periodYear,
-              period_month: periodMonth,
+              tax_period_year: periodYear,
+              tax_period_month: periodMonth,
               take: pageSize,
               skip: currentSkip,
             });
@@ -560,9 +620,11 @@ const SupplierDetails = () => {
         "Order Id": val.ref_no.toUpperCase(),
         "Trade Name": val.dvat?.tradename || "-",
         "TIN Number": val.dvat?.tinNumber || "-",
-        Period: val.returns_01
-          ? `${val.returns_01.month} ${val.returns_01.year}`
-          : "-",
+        Period: formatPeriod(
+          val.tax_period_from,
+          val.tax_period_to,
+          val.dvat?.frequencyFilings || null,
+        ),
         "Issued By": "System Generated",
         Type: capitalcase(val.notice_order_type),
         Description: val.form_type,
@@ -593,10 +655,7 @@ const SupplierDetails = () => {
       ];
 
       // Download the file
-      writeFile(
-        wb,
-        `Notices_Orders_${new Date().getTime()}.xlsx`
-      );
+      writeFile(wb, `Notices_Orders_${new Date().getTime()}.xlsx`);
       toast.success("Downloaded successfully!");
     } catch (error) {
       console.error("Download error:", error);
@@ -718,37 +777,26 @@ const SupplierDetails = () => {
                   return (
                     <div className="flex gap-2 items-center">
                       <Select
-                        style={{ width: 150 }}
                         placeholder="Select Year"
-                        onChange={(value) => setPeriodYear(value)}
                         value={periodYear}
+                        onChange={(value) => setPeriodYear(value)}
                         disabled={isSearch}
-                        options={[
-                          { value: (new Date().getFullYear() - 2).toString(), label: (new Date().getFullYear() - 2).toString() },
-                          { value: (new Date().getFullYear() - 1).toString(), label: (new Date().getFullYear() - 1).toString() },
-                          { value: new Date().getFullYear().toString(), label: new Date().getFullYear().toString() },
-                        ]}
+                        style={{ width: 150 }}
+                        options={availableYears.map((year) => ({
+                          label: year,
+                          value: year,
+                        }))}
                       />
                       <Select
-                        style={{ width: 150 }}
                         placeholder="Select Month"
-                        onChange={(value) => setPeriodMonth(value)}
                         value={periodMonth}
+                        onChange={(value) => setPeriodMonth(value)}
                         disabled={isSearch}
-                        options={[
-                          { value: "January", label: "January" },
-                          { value: "February", label: "February" },
-                          { value: "March", label: "March" },
-                          { value: "April", label: "April" },
-                          { value: "May", label: "May" },
-                          { value: "June", label: "June" },
-                          { value: "July", label: "July" },
-                          { value: "August", label: "August" },
-                          { value: "September", label: "September" },
-                          { value: "October", label: "October" },
-                          { value: "November", label: "November" },
-                          { value: "December", label: "December" },
-                        ]}
+                        style={{ width: 150 }}
+                        options={availableMonths.map((month) => ({
+                          label: month,
+                          value: month,
+                        }))}
                       />
                       <Button type="primary" onClick={datesearch}>
                         Search
@@ -908,9 +956,11 @@ const SupplierDetails = () => {
                         {(val as any).dvat?.tinNumber || "-"}
                       </TableCell>
                       <TableCell className="text-center whitespace-nowrap  border p-2">
-                        {(val as any).returns_01 
-                          ? `${(val as any).returns_01.month} ${(val as any).returns_01.year}` 
-                          : "-"}
+                        {formatPeriod(
+                          val.tax_period_from,
+                          val.tax_period_to,
+                          (val as any).dvat?.frequencyFilings || null,
+                        )}
                       </TableCell>
                       <TableCell className="text-center whitespace-nowrap  border p-2">
                         System Generated

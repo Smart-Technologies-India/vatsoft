@@ -31,6 +31,46 @@ const Dvat10Page = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [data, setData] = useState<ResponseType | null>(null);
 
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // Format period based on frequencyFilings
+  const formatPeriod = (
+    taxPeriodFrom: Date | string | null,
+    taxPeriodTo: Date | string | null,
+    frequencyFilings: string | null,
+  ): string => {
+    if (!taxPeriodFrom || !taxPeriodTo) return "N/A";
+
+    const fromDate = new Date(taxPeriodFrom);
+    const toDate = new Date(taxPeriodTo);
+    const fromMonth = monthNames[fromDate.getMonth()];
+    const toMonth = monthNames[toDate.getMonth()];
+    const fromYear = fromDate.getFullYear();
+
+    if (frequencyFilings === "MONTHLY") {
+      // Format: "Apr 2026"
+      return `${fromMonth.substring(0, 3)} ${fromYear}`;
+    } else if (frequencyFilings === "QUARTERLY") {
+      // Format: "Apr-Jun 2026"
+      return `${fromMonth.substring(0, 3)}-${toMonth.substring(0, 3)} ${fromYear}`;
+    }
+
+    return "N/A";
+  };
+
   useEffect(() => {
     const init = async () => {
       const authResponse = await getAuthenticatedUserId();
@@ -234,9 +274,7 @@ const Dvat10Page = () => {
                   Tax period
                 </td>
                 <td className="border border-black p-2 print:p-1 w-1/2">
-                  {notice.tax_period_from && notice.tax_period_to
-                    ? `${new Date(notice.tax_period_from).toLocaleDateString()} - ${new Date(notice.tax_period_to).toLocaleDateString()}`
-                    : "N/A"}
+                  {formatPeriod(notice.tax_period_from, notice.tax_period_to, data.dvat.frequencyFilings)}
                 </td>
               </tr>
               <tr>

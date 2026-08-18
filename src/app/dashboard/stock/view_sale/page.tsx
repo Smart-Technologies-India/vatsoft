@@ -6,6 +6,7 @@ import AcceptSaleForPendingProcess from "@/action/stock/acceptsaleforpendingproc
 import AutoAcceptSaleByDays from "@/action/stock/autoacceptsalebydays";
 import DeleteSale from "@/action/stock/deletesale";
 import DeleteSaleItem from "@/action/stock/deletesaleitem";
+import UpdateInvoiceNumber from "@/action/stock/updateinvoicenumber";
 import GetSaleDeleteImpact from "@/action/stock/getsaledeleteimpact";
 import GetUserDailySale, {
   DailySaleSummary,
@@ -700,6 +701,13 @@ const DocumentWiseDetails = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSalesConfirmed, setIsSalesConfirmed] = useState(false);
   const [isFinalizingSales, setIsFinalizingSales] = useState(false);
+  const [isInvoiceNumberModalOpen, setIsInvoiceNumberModalOpen] =
+    useState(false);
+  const [selectedRecordsForInvoiceEdit, setSelectedRecordsForInvoiceEdit] =
+    useState<any[]>([]);
+  const [invoiceNumberInput, setInvoiceNumberInput] = useState("");
+  const [isUpdatingInvoiceNumber, setIsUpdatingInvoiceNumber] =
+    useState(false);
   const [finalizeProgress, setFinalizeProgress] = useState<{
     total: number;
     processed: number;
@@ -833,6 +841,48 @@ const DocumentWiseDetails = () => {
 
       return pendingResponse.data.total > 0;
     };
+
+  const checkForEmptyInvoices = (): {
+    hasEmpty: boolean;
+    emptyInvoices: Array<{ invoiceNumber: string; reason: string }>;
+  } => {
+    const emptyInvoices: Array<{ invoiceNumber: string; reason: string }> = [];
+
+    dailySale.forEach((group) => {
+      group.records.forEach((record) => {
+        const issues: string[] = [];
+
+        // Check critical fields
+        if (!record.invoice_number || record.invoice_number.trim() === "") {
+          issues.push("missing invoice number");
+        }
+        if (!record.invoice_date) {
+          issues.push("missing invoice date");
+        }
+        if (!record.amount || parseFloat(record.amount) <= 0) {
+          issues.push("zero or missing taxable value");
+        }
+        if (!record.vatamount || parseFloat(record.vatamount) < 0) {
+          issues.push("missing VAT amount");
+        }
+        if (!record.seller_tin_number) {
+          issues.push("missing seller/trade information");
+        }
+
+        if (issues.length > 0) {
+          emptyInvoices.push({
+            invoiceNumber: record.invoice_number || "Unknown",
+            reason: issues.join(", "),
+          });
+        }
+      });
+    });
+
+    return {
+      hasEmpty: emptyInvoices.length > 0,
+      emptyInvoices,
+    };
+  };
 
   const Convertto31 = async () => {
     if (!dvatdata) {
@@ -1126,6 +1176,45 @@ const DocumentWiseDetails = () => {
     });
 
     setIsDeleteImpactLoading(false);
+  };
+
+  const handleUpdateInvoiceNumber = async () => {
+    if (selectedRecordsForInvoiceEdit.length === 0) {
+      toast.error("No records selected.");
+      return;
+    }
+
+    if (!invoiceNumberInput || invoiceNumberInput.trim() === "") {
+      toast.error("Please enter an invoice number.");
+      return;
+    }
+
+    setIsUpdatingInvoiceNumber(true);
+
+    const recordIds = selectedRecordsForInvoiceEdit.map((record) => record.id);
+    const response = await UpdateInvoiceNumber({
+      ids: recordIds,
+      invoiceNumber: invoiceNumberInput.trim(),
+    });
+
+    if (response.status) {
+      toast.success("Invoice number updated successfully.");
+      setIsInvoiceNumberModalOpen(false);
+      setSelectedRecordsForInvoiceEdit([]);
+      setInvoiceNumberInput("");
+      // Refresh data
+      await init();
+    } else {
+      toast.error(response.message || "Failed to update invoice number.");
+    }
+
+    setIsUpdatingInvoiceNumber(false);
+  };
+
+  const openInvoiceNumberModal = (records: any[]) => {
+    setSelectedRecordsForInvoiceEdit(records);
+    setInvoiceNumberInput("");
+    setIsInvoiceNumberModalOpen(true);
   };
 
   const openBulkDeleteModal = async () => {
@@ -1740,6 +1829,74 @@ const DocumentWiseDetails = () => {
           restored.
         </p>
       </Modal>
+      <Modal
+        title="Confirm Bulk Delete"
+        open={isBulkDeleteConfirmOpen}
+        onCancel={() => setIsBulkDeleteConfirmOpen(false)}
+        onOk={handleConfirmBulkDelete}
+        okText="Delete Permanently"
+        okButtonProps={{ danger: true, loading: isBulkDeleting }}
+      >
+        <p className="text-sm text-gray-700">
+          You are about to delete {selectedBulkDeleteIds.length} sale item(s).
+        </p>
+        <p className="mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+          Warning: This action cannot be reversed. Deleted items cannot be
+          restored.
+        </p>
+      </Modal>
+
+      <Modal
+        title="Fill Invoice Number"
+        open={isInvoiceNumberModalOpen}
+        onCancel={() => {
+          setIsInvoiceNumberModalOpen(false);
+          setSelectedRecordsForInvoiceEdit([]);
+          setInvoiceNumberInput("");
+        }}
+        onOk={handleUpdateInvoiceNumber}
+        okText="Update"
+        okButtonProps={{ loading: isUpdatingInvoiceNumber }}
+        cancelButtonProps={{ disabled: isUpdatingInvoiceNumber }}
+      >
+        <div className="space-y-4 py-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Invoice Number
+            </label>
+            <input
+              type="text"
+              value={invoiceNumberInput}
+              onChange={(e) => setInvoiceNumberInput(e.target.value)}
+              placeholder="Enter invoice number"
+              disabled={isUpdatingInvoiceNumber}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleUpdateInvoiceNumber();
+                }
+              }}
+            />
+          </div>
+          {selectedRecordsForInvoiceEdit.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded p-3">
+              <p className="text-xs text-blue-800 font-semibold mb-2">
+                📋 Records to be updated: {selectedRecordsForInvoiceEdit.length}
+              </p>
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {selectedRecordsForInvoiceEdit.map((record, idx) => (
+                  <div key={idx} className="text-xs text-blue-700 pb-1 border-b border-blue-100 last:border-0">
+                    <p>
+                      <strong>#{idx + 1}</strong> - Invoice: {record.invoice_number || "Empty"} | Trade: {record.seller_tin_number?.name_of_dealer}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
+
       <Drawer
         placement="right"
         closeIcon={null}
@@ -1868,6 +2025,21 @@ const DocumentWiseDetails = () => {
                                 if (hasPendingInSelectedRange) {
                                   toast.error(
                                     "All sale invoices should be accepted by buyer for the selected date range before generating DVAT 31/31 A.",
+                                  );
+                                  return;
+                                }
+
+                                // Check for empty invoices
+                                const emptyCheck = checkForEmptyInvoices();
+                                if (emptyCheck.hasEmpty) {
+                                  const emptyList = emptyCheck.emptyInvoices
+                                    .map((inv) => `• Invoice ${inv.invoiceNumber}: ${inv.reason}`)
+                                    .join("\n");
+                                  toast.error(
+                                    `❌ Cannot generate DVAT 31/31 A - The following invoices are incomplete:\n\n${emptyList}\n\nPlease fill in or correct these invoices before proceeding.`,
+                                    {
+                                      autoClose: false,
+                                    },
                                   );
                                   return;
                                 }
@@ -2216,6 +2388,18 @@ const DocumentWiseDetails = () => {
                                     Delete
                                   </button>
                                 )}
+                                {!group.records[0].invoice_number ||
+                                group.records[0].invoice_number.trim() === "" ? (
+                                  <button
+                                    onClick={() => {
+                                      openInvoiceNumberModal(group.records);
+                                      handelClose(index);
+                                    }}
+                                    className="text-sm bg-white border hover:border-purple-500 hover:text-purple-600 text-gray-700 py-1 px-3 rounded"
+                                  >
+                                    Fill Invoice No.
+                                  </button>
+                                ) : null}
                                 <button
                                   onClick={() => {
                                     setCreditNoteGroup(group);

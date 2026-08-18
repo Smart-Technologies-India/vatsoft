@@ -13,8 +13,8 @@ interface SearchNoticeOrderPayload {
   userid?: number;
   fromdate?: Date;
   todate?: Date;
-  period_year?: string;
-  period_month?: string;
+  tax_period_year?: string;
+  tax_period_month?: string;
   dept?: SelectOffice;
   form_type?: FormType;
   tin?: string;
@@ -40,6 +40,24 @@ const SearchNoticeOrder = async (
         message: "Not authenticated. Please login.",
         functionname: "SearchNoticeOrder",
       } as any;
+    }
+
+    // Calculate date range for month filtering
+    let monthStartDate: Date | undefined;
+    let monthEndDate: Date | undefined;
+    
+    if (payload.tax_period_year && payload.tax_period_month) {
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      const monthIndex = monthNames.indexOf(payload.tax_period_month);
+      const year = parseInt(payload.tax_period_year);
+      
+      if (monthIndex !== -1) {
+        monthStartDate = new Date(year, monthIndex, 1);
+        monthEndDate = new Date(year, monthIndex + 1, 0);
+      }
     }
 
     const [order_notice_response, totalCount] = await Promise.all([
@@ -70,24 +88,27 @@ const SearchNoticeOrder = async (
             },
           }),
           ...(payload.form_type && { form_type: payload.form_type }),
-          ...(payload.period_year && payload.period_month && {
-            returns_01: {
-              year: payload.period_year,
-              month: payload.period_month,
-            },
+          ...(monthStartDate && monthEndDate && {
+            AND: [
+              {
+                tax_period_from: {
+                  lte: monthEndDate,
+                },
+              },
+              {
+                tax_period_to: {
+                  gte: monthStartDate,
+                },
+              },
+            ],
           }),
         },
         include: {
           dvat: {
             select: {
+              frequencyFilings: true,
               tinNumber: true,
               tradename: true,
-            },
-          },
-          returns_01: {
-            select: {
-              year: true,
-              month: true,
             },
           },
         },
@@ -121,11 +142,19 @@ const SearchNoticeOrder = async (
             },
           }),
           ...(payload.form_type && { form_type: payload.form_type }),
-          ...(payload.period_year && payload.period_month && {
-            returns_01: {
-              year: payload.period_year,
-              month: payload.period_month,
-            },
+          ...(monthStartDate && monthEndDate && {
+            AND: [
+              {
+                tax_period_from: {
+                  lte: monthEndDate,
+                },
+              },
+              {
+                tax_period_to: {
+                  gte: monthStartDate,
+                },
+              },
+            ],
           }),
         },
       }),

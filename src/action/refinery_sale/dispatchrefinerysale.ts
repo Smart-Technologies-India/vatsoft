@@ -64,6 +64,21 @@ const DispatchRefinerySale = async (
       });
     }
 
+    const extradata = await prisma.refinery_sale.findFirst({
+      where: {
+        invoice_number: targetSale.invoice_number,
+        deletedAt: null,
+        status: "ACTIVE",
+        refineryId: refinery.id,
+      },
+    });
+    if (extradata) {
+      return createResponse({
+        message: "Invoice number already exists.",
+        functionname,
+      });
+    }
+
     const vatPaidRows = await prisma.refinery_sale.findMany({
       where: {
         refineryId: refinery.id,

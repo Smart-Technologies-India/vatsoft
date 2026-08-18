@@ -106,6 +106,52 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
     (returns_01 & { dvat04: dvat04 }) | null
   >(null);
 
+  interface Period {
+    to: string;
+    form: string;
+  }
+  const [periodData, setPeriodData] = useState<Period | null>(null);
+
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // Format period based on frequencyFilings
+  const formatPeriod = (
+    taxPeriodFrom: Date | null,
+    taxPeriodTo: Date | null,
+    frequencyFilings: string | null,
+  ): string => {
+    if (!taxPeriodFrom || !taxPeriodTo) return "-";
+
+    const fromDate = new Date(taxPeriodFrom);
+    const toDate = new Date(taxPeriodTo);
+    const fromMonth = monthNames[fromDate.getMonth()];
+    const toMonth = monthNames[toDate.getMonth()];
+    const fromYear = fromDate.getFullYear();
+
+    if (frequencyFilings === "MONTHLY") {
+      // Format: "Apr 2026"
+      return `${fromMonth.substring(0, 3)} ${fromYear}`;
+    } else if (frequencyFilings === "QUARTERLY") {
+      // Format: "Apr-Jun 2026"
+      return `${fromMonth.substring(0, 3)}-${toMonth.substring(0, 3)} ${fromYear}`;
+    }
+
+    return "-";
+  };
+
   const fixDate = (value: Date | string): Date => {
     if (!value) return new Date(NaN);
 
@@ -188,6 +234,46 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
       });
       if (return01_response.status && return01_response.data) {
         setReturn01Data(return01_response.data);
+        // Calculate period based on frequency
+        const iscomp: boolean = return01_response.data.dvat04.compositionScheme ?? false;
+        const from_year: string = return01_response.data.year;
+        const from_month: string = return01_response.data.month!;
+        const currentMonthIndex = monthNames.indexOf(from_month);
+        const currentYear = parseInt(from_year);
+
+        let to_year: string;
+        let to_month: string;
+
+        if (iscomp) {
+          if (currentMonthIndex >= 9) {
+            to_month = "December";
+            to_year = from_year;
+          } else {
+            const lastQuarterMonth =
+              currentMonthIndex - (currentMonthIndex % 3) + 2;
+            to_month = monthNames[lastQuarterMonth];
+            to_year = from_year;
+          }
+        } else {
+          if (currentMonthIndex === 11) {
+            to_month = monthNames[0];
+            to_year = (currentYear + 1).toString();
+          } else {
+            to_month = monthNames[currentMonthIndex + 1];
+            to_year = from_year;
+          }
+        }
+
+        const from_date: Date = new Date(parseInt(from_year), currentMonthIndex, 1);
+        const to_date: Date = new Date(
+          parseInt(to_year),
+          monthNames.indexOf(to_month),
+          0,
+        );
+        setPeriodData({
+          form: from_date.toDateString(),
+          to: to_date.toDateString(),
+        });
       }
       if (!(tinNumber == null || tinNumber == undefined || tinNumber == "")) {
         const dvat_response = await SearchTinNumber({
@@ -287,6 +373,19 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
                   mindate={dayjs()}
                   format="DD/MM/YYYY"
                 />
+              </div>
+              <div className="grow"></div>
+              <div className=" mt-2">
+                <p className="text-sm font-normal text-center">
+                  Tax Period From - To
+                </p>
+                <p className="text-sm font-medium  text-center">
+                  {formatPeriod(
+                    new Date(periodData?.form!),
+                    new Date(periodData?.to!),
+                    return01Data?.dvat04.frequencyFilings || null,
+                  )}
+                </p>
               </div>
             </div>
 

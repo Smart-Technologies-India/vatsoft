@@ -113,6 +113,46 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
   }
   const [periodData, setPeriodData] = useState<Period | null>(null);
 
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // Format period based on frequencyFilings
+  const formatPeriod = (
+    taxPeriodFrom: Date | null,
+    taxPeriodTo: Date | null,
+    frequencyFilings: string | null,
+  ): string => {
+    if (!taxPeriodFrom || !taxPeriodTo) return "-";
+
+    const fromDate = new Date(taxPeriodFrom);
+    const toDate = new Date(taxPeriodTo);
+    const fromMonth = monthNames[fromDate.getMonth()];
+    const toMonth = monthNames[toDate.getMonth()];
+    const fromYear = fromDate.getFullYear();
+
+    if (frequencyFilings === "MONTHLY") {
+      // Format: "Apr 2026"
+      return `${fromMonth.substring(0, 3)} ${fromYear}`;
+    } else if (frequencyFilings === "QUARTERLY") {
+      // Format: "Apr-Jun 2026"
+      return `${fromMonth.substring(0, 3)}-${toMonth.substring(0, 3)} ${fromYear}`;
+    }
+
+    return "-";
+  };
+
   const getPeriod = (
     return_01data: returns_01 & { dvat04: dvat04 },
   ): {
@@ -391,8 +431,11 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
                   Tax Period From - To
                 </p>
                 <p className="text-sm font-medium  text-center">
-                  {dayjs(new Date(periodData?.form!)).format("DD/MM/YYYY")} -{" "}
-                  {dayjs(new Date(periodData?.to!)).format("DD/MM/YYYY")}
+                  {formatPeriod(
+                    new Date(periodData?.form!),
+                    new Date(periodData?.to!),
+                    return01Data?.dvat04.frequencyFilings || null,
+                  )}
                 </p>
               </div>
             </div>
