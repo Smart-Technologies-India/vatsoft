@@ -334,8 +334,16 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
     ) {
       return toast.error("Enter Dealer Name");
     }
+
+    const dealerName = tinnname.current.input.value.trim();
+    // Validate that input contains at least one letter and is not purely numeric
+    const hasAlphabet = /[a-zA-Z]/.test(dealerName);
+    if (!hasAlphabet) {
+      return toast.error("Dealer Name must contain at least one letter. Only numbers are not allowed.");
+    }
+
     const response = await CreateTinNumber({
-      name: tinnname.current.input.value,
+      name: dealerName,
       tinumber: getValues("recipient_vat_no"),
     });
 

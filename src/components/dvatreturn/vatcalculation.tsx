@@ -472,7 +472,7 @@ export class InterState {
           : val.purchase_type == PurchaseType.STOCK_TRANSFER),
     );
     for (let i = 0; i < output.length; i++) {
-      increase = increase + parseFloat(output[i].amount ?? "0");
+      increase = increase + parseFloat(output[i].total_invoice_number ?? "0");
       decrease = decrease + parseFloat(output[i].vatamount ?? "0");
     }
     return {
@@ -491,7 +491,7 @@ export class InterState {
           val.purchase_type == PurchaseType.FORMC_CONCESSION),
     );
     for (let i = 0; i < output.length; i++) {
-      increase = increase + parseFloat(output[i].amount ?? "0");
+      increase = increase + parseFloat(output[i].total_invoice_number ?? "0");
       decrease = decrease + parseFloat(output[i].vatamount ?? "0");
     }
     return {
@@ -509,7 +509,7 @@ export class InterState {
         val.sale_of_interstate == SaleOfInterstate.FORMI,
     );
     for (let i = 0; i < output.length; i++) {
-      increase = increase + parseFloat(output[i].amount ?? "0");
+      increase = increase + parseFloat(output[i].total_invoice_number ?? "0");
       decrease = decrease + parseFloat(output[i].vatamount ?? "0");
     }
     return {
@@ -527,7 +527,7 @@ export class InterState {
         val.sale_of_interstate == SaleOfInterstate.FORMH,
     );
     for (let i = 0; i < output.length; i++) {
-      increase = increase + parseFloat(output[i].amount ?? "0");
+      increase = increase + parseFloat(output[i].total_invoice_number ?? "0");
       decrease = decrease + parseFloat(output[i].vatamount ?? "0");
     }
     return {
@@ -546,7 +546,7 @@ export class InterState {
         val.nature_purchase == NaturePurchase.OTHER_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
-      increase = increase + parseFloat(output[i].amount ?? "0");
+      increase = increase + parseFloat(output[i].total_invoice_number ?? "0");
       decrease = decrease + parseFloat(output[i].vatamount ?? "0");
     }
     return {
@@ -565,7 +565,7 @@ export class InterState {
         val.nature_purchase == NaturePurchase.CAPITAL_GOODS,
     );
     for (let i = 0; i < output.length; i++) {
-      increase = increase + parseFloat(output[i].amount ?? "0");
+      increase = increase + parseFloat(output[i].total_invoice_number ?? "0");
       decrease = decrease + parseFloat(output[i].vatamount ?? "0");
     }
     return {
@@ -583,7 +583,7 @@ export class InterState {
         val.sale_of_interstate == SaleOfInterstate.EXPORT_OUTOF_INDIA,
     );
     for (let i = 0; i < output.length; i++) {
-      increase = increase + parseFloat(output[i].amount ?? "0");
+      increase = increase + parseFloat(output[i].total_invoice_number ?? "0");
       decrease = decrease + parseFloat(output[i].vatamount ?? "0");
     }
     return {
@@ -601,7 +601,7 @@ export class InterState {
         val.sale_of_interstate == SaleOfInterstate.EXEMPT_US6,
     );
     for (let i = 0; i < output.length; i++) {
-      increase = increase + parseFloat(output[i].amount ?? "0");
+      increase = increase + parseFloat(output[i].total_invoice_number ?? "0");
       decrease = decrease + parseFloat(output[i].vatamount ?? "0");
     }
     return {
