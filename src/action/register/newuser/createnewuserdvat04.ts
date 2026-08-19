@@ -148,6 +148,17 @@ const CreateNewUserDvat04 = async (
       });
     }
 
+    // Extract first two digits from TIN to get state code
+    const stateCode = tinNumber.substring(0, 2);
+    
+    // Find state by code
+    const stateData = await prisma.state.findFirst({
+      where: {
+        code: stateCode,
+        deletedAt: null,
+      },
+    });
+
     const result = await prisma.$transaction(async (tx) => {
       const existingUser = await tx.user.findFirst({
         where: {
@@ -173,6 +184,7 @@ const CreateNewUserDvat04 = async (
           tin_number: tinNumber,
           name_of_dealer: tradename,
           status: "ACTIVE",
+          state: stateData?.name || null,
         },
       });
 

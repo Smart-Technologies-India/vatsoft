@@ -26,11 +26,23 @@ const CreateTinNumber = async (
       } as any;
     }
 
+    // Extract first two digits from TIN to get state code
+    const stateCode = payload.tinumber.substring(0, 2);
+    
+    // Find state by code
+    const stateData = await prisma.state.findFirst({
+      where: {
+        code: stateCode,
+        deletedAt: null,
+      },
+    });
+
     const tin_response = await prisma.tin_number_master.create({
       data: {
         tin_number: payload.tinumber,
         name_of_dealer: payload.name,
         status: "ACTIVE",
+        state: stateData?.name || null,
       },
     });
 

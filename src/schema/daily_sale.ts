@@ -1,9 +1,10 @@
-import { InferInput, minLength, object, string, pipe } from "valibot";
+import { InferInput, minLength, object, string, pipe, regex } from "valibot";
 
 const DailySaleSchema = object({
   recipient_vat_no: pipe(
     string("Recipient VAT NO is required."),
-    minLength(1, "Recipient VAT NO is required.")
+    minLength(1, "Recipient VAT NO is required."),
+    regex(/^(?!^\d+$)[\w]+$/, "TIN Number must contain at least one letter. Numbers only are not allowed.")
   ),
   description_of_goods: pipe(
     string("Select Description of goods."),

@@ -47,11 +47,23 @@ const UpdateDvatStatus = async (
     let tin_master_id: number = 1;
 
     if (payload.tinNumber) {
+      // Extract first two digits from TIN to get state code
+      const stateCode = payload.tinNumber.substring(0, 2);
+      
+      // Find state by code
+      const stateData = await prisma.state.findFirst({
+        where: {
+          code: stateCode,
+          deletedAt: null,
+        },
+      });
+
       const tin_master = await prisma.tin_number_master.create({
         data: {
           name_of_dealer: is_exist.tradename ?? "",
           tin_number: payload.tinNumber,
           status: "ACTIVE",
+          state: stateData?.name || null,
         },
       });
 
