@@ -88,7 +88,6 @@ export const orderstatus = async (request, response) => {
       keyBase64,
       ivBase64,
     );
-    console.log("Encrypted Request:", encRequest);
     const result = await axios.post(
       `https://api.ccavenue.com/apis/servlet/DoWebTrans?access_code=${process.env.ACCESS_CODE}&command=orderStatusTracker&request_type=JSON&response_type=JSON&version=1.2&enc_request=${encRequest}`,
     );

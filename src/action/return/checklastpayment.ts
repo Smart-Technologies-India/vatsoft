@@ -146,12 +146,7 @@ const CheckLastPayment = async (
         if (isExist.dvat04.vatLiableDate!.getTime() != lastmonthdate.getTime()) {
           if (isExist.dvat04.vatLiableDate! > lastmonthdate) {
           } else {
-            console.log("lastPayment", lastPayment);
-            console.log(
-              "isExist.dvat04.vatLiableDate",
-              isExist.dvat04.vatLiableDate,
-            );
-            console.log("lastmonthdate", lastmonthdate);
+           
             return createResponse({
               data: false,
               message: `You have a pending return for period: ${month} - ${year}. Payment not completed. Kindly file previous return before proceeding.`,

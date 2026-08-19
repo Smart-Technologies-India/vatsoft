@@ -32,7 +32,6 @@ const CreateDailySale = async (
 ): Promise<ApiResponseType<stock | null>> => {
   const functionname: string = CreateDailySale.name;
 
-  console.log("CreateDailySale payload:", payload);
   try {
     const currentUserId = await getCurrentUserId();
     const currentDvatId = await getCurrentDvatId();

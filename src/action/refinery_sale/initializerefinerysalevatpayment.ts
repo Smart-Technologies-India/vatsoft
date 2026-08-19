@@ -149,13 +149,6 @@ const InitializeRefinerySaleVatPayment = async (
       },
     });
 
-    console.log("Existing return check:", existingReturn);
-    console.log("Existing return check:", {
-      dvat04Id: currentDvatId,
-      year: currentYear,
-      month: currentMonth,
-      deletedAt: null,
-    });
 
     let returnId: number;
 

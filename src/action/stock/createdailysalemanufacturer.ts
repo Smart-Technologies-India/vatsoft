@@ -147,32 +147,7 @@ const CreateDailySaleManufacturer = async (
       if (!seller_dvat.tinNumber) {
         throw new Error("Seller Dvat TIN number is not set.");
       }
-      console.log("12345 Creating daily sale with the following data:");
-      console.log({
-        seller_tin_numberId: payload.seller_tin_id,
-        amount_unit: payload.amount_unit,
-        dvat04Id: payload.dvatid,
-        invoice_number: payload.invoice_number,
-        invoice_date: payload.invoice_date,
-        commodity_masterId: payload.commodityid,
-        quantity: payload.quantity,
-        tax_percent: payload.tax_percent,
-        amount: payload.amount,
-        vatamount: payload.vatamount,
-        is_dvat_31: false,
-        createdById: currentUserId,
-        urn_number: ref_no,
-        is_against_cform: payload.against_cfrom,
-        is_against_fform: payload.is_against_fform,
-        is_exempt: payload.is_exempt ?? false,
-        is_against_iform: payload.is_against_iform ?? false,
-        is_h_export: payload.is_h_export ?? false,
-        is_against_e1: payload.is_against_e1 ?? false,
-        is_export: payload.is_export,
-        is_local:
-          purchaser_response.tin_number.startsWith("25") ||
-          purchaser_response.tin_number.startsWith("26"),
-      });
+     
 
       const daily_sale_response = await prisma.daily_sale.create({
         data: {

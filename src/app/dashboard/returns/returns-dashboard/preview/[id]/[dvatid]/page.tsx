@@ -154,7 +154,6 @@ const Dvat16ReturnPreview = () => {
           returnId: selectedReturn.id,
         });
         if (challanResponse.status && challanResponse.data) {
-          console.log("challanResponse", challanResponse);
           setPaidChallans(challanResponse.data);
         } else {
           setPaidChallans([]);

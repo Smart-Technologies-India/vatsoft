@@ -73,7 +73,6 @@ const DispatchRefinerySale = async (
       },
     });
 
-    console.log("extradata", extradata);
     if (extradata) {
       return createResponse({
         message: "Invoice number already exists.",

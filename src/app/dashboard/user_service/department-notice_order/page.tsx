@@ -326,7 +326,6 @@ const SupplierDetails = () => {
           take: pagination.take,
           skip: pagination.skip,
         });
-        console.log("Notice Response:", notice_response);
         if (notice_response.status && notice_response.data.result) {
           setNoticeData(notice_response.data.result);
           setPaginatin({

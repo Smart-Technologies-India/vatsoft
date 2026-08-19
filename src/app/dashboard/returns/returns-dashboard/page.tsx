@@ -199,8 +199,6 @@ const ReturnDashboard = () => {
         effectiveQuarter,
       );
 
-      console.log("Quarterly Response:", quarterlyResponse);
-      console.log("Quarterly Response Data:", effectiveQuarter);
 
       if (quarterlyResponse.status && quarterlyResponse.data) {
         // For quarterly filing, use the first return from the array

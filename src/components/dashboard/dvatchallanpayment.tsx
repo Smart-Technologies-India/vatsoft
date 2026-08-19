@@ -588,11 +588,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   // compostion start here
 
   const getVatAmountcomp = (): number => {
-    console.log(
-      "compositionCalculation.getInvoicePercentage('1').decrease",
-      compositionCalculation.getInvoicePercentage("1").decrease,
-    );
-    console.log("paidvatamount", paidvatamount);
+   
     return (
       compositionCalculation.getInvoicePercentage("1").decrease - paidvatamount
     );
