@@ -10,13 +10,16 @@ interface AcceptTallySalePayload {
   tallyIds: number[];
   dvatid: number;
   createdById: number;
+  chunkIndex?: number;
+  chunkSize?: number;
 }
 
 const AcceptTallySale = async (
   payload: AcceptTallySalePayload,
-): Promise<ApiResponseType<boolean>> => {
+): Promise<ApiResponseType<{ processed: number; total: number; totalChunks: number; currentChunk: number }>> => {
   const functionname: string = AcceptTallySale.name;
-  const chunkSize = 100;
+  const chunkSize = payload.chunkSize || 100;
+  const chunkIndex = payload.chunkIndex ?? -1; // -1 means process all chunks
 
   try {
     const currentUserId = await getCurrentUserId();
@@ -100,9 +103,21 @@ const AcceptTallySale = async (
     const totalRecords = records.length;
     const totalChunks = Math.ceil(totalRecords / chunkSize);
 
-    for (let start = 0; start < totalRecords; start += chunkSize) {
-      const chunkRecords = records.slice(start, start + chunkSize);
+    // If specific chunk is requested, process only that chunk
+    if (chunkIndex >= 0) {
+      const start = chunkIndex * chunkSize;
+      const end = start + chunkSize;
+      
+      if (start >= totalRecords) {
+        return {
+          status: true,
+          data: { processed: 0, total: totalRecords, totalChunks, currentChunk: chunkIndex },
+          message: "Chunk index out of range - all records already processed.",
+          functionname,
+        } as any;
+      }
 
+      const chunkRecords = records.slice(start, end);
       const entries = chunkRecords.map((record) => {
         const taxPercent = record.tax_percent;
         const totalInvoice =
@@ -113,7 +128,6 @@ const AcceptTallySale = async (
         const invoiceDate = new Date(
           new Date(record.invoice_date).toISOString().split("T")[0],
         );
-        // invoiceDate.setDate(invoiceDate.getDate() + 1);
 
         return {
           dvatid: payload.dvatid,
@@ -137,10 +151,12 @@ const AcceptTallySale = async (
       const createResponseData = await CreateMultiDailySale({ entries });
 
       if (!createResponseData.status) {
-        return createResponse({
+        return {
+          status: false,
+          data: { processed: 0, total: totalRecords, totalChunks, currentChunk: chunkIndex },
           message: createResponseData.message,
           functionname,
-        });
+        } as any;
       }
 
       await prisma.tally_sale.deleteMany({
@@ -150,13 +166,79 @@ const AcceptTallySale = async (
           is_converted: false,
         },
       });
+
+      return {
+        status: true,
+        data: { processed: chunkRecords.length, total: totalRecords, totalChunks, currentChunk: chunkIndex },
+        message: `Chunk ${chunkIndex + 1} of ${totalChunks} processed (${chunkRecords.length} records).`,
+        functionname,
+      } as any;
     }
 
-    return createResponse({
+    // Process all chunks (original behavior for backward compatibility)
+    let totalProcessed = 0;
+
+    for (let start = 0; start < totalRecords; start += chunkSize) {
+      const chunkRecords = records.slice(start, start + chunkSize);
+
+      const entries = chunkRecords.map((record) => {
+        const taxPercent = record.tax_percent;
+        const totalInvoice =
+          parseFloat(record.amount) + parseFloat(record.vatamount);
+        const taxableValue = totalInvoice / (1 + parseFloat(taxPercent) / 100);
+        const vatValue = totalInvoice - taxableValue;
+
+        const invoiceDate = new Date(
+          new Date(record.invoice_date).toISOString().split("T")[0],
+        );
+
+        return {
+          dvatid: payload.dvatid,
+          commodityid: record.commodity_masterId,
+          quantity: record.quantity,
+          seller_tin_id: record.seller_tin_numberId,
+          invoice_number: record.invoice_number,
+          invoice_date: invoiceDate,
+          tax_percent: taxPercent,
+          amount: taxableValue.toFixed(2),
+          vatamount: vatValue.toFixed(2),
+          amount_unit: record.amount_unit,
+          createdById: payload.createdById,
+          against_cfrom: record.is_against_cform,
+          is_against_fform: false,
+          is_export: false,
+          batch_name: record.batch_name,
+        };
+      });
+
+      const createResponseData = await CreateMultiDailySale({ entries });
+
+      if (!createResponseData.status) {
+        return {
+          status: false,
+          data: { processed: totalProcessed, total: totalRecords, totalChunks, currentChunk: Math.ceil(totalProcessed / chunkSize) },
+          message: createResponseData.message,
+          functionname,
+        } as any;
+      }
+
+      await prisma.tally_sale.deleteMany({
+        where: {
+          id: { in: chunkRecords.map((record) => record.id) },
+          status: "ACTIVE",
+          is_converted: false,
+        },
+      });
+
+      totalProcessed += chunkRecords.length;
+    }
+
+    return {
+      status: true,
+      data: { processed: totalProcessed, total: totalRecords, totalChunks, currentChunk: totalChunks },
       message: `Tally sale records accepted and converted successfully. Processed ${totalRecords} row(s) in ${totalChunks} batch(es) of ${chunkSize}.`,
       functionname,
-      data: true,
-    });
+    } as any;
   } catch (e) {
     return createResponse({
       message: errorToString(e),

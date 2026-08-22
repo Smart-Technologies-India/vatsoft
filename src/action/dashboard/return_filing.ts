@@ -74,9 +74,10 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
             const monthName = month.format("MMMM");
 
             // Determine the due date based on the frequencyFilings
-            const dueDate = dvat.frequencyFilings === "QUARTERLY"
-              ? GetCompDueDate(year, monthName).toDate()
-              : month.add(1, "month").date(due_date_of_month).toDate();
+            const dueDate =
+              dvat.frequencyFilings === "QUARTERLY"
+                ? GetCompDueDate(year, monthName).toDate()
+                : month.add(1, "month").date(due_date_of_month).toDate();
 
             // Check and perform upsert
             await prisma.return_filing.upsert({
@@ -125,7 +126,7 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
       const currentdate: Date = get28thDate();
 
       for (const filing of returnfiling_response) {
-        const update_response = await prisma.return_filing.update({
+        await prisma.return_filing.update({
           where: {
             id: filing.id,
           },
@@ -142,8 +143,11 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
 
         if (filing.filing_status === false && filing.due_date! < currentdate) {
           // Check if order_notice already exists for this filing period to avoid duplicates
-          const { startDate, endDate } = MonthToStartEnd(filing.month, filing.year);
-          
+          const { startDate, endDate } = MonthToStartEnd(
+            filing.month,
+            filing.year,
+          );
+
           const existingNotice = await prisma.order_notice.findFirst({
             where: {
               dvatid: filing.dvatid,
@@ -160,10 +164,7 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
             // 15 days after today date
             const due_date = new Date();
             due_date.setDate(due_date.getDate() + 15);
-            const nanoid = customAlphabet(
-              "1234567890abcdefghijklmnopqrstuvwyz",
-              12,
-            );
+            const nanoid = customAlphabet("1234567890", 10);
             const ref_no: string = nanoid();
 
             await prisma.order_notice.create({
@@ -227,7 +228,7 @@ const GetCompDueDate = (year: string, month: string): Dayjs => {
 
 const MonthToStartEnd = (
   month: string,
-  year: string
+  year: string,
 ): {
   startDate: Date;
   endDate: Date;
@@ -250,8 +251,13 @@ const MonthToStartEnd = (
   const monthIndex = monthNames.indexOf(month);
 
   // Use dayjs to create dates in UTC to avoid timezone issues
-  const startDate = dayjs.utc(`${year}-${String(monthIndex + 1).padStart(2, '0')}-01T00:00:00Z`).toDate();
-  const endDate = dayjs.utc(`${year}-${String(monthIndex + 1).padStart(2, '0')}-01T00:00:00Z`).endOf('month').toDate();
-  
+  const startDate = dayjs
+    .utc(`${year}-${String(monthIndex + 1).padStart(2, "0")}-01T00:00:00Z`)
+    .toDate();
+  const endDate = dayjs
+    .utc(`${year}-${String(monthIndex + 1).padStart(2, "0")}-01T00:00:00Z`)
+    .endOf("month")
+    .toDate();
+
   return { startDate, endDate };
 };

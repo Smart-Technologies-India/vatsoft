@@ -98,10 +98,29 @@ const GetAllPendingReturn = async (
     let resMap = new Map<number, ResponseType>();
     const currentDate = new Date();
 
+    // Quarter to months mapping
+    const quarterMonthsMap: Record<string, string[]> = {
+      QUARTER1: ["April", "May", "June"],
+      QUARTER2: ["July", "August", "September"],
+      QUARTER3: ["October", "November", "December"],
+      QUARTER4: ["January", "February", "March"],
+    };
+
+    // Get last month of each quarter
+    const getLastMonthOfQuarter = (month: string): string => {
+      for (const [quarter, months] of Object.entries(quarterMonthsMap)) {
+        if (months.includes(month)) {
+          return months[months.length - 1]; // Return last month of quarter
+        }
+      }
+      return month; // Return as is if not found
+    };
+
     for (let i = 0; i < dvatRecords.length; i++) {
       const currentDvat = dvatRecords[i];
       let lastfiling = "N/A";
       let pending = 0;
+      const isQuarterly = currentDvat.frequencyFilings === "QUARTERLY";
 
       for (let j = 0; j < currentDvat.return_filing.length; j++) {
         const filing = currentDvat.return_filing[j];
@@ -112,7 +131,16 @@ const GetAllPendingReturn = async (
         if (filingStatus) {
           lastfiling = currentLastFiling;
         } else if (dueDate && dueDate < currentDate) {
-          pending += 1;
+          // For quarterly filing, only count if it's the last month of the quarter
+          if (isQuarterly) {
+            const lastMonthOfQuarter = getLastMonthOfQuarter(filing.month);
+            if (filing.month === lastMonthOfQuarter) {
+              pending += 1;
+            }
+          } else {
+            // For monthly filing, count every overdue month
+            pending += 1;
+          }
         }
       }
 

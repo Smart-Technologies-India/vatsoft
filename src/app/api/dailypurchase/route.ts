@@ -7,14 +7,12 @@ interface BodyData {
   VchNum: string;
   VchDt: string;
   CustomerTINNo: string;
-  // CustomerName: string;
   Items: {
     StockItem: string;
     BatchName: string;
     Qty: number;
     Rate: number;
     MasterID: number;
-    // Conversion: number;
     Amount: number;
   }[];
 }
@@ -41,6 +39,7 @@ export async function POST(req: NextRequest) {
 
     const tinCache = new Map<string, { id: number }>();
     const dvatCache = new Map<string, { id: number; createdById: number }>();
+
     const commodityCache = new Map<
       number,
       { id: number; crate_size: number; taxable_at: string }

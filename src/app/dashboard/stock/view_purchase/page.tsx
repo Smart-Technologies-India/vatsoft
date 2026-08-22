@@ -304,47 +304,57 @@ const DocumentWiseDetails = () => {
     setLoading(false);
   };
 
+  // Phase 1: Load essential data (auth, DVAT, current month purchases)
   useEffect(() => {
-    const init = async () => {
+    const initEssentialData = async () => {
       setLoading(true);
-      const authResponse = await getAuthenticatedUserId();
-      if (!authResponse.status || !authResponse.data) {
-        toast.error(authResponse.message);
-        return router.push("/");
-      }
-      setUserid(authResponse.data);
-
-      const dvat_response = await GetUserDvat04();
-
-      if (dvat_response.status && dvat_response.data) {
-        setDvatData(dvat_response.data);
-
-        // Check if stock_update_snapshot exists for this DVAT
-        if (dvat_response.data.commodity === "RESTAURANT") {
-          const snapshotResponse = await CheckStockUpdateSnapshot({
-            dvatid: dvat_response.data.id,
-          });
-          setStockSnapshotExists(
-            snapshotResponse.exists && snapshotResponse.count > 0,
-          );
+      try {
+        const authResponse = await getAuthenticatedUserId();
+        if (!authResponse.status || !authResponse.data) {
+          toast.error(authResponse.message);
+          return router.push("/");
         }
+        setUserid(authResponse.data);
 
-        await fetchPurchasePage({
-          dvatid: dvat_response.data.id,
-          skip: 0,
-          take: 25,
-          search: "",
-          sortBy: "invoice_date",
-          order: "desc",
-          startDate: "",
-          endDate: "",
-          acceptFilter: "all",
-        });
+        const dvat_response = await GetUserDvat04();
+
+        if (dvat_response.status && dvat_response.data) {
+          setDvatData(dvat_response.data);
+
+          // Check if stock_update_snapshot exists for this DVAT
+          if (dvat_response.data.commodity === "RESTAURANT") {
+            const snapshotResponse = await CheckStockUpdateSnapshot({
+              dvatid: dvat_response.data.id,
+            });
+            setStockSnapshotExists(
+              snapshotResponse.exists && snapshotResponse.count > 0,
+            );
+          }
+
+          // Calculate current month's start and end dates
+          const today = new Date();
+          const year = today.getFullYear();
+          const monthIndex = today.getMonth();
+          const currentMonthStart = new Date(year, monthIndex, 1);
+          const currentMonthEnd = today;
+
+          await fetchPurchasePage({
+            dvatid: dvat_response.data.id,
+            skip: 0,
+            take: 25,
+            search: "",
+            sortBy: "invoice_date",
+            order: "desc",
+            startDate: formatDateInputValue(currentMonthStart),
+            endDate: formatDateInputValue(currentMonthEnd),
+            acceptFilter: "all",
+          });
+        }
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
-    init();
+    initEssentialData();
   }, [router, fetchPurchasePage]);
 
   useEffect(() => {
@@ -993,7 +1003,9 @@ const DocumentWiseDetails = () => {
     | "invoice_value"
   >("invoice_date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(
+    formatMonthInputValue(new Date()),
+  );
   const [dateFilter, setDateFilter] = useState<{
     startDate: string;
     endDate: string;

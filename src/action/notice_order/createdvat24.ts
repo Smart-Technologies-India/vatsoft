@@ -27,13 +27,13 @@ interface CreateDvat24Payload {
 }
 
 const CreateDvat24 = async (
-  payload: CreateDvat24Payload
+  payload: CreateDvat24Payload,
 ): Promise<ApiResponseType<order_notice | null>> => {
   const functionname: string = CreateDvat24.name;
   let today = new Date();
   today.setDate(today.getDate() + 7);
 
-  const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstuvwyz", 12);
+  const nanoid = customAlphabet("1234567890", 10);
   const ref_no: string = nanoid();
 
   try {

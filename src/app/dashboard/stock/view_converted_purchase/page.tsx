@@ -107,7 +107,9 @@ const ViewConvertedPurchase = () => {
   );
 
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(
+    formatMonthInputValue(new Date()),
+  );
   const [dateFilter, setDateFilter] = useState<{
     startDate: string;
     endDate: string;
@@ -319,12 +321,47 @@ const ViewConvertedPurchase = () => {
     [fetchConvertedPurchase],
   );
 
+  // Phase 1: Load essential data (DVAT) with current month on first mount
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    init();
-  }, [init]);
+
+    const initEssentialData = async () => {
+      setLoading(true);
+      try {
+        const dvat_response = await GetUserDvat04();
+
+        if (dvat_response.status && dvat_response.data) {
+          setDvatData(dvat_response.data);
+          
+          // Calculate current month's start and end dates
+          const today = new Date();
+          const year = today.getFullYear();
+          const monthIndex = today.getMonth();
+          const currentMonthStart = new Date(year, monthIndex, 1);
+          const currentMonthEnd = today;
+
+          await fetchConvertedPurchase({
+            dvatid: dvat_response.data.id,
+            skip: 0,
+            take: 10000,
+            search: "",
+            sortBy: "invoice_date",
+            order: "desc",
+            startDate: formatDateInputValue(currentMonthStart),
+            endDate: formatDateInputValue(currentMonthEnd),
+          });
+        } else {
+          toast.error("Failed to load DVAT information");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initEssentialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchConvertedPurchase]);
 
   const maxSelectableMonth = useMemo(() => {
     const today = new Date();

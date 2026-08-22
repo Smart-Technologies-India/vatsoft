@@ -15,6 +15,8 @@ interface SearchReturnPaymentPayload {
   todate?: Date;
   tin?: string;
   trade?: string;
+  month?: string;
+  year?: string;
   dept: SelectOffice;
   skip: number;
   take: number;
@@ -70,6 +72,10 @@ const SearchReturnPayment = async (
                 lte: payload.todate,
               },
             }),
+          ...(payload.month && payload.year && {
+            month: payload.month,
+            year: payload.year,
+          }),
         },
         include: {
           dvat04: true,
@@ -107,6 +113,10 @@ const SearchReturnPayment = async (
                 lte: payload.todate,
               },
             }),
+          ...(payload.month && payload.year && {
+            month: payload.month,
+            year: payload.year,
+          }),
         },
       }),
     ]);

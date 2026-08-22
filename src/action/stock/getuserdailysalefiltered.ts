@@ -74,14 +74,31 @@ const GetUserDailySaleFiltered = async (
       } as any;
     }
 
+    // Build date filter for database query (moved from memory filtering)
+    const whereCondition: any = {
+      deletedAt: null,
+      deletedById: null,
+      status: "ACTIVE",
+      is_dvat_31: false,
+      dvat04Id: payload.dvatid,
+    };
+
+    // Apply date filter at database level for performance
+    if (payload.startDate || payload.endDate) {
+      const dateFilter: any = {};
+      if (payload.startDate) {
+        dateFilter.gte = new Date(payload.startDate);
+      }
+      if (payload.endDate) {
+        const endDate = new Date(payload.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        dateFilter.lte = endDate;
+      }
+      whereCondition.invoice_date = dateFilter;
+    }
+
     const dailySaleRows = await prisma.daily_sale.findMany({
-      where: {
-        deletedAt: null,
-        deletedById: null,
-        status: "ACTIVE",
-        is_dvat_31: false,
-        dvat04Id: payload.dvatid,
-      },
+      where: whereCondition,
       include: {
         commodity_master: true,
         seller_tin_number: true,
@@ -145,23 +162,6 @@ const GetUserDailySaleFiltered = async (
             .includes(searchTerm) ||
           group.seller_tin_number.tin_number.includes(searchTerm),
       );
-    }
-
-    if (payload.startDate || payload.endDate) {
-      const startDate = payload.startDate ? new Date(payload.startDate) : null;
-      const endDate = payload.endDate ? new Date(payload.endDate) : null;
-
-      if (endDate) {
-        endDate.setHours(23, 59, 59, 999);
-      }
-
-      filtered = filtered.filter((group) => {
-        const invoiceDate = new Date(group.invoice_date);
-
-        if (startDate && invoiceDate < startDate) return false;
-        if (endDate && invoiceDate > endDate) return false;
-        return true;
-      });
     }
 
     if (acceptStatusFilter !== "all") {

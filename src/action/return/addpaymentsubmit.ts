@@ -13,6 +13,13 @@ import {
 } from "@prisma/client";
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import { customAlphabet } from "nanoid";
+import {
+  CentralSalesCalculation,
+  NetTaxCalculation,
+  R4Turnover,
+  R5Turnover,
+  TheBalance,
+} from "@/components/dvatreturn/vatcalculation";
 
 interface AddPaymentSubmitPayload {
   id: number;
@@ -104,9 +111,236 @@ const AddPaymentSubmit = async (
         throw new Error("Something went wrong! Unable to update");
       }
 
-      // Check if quarterly filing
       const isQuarterlyFiling =
-        updateresponse.dvat04?.frequencyFilings === "QUARTERLY";
+        updateresponse.dvat04.frequencyFilings == "QUARTERLY";
+
+      // let month: string = updateresponse.month ?? "";
+      // let year: string = updateresponse.year;
+      // const months = [
+      //   "January",
+      //   "February",
+      //   "March",
+      //   "April",
+      //   "May",
+      //   "June",
+      //   "July",
+      //   "August",
+      //   "September",
+      //   "October",
+      //   "November",
+      //   "December",
+      // ];
+
+      // if (isQuarterlyFiling) {
+      //   year = ["April", "May", "June"].includes(month)
+      //     ? (parseInt(year) - 1).toString()
+      //     : year;
+      //   switch (month) {
+      //     case "April":
+      //       month = "March";
+      //       break;
+      //     case "May":
+      //       month = "March";
+      //       break;
+      //     case "June":
+      //       month = "March";
+      //       break;
+      //     case "July":
+      //       month = "June";
+      //       break;
+      //     case "August":
+      //       month = "June";
+      //       break;
+      //     case "September":
+      //       month = "June";
+      //       break;
+      //     case "October":
+      //       month = "September";
+      //       break;
+      //     case "November":
+      //       month = "September";
+      //       break;
+      //     case "December":
+      //       month = "September";
+      //       break;
+      //     case "January":
+      //       month = "December";
+      //       break;
+      //     case "February":
+      //       month = "December";
+      //       break;
+      //     case "March":
+      //       month = "December";
+      //       break;
+      //   }
+      // } else {
+      //   if (month == "January") {
+      //     year = (parseInt(year) - 1).toString();
+      //   }
+      //   if (month == "January") {
+      //     month = "December";
+      //   } else {
+      //     month = months[months.indexOf(month) - 1];
+      //   }
+      // }
+
+      // const lastmonthreturn = await prisma.returns_01.findFirst({
+      //   where: {
+      //     year: year,
+      //     month: month,
+      //     deletedAt: null,
+      //     deletedById: null,
+      //     status: "ACTIVE",
+      //   },
+      // });
+
+      // if (!lastmonthreturn) {
+      //   throw new Error(
+      //     `No return found for the previous month: ${month} ${year}`,
+      //   );
+      // }
+
+      // // Get months to fetch based on filing frequency
+      // let monthsToFetch: string[] = [updateresponse.month ?? ""];
+      // if (isQuarterlyFiling) {
+      //   monthsToFetch = getMonthGroup(updateresponse.month ?? "");
+      // }
+
+      // const returnforms = await prisma.returns_entry.findMany({
+      //   where: {
+      //     deletedAt: null,
+      //     deletedById: null,
+      //     returns_01: {
+      //       dvat04Id: updateresponse.dvat04Id,
+      //       year: updateresponse.year,
+      //       month: { in: monthsToFetch },
+      //       deletedAt: null,
+      //       deletedById: null,
+      //       status: "ACTIVE",
+      //     },
+      //     status: "ACTIVE",
+      //   },
+      //   include: {
+      //     seller_tin_number: true,
+      //     state: true,
+      //     returns_01: true,
+      //   },
+      // });
+
+      // const challans = await prisma.challan.findMany({
+      //   where: {
+      //     deletedAt: null,
+      //     deletedById: null,
+      //     paymentstatus: "PAID",
+      //     returns_01: {
+      //       dvat04Id: updateresponse.dvat04Id,
+      //       year: updateresponse.year,
+      //       month: { in: monthsToFetch },
+      //       deletedAt: null,
+      //       deletedById: null,
+      //       status: "ACTIVE",
+      //     },
+      //   },
+      // });
+
+      // const r4Turnover = new R4Turnover(
+      //   returnforms,
+      //   parseFloat(lastmonthreturn.cash_payment ?? "0"),
+      // );
+      // const r5Turnover = new R5Turnover(
+      //   returnforms,
+      //   parseFloat(lastmonthreturn.cash_payment ?? "0"),
+      // );
+      // const netTaxCalculation = new NetTaxCalculation(
+      //   returnforms,
+      //   challans,
+      //   isExist,
+      //   parseFloat(lastmonthreturn.pending_payment ?? "0"),
+      //   parseFloat(lastmonthreturn.cash_payment ?? "0"),
+      //   isQuarterlyFiling,
+      // );
+
+      // const centralSales = new CentralSalesCalculation(
+      //   returnforms,
+      //   challans,
+      //   isExist,
+      //   parseFloat(lastmonthreturn.pending_payment ?? "0"),
+      //   parseFloat(lastmonthreturn.cash_payment ?? "0"),
+      //   isQuarterlyFiling,
+      // );
+
+      // const thebalance = new TheBalance(
+      //   returnforms,
+      //   challans,
+      //   isExist,
+      //   parseFloat(lastmonthreturn.pending_payment ?? "0"),
+      //   parseFloat(lastmonthreturn.cash_payment ?? "0"),
+      //   isQuarterlyFiling,
+      // );
+      // const vatpaidchallan: number = challans.reduce((acc, curr) => {
+      //   const vat = parseFloat(curr.vat ?? "0");
+      //   return acc + vat;
+      // }, 0);
+      // const interestpaidchallan: number = challans.reduce((acc, curr) => {
+      //   const interest = parseFloat(curr.interest ?? "0");
+      //   return acc + interest;
+      // }, 0);
+      // const penaltypaidchallan: number = challans.reduce((acc, curr) => {
+      //   const penalty = parseFloat(curr.penalty ?? "0");
+      //   return acc + penalty;
+      // }, 0);
+      // const otherpaidchallan: number = challans.reduce((acc, curr) => {
+      //   const others = parseFloat(curr.others ?? "0");
+      //   return acc + others;
+      // }, 0);
+
+      // const returns_01_works = await prisma.returns_01_work.create({
+      //   data: {
+      //     returnId: updateresponse.id,
+      //     dvatId: updateresponse.dvat04Id,
+      //     frequency: updateresponse.dvat04?.frequencyFilings ?? "",
+      //     filed: true,
+      //     tinNumber: updateresponse.dvat04.tinNumber,
+      //     tradeName: updateresponse.dvat04.tradename,
+      //     selectOffice: updateresponse.dvat04.selectOffice,
+      //     commodity: updateresponse.dvat04.commodity,
+      //     vatamount: (r4Turnover.get4_8() - r5Turnover.get5_4()).toFixed(2),
+      //     interest: netTaxCalculation.getInterest().toFixed(2),
+      //     other_charge: centralSales.total_decrease().toFixed(2),
+      //     total_tax_amount: (
+      //       r4Turnover.get4_8() -
+      //       r5Turnover.get5_4() +
+      //       netTaxCalculation.getInterest() +
+      //       centralSales.total_decrease()
+      //     ).toFixed(2),
+      //     R4_8: r4Turnover.get4_8(),
+      //     R4_9: r4Turnover.get4_9(),
+      //     R4_10: r4Turnover.get4_10(),
+      //     R5_4: r5Turnover.get5_4(),
+      //     R5_5: r5Turnover.get5_5(),
+      //     R5_6: r5Turnover.get5_6(),
+      //     R6_1_balance_payable: netTaxCalculation.getR6_1().toFixed(2),
+      //     R6_INTEREST: netTaxCalculation.getInterest().toFixed(2),
+      //     R6_penalty: netTaxCalculation.getPenalty().toFixed(2),
+      //     R7_total_payable: netTaxCalculation.total().toFixed(2),
+      //     RPAID_vat: vatpaidchallan.toFixed(2),
+      //     RPAID_interest: interestpaidchallan.toFixed(2),
+      //     RPAID_penalty: penaltypaidchallan.toFixed(2),
+      //     RPAID_others: otherpaidchallan.toFixed(2),
+      //     RPAID_total: (
+      //       vatpaidchallan +
+      //       interestpaidchallan +
+      //       penaltypaidchallan +
+      //       otherpaidchallan
+      //     ).toFixed(2),
+      //     excess_cash_next_month: thebalance.excessCash().toFixed(2),
+      //     excess_itc_next_month: thebalance
+      //       .balance_carried_forward()
+      //       .toFixed(2),
+      //     status: "VERIFY",
+      //     remark: "",
+      //   },
+      // });
 
       if (updateresponse.dvat04.compositionScheme || isQuarterlyFiling) {
         const monthsToUpdate = getMonthGroup(updateresponse.month ?? "");
@@ -250,9 +484,12 @@ const AddPaymentSubmit = async (
               office_of_issue: isExist.dvat04.selectOffice,
               date_of_issue: new Date(),
               valid_date: isExist.dvat04.certificateDate!,
-              sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial, cformSrNoCounter++),
-              seller_address:
-                representativeEntry.seller_tin_number.state ?? "",
+              sr_no: getsrno(
+                isExist.dvat04.selectOffice!,
+                lastOfficeSerial,
+                cformSrNoCounter++,
+              ),
+              seller_address: representativeEntry.seller_tin_number.state ?? "",
               seller_name:
                 representativeEntry.seller_tin_number.name_of_dealer ?? "",
               seller_tin_no:
@@ -261,9 +498,7 @@ const AddPaymentSubmit = async (
               from_period: new Date(
                 dates.fromDate.split("-").reverse().join("-"),
               ),
-              to_period: new Date(
-                dates.toDate.split("-").reverse().join("-"),
-              ),
+              to_period: new Date(dates.toDate.split("-").reverse().join("-")),
               status: "ACTIVE",
               createdById: isExist.createdById,
             },
@@ -404,7 +639,10 @@ const AddPaymentSubmit = async (
       const fformSerialForFform = lastfformForFform
         ? parseInt(lastfformForFform.sr_no.split("/").pop() ?? "0", 10) || 0
         : 0;
-      const lastOfficeSerial = Math.max(cformSerialForFform, fformSerialForFform);
+      const lastOfficeSerial = Math.max(
+        cformSerialForFform,
+        fformSerialForFform,
+      );
 
       // Create a Map to track month key to fform ID
       const monthToFformMap = new Map<string, number>();
@@ -423,7 +661,11 @@ const AddPaymentSubmit = async (
               dates.toDate.split("-").reverse().join("-"),
             ),
             valid_date: isExist.dvat04.certificateDate ?? new Date(),
-            sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial, srNoCounter++),
+            sr_no: getsrno(
+              isExist.dvat04.selectOffice!,
+              lastOfficeSerial,
+              srNoCounter++,
+            ),
             seller_address: representativeEntry.seller_tin_number.state ?? "",
             seller_name:
               representativeEntry.seller_tin_number.name_of_dealer ?? "",
@@ -453,9 +695,7 @@ const AddPaymentSubmit = async (
         const fformId = monthToFformMap.get(monthKey);
 
         if (!fformId) {
-          throw new Error(
-            `FForm entry for month ${monthKey} was not created`,
-          );
+          throw new Error(`FForm entry for month ${monthKey} was not created`);
         }
 
         monthGroup.entries.forEach((entry) => {
@@ -566,7 +806,11 @@ function getFromDateAndToDate(
   };
 }
 
-const getsrno = (selectOffice: SelectOffice, last: number, offset: number = 0): string => {
+const getsrno = (
+  selectOffice: SelectOffice,
+  last: number,
+  offset: number = 0,
+): string => {
   let pre =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
       ? "DNH"

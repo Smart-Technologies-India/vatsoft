@@ -550,8 +550,124 @@ export const postRes = (request, response) => {
             },
             include: {
               dvat: true,
+              returns_01: true,
             },
           });
+
+          // Create interest_working record if returns_01 exists
+          if (res.dvat && res.returns_01) {
+            const isquar = res.dvat.frequencyFilings === "QUARTERLY";
+
+            // Quarter to months mapping
+            const quarterMonthsMap = {
+              QUARTER1: ["April", "May", "June"],
+              QUARTER2: ["July", "August", "September"],
+              QUARTER3: ["October", "November", "December"],
+              QUARTER4: ["January", "February", "March"],
+            };
+
+            // Calculate due date based on quarterly or monthly filing
+            const monthNames = [
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
+            ];
+
+            const paymentDate = new Date(res.transaction_date ?? "");
+            const returnMonth = res.returns_01?.month;
+            const returnYear = res.returns_01?.year;
+
+            // Get month index from month name
+            const monthIndex = monthNames.indexOf(returnMonth ?? "");
+
+            let dueDateYear = parseInt(
+              returnYear ?? new Date().getFullYear().toString(),
+            );
+            let dueDateMonth;
+
+            if (isquar) {
+              // Get current month name
+
+              const currentMonthName = monthNames[paymentDate.getMonth()];
+
+              // Find which quarter the payment month belongs to and get first month of next quarter
+              let nextQuarterFirstMonth = "April"; // Default
+              for (const [quarter, months] of Object.entries(
+                quarterMonthsMap,
+              )) {
+                if (months.includes(currentMonthName)) {
+                  // Get first month of next quarter
+                  if (quarter === "QUARTER1") {
+                    nextQuarterFirstMonth = "July";
+                  } else if (quarter === "QUARTER2") {
+                    nextQuarterFirstMonth = "October";
+                  } else if (quarter === "QUARTER3") {
+                    nextQuarterFirstMonth = "January";
+                  } else if (quarter === "QUARTER4") {
+                    nextQuarterFirstMonth = "April";
+                  }
+                  break;
+                }
+              }
+
+              dueDateMonth = monthNames.indexOf(nextQuarterFirstMonth);
+
+              // If next quarter month is earlier in the year, it's next year
+              if (dueDateMonth < monthIndex) {
+                dueDateYear++;
+              }
+            } else {
+              // For monthly filing: 15th of next month
+              dueDateMonth = monthIndex + 1; // Next month
+
+              if (dueDateMonth > 11) {
+                // If it goes beyond December (11)
+                dueDateMonth = 0; // January
+                dueDateYear++;
+              }
+            }
+
+            const dueDate = new Date(dueDateYear, dueDateMonth, 15);
+
+            // Calculate days late based on payment date vs due date
+            const daysLate = Math.max(
+              0,
+              Math.floor(
+                (paymentDate.getTime() - dueDate.getTime()) /
+                  (1000 * 60 * 60 * 24),
+              ),
+            );
+
+            if (
+              res.total_tax_amount != "0" &&
+              res.total_tax_amount != null
+            ) {
+              await prisma.interest_working.create({
+                data: {
+                  dvatId: res.dvat.id,
+                  returnId: res.returns_01.id,
+                  challanId: res.id,
+                  month: res.returns_01.month,
+                  outstanding_before: 0,
+                  interest: 0,
+                  payment_date: paymentDate,
+                  amount: res.returns_01.total_tax_amount,
+                  due_date: dueDate,
+                  days_late: daysLate,
+                  status: "ACTIVE",
+                },
+              });
+            }
+          }
 
           const encodedMessage = encodeURIComponent(
             `Payment of ₹ ${res.total_tax_amount} has been successfully received. Transaction ID: ${res.track_id}. -VAT DDD.`,
@@ -598,8 +714,125 @@ export const postRes = (request, response) => {
             },
             include: {
               dvat: true,
+              returns_01: true,
             },
           });
+
+          // Create interest_working record if returns_01 exists
+          if (challan.dvat && challan.returns_01) {
+            const isquar = challan.dvat.frequencyFilings === "QUARTERLY";
+
+            // Quarter to months mapping
+            const quarterMonthsMap = {
+              QUARTER1: ["April", "May", "June"],
+              QUARTER2: ["July", "August", "September"],
+              QUARTER3: ["October", "November", "December"],
+              QUARTER4: ["January", "February", "March"],
+            };
+
+            // Calculate due date based on quarterly or monthly filing
+            const monthNames = [
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
+            ];
+
+            const paymentDate = new Date(challan.transaction_date ?? "");
+            const returnMonth = challan.returns_01?.month;
+            const returnYear = challan.returns_01?.year;
+
+            // Get month index from month name
+            const monthIndex = monthNames.indexOf(returnMonth ?? "");
+
+            let dueDateYear = parseInt(
+              returnYear ?? new Date().getFullYear().toString(),
+            );
+            let dueDateMonth;
+
+            if (isquar) {
+              // Get current month name
+
+              const currentMonthName = monthNames[paymentDate.getMonth()];
+
+              // Find which quarter the payment month belongs to and get first month of next quarter
+              let nextQuarterFirstMonth = "April"; // Default
+              for (const [quarter, months] of Object.entries(
+                quarterMonthsMap,
+              )) {
+                if (months.includes(currentMonthName)) {
+                  // Get first month of next quarter
+                  if (quarter === "QUARTER1") {
+                    nextQuarterFirstMonth = "July";
+                  } else if (quarter === "QUARTER2") {
+                    nextQuarterFirstMonth = "October";
+                  } else if (quarter === "QUARTER3") {
+                    nextQuarterFirstMonth = "January";
+                  } else if (quarter === "QUARTER4") {
+                    nextQuarterFirstMonth = "April";
+                  }
+                  break;
+                }
+              }
+
+              dueDateMonth = monthNames.indexOf(nextQuarterFirstMonth);
+
+              // If next quarter month is earlier in the year, it's next year
+              if (dueDateMonth < monthIndex) {
+                dueDateYear++;
+              }
+            } else {
+              // For monthly filing: 15th of next month
+              dueDateMonth = monthIndex + 1; // Next month
+
+              if (dueDateMonth > 11) {
+                // If it goes beyond December (11)
+                dueDateMonth = 0; // January
+                dueDateYear++;
+              }
+            }
+
+            const dueDate = new Date(dueDateYear, dueDateMonth, 15);
+
+            // Calculate days late based on payment date vs due date
+            const daysLate = Math.max(
+              0,
+              Math.floor(
+                (paymentDate.getTime() - dueDate.getTime()) /
+                  (1000 * 60 * 60 * 24),
+              ),
+            );
+
+            if (
+              challan.total_tax_amount != "0" &&
+              challan.total_tax_amount != null
+            ) {
+              await prisma.interest_working.create({
+                data: {
+                  dvatId: challan.dvat.id,
+                  returnId: challan.returns_01.id,
+                  challanId: challan.id,
+                  month: challan.returns_01.month,
+                  outstanding_before: 0,
+                  interest: 0,
+                  payment_date: paymentDate,
+                  amount: challan.returns_01.total_tax_amount,
+                  due_date: dueDate,
+                  days_late: daysLate,
+                  status: "ACTIVE",
+                },
+              });
+            }
+          }
+
           const encodedMessage = encodeURIComponent(
             `Payment of ₹ ${challan.total_tax_amount} has been successfully received. Transaction ID: ${challan.track_id}. -VAT DDD.`,
           );
@@ -689,8 +922,125 @@ export const postRes = (request, response) => {
             },
             include: {
               dvat: true,
+              returns_01: true,
             },
           });
+
+          // Create interest_working record if returns_01 exists
+          if (challan.dvat && challan.returns_01) {
+            const isquar = challan.dvat.frequencyFilings === "QUARTERLY";
+
+            // Quarter to months mapping
+            const quarterMonthsMap = {
+              QUARTER1: ["April", "May", "June"],
+              QUARTER2: ["July", "August", "September"],
+              QUARTER3: ["October", "November", "December"],
+              QUARTER4: ["January", "February", "March"],
+            };
+
+            // Calculate due date based on quarterly or monthly filing
+            const monthNames = [
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
+            ];
+
+            const paymentDate = new Date(challan.transaction_date ?? "");
+            const returnMonth = challan.returns_01?.month;
+            const returnYear = challan.returns_01?.year;
+
+            // Get month index from month name
+            const monthIndex = monthNames.indexOf(returnMonth ?? "");
+
+            let dueDateYear = parseInt(
+              returnYear ?? new Date().getFullYear().toString(),
+            );
+            let dueDateMonth;
+
+            if (isquar) {
+              // Get current month name
+
+              const currentMonthName = monthNames[paymentDate.getMonth()];
+
+              // Find which quarter the payment month belongs to and get first month of next quarter
+              let nextQuarterFirstMonth = "April"; // Default
+              for (const [quarter, months] of Object.entries(
+                quarterMonthsMap,
+              )) {
+                if (months.includes(currentMonthName)) {
+                  // Get first month of next quarter
+                  if (quarter === "QUARTER1") {
+                    nextQuarterFirstMonth = "July";
+                  } else if (quarter === "QUARTER2") {
+                    nextQuarterFirstMonth = "October";
+                  } else if (quarter === "QUARTER3") {
+                    nextQuarterFirstMonth = "January";
+                  } else if (quarter === "QUARTER4") {
+                    nextQuarterFirstMonth = "April";
+                  }
+                  break;
+                }
+              }
+
+              dueDateMonth = monthNames.indexOf(nextQuarterFirstMonth);
+
+              // If next quarter month is earlier in the year, it's next year
+              if (dueDateMonth < monthIndex) {
+                dueDateYear++;
+              }
+            } else {
+              // For monthly filing: 15th of next month
+              dueDateMonth = monthIndex + 1; // Next month
+
+              if (dueDateMonth > 11) {
+                // If it goes beyond December (11)
+                dueDateMonth = 0; // January
+                dueDateYear++;
+              }
+            }
+
+            const dueDate = new Date(dueDateYear, dueDateMonth, 15);
+
+            // Calculate days late based on payment date vs due date
+            const daysLate = Math.max(
+              0,
+              Math.floor(
+                (paymentDate.getTime() - dueDate.getTime()) /
+                  (1000 * 60 * 60 * 24),
+              ),
+            );
+
+            if (
+              challan.total_tax_amount != "0" &&
+              challan.total_tax_amount != null
+            ) {
+              await prisma.interest_working.create({
+                data: {
+                  dvatId: challan.dvat.id,
+                  returnId: challan.returns_01.id,
+                  challanId: challan.id,
+                  month: challan.returns_01.month,
+                  outstanding_before: 0,
+                  interest: 0,
+                  payment_date: paymentDate,
+                  amount: challan.returns_01.total_tax_amount,
+                  due_date: dueDate,
+                  days_late: daysLate,
+                  status: "ACTIVE",
+                },
+              });
+            }
+          }
+
           const encodedMessage = encodeURIComponent(
             `Payment of ₹ ${challan.total_tax_amount} has been successfully received. Transaction ID: ${challan.track_id}. -VAT DDD.`,
           );

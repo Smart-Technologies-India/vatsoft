@@ -71,14 +71,31 @@ const GetGeneratedInvoices = async (
       });
     }
 
+    // Build date filter for database query (moved from memory filtering)
+    const whereCondition: any = {
+      deletedAt: null,
+      deletedById: null,
+      status: "ACTIVE",
+      is_dvat_31: true,
+      dvat04Id: payload.dvatid,
+    };
+
+    // Apply date filter at database level for performance
+    if (payload.startDate || payload.endDate) {
+      const dateFilter: any = {};
+      if (payload.startDate) {
+        dateFilter.gte = new Date(payload.startDate);
+      }
+      if (payload.endDate) {
+        const endDate = new Date(payload.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        dateFilter.lte = endDate;
+      }
+      whereCondition.invoice_date = dateFilter;
+    }
+
     const dailySaleRows = await prisma.daily_sale.findMany({
-      where: {
-        deletedAt: null,
-        deletedById: null,
-        status: "ACTIVE",
-        is_dvat_31: true,
-        dvat04Id: payload.dvatid,
-      },
+      where: whereCondition,
       include: {
         commodity_master: true,
         seller_tin_number: true,
@@ -133,16 +150,6 @@ const GetGeneratedInvoices = async (
           group.invoice_number.toLowerCase().includes(term) ||
           group.seller_tin_number.name_of_dealer.toLowerCase().includes(term) ||
           group.seller_tin_number.tin_number.toLowerCase().includes(term),
-      );
-    }
-
-    // Filter by date range
-    if (payload.startDate && payload.endDate) {
-      const start = new Date(payload.startDate);
-      const end = new Date(payload.endDate);
-      end.setHours(23, 59, 59, 999);
-      filtered = filtered.filter(
-        (group) => group.invoice_date >= start && group.invoice_date <= end,
       );
     }
 

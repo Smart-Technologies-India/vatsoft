@@ -26,7 +26,6 @@ const officeDetails: Record<
     title: string;
     address: string[];
     phone: string;
-    fax: string;
   }
 > = {
   head: {
@@ -34,44 +33,143 @@ const officeDetails: Record<
     title: "DNH Office (Silvassa)",
     address: [
       "VAT & GST Department,",
-      "District Secretariat \"A\" Wing",
+      'District Secretariat "A" Wing',
       "2nd Floor, D&NH",
       "Silvassa – 396230.",
     ],
-    phone: "(079)2323 2152",
-    fax: "(079)2323 2152",
+    phone: "(0260)2632 000",
   },
   regional: {
     tabLabel: "Daman Office",
     title: "Daman Office",
     address: [
-      "Office of the Assistant Commissioner (VAT)",
-      "Collectorate Campus,",
-      "Moti Daman – 396220."
+      "Office of GST & VAT",
+      "3rd floor of Udyog Bhavan,",
+      "Bhenslore, Nani Daman-396210.",
     ],
-    phone: "(0260)2644 123",
-    fax: "(0260)2644 124",
+    phone: "(0260)2260 349",
   },
   lab: {
     tabLabel: "Diu Office",
     title: "Diu Office",
     address: [
-      "Office of the Assistant Commissioner (VAT)",
-      "Collectorate Campus,",
-      "Moti Daman – 396220."
+      "Office of GST & VAT",
+      "3rd floor of Udyog Bhavan,",
+      "Bhenslore, Nani Daman-396210.",
     ],
     phone: "(0260)2230 901",
-    fax: "(0260)2230 902",
   },
 };
 
-const chairmanEmails = [
-  "vat-dd@gov.in",
-];
+const chairmanEmails = ["vato1-ctd-dnh@ddd.gov.in"];
 
-const memberSecretaryEmails = [
-  "dirctd-dd@nic.in",
-];
+// const memberSecretaryEmails = ["dirctd-dd@nic.in"];
+
+interface ContactPerson {
+  srNo: number;
+  name: string;
+  contactNo: string;
+  email: string;
+}
+
+const districtContacts: Record<string, ContactPerson[]> = {
+  daman: [
+    {
+      srNo: 1,
+      name: "Vipul M Patel",
+      contactNo: "9904090814",
+      email: "vipulprogramer@gmail.com",
+    },
+    {
+      srNo: 2,
+      name: "Mona Devikar",
+      contactNo: "9825791131",
+      email: "hiwanapurkar@gmail.com",
+    },
+    {
+      srNo: 3,
+      name: "Beena Bagoan",
+      contactNo: "9825598246",
+      email: "bbeena900@gmail.com",
+    },
+    {
+      srNo: 4,
+      name: "Atik Halpati",
+      contactNo: "9624550321",
+      email: "atikdaman@gmail.com",
+    },
+    {
+      srNo: 5,
+      name: "Dhruvisha Bhaysar",
+      contactNo: "7202802064",
+      email: "dhruvubhaysar8@gmai.com",
+    },
+    {
+      srNo: 6,
+      name: "Kartik Solanki",
+      contactNo: "9924479774",
+      email: "kartik.solanki05@gmail.com",
+    },
+    {
+      srNo: 7,
+      name: "Harshila Tandel",
+      contactNo: "9925434875",
+      email: "harsheelatandel@gmail.com",
+    },
+  ],
+  diu: [
+    {
+      srNo: 1,
+      name: "Pradip B Chuahan",
+      contactNo: "9925260769",
+      email: "pradip.diu@gov.in",
+    },
+    {
+      srNo: 2,
+      name: "Amanool A.",
+      contactNo: "8128330075",
+      email: "lachu.rockx@gmail.com",
+    },
+    {
+      srNo: 3,
+      name: "Minhajul A.",
+      contactNo: "9429333159",
+      email: "minhajul.ayub@gmail.com",
+    },
+    {
+      srNo: 4,
+      name: "Sonik V. B.",
+      contactNo: "8980787601",
+      email: "Sonik.bariya67@gmail.com",
+    },
+  ],
+  silvassa: [
+    {
+      srNo: 1,
+      name: "Sanjay Ahir",
+      contactNo: "9979957035",
+      email: "sanjayahir07@gmail.com",
+    },
+    {
+      srNo: 2,
+      name: "Amita Patel",
+      contactNo: "9624116750",
+      email: "amitapatel23680@gmail.com",
+    },
+    {
+      srNo: 3,
+      name: "Shandar Khan",
+      contactNo: "9824124135",
+      email: "shandar.khan@ymail.com",
+    },
+    {
+      srNo: 4,
+      name: "Ganesh Bhagrya",
+      contactNo: "9712866467",
+      email: "ganeshbhagrya@gmai.com",
+    },
+  ],
+};
 
 export default function ContactUsPage() {
   const [activeOffice, setActiveOffice] = useState<OfficeKey>("head");
@@ -195,17 +293,13 @@ export default function ContactUsPage() {
                     <span className="font-semibold text-[#0f2f67]">Phone:</span>{" "}
                     {office.phone}
                   </p>
-                  <p className="mt-1 text-[11px] text-gray-700 wrap-break-word">
-                    <span className="font-semibold text-[#0f2f67]">Fax:</span>{" "}
-                    {office.fax}
-                  </p>
                 </div>
               </div>
 
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <div className="min-w-0 border border-[#d3deef] bg-[#f7f9fc] p-3">
                   <p className="text-[11px] font-semibold text-[#0f2f67]">
-                    Emails:
+                    Email:
                   </p>
                   <div className="mt-1 space-y-1 text-[11px] text-[#0f2f67] underline break-all">
                     {chairmanEmails.map((email) => (
@@ -216,12 +310,10 @@ export default function ContactUsPage() {
 
                 <div className="min-w-0 border border-[#d3deef] bg-[#f7f9fc] p-3">
                   <p className="text-[11px] font-semibold text-[#0f2f67]">
-                    Emails:
+                    Office Timings
                   </p>
                   <div className="mt-1 space-y-1 text-[11px] text-[#0f2f67] underline break-all">
-                    {memberSecretaryEmails.map((email) => (
-                      <p key={email}>{email}</p>
-                    ))}
+                    <p>Monday to Friday: 10:00 AM to 5:30 PM</p>
                   </div>
                 </div>
               </div>
@@ -242,6 +334,186 @@ export default function ContactUsPage() {
               referrerPolicy="no-referrer-when-downgrade"
             />
           </section>
+        </div>
+
+        {/* Contact Personnel Tables by District */}
+        <div className="mt-6 grid gap-3">
+          {/* Daman Section */}
+          {activeOffice == "regional" && (
+            <section className="border border-[#c8d4e8] bg-white">
+              <div className="bg-[#0f2f67] px-2 py-1.5">
+                <h2 className="text-white font-bold text-sm uppercase tracking-wide">
+                  Contact Personnel - Daman
+                </h2>
+              </div>
+              <div className="p-3 overflow-x-auto">
+                <table className="w-full text-[11px] border-collapse">
+                  <thead>
+                    <tr className="bg-[#e8edf5] border-b-2 border-[#0f2f67]">
+                      <th className="border border-[#c8d4e8] px-2 py-1.5 text-left font-semibold text-[#0f2f67]">
+                        Sr No
+                      </th>
+                      <th className="border border-[#c8d4e8] px-2 py-1.5 text-left font-semibold text-[#0f2f67]">
+                        Name
+                      </th>
+                      <th className="border border-[#c8d4e8] px-2 py-1.5 text-left font-semibold text-[#0f2f67]">
+                        Contact No
+                      </th>
+                      <th className="border border-[#c8d4e8] px-2 py-1.5 text-left font-semibold text-[#0f2f67]">
+                        Email ID
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {districtContacts.daman.map((contact) => (
+                      <tr key={contact.srNo} className="hover:bg-[#f7f9fc]">
+                        <td className="border border-[#d3deef] px-2 py-1 text-gray-700">
+                          {contact.srNo}
+                        </td>
+                        <td className="border border-[#d3deef] px-2 py-1 text-gray-700 font-medium">
+                          {contact.name}
+                        </td>
+                        <td className="border border-[#d3deef] px-2 py-1 text-gray-700">
+                          <a
+                            href={`tel:${contact.contactNo}`}
+                            className="text-[#0f2f67] hover:underline"
+                          >
+                            {contact.contactNo}
+                          </a>
+                        </td>
+                        <td className="border border-[#d3deef] px-2 py-1 text-gray-700 break-all">
+                          <a
+                            href={`mailto:${contact.email}`}
+                            className="text-[#0f2f67] hover:underline"
+                          >
+                            {contact.email}
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* Diu Section */}
+          {activeOffice == "lab" && (
+            <section className="border border-[#c8d4e8] bg-white">
+              <div className="bg-[#0f2f67] px-2 py-1.5">
+                <h2 className="text-white font-bold text-sm uppercase tracking-wide">
+                  Contact Personnel - Diu
+                </h2>
+              </div>
+              <div className="p-3 overflow-x-auto">
+                <table className="w-full text-[11px] border-collapse">
+                  <thead>
+                    <tr className="bg-[#e8edf5] border-b-2 border-[#0f2f67]">
+                      <th className="border border-[#c8d4e8] px-2 py-1.5 text-left font-semibold text-[#0f2f67]">
+                        Sr No
+                      </th>
+                      <th className="border border-[#c8d4e8] px-2 py-1.5 text-left font-semibold text-[#0f2f67]">
+                        Name
+                      </th>
+                      <th className="border border-[#c8d4e8] px-2 py-1.5 text-left font-semibold text-[#0f2f67]">
+                        Contact No
+                      </th>
+                      <th className="border border-[#c8d4e8] px-2 py-1.5 text-left font-semibold text-[#0f2f67]">
+                        Email ID
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {districtContacts.diu.map((contact) => (
+                      <tr key={contact.srNo} className="hover:bg-[#f7f9fc]">
+                        <td className="border border-[#d3deef] px-2 py-1 text-gray-700">
+                          {contact.srNo}
+                        </td>
+                        <td className="border border-[#d3deef] px-2 py-1 text-gray-700 font-medium">
+                          {contact.name}
+                        </td>
+                        <td className="border border-[#d3deef] px-2 py-1 text-gray-700">
+                          <a
+                            href={`tel:${contact.contactNo}`}
+                            className="text-[#0f2f67] hover:underline"
+                          >
+                            {contact.contactNo}
+                          </a>
+                        </td>
+                        <td className="border border-[#d3deef] px-2 py-1 text-gray-700 break-all">
+                          <a
+                            href={`mailto:${contact.email}`}
+                            className="text-[#0f2f67] hover:underline"
+                          >
+                            {contact.email}
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* Silvassa (DNH) Section */}
+          {activeOffice == "head" && (
+            <section className="border border-[#c8d4e8] bg-white">
+              <div className="bg-[#0f2f67] px-2 py-1.5">
+                <h2 className="text-white font-bold text-sm uppercase tracking-wide">
+                  Contact Personnel - DNH (Silvassa)
+                </h2>
+              </div>
+              <div className="p-3 overflow-x-auto">
+                <table className="w-full text-[11px] border-collapse">
+                  <thead>
+                    <tr className="bg-[#e8edf5] border-b-2 border-[#0f2f67]">
+                      <th className="border border-[#c8d4e8] px-2 py-1.5 text-left font-semibold text-[#0f2f67]">
+                        Sr No
+                      </th>
+                      <th className="border border-[#c8d4e8] px-2 py-1.5 text-left font-semibold text-[#0f2f67]">
+                        Name
+                      </th>
+                      <th className="border border-[#c8d4e8] px-2 py-1.5 text-left font-semibold text-[#0f2f67]">
+                        Contact No
+                      </th>
+                      <th className="border border-[#c8d4e8] px-2 py-1.5 text-left font-semibold text-[#0f2f67]">
+                        Email ID
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {districtContacts.silvassa.map((contact) => (
+                      <tr key={contact.srNo} className="hover:bg-[#f7f9fc]">
+                        <td className="border border-[#d3deef] px-2 py-1 text-gray-700">
+                          {contact.srNo}
+                        </td>
+                        <td className="border border-[#d3deef] px-2 py-1 text-gray-700 font-medium">
+                          {contact.name}
+                        </td>
+                        <td className="border border-[#d3deef] px-2 py-1 text-gray-700">
+                          <a
+                            href={`tel:${contact.contactNo}`}
+                            className="text-[#0f2f67] hover:underline"
+                          >
+                            {contact.contactNo}
+                          </a>
+                        </td>
+                        <td className="border border-[#d3deef] px-2 py-1 text-gray-700 break-all">
+                          <a
+                            href={`mailto:${contact.email}`}
+                            className="text-[#0f2f67] hover:underline"
+                          >
+                            {contact.email}
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
         </div>
       </main>
 

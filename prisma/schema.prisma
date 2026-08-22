@@ -2012,6 +2012,7 @@ model returns_01_work {
   RPAID_total            Decimal?          @db.Decimal(10, 0)
   excess_cash_next_month Decimal?          @db.Decimal(10, 0)
   excess_itc_next_month  Decimal?          @db.Decimal(10, 0)
+  shortfall              Decimal?          @db.Decimal(10, 0)
   status                 ReturnWorkStatus  @default(VERIFY)
   remark                 String?           @db.LongText
 }

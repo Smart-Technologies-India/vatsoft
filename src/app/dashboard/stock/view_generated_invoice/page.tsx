@@ -85,7 +85,9 @@ const GeneratedInvoicePage = () => {
 
   // Search and Filter states
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(
+    formatMonthInputValue(new Date()),
+  );
   const [dateFilter, setDateFilter] = useState<{
     startDate: string;
     endDate: string;
@@ -241,29 +243,33 @@ const GeneratedInvoicePage = () => {
     [dvatdata?.id, pagination.take, searchTerm, sortField, sortOrder, dateFilter.startDate, dateFilter.endDate],
   );
 
+  // Phase 1: Load essential data (auth, DVAT) and calculate initial dates
   useEffect(() => {
-    const initData = async () => {
+    const initEssentialData = async () => {
       setIsLoading(true);
-      const authResponse = await getAuthenticatedUserId();
-      if (!authResponse.status || !authResponse.data) {
-        toast.error(authResponse.message);
-        return router.push("/");
-      }
-      setUserid(authResponse.data);
-      const userresponse = await GetUser({ id: authResponse.data });
-      if (userresponse.status) {
-        // User data retrieved
-      }
+      try {
+        const authResponse = await getAuthenticatedUserId();
+        if (!authResponse.status || !authResponse.data) {
+          toast.error(authResponse.message);
+          return router.push("/");
+        }
+        setUserid(authResponse.data);
+        
+        const userresponse = await GetUser({ id: authResponse.data });
+        if (userresponse.status) {
+          // User data retrieved
+        }
 
-      const dvat_response = await GetUserDvat04Anx({});
+        const dvat_response = await GetUserDvat04Anx({});
 
-      if (dvat_response.status && dvat_response.data) {
-        setDvatData(dvat_response.data);
+        if (dvat_response.status && dvat_response.data) {
+          setDvatData(dvat_response.data);
+        }
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     };
-    initData();
+    initEssentialData();
   }, [router]);
 
   useEffect(() => {

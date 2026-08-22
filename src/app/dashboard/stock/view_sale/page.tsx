@@ -39,6 +39,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx";
 
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 import GetAllDvat04 from "@/action/dvat/getalldvat";
@@ -79,7 +80,7 @@ const formatIndianNumber = (num: number): string => {
   if (!Number.isFinite(num)) return "0";
   const numStr = Math.floor(num).toString();
   if (numStr.length <= 3) return numStr;
-  
+
   const lastThree = numStr.slice(-3);
   const remaining = numStr.slice(0, -3);
   const withCommas = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
@@ -101,7 +102,9 @@ const DocumentWiseDetails = () => {
     | "invoice_value"
   >("invoice_date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(
+    formatMonthInputValue(new Date()),
+  );
   const [dateFilter, setDateFilter] = useState<{
     startDate: string;
     endDate: string;
@@ -228,6 +231,108 @@ const DocumentWiseDetails = () => {
     // },
   ];
 
+  const downloadDailySaleReport = async () => {
+    if (!dvatdata) {
+      toast.error("DVAT not found.");
+      return;
+    }
+
+    setIsSaleReportLoading(true);
+    try {
+      const BATCH_SIZE = 1000;
+      let skip = 0;
+      let total = Number.POSITIVE_INFINITY;
+      const reportData: GroupedDailySale[] = [];
+
+      // Determine the date range to use for filtering
+      let reportStartDate = "";
+      let reportEndDate = "";
+
+      // If there's a custom date filter applied, use it
+      if (dateFilter.startDate && dateFilter.endDate) {
+        reportStartDate = dateFilter.startDate;
+        reportEndDate = dateFilter.endDate;
+      } else if (selectedPeriod) {
+        // Otherwise, if a month is selected, calculate the date range for that month
+        const [year, month] = selectedPeriod.split("-");
+        const monthStart = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const monthEnd = new Date(parseInt(year), parseInt(month), 0);
+        reportStartDate = formatDateInputValue(monthStart);
+        reportEndDate = formatDateInputValue(monthEnd);
+      }
+      // If neither is true, leave dates empty to fetch all data
+
+      while (skip < total) {
+        const reportResponse = await GetUserDailySaleFiltered({
+          dvatid: dvatdata.id,
+          skip,
+          take: BATCH_SIZE,
+          searchTerm: "",
+          sortField: "invoice_date",
+          sortOrder: "desc",
+          startDate: reportStartDate,
+          endDate: reportEndDate,
+          acceptStatusFilter: "all",
+        });
+
+        if (!reportResponse.status || !reportResponse.data?.result) {
+          toast.error(reportResponse.message || "Unable to load report data.");
+          return;
+        }
+
+        const batch = reportResponse.data.result;
+        reportData.push(...batch);
+        total = reportResponse.data.total;
+        skip += BATCH_SIZE;
+
+        if (batch.length === 0) {
+          break;
+        }
+      }
+
+      if (reportData.length === 0) {
+        toast.info("No sale records found to export.");
+        return;
+      }
+
+      const detailRows = reportData.flatMap((group) =>
+        group.records.map((record) => ({
+          "Invoice No.": group.invoice_number,
+          "Invoice Date": formateDate(group.invoice_date),
+          "Trade Name": group.seller_tin_number.name_of_dealer,
+          "TIN Number": group.seller_tin_number.tin_number,
+          "Product Name": record.commodity_master.product_name,
+          "Item Code": record.commodity_master.id,
+          Quantity: record.quantity,
+          "Invoice Value": Number(
+            (parseFloat(record.vatamount) + parseFloat(record.amount)).toFixed(
+              2,
+            ),
+          ),
+          "Tax Rate": record.tax_percent,
+          "VAT Amount": Number(parseFloat(record.vatamount).toFixed(2)),
+          "Taxable Value": Number(parseFloat(record.amount).toFixed(2)),
+          URN: record.urn_number ?? "",
+          "Accept Status": record.is_accept ? "ACCEPTED" : "PENDING",
+        })),
+      );
+
+      if (detailRows.length === 0) {
+        toast.info("No invoice item records found to export.");
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(detailRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Invoice Details");
+
+      const fileDate = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(workbook, `dailySale_report_${fileDate}.xlsx`);
+    } finally {
+      setIsSaleReportLoading(false);
+    }
+  };
+
   const init = async () => {
     // setLoading(true);
 
@@ -287,89 +392,112 @@ const DocumentWiseDetails = () => {
     setFiledReturnPeriods(new Set());
   }, []);
 
+  // Phase 1: Load essential data (auth, DVAT, current month sales)
   useEffect(() => {
-    const init = async () => {
+    const initEssentialData = async () => {
       setIsLoading(true);
-      const authResponse = await getAuthenticatedUserId();
-      if (!authResponse.status || !authResponse.data) {
-        toast.error(authResponse.message);
-        return router.push("/");
+      try {
+        const authResponse = await getAuthenticatedUserId();
+        if (!authResponse.status || !authResponse.data) {
+          toast.error(authResponse.message);
+          return router.push("/");
+        }
+        setUserid(authResponse.data);
+
+        const userresponse = await GetUser({ id: authResponse.data });
+        if (userresponse.status) setUser(userresponse.data!);
+
+        const dvat_response = await GetUserDvat04Anx({});
+
+        if (dvat_response.status && dvat_response.data) {
+          setDvatData(dvat_response.data);
+          await loadFiledReturnPeriods(dvat_response.data.id);
+
+          // Calculate current month's start and end dates
+          const today = new Date();
+          const year = today.getFullYear();
+          const monthIndex = today.getMonth();
+          const currentMonthStart = new Date(year, monthIndex, 1);
+          const currentMonthEnd = today;
+
+          const daily_sale_response = await GetUserDailySaleFiltered({
+            dvatid: dvat_response.data.id,
+            skip: 0,
+            take: 25,
+            searchTerm: "",
+            sortField: "invoice_date",
+            sortOrder: "desc",
+            startDate: formatDateInputValue(currentMonthStart),
+            endDate: formatDateInputValue(currentMonthEnd),
+            acceptStatusFilter: "all",
+          });
+
+          if (daily_sale_response.status && daily_sale_response.data.result) {
+            setPaginatin({
+              skip: daily_sale_response.data.skip,
+              take: daily_sale_response.data.take,
+              total: daily_sale_response.data.total,
+            });
+            setDailySale(daily_sale_response.data.result);
+            const summary = daily_sale_response.data.summary as
+              | DailySaleFilteredSummary
+              | undefined;
+            setOverallSaleSummary(
+              summary?.overallSummary ?? DEFAULT_SALE_SUMMARY,
+            );
+            setFilteredSaleSummary(
+              summary?.filteredSummary ?? DEFAULT_SALE_SUMMARY,
+            );
+          }
+        }
+      } finally {
+        setIsLoading(false);
       }
-      setUserid(authResponse.data);
-      const userresponse = await GetUser({ id: authResponse.data });
-      if (userresponse.status) setUser(userresponse.data!);
+    };
+    initEssentialData();
+  }, [router, loadFiledReturnPeriods]);
 
-      const dvat_response = await GetUserDvat04Anx({});
+  // Phase 2: Load validation data in background (all DVAT and TIN records)
+  useEffect(() => {
+    const loadValidationData = async () => {
+      try {
+        const [allDvatResponse, allTinMasterResponse] = await Promise.all([
+          GetAllDvat04({}),
+          GetAllTinNumberMaster(),
+        ]);
 
-      const [allDvatResponse, allTinMasterResponse] = await Promise.all([
-        GetAllDvat04({}),
-        GetAllTinNumberMaster(),
-      ]);
+        if (allDvatResponse.status && allDvatResponse.data) {
+          setAllDvatTinNumbers(
+            new Set(
+              allDvatResponse.data
+                .map((row) => row.tinNumber)
+                .filter((tin): tin is string => Boolean(tin))
+                .map(normalizeTin),
+            ),
+          );
+        } else {
+          setAllDvatTinNumbers(new Set());
+        }
 
-      if (allDvatResponse.status && allDvatResponse.data) {
-        setAllDvatTinNumbers(
-          new Set(
-            allDvatResponse.data
-              .map((row) => row.tinNumber)
-              .filter((tin): tin is string => Boolean(tin))
-              .map(normalizeTin),
-          ),
-        );
-      } else {
+        if (allTinMasterResponse.status && allTinMasterResponse.data) {
+          setAllTinMasterTinNumbers(
+            new Set(
+              allTinMasterResponse.data
+                .map((row) => row.tin_number)
+                .filter((tin): tin is string => Boolean(tin))
+                .map(normalizeTin),
+            ),
+          );
+        } else {
+          setAllTinMasterTinNumbers(new Set());
+        }
+      } catch (error) {
         setAllDvatTinNumbers(new Set());
-      }
-
-      if (allTinMasterResponse.status && allTinMasterResponse.data) {
-        setAllTinMasterTinNumbers(
-          new Set(
-            allTinMasterResponse.data
-              .map((row) => row.tin_number)
-              .filter((tin): tin is string => Boolean(tin))
-              .map(normalizeTin),
-          ),
-        );
-      } else {
         setAllTinMasterTinNumbers(new Set());
       }
-
-      if (dvat_response.status && dvat_response.data) {
-        setDvatData(dvat_response.data);
-        await loadFiledReturnPeriods(dvat_response.data.id);
-        const daily_sale_response = await GetUserDailySaleFiltered({
-          dvatid: dvat_response.data.id,
-          skip: 0,
-          take: 25,
-          searchTerm: "",
-          sortField: "invoice_date",
-          sortOrder: "desc",
-          startDate: "",
-          endDate: "",
-          acceptStatusFilter: "all",
-        });
-
-        if (daily_sale_response.status && daily_sale_response.data.result) {
-          setPaginatin({
-            skip: daily_sale_response.data.skip,
-            take: daily_sale_response.data.take,
-            total: daily_sale_response.data.total,
-          });
-          setDailySale(daily_sale_response.data.result);
-          const summary = daily_sale_response.data.summary as
-            | DailySaleFilteredSummary
-            | undefined;
-          setOverallSaleSummary(
-            summary?.overallSummary ?? DEFAULT_SALE_SUMMARY,
-          );
-          setFilteredSaleSummary(
-            summary?.filteredSummary ?? DEFAULT_SALE_SUMMARY,
-          );
-        }
-      }
-
-      setIsLoading(false);
     };
-    init();
-  }, [router, loadFiledReturnPeriods]);
+    loadValidationData();
+  }, []);
 
   const canManualAcceptSale = useCallback(
     (tinNumber: string): boolean => {
@@ -706,8 +834,7 @@ const DocumentWiseDetails = () => {
   const [selectedRecordsForInvoiceEdit, setSelectedRecordsForInvoiceEdit] =
     useState<any[]>([]);
   const [invoiceNumberInput, setInvoiceNumberInput] = useState("");
-  const [isUpdatingInvoiceNumber, setIsUpdatingInvoiceNumber] =
-    useState(false);
+  const [isUpdatingInvoiceNumber, setIsUpdatingInvoiceNumber] = useState(false);
   const [finalizeProgress, setFinalizeProgress] = useState<{
     total: number;
     processed: number;
@@ -804,7 +931,10 @@ const DocumentWiseDetails = () => {
 
       // First, try to auto-accept eligible sales (older than 12 days)
       const autoAcceptResponse = await AutoAcceptSaleByDays({
-        startDate: new Date(dateFilter.startDate || new Date(new Date().setMonth(new Date().getMonth() - 1))),
+        startDate: new Date(
+          dateFilter.startDate ||
+            new Date(new Date().setMonth(new Date().getMonth() - 1)),
+        ),
         endDate: new Date(dateFilter.endDate || new Date()),
       });
 
@@ -1003,6 +1133,8 @@ const DocumentWiseDetails = () => {
   const [isBulkDeleteLoading, setIsBulkDeleteLoading] =
     useState<boolean>(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState<boolean>(false);
+  const [isSaleReportLoading, setIsSaleReportLoading] =
+    useState<boolean>(false);
   const [bulkDeleteRows, setBulkDeleteRows] = useState<
     Array<{
       id: number;
@@ -1068,7 +1200,8 @@ const DocumentWiseDetails = () => {
   const [debitNoteGroup, setDebitNoteGroup] = useState<GroupedDailySale | null>(
     null,
   );
-  const [isDeleteItemLoading, setIsDeleteItemLoading] = useState<boolean>(false);
+  const [isDeleteItemLoading, setIsDeleteItemLoading] =
+    useState<boolean>(false);
   const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
 
   const handleDeleteSaleItem = async (recordId: number) => {
@@ -1320,7 +1453,9 @@ const DocumentWiseDetails = () => {
 
   const formatAmount = (value: number | string | null | undefined): string => {
     const numericValue = typeof value === "number" ? value : Number(value ?? 0);
-    return Number.isFinite(numericValue) ? formatIndianNumber(numericValue) : "0";
+    return Number.isFinite(numericValue)
+      ? formatIndianNumber(numericValue)
+      : "0";
   };
 
   if (isLoading)
@@ -1437,27 +1572,33 @@ const DocumentWiseDetails = () => {
                         {record.amount
                           ? formatIndianNumber(
                               parseFloat(record.amount) +
-                              parseFloat(record.vatamount)
+                                parseFloat(record.vatamount),
                             )
                           : "0"}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         <div className="flex flex-col gap-1">
                           {/* Delete Button - Only for specific TIN IDs */}
-                          {[1, 2, 821].includes(
-                            record.seller_tin_number.id,
-                          ) &&
+                          {([1, 2, 821].includes(record.seller_tin_number.id) ||
+                            !record.seller_tin_number.tin_number.startsWith(
+                              "26",
+                            ) ||
+                            !record.seller_tin_number.tin_number.startsWith(
+                              "25",
+                            )) &&
                             !record.is_accept && (
                               <button
                                 onClick={() => {
                                   handleDeleteSaleItem(record.id);
                                 }}
                                 disabled={
-                                  isDeleteItemLoading && deleteItemId === record.id
+                                  isDeleteItemLoading &&
+                                  deleteItemId === record.id
                                 }
                                 className="text-xs bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white py-1 px-2 rounded"
                               >
-                                {isDeleteItemLoading && deleteItemId === record.id
+                                {isDeleteItemLoading &&
+                                deleteItemId === record.id
                                   ? "Deleting..."
                                   : "Delete"}
                               </button>
@@ -1885,9 +2026,14 @@ const DocumentWiseDetails = () => {
               </p>
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {selectedRecordsForInvoiceEdit.map((record, idx) => (
-                  <div key={idx} className="text-xs text-blue-700 pb-1 border-b border-blue-100 last:border-0">
+                  <div
+                    key={idx}
+                    className="text-xs text-blue-700 pb-1 border-b border-blue-100 last:border-0"
+                  >
                     <p>
-                      <strong>#{idx + 1}</strong> - Invoice: {record.invoice_number || "Empty"} | Trade: {record.seller_tin_number?.name_of_dealer}
+                      <strong>#{idx + 1}</strong> - Invoice:{" "}
+                      {record.invoice_number || "Empty"} | Trade:{" "}
+                      {record.seller_tin_number?.name_of_dealer}
                     </p>
                   </div>
                 ))}
@@ -2033,7 +2179,10 @@ const DocumentWiseDetails = () => {
                                 const emptyCheck = checkForEmptyInvoices();
                                 if (emptyCheck.hasEmpty) {
                                   const emptyList = emptyCheck.emptyInvoices
-                                    .map((inv) => `• Invoice ${inv.invoiceNumber}: ${inv.reason}`)
+                                    .map(
+                                      (inv) =>
+                                        `• Invoice ${inv.invoiceNumber}: ${inv.reason}`,
+                                    )
                                     .join("\n");
                                   toast.error(
                                     `❌ Cannot generate DVAT 31/31 A - The following invoices are incomplete:\n\n${emptyList}\n\nPlease fill in or correct these invoices before proceeding.`,
@@ -2074,6 +2223,19 @@ const DocumentWiseDetails = () => {
                             filedReturnPeriods={filedReturnPeriods}
                             onUploadComplete={init}
                           />
+
+                          <Button
+                            size="small"
+                            block
+                            type="default"
+                            loading={isSaleReportLoading}
+                            onClick={() => {
+                              setToolbarActionsOpen(false);
+                              downloadDailySaleReport();
+                            }}
+                          >
+                            Sale Report
+                          </Button>
 
                           <Button
                             size="small"
@@ -2389,7 +2551,8 @@ const DocumentWiseDetails = () => {
                                   </button>
                                 )}
                                 {!group.records[0].invoice_number ||
-                                group.records[0].invoice_number.trim() === "" ? (
+                                group.records[0].invoice_number.trim() ===
+                                  "" ? (
                                   <button
                                     onClick={() => {
                                       openInvoiceNumberModal(group.records);

@@ -313,19 +313,34 @@ const RegistrationStatus = () => {
                 View Stock
               </button>
             </div>
-            <button
-              type="button"
-              className="rounded-md bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700"
-              onClick={() =>
-                router.push(
-                  `/dashboard/registration_status/view-returns/${encryptURLData(
-                    row.original.id.toString(),
-                  )}`,
-                )
-              }
-            >
-              View Returns
-            </button>
+            <div className="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                className="rounded-md bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700"
+                onClick={() =>
+                  router.push(
+                    `/dashboard/registration_status/view-returns/${encryptURLData(
+                      row.original.id.toString(),
+                    )}`,
+                  )
+                }
+              >
+                View Returns
+              </button>
+              <button
+                type="button"
+                className="rounded-md bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700"
+                onClick={() =>
+                  router.push(
+                    `/dashboard/register/${encryptURLData(
+                      row.original.id.toString(),
+                    )}/preview/${encryptURLData(row.original.id.toString())}`,
+                  )
+                }
+              >
+                View DVAT
+              </button>
+            </div>
           </div>
         ),
       },

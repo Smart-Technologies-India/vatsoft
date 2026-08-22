@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, Button, Input, Pagination, Drawer } from "antd";
+import { Alert, Button, Input, Pagination, Drawer, Select } from "antd";
 import {
   Table,
   TableBody,
@@ -45,6 +45,7 @@ const TrackAppliation = () => {
     RETURN,
     TIN,
     TRADE,
+    PERIOD,
   }
   const [searchOption, setSeachOption] = useState<SearchOption>(
     SearchOption.ARN,
@@ -64,6 +65,58 @@ const TrackAppliation = () => {
   ) => {
     setSearchDate(dates);
   };
+
+  const [periodYear, setPeriodYear] = useState<string | null>(null);
+  const [periodMonth, setPeriodMonth] = useState<string | null>(null);
+
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // Generate available years and months from April 2026 to current date
+  const getAvailableYearsAndMonths = () => {
+    const startDate = new Date(2026, 3, 1); // April 2026 (month is 0-indexed)
+    const currentDate = new Date();
+    const years: string[] = [];
+    const months: string[] = [];
+
+    // Generate years
+    for (let year = startDate.getFullYear(); year <= currentDate.getFullYear(); year++) {
+      years.push(year.toString());
+    }
+
+    // Generate months for current year
+    for (let month = 0; month < monthNames.length; month++) {
+      // Include months from April onwards if current year, otherwise all months
+      if (currentDate.getFullYear() > startDate.getFullYear()) {
+        months.push(monthNames[month]);
+      } else if (month >= 3) {
+        // April is at index 3
+        if (
+          month < currentDate.getMonth() ||
+          (month === currentDate.getMonth())
+        ) {
+          months.push(monthNames[month]);
+        }
+      }
+    }
+
+    return { years, months };
+  };
+
+  const { years: availableYears, months: availableMonths } =
+    getAvailableYearsAndMonths();
 
   const [paymentData, setPaymentData] = useState<
     Array<returns_01 & { dvat04: dvat04 }>
@@ -196,6 +249,8 @@ const TrackAppliation = () => {
   const tradeRef = useRef<InputRef>(null);
 
   const init = async () => {
+    setPeriodYear(null);
+    setPeriodMonth(null);
     const payment_data = await SearchReturnPayment({
       dept: user?.selectOffice!,
       take: 10,
@@ -296,6 +351,29 @@ const TrackAppliation = () => {
     const search_response = await SearchReturnPayment({
       trade: tradeRef.current?.input?.value,
       dept: user?.selectOffice!,
+      take: 10,
+      skip: 0,
+    });
+    if (search_response.status && search_response.data.result) {
+      setPaymentData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      setSearch(true);
+    }
+  };
+
+  const periodsearch = async () => {
+    if (periodYear == null || periodMonth == null) {
+      return toast.error("Select year and month");
+    }
+
+    const search_response = await SearchReturnPayment({
+      dept: user?.selectOffice!,
+      month: periodMonth,
+      year: periodYear,
       take: 10,
       skip: 0,
     });
@@ -453,6 +531,9 @@ const TrackAppliation = () => {
           tradeRef.current?.input?.value
         ) {
           searchParams.trade = tradeRef.current.input.value;
+        } else if (searchOption === SearchOption.PERIOD && periodYear && periodMonth) {
+          searchParams.month = periodMonth;
+          searchParams.year = periodYear;
         }
       }
 
@@ -579,6 +660,7 @@ const TrackAppliation = () => {
                 <Radio value={SearchOption.RETURN}>Tax Period</Radio>
                 <Radio value={SearchOption.TIN}>TIN Number</Radio>
                 <Radio value={SearchOption.TRADE}>Trade Name</Radio>
+                <Radio value={SearchOption.PERIOD}>Period</Radio>
               </Radio.Group>
               {(() => {
                 switch (searchOption) {
@@ -660,6 +742,42 @@ const TrackAppliation = () => {
                           </Button>
                         ) : (
                           <Button onClick={tradesearch} type="primary">
+                            Search
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  case SearchOption.PERIOD:
+                    return (
+                      <div className="flex gap-2 items-center">
+                        <Select
+                          placeholder="Select Year"
+                          value={periodYear}
+                          onChange={(value) => setPeriodYear(value)}
+                          disabled={isSearch}
+                          style={{ width: 150 }}
+                          options={availableYears.map((year) => ({
+                            label: year,
+                            value: year,
+                          }))}
+                        />
+                        <Select
+                          placeholder="Select Month"
+                          value={periodMonth}
+                          onChange={(value) => setPeriodMonth(value)}
+                          disabled={isSearch}
+                          style={{ width: 150 }}
+                          options={availableMonths.map((month) => ({
+                            label: month,
+                            value: month,
+                          }))}
+                        />
+                        {isSearch ? (
+                          <Button onClick={init} type="primary">
+                            Reset
+                          </Button>
+                        ) : (
+                          <Button onClick={periodsearch} type="primary">
                             Search
                           </Button>
                         )}

@@ -261,9 +261,12 @@ const AddPaymentOnline = async (
               office_of_issue: isExist.dvat04.selectOffice,
               date_of_issue: new Date(),
               valid_date: isExist.dvat04.certificateDate!,
-              sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial, cformSrNoCounter++),
-              seller_address:
-                representativeEntry.seller_tin_number.state ?? "",
+              sr_no: getsrno(
+                isExist.dvat04.selectOffice!,
+                lastOfficeSerial,
+                cformSrNoCounter++,
+              ),
+              seller_address: representativeEntry.seller_tin_number.state ?? "",
               seller_name:
                 representativeEntry.seller_tin_number.name_of_dealer ?? "",
               seller_tin_no:
@@ -272,9 +275,7 @@ const AddPaymentOnline = async (
               from_period: new Date(
                 dates.fromDate.split("-").reverse().join("-"),
               ),
-              to_period: new Date(
-                dates.toDate.split("-").reverse().join("-"),
-              ),
+              to_period: new Date(dates.toDate.split("-").reverse().join("-")),
               status: "ACTIVE",
               createdById: isExist.createdById,
             },
@@ -420,7 +421,10 @@ const AddPaymentOnline = async (
       const fformSerialForFform = lastfformForFform
         ? parseInt(lastfformForFform.sr_no.split("/").pop() ?? "0", 10) || 0
         : 0;
-      const lastOfficeSerial = Math.max(cformSerialForFform, fformSerialForFform);
+      const lastOfficeSerial = Math.max(
+        cformSerialForFform,
+        fformSerialForFform,
+      );
 
       // Create a Map to track month key to fform ID
       const monthToFformMap = new Map<string, number>();
@@ -452,9 +456,7 @@ const AddPaymentOnline = async (
             from_period: new Date(
               dates.fromDate.split("-").reverse().join("-"),
             ),
-            to_period: new Date(
-              dates.toDate.split("-").reverse().join("-"),
-            ),
+            to_period: new Date(dates.toDate.split("-").reverse().join("-")),
             status: "ACTIVE",
             createdById: isExist.createdById,
           },
@@ -474,9 +476,7 @@ const AddPaymentOnline = async (
         const fformId = monthToFformMap.get(monthKey);
 
         if (!fformId) {
-          throw new Error(
-            `FForm entry for month ${monthKey} was not created`,
-          );
+          throw new Error(`FForm entry for month ${monthKey} was not created`);
         }
 
         monthGroup.entries.forEach((entry) => {
@@ -685,7 +685,11 @@ function getFromDateAndToDate(
   };
 }
 
-const getsrno = (selectOffice: SelectOffice, last: number, offset: number = 0): string => {
+const getsrno = (
+  selectOffice: SelectOffice,
+  last: number,
+  offset: number = 0,
+): string => {
   let pre =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
       ? "DNH"

@@ -4,6 +4,7 @@ import GetUserTallySale, {
   GroupedTallySale,
 } from "@/action/stock/getusertallysale";
 import AcceptTallySale from "@/action/stock/accepttallysale";
+import DeleteTallySale from "@/action/stock/deletetallysale";
 import GetTallySaleAcceptProgress from "@/action/stock/gettallysaleacceptprogress";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
@@ -60,6 +61,9 @@ const TallySalePage = () => {
   const [acceptingGroupIndex, setAcceptingGroupIndex] = useState<number | null>(
     null,
   );
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
     setQuantityCount(value);
@@ -201,87 +205,62 @@ const TallySalePage = () => {
 
     setIsAccepting(true);
     const ids = pendingRecords.map((record) => record.id);
-    const baselineResponse = await GetTallySaleAcceptProgress({ tallyIds: ids });
-
-    if (!baselineResponse.status || !baselineResponse.data) {
-      setIsAccepting(false);
-      toast.error(
-        baselineResponse.message || "Unable to start progress tracking.",
-      );
-      return;
-    }
-
-    const baselineConverted = baselineResponse.data.converted;
-    const totalAtStart = baselineResponse.data.total;
-    const pendingAtStart = Math.max(0, totalAtStart - baselineConverted);
+    const CHUNK_SIZE = 100;
+    const totalChunks = Math.ceil(ids.length / CHUNK_SIZE);
 
     setAcceptProgress({
-      total: pendingAtStart,
+      total: ids.length,
       processed: 0,
       percent: 0,
-      statusText:
-        pendingAtStart > 0
-          ? "Starting conversion..."
-          : "No pending rows found.",
+      statusText: "Starting conversion...",
     });
 
     try {
-      if (pendingAtStart > 0) {
-        acceptPollingRef.current = setInterval(async () => {
-          const pollResponse = await GetTallySaleAcceptProgress({
-            tallyIds: ids,
-          });
+      // Process chunks sequentially
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const response = await AcceptTallySale({
+          tallyIds: ids,
+          dvatid: dvatdata.id,
+          createdById: userid,
+          chunkIndex,
+          chunkSize: CHUNK_SIZE,
+        });
 
-          if (!pollResponse.status || !pollResponse.data) {
-            return;
-          }
-
-          const processed = Math.max(
-            0,
-            pollResponse.data.converted - baselineConverted,
-          );
-          const boundedProcessed = Math.min(pendingAtStart, processed);
-          const percent = Math.min(
-            100,
-            Math.floor((boundedProcessed / pendingAtStart) * 100),
-          );
-
-          setAcceptProgress({
-            total: pendingAtStart,
-            processed: boundedProcessed,
-            percent,
-            statusText: `Processing ${boundedProcessed} of ${pendingAtStart} rows...`,
-          });
-        }, 1500);
-      }
-
-      const response = await AcceptTallySale({
-        tallyIds: ids,
-        dvatid: dvatdata.id,
-        createdById: userid,
-      });
-
-      if (response.status) {
-        if (pendingAtStart > 0) {
-          setAcceptProgress({
-            total: pendingAtStart,
-            processed: pendingAtStart,
-            percent: 100,
-            statusText: "Conversion completed successfully.",
-          });
+        if (!response.status) {
+          toast.error(response.message);
+          setIsAcceptModalOpen(false);
+          setIsAccepting(false);
+          return;
         }
 
-        toast.success(response.message);
-        setIsAcceptModalOpen(false);
-        await init(dvatdata.id, 0, pagination.take);
-      } else {
-        toast.error(response.message);
+        const processedSoFar = (chunkIndex + 1) * CHUNK_SIZE;
+        const boundedProcessed = Math.min(ids.length, processedSoFar);
+        const percent = Math.floor((boundedProcessed / ids.length) * 100);
+
+        setAcceptProgress({
+          total: ids.length,
+          processed: boundedProcessed,
+          percent,
+          statusText: `Processing chunk ${chunkIndex + 1} of ${totalChunks}...`,
+        });
       }
+
+      // All chunks processed successfully
+      setAcceptProgress({
+        total: ids.length,
+        processed: ids.length,
+        percent: 100,
+        statusText: "Conversion completed successfully.",
+      });
+
+      toast.success(`Successfully accepted and converted ${ids.length} record(s).`);
+      await init(dvatdata.id, 0, pagination.take);
+      setIsAcceptModalOpen(false);
+    } catch (error) {
+      console.error("Error during accept:", error);
+      toast.error("An unexpected error occurred during conversion.");
+      setIsAcceptModalOpen(false);
     } finally {
-      if (acceptPollingRef.current) {
-        clearInterval(acceptPollingRef.current);
-        acceptPollingRef.current = null;
-      }
       setIsAccepting(false);
     }
   };
@@ -310,6 +289,37 @@ const TallySalePage = () => {
       await init(dvatdata.id, pagination.skip, pagination.take);
     } else {
       toast.error(response.message);
+    }
+  };
+
+  const handleDeleteGroup = async (group: GroupedTallySale) => {
+    if (!dvatdata) return;
+
+    setIsDeleteModalOpen(true);
+    setDeletingGroupId(group.invoice_number);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedGroup) return;
+
+    setIsDeleting(true);
+    const ids = selectedGroup.records.map((record) => record.id);
+
+    try {
+      const response = await DeleteTallySale({
+        tallyIds: ids,
+      });
+
+      if (response.status) {
+        toast.success(response.message);
+        setIsDeleteModalOpen(false);
+        setDeletingGroupId(null);
+        await init(dvatdata?.id, pagination.skip, pagination.take);
+      } else {
+        toast.error(response.message);
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -392,6 +402,36 @@ const TallySalePage = () => {
             <p className="mt-1">Progress: {acceptProgress.percent}%</p>
           </div>
         )}
+      </Modal>
+
+      {/* Delete confirmation modal */}
+      <Modal
+        title="Delete Tally Sale"
+        open={isDeleteModalOpen}
+        onOk={confirmDelete}
+        onCancel={() => {
+          if (isDeleting) return;
+          setIsDeleteModalOpen(false);
+          setSelectedGroup(null);
+          setDeletingGroupId(null);
+        }}
+        confirmLoading={isDeleting}
+        okText="Yes, Delete"
+        cancelText="Cancel"
+        okButtonProps={{ danger: true }}
+        cancelButtonProps={{ disabled: isDeleting }}
+        maskClosable={!isDeleting}
+        closable={!isDeleting}
+      >
+        <p className="text-sm text-slate-600 py-2">
+          Are you sure you want to delete this invoice record?
+          <br />
+          <strong>{deletingGroupId}</strong>
+          <br />
+          <span className="text-red-600 font-semibold">
+            This action cannot be undone.
+          </span>
+        </p>
       </Modal>
 
       {/* Invoice detail modal */}
@@ -723,6 +763,16 @@ const TallySalePage = () => {
                                     : "Accept"}
                                 </button>
                               )}
+                              <button
+                                onClick={() => {
+                                  setSelectedGroup(group);
+                                  handleDeleteGroup(group);
+                                }}
+                                disabled={isDeleting}
+                                className="text-sm bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white py-1 px-3 rounded"
+                              >
+                                Delete
+                              </button>
                             </div>
                           </TableCell>
                         </TableRow>

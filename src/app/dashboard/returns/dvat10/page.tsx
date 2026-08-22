@@ -1,8 +1,6 @@
 "use client";
 import GetNotice from "@/action/notice_order/getnotice";
-import {
-  decryptURLData,
-} from "@/utils/methods";
+import { decryptURLData } from "@/utils/methods";
 import {
   dvat04,
   Dvat24Reason,
@@ -239,17 +237,31 @@ const Dvat10Page = () => {
           <p className="font-bold text-sm print:text-xs">
             (Department of Value Added Tax)
           </p>
-          <p className="text-sm print:text-xs">
-            District Secretariat &quot;A&quot; - Wing, 2nd Floor,
-          </p>
-          <p className="text-sm print:text-xs">Silvassa - 396230.</p>
+
+          {dvatInfo.selectOffice == "Dadra_Nagar_Haveli" ? (
+            <>
+              <p className="text-sm print:text-xs">
+                District Secretariat &quot;A&quot; - Wing, 2nd Floor,
+              </p>
+              <p className="text-sm print:text-xs">Silvassa - 396230.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm print:text-xs">
+                3rd Floor, Udyog Bhavan, Bhenslore,
+              </p>
+              <p className="text-sm print:text-xs">Daman - 396210.</p>
+            </>
+          )}
         </div>
 
         {/* Notice Info */}
         <div className="flex justify-between mb-2 print:mb-1 text-sm print:text-xs">
           <div>
             <span className="font-bold">
-              No.VATO/Return Defaulter/
+              No.
+              {dvatInfo.selectOffice == "Dadra_Nagar_Haveli" ? "VATO" : "AVATO"}
+              /Return Defaulter/
               {dvatInfo.commodity == "FUEL" ? "PETROL" : "LIQUOR"}/
             </span>{" "}
             {notice.ref_no}
@@ -274,7 +286,11 @@ const Dvat10Page = () => {
                   Tax period
                 </td>
                 <td className="border border-black p-2 print:p-1 w-1/2">
-                  {formatPeriod(notice.tax_period_from, notice.tax_period_to, data.dvat.frequencyFilings)}
+                  {formatPeriod(
+                    notice.tax_period_from,
+                    notice.tax_period_to,
+                    data.dvat.frequencyFilings,
+                  )}
                 </td>
               </tr>
               <tr>
@@ -331,12 +347,20 @@ const Dvat10Page = () => {
             <div className="mb-3 print:mb-2">
               <div className="h-8 print:h-6"></div>
               <p className="font-bold text-sm print:text-xs">
-                Value Added Tax Officer
+                {dvatInfo.selectOffice == "Dadra_Nagar_Haveli"
+                  ? "Value Added Tax Officer"
+                  : "Assistant Value Added Tax Officer"}
               </p>
               <p className="font-bold text-sm print:text-xs">
-                Dadra and Nagar Haveli
+                {dvatInfo.selectOffice == "Dadra_Nagar_Haveli"
+                  ? "Dadra and Nagar Haveli"
+                  : "Daman and Diu"}
               </p>
-              <p className="font-bold text-sm print:text-xs">Silvassa.</p>
+              <p className="font-bold text-sm print:text-xs">
+                {dvatInfo.selectOffice == "Dadra_Nagar_Haveli"
+                  ? "Silvassa"
+                  : "Daman/Diu"}
+              </p>
             </div>
           </div>
         </div>

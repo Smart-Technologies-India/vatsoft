@@ -20,13 +20,13 @@ interface CreateDvat10Payload {
 }
 
 const CreateDvat10 = async (
-  payload: CreateDvat10Payload
+  payload: CreateDvat10Payload,
 ): Promise<ApiResponseType<order_notice | null>> => {
   const functionname: string = CreateDvat10.name;
   let today = new Date();
   today.setDate(today.getDate() + 3);
 
-  const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstuvwyz", 12);
+  const nanoid = customAlphabet("1234567890", 10);
   const ref_no: string = nanoid();
 
   try {
@@ -82,17 +82,20 @@ const CreateDvat10 = async (
     }<tr><td>Mobile:<td class="left">${
       order_notice.dvat.createdBy.mobileOne
     }<tr><td>Address:<td class="left">Silvassa</table><table><tr style="font-size:20px"><td>DVAT 10 Info<td class="left"></tbody><table class="pricetable"><tr><td>Reason For Notice:<td class="left">26000004005<tr><td>Due Date:<td class="left">${dayjs(
-      order_notice.due_date
+      order_notice.due_date,
     ).format("DD/MM/YYYY")}<tr><td>Tax Period From:<td class="left">${dayjs(
-      order_notice.tax_period_from
+      order_notice.tax_period_from,
     ).format("DD/MM/YYYY")}<tr><td>Tax Period To:<td class="left">${dayjs(
-      order_notice.tax_period_to
+      order_notice.tax_period_to,
     ).format("DD/MM/YYYY")}<tr><td>Remark:<td class="left">${
       order_notice.remark
     }</table><hr><p>(See Rule 36 of the Dadra and Nagar Haveli and Daman and Diu Value Added Tax Rules, 2021)<p>Notice to return defaulter u/s 32 for not filing return. Type of Return: DVAT-16</main>`;
 
     try {
-      const contactDigits = (order_notice.dvat.contact_one ?? "").replace(/\D/g, "");
+      const contactDigits = (order_notice.dvat.contact_one ?? "").replace(
+        /\D/g,
+        "",
+      );
       const mobile =
         contactDigits.length > 10 ? contactDigits.slice(-10) : contactDigits;
 
