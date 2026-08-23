@@ -1563,11 +1563,12 @@ model cform {
 }
 
 model cform_returns {
-  id              Int           @id @default(autoincrement())
-  cformId         Int
-  returns_entryId Int
-  cform           cform         @relation(fields: [cformId], references: [id])
-  returns_entry   returns_entry @relation(fields: [returns_entryId], references: [id])
+  id                   Int           @id @default(autoincrement())
+  cformId              Int
+  returns_entryId      Int
+  description_of_goods String?
+  cform                cform         @relation(fields: [cformId], references: [id])
+  returns_entry        returns_entry @relation(fields: [returns_entryId], references: [id])
 
   @@index([cformId], map: "cform_returns_cformId_fkey")
   @@index([returns_entryId], map: "cform_returns_returns_entryId_fkey")

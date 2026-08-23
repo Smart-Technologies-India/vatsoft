@@ -8,9 +8,15 @@ interface GetCformEntryPayload {
   id: number;
 }
 
+interface CformReturnData {
+  id: number;
+  description_of_goods: string | null;
+  returns_entry: returns_entry;
+}
+
 const GetCformEntry = async (
   payload: GetCformEntryPayload
-): Promise<ApiResponseType<returns_entry[] | null>> => {
+): Promise<ApiResponseType<CformReturnData[] | null>> => {
   const functionname: string = GetCformEntry.name;
 
   try {
@@ -41,12 +47,16 @@ const GetCformEntry = async (
       });
     }
 
-    const returnEntries = cform_response.map((item) => item.returns_entry);
+    const returnData = cform_response.map((item) => ({
+      id: item.id,
+      description_of_goods: item.description_of_goods,
+      returns_entry: item.returns_entry,
+    }));
 
     return createResponse({
       message: "C-Form Data get successfully",
       functionname,
-      data: returnEntries,
+      data: returnData,
     });
   } catch (e) {
     return createResponse({
