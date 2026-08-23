@@ -10,7 +10,7 @@ import { decryptURLData, formateDate, generatePDF } from "@/utils/methods";
 import { Button } from "antd";
 
 import GetCformById from "@/action/cform/getcfrombyid";
-import GetCformEntry from "@/action/cform/getcfromenrty";
+import GetCformEntry, { CformReturnData } from "@/action/cform/getcfromenrty";
 import Image from "next/image";
 const formateDatecus = (date: Date): string => {
   const day = date.getDate();
@@ -68,10 +68,10 @@ const CFROM = () => {
         });
 
         if (cform_entry_respone.data && cform_entry_respone.status) {
-          const grouped: Record<string, returns_entry> = {};
+          const grouped: Record<string, (CformReturnData & { returns_entry: returns_entry })> = {};
 
           for (const entry of cform_entry_respone.data) {
-            const key = entry.invoice_number;
+            const key = entry.returns_entry.invoice_number;
 
             if (!grouped[key]) {
               grouped[key] = { ...entry }; // shallow copy
@@ -79,13 +79,15 @@ const CFROM = () => {
               const existing = grouped[key];
 
               // Merge comma-separated strings (avoid duplicates if needed)
-              existing.description_of_goods += `, ${entry.description_of_goods}`;
+              const existingDesc = existing.description_of_goods || existing.returns_entry.description_of_goods || "";
+              const newDesc = entry.description_of_goods || entry.returns_entry.description_of_goods || "";
+              existing.description_of_goods = existingDesc ? `${existingDesc}, ${newDesc}` : newDesc;
 
               const total_invoice_numberSum =
-                parseFloat(existing.total_invoice_number || "0") +
-                parseFloat(entry.total_invoice_number || "0");
+                parseFloat(existing.returns_entry.total_invoice_number || "0") +
+                parseFloat(entry.returns_entry.total_invoice_number || "0");
 
-              existing.total_invoice_number =
+              existing.returns_entry.total_invoice_number =
                 total_invoice_numberSum.toFixed(2); // assuming you want quantity as string
             }
           }
@@ -93,7 +95,7 @@ const CFROM = () => {
           // Post-processing step: Update description_of_goods for all grouped entries
           for (const key in grouped) {
             const entry = grouped[key];
-            const desc = entry.description_of_goods!.toLowerCase();
+            const desc = (entry.description_of_goods || entry.returns_entry.description_of_goods || "").toLowerCase();
 
             if (
               desc.includes("diesel") ||
@@ -111,7 +113,12 @@ const CFROM = () => {
             }
           }
 
-          serReturns_entryData(Object.values(grouped));
+          // Extract returns_entry and update with categorized descriptions
+          const finalEntries = Object.values(grouped).map((item) => ({
+            ...item.returns_entry,
+            description_of_goods: item.description_of_goods,
+          }));
+          serReturns_entryData(finalEntries);
           // serReturns_entryData(cform_entry_respone.data);
         }
       }

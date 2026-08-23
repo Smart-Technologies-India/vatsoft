@@ -8,7 +8,7 @@ interface GetCformEntryPayload {
   id: number;
 }
 
-interface CformReturnData {
+export interface CformReturnData {
   id: number;
   description_of_goods: string | null;
   returns_entry: returns_entry;

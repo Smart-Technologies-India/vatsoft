@@ -131,7 +131,7 @@ const TrackAppliation = () => {
       setLoading(false);
     };
     init();
-  }, [userid]);
+  }, [userid, router]);
 
   const get_years = (month: string, year: string): string => {
     const monthNames = [
