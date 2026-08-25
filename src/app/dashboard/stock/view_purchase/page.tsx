@@ -34,11 +34,13 @@ import {
   Alert,
   Button,
   Drawer,
+  Input,
   Modal,
   Pagination,
   Popover,
   Radio,
   RadioChangeEvent,
+  Select,
 } from "antd";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -89,7 +91,7 @@ const formatIndianNumber = (num: number): string => {
   if (!Number.isFinite(num)) return "0";
   const numStr = Math.floor(num).toString();
   if (numStr.length <= 3) return numStr;
-  
+
   const lastThree = numStr.slice(-3);
   const remaining = numStr.slice(0, -3);
   const withCommas = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
@@ -992,6 +994,8 @@ const DocumentWiseDetails = () => {
     useState<boolean>(false);
   const [isPurchaseReportLoading, setIsPurchaseReportLoading] =
     useState<boolean>(false);
+  const [isDownloadingDailyPurchase, setIsDownloadingDailyPurchase] =
+    useState<boolean>(false);
 
   // Search, Sort, and Filter states
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -1142,7 +1146,7 @@ const DocumentWiseDetails = () => {
       return;
     }
 
-    setIsPurchaseReportLoading(true);
+    setIsDownloadingDailyPurchase(true);
     try {
       const BATCH_SIZE = 1000;
       let skip = 0;
@@ -1209,8 +1213,14 @@ const DocumentWiseDetails = () => {
 
       const fileDate = new Date().toISOString().slice(0, 10);
       XLSX.writeFile(workbook, `dailyPurchase_report_${fileDate}.xlsx`);
+      toast.success(
+        `Excel file downloaded successfully! (${detailRows.length} items)`,
+      );
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download Excel file.");
     } finally {
-      setIsPurchaseReportLoading(false);
+      setIsDownloadingDailyPurchase(false);
     }
   };
 
@@ -1344,7 +1354,8 @@ const DocumentWiseDetails = () => {
 
       // Convert quantity from pieces to ML for restaurant commodity (1 piece = pack_size ML)
       const quantityToUse = isRestaurantCommodity
-        ? record.quantity * parseInt(record.commodity_master.pack_size ?? "0", 10)
+        ? record.quantity *
+          parseInt(record.commodity_master.pack_size ?? "0", 10)
         : record.quantity;
 
       const response = await AcceptSale({
@@ -1771,7 +1782,7 @@ const DocumentWiseDetails = () => {
                         ₹
                         {formatIndianNumber(
                           parseFloat(record.vatamount) +
-                          parseFloat(record.amount)
+                            parseFloat(record.amount),
                         )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
@@ -2350,7 +2361,7 @@ const DocumentWiseDetails = () => {
                         </p>
                         <div className="mt-2 flex flex-col gap-2">
                           {(dvatdata?.commodity === "OIDC" ||
-                            [84, 542].includes(dvatdata?.id ?? 0)) && (
+                            [84, 542, 93].includes(dvatdata?.id ?? 0)) && (
                             <Button
                               size="small"
                               block
@@ -2583,97 +2594,140 @@ const DocumentWiseDetails = () => {
             <div className="mb-4 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-8 gap-3 items-end">
                 <div className="xl:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
                     Search
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Search by invoice number, trade name, or TIN..."
+                  <Input
+                    size="small"
+                    placeholder="Invoice, TIN, dealer name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
+                    Month & Year
+                  </label>
+                  <Select
+                    size="small"
+                    placeholder="Select Month & Year"
+                    value={selectedPeriod || undefined}
+                    onChange={setSelectedPeriod}
+                    allowClear
+                    style={{ width: "100%" }}
+                  >
+                    {Array.from({ length: 12 }, (_, i) => {
+                      const startDate = new Date(2026, 3, 1); // April 2026
+                      const date = new Date(startDate);
+                      date.setMonth(startDate.getMonth() + i);
+
+                      const today = new Date();
+                      if (date > today) return null;
+
+                      const value = formatMonthInputValue(date);
+                      const label = date.toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                      });
+                      return (
+                        <Select.Option key={value} value={value}>
+                          {label}
+                        </Select.Option>
+                      );
+                    }).filter(Boolean)}
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
                     Sort By
                   </label>
-                  <select
+                  <Select
+                    size="small"
                     value={sortField}
-                    onChange={(e) => setSortField(e.target.value as any)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="invoice_date">Invoice Date</option>
-                    <option value="invoice_number">Invoice Number</option>
-                    <option value="trade_name">Trade Name</option>
-                    <option value="tin_number">TIN Number</option>
-                    <option value="invoice_value">Invoice Value</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Order
-                  </label>
-                  <select
-                    value={sortOrder || ""}
-                    onChange={(e) =>
-                      setSortOrder((e.target.value || null) as SortOrder)
-                    }
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Default</option>
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
-                  </select>
-                </div>
-
-                <div className="xl:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Month
-                  </label>
-                  <input
-                    type="month"
-                    value={selectedPeriod}
-                    onChange={(e) => setSelectedPeriod(e.target.value)}
-                    min="2026-04"
-                    max={maxSelectableMonth}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(value) => setSortField(value as any)}
+                    options={[
+                      { label: "Invoice Date", value: "invoice_date" },
+                      { label: "Invoice Number", value: "invoice_number" },
+                      { label: "Trade Name", value: "trade_name" },
+                      { label: "TIN Number", value: "tin_number" },
+                      { label: "Invoice Value", value: "invoice_value" },
+                    ]}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Accept Status
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
+                    Order
                   </label>
-                  <select
-                    value={acceptStatusFilter}
-                    onChange={(e) =>
-                      setAcceptStatusFilter(e.target.value as any)
-                    }
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="accepted">Accepted</option>
-                  </select>
+                  <Select
+                    size="small"
+                    value={sortOrder || "desc"}
+                    onChange={(value) => setSortOrder(value as SortOrder)}
+                    options={[
+                      { label: "Ascending", value: "asc" },
+                      { label: "Descending", value: "desc" },
+                    ]}
+                  />
                 </div>
 
                 <div>
-                  <button
-                    onClick={() => {
-                      setSearchTerm("");
-                      setSelectedPeriod("");
-                      setDateFilter({ startDate: "", endDate: "" });
-                      setAcceptStatusFilter("all");
-                      setSortField("invoice_date");
-                      setSortOrder("desc");
-                    }}
-                    className="w-full px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-300 transition-colors"
-                  >
-                    Clear Filters
-                  </button>
+                  <label className="text-xs font-medium text-gray-700 mb-1 block w-52">
+                    Accept Status
+                  </label>
+                  <Select
+                    size="small"
+                    className="w-full"
+                    value={acceptStatusFilter}
+                    onChange={(value) => setAcceptStatusFilter(value as any)}
+                    options={[
+                      { label: "All", value: "all" },
+                      { label: "Pending", value: "pending" },
+                      { label: "Accepted", value: "accepted" },
+                    ]}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  {(searchTerm || selectedPeriod) && (
+                    <Button
+                      size="small"
+                      type="default"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setSelectedPeriod("");
+                        setDateFilter({ startDate: "", endDate: "" });
+                        setAcceptStatusFilter("all");
+                        setSortField("invoice_date");
+                        setSortOrder("desc");
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
+                  {selectedPeriod ? (
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={() => downloadDailyPurchaseReport()}
+                      loading={isDownloadingDailyPurchase}
+                      disabled={
+                        dailyPurchase.length === 0 || isDownloadingDailyPurchase
+                      }
+                    >
+                      📥 Download Excel (All Pages)
+                    </Button>
+                  ) : (
+                    <Button
+                      size="small"
+                      type="default"
+                      disabled
+                      title="Please select a month to download"
+                    >
+                      📥 Download Excel (Select Month)
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

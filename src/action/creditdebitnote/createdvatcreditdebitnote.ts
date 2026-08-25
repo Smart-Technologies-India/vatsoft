@@ -354,8 +354,8 @@ const CreateDvatCreditDebitNote = async (
         category_of_entry: payload.is_goods_returned
           ? CategoryOfEntry.GOODS_RETURNED
           : payload.is_credit
-            ? CategoryOfEntry.DEBIT_NOTE
-            : CategoryOfEntry.CREDIT_NOTE,
+            ? CategoryOfEntry.CREDIT_NOTE
+            : CategoryOfEntry.DEBIT_NOTE,
         total_invoice_number: (
           parseFloat(payload.amount) + parseFloat(payload.vatamount)
         ).toFixed(2),

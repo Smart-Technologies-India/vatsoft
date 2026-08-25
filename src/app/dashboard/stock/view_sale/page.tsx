@@ -30,11 +30,13 @@ import { dvat04 } from "@prisma/client";
 import {
   Button,
   Drawer,
+  Input,
   Modal,
   Pagination,
   Popover,
   Radio,
   RadioChangeEvent,
+  Select,
 } from "antd";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -237,7 +239,7 @@ const DocumentWiseDetails = () => {
       return;
     }
 
-    setIsSaleReportLoading(true);
+    setIsDownloadingSaleDailyReport(true);
     try {
       const BATCH_SIZE = 1000;
       let skip = 0;
@@ -328,8 +330,14 @@ const DocumentWiseDetails = () => {
 
       const fileDate = new Date().toISOString().slice(0, 10);
       XLSX.writeFile(workbook, `dailySale_report_${fileDate}.xlsx`);
+      toast.success(
+        `Excel file downloaded successfully! (${detailRows.length} items)`,
+      );
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download Excel file.");
     } finally {
-      setIsSaleReportLoading(false);
+      setIsDownloadingSaleDailyReport(false);
     }
   };
 
@@ -1133,7 +1141,7 @@ const DocumentWiseDetails = () => {
   const [isBulkDeleteLoading, setIsBulkDeleteLoading] =
     useState<boolean>(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState<boolean>(false);
-  const [isSaleReportLoading, setIsSaleReportLoading] =
+  const [isDownloadingSaleDailyReport, setIsDownloadingSaleDailyReport] =
     useState<boolean>(false);
   const [bulkDeleteRows, setBulkDeleteRows] = useState<
     Array<{
@@ -2143,7 +2151,7 @@ const DocumentWiseDetails = () => {
                         </p>
                         <div className="mt-2 flex flex-col gap-2">
                           {(dvatdata?.commodity === "OIDC" ||
-                            [84, 542].includes(dvatdata?.id ?? 0)) && (
+                            [84, 542, 93].includes(dvatdata?.id ?? 0)) && (
                             <Button
                               size="small"
                               block
@@ -2228,7 +2236,7 @@ const DocumentWiseDetails = () => {
                             size="small"
                             block
                             type="default"
-                            loading={isSaleReportLoading}
+                            loading={isDownloadingSaleDailyReport}
                             onClick={() => {
                               setToolbarActionsOpen(false);
                               downloadDailySaleReport();
@@ -2309,98 +2317,141 @@ const DocumentWiseDetails = () => {
           <div className="bg-white rounded shadow-sm border p-3">
             {/* Search, Sort, and Filter Controls */}
             <div className="mb-4 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3 items-end">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-8 gap-3 items-end">
                 <div className="xl:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
                     Search
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Search by invoice number, trade name, or TIN..."
+                  <Input
+                    size="small"
+                    placeholder="Invoice, TIN, dealer name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
                     Sort By
                   </label>
-                  <select
+                  <Select
+                    size="small"
                     value={sortField}
-                    onChange={(e) => setSortField(e.target.value as any)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="invoice_date">Invoice Date</option>
-                    <option value="invoice_number">Invoice Number</option>
-                    <option value="trade_name">Trade Name</option>
-                    <option value="tin_number">TIN Number</option>
-                    <option value="invoice_value">Invoice Value</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Order
-                  </label>
-                  <select
-                    value={sortOrder}
-                    onChange={(e) =>
-                      setSortOrder(e.target.value as "asc" | "desc")
-                    }
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Month
-                  </label>
-                  <input
-                    type="month"
-                    value={selectedPeriod}
-                    onChange={(e) => setSelectedPeriod(e.target.value)}
-                    min="2026-04"
-                    max={maxSelectableMonth}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(value) => setSortField(value as any)}
+                    options={[
+                      { label: "Invoice Date", value: "invoice_date" },
+                      { label: "Invoice Number", value: "invoice_number" },
+                      { label: "Trade Name", value: "trade_name" },
+                      { label: "TIN Number", value: "tin_number" },
+                      { label: "Invoice Value", value: "invoice_value" },
+                    ]}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Accept Status
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
+                    Order
                   </label>
-                  <select
-                    value={acceptStatusFilter}
-                    onChange={(e) =>
-                      setAcceptStatusFilter(e.target.value as any)
-                    }
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="accepted">Accepted</option>
-                  </select>
+                  <Select
+                    size="small"
+                    value={sortOrder}
+                    onChange={(value) => setSortOrder(value as "asc" | "desc")}
+                    options={[
+                      { label: "Ascending", value: "asc" },
+                      { label: "Descending", value: "desc" },
+                    ]}
+                  />
                 </div>
 
                 <div>
-                  <button
-                    onClick={() => {
-                      setSearchTerm("");
-                      setSelectedPeriod("");
-                      setDateFilter({ startDate: "", endDate: "" });
-                      setAcceptStatusFilter("all");
-                      setSortField("invoice_date");
-                      setSortOrder("desc");
-                    }}
-                    className="w-full px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-300 transition-colors"
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
+                    Month & Year
+                  </label>
+                  <Select
+                    size="small"
+                    placeholder="Select Month & Year"
+                    value={selectedPeriod || undefined}
+                    onChange={setSelectedPeriod}
+                    allowClear
+                    style={{ width: "100%" }}
                   >
-                    Clear Filters
-                  </button>
+                    {Array.from({ length: 12 }, (_, i) => {
+                      const startDate = new Date(2026, 3, 1); // April 2026
+                      const date = new Date(startDate);
+                      date.setMonth(startDate.getMonth() + i);
+
+                      const today = new Date();
+                      if (date > today) return null;
+
+                      const value = formatMonthInputValue(date);
+                      const label = date.toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                      });
+                      return (
+                        <Select.Option key={value} value={value}>
+                          {label}
+                        </Select.Option>
+                      );
+                    }).filter(Boolean)}
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
+                    Accept Status
+                  </label>
+                  <Select
+                    size="small"
+                    value={acceptStatusFilter}
+                    onChange={(value) => setAcceptStatusFilter(value as any)}
+                    options={[
+                      { label: "All", value: "all" },
+                      { label: "Pending", value: "pending" },
+                      { label: "Accepted", value: "accepted" },
+                    ]}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  {(searchTerm || selectedPeriod) && (
+                    <Button
+                      size="small"
+                      type="default"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setSelectedPeriod("");
+                        setDateFilter({ startDate: "", endDate: "" });
+                        setAcceptStatusFilter("all");
+                        setSortField("invoice_date");
+                        setSortOrder("desc");
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
+                  {selectedPeriod ? (
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={() => downloadDailySaleReport()}
+                      loading={isDownloadingSaleDailyReport}
+                      disabled={
+                        dailySale.length === 0 || isDownloadingSaleDailyReport
+                      }
+                    >
+                      📥 Download Excel (All Pages)
+                    </Button>
+                  ) : (
+                    <Button
+                      size="small"
+                      type="default"
+                      disabled
+                      title="Please select a month to download"
+                    >
+                      📥 Download Excel (Select Month)
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

@@ -37,7 +37,12 @@ type AddDvatCreditDebitNoteProps = {
   open: boolean;
   onClose: () => void;
   onCreated?: () => void;
-  mode?: "credit" | "debit" | "goods-return" | "interstate-credit" | "interstate-debit";
+  mode?:
+    | "credit"
+    | "debit"
+    | "goods-return"
+    | "interstate-credit"
+    | "interstate-debit";
 };
 
 const formatCurrency = (value: number) => {
@@ -51,15 +56,22 @@ const AddDvatCreditDebitNote = ({
   mode = "credit",
 }: AddDvatCreditDebitNoteProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dvatData, setDvatData] = useState<dvat04>();
+  // const [dvatData, setDvatData] = useState<dvat04>();
   const [allDvatData, setAllDvatData] = useState<dvat04[]>([]);
-  const [allTinNumberData, setAllTinNumberData] = useState<tin_number_master[]>([]);
-  const [commodities, setCommodities] = useState<commodity_master[]>([]);
-  const [noteMode, setNoteMode] = useState<"credit" | "debit" | "goods-return" | "interstate-credit" | "interstate-debit">(
-    mode,
+  const [allTinNumberData, setAllTinNumberData] = useState<tin_number_master[]>(
+    [],
   );
+  const [commodities, setCommodities] = useState<commodity_master[]>([]);
+  const [noteMode, setNoteMode] = useState<
+    | "credit"
+    | "debit"
+    | "goods-return"
+    | "interstate-credit"
+    | "interstate-debit"
+  >(mode);
 
-  const isInterstate = noteMode === "interstate-credit" || noteMode === "interstate-debit";
+  const isInterstate =
+    noteMode === "interstate-credit" || noteMode === "interstate-debit";
 
   const methods = useForm<CreditDebitNoteFormValues>({
     defaultValues: {
@@ -127,7 +139,10 @@ const AddDvatCreditDebitNote = ({
       vatamount: "0",
       invoice_amount: "0",
       is_purchase: "false",
-      is_credit: (noteMode === "credit" || noteMode === "interstate-credit") ? "true" : "false",
+      is_credit:
+        noteMode === "credit" || noteMode === "interstate-credit"
+          ? "true"
+          : "false",
       is_goods_returned: noteMode === "goods-return" ? "true" : "false",
       creditnote_no: "",
       creditnote_date: "",
@@ -138,6 +153,20 @@ const AddDvatCreditDebitNote = ({
     setNoteMode(mode);
   }, [mode]);
 
+  useEffect(() => {
+    // Update form values based on noteMode
+    if (noteMode === "credit" || noteMode === "interstate-credit") {
+      setValue("is_credit", "true");
+      setValue("is_goods_returned", "false");
+    } else if (noteMode === "debit" || noteMode === "interstate-debit") {
+      setValue("is_credit", "false");
+      setValue("is_goods_returned", "false");
+    } else if (noteMode === "goods-return") {
+      setValue("is_credit", "false");
+      setValue("is_goods_returned", "true");
+    }
+  }, [noteMode, setValue]);
+
   const handleClose = () => {
     onClose();
     resetForm();
@@ -147,7 +176,7 @@ const AddDvatCreditDebitNote = ({
     const init = async () => {
       const dvatResponse = await GetUserDvat04();
       if (dvatResponse.status && dvatResponse.data) {
-        setDvatData(dvatResponse.data);
+        // setDvatData(dvatResponse.data);
 
         const commodityResponse = await AllCommodityMaster({});
         if (commodityResponse.status && commodityResponse.data) {
@@ -157,9 +186,7 @@ const AddDvatCreditDebitNote = ({
             );
           } else {
             setCommodities(
-              commodityResponse.data.filter(
-                (c) => c.product_type == "LIQUOR",
-              ),
+              commodityResponse.data.filter((c) => c.product_type == "LIQUOR"),
             );
           }
         }
@@ -168,7 +195,7 @@ const AddDvatCreditDebitNote = ({
       if (allDvatResponse.status && allDvatResponse.data) {
         setAllDvatData(allDvatResponse.data);
       }
-      
+
       const allTinNumberResponse = await getAllTinNumberMaster();
       if (allTinNumberResponse.status && allTinNumberResponse.data) {
         setAllTinNumberData(allTinNumberResponse.data);
@@ -188,7 +215,10 @@ const AddDvatCreditDebitNote = ({
     if (isInterstate) {
       // For interstate modes, use tin_number_master data excluding 25 and 26
       const filtered = allTinNumberData.filter(
-        (tin) => tin.tin_number && !tin.tin_number.startsWith("25") && !tin.tin_number.startsWith("26")
+        (tin) =>
+          tin.tin_number &&
+          !tin.tin_number.startsWith("25") &&
+          !tin.tin_number.startsWith("26"),
       );
       return filtered.map((tin) => ({
         value: tin.id.toString(),
@@ -241,7 +271,6 @@ const AddDvatCreditDebitNote = ({
 
     try {
       let response;
-
       if (isInterstate) {
         // Use interstate action
         response = await CreateInterstateCreditDebitNote({
@@ -279,7 +308,6 @@ const AddDvatCreditDebitNote = ({
           creditnote_date: parsedCreditNoteDate,
         });
       }
-
       if (response.status) {
         toast.success(
           response.message || "Credit/Debit note created successfully.",
@@ -313,6 +341,12 @@ const AddDvatCreditDebitNote = ({
       onClose={handleClose}
       size={700}
     >
+      {noteMode == "credit" && (
+        <p className="mb-4">You are the seller issuing a credit note against sales.</p>
+      )}
+      {noteMode == "debit" && (
+        <p className="mb-4">You are the seller issuing a debit note against sales.</p>
+      )}
       <FormProvider {...methods}>
         <form onSubmit={handleSubmit(handleCreateNote)} className="space-y-3">
           <div className="space-y-1">
