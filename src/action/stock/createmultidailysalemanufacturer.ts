@@ -62,11 +62,14 @@ const CreateMultiDailySaleManufacturer = async (
           commodity_masterId: entry.commodityid,
           ...(entry.batch_name !== null && { batch_name: entry.batch_name }),
         },
+        include: {
+          commodity_master: true,
+        },
       });
 
       if (isexist) {
         throw new Error(
-          `Entry with invoice number ${entry.invoice_number} already exists.`,
+          `Entry with invoice number ${entry.invoice_number}, with commodity name ${isexist.commodity_master.product_name} and quantity ${isexist.quantity} already exists.`,
         );
       }
 
