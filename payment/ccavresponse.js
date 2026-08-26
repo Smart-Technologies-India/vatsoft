@@ -647,10 +647,7 @@ export const postRes = (request, response) => {
               ),
             );
 
-            if (
-              res.total_tax_amount != "0" &&
-              res.total_tax_amount != null
-            ) {
+            if (res.total_tax_amount != "0" && res.total_tax_amount != null) {
               await prisma.interest_working.create({
                 data: {
                   dvatId: res.dvat.id,
@@ -1076,6 +1073,7 @@ export const postRes = (request, response) => {
                 },
                 data: {
                   refinery_status: "VATPAID",
+                  challanId: challan.id,
                   updatedById: challan.createdById,
                 },
               });

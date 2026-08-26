@@ -213,7 +213,7 @@ const CFROM = () => {
             {/* part one start here */}
 
             <div
-              className="bg-white p-8 shadow h-280.75 w-198.5 mx-auto relative font-bold"
+              className="bg-white p-8 shadow h-290.75 w-198.5 mx-auto relative font-bold"
               id="mainpdf"
             >
               <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
@@ -405,7 +405,7 @@ const CFROM = () => {
             {pages.map((pageData, pageIndex) => (
               <div
                 key={pageIndex}
-                className="bg-white p-8 shadow h-280.75 w-198.5 mx-auto relative font-bold"
+                className="bg-white p-8 shadow h-290.75 w-198.5 mx-auto relative font-bold"
                 style={{
                   pageBreakAfter:
                     pageIndex === pages.length - 1 ? "auto" : "always",
@@ -458,7 +458,7 @@ const CFROM = () => {
                   </table>
                   <table
                     border={1}
-                    className="mx-4 mt-6"
+                    className="mx-2 mt-6"
                     style={{ pageBreakInside: "avoid" }}
                   >
                     <thead style={{ display: "table-header-group" }}>
@@ -541,7 +541,7 @@ const CFROM = () => {
             {/* part two start here */}
             {/* <div className="p-4 text-center text-sm">Duplicate</div> */}
             <div
-              className="bg-white p-8 shadow h-280.75 w-198.5 mx-auto relative font-bold"
+              className="bg-white p-8 shadow h-290.75 w-198.5 mx-auto relative font-bold"
               id="mainpdf"
             >
               <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
@@ -732,7 +732,7 @@ const CFROM = () => {
             {pages.map((pageData, pageIndex) => (
               <div
                 key={pageIndex}
-                className="bg-white p-8 shadow h-280.75 w-198.5 mx-auto relative font-bold"
+                className="bg-white p-8 shadow h-290.75 w-198.5 mx-auto relative font-bold"
                 style={{
                   pageBreakAfter:
                     pageIndex === pages.length - 1 ? "auto" : "always",
@@ -785,7 +785,7 @@ const CFROM = () => {
                   </table>
                   <table
                     border={1}
-                    className="mx-4 mt-6"
+                    className="mx-2 mt-6"
                     style={{ pageBreakInside: "avoid" }}
                   >
                     <thead style={{ display: "table-header-group" }}>
@@ -868,7 +868,7 @@ const CFROM = () => {
 
             {/* part three start here */}
             <div
-              className="bg-white p-8 shadow h-280.75 w-198.5 mx-auto relative font-bold"
+              className="bg-white p-8 shadow h-290.75 w-198.5 mx-auto relative font-bold"
               id="mainpdf"
             >
               <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
@@ -1060,7 +1060,7 @@ const CFROM = () => {
             {pages.map((pageData, pageIndex) => (
               <div
                 key={pageIndex}
-                className="bg-white p-8 shadow h-280.75 w-198.5 mx-auto relative font-bold"
+                className="bg-white p-8 shadow h-290.75 w-198.5 mx-auto relative font-bold"
                 style={{
                   pageBreakAfter:
                     pageIndex === pages.length - 1 ? "auto" : "always",
@@ -1110,7 +1110,7 @@ const CFROM = () => {
                   </table>
                   <table
                     border={1}
-                    className="mx-4 mt-6"
+                    className="mx-2 mt-6"
                     style={{ pageBreakInside: "avoid" }}
                   >
                     <thead style={{ display: "table-header-group" }}>

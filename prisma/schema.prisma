@@ -749,6 +749,7 @@ model challan {
   order_notice     order_notice[]
   payment_intents  payment_intent[]
   interestWorkings interest_working[]
+  refinerySales    refinery_sale[]
 
   @@index([createdById], map: "challan_createdById_fkey")
   @@index([deletedById], map: "challan_deletedById_fkey")
@@ -1838,6 +1839,8 @@ model refinery_sale {
   is_export              Boolean                    @default(false)
   vehicle_number         String?
   Shipment_time          DateTime?
+  challan                challan?                   @relation(fields: [challanId], references: [id])
+  challanId              Int?
   refinery_status        RefineryStatus?            @default(SALE)
   status                 Status                     @default(ACTIVE)
   createdAt              DateTime                   @default(now())

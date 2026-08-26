@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button, Spin, Modal, Tabs } from "antd";
+import { Button, Spin, Modal, Tabs, Input } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import AddDvatCreditDebitNote from "@/components/creditdebitnote/adddvatcreditdebitnote";
@@ -99,6 +99,18 @@ const CreditDebitNotePage = () => {
     noteId: null,
     isDeleting: false,
   });
+
+  // Search filter states
+  const [searchInvoiceNo, setSearchInvoiceNo] = useState<string>("");
+  const [searchInvoiceDateRange, setSearchInvoiceDateRange] = useState<{
+    start: string;
+    end: string;
+  }>({ start: "", end: "" });
+  const [searchCdnNo, setSearchCdnNo] = useState<string>("");
+  const [searchCdnDateRange, setSearchCdnDateRange] = useState<{
+    start: string;
+    end: string;
+  }>({ start: "", end: "" });
 
   const loadNotes = async () => {
     setIsLoading(true);
@@ -208,19 +220,82 @@ const CreditDebitNotePage = () => {
     [goodsReturnNotes],
   );
 
-  const tabTotals = useMemo(() => {
-    if (selectedTab === "1") return creditTotals;
-    if (selectedTab === "2") return debitTotals;
-    if (selectedTab === "3") return goodsReturnTotals;
-    return { taxableValue: 0, vatAmount: 0, invoiceValue: 0 };
-  }, [selectedTab, creditTotals, debitTotals, goodsReturnTotals]);
-
   const tabNotes = useMemo(() => {
-    if (selectedTab === "1") return creditNotes;
-    if (selectedTab === "2") return debitNotes;
-    if (selectedTab === "3") return goodsReturnNotes;
-    return [];
-  }, [selectedTab, creditNotes, debitNotes, goodsReturnNotes]);
+    let filtered: DvatCreditDebitNote[] = [];
+    
+    if (selectedTab === "1") filtered = creditNotes;
+    else if (selectedTab === "2") filtered = debitNotes;
+    else if (selectedTab === "3") filtered = goodsReturnNotes;
+    else filtered = [];
+
+    // Apply search filters
+    filtered = filtered.filter((note) => {
+      // Search by Original Invoice Number
+      if (
+        searchInvoiceNo.trim() &&
+        !note.invoice_number
+          ?.toLowerCase()
+          .includes(searchInvoiceNo.toLowerCase())
+      ) {
+        return false;
+      }
+
+      // Search by Invoice Date range
+      if (searchInvoiceDateRange.start || searchInvoiceDateRange.end) {
+        const invoiceDate = new Date(note.invoice_date);
+        if (searchInvoiceDateRange.start) {
+          const startDate = new Date(searchInvoiceDateRange.start);
+          if (invoiceDate < startDate) return false;
+        }
+        if (searchInvoiceDateRange.end) {
+          const endDate = new Date(searchInvoiceDateRange.end);
+          endDate.setHours(23, 59, 59, 999);
+          if (invoiceDate > endDate) return false;
+        }
+      }
+
+      // Search by CDN Number
+      if (
+        searchCdnNo.trim() &&
+        !note.creditnote_no
+          ?.toLowerCase()
+          .includes(searchCdnNo.toLowerCase())
+      ) {
+        return false;
+      }
+
+      // Search by CDN Date range
+      if (searchCdnDateRange.start || searchCdnDateRange.end) {
+        const cdnDate = new Date(note.creditnote_date);
+        if (searchCdnDateRange.start) {
+          const startDate = new Date(searchCdnDateRange.start);
+          if (cdnDate < startDate) return false;
+        }
+        if (searchCdnDateRange.end) {
+          const endDate = new Date(searchCdnDateRange.end);
+          endDate.setHours(23, 59, 59, 999);
+          if (cdnDate > endDate) return false;
+        }
+      }
+
+      return true;
+    });
+
+    return filtered;
+  }, [
+    selectedTab,
+    creditNotes,
+    debitNotes,
+    goodsReturnNotes,
+    searchInvoiceNo,
+    searchInvoiceDateRange,
+    searchCdnNo,
+    searchCdnDateRange,
+  ]);
+
+  const tabTotals = useMemo(() => {
+    return calculateTotals(tabNotes);
+  }, [tabNotes]);
 
   const openDrawer = (mode: "credit" | "debit" | "goods-return" | "interstate-credit" | "interstate-debit") => {
     setDrawerMode(mode);
@@ -407,6 +482,127 @@ const CreditDebitNotePage = () => {
           mode={drawerMode}
         />
 
+        {/* Search and Filter Controls */}
+        <div className="bg-white rounded shadow-sm border p-3">
+          <div className="mb-4 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+              <div>
+                <label className="text-xs font-medium text-gray-700 mb-1 block">
+                  Original Invoice No
+                </label>
+                <Input
+                  size="small"
+                  placeholder="Search invoice..."
+                  value={searchInvoiceNo}
+                  onChange={(e) => setSearchInvoiceNo(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-700 mb-1 block">
+                  Invoice Date From
+                </label>
+                <input
+                  type="date"
+                  value={searchInvoiceDateRange.start}
+                  onChange={(e) =>
+                    setSearchInvoiceDateRange({
+                      ...searchInvoiceDateRange,
+                      start: e.target.value,
+                    })
+                  }
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-700 mb-1 block">
+                  Invoice Date To
+                </label>
+                <input
+                  type="date"
+                  value={searchInvoiceDateRange.end}
+                  onChange={(e) =>
+                    setSearchInvoiceDateRange({
+                      ...searchInvoiceDateRange,
+                      end: e.target.value,
+                    })
+                  }
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-700 mb-1 block">
+                  CDN Number
+                </label>
+                <Input
+                  size="small"
+                  placeholder="Search CDN..."
+                  value={searchCdnNo}
+                  onChange={(e) => setSearchCdnNo(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-700 mb-1 block">
+                  CDN Date From
+                </label>
+                <input
+                  type="date"
+                  value={searchCdnDateRange.start}
+                  onChange={(e) =>
+                    setSearchCdnDateRange({
+                      ...searchCdnDateRange,
+                      start: e.target.value,
+                    })
+                  }
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-700 mb-1 block">
+                  CDN Date To
+                </label>
+                <input
+                  type="date"
+                  value={searchCdnDateRange.end}
+                  onChange={(e) =>
+                    setSearchCdnDateRange({
+                      ...searchCdnDateRange,
+                      end: e.target.value,
+                    })
+                  }
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              {(searchInvoiceNo ||
+                searchInvoiceDateRange.start ||
+                searchInvoiceDateRange.end ||
+                searchCdnNo ||
+                searchCdnDateRange.start ||
+                searchCdnDateRange.end) && (
+                <div>
+                  <Button
+                    size="small"
+                    type="default"
+                    onClick={() => {
+                      setSearchInvoiceNo("");
+                      setSearchInvoiceDateRange({ start: "", end: "" });
+                      setSearchCdnNo("");
+                      setSearchCdnDateRange({ start: "", end: "" });
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="bg-white rounded shadow-sm border px-6">
           <Tabs
             activeKey={selectedTab}
@@ -415,17 +611,17 @@ const CreditDebitNotePage = () => {
               {
                 key: "1",
                 label: `Credit Notes (${creditNotes.length})`,
-                children: renderTable(creditNotes),
+                children: renderTable(tabNotes),
               },
               {
                 key: "2",
                 label: `Debit Notes (${debitNotes.length})`,
-                children: renderTable(debitNotes),
+                children: renderTable(tabNotes),
               },
               {
                 key: "3",
                 label: `Goods Return (${goodsReturnNotes.length})`,
-                children: renderTable(goodsReturnNotes),
+                children: renderTable(tabNotes),
               },
             ]}
           />

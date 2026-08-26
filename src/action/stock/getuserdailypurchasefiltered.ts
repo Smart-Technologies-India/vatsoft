@@ -90,9 +90,9 @@ const GetUserDailyPurchaseFiltered = async (
         dateFilter.gte = new Date(payload.startDate);
       }
       if (payload.endDate) {
-        const endDate = new Date(payload.endDate);
-        endDate.setHours(23, 59, 59, 999);
-        dateFilter.lte = endDate;
+        // EndDate is treated as exclusive (use lt instead of lte)
+        // This allows us to pass the next day and exclude it properly
+        dateFilter.lt = new Date(payload.endDate);
       }
       whereCondition.invoice_date = dateFilter;
     }

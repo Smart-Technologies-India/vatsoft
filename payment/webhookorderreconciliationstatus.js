@@ -433,6 +433,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
               },
               data: {
                 refinery_status: "VATPAID",
+                challanId: paidchallan.id,
                 updatedById: challan.createdById,
               },
             });

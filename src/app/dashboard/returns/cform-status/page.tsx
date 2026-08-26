@@ -677,87 +677,100 @@ const TrackAppliation = () => {
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-300 p-2 text-left text-xs font-semibold text-gray-700">
-                      Invoice No
-                    </th>
-                    <th className="border border-gray-300 p-2 text-left text-xs font-semibold text-gray-700">
-                      Invoice Date
-                    </th>
-                    <th className="border border-gray-300 p-2 text-left text-xs font-semibold text-gray-700">
-                      URN
-                    </th>
-                    <th className="border border-gray-300 p-2 text-left text-xs font-semibold text-gray-700">
-                      Description of Goods
-                    </th>
-                    <th className="border border-gray-300 p-2 text-center text-xs font-semibold text-gray-700">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    const uniqueInvoices = new Map();
-                    returnsEntries.forEach((entry: any) => {
-                      const invoiceNo = entry.returns_entry.invoice_number;
-                      if (!uniqueInvoices.has(invoiceNo)) {
-                        uniqueInvoices.set(invoiceNo, entry);
-                      }
-                    });
-                    return Array.from(uniqueInvoices.values()).map(
-                      (entry: any) => (
-                        <tr
-                          key={entry.id}
-                          className="hover:bg-gray-50"
-                        >
-                          <td className="border border-gray-300 p-2 text-xs text-gray-700">
-                            {entry.returns_entry.invoice_number}
-                          </td>
-                          <td className="border border-gray-300 p-2 text-xs text-gray-700">
-                            {new Date(
-                              entry.returns_entry.invoice_date
-                            ).toLocaleDateString()}
-                          </td>
-                          <td className="border border-gray-300 p-2 text-xs text-gray-700">
-                            {entry.returns_entry.urn_number}
-                          </td>
-                          <td className="border border-gray-300 p-2">
-                            <input
-                              type="text"
-                              maxLength={17}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              value={
-                                editingEntries[entry.id] || ""
-                              }
-                              onChange={(e) =>
-                                setEditingEntries({
-                                  ...editingEntries,
-                                  [entry.id]: e.target.value,
-                                })
-                              }
-                              placeholder="Enter description"
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-2 text-center">
-                            <Button
-                              type="primary"
-                              size="small"
-                              onClick={() =>
-                                handleSaveDescription(entry.id)
-                              }
-                              loading={isLoadingModal}
+              {(() => {
+                // Check if any row has a description value
+                const hasAnyDescription = Object.values(editingEntries).some(
+                  (desc: any) => desc && desc.trim() !== ""
+                );
+
+                return (
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-300 p-2 text-left text-xs font-semibold text-gray-700">
+                          Invoice No
+                        </th>
+                        <th className="border border-gray-300 p-2 text-left text-xs font-semibold text-gray-700">
+                          Invoice Date
+                        </th>
+                        <th className="border border-gray-300 p-2 text-left text-xs font-semibold text-gray-700">
+                          URN
+                        </th>
+                        <th className="border border-gray-300 p-2 text-left text-xs font-semibold text-gray-700">
+                          Description of Goods
+                        </th>
+                        {!hasAnyDescription && (
+                          <th className="border border-gray-300 p-2 text-center text-xs font-semibold text-gray-700">
+                            Action
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const uniqueInvoices = new Map();
+                        returnsEntries.forEach((entry: any) => {
+                          const invoiceNo = entry.returns_entry.invoice_number;
+                          if (!uniqueInvoices.has(invoiceNo)) {
+                            uniqueInvoices.set(invoiceNo, entry);
+                          }
+                        });
+                        return Array.from(uniqueInvoices.values()).map(
+                          (entry: any) => (
+                            <tr
+                              key={entry.id}
+                              className="hover:bg-gray-50"
                             >
-                              Save
-                            </Button>
-                          </td>
-                        </tr>
-                      )
-                    );
-                  })()}
-                </tbody>
-              </table>
+                              <td className="border border-gray-300 p-2 text-xs text-gray-700">
+                                {entry.returns_entry.invoice_number}
+                              </td>
+                              <td className="border border-gray-300 p-2 text-xs text-gray-700">
+                                {new Date(
+                                  entry.returns_entry.invoice_date
+                                ).toLocaleDateString()}
+                              </td>
+                              <td className="border border-gray-300 p-2 text-xs text-gray-700">
+                                {entry.returns_entry.urn_number}
+                              </td>
+                              <td className="border border-gray-300 p-2">
+                                <input
+                                  type="text"
+                                  maxLength={17}
+                                  className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  value={
+                                    editingEntries[entry.id] || ""
+                                  }
+                                  onChange={(e) =>
+                                    setEditingEntries({
+                                      ...editingEntries,
+                                      [entry.id]: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Enter description"
+                                />
+                              </td>
+                              {!hasAnyDescription && (
+                                <td className="border border-gray-300 p-2 text-center">
+                                  <Button
+                                    type="primary"
+                                    size="small"
+                                    onClick={() =>
+                                      handleSaveDescription(entry.id)
+                                    }
+                                    loading={isLoadingModal}
+                                  >
+                                    Save
+                                  </Button>
+                                </td>
+                              )}
+                            </tr>
+                          )
+                        );
+                      })()}
+                    </tbody>
+                  </table>
+                );
+              })()}
             </div>
           )}
         </div>

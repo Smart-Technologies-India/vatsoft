@@ -1113,14 +1113,26 @@ const DocumentWiseDetails = () => {
     const monthEndDate = new Date(year, monthIndex + 1, 0);
     const today = new Date();
 
-    const endDate =
-      year === today.getFullYear() && monthIndex === today.getMonth()
-        ? today
-        : monthEndDate;
+    // Determine the actual end date to use
+    let endDate: Date;
+    if (year === today.getFullYear() && monthIndex === today.getMonth()) {
+      endDate = today;
+    } else {
+      endDate = monthEndDate;
+    }
+
+    // Format start date as is (beginning of month)
+    const startDateStr = formatDateInputValue(startDate);
+    
+    // Format end date ensuring we capture the full day by adding 1 day and subtracting 1 second
+    // This ensures the date range includes the entire last day of the month
+    const nextDay = new Date(endDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const endDateStr = formatDateInputValue(nextDay);
 
     setDateFilter({
-      startDate: formatDateInputValue(startDate),
-      endDate: formatDateInputValue(endDate),
+      startDate: startDateStr,
+      endDate: endDateStr,
     });
   }, [selectedPeriod]);
 
