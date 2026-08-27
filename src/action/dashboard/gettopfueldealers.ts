@@ -40,6 +40,7 @@ export default async function GetTopFuelDealers(data: {
     const fuelDealers = await prisma.dvat04.findMany({
       where: {
         deletedAt: null,
+        deletedById: null,
         ...whereClause,
         commodity: "FUEL",
       },
@@ -80,6 +81,7 @@ export default async function GetTopFuelDealers(data: {
           where: {
             dvat04Id: dealer.id,
             deletedAt: null,
+            deletedById: null,
             file_status: "ACTIVE",
             transaction_date: {
               gte: startDate,

@@ -116,7 +116,7 @@ const CreateDvat24 = async (
 
     try {
       const dvatRecord = await prisma.dvat04.findFirst({
-        where: { id: payload.dvatid, deletedAt: null },
+        where: { id: payload.dvatid, deletedAt: null, deletedById: null },
         select: { contact_one: true, name: true, tradename: true },
       });
 

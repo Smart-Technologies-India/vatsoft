@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
           deletedAt: null,
           status: "ACTIVE",
           product_type: "LIQUOR",
+          deletedById: null,
         },
         select: {
           id: true,
@@ -27,7 +28,11 @@ export async function POST(req: NextRequest) {
 
       const result = { data: data, total: data.length };
       return NextResponse.json(
-        { status: true, message: "Request processed successfully", data: result },
+        {
+          status: true,
+          message: "Request processed successfully",
+          data: result,
+        },
         { status: 200 },
       );
     }
@@ -38,6 +43,7 @@ export async function POST(req: NextRequest) {
           deletedAt: null,
           status: "ACTIVE",
           product_type: "LIQUOR",
+          deletedById: null,
         },
         select: {
           id: true,

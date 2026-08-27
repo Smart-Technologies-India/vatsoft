@@ -63,7 +63,7 @@ const Last15Received = async (
             selectOffice: payload.selectOffice,
           },
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           paymentstatus: "PAID",
           transaction_date: {
             gte: day,

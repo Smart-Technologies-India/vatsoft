@@ -81,7 +81,11 @@ const DealerTypeRevenue = async (
           ...dvatWhereClause,
           commodity: "FUEL",
           status: "APPROVED",
+          deletedAt: null,
+          deletedById: null,
         },
+        deletedAt: null,
+        deletedById: null,
         status: "PAID",
         file_status: "ACTIVE",
         year: selectedYear,
@@ -95,10 +99,14 @@ const DealerTypeRevenue = async (
     // Fetch revenue data for liquor dealers
     const liquorReturns = await prisma.returns_01.findMany({
       where: {
+        deletedAt: null,
+        deletedById: null,
         dvat04: {
           ...dvatWhereClause,
           commodity: "LIQUOR",
           status: "APPROVED",
+          deletedAt: null,
+          deletedById: null,
         },
         status: "PAID",
         file_status: "ACTIVE",

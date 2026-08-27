@@ -39,7 +39,7 @@ const EditManufacture = async (
         const is_exist = await prisma.manufacturer_purchase.findFirst({
           where: {
             deletedAt: null,
-            deletedBy: null,
+            deletedById: null,
             status: "ACTIVE",
             id: payload.id,
           },
@@ -84,6 +84,8 @@ const EditManufacture = async (
 
         const find_stock = await prisma.stock.findFirst({
           where: {
+            deletedAt: null,
+            deletedById: null,
             commodity_masterId: payload.commodityid,
             status: "ACTIVE",
             dvat04Id: payload.dvatid,

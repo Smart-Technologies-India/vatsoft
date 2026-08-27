@@ -58,6 +58,7 @@ const GetAutoRefinerySalePrice = async (
         dvatid: currentDvatId,
         commodity_masterId: payload.commodityMasterId,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
         effective_date: {
           lte: invoiceDate,
@@ -77,6 +78,7 @@ const GetAutoRefinerySalePrice = async (
         dvatid: null,
         commodity_masterId: payload.commodityMasterId,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
         effective_date: {
           lte: invoiceDate,

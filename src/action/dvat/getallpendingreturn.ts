@@ -75,7 +75,7 @@ const GetAllPendingReturn = async (
           ],
         }),
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
       },
       include: {
         return_filing: {
@@ -158,7 +158,7 @@ const GetAllPendingReturn = async (
       where: {
         dvatid: { in: dvatIds },
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         status: "PENDING",
         notice_order_type: "NOTICE",
       },

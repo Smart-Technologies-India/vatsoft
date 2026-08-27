@@ -32,6 +32,8 @@ const DeleteManufacture = async (
         let is_exist = await prisma.manufacturer_purchase.findFirst({
           where: {
             id: payload.id,
+            deletedAt: null,
+            deletedById: null,
           },
         });
 

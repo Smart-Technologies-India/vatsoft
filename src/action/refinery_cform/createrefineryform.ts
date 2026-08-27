@@ -58,6 +58,8 @@ const CreateRefineryCform = async (
     // Get the last C-form to generate next SR No
     const lastCform = await prisma.cform.findFirst({
       where: {
+        deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
         office_of_issue: payload.office_of_issue as any,
       },

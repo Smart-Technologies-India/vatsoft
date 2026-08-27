@@ -58,7 +58,9 @@ const ConvertDvat31 = async (
       } as any;
     }
 
-    const shouldUseSelectedPeriod = Boolean(payload.startDate || payload.endDate);
+    const shouldUseSelectedPeriod = Boolean(
+      payload.startDate || payload.endDate,
+    );
 
     const invoiceDateFilter: {
       gte?: Date;
@@ -78,7 +80,7 @@ const ConvertDvat31 = async (
     const candidateRows = await prisma.daily_sale.findMany({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         status: "ACTIVE",
         dvat04Id: payload.dvatid,
         is_dvat_31: false,
@@ -118,7 +120,7 @@ const ConvertDvat31 = async (
     }
 
     const dvat04 = await prisma.dvat04.findFirst({
-      where: { id: payload.dvatid },
+      where: { id: payload.dvatid, deletedAt: null, deletedById: null },
     });
 
     if (!dvat04) {
@@ -237,6 +239,7 @@ const ConvertDvat31 = async (
           returns_01Id: returnInvoice.id,
           isnil: true,
           deletedAt: null,
+          deletedById: null,
         },
       });
 
@@ -295,10 +298,10 @@ const ConvertDvat31 = async (
                 val.seller_tin_number.tin_number?.substring(0, 2) ?? "";
 
               const placeOfSupplyId = val.is_local
-                ? stateCodeToId.get(ownTinStateCode) ??
+                ? (stateCodeToId.get(ownTinStateCode) ??
                   stateCodeToId.get(sellerTinCode) ??
-                  null
-                : stateCodeToId.get(sellerTinCode) ?? null;
+                  null)
+                : (stateCodeToId.get(sellerTinCode) ?? null);
 
               return {
                 returns_01Id: returnInvoice.id,

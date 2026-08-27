@@ -55,6 +55,8 @@ const ImprovedCompliance = async (
     // Build where clause for dvat04
     const dvatWhereClause: any = {
       status: "APPROVED",
+      deletedAt: null,
+      deletedById: null,
     };
 
     if (payload.selectOffice) {
@@ -83,6 +85,8 @@ const ImprovedCompliance = async (
         where: {
           dvatid: dealer.id,
           status: "ACTIVE",
+          deletedAt: null,
+          deletedById: null,
           due_date: {
             gte: oneYearAgo,
           },

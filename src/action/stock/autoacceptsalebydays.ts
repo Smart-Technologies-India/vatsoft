@@ -32,6 +32,7 @@ const AutoAcceptSaleByDays = async (
         dvat04Id: currentDvatId,
         is_accept: false,
         deletedAt: null,
+        deletedById: null,
         invoice_date: {
           gte: payload.startDate,
           lte: payload.endDate,

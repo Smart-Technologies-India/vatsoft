@@ -39,6 +39,7 @@ const InitializeRefinerySaleVatPayment = async (
       where: {
         id: currentDvatId,
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         tin_master_id: true,
@@ -143,6 +144,7 @@ const InitializeRefinerySaleVatPayment = async (
         year: currentYear,
         month: months[parseInt(currentMonth) - 1],
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         id: true,

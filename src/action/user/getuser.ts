@@ -10,7 +10,7 @@ import { user } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const GetUser = async (
-  payload: GetUserPayload
+  payload: GetUserPayload,
 ): Promise<ApiResponseType<user | null>> => {
   try {
     const currentUserId = await getCurrentUserId();
@@ -25,7 +25,11 @@ const GetUser = async (
     }
 
     const user = await prisma.user.findFirst({
-      where: { id: parseInt(payload.id.toString() ?? "0"), status: "ACTIVE" },
+      where: {
+        id: parseInt(payload.id.toString() ?? "0"),
+        status: "ACTIVE",
+        deletedAt: null,
+      },
     });
 
     if (!user)

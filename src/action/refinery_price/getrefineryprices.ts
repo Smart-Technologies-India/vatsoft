@@ -77,6 +77,7 @@ const GetRefineryPriceLast7Days = async (
     const refinery = await prisma.refinery.findFirst({
       where: {
         deletedAt: null,
+        deletedById: null,
         id: currentRefineryId,
       },
       select: { id: true },
@@ -93,6 +94,7 @@ const GetRefineryPriceLast7Days = async (
       where: {
         refineryId: refinery.id,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
       include: {
@@ -141,6 +143,7 @@ const GetRefineryPriceLast7Days = async (
     const commodityOptionsRaw = await prisma.commodity_master.findMany({
       where: {
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
         id: {
           in: ALLOWED_COMMODITY_IDS,
@@ -175,6 +178,7 @@ const GetRefineryPriceLast7Days = async (
         refineryId: refinery.id,
         dvatid: selectedDvatId,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
         effective_date: {
           lte: windowEnd,

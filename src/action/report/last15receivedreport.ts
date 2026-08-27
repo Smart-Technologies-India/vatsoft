@@ -105,7 +105,7 @@ const Last15ReceivedReport = async (
 
       const challanWhere: any = {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         paymentstatus: "PAID",
         transaction_date: {
           gte: day,

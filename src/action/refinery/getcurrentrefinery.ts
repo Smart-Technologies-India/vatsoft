@@ -25,6 +25,7 @@ const GetCurrentRefinery = async (): Promise<
       where: {
         id: currentRefineryId,
         deletedAt: null,
+        deletedById: null,
       },
     });
 

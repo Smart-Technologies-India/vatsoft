@@ -30,6 +30,7 @@ const CheckProductNameExists = async (
       where: {
         product_name: payload.product_name,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
     });

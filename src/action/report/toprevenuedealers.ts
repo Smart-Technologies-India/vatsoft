@@ -51,6 +51,8 @@ const TopRevenueDealers = async (
     // Build where clause for dvat04
     const dvatWhereClause: any = {
       status: "APPROVED",
+      deletedAt: null,
+      deletedById: null,
     };
 
     if (payload.selectOffice) {
@@ -90,6 +92,8 @@ const TopRevenueDealers = async (
           status: "PAID",
           file_status: "ACTIVE",
           year: selectedYear,
+          deletedAt: null,
+          deletedById: null,
         },
         select: {
           vatamount: true,

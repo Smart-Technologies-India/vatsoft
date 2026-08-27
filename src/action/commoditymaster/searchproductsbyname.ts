@@ -113,6 +113,7 @@ const SearchProductsByName = async (
 
     const allCommodityNames = await prisma.commodity_master.findMany({
       where: {
+        deletedById: null,
         deletedAt: null,
         status: "ACTIVE",
       },
@@ -157,6 +158,7 @@ const SearchProductsByName = async (
           in: matchedProducts.map((item) => item.id),
         },
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
     });

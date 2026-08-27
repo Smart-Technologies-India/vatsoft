@@ -17,7 +17,7 @@ const GetDvatById = async (
         // createdById: parseInt(payload.userid.toString() ?? "0"),\
         id: payload.id,
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
       },
       include: {
         selectComOne: true,

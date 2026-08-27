@@ -16,7 +16,14 @@ interface AcceptTallySalePayload {
 
 const AcceptTallySale = async (
   payload: AcceptTallySalePayload,
-): Promise<ApiResponseType<{ processed: number; total: number; totalChunks: number; currentChunk: number }>> => {
+): Promise<
+  ApiResponseType<{
+    processed: number;
+    total: number;
+    totalChunks: number;
+    currentChunk: number;
+  }>
+> => {
   const functionname: string = AcceptTallySale.name;
   const chunkSize = payload.chunkSize || 100;
   const chunkIndex = payload.chunkIndex ?? -1; // -1 means process all chunks
@@ -87,7 +94,8 @@ const AcceptTallySale = async (
 
     for (const record of records) {
       const required = requiredByCommodity.get(record.commodity_masterId) ?? 0;
-      const availablePcs = availableByCommodity.get(record.commodity_masterId) ?? 0;
+      const availablePcs =
+        availableByCommodity.get(record.commodity_masterId) ?? 0;
       const packSize = packSizeByCommodity.get(record.commodity_masterId) ?? 1;
       const requiredPcs = Math.ceil(required / packSize);
 
@@ -107,11 +115,16 @@ const AcceptTallySale = async (
     if (chunkIndex >= 0) {
       const start = chunkIndex * chunkSize;
       const end = start + chunkSize;
-      
+
       if (start >= totalRecords) {
         return {
           status: true,
-          data: { processed: 0, total: totalRecords, totalChunks, currentChunk: chunkIndex },
+          data: {
+            processed: 0,
+            total: totalRecords,
+            totalChunks,
+            currentChunk: chunkIndex,
+          },
           message: "Chunk index out of range - all records already processed.",
           functionname,
         } as any;
@@ -153,7 +166,12 @@ const AcceptTallySale = async (
       if (!createResponseData.status) {
         return {
           status: false,
-          data: { processed: 0, total: totalRecords, totalChunks, currentChunk: chunkIndex },
+          data: {
+            processed: 0,
+            total: totalRecords,
+            totalChunks,
+            currentChunk: chunkIndex,
+          },
           message: createResponseData.message,
           functionname,
         } as any;
@@ -169,7 +187,12 @@ const AcceptTallySale = async (
 
       return {
         status: true,
-        data: { processed: chunkRecords.length, total: totalRecords, totalChunks, currentChunk: chunkIndex },
+        data: {
+          processed: chunkRecords.length,
+          total: totalRecords,
+          totalChunks,
+          currentChunk: chunkIndex,
+        },
         message: `Chunk ${chunkIndex + 1} of ${totalChunks} processed (${chunkRecords.length} records).`,
         functionname,
       } as any;
@@ -216,7 +239,12 @@ const AcceptTallySale = async (
       if (!createResponseData.status) {
         return {
           status: false,
-          data: { processed: totalProcessed, total: totalRecords, totalChunks, currentChunk: Math.ceil(totalProcessed / chunkSize) },
+          data: {
+            processed: totalProcessed,
+            total: totalRecords,
+            totalChunks,
+            currentChunk: Math.ceil(totalProcessed / chunkSize),
+          },
           message: createResponseData.message,
           functionname,
         } as any;
@@ -235,7 +263,12 @@ const AcceptTallySale = async (
 
     return {
       status: true,
-      data: { processed: totalProcessed, total: totalRecords, totalChunks, currentChunk: totalChunks },
+      data: {
+        processed: totalProcessed,
+        total: totalRecords,
+        totalChunks,
+        currentChunk: totalChunks,
+      },
       message: `Tally sale records accepted and converted successfully. Processed ${totalRecords} row(s) in ${totalChunks} batch(es) of ${chunkSize}.`,
       functionname,
     } as any;

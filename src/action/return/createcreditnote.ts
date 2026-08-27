@@ -105,6 +105,8 @@ const CreateCreditNote = async (
         month: monthName,
         dvat04Id: payload.dvat04Id,
         return_type: "REVISED",
+        deletedAt: null,
+        deletedById: null,
       },
     });
 
@@ -115,13 +117,15 @@ const CreateCreditNote = async (
           month: monthName,
           dvat04Id: payload.dvat04Id,
           return_type: "ORIGINAL",
+          deletedAt: null,
+          deletedById: null,
         },
       });
     }
 
     if (!returnInvoice) {
       const dvat04 = await prisma.dvat04.findFirst({
-        where: { id: payload.dvat04Id },
+        where: { id: payload.dvat04Id, deletedAt: null, deletedById: null },
       });
 
       if (!dvat04) {

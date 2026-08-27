@@ -30,6 +30,7 @@ export async function getCurrentUser(): Promise<user | null> {
       where: {
         id: payload.userId, 
         status: "ACTIVE",
+        deletedAt: null,
       },
     });
 

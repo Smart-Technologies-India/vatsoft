@@ -36,6 +36,7 @@ const PayRefinerySaleTax = async (
       where: {
         id: currentDvatId,
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         tin_master_id: true,

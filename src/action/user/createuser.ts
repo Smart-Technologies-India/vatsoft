@@ -15,7 +15,7 @@ interface CreateUserPayload {
 }
 
 const CreateUser = async (
-  payload: CreateUserPayload
+  payload: CreateUserPayload,
 ): Promise<ApiResponseType<user | null>> => {
   const functionname: string = CreateUser.name;
 
@@ -32,7 +32,7 @@ const CreateUser = async (
     }
 
     const user = await prisma.user.findFirst({
-      where: { mobileOne: payload.mobile, status: "ACTIVE" },
+      where: { mobileOne: payload.mobile, status: "ACTIVE", deletedAt: null },
     });
 
     if (user) {

@@ -39,6 +39,7 @@ const GetCurrentDvatRefinerySale = async (): Promise<
       where: {
         id: currentDvatId,
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         tin_master_id: true,

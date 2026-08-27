@@ -56,6 +56,7 @@ const UpdateRefineryDealer = async (
       where: {
         id: currentRefineryId,
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         id: true,
@@ -75,6 +76,7 @@ const UpdateRefineryDealer = async (
         id: payload.id,
         refineryId: refinery.id,
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         id: true,
@@ -93,6 +95,7 @@ const UpdateRefineryDealer = async (
       where: {
         id: payload.dealerId,
         deletedAt: null,
+        deletedById: null,
         status: "APPROVED",
       },
       select: {
@@ -110,6 +113,7 @@ const UpdateRefineryDealer = async (
     const targetRefineries = await prisma.refinery.findMany({
       where: {
         deletedAt: null,
+        deletedById: null,
         tinNumber: refinery.tinNumber,
       },
       select: {
@@ -126,6 +130,7 @@ const UpdateRefineryDealer = async (
             refineryId: targetRefinery.id,
             dealerId: sourceDealerId,
             deletedAt: null,
+            deletedById: null,
           },
           select: {
             id: true,
@@ -137,6 +142,7 @@ const UpdateRefineryDealer = async (
             refineryId: targetRefinery.id,
             dealerId: payload.dealerId,
             deletedAt: null,
+            deletedById: null,
           },
           select: {
             id: true,
@@ -211,6 +217,7 @@ const UpdateRefineryDealer = async (
         refineryId: refinery.id,
         dealerId: payload.dealerId,
         deletedAt: null,
+        deletedById: null,
       },
       include: {
         dvat: {

@@ -43,7 +43,7 @@ const DemandPenalty = async (
     const dvat04response = await prisma.challan.findMany({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         reason: "DEMAND",
         OR: [
           {

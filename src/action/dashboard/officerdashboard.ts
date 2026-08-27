@@ -175,7 +175,7 @@ const OfficerDashboard = async (
           selectOffice: payload.selectOffice,
         },
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         status: "PAID",
         transaction_date: {
           gte: firstDayOfLastMonth,
@@ -200,7 +200,7 @@ const OfficerDashboard = async (
           selectOffice: payload.selectOffice,
         },
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         status: "PAID",
         transaction_date: {
           gte: firstDayOfThisMonth,
@@ -247,7 +247,7 @@ const OfficerDashboard = async (
           selectOffice: payload.selectOffice,
         },
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         status: "PAID",
         transaction_date: {
           gte: startOfToday,

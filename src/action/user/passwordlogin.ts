@@ -14,7 +14,7 @@ interface PasswordLoginPayload {
 }
 
 const PasswordLogin = async (
-  payload: PasswordLoginPayload
+  payload: PasswordLoginPayload,
 ): Promise<ApiResponseType<user | null>> => {
   const functionname: string = PasswordLogin.name;
   const cookie = await cookies();
@@ -33,13 +33,13 @@ const PasswordLogin = async (
           },
         ],
         deletedAt: null,
+        deletedById: null,
         tinNumber: payload.tin_number,
       },
       include: {
         createdBy: true,
       },
     });
-
 
     if (!usersresponse) {
       return createResponse({
@@ -58,10 +58,8 @@ const PasswordLogin = async (
 
     const passwordMatch = await compare(
       payload.password,
-      usersresponse.createdBy.password ?? ""
+      usersresponse.createdBy.password ?? "",
     );
-
-
 
     if (!passwordMatch) {
       return createResponse({

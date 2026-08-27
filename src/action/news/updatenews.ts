@@ -16,7 +16,7 @@ interface UpdateNewsPayload {
 }
 
 const UpdateNews = async (
-  payload: UpdateNewsPayload
+  payload: UpdateNewsPayload,
 ): Promise<ApiResponseType<news | null>> => {
   const functionname: string = UpdateNews.name;
 
@@ -32,7 +32,12 @@ const UpdateNews = async (
     }
 
     const isnews = await prisma.news.findFirst({
-      where: { id: payload.id, status: "ACTIVE" },
+      where: {
+        id: payload.id,
+        status: "ACTIVE",
+        deletedAt: null,
+        deletedById: null,
+      },
     });
     if (!isnews) {
       return createResponse({
@@ -56,7 +61,9 @@ const UpdateNews = async (
     });
 
     return createResponse({
-      message: newsdata ? "News updated successfully" : "Unable to udpate news.",
+      message: newsdata
+        ? "News updated successfully"
+        : "Unable to udpate news.",
       functionname: functionname,
       data: newsdata ?? null,
     });

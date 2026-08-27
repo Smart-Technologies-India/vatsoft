@@ -32,7 +32,7 @@ const DeleteCreditDebitNote = async (
     }
 
     const note = await prisma.creditdebitnote.findUnique({
-      where: { id: payload.id },
+      where: { id: payload.id, deletedById: null, deletedAt: null },
     });
 
     if (!note) {

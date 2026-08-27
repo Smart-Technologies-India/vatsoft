@@ -40,6 +40,7 @@ export default async function GetTopLiquorDealers(data: {
     const liquorDealers = await prisma.dvat04.findMany({
       where: {
         deletedAt: null,
+        deletedById: null,
         commodity: "LIQUOR",
         ...whereClause,
       },
@@ -80,6 +81,7 @@ export default async function GetTopLiquorDealers(data: {
           where: {
             dvat04Id: dealer.id,
             deletedAt: null,
+            deletedById: null,
             file_status: "ACTIVE",
             transaction_date: {
               gte: startDate,

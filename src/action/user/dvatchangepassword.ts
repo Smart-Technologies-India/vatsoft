@@ -29,7 +29,11 @@ const DvatChangePassword = async (
     // }
 
     const dvat = await prisma.dvat04.findFirst({
-      where: { id: parseInt(payload.id.toString() ?? "0"), deletedAt: null },
+      where: {
+        id: parseInt(payload.id.toString() ?? "0"),
+        deletedAt: null,
+        deletedById: null,
+      },
     });
 
     if (!dvat) {

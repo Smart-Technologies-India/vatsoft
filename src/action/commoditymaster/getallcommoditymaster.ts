@@ -91,6 +91,7 @@ const GetAllCommodityMaster = async (
         where: whereClause,
         take: payload.take,
         skip: payload.skip,
+        
         orderBy: {
           product_name: "asc",
         },

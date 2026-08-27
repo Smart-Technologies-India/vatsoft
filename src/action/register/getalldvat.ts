@@ -23,6 +23,8 @@ const GetAllDvat = async (
 
     const dvat04response = await prisma.dvat04.findMany({
       where: {
+        deletedAt: null,
+        deletedById: null,
         NOT: [
           {
             status: "NONE",

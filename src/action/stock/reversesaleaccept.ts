@@ -60,6 +60,7 @@ const ReverseSaleAccept = async (
           dvat04Id: sale.dvat04Id,
           commodity_masterId: sale.commodity_masterId,
           deletedAt: null,
+          deletedById: null,
           status: "ACTIVE",
         },
       });

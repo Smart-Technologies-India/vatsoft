@@ -43,6 +43,7 @@ const GetCompletedDailyPurchaseView = async (
       where: {
         id: currentRefineryId,
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         id: true,
@@ -63,6 +64,7 @@ const GetCompletedDailyPurchaseView = async (
         refineryId: refinery.id,
         refinery_status: "COMPLETED",
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
       select: {
@@ -94,6 +96,7 @@ const GetCompletedDailyPurchaseView = async (
         seller_tin_numberId: targetSale.seller_tin_numberId,
         refinery_status: "COMPLETED",
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
       include: {

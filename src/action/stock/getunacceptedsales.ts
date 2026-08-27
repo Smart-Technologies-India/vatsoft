@@ -35,6 +35,8 @@ export default async function GetUnacceptedSales({
         const seller = await prisma.dvat04.findFirst({
           where: {
             id: sale.seller_tin_numberId,
+            deletedAt: null,
+            deletedById: null,
           },
           select: {
             tinNumber: true,

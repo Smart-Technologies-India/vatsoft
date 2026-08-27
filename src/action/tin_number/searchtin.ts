@@ -26,6 +26,7 @@ const SearchTin = async (
     const tinuser = await prisma.tin_number_master.findFirst({
       where: {
         tin_number: payload.tinumber.toString(),
+        deletedAt: null,
         status: "ACTIVE",
       },
     });

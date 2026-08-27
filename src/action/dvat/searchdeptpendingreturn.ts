@@ -45,7 +45,7 @@ const SearchDeptPendingReturn = async (
     const dvat04response = await prisma.return_filing.findMany({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         dvat: {
           ...(payload.dept && { selectOffice: payload.dept }),
           ...(payload.arnnumber && { tinNumber: payload.arnnumber }),

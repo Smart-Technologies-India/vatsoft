@@ -32,7 +32,7 @@ const GetUserDvat04 = async (): Promise<ApiResponseType<dvat04 | null>> => {
     const dvat04response = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         id: dvatid,
 
         // createdById: payload.userid,

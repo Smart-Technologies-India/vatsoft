@@ -39,6 +39,7 @@ const GetAllMissingInvoiceComplaints = async (
 
     const where: Record<string, unknown> = {
       deletedAt: null,
+      deletedById: null,
     };
 
     if (payload.status) {
@@ -61,6 +62,7 @@ const GetAllMissingInvoiceComplaints = async (
     const [allComplaints, total] = await Promise.all([
       prisma.missing_invoice_complaint.findMany({
         where,
+        
         include: {
           createdBy: {
             select: {

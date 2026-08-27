@@ -39,7 +39,7 @@ const CreateMaterial = async (
     const isdata = await prisma.daily_purchase.findFirst({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         status: "ACTIVE",
         is_dvat_30a: false,
         dvat04Id: payload.dvatid,

@@ -28,7 +28,7 @@ const GetUserRegsterDvat04 = async (
     const dvat04response = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         createdById: payload.userid,
       },
     });

@@ -2987,7 +2987,7 @@ const DocumentWiseDetails = () => {
                                         </button>
                                       </>
                                     )}
-                                  <button
+                                  {/* <button
                                     onClick={() => {
                                       setCreditNoteGroup(group);
                                       setCreditNoteBox(true);
@@ -3006,7 +3006,7 @@ const DocumentWiseDetails = () => {
                                     className="text-sm bg-white border hover:border-amber-500 hover:text-amber-600 text-gray-700 py-1 px-3 rounded"
                                   >
                                     Debit Note
-                                  </button>
+                                  </button> */}
                                 </div>
                               }
                               title="Actions"

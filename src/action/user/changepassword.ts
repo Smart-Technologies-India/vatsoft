@@ -13,7 +13,7 @@ interface ChangePasswordPayload {
 }
 
 const ChangePassword = async (
-  payload: ChangePasswordPayload
+  payload: ChangePasswordPayload,
 ): Promise<ApiResponseType<user | null>> => {
   const functionname: string = ChangePassword.name;
 
@@ -30,7 +30,11 @@ const ChangePassword = async (
     }
 
     const user = await prisma.user.findFirst({
-      where: { id: parseInt(payload.id.toString() ?? "0"), status: "ACTIVE" },
+      where: {
+        id: parseInt(payload.id.toString() ?? "0"),
+        status: "ACTIVE",
+        deletedAt: null,
+      },
     });
 
     if (!user) {
@@ -42,7 +46,7 @@ const ChangePassword = async (
 
     const ispasswordmatch = await compare(
       payload.password,
-      user.password ?? ""
+      user.password ?? "",
     );
 
     if (ispasswordmatch) {

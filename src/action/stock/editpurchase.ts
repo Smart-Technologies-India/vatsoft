@@ -48,7 +48,7 @@ const EditPurchase = async (
         where: {
           id: payload.id,
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           status: "ACTIVE",
           is_dvat_30a: false,
         },
@@ -126,6 +126,8 @@ const EditPurchase = async (
           commodity_masterId: payload.commodityid,
           status: "ACTIVE",
           dvat04Id: payload.dvatid,
+          deletedAt: null,
+          deletedById: null,
         },
       });
 

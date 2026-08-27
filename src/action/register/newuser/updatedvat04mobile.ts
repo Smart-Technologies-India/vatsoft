@@ -47,6 +47,7 @@ const UpdateDvat04Mobile = async (
       where: {
         id: payload.dvat04Id,
         deletedAt: null,
+        deletedById: null,
       },
       select: { id: true },
     });

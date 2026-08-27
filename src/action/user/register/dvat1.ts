@@ -47,6 +47,8 @@ const DvatUpdate = async (
     const is_exist = await prisma.dvat04.findFirst({
       where: {
         id: payload.id,
+        deletedAt: null,
+        deletedById: null,
       },
     });
 

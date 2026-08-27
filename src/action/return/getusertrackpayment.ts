@@ -34,7 +34,7 @@ const GetUserTrackPayment = async (
       prisma.returns_01.findMany({
         where: {
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           dvat04Id: dvatid,
           NOT: [{ transaction_id: null, track_id: null }],
           ...(payload.rr_number && { rr_number: payload.rr_number }),

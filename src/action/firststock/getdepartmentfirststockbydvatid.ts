@@ -35,7 +35,7 @@ const GetDepartmentFirstStockByDvatId = async (
       where: {
         id: payload.dvat04Id,
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
       },
     });
 

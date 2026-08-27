@@ -23,6 +23,7 @@ const ChangeRefinerySales = async (
       where: {
         id: payload.refinerysaleId,
         deletedAt: null,
+        deletedById: null,
         refinery_status: "VATPAID",
         status: "ACTIVE",
       },

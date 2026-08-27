@@ -34,7 +34,7 @@ const GetPendingReturn = async (
     const dvat04response = await prisma.return_filing.findMany({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         dvatid: payload.dvatid,
       },
       include: {

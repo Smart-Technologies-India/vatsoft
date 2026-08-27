@@ -40,7 +40,7 @@ interface Dvat2UpdatePayload {
 }
 
 const Dvat2Update = async (
-  payload: Dvat2UpdatePayload
+  payload: Dvat2UpdatePayload,
 ): Promise<ApiResponseType<dvat04 | null>> => {
   const functionname: string = Dvat2Update.name;
 
@@ -48,6 +48,8 @@ const Dvat2Update = async (
     const is_exist = await prisma.dvat04.findFirst({
       where: {
         id: payload.id,
+        deletedAt: null,
+        deletedById: null,
       },
     });
 

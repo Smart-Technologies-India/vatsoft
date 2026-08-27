@@ -26,7 +26,7 @@ const GetDvat = async (
       where: {
         id: dvatid,
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
       },
       include: {
         selectComOne: true,

@@ -68,6 +68,7 @@ const CreateRefinerySale = async (
         dealerId: currentDvatId,
         refineryId: payload.purchaser_refinery_id,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
         refinery: {
           deletedAt: null,
@@ -195,6 +196,7 @@ const CreateRefinerySale = async (
           refineryId: refineryResponse.id,
           invoice_number: invoiceNumber,
           deletedAt: null,
+          deletedById: null,
         },
       });
 

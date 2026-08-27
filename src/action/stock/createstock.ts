@@ -52,7 +52,7 @@ const CreateStock = async (
       const isstock = await prisma.stock.findFirst({
         where: {
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           status: "ACTIVE",
           dvat04Id: payload.dvatid,
           commodity_masterId: payload.commodityid,

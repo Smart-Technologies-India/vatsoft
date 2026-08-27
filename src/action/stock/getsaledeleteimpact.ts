@@ -36,6 +36,7 @@ const GetSaleDeleteImpact = async (
       where: {
         id: payload.id,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
       select: {

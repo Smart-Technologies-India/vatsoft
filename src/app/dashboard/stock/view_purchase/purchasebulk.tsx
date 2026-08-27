@@ -551,6 +551,20 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
           const invoice_date = parseDateDDMMYYYY(invoice_date_raw);
           if (!invoice_date) {
             errors.push("* Invoice Date must be DD/MM/YYYY");
+          } else {
+            // Check minimum date: 1 April 2026
+            const minDate = new Date(2026, 3, 1); // April 1, 2026
+            if (invoice_date < minDate) {
+              errors.push("* Invoice Date cannot be before 1 April 2026");
+            }
+
+            // Check maximum date based on commodity
+            if (dvatdata?.commodity === "FUEL") {
+              const maxDate = new Date(2026, 5, 30); // June 30, 2026
+              if (invoice_date > maxDate) {
+                errors.push("* FUEL commodity: Invoice Date cannot be after 30 June 2026");
+              }
+            }
           }
 
           const item_code = Number(item_code_raw);

@@ -169,6 +169,8 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
     if (!challan && merchantMeta.challanId) {
       challan = await prisma.challan.findFirst({
         where: {
+          deletedAt: null,
+          deletedById: null,
           id: merchantMeta.challanId,
           dvatid: merchantMeta.dvatId || undefined,
         },
@@ -178,6 +180,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
     if (!challan && orderId) {
       challan = await prisma.challan.findFirst({
         where: {
+          deletedById: null,
           order_id: orderId,
           deletedAt: null,
         },
@@ -200,6 +203,8 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
       intent = await prisma.payment_intent.findFirst({
         where: {
           challanId: challan.id,
+          deletedAt: null,
+          deletedById: null,
         },
         orderBy: {
           id: "desc",

@@ -31,7 +31,7 @@ const UpdateCompletedInvoice = async (
     }
 
     const refinery = await prisma.refinery.findFirst({
-      where: { deletedAt: null, id: currentRefineryId },
+      where: { deletedAt: null, deletedById: null, id: currentRefineryId },
     });
 
     if (!refinery) {
@@ -46,6 +46,7 @@ const UpdateCompletedInvoice = async (
         id: payload.id,
         refineryId: refinery.id,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
         refinery_status: "COMPLETED",
       },
@@ -65,6 +66,7 @@ const UpdateCompletedInvoice = async (
         dvat04Id: targetSale.seller_tin_numberId,
         seller_tin_numberId: targetSale.seller_tin_numberId,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
     });
@@ -112,6 +114,7 @@ const UpdateCompletedInvoice = async (
         seller_tin_numberId: targetSale.seller_tin_numberId,
         refinery_status: "COMPLETED",
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
     });
@@ -183,6 +186,7 @@ const UpdateCompletedInvoice = async (
             dvat04Id: targetSale.seller_tin_numberId,
             seller_tin_numberId: targetSale.seller_tin_numberId,
             deletedAt: null,
+            deletedById: null,
             status: "ACTIVE",
           },
         });

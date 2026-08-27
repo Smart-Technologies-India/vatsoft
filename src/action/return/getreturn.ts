@@ -32,7 +32,7 @@ const GetReturn01 = async (
     let return01response = await prisma.returns_01.findFirst({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         id: payload.id,
         return_type: "REVISED",
       },
@@ -51,7 +51,7 @@ const GetReturn01 = async (
       return01response = await prisma.returns_01.findFirst({
         where: {
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           id: payload.id,
           return_type: "ORIGINAL",
         },

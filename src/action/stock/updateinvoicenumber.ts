@@ -52,6 +52,7 @@ const UpdateInvoiceNumber = async (
           in: payload.ids,
         },
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
     });

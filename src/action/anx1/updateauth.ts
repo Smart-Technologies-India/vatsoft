@@ -28,6 +28,8 @@ const Anx1Update = async (
 
     const isExist = await prisma.annexure1.findFirst({
       where: {
+        deletedAt: null,
+        deletedById: null,
         id: parseInt(payload.id.toString() ?? "0"),
       },
     });

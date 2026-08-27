@@ -69,6 +69,8 @@ const YearlyComparison = async (
     // Build where clause for dvat04 based on office and commodity
     const dvatWhereClause: any = {
       status: "APPROVED",
+      deletedAt: null,
+      deletedById: null,
     };
 
     if (payload.selectOffice) {

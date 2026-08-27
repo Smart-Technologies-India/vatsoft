@@ -50,7 +50,7 @@ const TinSendOtp = async (
           },
         ],
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         tinNumber,
       },
       include: {

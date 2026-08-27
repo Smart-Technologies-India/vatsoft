@@ -59,6 +59,7 @@ const ResetForgetPassword = async (
     where: {
       tinNumber,
       deletedAt: null,
+      deletedById: null,
     },
     select: {
       id: true,

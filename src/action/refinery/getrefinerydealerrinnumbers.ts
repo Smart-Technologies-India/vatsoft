@@ -27,6 +27,7 @@ const GetRefineryDealerTinNumbers = async (): Promise<
       where: {
         refineryId: currentRefineryId,
         deletedAt: null,
+        deletedById: null,
       },
       include: {
         dvat: {
@@ -47,7 +48,7 @@ const GetRefineryDealerTinNumbers = async (): Promise<
 
     // Extract TIN numbers from dealers
     const tinIds = refineryDealers.map((dealer) => dealer.dvat.tin_master_id);
-    
+
     const tinNumbers = await prisma.tin_number_master.findMany({
       where: {
         id: {

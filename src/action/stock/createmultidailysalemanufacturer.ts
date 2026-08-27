@@ -54,7 +54,7 @@ const CreateMultiDailySaleManufacturer = async (
         where: {
           dvat04Id: currentDvatId,
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           status: "ACTIVE",
           invoice_number: entry.invoice_number,
           quantity: entry.quantity,

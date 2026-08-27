@@ -109,7 +109,7 @@ const CreateDailySaleManufacturer = async (
     const isdata = await prisma.daily_sale.findFirst({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         status: "ACTIVE",
         is_dvat_31: false,
         dvat04Id: payload.dvatid,
@@ -132,7 +132,7 @@ const CreateDailySaleManufacturer = async (
       const seller_dvat = await prisma.dvat04.findFirst({
         where: {
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           id: payload.dvatid,
         },
       });
@@ -147,7 +147,6 @@ const CreateDailySaleManufacturer = async (
       if (!seller_dvat.tinNumber) {
         throw new Error("Seller Dvat TIN number is not set.");
       }
-     
 
       const daily_sale_response = await prisma.daily_sale.create({
         data: {
@@ -188,7 +187,7 @@ const CreateDailySaleManufacturer = async (
       const isexist = await prisma.stock.findFirst({
         where: {
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           dvat04Id: daily_sale_response.dvat04Id,
           commodity_masterId: daily_sale_response.commodity_masterId,
         },
@@ -215,6 +214,8 @@ const CreateDailySaleManufacturer = async (
 
       const userstock = await prisma.dvat04.findFirst({
         where: {
+          deletedAt: null,
+          deletedById: null,
           tinNumber: daily_sale_response.seller_tin_number.tin_number,
         },
       });

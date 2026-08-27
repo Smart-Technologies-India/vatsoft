@@ -31,6 +31,7 @@ const GetUserRefinerySale = async (): Promise<
     const refineryResponse = await prisma.refinery.findFirst({
       where: {
         deletedAt: null,
+        deletedById: null,
         id: currentRefineryId,
       },
       orderBy: {

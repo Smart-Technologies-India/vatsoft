@@ -33,7 +33,7 @@ const GetCurrentDvatCreditDebitNotes = async (): Promise<
     }
 
     const refinery = await prisma.refinery.findUnique({
-      where: { id: currentRefineryId },
+      where: { id: currentRefineryId, deletedAt: null, deletedById: null },
     });
 
     if (!refinery) {
@@ -43,7 +43,6 @@ const GetCurrentDvatCreditDebitNotes = async (): Promise<
         data: [],
       });
     }
-
 
     const notes = await prisma.creditdebitnote.findMany({
       where: {

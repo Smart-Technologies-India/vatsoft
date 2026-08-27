@@ -26,6 +26,7 @@ const GetRefineryDealerOptions = async (): Promise<
       where: {
         id: currentRefineryId,
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         id: true,
@@ -42,6 +43,7 @@ const GetRefineryDealerOptions = async (): Promise<
     const dealers = await prisma.dvat04.findMany({
       where: {
         deletedAt: null,
+        deletedById: null,
         status: "APPROVED",
       },
       select: {

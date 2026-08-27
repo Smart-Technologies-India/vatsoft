@@ -59,7 +59,7 @@ const GetVatpaidInvoiceById = async (
     }
 
     const refinery = await prisma.refinery.findFirst({
-      where: { deletedAt: null, id: currentRefineryId },
+      where: { deletedAt: null, deletedById: null, id: currentRefineryId },
     });
 
     if (!refinery) {
@@ -74,6 +74,7 @@ const GetVatpaidInvoiceById = async (
         id,
         refineryId: refinery.id,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
       include: {
@@ -96,6 +97,7 @@ const GetVatpaidInvoiceById = async (
         invoice_date: targetSale.invoice_date,
         seller_tin_numberId: targetSale.seller_tin_numberId,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
       include: {
@@ -109,6 +111,7 @@ const GetVatpaidInvoiceById = async (
       where: {
         tin_master_id: targetSale.seller_tin_numberId,
         deletedAt: null,
+        deletedById: null,
         status: "APPROVED",
       },
       select: {
@@ -123,6 +126,7 @@ const GetVatpaidInvoiceById = async (
           refineryId: refinery.id,
           dealerId: buyerDvat.id,
           deletedAt: null,
+          deletedById: null,
           status: "ACTIVE",
         },
         select: {

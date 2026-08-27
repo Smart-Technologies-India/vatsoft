@@ -34,7 +34,7 @@ const GetDvatCreditDebitNotes = async (): Promise<
     }
 
     const currentDvat = await prisma.dvat04.findUnique({
-      where: { id: currentDvatId },
+      where: { id: currentDvatId, deletedAt: null, deletedById: null },
     });
 
     if (!currentDvat) {
@@ -58,6 +58,7 @@ const GetDvatCreditDebitNotes = async (): Promise<
             dvat04Id: currentDvatId,
           },
         ],
+        deletedById: null,
         deletedAt: null,
       },
       include: {

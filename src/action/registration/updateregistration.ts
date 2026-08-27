@@ -79,6 +79,8 @@ const UpdateRegistration = async (
     const is_exist = await prisma.registration.findFirst({
       where: {
         id: payload.id,
+        deletedAt: null,
+        deletedById: null,
       },
     });
 

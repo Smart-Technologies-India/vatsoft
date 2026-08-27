@@ -26,6 +26,8 @@ const GetNilCommodity = async (): Promise<
     const commodity_data = await prisma.commodity_master.findFirst({
       where: {
         id: 1154,
+        deletedAt: null,
+        deletedById: null,
         // id: 748,
       },
     });

@@ -90,7 +90,7 @@ const GetDvatByOffice = async (
         first_stock: {
           where: {
             deletedAt: null,
-            deletedBy: null,
+            deletedById: null,
           },
         },
       },

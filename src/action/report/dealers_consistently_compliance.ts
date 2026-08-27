@@ -73,7 +73,7 @@ const DealersConsistentlyCompliant = async (
     const dvat04response = await prisma.return_filing.findMany({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         month: {
           in: monthsArray,
         },

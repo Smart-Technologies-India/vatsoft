@@ -49,7 +49,7 @@ const CreateDailyPurchase = async (
       const isdata = await prisma.daily_purchase.findFirst({
         where: {
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           status: "ACTIVE",
           is_dvat_30a: false,
           dvat04Id: payload.dvatid,
@@ -70,6 +70,7 @@ const CreateDailyPurchase = async (
       const seller_tin_number = await prisma.tin_number_master.findFirst({
         where: {
           id: payload.seller_tin_id,
+          deletedAt: null,
         },
       });
 
@@ -124,7 +125,7 @@ const CreateDailyPurchase = async (
       const isstock = await prisma.stock.findFirst({
         where: {
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           status: "ACTIVE",
           dvat04Id: payload.dvatid,
           commodity_masterId: payload.commodityid,

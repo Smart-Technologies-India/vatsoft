@@ -46,7 +46,7 @@ const TimeLineSummary = async (
     const dvat04response = await prisma.return_filing.findMany({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         ...(payload.year && { year: payload.year.toString() }),
         dvat: {
           ...(payload.arnnumber && { tinNumber: payload.arnnumber }),

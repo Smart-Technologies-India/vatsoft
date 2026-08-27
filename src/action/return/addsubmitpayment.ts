@@ -182,6 +182,8 @@ const AddSubmitPayment = async (
         // Get the last form (cform or fform) created for this office to determine serial number
         const lastcform = await prisma.cform.findFirst({
           where: {
+            deletedAt: null,
+            deletedById: null,
             status: "ACTIVE",
             office_of_issue: isExist.dvat04.selectOffice,
           },
@@ -192,6 +194,8 @@ const AddSubmitPayment = async (
 
         const lastfform = await prisma.fform.findFirst({
           where: {
+            deletedAt: null,
+            deletedById: null,
             status: "ACTIVE",
             office_of_issue: isExist.dvat04.selectOffice,
           },
@@ -227,9 +231,12 @@ const AddSubmitPayment = async (
                 dates.toDate.split("-").reverse().join("-"),
               ),
               valid_date: isExist.dvat04.certificateDate!,
-              sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial, cformSrNoCounter++),
-              seller_address:
-                representativeEntry.seller_tin_number.state ?? "",
+              sr_no: getsrno(
+                isExist.dvat04.selectOffice!,
+                lastOfficeSerial,
+                cformSrNoCounter++,
+              ),
+              seller_address: representativeEntry.seller_tin_number.state ?? "",
               seller_name:
                 representativeEntry.seller_tin_number.name_of_dealer ?? "",
               seller_tin_no:
@@ -238,9 +245,7 @@ const AddSubmitPayment = async (
               from_period: new Date(
                 dates.fromDate.split("-").reverse().join("-"),
               ),
-              to_period: new Date(
-                dates.toDate.split("-").reverse().join("-"),
-              ),
+              to_period: new Date(dates.toDate.split("-").reverse().join("-")),
               status: "ACTIVE",
               createdById: isExist.createdById,
             },
@@ -356,6 +361,8 @@ const AddSubmitPayment = async (
       // Get the last form (cform or fform) created for this office to determine serial number
       const lastcformForSerial = await prisma.cform.findFirst({
         where: {
+          deletedAt: null,
+          deletedById: null,
           status: "ACTIVE",
           office_of_issue: isExist.dvat04.selectOffice,
         },
@@ -366,6 +373,8 @@ const AddSubmitPayment = async (
 
       const lastfformForSerial = await prisma.fform.findFirst({
         where: {
+          deletedAt: null,
+          deletedById: null,
           status: "ACTIVE",
           office_of_issue: isExist.dvat04.selectOffice,
         },
@@ -381,7 +390,10 @@ const AddSubmitPayment = async (
       const fformSerialForFform = lastfformForSerial
         ? parseInt(lastfformForSerial.sr_no.split("/").pop() ?? "0", 10) || 0
         : 0;
-      const lastOfficeSerial = Math.max(cformSerialForFform, fformSerialForFform);
+      const lastOfficeSerial = Math.max(
+        cformSerialForFform,
+        fformSerialForFform,
+      );
 
       // Create a Map to track month keys to fform IDs
       const monthToFformMap = new Map<string, number>();
@@ -400,7 +412,11 @@ const AddSubmitPayment = async (
               dates.toDate.split("-").reverse().join("-"),
             ),
             valid_date: isExist.dvat04.certificateDate ?? new Date(),
-            sr_no: getsrno(isExist.dvat04.selectOffice!, lastOfficeSerial, srNoCounter++),
+            sr_no: getsrno(
+              isExist.dvat04.selectOffice!,
+              lastOfficeSerial,
+              srNoCounter++,
+            ),
             seller_address: representativeEntry.seller_tin_number.state ?? "",
             seller_name:
               representativeEntry.seller_tin_number.name_of_dealer ?? "",
@@ -430,9 +446,7 @@ const AddSubmitPayment = async (
         const fformId = monthToFformMap.get(monthKey);
 
         if (!fformId) {
-          throw new Error(
-            `FForm entry for month ${monthKey} was not created`,
-          );
+          throw new Error(`FForm entry for month ${monthKey} was not created`);
         }
 
         // Add all entries from this month to the fform_returns list
@@ -543,7 +557,11 @@ function getFromDateAndToDate(
   };
 }
 
-const getsrno = (selectOffice: SelectOffice, last: number, offset: number = 0): string => {
+const getsrno = (
+  selectOffice: SelectOffice,
+  last: number,
+  offset: number = 0,
+): string => {
   let pre =
     selectOffice == SelectOffice.Dadra_Nagar_Haveli
       ? "DNH"

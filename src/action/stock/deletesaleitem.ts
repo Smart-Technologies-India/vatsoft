@@ -10,7 +10,7 @@ interface DeleteSaleItemPayload {
 }
 
 const DeleteSaleItem = async (
-  payload: DeleteSaleItemPayload
+  payload: DeleteSaleItemPayload,
 ): Promise<ApiResponseType<daily_sale | null>> => {
   const functionname: string = DeleteSaleItem.name;
 
@@ -31,6 +31,7 @@ const DeleteSaleItem = async (
         where: {
           id: payload.id,
           deletedAt: null,
+          deletedById: null,
           status: "ACTIVE",
         },
       });
@@ -49,6 +50,8 @@ const DeleteSaleItem = async (
         where: {
           dvat04Id: saleItem.dvat04Id,
           commodity_masterId: saleItem.commodity_masterId,
+          deletedAt: null,
+          deletedById: null,
         },
       });
 
@@ -67,7 +70,7 @@ const DeleteSaleItem = async (
         where: {
           id: saleItem.dvat04Id,
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
         },
       });
 
@@ -83,7 +86,7 @@ const DeleteSaleItem = async (
           where: {
             tinNumber: buyerTinMaster.tin_number,
             deletedAt: null,
-            deletedBy: null,
+            deletedById: null,
           },
         });
 

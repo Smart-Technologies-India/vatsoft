@@ -156,6 +156,8 @@ const AddNil = async (
           month: monthName,
           dvat04Id: dvat04.id,
           status: Status.ACTIVE,
+          deletedAt: null,
+          deletedById: null,
           OR: [
             {
               return_type: "ORIGINAL",

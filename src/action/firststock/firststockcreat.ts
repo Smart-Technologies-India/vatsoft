@@ -59,6 +59,8 @@ const CreateFirstStock = async (
     const result = await prisma.$transaction(async (prisma) => {
       const isexist = await prisma.dvat04.findFirst({
         where: {
+          deletedAt: null,
+          deletedById: null,
           id: payload.dvatid,
         },
       });

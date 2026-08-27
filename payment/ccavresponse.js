@@ -420,6 +420,8 @@ export const postRes = (request, response) => {
         where: {
           dvatid: dvatid ? parseInt(dvatid) : 0,
           id: challanid ? parseInt(challanid) : 0,
+          deletedAt: null,
+          deletedById: null,
         },
       });
 
@@ -1115,6 +1117,8 @@ export const postRes = (request, response) => {
               const returnToUpdate = await prisma.returns_01.findFirst({
                 where: {
                   id: challan.returnid,
+                  deletedAt: null,
+                  deletedById: null,
                 },
                 include: {
                   dvat04: true,
@@ -1171,6 +1175,8 @@ export const postRes = (request, response) => {
                     dvat04Id: returnToUpdate.dvat04Id,
                     year: returnToUpdate.year,
                     month: { in: monthsToUpdate },
+                    deletedAt: null,
+                    deletedById: null,
                   },
                   include: {
                     dvat04: true,
@@ -1204,6 +1210,8 @@ export const postRes = (request, response) => {
                     dvatid: returnToUpdate.dvat04Id,
                     filing_date: null,
                     year: returnToUpdate.year,
+                    deletedAt: null,
+                    deletedById: null,
                     month: { in: monthsToUpdate },
                   },
                 });
@@ -1232,6 +1240,8 @@ export const postRes = (request, response) => {
                     dvatid: returnToUpdate.dvat04Id,
                     filing_date: null,
                     year: returnToUpdate.year,
+                    deletedAt: null,
+                    deletedById: null,
                     month: returnToUpdate.month ?? "",
                   },
                 });
@@ -1311,6 +1321,8 @@ export const postRes = (request, response) => {
         where: {
           dvatid: dvatid ? parseInt(dvatid) : 0,
           id: challanid ? parseInt(challanid) : 0,
+          deletedAt: null,
+          deletedById: null,
         },
       });
 

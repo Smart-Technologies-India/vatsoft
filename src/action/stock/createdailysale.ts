@@ -133,7 +133,7 @@ const CreateDailySale = async (
       const seller_dvat = await prisma.dvat04.findFirst({
         where: {
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           id: payload.dvatid,
         },
       });
@@ -187,7 +187,7 @@ const CreateDailySale = async (
       const isexist = await prisma.stock.findFirst({
         where: {
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           dvat04Id: daily_sale_response.dvat04Id,
           commodity_masterId: daily_sale_response.commodity_masterId,
         },
@@ -221,6 +221,8 @@ const CreateDailySale = async (
 
       const userstock = await prisma.dvat04.findFirst({
         where: {
+          deletedAt: null,
+          deletedById: null,
           tinNumber: daily_sale_response.seller_tin_number.tin_number,
         },
       });

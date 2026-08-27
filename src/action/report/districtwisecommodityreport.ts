@@ -57,7 +57,7 @@ const DistrictWiseCommodityReport = async (
     const response = await prisma.returns_entry.findMany({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         invoice_date: {
           gte: firstDateOfMonth,
           lt: lastDateOfMonth,

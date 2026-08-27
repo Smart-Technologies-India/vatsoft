@@ -10,7 +10,7 @@ import { annexure1 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const GetAnx1ById = async (
-  payload: GetAnxByIdPayload
+  payload: GetAnxByIdPayload,
 ): Promise<ApiResponseType<annexure1 | null>> => {
   try {
     const currentUserId = await getCurrentUserId();
@@ -26,6 +26,8 @@ const GetAnx1ById = async (
 
     const anx1response = await prisma.annexure1.findFirst({
       where: {
+        deletedAt: null,
+        deletedById: null,
         id: parseInt(payload.id.toString() ?? "0"),
       },
     });

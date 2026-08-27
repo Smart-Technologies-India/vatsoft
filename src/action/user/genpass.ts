@@ -10,7 +10,7 @@ interface GeneratePasswordPayload {
 }
 
 const GeneratePassword = async (
-  payload: GeneratePasswordPayload
+  payload: GeneratePasswordPayload,
 ): Promise<ApiResponseType<string | null>> => {
   const functionname: string = GeneratePassword.name;
 
@@ -20,6 +20,7 @@ const GeneratePassword = async (
         // status: "ACTIVE",
         // role: "USER",
         deletedAt: null,
+        deletedById: null,
       },
     });
 

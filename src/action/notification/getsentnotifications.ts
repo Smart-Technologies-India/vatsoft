@@ -10,7 +10,7 @@ interface GetSentNotificationsParams {
 }
 
 export default async function GetSentNotifications(
-  params?: GetSentNotificationsParams
+  params?: GetSentNotificationsParams,
 ): Promise<
   ApiResponseType<{ notifications: any[]; total: number; totalPages: number }>
 > {

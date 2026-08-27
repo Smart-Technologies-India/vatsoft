@@ -99,6 +99,8 @@ const DistrictWiseRevenue = async (
       const returns = await prisma.returns_01.findMany({
         where: {
           dvat04: dvat04Where,
+          deletedAt: null,
+          deletedById: null,
           status: "PAID",
           file_status: "ACTIVE",
           transaction_date: {

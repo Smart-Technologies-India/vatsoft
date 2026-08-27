@@ -103,6 +103,8 @@ const CreatePurchaseCreditNote = async (
         month: monthName,
         dvat04Id: payload.dvat04Id,
         return_type: "REVISED",
+        deletedAt: null,
+        deletedById: null,
       },
     });
 
@@ -113,12 +115,16 @@ const CreatePurchaseCreditNote = async (
           month: monthName,
           dvat04Id: payload.dvat04Id,
           return_type: "ORIGINAL",
+          deletedAt: null,
+          deletedById: null,
         },
       });
     }
 
     if (!returnInvoice) {
-      const dvat04 = await prisma.dvat04.findFirst({ where: { id: payload.dvat04Id } });
+      const dvat04 = await prisma.dvat04.findFirst({
+        where: { id: payload.dvat04Id, deletedAt: null, deletedById: null },
+      });
       if (!dvat04) throw new Error("DVAT04 record not found.");
 
       returnInvoice = await prisma.returns_01.create({
@@ -148,7 +154,9 @@ const CreatePurchaseCreditNote = async (
         urn_number: nanoid(),
         invoice_number: payload.credit_invoice_number,
         invoice_date: invoiceDate,
-        total_invoice_number: parseFloat(payload.total_invoice_value).toFixed(2),
+        total_invoice_number: parseFloat(payload.total_invoice_value).toFixed(
+          2,
+        ),
         seller_tin_numberId: payload.seller_tin_numberId,
         category_of_entry: CategoryOfEntry.CREDIT_NOTE,
         input_tax_credit: InputTaxCredit.ITC_ELIGIBLE,

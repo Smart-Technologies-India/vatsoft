@@ -93,7 +93,7 @@ export default async function ValidatePreviewData(
           },
         })),
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
       },
       select: {
         id: true,
@@ -114,7 +114,7 @@ export default async function ValidatePreviewData(
           },
         })),
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
       },
       select: {
         id: true,

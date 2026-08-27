@@ -88,6 +88,8 @@ const CheckPayment = async (
           year: isExist.year,
           month: lastMonthOfQuarter,
           return_type: isExist.return_type,
+          deletedAt: null,
+          deletedById: null,
         },
       });
 

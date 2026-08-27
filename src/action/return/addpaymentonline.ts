@@ -108,6 +108,8 @@ const AddPaymentOnline = async (
       const updateresponse = await prisma.returns_01.findFirst({
         where: {
           id: payload.id,
+          deletedAt: null,
+          deletedById: null,
         },
         include: {
           dvat04: true,
@@ -127,6 +129,8 @@ const AddPaymentOnline = async (
       await prisma.return_filing.findMany({
         where: {
           filing_status: false,
+          deletedAt: null,
+          deletedById: null,
           dvatid: updateresponse.dvat04Id,
           filing_date: null,
           year: updateresponse.year,
@@ -218,6 +222,8 @@ const AddPaymentOnline = async (
         // Get the last form (cform or fform) created for this office to determine serial number
         const lastcform = await prisma.cform.findFirst({
           where: {
+            deletedAt: null,
+            deletedById: null,
             status: "ACTIVE",
             office_of_issue: isExist.dvat04.selectOffice,
           },
@@ -228,6 +234,8 @@ const AddPaymentOnline = async (
 
         const lastfformForSerial = await prisma.fform.findFirst({
           where: {
+            deletedAt: null,
+            deletedById: null,
             status: "ACTIVE",
             office_of_issue: isExist.dvat04.selectOffice,
           },
@@ -396,6 +404,8 @@ const AddPaymentOnline = async (
       // Get the last form (cform or fform) created for this office to determine serial number
       const lastcformForFform = await prisma.cform.findFirst({
         where: {
+          deletedAt: null,
+          deletedById: null,
           status: "ACTIVE",
           office_of_issue: isExist.dvat04.selectOffice,
         },
@@ -406,6 +416,8 @@ const AddPaymentOnline = async (
 
       const lastfformForFform = await prisma.fform.findFirst({
         where: {
+          deletedAt: null,
+          deletedById: null,
           status: "ACTIVE",
           office_of_issue: isExist.dvat04.selectOffice,
         },

@@ -54,6 +54,7 @@ const GetRefinerySwitchOptions = async (): Promise<
     const currentRefinery = await prisma.refinery.findFirst({
       where: {
         deletedAt: null,
+        deletedById: null,
         id: currentRefineryId,
       },
       orderBy: {
@@ -71,6 +72,7 @@ const GetRefinerySwitchOptions = async (): Promise<
     const sameCompanyRefineries = await prisma.refinery.findMany({
       where: {
         deletedAt: null,
+        deletedById: null,
         company: currentRefinery.company,
       },
       orderBy: {

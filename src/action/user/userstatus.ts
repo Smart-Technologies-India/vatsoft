@@ -14,7 +14,7 @@ type Response = {
 };
 
 const GetUserStatus = async (
-  payload: UserStatusPayload
+  payload: UserStatusPayload,
 ): Promise<ApiResponseType<Response | null>> => {
   const functionname: string = GetUserStatus.name;
 
@@ -29,7 +29,11 @@ const GetUserStatus = async (
 
   try {
     const user = await prisma.user.findFirst({
-      where: { id: parseInt(payload.id.toString() ?? "0"), status: "ACTIVE" },
+      where: {
+        id: parseInt(payload.id.toString() ?? "0"),
+        status: "ACTIVE",
+        deletedAt: null,
+      },
     });
 
     if (!user)

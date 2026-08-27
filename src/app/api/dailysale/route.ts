@@ -80,7 +80,11 @@ export async function POST(req: NextRequest) {
           let dvat = dvatCache.get(data.SupplierTIN);
           if (!dvat) {
             const dvatResponse = await tx.dvat04.findFirst({
-              where: { tinNumber: data.SupplierTIN },
+              where: {
+                tinNumber: data.SupplierTIN,
+                deletedAt: null,
+                deletedById: null,
+              },
               select: { id: true, createdById: true },
             });
 

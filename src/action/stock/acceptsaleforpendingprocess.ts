@@ -64,7 +64,7 @@ const  AcceptSaleForPendingProcess = async (
     const sellerDvat = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         tinNumber: sellerTin,
       },
       orderBy: {

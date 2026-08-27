@@ -26,6 +26,7 @@ const GetCurrentDvatTin = async (): Promise<
         id: currentDvatId,
         status: "APPROVED",
         deletedAt: null,
+        deletedById: null,
       },
       include: {
         tin_master: true,

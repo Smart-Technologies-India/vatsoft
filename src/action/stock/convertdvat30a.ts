@@ -68,7 +68,7 @@ const ConvertDvat30A = async (
       new Date(date.getFullYear(), date.getMonth() + months, 1);
 
     const dvat04 = await prisma.dvat04.findFirst({
-      where: { id: payload.dvatid },
+      where: { id: payload.dvatid, deletedAt: null, deletedById: null },
     });
 
     if (!dvat04) {
@@ -95,7 +95,7 @@ const ConvertDvat30A = async (
     const candidateRows = await prisma.daily_purchase.findMany({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         status: "ACTIVE",
         dvat04Id: payload.dvatid,
         is_dvat_30a: false,

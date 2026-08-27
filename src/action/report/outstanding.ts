@@ -71,7 +71,7 @@ const OutstandingDealers = async (
     const dvat04response = await prisma.returns_01.findMany({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         ...dateFilter,
         dvat04: {
           ...(payload.arnnumber && { tinNumber: payload.arnnumber }),

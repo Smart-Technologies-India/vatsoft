@@ -31,7 +31,7 @@ const UpdateHoliday = async (
     }
 
     const isholiday = await prisma.holiday.findFirst({
-      where: { id: payload.id, status: "ACTIVE" },
+      where: { id: payload.id, status: "ACTIVE", deletedAt: null, deletedById: null },
     });
     if (!isholiday) {
       return createResponse({

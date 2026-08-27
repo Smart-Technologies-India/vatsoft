@@ -12,29 +12,30 @@ interface GetAllProductRequestsPayload {
 }
 
 const GetAllProductRequests = async (
-  payload?: GetAllProductRequestsPayload
+  payload?: GetAllProductRequestsPayload,
 ): Promise<
   ApiResponseType<
-    Prisma.product_requestGetPayload<{
-      include: {
-        requestedBy: {
-          select: {
-            id: true;
-            firstName: true;
-            lastName: true;
-            mobileOne: true;
-            email: true;
+    | Prisma.product_requestGetPayload<{
+        include: {
+          requestedBy: {
+            select: {
+              id: true;
+              firstName: true;
+              lastName: true;
+              mobileOne: true;
+              email: true;
+            };
+          };
+          createdBy: {
+            select: {
+              id: true;
+              firstName: true;
+              lastName: true;
+            };
           };
         };
-        createdBy: {
-          select: {
-            id: true;
-            firstName: true;
-            lastName: true;
-          };
-        };
-      };
-    }>[] | null
+      }>[]
+    | null
   >
 > => {
   const functionname: string = GetAllProductRequests.name;
@@ -56,6 +57,7 @@ const GetAllProductRequests = async (
     const product_requests = await prisma.product_request.findMany({
       where: {
         deletedAt: null,
+        deletedById: null,
         ...(normalizedProductName
           ? {
               product_name: {

@@ -38,7 +38,7 @@ const DispatchRefinerySale = async (
     }
 
     const refinery = await prisma.refinery.findFirst({
-      where: { deletedAt: null, id: currentRefineryId },
+      where: { deletedAt: null, deletedById: null, id: currentRefineryId },
     });
 
     if (!refinery) {
@@ -53,6 +53,7 @@ const DispatchRefinerySale = async (
         id: payload.id,
         refineryId: refinery.id,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
     });
@@ -68,6 +69,7 @@ const DispatchRefinerySale = async (
       where: {
         invoice_number: payload.invoice_number,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
         refineryId: refinery.id,
       },
@@ -88,6 +90,7 @@ const DispatchRefinerySale = async (
         seller_tin_numberId: targetSale.seller_tin_numberId,
         refinery_status: "VATPAID",
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
       orderBy: {
@@ -213,6 +216,7 @@ const DispatchRefinerySale = async (
       where: {
         tin_master_id: targetSale.seller_tin_numberId,
         deletedAt: null,
+        deletedById: null,
         status: "APPROVED",
       },
     });

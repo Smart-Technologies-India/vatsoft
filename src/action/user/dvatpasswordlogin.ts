@@ -14,7 +14,7 @@ interface DvatPasswordLoginPayload {
 }
 
 const DvatPasswordLogin = async (
-  payload: DvatPasswordLoginPayload
+  payload: DvatPasswordLoginPayload,
 ): Promise<ApiResponseType<user | null>> => {
   const functionname: string = DvatPasswordLogin.name;
   const cookie = await cookies();
@@ -33,6 +33,7 @@ const DvatPasswordLogin = async (
           },
         ],
         deletedAt: null,
+        deletedById: null,
         tinNumber: payload.tin_number,
       },
       include: {
@@ -57,7 +58,7 @@ const DvatPasswordLogin = async (
 
     const passwordMatch = await compare(
       payload.password,
-      dvatresponse.password ?? ""
+      dvatresponse.password ?? "",
     );
 
     if (!passwordMatch) {

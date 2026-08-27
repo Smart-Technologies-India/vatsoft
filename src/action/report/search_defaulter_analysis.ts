@@ -44,7 +44,7 @@ const SearchDefaulterAnalysis = async (
     const returnFilings = await prisma.return_filing.findMany({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         return_status: "PENDINGFILING",
         dvat: {
           ...(payload.dept && { selectOffice: payload.dept }),

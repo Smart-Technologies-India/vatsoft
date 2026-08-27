@@ -10,7 +10,7 @@ interface GetUserNotificationsParams {
 }
 
 export default async function GetUserNotifications(
-  params?: GetUserNotificationsParams
+  params?: GetUserNotificationsParams,
 ): Promise<
   ApiResponseType<{ notifications: any[]; total: number; totalPages: number }>
 > {
@@ -34,6 +34,7 @@ export default async function GetUserNotifications(
       where: {
         id: dvatid,
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         id: true,

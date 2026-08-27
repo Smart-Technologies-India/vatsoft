@@ -248,7 +248,7 @@ const OfficerDashboardReport = async (
       where: {
         dvat04: lastMonthDvatWhere,
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         OR: [
           {
             status: "LATE",
@@ -287,7 +287,7 @@ const OfficerDashboardReport = async (
       where: {
         dvat04: thisMonthDvatWhere,
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         OR: [
           {
             status: "LATE",
@@ -348,7 +348,7 @@ const OfficerDashboardReport = async (
       where: {
         dvat04: todayDvatWhere,
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         OR: [
           {
             status: "LATE",

@@ -113,6 +113,8 @@ const AddPayment = async (
       const updateresponse = await prisma.returns_01.findFirst({
         where: {
           id: payload.id,
+          deletedAt: null,
+          deletedById: null,
         },
         include: {
           dvat04: true,
@@ -265,6 +267,8 @@ const AddPayment = async (
         const lastcform = await prisma.cform.findFirst({
           where: {
             status: "ACTIVE",
+            deletedAt: null,
+            deletedById: null,
             office_of_issue: isExist.dvat04.selectOffice,
           },
           orderBy: {
@@ -275,6 +279,8 @@ const AddPayment = async (
         const lastfformForSerial = await prisma.fform.findFirst({
           where: {
             status: "ACTIVE",
+            deletedAt: null,
+            deletedById: null,
             office_of_issue: isExist.dvat04.selectOffice,
           },
           orderBy: {
@@ -312,8 +318,7 @@ const AddPayment = async (
                 lastOfficeSerial,
                 cformSrNoCounter++,
               ),
-              seller_address:
-                representativeEntry.seller_tin_number.state ?? "",
+              seller_address: representativeEntry.seller_tin_number.state ?? "",
               seller_name:
                 representativeEntry.seller_tin_number.name_of_dealer ?? "",
               seller_tin_no:
@@ -322,9 +327,7 @@ const AddPayment = async (
               from_period: new Date(
                 dates.fromDate.split("-").reverse().join("-"),
               ),
-              to_period: new Date(
-                dates.toDate.split("-").reverse().join("-"),
-              ),
+              to_period: new Date(dates.toDate.split("-").reverse().join("-")),
               status: "ACTIVE",
               createdById: isExist.createdById,
             },
@@ -364,7 +367,6 @@ const AddPayment = async (
           });
         }
 
-       
         if (cformReturnsEntries.length > 0) {
           const response = await prisma.cform_returns.createMany({
             data: cformReturnsEntries,
@@ -373,7 +375,6 @@ const AddPayment = async (
             throw new Error(`CForm return entry was not created`);
           }
         }
-      
       }
 
       // fform start here
@@ -448,6 +449,8 @@ const AddPayment = async (
         where: {
           status: "ACTIVE",
           office_of_issue: isExist.dvat04.selectOffice,
+          deletedAt: null,
+          deletedById: null,
         },
         orderBy: {
           createdAt: "desc",
@@ -458,6 +461,8 @@ const AddPayment = async (
         where: {
           status: "ACTIVE",
           office_of_issue: isExist.dvat04.selectOffice,
+          deletedAt: null,
+          deletedById: null,
         },
         orderBy: {
           createdAt: "desc",
@@ -471,7 +476,10 @@ const AddPayment = async (
       const fformSerialForFform = lastfformForFform
         ? parseInt(lastfformForFform.sr_no.split("/").pop() ?? "0", 10) || 0
         : 0;
-      const lastOfficeSerial = Math.max(cformSerialForFform, fformSerialForFform);
+      const lastOfficeSerial = Math.max(
+        cformSerialForFform,
+        fformSerialForFform,
+      );
 
       // Create a Map to track month key to fform ID
       const monthToFformMap = new Map<string, number>();
@@ -523,9 +531,7 @@ const AddPayment = async (
         const fformId = monthToFformMap.get(monthKey);
 
         if (!fformId) {
-          throw new Error(
-            `FForm entry for month ${monthKey} was not created`,
-          );
+          throw new Error(`FForm entry for month ${monthKey} was not created`);
         }
 
         monthGroup.entries.forEach((entry) => {

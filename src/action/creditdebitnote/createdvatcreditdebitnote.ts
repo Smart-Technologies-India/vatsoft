@@ -92,6 +92,7 @@ const CreateDvatCreditDebitNote = async (
         id: payload.commodity_master_id,
         status: "ACTIVE",
         deletedAt: null,
+        deletedById: null,
       },
     });
 

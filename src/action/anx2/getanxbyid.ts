@@ -26,6 +26,8 @@ const GetAnx2ById = async (
 
     const anx2response = await prisma.annexure2.findFirst({
       where: {
+        deletedAt: null,
+        deletedById: null,
         id: parseInt(payload.id.toString() ?? "0"),
       },
     });

@@ -15,7 +15,7 @@ import { daily_purchase, stock } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const AcceptSale = async (
-  payload: AcceptSalePayload
+  payload: AcceptSalePayload,
 ): Promise<ApiResponseType<daily_purchase | null>> => {
   const functionname: string = AcceptSale.name;
 
@@ -35,7 +35,7 @@ const AcceptSale = async (
       const isstock = await prisma.stock.findFirst({
         where: {
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           status: "ACTIVE",
           dvat04Id: payload.dvatid,
           commodity_masterId: payload.commodityid,
@@ -76,6 +76,8 @@ const AcceptSale = async (
         where: {
           id: payload.puchaseid,
           status: "ACTIVE",
+          deletedAt: null,
+          deletedById: null,
         },
       });
 
@@ -98,6 +100,8 @@ const AcceptSale = async (
         where: {
           urn_number: is_purchase.urn_number,
           status: "ACTIVE",
+          deletedAt: null,
+          deletedById: null,
         },
       });
 

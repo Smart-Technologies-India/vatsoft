@@ -32,7 +32,7 @@ const TinLoginOtp = async (
           },
         ],
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         tinNumber: payload.tin_number,
       },
       include: {

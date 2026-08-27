@@ -26,6 +26,7 @@ const GetUserRefineryDealer = async (): Promise<
       where: {
         id: currentRefineryId,
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         id: true,
@@ -43,6 +44,7 @@ const GetUserRefineryDealer = async (): Promise<
       where: {
         refineryId: refinery.id,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
       include: {

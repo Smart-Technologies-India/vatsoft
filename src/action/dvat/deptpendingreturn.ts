@@ -75,7 +75,7 @@ const DeptPendingReturn = async (
           ],
         }),
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
       },
       include: {
         return_filing: {
@@ -186,7 +186,7 @@ const DeptPendingReturn = async (
       where: {
         dvatid: { in: dvatIds },
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         status: "PENDING",
         notice_order_type: "NOTICE",
         // form_type: "DVAT10",

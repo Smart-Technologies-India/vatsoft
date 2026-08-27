@@ -80,7 +80,7 @@ const LastYearReceived = async (
         where: {
           dvat04: dvat04Where,
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           OR: [
             {
               status: "LATE",

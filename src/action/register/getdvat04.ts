@@ -32,7 +32,7 @@ const GetDvat04 = async (
     const dvat04response = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         id: parseInt(payload.id.toString() ?? "0"),
       },
       include: {

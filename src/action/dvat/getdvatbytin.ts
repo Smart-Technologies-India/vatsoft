@@ -30,7 +30,7 @@ const GetDvat04ByTin = async (
     const dvat04response = await prisma.dvat04.findFirst({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         tinNumber: payload.tinNumber,
         OR: [{ status: "APPROVED" }, { status: "PENDINGPROCESSING" }],
       },

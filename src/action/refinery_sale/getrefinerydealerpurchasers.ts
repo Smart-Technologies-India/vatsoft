@@ -27,9 +27,11 @@ const GetRefineryDealerPurchasers = async (): Promise<
       where: {
         dealerId: currentDvatId,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
         dvat: {
           deletedAt: null,
+          deletedById: null,
           status: "APPROVED",
         },
       },

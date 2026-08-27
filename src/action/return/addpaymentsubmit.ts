@@ -441,6 +441,8 @@ const AddPaymentSubmit = async (
         // Get the last form (cform or fform) created for this office to determine serial number
         const lastcform = await prisma.cform.findFirst({
           where: {
+            deletedAt: null,
+            deletedById: null,
             status: "ACTIVE",
             office_of_issue: isExist.dvat04.selectOffice,
           },
@@ -451,6 +453,8 @@ const AddPaymentSubmit = async (
 
         const lastfformForSerial = await prisma.fform.findFirst({
           where: {
+            deletedAt: null,
+            deletedById: null,
             status: "ACTIVE",
             office_of_issue: isExist.dvat04.selectOffice,
           },
@@ -614,6 +618,8 @@ const AddPaymentSubmit = async (
       // Get the last form (cform or fform) created for this office to determine serial number
       const lastcformForFform = await prisma.cform.findFirst({
         where: {
+          deletedAt: null,
+          deletedById: null,
           status: "ACTIVE",
           office_of_issue: isExist.dvat04.selectOffice,
         },
@@ -624,6 +630,8 @@ const AddPaymentSubmit = async (
 
       const lastfformForFform = await prisma.fform.findFirst({
         where: {
+          deletedAt: null,
+          deletedById: null,
           status: "ACTIVE",
           office_of_issue: isExist.dvat04.selectOffice,
         },

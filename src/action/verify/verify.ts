@@ -20,6 +20,7 @@ const VerifyCForm = async (
         status: "ACTIVE",
         sr_no: payload.search,
         deletedAt: null,
+        deletedById: null,
       },
       include: {
         dvat04: true,

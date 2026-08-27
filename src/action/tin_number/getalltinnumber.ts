@@ -6,7 +6,9 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import { tin_number_master } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
-const getAllTinNumberMaster = async (): Promise<ApiResponseType<tin_number_master[] | null>> => {
+const getAllTinNumberMaster = async (): Promise<
+  ApiResponseType<tin_number_master[] | null>
+> => {
   const functionname: string = getAllTinNumberMaster.name;
 
   try {
@@ -23,6 +25,7 @@ const getAllTinNumberMaster = async (): Promise<ApiResponseType<tin_number_maste
     const tinNumbers = await prisma.tin_number_master.findMany({
       where: {
         status: "ACTIVE",
+        deletedAt: null,
       },
       orderBy: {
         createdAt: "desc",

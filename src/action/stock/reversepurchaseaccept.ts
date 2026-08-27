@@ -54,6 +54,7 @@ const ReversePurchaseAccept = async (
           dvat04Id: purchase.dvat04Id,
           commodity_masterId: purchase.commodity_masterId,
           deletedAt: null,
+          deletedById: null,
           status: "ACTIVE",
         },
         include: {

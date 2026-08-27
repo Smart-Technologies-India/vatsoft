@@ -37,6 +37,8 @@ const CreateSaveStock = async (
       const isexist = await prisma.dvat04.findFirst({
         where: {
           id: payload.dvatid,
+          deletedAt: null,
+          deletedById: null,
         },
       });
 

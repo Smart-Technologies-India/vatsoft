@@ -59,6 +59,7 @@ const RefineryResetForgetPassword = async (
     where: {
       tinNumber,
       deletedAt: null,
+      deletedById: null,
     },
     select: {
       id: true,

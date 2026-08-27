@@ -49,7 +49,7 @@ const GetTopCommodities = async (
       0,
       0,
       0,
-      0
+      0,
     );
     const endDate = new Date(
       currentDate.getFullYear(),
@@ -58,11 +58,13 @@ const GetTopCommodities = async (
       23,
       59,
       59,
-      999
+      999,
     );
 
     // Build where clause for dvat04
     const dvat04Where: any = {
+      deletedAt: null,
+      deletedById: null,
       status: "APPROVED",
     };
 
@@ -132,6 +134,8 @@ const GetTopCommodities = async (
       where: {
         dvat04Id: { in: dealerIds },
         status: "PAID",
+        deletedAt: null,
+        deletedById: null,
         file_status: "ACTIVE",
         transaction_date: {
           gte: startDate,
@@ -153,7 +157,7 @@ const GetTopCommodities = async (
 
     const returns01Ids = returns01Records.map((r) => r.id);
     const returns01Map = new Map(
-      returns01Records.map((r) => [r.id, r.dvat04Id])
+      returns01Records.map((r) => [r.id, r.dvat04Id]),
     );
 
     // Get returns_entry data for these returns_01 records, filtered by commodity_masterId
@@ -162,6 +166,7 @@ const GetTopCommodities = async (
         returns_01Id: { in: returns01Ids },
         commodity_masterId: { in: commodityIds },
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         returns_01Id: true,

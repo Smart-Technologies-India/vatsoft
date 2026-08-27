@@ -50,7 +50,7 @@ const GetNewDealers = async (
     const dvat04response = await prisma.return_filing.findMany({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         dvat: {
           selectOffice: payload.dept,
           deletedAt: null,
@@ -78,7 +78,7 @@ const GetNewDealers = async (
     const notice = await prisma.order_notice.findMany({
       where: {
         deletedAt: null,
-        deletedBy: null,
+        deletedById: null,
         status: "PENDING",
         notice_order_type: "NOTICE",
         form_type: "DVAT10",

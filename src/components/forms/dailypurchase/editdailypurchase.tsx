@@ -434,9 +434,12 @@ const EditDailyPurchaseMaster = (props: EditDailyPurchaseProviderProps) => {
             title="Invoice Date"
             format={"DD/MM/YYYY"}
             placeholder="Select Invoice Date"
-            // mindate={dayjs(getMonthDateas().start, dateFormat)}
-            // maxdate={dayjs(getMonthDateas().end, dateFormat)}
-            maxdate={dayjs()}
+            mindate={dayjs("2026-04-01")}
+            maxdate={
+              davtdata?.commodity === "FUEL"
+                ? dayjs("2026-06-30")
+                : dayjs()
+            }
           />
         </div>
         <div className="mt-2">

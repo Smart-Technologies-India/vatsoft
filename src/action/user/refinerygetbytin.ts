@@ -36,6 +36,7 @@ const RefineryGetByTin = async (
           { status: "PENDINGPROCESSING" },
         ],
         deletedAt: null,
+        deletedById: null,
         tinNumber,
       },
       select: {
@@ -57,7 +58,8 @@ const RefineryGetByTin = async (
 
     const options: RefineryTinOption[] = refineries.map((item) => ({
       id: item.id,
-      name: item.name?.trim() || item.tradename?.trim() || `Refinery ${item.id}`,
+      name:
+        item.name?.trim() || item.tradename?.trim() || `Refinery ${item.id}`,
     }));
 
     return createResponse({

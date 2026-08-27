@@ -53,7 +53,7 @@ interface AddMultiReturnInvoicePayload {
 }
 
 const AddMultiReturnInvoice = async (
-  payload: AddMultiReturnInvoicePayload
+  payload: AddMultiReturnInvoicePayload,
 ): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = AddMultiReturnInvoice.name;
 
@@ -75,6 +75,8 @@ const AddMultiReturnInvoice = async (
         month: payload.month,
         createdById: payload.createdById,
         return_type: "REVISED",
+        deletedAt: null,
+        deletedById: null,
       },
     });
 
@@ -85,13 +87,19 @@ const AddMultiReturnInvoice = async (
           month: payload.month,
           createdById: payload.createdById,
           return_type: "ORIGINAL",
+          deletedAt: null,
+          deletedById: null,
         },
       });
     }
 
     if (!returnInvoice) {
       const dvat04 = await prisma.dvat04.findFirst({
-        where: { createdById: payload.createdById },
+        where: {
+          createdById: payload.createdById,
+          deletedAt: null,
+          deletedById: null,
+        },
       });
 
       if (!dvat04) {

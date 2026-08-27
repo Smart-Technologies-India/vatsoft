@@ -11,7 +11,7 @@ import { daily_sale } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const DeleteSale = async (
-  payload: DeleteSalePayload
+  payload: DeleteSalePayload,
 ): Promise<ApiResponseType<daily_sale | null>> => {
   const functionname: string = DeleteSale.name;
 
@@ -32,6 +32,8 @@ const DeleteSale = async (
       let is_exist = await prisma.daily_sale.findFirst({
         where: {
           id: payload.id,
+          deletedAt: null,
+          deletedById: null,
         },
       });
 
@@ -44,6 +46,8 @@ const DeleteSale = async (
         where: {
           dvat04Id: is_exist.dvat04Id,
           commodity_masterId: is_exist.commodity_masterId,
+          deletedAt: null,
+          deletedById: null,
         },
       });
 
@@ -62,7 +66,7 @@ const DeleteSale = async (
         where: {
           id: is_exist.dvat04Id,
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
         },
       });
 
@@ -78,7 +82,7 @@ const DeleteSale = async (
           where: {
             tinNumber: buyerTinMaster.tin_number,
             deletedAt: null,
-            deletedBy: null,
+            deletedById: null,
           },
         });
 

@@ -25,6 +25,8 @@ const getAllRefineryTinNumberMaster = async (): Promise<
     const tinNumbers = await prisma.refinery.findMany({
       where: {
         status: "APPROVED",
+        deletedAt: null,
+        deletedById: null,
       },
       orderBy: {
         createdAt: "desc",

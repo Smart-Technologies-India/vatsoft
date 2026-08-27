@@ -51,8 +51,18 @@ const CommoditySalesGrowth = async (
 
     // Month names array to match database format
     const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
 
     let currentPeriodLabel = "";
@@ -67,7 +77,8 @@ const CommoditySalesGrowth = async (
       const previousMonth = selectedMonth === 1 ? 12 : selectedMonth - 1;
       const previousMonthIndex = previousMonth - 1;
       const previousMonthStr = String(previousMonth).padStart(2, "0");
-      const previousMonthYear = selectedMonth === 1 ? selectedYear - 1 : selectedYear;
+      const previousMonthYear =
+        selectedMonth === 1 ? selectedYear - 1 : selectedYear;
 
       currentPeriodLabel = `${selectedYear}-${currentMonthStr}`;
       previousPeriodLabel = `${previousMonthYear}-${previousMonthStr}`;
@@ -114,7 +125,6 @@ const CommoditySalesGrowth = async (
       }
     }
 
-
     // Fetch current period data
     const currentPeriodData = await prisma.returns_entry.findMany({
       where: {
@@ -123,6 +133,8 @@ const CommoditySalesGrowth = async (
           status: "PAID",
           file_status: "ACTIVE",
           dvat04: dvatWhereClause,
+          deletedAt: null,
+          deletedById: null,
         },
         status: "ACTIVE",
         commodity_masterId: {
@@ -149,6 +161,8 @@ const CommoditySalesGrowth = async (
           ...previousPeriodCondition,
           status: "PAID",
           file_status: "ACTIVE",
+          deletedAt: null,
+          deletedById: null,
           dvat04: dvatWhereClause,
         },
         status: "ACTIVE",
@@ -222,11 +236,15 @@ const CommoditySalesGrowth = async (
       const quantityGrowth = data.currentQuantity - data.previousQuantity;
       const amountGrowthPercent =
         data.previousAmount === 0
-          ? (data.currentAmount > 0 ? 100 : 0)
+          ? data.currentAmount > 0
+            ? 100
+            : 0
           : (amountGrowth / data.previousAmount) * 100;
       const quantityGrowthPercent =
         data.previousQuantity === 0
-          ? (data.currentQuantity > 0 ? 100 : 0)
+          ? data.currentQuantity > 0
+            ? 100
+            : 0
           : (quantityGrowth / data.previousQuantity) * 100;
 
       growthData.push({

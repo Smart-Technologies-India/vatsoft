@@ -62,6 +62,7 @@ const AddRefineryDayPrice = async (
     const refinery = await prisma.refinery.findFirst({
       where: {
         deletedAt: null,
+        deletedById: null,
         id: currentRefineryId,
       },
       select: { id: true },
@@ -79,6 +80,7 @@ const AddRefineryDayPrice = async (
         refineryId: refinery.id,
         dealerId: payload.dvatId,
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
       select: {
@@ -106,6 +108,7 @@ const AddRefineryDayPrice = async (
           },
         ],
         deletedAt: null,
+        deletedById: null,
         status: "ACTIVE",
       },
       select: { id: true },
@@ -135,6 +138,7 @@ const AddRefineryDayPrice = async (
         commodity_masterId: payload.commodityMasterId,
         effective_date: effectiveDate,
         deletedAt: null,
+        deletedById: null,
       },
       select: { id: true },
     });

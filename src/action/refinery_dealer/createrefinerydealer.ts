@@ -48,6 +48,7 @@ const CreateRefineryDealer = async (
       where: {
         id: currentRefineryId,
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         id: true,
@@ -66,6 +67,7 @@ const CreateRefineryDealer = async (
       where: {
         id: payload.dealerId,
         deletedAt: null,
+        deletedById: null,
         status: "APPROVED",
       },
       select: {
@@ -83,6 +85,7 @@ const CreateRefineryDealer = async (
     const targetRefineries = await prisma.refinery.findMany({
       where: {
         deletedAt: null,
+        deletedById: null,
         tinNumber: refinery.tinNumber,
       },
       select: {
@@ -99,20 +102,24 @@ const CreateRefineryDealer = async (
         },
         dealerId: payload.dealerId,
         deletedAt: null,
+        deletedById: null,
       },
       select: {
         refineryId: true,
       },
     });
 
-    const existingRefineryIds = new Set(existing.map((item) => item.refineryId));
+    const existingRefineryIds = new Set(
+      existing.map((item) => item.refineryId),
+    );
     const missingRefineryIds = targetRefineryIds.filter(
       (refineryId) => !existingRefineryIds.has(refineryId),
     );
 
     if (missingRefineryIds.length === 0) {
       return createResponse({
-        message: "Dealer is already mapped to all refinery entries with same TIN.",
+        message:
+          "Dealer is already mapped to all refinery entries with same TIN.",
         functionname,
       });
     }
@@ -135,6 +142,7 @@ const CreateRefineryDealer = async (
         refineryId: refinery.id,
         dealerId: payload.dealerId,
         deletedAt: null,
+        deletedById: null,
       },
       include: {
         dvat: {

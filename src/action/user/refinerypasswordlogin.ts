@@ -31,6 +31,7 @@ const RefineryPasswordLogin = async (
           { status: "PENDINGPROCESSING" },
         ],
         deletedAt: null,
+        deletedById: null,
         tinNumber,
         ...(payload.refinery_id ? { id: payload.refinery_id } : {}),
       },

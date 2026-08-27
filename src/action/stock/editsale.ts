@@ -63,7 +63,7 @@ const EditSale = async (
         where: {
           id: payload.id,
           deletedAt: null,
-          deletedBy: null,
+          deletedById: null,
           status: "ACTIVE",
           is_dvat_31: false,
         },
@@ -132,7 +132,7 @@ const EditSale = async (
           where: {
             urn_number: updatedSale.urn_number,
             deletedAt: null,
-            deletedBy: null,
+            deletedById: null,
             status: "ACTIVE",
           },
         });
@@ -190,6 +190,8 @@ const EditSale = async (
             commodity_masterId: payload.commodityid,
             status: "ACTIVE",
             dvat04Id: payload.dvatid,
+            deletedAt: null,
+            deletedById: null,
           },
         });
 

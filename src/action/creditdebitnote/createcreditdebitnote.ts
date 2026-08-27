@@ -91,6 +91,7 @@ const CreateCreditDebitNote = async (
         id: payload.commodity_master_id,
         status: "ACTIVE",
         deletedAt: null,
+        deletedById: null,
       },
     });
 
@@ -163,7 +164,7 @@ const CreateCreditDebitNote = async (
     }
 
     const refinery = await prisma.refinery.findFirst({
-      where: { deletedAt: null, id: currentRefineryId },
+      where: { deletedAt: null, deletedById: null, id: currentRefineryId },
     });
 
     if (!refinery) {
