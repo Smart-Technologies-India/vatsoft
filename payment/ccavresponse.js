@@ -649,7 +649,9 @@ export const postRes = (request, response) => {
               ),
             );
 
-            if (res.total_tax_amount != "0" && res.total_tax_amount != null) {
+            if (
+              !(res.total_tax_amount == "0" || res.total_tax_amount == null)
+            ) {
               await prisma.interest_working.create({
                 data: {
                   dvatId: res.dvat.id,
@@ -811,8 +813,10 @@ export const postRes = (request, response) => {
             );
 
             if (
-              challan.total_tax_amount != "0" &&
-              challan.total_tax_amount != null
+              !(
+                challan.total_tax_amount == "0" ||
+                challan.total_tax_amount == null
+              )
             ) {
               await prisma.interest_working.create({
                 data: {
@@ -1019,8 +1023,10 @@ export const postRes = (request, response) => {
             );
 
             if (
-              challan.total_tax_amount != "0" &&
-              challan.total_tax_amount != null
+              !(
+                challan.total_tax_amount == "0" ||
+                challan.total_tax_amount == null
+              )
             ) {
               await prisma.interest_working.create({
                 data: {

@@ -605,7 +605,9 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
     // Validate that input contains at least one letter and is not purely numeric
     const hasAlphabet = /[a-zA-Z]/.test(dealerName);
     if (!hasAlphabet) {
-      return toast.error("Dealer Name must contain at least one letter. Only numbers are not allowed.");
+      return toast.error(
+        "Dealer Name must contain at least one letter. Only numbers are not allowed.",
+      );
     }
 
     const response = await CreateTinNumber({
@@ -720,17 +722,23 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         <div className="mt-2">
           <DateSelect<DailyPurchaseMasterForm>
             name="invoice_date"
+            disable={
+              description_of_goods == null ||
+              description_of_goods == undefined ||
+              isAddMoreMode
+            }
             required={true}
             title="Invoice Date"
             format={"DD/MM/YYYY"}
             placeholder="Select Invoice Date"
             mindate={dayjs("2026-04-01")}
             maxdate={
-              davtdata?.commodity === "FUEL"
+              davtdata?.commodity === "FUEL" &&
+              [1, 2, 748, 749].includes(Number(description_of_goods))
                 ? dayjs("2026-06-30")
                 : dayjs()
             }
-            disable={isAddMoreMode}
+            // disable={isAddMoreMode}
           />
         </div>
         {
@@ -763,10 +771,10 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
         <div className="mt-2">
           <div className="mt-2">
             <MultiSelect<DailyPurchaseMasterForm>
-              placeholder="Select Items details"
+              placeholder="Select Item details"
               name="description_of_goods"
               required={true}
-              title="Items details"
+              title="Item details"
               options={commodityMaster.map(
                 (val: commodity_master, index: number) => ({
                   value: val.id.toString(),

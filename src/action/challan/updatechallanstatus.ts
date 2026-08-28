@@ -219,7 +219,9 @@ export default async function UpdateChallanStatus(
           (paymentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
         ),
       );
-      if (updated.total_tax_amount != "0" && updated.total_tax_amount != null) {
+      if (
+        !(updated.total_tax_amount == "0" || updated.total_tax_amount == null)
+      ) {
         await prisma.interest_working.create({
           data: {
             dvatId: updated.dvat.id,

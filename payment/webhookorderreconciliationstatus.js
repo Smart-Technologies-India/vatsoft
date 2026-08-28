@@ -368,8 +368,10 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
           );
 
           if (
-            paidchallan.total_tax_amount != "0" &&
-            paidchallan.total_tax_amount != null
+            !(
+              paidchallan.total_tax_amount == "0" ||
+              paidchallan.total_tax_amount == null
+            )
           ) {
             await prisma.interest_working.create({
               data: {

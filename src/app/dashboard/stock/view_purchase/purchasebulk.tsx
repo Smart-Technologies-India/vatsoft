@@ -559,10 +559,15 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
             }
 
             // Check maximum date based on commodity
-            if (dvatdata?.commodity === "FUEL") {
+            if (
+              dvatdata?.commodity === "FUEL" &&
+              [1, 2, 748, 749].includes(Number(item_code_raw))
+            ) {
               const maxDate = new Date(2026, 5, 30); // June 30, 2026
               if (invoice_date > maxDate) {
-                errors.push("* FUEL commodity: Invoice Date cannot be after 30 June 2026");
+                errors.push(
+                  "* FUEL commodity: Invoice Date cannot be after 30 June 2026",
+                );
               }
             }
           }
@@ -958,7 +963,9 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
 
           if (validItemRows.length !== invoiceRows.length) {
             invoiceRows.forEach((row) => {
-              if (!row.errorname.includes("* Item Value must be greater than 0")) {
+              if (
+                !row.errorname.includes("* Item Value must be greater than 0")
+              ) {
                 row.error = true;
                 row.errorname = row.errorname
                   ? row.errorname + "\n* Item Value must be greater than 0"
@@ -977,7 +984,8 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
               ) {
                 row.error = true;
                 row.errorname = row.errorname
-                  ? row.errorname + "\n* Total Invoice Value must be greater than 0"
+                  ? row.errorname +
+                    "\n* Total Invoice Value must be greater than 0"
                   : "* Total Invoice Value must be greater than 0";
               }
             });
@@ -993,7 +1001,8 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
             invoiceRows.forEach((row) => {
               row.error = true;
               row.errorname = row.errorname
-                ? row.errorname + "\n* Total Invoice Value must be same for all rows of an invoice"
+                ? row.errorname +
+                  "\n* Total Invoice Value must be same for all rows of an invoice"
                 : "* Total Invoice Value must be same for all rows of an invoice";
             });
             continue;
@@ -1008,7 +1017,8 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
             invoiceRows.forEach((row) => {
               row.error = true;
               row.errorname = row.errorname
-                ? row.errorname + "\n* Sum of Item Value for invoice must be greater than 0"
+                ? row.errorname +
+                  "\n* Sum of Item Value for invoice must be greater than 0"
                 : "* Sum of Item Value for invoice must be greater than 0";
             });
             continue;

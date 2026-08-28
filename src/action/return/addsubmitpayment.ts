@@ -412,7 +412,7 @@ const AddSubmitPayment = async (
               dates.toDate.split("-").reverse().join("-"),
             ),
             valid_date: isExist.dvat04.certificateDate ?? new Date(),
-            sr_no: getsrno(
+            sr_no: getsrnofform(
               isExist.dvat04.selectOffice!,
               lastOfficeSerial,
               srNoCounter++,
@@ -577,4 +577,26 @@ const getsrno = (
         : "03";
 
   return `${pre}/${value1}/C/${last + offset + 1}`;
+};
+
+const getsrnofform = (
+  selectOffice: SelectOffice,
+  last: number,
+  offset: number = 0,
+): string => {
+  let pre =
+    selectOffice == SelectOffice.Dadra_Nagar_Haveli
+      ? "DNH"
+      : selectOffice == SelectOffice.DAMAN
+        ? "DD"
+        : "DIU";
+
+  let value1 =
+    selectOffice == SelectOffice.Dadra_Nagar_Haveli
+      ? "01"
+      : selectOffice == SelectOffice.DAMAN
+        ? "02"
+        : "03";
+
+  return `${pre}/${value1}/F/${last + offset + 1}`;
 };
