@@ -317,15 +317,6 @@ const Sidebar = (props: SidebarProps) => {
               collapsed={isCollapsed}
             />
 
-            {/* <MenuTab
-              click={() => props.setIsOpen(false)}
-              icon={<FluentCalendar12Regular className="w-5 h-5" />}
-              name="Dispatch"
-              path={path}
-              pathcheck={"/dashboard/refinery/dispatch"}
-              collapsed={isCollapsed}
-            /> */}
-
             <MenuTab
               click={() => props.setIsOpen(false)}
               icon={<FluentAlignBottom24Regular className="w-5 h-5" />}
@@ -349,6 +340,14 @@ const Sidebar = (props: SidebarProps) => {
               name="Credit/Debit Note"
               path={path}
               pathcheck={"/dashboard/refinery/credit_debit_note"}
+              collapsed={isCollapsed}
+            />
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentCalendar12Regular className="w-5 h-5" />}
+              name="Dealer Invoices"
+              path={path}
+              pathcheck={"/dashboard/refinery/dealer_invoices"}
               collapsed={isCollapsed}
             />
           </>

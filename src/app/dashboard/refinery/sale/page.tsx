@@ -46,6 +46,7 @@ type GroupedRefinerySale = {
   invoice_number: string;
   invoice_date: Date;
   seller_tin_number: tin_number_master;
+  purchaser_trade_name: string;
   item_details: string;
   item_count: number;
   quantity: number;
@@ -122,6 +123,7 @@ const RefinerySalePage = () => {
           invoice_number: entry.invoice_number,
           invoice_date: new Date(entry.invoice_date),
           seller_tin_number: entry.seller_tin_number,
+          purchaser_trade_name: entry.seller_tin_number.name_of_dealer || "",
           item_details: entry.commodity_master.product_name,
           item_count: 1,
           quantity: Number(entry.quantity || 0),
@@ -212,6 +214,11 @@ const RefinerySalePage = () => {
         accessorFn: (row) => row.seller_tin_number.tin_number,
       },
       {
+        id: "purchaser_trade_name",
+        header: "Purchaser Trade Name",
+        accessorFn: (row) => row.purchaser_trade_name,
+      },
+      {
         id: "item_details",
         header: "Item Details",
         accessorFn: (row) => row.item_details,
@@ -286,6 +293,7 @@ const RefinerySalePage = () => {
       const haystack = [
         row.original.invoice_number,
         row.original.seller_tin_number.tin_number,
+        row.original.purchaser_trade_name,
         row.original.item_details,
         row.original.refinery_status || "SALE",
       ]
@@ -427,7 +435,7 @@ const RefinerySalePage = () => {
                   setSearchText(e.target.value);
                   setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                 }}
-                placeholder="Search invoice, TIN, item, status"
+                placeholder="Search invoice, TIN, purchaser, item, status"
                 className="h-9 w-full sm:w-72 rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
               />
               <select

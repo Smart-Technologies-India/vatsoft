@@ -4,6 +4,7 @@ import GetCurrentDvatRefinerySale, {
   CurrentDvatRefinerySale,
 } from "@/action/refinery_sale/getcurrentdvatrefinerysale";
 import DeleteRefinerySale from "@/action/refinery_sale/deleterefinerysale";
+import GetChallanWithRefinerySales from "@/action/challan/getchallanwithrefinerysales";
 import {
   Table,
   TableBody,
@@ -12,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button, Spin, Modal } from "antd";
+import { Button, Spin, Modal, Input, Select } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
@@ -81,6 +82,8 @@ type GroupedRefinerySale = {
   taxableAmount: number;
   invoiceValue: number;
   status: string;
+  challanId: number | null;
+  challanCount: number;
 };
 
 const RefinerySalesPage = () => {
@@ -88,6 +91,14 @@ const RefinerySalesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [sales, setSales] = useState<CurrentDvatRefinerySale[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [sortField, setSortField] = useState<
+    "invoiceNumber" | "invoiceDate" | "refineryName" | "status" | "invoiceValue"
+  >("invoiceDate");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "SALE" | "PAID" | "VATPAID" | "DISPATCH"
+  >("all");
   const [deleteModalState, setDeleteModalState] = useState<{
     open: boolean;
     saleId: number | null;
@@ -97,8 +108,14 @@ const RefinerySalesPage = () => {
     saleId: null,
     isDeleting: false,
   });
+  const [isChallanModalOpen, setIsChallanModalOpen] = useState(false);
+  const [selectedChallanId, setSelectedChallanId] = useState<number | null>(
+    null,
+  );
+  const [challanData, setChallanData] = useState<any>(null);
+  const [isChallanLoading, setIsChallanLoading] = useState(false);
 
-  const  loadSales = async () => {
+  const loadSales = async () => {
     setIsLoading(true);
     try {
       const response = await GetCurrentDvatRefinerySale();
@@ -135,7 +152,9 @@ const RefinerySalesPage = () => {
         });
 
         // SECOND: Show success toast
-        toast.success(response.message || "Refinery sale deleted successfully.");
+        toast.success(
+          response.message || "Refinery sale deleted successfully.",
+        );
 
         // THIRD: Reload all data
         await loadSales();
@@ -163,6 +182,32 @@ const RefinerySalesPage = () => {
       saleId: null,
       isDeleting: false,
     });
+  };
+
+  const openChallanModal = async (challanId: number) => {
+    setSelectedChallanId(challanId);
+    setIsChallanModalOpen(true);
+    setIsChallanLoading(true);
+
+    try {
+      const response = await GetChallanWithRefinerySales(challanId);
+      if (response.status && response.data) {
+        setChallanData(response.data);
+      } else {
+        toast.error(response.message || "Failed to load challan details");
+      }
+    } catch (error) {
+      toast.error("Error loading challan details");
+      console.error(error);
+    } finally {
+      setIsChallanLoading(false);
+    }
+  };
+
+  const closeChallanModal = () => {
+    setIsChallanModalOpen(false);
+    setSelectedChallanId(null);
+    setChallanData(null);
   };
 
   useEffect(() => {
@@ -207,6 +252,8 @@ const RefinerySalesPage = () => {
           taxableAmount: taxable,
           invoiceValue: taxable + vat,
           status,
+          challanId: sale.challanId || null,
+          challanCount: sale.challanId ? 1 : 0,
         });
         return;
       }
@@ -220,6 +267,17 @@ const RefinerySalesPage = () => {
         existing.count > 1 ? `${existing.count} items` : productName;
       existing.taxPercentDisplay =
         existing.count > 1 ? "Multiple" : `${sale.tax_percent}%`;
+
+      // Track challan count
+      if (
+        sale.challanId &&
+        (!existing.challanId || existing.challanId !== sale.challanId)
+      ) {
+        existing.challanCount += 1;
+        if (!existing.challanId) {
+          existing.challanId = sale.challanId;
+        }
+      }
 
       const statuses = [existing.status, status];
       if (statuses.includes("COMPLETED")) {
@@ -235,11 +293,55 @@ const RefinerySalesPage = () => {
       }
     });
 
-    return Array.from(grouped.values()).sort(
-      (a, b) =>
-        b.invoiceDate.getTime() - a.invoiceDate.getTime() || b.id - a.id,
-    );
-  }, [sales]);
+    return Array.from(grouped.values())
+      .filter((sale) => {
+        // Status filter
+        if (statusFilter !== "all" && sale.status !== statusFilter) {
+          return false;
+        }
+
+        // Search term filter
+        if (searchTerm.trim() !== "") {
+          const search = searchTerm.toLowerCase();
+          const matchInvoiceNumber = sale.invoiceNumber
+            .toLowerCase()
+            .includes(search);
+          const matchRefinery = sale.refineryName.toLowerCase().includes(search);
+          const matchProduct = sale.productSummary.toLowerCase().includes(search);
+
+          if (!matchInvoiceNumber && !matchRefinery && !matchProduct) {
+            return false;
+          }
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        let comparison = 0;
+
+        switch (sortField) {
+          case "invoiceNumber":
+            comparison = a.invoiceNumber.localeCompare(b.invoiceNumber);
+            break;
+          case "invoiceDate":
+            comparison = a.invoiceDate.getTime() - b.invoiceDate.getTime();
+            break;
+          case "refineryName":
+            comparison = a.refineryName.localeCompare(b.refineryName);
+            break;
+          case "status":
+            comparison = a.status.localeCompare(b.status);
+            break;
+          case "invoiceValue":
+            comparison = a.invoiceValue - b.invoiceValue;
+            break;
+          default:
+            comparison = 0;
+        }
+
+        return sortOrder === "asc" ? comparison : -comparison;
+      });
+  }, [sales, searchTerm, sortField, sortOrder, statusFilter]);
 
   const totals = useMemo(() => {
     return sales.reduce(
@@ -316,6 +418,91 @@ const RefinerySalesPage = () => {
           </div>
         ) : groupedSales.length > 0 ? (
           <div className="bg-white rounded shadow-sm border p-3">
+            {/* Search, Sort, and Filter Controls */}
+            <div className="mb-4 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3 items-end">
+                <div className="xl:col-span-2">
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
+                    Search
+                  </label>
+                  <Input
+                    size="small"
+                    placeholder="Invoice number, refinery name, product..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
+                    Sort By
+                  </label>
+                  <Select
+                    size="small"
+                    value={sortField}
+                    onChange={(value) => setSortField(value as any)}
+                    options={[
+                      { label: "Invoice Date", value: "invoiceDate" },
+                      { label: "Invoice Number", value: "invoiceNumber" },
+                      { label: "Refinery Name", value: "refineryName" },
+                      { label: "Status", value: "status" },
+                      { label: "Invoice Value", value: "invoiceValue" },
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
+                    Order
+                  </label>
+                  <Select
+                    size="small"
+                    value={sortOrder}
+                    onChange={(value) => setSortOrder(value as "asc" | "desc")}
+                    options={[
+                      { label: "Ascending", value: "asc" },
+                      { label: "Descending", value: "desc" },
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
+                    Status
+                  </label>
+                  <Select
+                    size="small"
+                    value={statusFilter}
+                    onChange={(value) => setStatusFilter(value as any)}
+                    options={[
+                      { label: "All Status", value: "all" },
+                      { label: "Sale", value: "SALE" },
+                      { label: "Paid", value: "PAID" },
+                      { label: "VAT Paid", value: "VATPAID" },
+                      { label: "Dispatch", value: "DISPATCH" },
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  {(searchTerm || statusFilter !== "all") && (
+                    <Button
+                      size="small"
+                      type="default"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setStatusFilter("all");
+                        setSortField("invoiceDate");
+                        setSortOrder("desc");
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -349,6 +536,9 @@ const RefinerySalesPage = () => {
                     </TableHead>
                     <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                       Status
+                    </TableHead>
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Challan
                     </TableHead>
                     <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                       Action
@@ -401,6 +591,20 @@ const RefinerySalesPage = () => {
                           </span>
                         </TableCell>
                         <TableCell className="text-center p-2 text-xs">
+                          {sale.challanId && sale.challanCount > 0 ? (
+                            <Button
+                              type="link"
+                              size="small"
+                              onClick={() => openChallanModal(sale.challanId!)}
+                              className="text-blue-600 hover:text-blue-800 font-medium"
+                            >
+                              {sale.challanCount}
+                            </Button>
+                          ) : (
+                            <span className="text-gray-400 text-xs">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center p-2 text-xs">
                           <div className="flex gap-1 justify-center">
                             <Button
                               size="small"
@@ -448,8 +652,159 @@ const RefinerySalesPage = () => {
           onOk={handleDeleteConfirm}
         >
           <p>
-            Are you sure you want to delete this refinery sale? This action cannot be undone.
+            Are you sure you want to delete this refinery sale? This action
+            cannot be undone.
           </p>
+        </Modal>
+
+        <Modal
+          title={`Challan Details`}
+          open={isChallanModalOpen}
+          onCancel={closeChallanModal}
+          width={1200}
+          footer={[
+            <Button key="close" onClick={closeChallanModal}>
+              Close
+            </Button>,
+          ]}
+          loading={isChallanLoading}
+        >
+          {isChallanLoading ? (
+            <div className="flex justify-center py-8">
+              <Spin />
+            </div>
+          ) : challanData ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-900 text-sm">
+                  Challan Information
+                </h3>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Challan Number
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Challan Date
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Payment Status
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Total Amount
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow className="hover:bg-gray-50">
+                        <TableCell className="text-center p-2 text-xs font-semibold">
+                          {challanData.challan.cpin}
+                        </TableCell>
+                        <TableCell className="text-center p-2 text-xs">
+                          {formatDate(challanData.challan.transaction_date)}
+                        </TableCell>
+                        <TableCell className="text-center p-2 text-xs">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              challanData.challan.paymentstatus === "PAID"
+                                ? "bg-green-100 text-green-800"
+                                : challanData.challan.paymentstatus ===
+                                    "PENDING"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {challanData.challan.paymentstatus}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center p-2 text-xs font-semibold">
+                          {formatCurrency(challanData.totalAmount)}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-900 text-sm">
+                  Mapped Refinery Sales
+                </h3>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Sr. No.
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Invoice Number
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Invoice Date
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Refinery
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Product
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Quantity
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Taxable Value
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          VAT Amount
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {challanData.refinerySales.map(
+                        (sale: any, index: number) => (
+                          <TableRow key={sale.id} className="hover:bg-gray-50">
+                            <TableCell className="text-center p-2 text-xs">
+                              {index + 1}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-xs">
+                              {sale.invoice_number}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-xs">
+                              {formatDate(sale.invoice_date)}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-xs">
+                              {sale.refinery?.tradename ||
+                                sale.refinery?.name ||
+                                "N/A"}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-xs">
+                              {sale.commodity_master?.product_name || "N/A"}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-xs">
+                              {formatQuantity(sale.quantity)}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-xs">
+                              {sale.amount}
+                            </TableCell>
+                            <TableCell className="text-center p-2 text-xs">
+                              {sale.vatamount}
+                            </TableCell>
+                          </TableRow>
+                        ),
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-4">
+              No challan data available
+            </p>
+          )}
         </Modal>
       </div>
     </main>

@@ -330,6 +330,7 @@ async function processReturnData(
     data: {
       returnId: updateresponse.id,
       dvatId: updateresponse.dvat04Id,
+      month: updateresponse.month,
       frequency: updateresponse.dvat04?.frequencyFilings ?? "MONTHLY",
       filed: true,
       tinNumber: updateresponse.dvat04.tinNumber,

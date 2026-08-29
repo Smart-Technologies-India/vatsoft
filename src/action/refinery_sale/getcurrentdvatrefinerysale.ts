@@ -64,6 +64,7 @@ const GetCurrentDvatRefinerySale = async (): Promise<
         commodity_master: true,
         refinery: true,
         seller_tin_number: true,
+        challan: true,
       },
       orderBy: [{ invoice_date: "desc" }, { id: "desc" }],
     });
