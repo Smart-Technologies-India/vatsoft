@@ -760,7 +760,7 @@ const RefinerySalesPage = () => {
                           </span>
                         </TableCell>
                         <TableCell className="text-center p-2 text-xs font-semibold">
-                          {formatCurrency(challanData.challan.total_tax_amount)}
+                          {challanData.challan.total_tax_amount}
                         </TableCell>
                       </TableRow>
                     </TableBody>
