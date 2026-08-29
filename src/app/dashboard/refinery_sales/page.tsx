@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button, Spin, Modal, Input, Select } from "antd";
+import { Button, Spin, Modal, Input, Select, Pagination } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
@@ -114,6 +114,11 @@ const RefinerySalesPage = () => {
   );
   const [challanData, setChallanData] = useState<any>(null);
   const [isChallanLoading, setIsChallanLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    take: 10,
+    skip: 0,
+    total: 0,
+  });
 
   const loadSales = async () => {
     setIsLoading(true);
@@ -343,6 +348,15 @@ const RefinerySalesPage = () => {
       });
   }, [sales, searchTerm, sortField, sortOrder, statusFilter]);
 
+  const pagedSales = useMemo(() => {
+    // Update total when groupedSales changes
+    setPagination((prev) => ({ ...prev, skip: 0, total: groupedSales.length }));
+    return groupedSales.slice(
+      pagination.skip,
+      pagination.skip + pagination.take,
+    );
+  }, [groupedSales, pagination.skip, pagination.take]);
+
   const totals = useMemo(() => {
     return sales.reduce(
       (acc, sale) => {
@@ -368,6 +382,14 @@ const RefinerySalesPage = () => {
 
   const openDrawer = () => {
     setIsDrawerOpen(true);
+  };
+
+  const onPageChange = (page: number, pageSize: number) => {
+    setPagination((prev) => ({
+      ...prev,
+      take: pageSize,
+      skip: (page - 1) * pageSize,
+    }));
   };
 
   return (
@@ -546,8 +568,10 @@ const RefinerySalesPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {groupedSales.map((sale, index) => {
+                  {pagedSales.map((sale, index) => {
                     const status = sale.status || "SALE";
+                    const displayIndex =
+                      pagination.skip + index + 1;
 
                     return (
                       <TableRow
@@ -555,7 +579,7 @@ const RefinerySalesPage = () => {
                         className={`border-b ${getStatusRowColor(status)}`}
                       >
                         <TableCell className="text-center p-2 text-xs">
-                          {index + 1}
+                          {displayIndex}
                         </TableCell>
                         <TableCell className="text-center p-2 text-xs">
                           {sale.invoiceNumber}
@@ -633,6 +657,22 @@ const RefinerySalesPage = () => {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination */}
+            {groupedSales.length > 0 && (
+              <div className="flex justify-end mt-4">
+                <Pagination
+                  current={
+                    Math.floor(pagination.skip / pagination.take) + 1
+                  }
+                  pageSize={pagination.take}
+                  total={pagination.total}
+                  onChange={onPageChange}
+                  showSizeChanger
+                  pageSizeOptions={[5, 10, 20, 50]}
+                />
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded shadow-sm border p-12 text-center">
@@ -720,7 +760,7 @@ const RefinerySalesPage = () => {
                           </span>
                         </TableCell>
                         <TableCell className="text-center p-2 text-xs font-semibold">
-                          {formatCurrency(challanData.totalAmount)}
+                          {formatCurrency(challanData.challan.total_tax_amount)}
                         </TableCell>
                       </TableRow>
                     </TableBody>
