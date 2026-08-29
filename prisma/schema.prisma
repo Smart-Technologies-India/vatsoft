@@ -678,6 +678,8 @@ model returns_entry {
   @@index([returns_01Id], map: "returns_entry_returns_01Id_fkey")
   @@index([seller_tin_numberId], map: "returns_entry_seller_tin_numberId_fkey")
   @@index([updatedById], map: "returns_entry_updatedById_fkey")
+  @@index([quantity], map: "returns_entry_quantity_idx")
+  @@index([invoice_number], map: "returns_entry_invoice_number_idx")
 }
 
 model department_doc_upload {
@@ -1157,6 +1159,8 @@ model daily_sale {
   @@index([dvat04Id], map: "daily_sale_dvat04Id_fkey")
   @@index([seller_tin_numberId], map: "daily_sale_seller_tin_numberId_fkey")
   @@index([updatedById], map: "daily_sale_updatedById_fkey")
+  @@index([invoice_number], map: "daily_sale_invoice_number_idx")
+  @@index([quantity], map: "daily_sale_quantity_idx")
 }
 
 model tally_sale {
@@ -1236,6 +1240,8 @@ model daily_purchase {
   @@index([dvat04Id], map: "daily_purchase_dvat04Id_fkey")
   @@index([seller_tin_numberId], map: "daily_purchase_seller_tin_numberId_fkey")
   @@index([updatedById], map: "daily_purchase_updatedById_fkey")
+  @@index([invoice_number], map: "daily_purchase_invoice_number_idx")
+  @@index([quantity], map: "daily_purchase_quantity_idx")
 }
 
 model stock {

@@ -295,7 +295,7 @@ const ConvertDvat30A = async (
               dvat_type: val.is_local ? DvatType.DVAT_30 : DvatType.DVAT_30_A,
               status: Status.ACTIVE,
               createdById: currentUserId,
-              urn_number: nanoid(),
+              urn_number: val.urn_number || nanoid(),
               invoice_date: val.invoice_date,
               invoice_number: val.invoice_number,
               seller_tin_numberId: val.seller_tin_numberId,

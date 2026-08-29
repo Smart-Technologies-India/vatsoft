@@ -65,7 +65,6 @@ const DeleteTallySale = async (
       functionname,
     } as any;
   } catch (error) {
-    console.error(`[${functionname}]`, error);
     return {
       status: false,
       data: null,

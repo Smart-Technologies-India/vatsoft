@@ -400,7 +400,6 @@ const AddPaymentSubmit = async (
             seller_tin_number: true,
           },
         });
-
         // step 2 : get all entry
         const groupedData = returnEntry.reduce<
           Record<
