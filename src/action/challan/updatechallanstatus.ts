@@ -222,21 +222,30 @@ export default async function UpdateChallanStatus(
       if (
         !(updated.total_tax_amount == "0" || updated.total_tax_amount == null)
       ) {
-        await prisma.interest_working.create({
-          data: {
+        const isexist = await prisma.interest_working.findFirst({
+          where: {
             dvatId: updated.dvat.id,
             returnId: updated.returns_01.id,
             challanId: updated.id,
-            month: updated.returns_01.month,
-            outstanding_before: 0,
-            interest: 0,
-            payment_date: paymentDate,
-            amount: updated.returns_01.total_tax_amount,
-            due_date: dueDate,
-            days_late: daysLate,
-            status: "ACTIVE",
           },
         });
+        if (!isexist) {
+          await prisma.interest_working.create({
+            data: {
+              dvatId: updated.dvat.id,
+              returnId: updated.returns_01.id,
+              challanId: updated.id,
+              month: updated.returns_01.month,
+              outstanding_before: 0,
+              interest: 0,
+              payment_date: paymentDate,
+              amount: updated.total_tax_amount,
+              due_date: dueDate,
+              days_late: daysLate,
+              status: "ACTIVE",
+            },
+          });
+        }
       }
     }
 

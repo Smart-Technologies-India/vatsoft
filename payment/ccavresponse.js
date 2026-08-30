@@ -652,21 +652,30 @@ export const postRes = (request, response) => {
             if (
               !(res.total_tax_amount == "0" || res.total_tax_amount == null)
             ) {
-              await prisma.interest_working.create({
-                data: {
-                  dvatId: res.dvat.id,
-                  returnId: res.returns_01.id,
-                  challanId: res.id,
-                  month: res.returns_01.month,
-                  outstanding_before: 0,
-                  interest: 0,
-                  payment_date: paymentDate,
-                  amount: res.returns_01.total_tax_amount,
-                  due_date: dueDate,
-                  days_late: daysLate,
-                  status: "ACTIVE",
+              const isexist = await prisma.interest_working.findFirst({
+                where: {
+                  dvatId: updated.dvat.id,
+                  returnId: updated.returns_01.id,
+                  challanId: updated.id,
                 },
               });
+              if (!isexist) {
+                await prisma.interest_working.create({
+                  data: {
+                    dvatId: res.dvat.id,
+                    returnId: res.returns_01.id,
+                    challanId: res.id,
+                    month: res.returns_01.month,
+                    outstanding_before: 0,
+                    interest: 0,
+                    payment_date: paymentDate,
+                    amount: res.total_tax_amount,
+                    due_date: dueDate,
+                    days_late: daysLate,
+                    status: "ACTIVE",
+                  },
+                });
+              }
             }
           }
 
@@ -818,21 +827,30 @@ export const postRes = (request, response) => {
                 challan.total_tax_amount == null
               )
             ) {
-              await prisma.interest_working.create({
-                data: {
-                  dvatId: challan.dvat.id,
-                  returnId: challan.returns_01.id,
-                  challanId: challan.id,
-                  month: challan.returns_01.month,
-                  outstanding_before: 0,
-                  interest: 0,
-                  payment_date: paymentDate,
-                  amount: challan.returns_01.total_tax_amount,
-                  due_date: dueDate,
-                  days_late: daysLate,
-                  status: "ACTIVE",
+              const isexist = await prisma.interest_working.findFirst({
+                where: {
+                  dvatId: updated.dvat.id,
+                  returnId: updated.returns_01.id,
+                  challanId: updated.id,
                 },
               });
+              if (!isexist) {
+                await prisma.interest_working.create({
+                  data: {
+                    dvatId: challan.dvat.id,
+                    returnId: challan.returns_01.id,
+                    challanId: challan.id,
+                    month: challan.returns_01.month,
+                    outstanding_before: 0,
+                    interest: 0,
+                    payment_date: paymentDate,
+                    amount: challan.total_tax_amount,
+                    due_date: dueDate,
+                    days_late: daysLate,
+                    status: "ACTIVE",
+                  },
+                });
+              }
             }
           }
 
@@ -1028,21 +1046,30 @@ export const postRes = (request, response) => {
                 challan.total_tax_amount == null
               )
             ) {
-              await prisma.interest_working.create({
-                data: {
-                  dvatId: challan.dvat.id,
-                  returnId: challan.returns_01.id,
-                  challanId: challan.id,
-                  month: challan.returns_01.month,
-                  outstanding_before: 0,
-                  interest: 0,
-                  payment_date: paymentDate,
-                  amount: challan.returns_01.total_tax_amount,
-                  due_date: dueDate,
-                  days_late: daysLate,
-                  status: "ACTIVE",
+              const isexist = await prisma.interest_working.findFirst({
+                where: {
+                  dvatId: updated.dvat.id,
+                  returnId: updated.returns_01.id,
+                  challanId: updated.id,
                 },
               });
+              if (!isexist) {
+                await prisma.interest_working.create({
+                  data: {
+                    dvatId: challan.dvat.id,
+                    returnId: challan.returns_01.id,
+                    challanId: challan.id,
+                    month: challan.returns_01.month,
+                    outstanding_before: 0,
+                    interest: 0,
+                    payment_date: paymentDate,
+                    amount: challan.total_tax_amount,
+                    due_date: dueDate,
+                    days_late: daysLate,
+                    status: "ACTIVE",
+                  },
+                });
+              }
             }
           }
 
