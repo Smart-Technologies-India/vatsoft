@@ -30,7 +30,7 @@ const TestReturn = async (
         // id: payload.id,
         deletedAt: null,
         deletedById: null,
-        //   status: "ACTIVE",
+        status: "PAID",
         OR: [
           {
             return_type: "REVISED",
@@ -193,6 +193,7 @@ async function processReturnData(
         month: month,
         deletedAt: null,
         deletedById: null,
+        status: "PAID",
       },
     });
 
