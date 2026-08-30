@@ -72,7 +72,12 @@ const ConvertDvat31 = async (
     }
 
     if (payload.endDate) {
-      const endDate = new Date(payload.endDate);
+      let endDate = new Date(payload.endDate);
+      // If endDate is the 1st of a month, it means "up to end of previous month"
+      // So set it to the last day of the previous month
+      if (endDate.getDate() === 1) {
+        endDate = new Date(endDate.getFullYear(), endDate.getMonth(), 0);
+      }
       endDate.setHours(23, 59, 59, 999);
       invoiceDateFilter.lte = endDate;
     }
