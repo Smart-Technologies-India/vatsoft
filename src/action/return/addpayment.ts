@@ -5,6 +5,7 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import {
   CategoryOfEntry,
+  dvat04,
   DvatType,
   PurchaseType,
   returns_01,
@@ -13,6 +14,13 @@ import {
 } from "@prisma/client";
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import { customAlphabet } from "nanoid";
+import {
+  CentralSalesCalculation,
+  NetTaxCalculation,
+  R4Turnover,
+  R5Turnover,
+  TheBalance,
+} from "@/components/dvatreturn/vatcalculation";
 
 interface AddPaymentPayload {
   id: number;
@@ -83,7 +91,7 @@ const AddPayment = async (
       const transactionDate = addPrismaDatabaseDate(new Date()).toISOString();
       const filingDate = new Date();
 
-      await prisma.returns_01.update({
+      const returnresponse = await prisma.returns_01.update({
         where: {
           id: payload.id,
         },
@@ -108,7 +116,18 @@ const AddPayment = async (
           total_tax_amount: payload.totaltaxamount,
           status: "PAID",
         },
+        include: {
+          dvat04: true,
+        },
       });
+
+      if (!returnresponse) {
+        throw new Error("Something went wrong! Unable to update");
+      }
+
+      const isQuarterlyFiling =
+        returnresponse.dvat04.frequencyFilings == "QUARTERLY";
+      await updateReturns01Work(isQuarterlyFiling, returnresponse);
 
       const updateresponse = await prisma.returns_01.findFirst({
         where: {
@@ -738,4 +757,313 @@ const getsrnofform = (
         : "03";
 
   return `${pre}/${value1}/F/${last + offset + 1}`;
+};
+
+const updateReturns01Work = async (
+  isQuarterlyFiling: boolean,
+  updateresponse: returns_01 & {
+    dvat04: dvat04;
+  },
+): Promise<void> => {
+  let month: string = updateresponse.month ?? "";
+  let year: string = updateresponse.year;
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  if (isQuarterlyFiling) {
+    year = ["April", "May", "June"].includes(month)
+      ? (parseInt(year) - 1).toString()
+      : year;
+    switch (month) {
+      case "April":
+        month = "March";
+        break;
+      case "May":
+        month = "March";
+        break;
+      case "June":
+        month = "March";
+        break;
+      case "July":
+        month = "June";
+        break;
+      case "August":
+        month = "June";
+        break;
+      case "September":
+        month = "June";
+        break;
+      case "October":
+        month = "September";
+        break;
+      case "November":
+        month = "September";
+        break;
+      case "December":
+        month = "September";
+        break;
+      case "January":
+        month = "December";
+        break;
+      case "February":
+        month = "December";
+        break;
+      case "March":
+        month = "December";
+        break;
+    }
+  } else {
+    if (month == "January") {
+      year = (parseInt(year) - 1).toString();
+    }
+    if (month == "January") {
+      month = "December";
+    } else {
+      month = months[months.indexOf(month) - 1];
+    }
+  }
+
+  const isBeforeApril2026: boolean =
+    parseInt(year) < 2026 ||
+    (parseInt(year) === 2026 &&
+      months.indexOf(month) < months.indexOf("April"));
+
+  let lastmonthreturn: returns_01 | null = null;
+
+  if (!isBeforeApril2026) {
+    lastmonthreturn = await prisma.returns_01.findFirst({
+      where: {
+        year: year,
+        month: month,
+        deletedAt: null,
+        deletedById: null,
+      },
+    });
+
+    if (!lastmonthreturn) {
+      throw new Error(
+        `No return found for the previous month: ${month} ${year}`,
+      );
+    }
+  }
+
+  // Get months to fetch based on filing frequency
+  let monthsToFetch: string[] = [updateresponse.month ?? ""];
+  if (isQuarterlyFiling) {
+    monthsToFetch = getMonthGroup(updateresponse.month ?? "");
+  }
+
+  const returnforms = await prisma.returns_entry.findMany({
+    where: {
+      deletedAt: null,
+      deletedById: null,
+      returns_01: {
+        dvat04Id: updateresponse.dvat04Id,
+        year: updateresponse.year,
+        month: { in: monthsToFetch },
+        deletedAt: null,
+        deletedById: null,
+        status: "ACTIVE",
+      },
+      status: "ACTIVE",
+    },
+    include: {
+      seller_tin_number: true,
+      state: true,
+      returns_01: true,
+    },
+  });
+
+  const challans = await prisma.challan.findMany({
+    where: {
+      deletedAt: null,
+      deletedById: null,
+      paymentstatus: "PAID",
+      returns_01: {
+        dvat04Id: updateresponse.dvat04Id,
+        year: updateresponse.year,
+        month: { in: monthsToFetch },
+        deletedAt: null,
+        deletedById: null,
+        status: "ACTIVE",
+      },
+    },
+  });
+  const r4Turnover = new R4Turnover(
+    returnforms,
+    !isBeforeApril2026 && lastmonthreturn
+      ? parseFloat(lastmonthreturn.cash_payment ?? "0")
+      : 0,
+  );
+  const r5Turnover = new R5Turnover(
+    returnforms,
+    !isBeforeApril2026 && lastmonthreturn
+      ? parseFloat(lastmonthreturn.cash_payment ?? "0")
+      : 0,
+  );
+
+  const netTaxCalc = new NetTaxCalculation(
+    returnforms,
+    challans,
+    updateresponse,
+    !isBeforeApril2026 && lastmonthreturn
+      ? parseFloat(lastmonthreturn.pending_payment ?? "0")
+      : 0,
+    !isBeforeApril2026 && lastmonthreturn
+      ? parseFloat(lastmonthreturn.cash_payment ?? "0")
+      : 0,
+    isQuarterlyFiling,
+  );
+
+  const centralSales = new CentralSalesCalculation(
+    returnforms,
+    challans,
+    updateresponse,
+    !isBeforeApril2026 && lastmonthreturn
+      ? parseFloat(lastmonthreturn.pending_payment ?? "0")
+      : 0,
+    !isBeforeApril2026 && lastmonthreturn
+      ? parseFloat(lastmonthreturn.cash_payment ?? "0")
+      : 0,
+    isQuarterlyFiling,
+  );
+
+  const thebalance = new TheBalance(
+    returnforms,
+    challans,
+    updateresponse,
+    !isBeforeApril2026 && lastmonthreturn
+      ? parseFloat(lastmonthreturn.pending_payment ?? "0")
+      : 0,
+    !isBeforeApril2026 && lastmonthreturn
+      ? parseFloat(lastmonthreturn.cash_payment ?? "0")
+      : 0,
+    isQuarterlyFiling,
+  );
+  const vatpaidchallan: number = challans.reduce((acc, curr) => {
+    const vat = parseFloat(curr.vat ?? "0");
+    return acc + vat;
+  }, 0);
+  const interestpaidchallan: number = challans.reduce((acc, curr) => {
+    const interest = parseFloat(curr.interest ?? "0");
+    return acc + interest;
+  }, 0);
+  const penaltypaidchallan: number = challans.reduce((acc, curr) => {
+    const penalty = parseFloat(curr.penalty ?? "0");
+    return acc + penalty;
+  }, 0);
+  const otherpaidchallan: number = challans.reduce((acc, curr) => {
+    const others = parseFloat(curr.others ?? "0");
+    return acc + others;
+  }, 0);
+
+  const value =
+    netTaxCalc.total() -
+    (vatpaidchallan +
+      interestpaidchallan +
+      penaltypaidchallan +
+      otherpaidchallan);
+
+  await prisma.returns_01_work.create({
+    data: {
+      returnId: updateresponse.id,
+      dvatId: updateresponse.dvat04Id,
+      month: updateresponse.month,
+      frequency: updateresponse.dvat04.frequencyFilings ?? "",
+      filed: true,
+      tinNumber: updateresponse.dvat04.tinNumber,
+      tradeName: updateresponse.dvat04.tradename,
+      selectOffice: updateresponse.dvat04.selectOffice,
+      commodity: updateresponse.dvat04.commodity,
+      vatamount: (r4Turnover.get4_8() - r5Turnover.get5_4()).toFixed(2),
+      interest: netTaxCalc.getInterest().toFixed(2),
+      penalty: netTaxCalc.getPenalty().toFixed(2),
+      other_charge: centralSales.total_decrease().toFixed(2),
+      total_tax_amount: (
+        r4Turnover.get4_8() -
+        r5Turnover.get5_4() +
+        netTaxCalc.getInterest() +
+        centralSales.total_decrease()
+      ).toFixed(2),
+      R4_8: r4Turnover.get4_8(),
+      R4_9: r4Turnover.get4_9(),
+      R4_10: r4Turnover.get4_10(),
+      R5_4: r5Turnover.get5_4(),
+      R5_5: r5Turnover.get5_5(),
+      R5_6: r5Turnover.get5_6(),
+      R6_1_balance_payable: netTaxCalc.getR6_1().toFixed(2),
+      R6_INTEREST: netTaxCalc.getInterest().toFixed(2),
+      R6_penalty: netTaxCalc.getPenalty().toFixed(2),
+      R7_total_payable: netTaxCalc.total().toFixed(2),
+      RPAID_vat: vatpaidchallan.toFixed(2),
+      RPAID_interest: interestpaidchallan.toFixed(2),
+      RPAID_penalty: penaltypaidchallan.toFixed(2),
+      RPAID_others: otherpaidchallan.toFixed(2),
+      RPAID_total: (
+        vatpaidchallan +
+        interestpaidchallan +
+        penaltypaidchallan +
+        otherpaidchallan
+      ).toFixed(2),
+      excess_cash_next_month: thebalance.excessCash().toFixed(2),
+      excess_itc_next_month: thebalance.balance_carried_forward().toFixed(2),
+      status: "VERIFY",
+      remark: "",
+      shortfall: value > 0 ? Math.abs(value).toFixed(2) : "0",
+    },
+  });
+  const response_interest = await prisma.interest_working.findMany({
+    where: {
+      returnId: updateresponse.id,
+      dvatId: updateresponse.dvat04Id,
+      status: "ACTIVE",
+    },
+    orderBy: {
+      payment_date: "asc",
+    },
+  });
+
+  if (response_interest && response_interest.length > 0) {
+    let total = netTaxCalc.getR6_1();
+
+    // Prepare bulk update data instead of looping
+    const bulkUpdateData = [];
+
+    for (let i = 0; i < response_interest.length; i++) {
+      const amount = Number(response_interest[i].amount ?? 0);
+      const amount_cal = Math.min(total, amount);
+      const interest =
+        ((amount_cal * 0.15) / 365) * (response_interest[i].days_late ?? 0);
+
+      bulkUpdateData.push({
+        id: response_interest[i].id,
+        outstanding_before: total.toFixed(2),
+        interest: interest.toFixed(2),
+      });
+
+      total = total - amount;
+    }
+
+    for (const data of bulkUpdateData) {
+      await prisma.interest_working.update({
+        where: { id: data.id },
+        data: {
+          outstanding_before: data.outstanding_before,
+          interest: data.interest,
+        },
+      });
+    }
+  }
 };

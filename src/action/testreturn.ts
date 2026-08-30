@@ -67,7 +67,7 @@ const TestReturn = async (
                 id: chunk[i].id,
               },
               data: {
-                transaction_id: "1234",
+                transaction_id: "0",
               },
               include: {
                 dvat04: true,
