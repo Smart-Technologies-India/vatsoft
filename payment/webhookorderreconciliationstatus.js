@@ -375,9 +375,9 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
           ) {
             const isexist = await prisma.interest_working.findFirst({
               where: {
-                dvatId: updated.dvat.id,
-                returnId: updated.returns_01.id,
-                challanId: updated.id,
+                dvatId: paidchallan.dvat.id,
+                returnId: paidchallan.returns_01.id,
+                challanId: paidchallan.id,
               },
             });
             if (!isexist) {

@@ -654,9 +654,9 @@ export const postRes = (request, response) => {
             ) {
               const isexist = await prisma.interest_working.findFirst({
                 where: {
-                  dvatId: updated.dvat.id,
-                  returnId: updated.returns_01.id,
-                  challanId: updated.id,
+                  dvatId: res.dvat.id,
+                  returnId: res.returns_01.id,
+                  challanId: res.id,
                 },
               });
               if (!isexist) {
@@ -829,9 +829,9 @@ export const postRes = (request, response) => {
             ) {
               const isexist = await prisma.interest_working.findFirst({
                 where: {
-                  dvatId: updated.dvat.id,
-                  returnId: updated.returns_01.id,
-                  challanId: updated.id,
+                  dvatId: challan.dvat.id,
+                  returnId: challan.returns_01.id,
+                  challanId: challan.id,
                 },
               });
               if (!isexist) {
@@ -1048,9 +1048,9 @@ export const postRes = (request, response) => {
             ) {
               const isexist = await prisma.interest_working.findFirst({
                 where: {
-                  dvatId: updated.dvat.id,
-                  returnId: updated.returns_01.id,
-                  challanId: updated.id,
+                  dvatId: challan.dvat.id,
+                  returnId: challan.returns_01.id,
+                  challanId: challan.id,
                 },
               });
               if (!isexist) {
