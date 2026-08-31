@@ -115,7 +115,7 @@ const AddPaymentSubmit = async (
       const isQuarterlyFiling =
         updateresponse.dvat04.frequencyFilings == "QUARTERLY";
 
-      await updateReturns01Work(isQuarterlyFiling, updateresponse);
+      // await updateReturns01Work(isQuarterlyFiling, updateresponse);
 
       if (updateresponse.dvat04.compositionScheme || isQuarterlyFiling) {
         const monthsToUpdate = getMonthGroup(updateresponse.month ?? "");

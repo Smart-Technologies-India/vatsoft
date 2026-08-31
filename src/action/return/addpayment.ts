@@ -127,7 +127,7 @@ const AddPayment = async (
 
       const isQuarterlyFiling =
         returnresponse.dvat04.frequencyFilings == "QUARTERLY";
-      await updateReturns01Work(isQuarterlyFiling, returnresponse);
+      // await updateReturns01Work(isQuarterlyFiling, returnresponse);
 
       const updateresponse = await prisma.returns_01.findFirst({
         where: {
