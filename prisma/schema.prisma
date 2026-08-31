@@ -937,6 +937,11 @@ model return_filing {
   @@index([createdById], map: "return_filing_createdById_fkey")
   @@index([deletedById], map: "return_filing_deletedById_fkey")
   @@index([updatedById], map: "return_filing_updatedById_fkey")
+  @@index([filing_status])
+  @@index([filing_date])
+  @@index([dvatid])
+  @@index([month])
+  @@index([year])
 }
 
 model commodity_master {
