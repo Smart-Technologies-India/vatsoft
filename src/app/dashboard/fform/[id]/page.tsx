@@ -277,10 +277,10 @@ const FFROM = () => {
                         Quarter & Year :{" "}
                       </td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {fformdata?.from_period.toLocaleString("default", {
+                        {/* {fformdata?.from_period.toLocaleString("default", {
                           month: "short",
                         })}
-                        -
+                        - */}
                         {fformdata?.to_period.toLocaleString("default", {
                           month: "short",
                         })}

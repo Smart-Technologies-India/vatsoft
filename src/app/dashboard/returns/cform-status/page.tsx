@@ -26,6 +26,7 @@ import {
 } from "@/action/cform/getcformreturns";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import CreateCFormForReturns from "@/action/return/createcformforreturns";
 
 const TrackAppliation = () => {
   const router = useRouter();
@@ -72,8 +73,11 @@ const TrackAppliation = () => {
   const [selectedCForm, setSelectedCForm] = useState<cform | null>(null);
   const [returnsEntries, setReturnsEntries] = useState<any[]>([]);
   const [isLoadingModal, setIsLoadingModal] = useState<boolean>(false);
-  const [editingEntries, setEditingEntries] = useState<{ [key: number]: string }>({});
+  const [editingEntries, setEditingEntries] = useState<{
+    [key: number]: string;
+  }>({});
   const [form] = Form.useForm();
+  const [isCreatingCForm, setIsCreatingCForm] = useState<boolean>(false);
 
   const init = async () => {
     setLoading(true);
@@ -355,8 +359,7 @@ const TrackAppliation = () => {
         setReturnsEntries(response.data);
         const initialValues: { [key: number]: string } = {};
         response.data.forEach((entry: any) => {
-          initialValues[entry.id] =
-            entry.description_of_goods || "";
+          initialValues[entry.id] = entry.description_of_goods || "";
         });
         setEditingEntries(initialValues);
       } else {
@@ -384,7 +387,7 @@ const TrackAppliation = () => {
     try {
       const response = await UpdateReturnEntryDescription(
         cformReturnsId,
-        description
+        description,
       );
       if (response.status) {
         toast.success("Description updated successfully");
@@ -395,7 +398,7 @@ const TrackAppliation = () => {
                 ...entry,
                 description_of_goods: description,
               }
-            : entry
+            : entry,
         );
         setReturnsEntries(updatedEntries);
       } else {
@@ -406,6 +409,25 @@ const TrackAppliation = () => {
       console.error(error);
     } finally {
       setIsLoadingModal(false);
+    }
+  };
+
+  const handleCreateCFormForReturns = async () => {
+    setIsCreatingCForm(true);
+    try {
+      const response = await CreateCFormForReturns();
+      if (response.status) {
+        toast.success(response.message);
+        // Refresh the data
+        await init();
+      } else {
+        toast.error(response.message || "Failed to create C-Forms");
+      }
+    } catch (error: any) {
+      toast.error("Error creating C-Forms");
+      console.error(error);
+    } finally {
+      setIsCreatingCForm(false);
     }
   };
 
@@ -432,15 +454,22 @@ const TrackAppliation = () => {
                 </p>
               </div>
               <div className="grow"></div>
-              {isSearch && (
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   size="small"
-                  type="default"
-                  onClick={init}
+                  type="primary"
+                  loading={isCreatingCForm}
+                  onClick={handleCreateCFormForReturns}
+                  className="whitespace-nowrap"
                 >
-                  Clear Filter
+                  Generate C-Form
                 </Button>
-              )}
+                {isSearch && (
+                  <Button size="small" type="default" onClick={init}>
+                    Clear Filter
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -680,7 +709,7 @@ const TrackAppliation = () => {
               {(() => {
                 // Check if any row has a description value
                 const hasAnyDescription = Object.values(editingEntries).some(
-                  (desc: any) => desc && desc.trim() !== ""
+                  (desc: any) => desc && desc.trim() !== "",
                 );
 
                 return (
@@ -717,16 +746,13 @@ const TrackAppliation = () => {
                         });
                         return Array.from(uniqueInvoices.values()).map(
                           (entry: any) => (
-                            <tr
-                              key={entry.id}
-                              className="hover:bg-gray-50"
-                            >
+                            <tr key={entry.id} className="hover:bg-gray-50">
                               <td className="border border-gray-300 p-2 text-xs text-gray-700">
                                 {entry.returns_entry.invoice_number}
                               </td>
                               <td className="border border-gray-300 p-2 text-xs text-gray-700">
                                 {new Date(
-                                  entry.returns_entry.invoice_date
+                                  entry.returns_entry.invoice_date,
                                 ).toLocaleDateString()}
                               </td>
                               <td className="border border-gray-300 p-2 text-xs text-gray-700">
@@ -737,9 +763,7 @@ const TrackAppliation = () => {
                                   type="text"
                                   maxLength={17}
                                   className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                  value={
-                                    editingEntries[entry.id] || ""
-                                  }
+                                  value={editingEntries[entry.id] || ""}
                                   onChange={(e) =>
                                     setEditingEntries({
                                       ...editingEntries,
@@ -764,7 +788,7 @@ const TrackAppliation = () => {
                                 </td>
                               )}
                             </tr>
-                          )
+                          ),
                         );
                       })()}
                     </tbody>

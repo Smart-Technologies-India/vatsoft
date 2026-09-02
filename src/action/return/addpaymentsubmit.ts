@@ -148,362 +148,362 @@ const AddPaymentSubmit = async (
         });
       }
 
-      if (
-        ["March", "June", "September", "December"].includes(isExist.month ?? "")
-      ) {
-        const monthsToUpdate = getMonthGroup(isExist.month ?? "");
+      // if (
+      //   ["March", "June", "September", "December"].includes(isExist.month ?? "")
+      // ) {
+      //   const monthsToUpdate = getMonthGroup(isExist.month ?? "");
 
-        // step 1 : get all entry
-        const returnEntry = await prisma.returns_entry.findMany({
-          where: {
-            dvat_type: DvatType.DVAT_30_A,
-            category_of_entry: CategoryOfEntry.INVOICE,
-            purchase_type: PurchaseType.FORMC_CONCESSION,
-            status: "ACTIVE",
-            deletedAt: null,
-            deletedById: null,
-            returns_01: {
-              dvat04Id: isExist.dvat04Id,
-              year: isExist.year,
-              // isExist.month == "March"
-              //   ? (parseInt(isExist.year) + 1).toString()
-              //   : isExist.year,
-              month: { in: monthsToUpdate },
-            },
-          },
-          include: {
-            seller_tin_number: true,
-          },
-        });
-        // step 2 : get all entry
-        const groupedData = returnEntry.reduce<
-          Record<
-            number,
-            {
-              seller_tin_numberId: number;
-              totalAmount: number;
-              entries: typeof returnEntry;
-            }
-          >
-        >((acc, entry) => {
-          const sellerId = entry.seller_tin_numberId;
-          const amount = parseFloat(entry.total_invoice_number || "0");
+      //   // step 1 : get all entry
+      //   const returnEntry = await prisma.returns_entry.findMany({
+      //     where: {
+      //       dvat_type: DvatType.DVAT_30_A,
+      //       category_of_entry: CategoryOfEntry.INVOICE,
+      //       purchase_type: PurchaseType.FORMC_CONCESSION,
+      //       status: "ACTIVE",
+      //       deletedAt: null,
+      //       deletedById: null,
+      //       returns_01: {
+      //         dvat04Id: isExist.dvat04Id,
+      //         year: isExist.year,
+      //         // isExist.month == "March"
+      //         //   ? (parseInt(isExist.year) + 1).toString()
+      //         //   : isExist.year,
+      //         month: { in: monthsToUpdate },
+      //       },
+      //     },
+      //     include: {
+      //       seller_tin_number: true,
+      //     },
+      //   });
+      //   // step 2 : get all entry
+      //   const groupedData = returnEntry.reduce<
+      //     Record<
+      //       number,
+      //       {
+      //         seller_tin_numberId: number;
+      //         totalAmount: number;
+      //         entries: typeof returnEntry;
+      //       }
+      //     >
+      //   >((acc, entry) => {
+      //     const sellerId = entry.seller_tin_numberId;
+      //     const amount = parseFloat(entry.total_invoice_number || "0");
 
-          if (!acc[sellerId]) {
-            acc[sellerId] = {
-              seller_tin_numberId: sellerId,
-              totalAmount: 0,
-              entries: [],
-            };
-          }
+      //     if (!acc[sellerId]) {
+      //       acc[sellerId] = {
+      //         seller_tin_numberId: sellerId,
+      //         totalAmount: 0,
+      //         entries: [],
+      //       };
+      //     }
 
-          acc[sellerId].totalAmount += amount;
-          acc[sellerId].entries.push(entry);
+      //     acc[sellerId].totalAmount += amount;
+      //     acc[sellerId].entries.push(entry);
 
-          return acc;
-        }, {});
+      //     return acc;
+      //   }, {});
 
-        const flatData = Object.values(groupedData).flatMap((group) =>
-          group.entries.map((entry) => ({
-            ...entry,
-            amount: group.totalAmount.toString(), // Overwrite or add the total amount
-          })),
-        );
+      //   const flatData = Object.values(groupedData).flatMap((group) =>
+      //     group.entries.map((entry) => ({
+      //       ...entry,
+      //       amount: group.totalAmount.toString(), // Overwrite or add the total amount
+      //     })),
+      //   );
 
-        const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
+      //   const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
 
-        // Get the last form (cform or fform) created for this office to determine serial number
-        const lastcform = await prisma.cform.findFirst({
-          where: {
-            deletedAt: null,
-            deletedById: null,
-            status: "ACTIVE",
-            office_of_issue: isExist.dvat04.selectOffice,
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        });
+      //   // Get the last form (cform or fform) created for this office to determine serial number
+      //   const lastcform = await prisma.cform.findFirst({
+      //     where: {
+      //       deletedAt: null,
+      //       deletedById: null,
+      //       status: "ACTIVE",
+      //       office_of_issue: isExist.dvat04.selectOffice,
+      //     },
+      //     orderBy: {
+      //       createdAt: "desc",
+      //     },
+      //   });
 
-        const lastfformForSerial = await prisma.fform.findFirst({
-          where: {
-            deletedAt: null,
-            deletedById: null,
-            status: "ACTIVE",
-            office_of_issue: isExist.dvat04.selectOffice,
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        });
+      //   const lastfformForSerial = await prisma.fform.findFirst({
+      //     where: {
+      //       deletedAt: null,
+      //       deletedById: null,
+      //       status: "ACTIVE",
+      //       office_of_issue: isExist.dvat04.selectOffice,
+      //     },
+      //     orderBy: {
+      //       createdAt: "desc",
+      //     },
+      //   });
 
-        // Get the highest serial number from both cform and fform
-        const cformSerial = lastcform
-          ? parseInt(lastcform.sr_no.split("/").pop() ?? "0", 10) || 0
-          : 0;
-        const fformSerial = lastfformForSerial
-          ? parseInt(lastfformForSerial.sr_no.split("/").pop() ?? "0", 10) || 0
-          : 0;
-        const lastOfficeSerial = Math.max(cformSerial, fformSerial);
+      //   // Get the highest serial number from both cform and fform
+      //   const cformSerial = lastcform
+      //     ? parseInt(lastcform.sr_no.split("/").pop() ?? "0", 10) || 0
+      //     : 0;
+      //   const fformSerial = lastfformForSerial
+      //     ? parseInt(lastfformForSerial.sr_no.split("/").pop() ?? "0", 10) || 0
+      //     : 0;
+      //   const lastOfficeSerial = Math.max(cformSerial, fformSerial);
 
-        // Create a Map to track seller ID to cform ID
-        const sellerToCformMap = new Map<number, number>();
-        let cformSrNoCounter = 0;
+      //   // Create a Map to track seller ID to cform ID
+      //   const sellerToCformMap = new Map<number, number>();
+      //   let cformSrNoCounter = 0;
 
-        // Create cforms for each seller
-        for (const [sellerId, group] of Object.entries(groupedData)) {
-          const sellerIdNum = parseInt(sellerId, 10);
-          const representativeEntry = group.entries[0]; // Pick one entry to extract seller info
+      //   // Create cforms for each seller
+      //   for (const [sellerId, group] of Object.entries(groupedData)) {
+      //     const sellerIdNum = parseInt(sellerId, 10);
+      //     const representativeEntry = group.entries[0]; // Pick one entry to extract seller info
 
-          const cformResponse = await prisma.cform.create({
-            data: {
-              amount: group.totalAmount.toFixed(2),
-              dvat04Id: isExist.dvat04Id,
-              office_of_issue: isExist.dvat04.selectOffice,
-              date_of_issue: new Date(),
-              valid_date: isExist.dvat04.certificateDate!,
-              sr_no: getsrno(
-                isExist.dvat04.selectOffice!,
-                lastOfficeSerial,
-                cformSrNoCounter++,
-              ),
-              seller_address: representativeEntry.seller_tin_number.state ?? "",
-              seller_name:
-                representativeEntry.seller_tin_number.name_of_dealer ?? "",
-              seller_tin_no:
-                representativeEntry.seller_tin_number.tin_number ?? "",
-              cform_type: ReturnType.ORIGINAL,
-              from_period: new Date(
-                dates.fromDate.split("-").reverse().join("-"),
-              ),
-              to_period: new Date(dates.toDate.split("-").reverse().join("-")),
-              status: "ACTIVE",
-              createdById: isExist.createdById,
-            },
-          });
+      //     const cformResponse = await prisma.cform.create({
+      //       data: {
+      //         amount: group.totalAmount.toFixed(2),
+      //         dvat04Id: isExist.dvat04Id,
+      //         office_of_issue: isExist.dvat04.selectOffice,
+      //         date_of_issue: new Date(),
+      //         valid_date: isExist.dvat04.certificateDate!,
+      //         sr_no: getsrno(
+      //           isExist.dvat04.selectOffice!,
+      //           lastOfficeSerial,
+      //           cformSrNoCounter++,
+      //         ),
+      //         seller_address: representativeEntry.seller_tin_number.state ?? "",
+      //         seller_name:
+      //           representativeEntry.seller_tin_number.name_of_dealer ?? "",
+      //         seller_tin_no:
+      //           representativeEntry.seller_tin_number.tin_number ?? "",
+      //         cform_type: ReturnType.ORIGINAL,
+      //         from_period: new Date(
+      //           dates.fromDate.split("-").reverse().join("-"),
+      //         ),
+      //         to_period: new Date(dates.toDate.split("-").reverse().join("-")),
+      //         status: "ACTIVE",
+      //         createdById: isExist.createdById,
+      //       },
+      //     });
 
-          // Store the mapping of seller ID to cform ID
-          sellerToCformMap.set(sellerIdNum, cformResponse.id);
-        }
+      //     // Store the mapping of seller ID to cform ID
+      //     sellerToCformMap.set(sellerIdNum, cformResponse.id);
+      //   }
 
-        // Step 2: Add entries to `cform_returns` table using the Map
-        const cformReturnsEntries: Array<{
-          cformId: number;
-          returns_entryId: number;
-        }> = [];
+      //   // Step 2: Add entries to `cform_returns` table using the Map
+      //   const cformReturnsEntries: Array<{
+      //     cformId: number;
+      //     returns_entryId: number;
+      //   }> = [];
 
-        for (const [sellerId, group] of Object.entries(groupedData)) {
-          const sellerIdNum = parseInt(sellerId, 10);
-          const cformId = sellerToCformMap.get(sellerIdNum);
+      //   for (const [sellerId, group] of Object.entries(groupedData)) {
+      //     const sellerIdNum = parseInt(sellerId, 10);
+      //     const cformId = sellerToCformMap.get(sellerIdNum);
 
-          if (!cformId) {
-            throw new Error(
-              `CForm entry for seller ${sellerIdNum} was not created`,
-            );
-          }
+      //     if (!cformId) {
+      //       throw new Error(
+      //         `CForm entry for seller ${sellerIdNum} was not created`,
+      //       );
+      //     }
 
-          group.entries.forEach((entry) => {
-            // Verify entry belongs to the correct seller
-            if (entry.seller_tin_numberId !== sellerIdNum) {
-              throw new Error(
-                `Entry ${entry.id} belongs to seller ${entry.seller_tin_numberId}, but expected ${sellerIdNum}`,
-              );
-            }
+      //     group.entries.forEach((entry) => {
+      //       // Verify entry belongs to the correct seller
+      //       if (entry.seller_tin_numberId !== sellerIdNum) {
+      //         throw new Error(
+      //           `Entry ${entry.id} belongs to seller ${entry.seller_tin_numberId}, but expected ${sellerIdNum}`,
+      //         );
+      //       }
 
-            cformReturnsEntries.push({
-              cformId,
-              returns_entryId: entry.id,
-            });
-          });
-        }
+      //       cformReturnsEntries.push({
+      //         cformId,
+      //         returns_entryId: entry.id,
+      //       });
+      //     });
+      //   }
 
-        // Step 3: Insert `cform_returns` entries in bulk
-        if (cformReturnsEntries.length > 0) {
-          const response = await prisma.cform_returns.createMany({
-            data: cformReturnsEntries,
-          });
-          if (!response) {
-            throw new Error(`CForm return entry was not created`);
-          }
-        }
-      }
+      //   // Step 3: Insert `cform_returns` entries in bulk
+      //   if (cformReturnsEntries.length > 0) {
+      //     const response = await prisma.cform_returns.createMany({
+      //       data: cformReturnsEntries,
+      //     });
+      //     if (!response) {
+      //       throw new Error(`CForm return entry was not created`);
+      //     }
+      //   }
+      // }
 
-      // fform start here
-      const monthsToUpdate = getMonthGroup(isExist.month ?? "");
+      // // fform start here
+      // const monthsToUpdate = getMonthGroup(isExist.month ?? "");
 
-      // step 1 : get all entry
-      const returnEntry = await prisma.returns_entry.findMany({
-        where: {
-          dvat_type: DvatType.DVAT_30_A,
-          category_of_entry: CategoryOfEntry.INVOICE,
-          purchase_type: PurchaseType.STOCK_TRANSFER,
-          status: "ACTIVE",
-          deletedAt: null,
-          deletedById: null,
-          returns_01: {
-            dvat04Id: isExist.dvat04Id,
-            year:
-              isExist.month == "March"
-                ? (parseInt(isExist.year) + 1).toString()
-                : isExist.year,
-            month: { in: monthsToUpdate },
-          },
-        },
-        include: {
-          seller_tin_number: true,
-          returns_01: true,
-        },
-      });
+      // // step 1 : get all entry
+      // const returnEntry = await prisma.returns_entry.findMany({
+      //   where: {
+      //     dvat_type: DvatType.DVAT_30_A,
+      //     category_of_entry: CategoryOfEntry.INVOICE,
+      //     purchase_type: PurchaseType.STOCK_TRANSFER,
+      //     status: "ACTIVE",
+      //     deletedAt: null,
+      //     deletedById: null,
+      //     returns_01: {
+      //       dvat04Id: isExist.dvat04Id,
+      //       year:
+      //         isExist.month == "March"
+      //           ? (parseInt(isExist.year) + 1).toString()
+      //           : isExist.year,
+      //       month: { in: monthsToUpdate },
+      //     },
+      //   },
+      //   include: {
+      //     seller_tin_number: true,
+      //     returns_01: true,
+      //   },
+      // });
 
-      // step 2 : group by month
-      const groupedByMonth = returnEntry.reduce<
-        Record<
-          string,
-          {
-            month: string;
-            year: string;
-            totalAmount: number;
-            entries: typeof returnEntry;
-          }
-        >
-      >((acc, entry) => {
-        const month = entry.returns_01.month ?? "";
-        const year = entry.returns_01.year;
-        const key = `${year}-${month}`;
-        const amount = parseFloat(entry.total_invoice_number || "0");
+      // // step 2 : group by month
+      // const groupedByMonth = returnEntry.reduce<
+      //   Record<
+      //     string,
+      //     {
+      //       month: string;
+      //       year: string;
+      //       totalAmount: number;
+      //       entries: typeof returnEntry;
+      //     }
+      //   >
+      // >((acc, entry) => {
+      //   const month = entry.returns_01.month ?? "";
+      //   const year = entry.returns_01.year;
+      //   const key = `${year}-${month}`;
+      //   const amount = parseFloat(entry.total_invoice_number || "0");
 
-        if (!acc[key]) {
-          acc[key] = {
-            month,
-            year,
-            totalAmount: 0,
-            entries: [],
-          };
-        }
+      //   if (!acc[key]) {
+      //     acc[key] = {
+      //       month,
+      //       year,
+      //       totalAmount: 0,
+      //       entries: [],
+      //     };
+      //   }
 
-        acc[key].totalAmount += amount;
-        acc[key].entries.push(entry);
+      //   acc[key].totalAmount += amount;
+      //   acc[key].entries.push(entry);
 
-        return acc;
-      }, {});
+      //   return acc;
+      // }, {});
 
-      const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
+      // const dates = getFromDateAndToDate(isExist.year, isExist.month ?? "");
 
-      // Get the last form (cform or fform) created for this office to determine serial number
-      const lastcformForFform = await prisma.cform.findFirst({
-        where: {
-          deletedAt: null,
-          deletedById: null,
-          status: "ACTIVE",
-          office_of_issue: isExist.dvat04.selectOffice,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      // // Get the last form (cform or fform) created for this office to determine serial number
+      // const lastcformForFform = await prisma.cform.findFirst({
+      //   where: {
+      //     deletedAt: null,
+      //     deletedById: null,
+      //     status: "ACTIVE",
+      //     office_of_issue: isExist.dvat04.selectOffice,
+      //   },
+      //   orderBy: {
+      //     createdAt: "desc",
+      //   },
+      // });
 
-      const lastfformForFform = await prisma.fform.findFirst({
-        where: {
-          deletedAt: null,
-          deletedById: null,
-          status: "ACTIVE",
-          office_of_issue: isExist.dvat04.selectOffice,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      // const lastfformForFform = await prisma.fform.findFirst({
+      //   where: {
+      //     deletedAt: null,
+      //     deletedById: null,
+      //     status: "ACTIVE",
+      //     office_of_issue: isExist.dvat04.selectOffice,
+      //   },
+      //   orderBy: {
+      //     createdAt: "desc",
+      //   },
+      // });
 
-      // Get the highest serial number from both cform and fform
-      const cformSerialForFform = lastcformForFform
-        ? parseInt(lastcformForFform.sr_no.split("/").pop() ?? "0", 10) || 0
-        : 0;
-      const fformSerialForFform = lastfformForFform
-        ? parseInt(lastfformForFform.sr_no.split("/").pop() ?? "0", 10) || 0
-        : 0;
-      const lastOfficeSerial = Math.max(
-        cformSerialForFform,
-        fformSerialForFform,
-      );
+      // // Get the highest serial number from both cform and fform
+      // const cformSerialForFform = lastcformForFform
+      //   ? parseInt(lastcformForFform.sr_no.split("/").pop() ?? "0", 10) || 0
+      //   : 0;
+      // const fformSerialForFform = lastfformForFform
+      //   ? parseInt(lastfformForFform.sr_no.split("/").pop() ?? "0", 10) || 0
+      //   : 0;
+      // const lastOfficeSerial = Math.max(
+      //   cformSerialForFform,
+      //   fformSerialForFform,
+      // );
 
-      // Create a Map to track month key to fform ID
-      const monthToFformMap = new Map<string, number>();
-      let srNoCounter = 0;
+      // // Create a Map to track month key to fform ID
+      // const monthToFformMap = new Map<string, number>();
+      // let srNoCounter = 0;
 
-      // Create fforms for each month
-      for (const [monthKey, monthGroup] of Object.entries(groupedByMonth)) {
-        const representativeEntry = monthGroup.entries[0];
+      // // Create fforms for each month
+      // for (const [monthKey, monthGroup] of Object.entries(groupedByMonth)) {
+      //   const representativeEntry = monthGroup.entries[0];
 
-        const fformResponse = await prisma.fform.create({
-          data: {
-            amount: monthGroup.totalAmount.toFixed(2),
-            dvat04Id: isExist.dvat04Id,
-            office_of_issue: isExist.dvat04.selectOffice,
-            date_of_issue: new Date(
-              dates.toDate.split("-").reverse().join("-"),
-            ),
-            valid_date: isExist.dvat04.certificateDate ?? new Date(),
-            sr_no: getsrnofform(
-              isExist.dvat04.selectOffice!,
-              lastOfficeSerial,
-              srNoCounter++,
-            ),
-            seller_address: representativeEntry.seller_tin_number.state ?? "",
-            seller_name:
-              representativeEntry.seller_tin_number.name_of_dealer ?? "",
-            seller_tin_no:
-              representativeEntry.seller_tin_number.tin_number ?? "",
-            fform_type: ReturnType.ORIGINAL,
-            from_period: new Date(
-              dates.fromDate.split("-").reverse().join("-"),
-            ),
-            to_period: new Date(dates.toDate.split("-").reverse().join("-")),
-            status: "ACTIVE",
-            createdById: isExist.createdById,
-          },
-        });
+      //   const fformResponse = await prisma.fform.create({
+      //     data: {
+      //       amount: monthGroup.totalAmount.toFixed(2),
+      //       dvat04Id: isExist.dvat04Id,
+      //       office_of_issue: isExist.dvat04.selectOffice,
+      //       date_of_issue: new Date(
+      //         dates.toDate.split("-").reverse().join("-"),
+      //       ),
+      //       valid_date: isExist.dvat04.certificateDate ?? new Date(),
+      //       sr_no: getsrnofform(
+      //         isExist.dvat04.selectOffice!,
+      //         lastOfficeSerial,
+      //         srNoCounter++,
+      //       ),
+      //       seller_address: representativeEntry.seller_tin_number.state ?? "",
+      //       seller_name:
+      //         representativeEntry.seller_tin_number.name_of_dealer ?? "",
+      //       seller_tin_no:
+      //         representativeEntry.seller_tin_number.tin_number ?? "",
+      //       fform_type: ReturnType.ORIGINAL,
+      //       from_period: new Date(
+      //         dates.fromDate.split("-").reverse().join("-"),
+      //       ),
+      //       to_period: new Date(dates.toDate.split("-").reverse().join("-")),
+      //       status: "ACTIVE",
+      //       createdById: isExist.createdById,
+      //     },
+      //   });
 
-        // Store the mapping of month key to fform ID
-        monthToFformMap.set(monthKey, fformResponse.id);
-      }
+      //   // Store the mapping of month key to fform ID
+      //   monthToFformMap.set(monthKey, fformResponse.id);
+      // }
 
-      // Step 2: Add entries to `fform_returns` table using the Map
-      const fformReturnsEntries: {
-        fformId: number;
-        returns_entryId: number;
-      }[] = [];
+      // // Step 2: Add entries to `fform_returns` table using the Map
+      // const fformReturnsEntries: {
+      //   fformId: number;
+      //   returns_entryId: number;
+      // }[] = [];
 
-      for (const [monthKey, monthGroup] of Object.entries(groupedByMonth)) {
-        const fformId = monthToFformMap.get(monthKey);
+      // for (const [monthKey, monthGroup] of Object.entries(groupedByMonth)) {
+      //   const fformId = monthToFformMap.get(monthKey);
 
-        if (!fformId) {
-          throw new Error(`FForm entry for month ${monthKey} was not created`);
-        }
+      //   if (!fformId) {
+      //     throw new Error(`FForm entry for month ${monthKey} was not created`);
+      //   }
 
-        monthGroup.entries.forEach((entry) => {
-          // Verify entry belongs to the correct DVAT
-          if (entry.returns_01.dvat04Id !== isExist.dvat04Id) {
-            throw new Error(
-              `Entry ${entry.id} belongs to DVAT ${entry.returns_01.dvat04Id}, but expected ${isExist.dvat04Id}`,
-            );
-          }
+      //   monthGroup.entries.forEach((entry) => {
+      //     // Verify entry belongs to the correct DVAT
+      //     if (entry.returns_01.dvat04Id !== isExist.dvat04Id) {
+      //       throw new Error(
+      //         `Entry ${entry.id} belongs to DVAT ${entry.returns_01.dvat04Id}, but expected ${isExist.dvat04Id}`,
+      //       );
+      //     }
 
-          fformReturnsEntries.push({
-            fformId,
-            returns_entryId: entry.id,
-          });
-        });
-      }
+      //     fformReturnsEntries.push({
+      //       fformId,
+      //       returns_entryId: entry.id,
+      //     });
+      //   });
+      // }
 
-      // Step 3: Insert `fform_returns` entries in bulk
-      if (fformReturnsEntries.length > 0) {
-        const response = await prisma.fform_returns.createMany({
-          data: fformReturnsEntries,
-        });
-        if (!response) {
-          throw new Error(`FForm return entry was not created`);
-        }
-      }
+      // // Step 3: Insert `fform_returns` entries in bulk
+      // if (fformReturnsEntries.length > 0) {
+      //   const response = await prisma.fform_returns.createMany({
+      //     data: fformReturnsEntries,
+      //   });
+      //   if (!response) {
+      //     throw new Error(`FForm return entry was not created`);
+      //   }
+      // }
 
       return updateresponse;
     });

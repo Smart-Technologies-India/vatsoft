@@ -22,6 +22,7 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUserFform from "@/action/fform/getuserfform";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import CreateFFormForReturns from "@/action/return/createfformforreturns";
 
 const TrackAppliation = () => {
   const router = useRouter();
@@ -64,6 +65,7 @@ const TrackAppliation = () => {
 
   const [fformData, setFformData] = useState<Array<fform>>([]);
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
+  const [isCreatingFForm, setIsCreatingFForm] = useState<boolean>(false);
 
   const init = async () => {
     setLoading(true);
@@ -331,8 +333,28 @@ const TrackAppliation = () => {
     const start = formatMonthYear(startMonth);
     const end = formatMonthYear(lastMonth);
 
-    return `${start} to ${end}`;
+    // return `${start} to ${end}`;
+    return `${end}`;
   }
+
+  const handleCreateFFormForReturns = async () => {
+    setIsCreatingFForm(true);
+    try {
+      const response = await CreateFFormForReturns();
+      if (response.status) {
+        toast.success(response.message);
+        // Refresh the data
+        await init();
+      } else {
+        toast.error(response.message || "Failed to create F-Forms");
+      }
+    } catch (error: any) {
+      toast.error("Error creating F-Forms");
+      console.error(error);
+    } finally {
+      setIsCreatingFForm(false);
+    }
+  };
 
   if (isLoading)
     return (
@@ -357,15 +379,22 @@ const TrackAppliation = () => {
                 </p>
               </div>
               <div className="grow"></div>
-              {isSearch && (
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   size="small"
-                  type="default"
-                  onClick={init}
+                  type="primary"
+                  loading={isCreatingFForm}
+                  onClick={handleCreateFFormForReturns}
+                  className="whitespace-nowrap"
                 >
-                  Clear Filter
+                  Generate F-Form
                 </Button>
-              )}
+                {isSearch && (
+                  <Button size="small" type="default" onClick={init}>
+                    Clear Filter
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 

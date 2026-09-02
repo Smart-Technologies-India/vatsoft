@@ -62,13 +62,11 @@ const TestReturn = async (
       await prisma.$transaction(
         async (txPrisma) => {
           for (let i = 0; i < chunk.length; i++) {
-            const updateresponse = await txPrisma.returns_01.update({
+            const updateresponse = await txPrisma.returns_01.findFirst({
               where: {
                 id: chunk[i].id,
               },
-              data: {
-                transaction_id: "0",
-              },
+
               include: {
                 dvat04: true,
               },
