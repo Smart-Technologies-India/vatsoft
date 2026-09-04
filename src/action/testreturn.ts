@@ -13,7 +13,7 @@ import {
 } from "@/components/dvatreturn/vatcalculation";
 
 interface TestPaymentSubmitPayload {
-  // id: number;
+  id: number;
 }
 
 const CHUNK_SIZE = 100;
@@ -48,6 +48,30 @@ const TestReturn = async (
     if (!isExist || isExist.length === 0) {
       throw new Error("Invalid Id, try again");
     }
+
+    // Sort returns by year and month to ensure correct calculation order
+    const monthOrder = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    isExist.sort((a, b) => {
+      const yearDiff = parseInt(a.year) - parseInt(b.year);
+      if (yearDiff !== 0) return yearDiff;
+      return (
+        monthOrder.indexOf(a.month ?? "") - monthOrder.indexOf(b.month ?? "")
+      );
+    });
 
     // Process in chunks of 100
     const chunks = [];
@@ -189,6 +213,7 @@ async function processReturnData(
       where: {
         year: year,
         month: month,
+        dvat04Id: updateresponse.dvat04Id,
         deletedAt: null,
         deletedById: null,
         status: "PAID",
@@ -251,7 +276,7 @@ async function processReturnData(
   const r5Turnover = new R5Turnover(
     returnforms,
     !isBeforeApril2026 && lastmonthreturn
-      ? parseFloat(lastmonthreturn.cash_payment ?? "0")
+      ? parseFloat(lastmonthreturn.pending_payment ?? "0")
       : 0,
   );
 
@@ -324,56 +349,113 @@ async function processReturnData(
       penaltypaidchallan +
       otherpaidchallan);
 
-  // Create returns_01_work
-  await prisma.returns_01_work.create({
-    data: {
-      returnId: updateresponse.id,
-      dvatId: updateresponse.dvat04Id,
-      month: updateresponse.month,
-      frequency: updateresponse.dvat04?.frequencyFilings ?? "MONTHLY",
-      filed: true,
-      tinNumber: updateresponse.dvat04.tinNumber,
-      tradeName: updateresponse.dvat04.tradename,
-      selectOffice: updateresponse.dvat04.selectOffice,
-      commodity: updateresponse.dvat04.commodity,
-      vatamount: (r4Turnover.get4_8() - r5Turnover.get5_4()).toFixed(2),
-      interest: netTaxCalc.getInterest().toFixed(2),
-      penalty: netTaxCalc.getPenalty().toFixed(2),
-      other_charge: centralSales.total_decrease().toFixed(2),
-      total_tax_amount: (
-        r4Turnover.get4_8() -
-        r5Turnover.get5_4() +
-        netTaxCalc.getInterest() +
-        centralSales.total_decrease() +
-        netTaxCalc.getPenalty()
-      ).toFixed(2),
-      R4_8: r4Turnover.get4_8(),
-      R4_9: r4Turnover.get4_9(),
-      R4_10: r4Turnover.get4_10(),
-      R5_4: r5Turnover.get5_4(),
-      R5_5: r5Turnover.get5_5(),
-      R5_6: r5Turnover.get5_6(),
-      R6_1_balance_payable: netTaxCalc.getR6_1().toFixed(2),
-      R6_INTEREST: netTaxCalc.getInterest().toFixed(2),
-      R6_penalty: netTaxCalc.getPenalty().toFixed(2),
-      R7_total_payable: netTaxCalc.total().toFixed(2),
-      RPAID_vat: vatpaidchallan.toFixed(2),
-      RPAID_interest: interestpaidchallan.toFixed(2),
-      RPAID_penalty: penaltypaidchallan.toFixed(2),
-      RPAID_others: otherpaidchallan.toFixed(2),
-      RPAID_total: (
-        vatpaidchallan +
-        interestpaidchallan +
-        penaltypaidchallan +
-        otherpaidchallan
-      ).toFixed(2),
-      excess_cash_next_month: thebalance.excessCash().toFixed(2),
-      excess_itc_next_month: thebalance.balance_carried_forward().toFixed(2),
-      status: "VERIFY",
-      remark: "",
-      shortfall: value > 0 ? Math.abs(value).toFixed(2) : "0",
-    },
-  });
+  if (
+    isQuarterlyFiling &&
+    !["March", "June", "September", "December"].includes(
+      updateresponse.month ?? "",
+    )
+  ) {
+    await prisma.returns_01_work.create({
+      data: {
+        returnId: updateresponse.id,
+        dvatId: updateresponse.dvat04Id,
+        month: updateresponse.month,
+        frequency: updateresponse.dvat04?.frequencyFilings ?? "MONTHLY",
+        filed: true,
+        tinNumber: updateresponse.dvat04.tinNumber,
+        tradeName: updateresponse.dvat04.tradename,
+        selectOffice: updateresponse.dvat04.selectOffice,
+        commodity: updateresponse.dvat04.commodity,
+        vatamount: "0",
+        interest: "0",
+        penalty: "0",
+        other_charge: centralSales.total_decrease().toFixed(2),
+        total_tax_amount: (
+          r4Turnover.get4_8() -
+          r5Turnover.get5_4() +
+          netTaxCalc.getInterest() +
+          centralSales.total_decrease() +
+          netTaxCalc.getPenalty()
+        ).toFixed(2),
+        R4_8: r4Turnover.get4_8(),
+        R4_9: r4Turnover.get4_9(),
+        R4_10: r4Turnover.get4_10(),
+        R5_4: r5Turnover.get5_4(),
+        R5_5: r5Turnover.get5_5(),
+        R5_6: r5Turnover.get5_6(),
+        R6_1_balance_payable: netTaxCalc.getR6_1().toFixed(2),
+        R6_INTEREST: netTaxCalc.getInterest().toFixed(2),
+        R6_penalty: netTaxCalc.getPenalty().toFixed(2),
+        R7_total_payable: netTaxCalc.total().toFixed(2),
+        RPAID_vat: vatpaidchallan.toFixed(2),
+        RPAID_interest: interestpaidchallan.toFixed(2),
+        RPAID_penalty: penaltypaidchallan.toFixed(2),
+        RPAID_others: otherpaidchallan.toFixed(2),
+        RPAID_total: (
+          vatpaidchallan +
+          interestpaidchallan +
+          penaltypaidchallan +
+          otherpaidchallan
+        ).toFixed(2),
+        excess_cash_next_month: thebalance.excessCash().toFixed(2),
+        excess_itc_next_month: thebalance.balance_carried_forward().toFixed(2),
+        status: "VERIFY",
+        remark: "",
+        shortfall: value > 0 ? Math.abs(value).toFixed(2) : "0",
+      },
+    });
+  } else {
+    // Create returns_01_work
+    await prisma.returns_01_work.create({
+      data: {
+        returnId: updateresponse.id,
+        dvatId: updateresponse.dvat04Id,
+        month: updateresponse.month,
+        frequency: updateresponse.dvat04?.frequencyFilings ?? "MONTHLY",
+        filed: true,
+        tinNumber: updateresponse.dvat04.tinNumber,
+        tradeName: updateresponse.dvat04.tradename,
+        selectOffice: updateresponse.dvat04.selectOffice,
+        commodity: updateresponse.dvat04.commodity,
+        vatamount: (r4Turnover.get4_8() - r5Turnover.get5_4()).toFixed(2),
+        interest: netTaxCalc.getInterest().toFixed(2),
+        penalty: netTaxCalc.getPenalty().toFixed(2),
+        other_charge: centralSales.total_decrease().toFixed(2),
+        total_tax_amount: (
+          r4Turnover.get4_8() -
+          r5Turnover.get5_4() +
+          netTaxCalc.getInterest() +
+          centralSales.total_decrease() +
+          netTaxCalc.getPenalty()
+        ).toFixed(2),
+        R4_8: r4Turnover.get4_8(),
+        R4_9: r4Turnover.get4_9(),
+        R4_10: r4Turnover.get4_10(),
+        R5_4: r5Turnover.get5_4(),
+        R5_5: r5Turnover.get5_5(),
+        R5_6: r5Turnover.get5_6(),
+        R6_1_balance_payable: netTaxCalc.getR6_1().toFixed(2),
+        R6_INTEREST: netTaxCalc.getInterest().toFixed(2),
+        R6_penalty: netTaxCalc.getPenalty().toFixed(2),
+        R7_total_payable: netTaxCalc.total().toFixed(2),
+        RPAID_vat: vatpaidchallan.toFixed(2),
+        RPAID_interest: interestpaidchallan.toFixed(2),
+        RPAID_penalty: penaltypaidchallan.toFixed(2),
+        RPAID_others: otherpaidchallan.toFixed(2),
+        RPAID_total: (
+          vatpaidchallan +
+          interestpaidchallan +
+          penaltypaidchallan +
+          otherpaidchallan
+        ).toFixed(2),
+        excess_cash_next_month: thebalance.excessCash().toFixed(2),
+        excess_itc_next_month: thebalance.balance_carried_forward().toFixed(2),
+        status: "VERIFY",
+        remark: "",
+        shortfall: value > 0 ? Math.abs(value).toFixed(2) : "0",
+      },
+    });
+  }
 
   // Fetch interest_working records
   const response_interest = await prisma.interest_working.findMany({
