@@ -6,7 +6,12 @@ import { cform, dvat04, returns_entry } from "@prisma/client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { decryptURLData, formateDate, generatePDF } from "@/utils/methods";
+import {
+  decryptURLData,
+  formateDate,
+  generatePDF,
+  trimextraString,
+} from "@/utils/methods";
 import { Button } from "antd";
 
 import GetCformById from "@/action/cform/getcfrombyid";
@@ -102,9 +107,10 @@ const CFROM = () => {
           // Post-processing step: Update description_of_goods for all grouped entries
           for (const key in grouped) {
             const entry = grouped[key];
-            
+
             // Use cform_description if available, otherwise use returns_entry description
-            const descToUse = entry.cform_description || entry.description_of_goods;
+            const descToUse =
+              entry.cform_description || entry.description_of_goods;
             const desc = descToUse?.toLowerCase() || "";
 
             if (
@@ -229,7 +235,10 @@ const CFROM = () => {
               </div>
               <div className="border border-black p-2 h-full w-full relative">
                 <div className="scale-[0.3] absolute top-20 -right-10">
-                  <Barcode value={cformdata ? cformdata.sr_no : ""} fontSize={30}/>
+                  <Barcode
+                    value={cformdata ? cformdata.sr_no : ""}
+                    fontSize={30}
+                  />
                 </div>
                 <div className="p-4 text-center text-xs">Original</div>
                 <div className="text-center text-sm font-medium">
@@ -424,7 +433,10 @@ const CFROM = () => {
                 </div>
                 <div className="border border-black p-2 h-full w-full relative">
                   <div className="scale-[0.3] absolute top-10 -right-10">
-                    <Barcode value={cformdata ? cformdata.sr_no : ""} fontSize={30} />
+                    <Barcode
+                      value={cformdata ? cformdata.sr_no : ""}
+                      fontSize={30}
+                    />
                   </div>
                   <div className="flex">
                     <div className="grow"></div>
@@ -498,39 +510,51 @@ const CFROM = () => {
                           Pur. Ord. No./Date
                         </td>
                       </tr>
-                      {pageData.map((val: returns_entry & { cform_description?: string | null }, index) => (
-                        <tr
-                          key={index}
-                          className="w-full"
-                          style={{ pageBreakInside: "avoid" }}
-                        >
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[4%]">
-                            {pageIndex * PAGE_SIZE + index + 1}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.invoice_number}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
-                            {formateDatecus(
-                              new Date(val.invoice_date),
-                            ).replaceAll("-", "/")}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.cform_description || val.description_of_goods}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
-                            {val.total_invoice_number}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
-                            For Resale
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
-                            {formateDatecus(
-                              new Date(val.invoice_date),
-                            ).replaceAll("-", "/")}
-                          </td>
-                        </tr>
-                      ))}
+                      {pageData.map(
+                        (
+                          val: returns_entry & {
+                            cform_description?: string | null;
+                          },
+                          index,
+                        ) => (
+                          <tr
+                            key={index}
+                            className="w-full"
+                            style={{ pageBreakInside: "avoid" }}
+                          >
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[4%]">
+                              {pageIndex * PAGE_SIZE + index + 1}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
+                              {trimextraString(val.invoice_number, 17)}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                              {formateDatecus(
+                                new Date(val.invoice_date),
+                              ).replaceAll("-", "/")}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
+                              {trimextraString(
+                                (val.cform_description ||
+                                  val.description_of_goods) ??
+                                  "",
+                                17,
+                              )}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                              {val.total_invoice_number}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
+                              For Resale
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                              {formateDatecus(
+                                new Date(val.invoice_date),
+                              ).replaceAll("-", "/")}
+                            </td>
+                          </tr>
+                        ),
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -557,7 +581,10 @@ const CFROM = () => {
               </div>
               <div className="border border-black p-2 h-full w-full relative">
                 <div className="scale-[0.3] absolute top-20 -right-10">
-                  <Barcode value={cformdata ? cformdata.sr_no : ""} fontSize={30}/>
+                  <Barcode
+                    value={cformdata ? cformdata.sr_no : ""}
+                    fontSize={30}
+                  />
                 </div>
                 <div className="p-4 text-center text-xs">Duplicate</div>
                 <div className="text-center text-sm font-medium">
@@ -751,7 +778,10 @@ const CFROM = () => {
                 </div>
                 <div className="border border-black p-2 h-full w-full relative">
                   <div className="scale-[0.3] absolute top-10 -right-10">
-                    <Barcode value={cformdata ? cformdata.sr_no : ""} fontSize={30}/>
+                    <Barcode
+                      value={cformdata ? cformdata.sr_no : ""}
+                      fontSize={30}
+                    />
                   </div>
                   <div className="flex">
                     <div className="grow"></div>
@@ -825,39 +855,51 @@ const CFROM = () => {
                           Pur. Ord. No./Date
                         </td>
                       </tr>
-                      {pageData.map((val: returns_entry & { cform_description?: string | null }, index) => (
-                        <tr
-                          key={index}
-                          className="w-full"
-                          style={{ pageBreakInside: "avoid" }}
-                        >
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[4%]">
-                            {pageIndex * PAGE_SIZE + index + 1}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.invoice_number}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
-                            {formateDatecus(
-                              new Date(val.invoice_date),
-                            ).replaceAll("-", "/")}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.cform_description || val.description_of_goods}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
-                            {val.total_invoice_number}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
-                            For Resale
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
-                            {formateDatecus(
-                              new Date(val.invoice_date),
-                            ).replaceAll("-", "/")}
-                          </td>
-                        </tr>
-                      ))}
+                      {pageData.map(
+                        (
+                          val: returns_entry & {
+                            cform_description?: string | null;
+                          },
+                          index,
+                        ) => (
+                          <tr
+                            key={index}
+                            className="w-full"
+                            style={{ pageBreakInside: "avoid" }}
+                          >
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[4%]">
+                              {pageIndex * PAGE_SIZE + index + 1}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
+                              {trimextraString(val.invoice_number, 17)}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                              {formateDatecus(
+                                new Date(val.invoice_date),
+                              ).replaceAll("-", "/")}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
+                              {trimextraString(
+                                (val.cform_description ||
+                                  val.description_of_goods) ??
+                                  "",
+                                17,
+                              )}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                              {val.total_invoice_number}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
+                              For Resale
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                              {formateDatecus(
+                                new Date(val.invoice_date),
+                              ).replaceAll("-", "/")}
+                            </td>
+                          </tr>
+                        ),
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -884,7 +926,10 @@ const CFROM = () => {
               </div>
               <div className="border border-black p-2 h-full w-full relative">
                 <div className="scale-[0.3] absolute top-20 -right-10">
-                  <Barcode value={cformdata ? cformdata.sr_no : ""} fontSize={30}/>
+                  <Barcode
+                    value={cformdata ? cformdata.sr_no : ""}
+                    fontSize={30}
+                  />
                 </div>
                 <div className="p-4 text-center text-xs">Counterfoil</div>
                 <div className="text-center text-sm font-medium">
@@ -1076,7 +1121,10 @@ const CFROM = () => {
                 </div>
                 <div className="border border-black p-2 h-full w-full relative">
                   <div className="scale-[0.3] absolute top-10 -right-10">
-                    <Barcode value={cformdata ? cformdata.sr_no : ""} fontSize={30}/>
+                    <Barcode
+                      value={cformdata ? cformdata.sr_no : ""}
+                      fontSize={30}
+                    />
                   </div>
                   <div className="flex">
                     <div className="grow"></div>
@@ -1150,39 +1198,51 @@ const CFROM = () => {
                           Pur. Ord. No./Date
                         </td>
                       </tr>
-                      {pageData.map((val: returns_entry & { cform_description?: string | null }, index) => (
-                        <tr
-                          key={index}
-                          className="w-full"
-                          style={{ pageBreakInside: "avoid" }}
-                        >
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[4%]">
-                            {pageIndex * PAGE_SIZE + index + 1}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.invoice_number}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
-                            {formateDatecus(
-                              new Date(val.invoice_date),
-                            ).replaceAll("-", "/")}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.cform_description || val.description_of_goods}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
-                            {val.total_invoice_number}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
-                            For Resale
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
-                            {formateDatecus(
-                              new Date(val.invoice_date),
-                            ).replaceAll("-", "/")}
-                          </td>
-                        </tr>
-                      ))}
+                      {pageData.map(
+                        (
+                          val: returns_entry & {
+                            cform_description?: string | null;
+                          },
+                          index,
+                        ) => (
+                          <tr
+                            key={index}
+                            className="w-full"
+                            style={{ pageBreakInside: "avoid" }}
+                          >
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[4%]">
+                              {pageIndex * PAGE_SIZE + index + 1}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
+                              {trimextraString(val.invoice_number, 17)}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                              {formateDatecus(
+                                new Date(val.invoice_date),
+                              ).replaceAll("-", "/")}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
+                              {trimextraString(
+                                (val.cform_description ||
+                                  val.description_of_goods) ??
+                                  "",
+                                17,
+                              )}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                              {val.total_invoice_number}
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
+                              For Resale
+                            </td>
+                            <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                              {formateDatecus(
+                                new Date(val.invoice_date),
+                              ).replaceAll("-", "/")}
+                            </td>
+                          </tr>
+                        ),
+                      )}
                     </tbody>
                   </table>
                 </div>

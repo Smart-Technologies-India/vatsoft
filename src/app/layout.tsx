@@ -4,6 +4,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { nunito, roboto } from "../utils/fonts";
 import NextTopLoader from "nextjs-toploader";
+import ContextMenuProvider from "./context-menu-provider";
 
 export const metadata: Metadata = {
   title: "VAT DD DNH",
@@ -33,7 +34,7 @@ export default function RootLayout({
       </head>
       <body>
         <NextTopLoader showSpinner={false} />
-        {children}
+        <ContextMenuProvider>{children}</ContextMenuProvider>
         <ToastContainer />
       </body>
     </html>

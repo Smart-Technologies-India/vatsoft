@@ -301,9 +301,9 @@ const AfterDeathLinePage = () => {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      // legend: {
-      //   position: "top" as const,
-      // },
+      legend: {
+        display: false,
+      },
       tooltip: {
         callbacks: {
           label: function (context: any) {

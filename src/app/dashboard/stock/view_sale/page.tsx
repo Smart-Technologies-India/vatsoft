@@ -2442,7 +2442,7 @@ const DocumentWiseDetails = () => {
                       Clear Filters
                     </Button>
                   )}
-                  {selectedPeriod ? (
+                  {!selectedPeriod ? (
                     <Button
                       size="small"
                       type="primary"
@@ -2458,8 +2458,11 @@ const DocumentWiseDetails = () => {
                     <Button
                       size="small"
                       type="default"
-                      disabled
-                      title="Please select a month to download"
+                      onClick={() => downloadDailySaleReport()}
+                      loading={isDownloadingSaleDailyReport}
+                      disabled={
+                        dailySale.length === 0 || isDownloadingSaleDailyReport
+                      }
                     >
                       📥 Download Excel (Select Month)
                     </Button>

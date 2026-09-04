@@ -1,3 +1,4 @@
+import ServerTime from "@/action/servertime";
 import {
   CategoryOfEntry,
   challan,
@@ -672,8 +673,7 @@ export class NetTaxCalculation extends CreditDebit {
   getPenalty = (): number => {
     const month: string = this.return01.month ?? "April";
     const year: string = this.return01.year;
-    // const currentDate: Date = new Date(2026, 9, 1);
-    const currentDate: Date = new Date();
+    const currentDate: Date = ServerTime().data as Date;
 
     const monthNames = [
       "January",
@@ -794,7 +794,7 @@ export class NetTaxCalculation extends CreditDebit {
     dueDate: Date,
     payments: challan[],
     annualRate = 15,
-    asOfDate: Date = new Date(),
+    asOfDate: Date = ServerTime().data as Date,
   ): number => {
     if (!Number.isFinite(totalDue) || totalDue <= 0) return 0;
 
@@ -1525,7 +1525,7 @@ export class CompositionCalculation {
   getPenalty = (): number => {
     const month: string = this.return01.month ?? "April";
     const year: string = this.return01.year;
-    const currentDate: Date = new Date();
+    const currentDate: Date = ServerTime().data as Date;
 
     const monthNames = [
       "January",
@@ -1646,7 +1646,7 @@ export class CompositionCalculation {
     dueDate: Date,
     payments: challan[],
     annualRate = 15,
-    asOfDate: Date = new Date(),
+    asOfDate: Date = ServerTime().data as Date,
   ): number => {
     if (!Number.isFinite(totalDue) || totalDue <= 0) return 0;
 

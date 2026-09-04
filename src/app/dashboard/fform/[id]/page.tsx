@@ -11,6 +11,7 @@ import {
   formateDate,
   formatDateDDMMYY,
   generatePDF,
+  trimextraString,
 } from "@/utils/methods";
 import { Button } from "antd";
 
@@ -578,7 +579,7 @@ const FFROM = () => {
                             {pageIndex * PAGE_SIZE + index + 1}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.invoice_number}
+                            {trimextraString(val.invoice_number, 17)}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
                             {formateDatecus(
@@ -586,7 +587,10 @@ const FFROM = () => {
                             ).replaceAll("-", "/")}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.description_of_goods}
+                            {trimextraString(
+                              val.description_of_goods ?? "",
+                              17,
+                            )}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                             {val.total_invoice_number}
@@ -973,7 +977,7 @@ const FFROM = () => {
                             {pageIndex * PAGE_SIZE + index + 1}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.invoice_number}
+                            {trimextraString(val.invoice_number, 17)}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
                             {formateDatecus(
@@ -981,7 +985,10 @@ const FFROM = () => {
                             ).replaceAll("-", "/")}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.description_of_goods}
+                            {trimextraString(
+                              val.description_of_goods ?? "",
+                              17,
+                            )}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                             {val.total_invoice_number}
@@ -1367,7 +1374,7 @@ const FFROM = () => {
                             {pageIndex * PAGE_SIZE + index + 1}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.invoice_number}
+                            {trimextraString(val.invoice_number, 17)}F
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
                             {formateDatecus(
@@ -1375,7 +1382,10 @@ const FFROM = () => {
                             ).replaceAll("-", "/")}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.description_of_goods}
+                            {trimextraString(
+                              val.description_of_goods ?? "",
+                              17,
+                            )}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
                             {val.total_invoice_number}

@@ -1166,11 +1166,24 @@ const DocumentWiseDetails = () => {
       const reportData: GroupedDailyPurchase[] = [];
 
       while (skip < total) {
-        const reportResponse = await GetUserDailyPurchase({
-          dvatid: dvatdata.id,
-          skip,
-          take: BATCH_SIZE,
-        });
+        // Use filtered API when a period is selected, otherwise use all data
+        const reportResponse = selectedPeriod
+          ? await GetUserDailyPurchaseFiltered({
+              dvatid: dvatdata.id,
+              skip,
+              take: BATCH_SIZE,
+              searchTerm: "",
+              sortField: "invoice_date",
+              sortOrder: "desc",
+              startDate: dateFilter.startDate,
+              endDate: dateFilter.endDate,
+              acceptStatusFilter: "all",
+            })
+          : await GetUserDailyPurchase({
+              dvatid: dvatdata.id,
+              skip,
+              take: BATCH_SIZE,
+            });
 
         if (!reportResponse.status || !reportResponse.data?.result) {
           toast.error(reportResponse.message || "Unable to load report data.");
@@ -2718,7 +2731,7 @@ const DocumentWiseDetails = () => {
                       Clear Filters
                     </Button>
                   )}
-                  {selectedPeriod ? (
+                  {!selectedPeriod ? (
                     <Button
                       size="small"
                       type="primary"
@@ -2734,8 +2747,11 @@ const DocumentWiseDetails = () => {
                     <Button
                       size="small"
                       type="default"
-                      disabled
-                      title="Please select a month to download"
+                      onClick={() => downloadDailyPurchaseReport()}
+                      loading={isDownloadingDailyPurchase}
+                      disabled={
+                        dailyPurchase.length === 0 || isDownloadingDailyPurchase
+                      }
                     >
                       📥 Download Excel (Select Month)
                     </Button>

@@ -3,11 +3,12 @@ import { Router } from "lucide-react";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { FieldErrors, FieldValues } from "react-hook-form";
 import { toast } from "react-toastify";
+import ServerTime from "@/action/servertime";
 
 const due_date_of_month = 28;
 
 const get28thDate = (): Date => {
-  const today = new Date(); // Get the current date
+  const today = ServerTime().data as Date; // Get the current date
   const year = today.getFullYear();
   const month = today.getMonth(); // 0-based month index
   return new Date(year, month, due_date_of_month); // Set the date to the 28th of the current month
@@ -280,7 +281,6 @@ const onFormError = <T extends FieldValues>(error: FieldErrors<T>) => {
 
   console.log("Form validation error:", firstErrorMessage);
 
-
   setTimeout(() => {
     if (firstErrorMessage) {
       const errorElement = Array.from(document.querySelectorAll("p")).find(
@@ -350,19 +350,18 @@ export { getPreviousMonth, getMonthDifference, getDateFromMonth };
 
 const generatePDF = async (path: string, filename: string = "output.pdf") => {
   try {
-    
     // Open the page with print parameter to trigger browser's print-to-PDF
     const fullPath = `${window.location.origin}/${path}`;
-    const printWindow = window.open(fullPath, '_blank');
-    
+    const printWindow = window.open(fullPath, "_blank");
+
     if (!printWindow) {
       throw new Error("Popup blocked. Please allow popups for PDF download.");
     }
-    
+
     // Wait for the page to load and inject print styles
-    printWindow.addEventListener('load', () => {
+    printWindow.addEventListener("load", () => {
       // Add CSS to remove headers and footers
-      const style = printWindow.document.createElement('style');
+      const style = printWindow.document.createElement("style");
       style.textContent = `
         @page {
           margin: 20mm 15mm 20mm 15mm;
@@ -379,13 +378,15 @@ const generatePDF = async (path: string, filename: string = "output.pdf") => {
         }
       `;
       printWindow.document.head.appendChild(style);
-      
+
       setTimeout(() => {
         printWindow.print();
       }, 2000);
     });
-    
-    toast.success("Opening print dialog. Use 'Save as PDF' and disable 'Headers and footers' in print settings.");
+
+    toast.success(
+      "Opening print dialog. Use 'Save as PDF' and disable 'Headers and footers' in print settings.",
+    );
   } catch (error: any) {
     console.error("Error generating PDF:", error);
     toast.error("Unable to download pdf. Please try again.");
@@ -436,3 +437,10 @@ const isNegative = (value: number): boolean => {
 };
 
 export { isNegative };
+
+const trimextraString = (value: string, index: number): string => {
+  if (value.length == index || value.length < index) return value;
+  return value.substring(0, index) + "..";
+};
+
+export { trimextraString };
