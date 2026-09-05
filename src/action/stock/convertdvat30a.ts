@@ -111,6 +111,7 @@ const ConvertDvat30A = async (
         }),
       },
       include: {
+        dvat04: true,
         commodity_master: true,
         seller_tin_number: true,
       },
@@ -292,63 +293,65 @@ const ConvertDvat30A = async (
       const chunkRows = data_to_create.slice(start, start + chunkSize);
 
       await prisma.$transaction(async (tx) => {
-        await tx.returns_entry.createMany({
-          data: chunkRows.map(
-            (
-              val: daily_purchase & {
-                seller_tin_number: tin_number_master;
-                commodity_master: commodity_master;
-              },
-            ) => ({
-              returns_01Id: returnInvoice.id,
-              dvat_type: val.is_local ? DvatType.DVAT_30 : DvatType.DVAT_30_A,
-              status: Status.ACTIVE,
-              createdById: currentUserId,
-              urn_number: val.urn_number || nanoid(),
-              invoice_date: val.invoice_date,
-              invoice_number: val.invoice_number,
-              seller_tin_numberId: val.seller_tin_numberId,
-              category_of_entry: CategoryOfEntry.INVOICE,
-              total_invoice_number: (
-                parseFloat(val.amount) + parseFloat(val.vatamount)
-              ).toFixed(2),
-              commodity_masterId: val.commodity_masterId,
-              ...(val.is_local && {
-                purchase_type: PurchaseType.TAXABLE_RATE,
-              }),
-              ...(!val.is_local &&
-                val.is_against_cform && {
-                  purchase_type: PurchaseType.FORMC_CONCESSION,
-                }),
-              ...(!val.is_local &&
-                val.is_against_fform && {
-                  purchase_type: PurchaseType.STOCK_TRANSFER,
-                }),
-              ...(!val.is_local &&
-                val.is_export && {
-                  purchase_type: PurchaseType.OUTSIDE_INDIA,
-                }),
-              ...(!val.is_local &&
-                !val.is_against_cform &&
-                !val.is_against_fform &&
-                !val.is_export && {
+        if (!candidateRows[0].dvat04.compositionScheme) {
+          await tx.returns_entry.createMany({
+            data: chunkRows.map(
+              (
+                val: daily_purchase & {
+                  seller_tin_number: tin_number_master;
+                  commodity_master: commodity_master;
+                },
+              ) => ({
+                returns_01Id: returnInvoice.id,
+                dvat_type: val.is_local ? DvatType.DVAT_30 : DvatType.DVAT_30_A,
+                status: Status.ACTIVE,
+                createdById: currentUserId,
+                urn_number: val.urn_number || nanoid(),
+                invoice_date: val.invoice_date,
+                invoice_number: val.invoice_number,
+                seller_tin_numberId: val.seller_tin_numberId,
+                category_of_entry: CategoryOfEntry.INVOICE,
+                total_invoice_number: (
+                  parseFloat(val.amount) + parseFloat(val.vatamount)
+                ).toFixed(2),
+                commodity_masterId: val.commodity_masterId,
+                ...(val.is_local && {
                   purchase_type: PurchaseType.TAXABLE_RATE,
                 }),
-              nature_purchase: NaturePurchase.OTHER_GOODS,
-              nature_purchase_option: NaturePurchaseOption.REGISTER_DEALERS,
-              input_tax_credit: InputTaxCredit.ITC_ELIGIBLE,
-              place_of_supply: parseInt(
-                val.seller_tin_number.tin_number.substring(0, 2),
-              ),
-              tax_percent: val.tax_percent,
-              amount: val.amount,
-              vatamount: val.vatamount,
-              remarks: "",
-              quantity: val.quantity,
-              description_of_goods: val.commodity_master.product_name,
-            }),
-          ),
-        });
+                ...(!val.is_local &&
+                  val.is_against_cform && {
+                    purchase_type: PurchaseType.FORMC_CONCESSION,
+                  }),
+                ...(!val.is_local &&
+                  val.is_against_fform && {
+                    purchase_type: PurchaseType.STOCK_TRANSFER,
+                  }),
+                ...(!val.is_local &&
+                  val.is_export && {
+                    purchase_type: PurchaseType.OUTSIDE_INDIA,
+                  }),
+                ...(!val.is_local &&
+                  !val.is_against_cform &&
+                  !val.is_against_fform &&
+                  !val.is_export && {
+                    purchase_type: PurchaseType.TAXABLE_RATE,
+                  }),
+                nature_purchase: NaturePurchase.OTHER_GOODS,
+                nature_purchase_option: NaturePurchaseOption.REGISTER_DEALERS,
+                input_tax_credit: InputTaxCredit.ITC_ELIGIBLE,
+                place_of_supply: parseInt(
+                  val.seller_tin_number.tin_number.substring(0, 2),
+                ),
+                tax_percent: val.tax_percent,
+                amount: val.amount,
+                vatamount: val.vatamount,
+                remarks: "",
+                quantity: val.quantity,
+                description_of_goods: val.commodity_master.product_name,
+              }),
+            ),
+          });
+        }
 
         const updateResponse = await tx.daily_purchase.updateMany({
           where: {

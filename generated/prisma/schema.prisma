@@ -555,6 +555,7 @@ model returns_01 {
   bank_name         String?
   track_id          String?
   compositionScheme Boolean?        @default(false)
+  is_quarter        Boolean?        @default(false)
   remarks           String?
   status            ReturnStatus    @default(DUE)
   challan_number    String?

@@ -15,18 +15,21 @@ import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
 import GetUserTrackPayment from "@/action/return/getusertrackpayment";
-import { returns_01 } from "@prisma/client";
+import { dvat04, returns_01 } from "@prisma/client";
 import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import { getCurrentDvatId } from "@/lib/auth";
+import GetDvatById from "@/action/user/register/getdvatbyid";
 
 const TrackAppliation = () => {
   const router = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
+  const [dvat, setDvat] = useState<dvat04>();
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -43,7 +46,7 @@ const TrackAppliation = () => {
     RETURN,
   }
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.ARN
+    SearchOption.ARN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -56,7 +59,7 @@ const TrackAppliation = () => {
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    _dateStrings: [string, string]
+    _dateStrings: [string, string],
   ) => {
     setSearchDate(dates);
   };
@@ -147,6 +150,21 @@ const TrackAppliation = () => {
         return;
       }
 
+      const dvatid = await getCurrentDvatId();
+      if (!dvatid) {
+        toast.error("Failed to get current DVAT ID");
+        router.push("/");
+        return;
+      }
+
+      const dvat = await GetDvatById({
+        id: dvatid,
+      });
+
+      if (dvat.status && dvat.data) {
+        setDvat(dvat.data);
+      }
+
       const paymentDataResponse = await GetUserTrackPayment({
         take: 10,
         skip: 0,
@@ -187,16 +205,13 @@ const TrackAppliation = () => {
     const monthIndex = monthNames.indexOf(capitalcase(month));
     const yearNum = parseInt(year, 10);
 
- 
-
-    if(monthIndex >= 0 && monthIndex <= 2) {
+    if (monthIndex >= 0 && monthIndex <= 2) {
       // January to March
       return `${yearNum - 1}-${yearNum.toString().slice(-2)}`;
     } else {
       // April to December
       return `${yearNum}-${(yearNum + 1).toString().slice(-2)}`;
     }
-
   };
 
   const get_month = (composition: boolean, month: string): string => {
@@ -245,7 +260,7 @@ const TrackAppliation = () => {
   const getFilteredPaymentData = (): returns_01[] => {
     // Group by ARN (rr_number)
     const grouped = new Map<string, returns_01[]>();
-    
+
     for (const payment of paymentData) {
       const arn = payment.rr_number || "";
       if (!grouped.has(arn)) {
@@ -256,32 +271,40 @@ const TrackAppliation = () => {
 
     // Filter based on quarterly vs monthly
     const filtered: returns_01[] = [];
-    
+
     for (const [_arn, group] of grouped.entries()) {
       if (group.length > 1) {
         // Multiple records with same ARN = Quarterly filing
         // Sort by month and keep only the last month
         const quarterMonthMap: Record<string, number> = {
-          "January": 1, "February": 2, "March": 3,
-          "April": 4, "May": 5, "June": 6,
-          "July": 7, "August": 8, "September": 9,
-          "October": 10, "November": 11, "December": 12,
+          January: 1,
+          February: 2,
+          March: 3,
+          April: 4,
+          May: 5,
+          June: 6,
+          July: 7,
+          August: 8,
+          September: 9,
+          October: 10,
+          November: 11,
+          December: 12,
         };
-        
-        const quarterEndMonths = { "Q1": 6, "Q2": 9, "Q3": 12, "Q4": 3 };
+
+        const quarterEndMonths = { Q1: 6, Q2: 9, Q3: 12, Q4: 3 };
         const lastGroup = group.sort((a, b) => {
           const monthA = quarterMonthMap[a.month!] || 0;
           const monthB = quarterMonthMap[b.month!] || 0;
           return monthB - monthA;
         })[0];
-        
+
         filtered.push(lastGroup);
       } else {
         // Single record = Monthly filing, show it
         filtered.push(group[0]);
       }
     }
-    
+
     return filtered;
   };
 
@@ -305,9 +328,11 @@ const TrackAppliation = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-white rounded-full"></div>
-                <h1 className="text-2xl font-bold text-white">Track Return Status</h1>
+                <h1 className="text-2xl font-bold text-white">
+                  Track Return Status
+                </h1>
               </div>
-              <Button 
+              <Button
                 onClick={() => setDrawerOpen(true)}
                 className="text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-colors font-medium bg-transparent border-white"
               >
@@ -318,7 +343,11 @@ const TrackAppliation = () => {
         </div>
 
         <Drawer
-          title={<span className="text-xl font-bold text-gray-900">Meaning of Status</span>}
+          title={
+            <span className="text-xl font-bold text-gray-900">
+              Meaning of Status
+            </span>
+          }
           placement="right"
           size={720}
           onClose={() => setDrawerOpen(false)}
@@ -331,8 +360,8 @@ const TrackAppliation = () => {
                   Pending for Processing
                 </TableCell>
                 <TableCell className="text-left p-3 text-gray-700">
-                  Application filed successfully. Pending with Tax Officer
-                  for Processing.*
+                  Application filed successfully. Pending with Tax Officer for
+                  Processing.*
                 </TableCell>
               </TableRow>
               <TableRow className="hover:bg-blue-50 transition-colors">
@@ -350,8 +379,8 @@ const TrackAppliation = () => {
                   Clarification filed-Pending for Order
                 </TableCell>
                 <TableCell className="text-left p-3 text-gray-700">
-                  Clarification filed successfully by Applicant. Pending
-                  with Tax Officer for Order.*
+                  Clarification filed successfully by Applicant. Pending with
+                  Tax Officer for Order.*
                 </TableCell>
               </TableRow>
               <TableRow className="hover:bg-blue-50 transition-colors">
@@ -359,8 +388,8 @@ const TrackAppliation = () => {
                   Clarification not filed Pending for Order
                 </TableCell>
                 <TableCell className="text-left p-3 text-gray-700">
-                  Clarification not filed by the Applicant. Pending with
-                  Tax Officer for Rejection.*
+                  Clarification not filed by the Applicant. Pending with Tax
+                  Officer for Rejection.*
                 </TableCell>
               </TableRow>
               <TableRow className="hover:bg-blue-50 transition-colors">
@@ -368,8 +397,8 @@ const TrackAppliation = () => {
                   Approved
                 </TableCell>
                 <TableCell className="text-left p-3 text-gray-700">
-                  Application is Approved. Registration ID and possward
-                  emailed to Applicant.
+                  Application is Approved. Registration ID and possward emailed
+                  to Applicant.
                 </TableCell>
               </TableRow>
               <TableRow className="hover:bg-blue-50 transition-colors">
@@ -405,76 +434,76 @@ const TrackAppliation = () => {
           {/* Search Section */}
           <div className="p-6 bg-linear-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
             <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
-            <Radio.Group
-              onChange={onChange}
-              value={searchOption}
-              disabled={isSearch}
-            >
-              <Radio value={SearchOption.ARN}>ARN</Radio>
-              <Radio value={SearchOption.RETURN}>Return Filing Period</Radio>
-            </Radio.Group>
-            {(() => {
-              switch (searchOption) {
-                case SearchOption.ARN:
-                  return (
-                    <div className="flex gap-3">
-                      <Input
-                        className="w-60 border-gray-300 focus:border-blue-500"
-                        ref={arnRef}
-                        placeholder={"Enter CPIN"}
-                        disabled={isSearch}
-                      />
-                      {isSearch ? (
-                        <Button 
-                          onClick={init} 
-                          type="primary"
-                          className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
-                        >
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button 
-                          onClick={cpinsearch} 
-                          type="primary"
-                          className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
-                        >
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
+              <Radio.Group
+                onChange={onChange}
+                value={searchOption}
+                disabled={isSearch}
+              >
+                <Radio value={SearchOption.ARN}>ARN</Radio>
+                <Radio value={SearchOption.RETURN}>Return Filing Period</Radio>
+              </Radio.Group>
+              {(() => {
+                switch (searchOption) {
+                  case SearchOption.ARN:
+                    return (
+                      <div className="flex gap-3">
+                        <Input
+                          className="w-60 border-gray-300 focus:border-blue-500"
+                          ref={arnRef}
+                          placeholder={"Enter CPIN"}
+                          disabled={isSearch}
+                        />
+                        {isSearch ? (
+                          <Button
+                            onClick={init}
+                            type="primary"
+                            className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
+                          >
+                            Reset
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={cpinsearch}
+                            type="primary"
+                            className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
+                          >
+                            Search
+                          </Button>
+                        )}
+                      </div>
+                    );
 
-                case SearchOption.RETURN:
-                  return (
-                    <div className="flex gap-3">
-                      <RangePicker
-                        onChange={onChangeDate}
-                        disabled={isSearch}
-                        className="border-gray-300 focus:border-blue-500"
-                      />
-                      {isSearch ? (
-                        <Button 
-                          onClick={init} 
-                          type="primary"
-                          className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
-                        >
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button 
-                          type="primary" 
-                          onClick={datesearch}
-                          className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
-                        >
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
-                default:
-                  return null;
-              }
-            })()}
+                  case SearchOption.RETURN:
+                    return (
+                      <div className="flex gap-3">
+                        <RangePicker
+                          onChange={onChangeDate}
+                          disabled={isSearch}
+                          className="border-gray-300 focus:border-blue-500"
+                        />
+                        {isSearch ? (
+                          <Button
+                            onClick={init}
+                            type="primary"
+                            className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
+                          >
+                            Reset
+                          </Button>
+                        ) : (
+                          <Button
+                            type="primary"
+                            onClick={datesearch}
+                            className="bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
+                          >
+                            Search
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  default:
+                    return null;
+                }
+              })()}
             </div>
           </div>
 
@@ -504,57 +533,62 @@ const TrackAppliation = () => {
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
                     Mode of filing
                   </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {getFilteredPaymentData().map((val: returns_01, index: number) => {
-                return (
-                  <TableRow key={index} className="hover:bg-blue-50 transition-colors">
-                    <TableCell className="border text-center p-3">
-                      <Link
-                        href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                          val.createdById.toString()
-                        )}?form=30A&year=${val.year}&quarter=${
-                          val.quarter
-                        }&month=${val.month}`}
-                        className="text-blue-600 hover:text-blue-800 font-medium hover:underline transition-colors"
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {getFilteredPaymentData().map(
+                  (val: returns_01, index: number) => {
+                    return (
+                      <TableRow
+                        key={index}
+                        className="hover:bg-blue-50 transition-colors"
                       >
-                        {val.rr_number}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="border text-center p-3 text-gray-900">
-                      {val.return_type}
-                    </TableCell>
-                    <TableCell className="border text-center p-3 text-gray-900">
-                      {get_years(
-                        new Date(val.transaction_date!).toLocaleString(
-                          "en-US",
-                          {
-                            month: "long",
-                          }
-                        ),
-                        val.year
-                      )}
-                    </TableCell>
-                    <TableCell className="border text-center p-3 text-gray-900">
-                      {val.month}
-                    </TableCell>
-                    <TableCell className="border text-center p-3 text-gray-900">
-                      {formateDate(new Date(val.transaction_date!))}
-                    </TableCell>
-                    <TableCell className="border text-center p-3">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                        Filed
-                      </span>
-                    </TableCell>
-                    <TableCell className="border text-center p-3 text-gray-900">
-                      {val.paymentmode}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                        <TableCell className="border text-center p-3">
+                          <Link
+                            href={`/dashboard/returns/returns-dashboard/${dvat && dvat.compositionScheme ? "previewcomposition" : "preview"}/${encryptURLData(
+                              val.createdById.toString(),
+                            )}?form=30A&year=${val.year}&quarter=${
+                              val.quarter
+                            }&month=${val.month}`}
+                            className="text-blue-600 hover:text-blue-800 font-medium hover:underline transition-colors"
+                          >
+                            {val.rr_number}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="border text-center p-3 text-gray-900">
+                          {val.return_type}
+                        </TableCell>
+                        <TableCell className="border text-center p-3 text-gray-900">
+                          {get_years(
+                            new Date(val.transaction_date!).toLocaleString(
+                              "en-US",
+                              {
+                                month: "long",
+                              },
+                            ),
+                            val.year,
+                          )}
+                        </TableCell>
+                        <TableCell className="border text-center p-3 text-gray-900">
+                          {val.month}
+                        </TableCell>
+                        <TableCell className="border text-center p-3 text-gray-900">
+                          {formateDate(new Date(val.transaction_date!))}
+                        </TableCell>
+                        <TableCell className="border text-center p-3">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                            Filed
+                          </span>
+                        </TableCell>
+                        <TableCell className="border text-center p-3 text-gray-900">
+                          {val.paymentmode}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  },
+                )}
+              </TableBody>
+            </Table>
           </div>
 
           {/* Pagination Section */}

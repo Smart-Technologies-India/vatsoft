@@ -103,6 +103,7 @@ const AddPaymentSubmit = async (
           status: "PAID",
           track_id: "0",
           transaction_id: "0",
+          is_quarterly: isExist.dvat04.frequencyFilings == "QUARTERLY",
         },
         include: {
           dvat04: true,

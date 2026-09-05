@@ -92,7 +92,11 @@ const TrackAppliation = () => {
     const months: string[] = [];
 
     // Generate years
-    for (let year = startDate.getFullYear(); year <= currentDate.getFullYear(); year++) {
+    for (
+      let year = startDate.getFullYear();
+      year <= currentDate.getFullYear();
+      year++
+    ) {
       years.push(year.toString());
     }
 
@@ -105,7 +109,7 @@ const TrackAppliation = () => {
         // April is at index 3
         if (
           month < currentDate.getMonth() ||
-          (month === currentDate.getMonth())
+          month === currentDate.getMonth()
         ) {
           months.push(monthNames[month]);
         }
@@ -531,7 +535,11 @@ const TrackAppliation = () => {
           tradeRef.current?.input?.value
         ) {
           searchParams.trade = tradeRef.current.input.value;
-        } else if (searchOption === SearchOption.PERIOD && periodYear && periodMonth) {
+        } else if (
+          searchOption === SearchOption.PERIOD &&
+          periodYear &&
+          periodMonth
+        ) {
           searchParams.month = periodMonth;
           searchParams.year = periodYear;
         }
@@ -851,9 +859,7 @@ const TrackAppliation = () => {
                   <TableBody>
                     {filteredPaymentData.map(
                       (val: returns_01 & { dvat04: dvat04 }, index: number) => {
-                        const isQuarterly =
-                          val.dvat04.frequencyFilings === "QUARTERLY";
-                        const taxPeriodDisplay = isQuarterly
+                        const taxPeriodDisplay = val.is_quarterly
                           ? val.quarter
                           : val.month;
 
@@ -864,7 +870,7 @@ const TrackAppliation = () => {
                           >
                             <TableCell className="border text-center p-3">
                               <Link
-                                href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                                href={`/dashboard/returns/returns-dashboard/${val.dvat04.compositionScheme ? "previewcomposition" : "preview"}/${encryptURLData(
                                   val.createdById.toString(),
                                 )}/${encryptURLData(
                                   val.dvat04Id.toString(),

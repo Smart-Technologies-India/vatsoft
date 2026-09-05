@@ -102,6 +102,7 @@ const AddPaymentOnline = async (
             parseFloat(payload.totaltaxamount) +
             parseFloat(payload.challan_other ?? "0")
           ).toString(),
+          is_quarterly: isExist.dvat04.frequencyFilings == "QUARTERLY",
         },
       });
 

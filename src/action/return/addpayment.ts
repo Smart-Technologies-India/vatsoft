@@ -115,6 +115,7 @@ const AddPayment = async (
           vatamount: payload.vatamount,
           total_tax_amount: payload.totaltaxamount,
           status: "PAID",
+          is_quarterly: isExist.dvat04.frequencyFilings == "QUARTERLY",
         },
         include: {
           dvat04: true,

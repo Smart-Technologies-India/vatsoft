@@ -81,6 +81,7 @@ const AddSubmitPayment = async (
           paymentmode: "ONLINE",
           rr_number: payload.rr_number,
           filing_datetime: new Date(),
+          is_quarterly: isExist.dvat04.frequencyFilings == "QUARTERLY",
         },
         include: {
           dvat04: true,
