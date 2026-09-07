@@ -1,7 +1,7 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { dvat04, SelectOffice, FrequencyFilings } from "@prisma/client";
+import { dvat04, SelectOffice, FrequencyFilings, Dvat04Commodity } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import {
   createPaginationResponse,
@@ -26,6 +26,7 @@ interface DeptPendingReturnPayload {
   todate?: Date;
   month?: string;
   year?: string;
+  commodity?: string;
   skip: number;
   take: number;
 }
@@ -68,6 +69,7 @@ const DeptPendingReturn = async (
         ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
         ...(payload.frequencyFilings && { frequencyFilings: payload.frequencyFilings as FrequencyFilings }),
         ...(payload.compositionScheme !== undefined && { compositionScheme: payload.compositionScheme }),
+        ...(payload.commodity && { commodity: payload.commodity as Dvat04Commodity }),
         ...(payload.tradename && {
           OR: [
             { tradename: { contains: payload.tradename } },

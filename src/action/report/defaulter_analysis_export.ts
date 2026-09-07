@@ -35,12 +35,11 @@ const DefaulterAnalysisExport = async (
       } as any;
     }
 
-    // Get all return filings with PENDINGFILING status
+    // Get all return filings (regardless of status)
     const returnFilings = await prisma.return_filing.findMany({
       where: {
         deletedAt: null,
         deletedById: null,
-        return_status: "PENDINGFILING",
         dvat: {
           ...(payload.dept && { selectOffice: payload.dept }),
           ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
@@ -71,13 +70,48 @@ const DefaulterAnalysisExport = async (
       };
     }
 
+    let resTempMap = new Map<number, ResponseType>();
+
+    for (let i = 0; i < returnFilings.length; i++) {
+      const currentDvat: dvat04 = returnFilings[i].dvat;
+      if (resTempMap.has(currentDvat.id)) {
+        let existingData: ResponseType = resTempMap.get(
+          currentDvat.id,
+        ) as ResponseType;
+
+        // If dvat already exists
+        existingData.pendingCount += 1;
+      } else {
+        resTempMap.set(currentDvat.id, {
+          dvat04: currentDvat,
+          lastfiling: "N/A",
+          pendingCount: 0,
+          defaultCount: 0,
+          lastYearDefaults: 0,
+        });
+      }
+    }
+
     let resMap = new Map<number, ResponseType>();
     const currentDate = new Date();
-    const oneYearAgo = new Date(
-      currentDate.getFullYear() - 1,
-      currentDate.getMonth(),
-      currentDate.getDate(),
-    );
+
+    // Quarter to months mapping
+    const quarterMonthsMap: Record<string, string[]> = {
+      QUARTER1: ["April", "May", "June"],
+      QUARTER2: ["July", "August", "September"],
+      QUARTER3: ["October", "November", "December"],
+      QUARTER4: ["January", "February", "March"],
+    };
+
+    // Get last month of each quarter
+    const getLastMonthOfQuarter = (month: string): string => {
+      for (const [quarter, months] of Object.entries(quarterMonthsMap)) {
+        if (months.includes(month)) {
+          return months[months.length - 1]; // Return last month of quarter
+        }
+      }
+      return month; // Return as is if not found
+    };
 
     const monthNames = [
       "January",
@@ -95,52 +129,60 @@ const DefaulterAnalysisExport = async (
     ];
 
     for (let i = 0; i < returnFilings.length; i++) {
-      const currentDvat: dvat04 = returnFilings[i].dvat;
-      const filingMonth = monthNames.indexOf(returnFilings[i].month) + 1;
-      const filingYear = parseInt(returnFilings[i].year);
+      const filing = returnFilings[i];
+      const currentDvat: dvat04 = filing.dvat;
+      const filingMonth = monthNames.indexOf(filing.month) + 1;
+      const filingYear = parseInt(filing.year);
 
-      if (!returnFilings[i].due_date) continue;
-      const dueDate = new Date(returnFilings[i].due_date!);
+      if (!resMap.has(currentDvat.id)) {
+        resMap.set(currentDvat.id, {
+          dvat04: currentDvat,
+          lastfiling: "N/A",
+          pendingCount: 0,
+          defaultCount: 0,
+          lastYearDefaults: 0,
+        });
+      }
 
-      if (currentDvat && dueDate < currentDate) {
-        if (resMap.has(currentDvat.id)) {
-          let existingData = resMap.get(currentDvat.id) as ResponseType;
+      const resItem = resMap.get(currentDvat.id) as ResponseType;
+      const filingStatus = filing.filing_status;
+      const currentLastFiling = `${filing.month}-${filing.year}`;
+      const dueDate = filing.due_date ? new Date(filing.due_date) : null;
 
-          // Count total pending filings
-          existingData.pendingCount += 1;
-
-          // Count defaults (overdue filings)
-          existingData.defaultCount += 1;
-
-          // Count defaults in the past year
-          if (dueDate >= oneYearAgo) {
-            existingData.lastYearDefaults += 1;
-          }
-
-          // Update last filing with the most recent one
-          const currentFilingStr = `${returnFilings[i].month}-${returnFilings[i].year}`;
-          if (
-            existingData.lastfiling === "N/A" ||
-            filingYear > parseInt(existingData.lastfiling.split("-")[1]) ||
-            (filingYear === parseInt(existingData.lastfiling.split("-")[1]) &&
-              filingMonth >
-                monthNames.indexOf(existingData.lastfiling.split("-")[0]) + 1)
-          ) {
-            existingData.lastfiling = currentFilingStr;
+      if (filingStatus) {
+        if (
+          resItem.lastfiling === "N/A" ||
+          filingYear > parseInt(resItem.lastfiling.split("-")[1]) ||
+          (filingYear === parseInt(resItem.lastfiling.split("-")[1]) &&
+            filingMonth >
+              monthNames.indexOf(resItem.lastfiling.split("-")[0]) + 1)
+        ) {
+          resItem.lastfiling = currentLastFiling;
+        }
+      } else if (dueDate && dueDate < currentDate) {
+        const isQuarterly = currentDvat.frequencyFilings === "QUARTERLY";
+        
+        // For quarterly filing, only count if it's the last month of the quarter
+        if (isQuarterly) {
+          const lastMonthOfQuarter = getLastMonthOfQuarter(filing.month);
+          if (filing.month === lastMonthOfQuarter) {
+            resItem.pendingCount += 1;
           }
         } else {
-          const currentFilingStr = `${returnFilings[i].month}-${returnFilings[i].year}`;
-          const lastYearDefault = dueDate >= oneYearAgo ? 1 : 0;
-
-          resMap.set(currentDvat.id, {
-            dvat04: currentDvat,
-            lastfiling: currentFilingStr,
-            pendingCount: 1,
-            defaultCount: 1,
-            lastYearDefaults: lastYearDefault,
-          });
+          // For monthly filing, count every overdue month
+          resItem.pendingCount += 1;
         }
       }
+
+      // Count all unfiled returns as defaults
+      resItem.defaultCount = returnFilings
+        .filter((rf) => rf.dvat.id === currentDvat.id && rf.filing_status === false)
+        .length;
+
+      // Count defaults in last 12 entries
+      resItem.lastYearDefaults = returnFilings
+        .filter((rf) => rf.dvat.id === currentDvat.id && rf.filing_status === false)
+        .slice(-12).length;
     }
 
     // Convert Map to array and filter dealers with 3+ defaults in the past year

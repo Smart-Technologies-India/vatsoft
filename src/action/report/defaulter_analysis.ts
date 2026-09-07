@@ -104,34 +104,65 @@ const DefaulterAnalysis = async (
     let resMap = new Map<number, ResponseType>();
 
     const tempRes: ResponseType[] = Array.from(resTempMap.values());
+    const currentDate = new Date();
+
+    // Quarter to months mapping
+    const quarterMonthsMap: Record<string, string[]> = {
+      QUARTER1: ["April", "May", "June"],
+      QUARTER2: ["July", "August", "September"],
+      QUARTER3: ["October", "November", "December"],
+      QUARTER4: ["January", "February", "March"],
+    };
+
+    // Get last month of each quarter
+    const getLastMonthOfQuarter = (month: string): string => {
+      for (const [quarter, months] of Object.entries(quarterMonthsMap)) {
+        if (months.includes(month)) {
+          return months[months.length - 1]; // Return last month of quarter
+        }
+      }
+      return month; // Return as is if not found
+    };
 
     for (let i = 0; i < tempRes.length; i++) {
       let resItem = tempRes[i];
-      // if filing_status is false  return_status PENDINGFILING
-      let pendingCount = resItem.returnfiling.filter(
-        (rf) =>
-          rf.filing_status === false && rf.return_status === "PENDINGFILING",
-      ).length;
-      // return_filing total entries and return_status expect DUE
-      let defaultCount = resItem.returnfiling.filter(
-        (rf) => rf.return_status !== "DUE" && rf.filing_status === false,
-      ).length;
-      // return_filing in last 12 entring with filing_status false and return_status PENDINGFILING
-      let lastYearDefaults = resItem.returnfiling
-        .filter(
-          (rf) =>
-            rf.filing_status === false && rf.return_status === "PENDINGFILING",
-        )
-        .splice(-12).length;
-
       let lastfiling = "N/A";
-      const lastFilingEntry = resItem.returnfiling
-        .filter((rf) => rf.filing_status === true)
-        .splice(-1);
-      if (lastFilingEntry.length > 0) {
-        lastfiling = `${lastFilingEntry[0].month}-${lastFilingEntry[0].year}`;
+      let pendingCount = 0;
+      let defaultCount = 0;
+      let lastYearDefaults = 0;
+      const isQuarterly = resItem.dvat04.frequencyFilings === "QUARTERLY";
+
+      for (let j = 0; j < resItem.returnfiling.length; j++) {
+        const filing = resItem.returnfiling[j];
+        const filingStatus = filing.filing_status;
+        const currentLastFiling = `${filing.month}-${filing.year}`;
+        const dueDate = filing.due_date ? new Date(filing.due_date) : null;
+
+        if (filingStatus) {
+          lastfiling = currentLastFiling;
+        } else if (dueDate && dueDate < currentDate) {
+          // For quarterly filing, only count if it's the last month of the quarter
+          if (isQuarterly) {
+            const lastMonthOfQuarter = getLastMonthOfQuarter(filing.month);
+            if (filing.month === lastMonthOfQuarter) {
+              pendingCount += 1;
+            }
+          } else {
+            // For monthly filing, count every overdue month
+            pendingCount += 1;
+          }
+        }
       }
-      let lastFilingDate: string = lastfiling;
+
+      // Count all unfiled returns as defaults
+      defaultCount = resItem.returnfiling.filter(
+        (rf) => rf.filing_status === false,
+      ).length;
+
+      // Count defaults in last 12 entries
+      lastYearDefaults = resItem.returnfiling
+        .filter((rf) => rf.filing_status === false)
+        .slice(-12).length;
 
       resMap.set(resItem.dvat04.id, {
         dvat04: resItem.dvat04,
@@ -139,7 +170,7 @@ const DefaulterAnalysis = async (
         pendingCount: pendingCount,
         defaultCount: defaultCount,
         lastYearDefaults: lastYearDefaults,
-        lastfiling: lastFilingDate,
+        lastfiling: lastfiling,
       });
     }
 

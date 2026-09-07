@@ -153,17 +153,17 @@ const TrackAppliation = () => {
     toast.success(`Successfully exported ${allData.length} records`);
   };
 
-  // Chart data - Top 10 dealers by defaults from ALL data
+  // Chart data - Top 10 dealers by pending returns from ALL data
   const top10Dealers = [...allData]
-    .sort((a, b) => b.defaultCount - a.defaultCount)
+    .sort((a, b) => b.pendingCount - a.pendingCount)
     .slice(0, 10);
 
   const barChartData = {
     labels: top10Dealers.map((item) => item.dvat04.tinNumber || "Unknown"),
     datasets: [
       {
-        label: "Total Defaults",
-        data: top10Dealers.map((item) => item.defaultCount),
+        label: "Pending Returns",
+        data: top10Dealers.map((item) => item.pendingCount),
         backgroundColor: "rgba(255, 99, 132, 0.8)",
       },
     ],
@@ -669,7 +669,7 @@ const TrackAppliation = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow-sm p-6 lg:col-span-2">
             <h2 className="text-lg font-semibold mb-4">
-              Top 10 Defaulters by Total Defaults
+              Top 10 Defaulters by Pending Returns
             </h2>
             <div className="h-80">
               {allData.length > 0 ? (
@@ -798,12 +798,12 @@ const TrackAppliation = () => {
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
                     Pending Returns
                   </TableHead>
-                  <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
+                  {/* <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
                     Total Defaults
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
                     Defaults (Past Year)
-                  </TableHead>
+                  </TableHead> */}
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
                     Action
                   </TableHead>
@@ -851,7 +851,7 @@ const TrackAppliation = () => {
                           {val.pendingCount}
                         </span>
                       </TableCell>
-                      <TableCell className="border text-center p-3 text-sm">
+                      {/* <TableCell className="border text-center p-3 text-sm">
                         <span
                           className={`inline-flex px-3 py-1 rounded-full text-sm font-bold ${
                             val.defaultCount > 20
@@ -876,7 +876,7 @@ const TrackAppliation = () => {
                         >
                           {val.lastYearDefaults}
                         </span>
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell className="border text-center p-3">
                         <Button
                           type="primary"

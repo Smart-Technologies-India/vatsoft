@@ -55,6 +55,7 @@ const TrackAppliation = () => {
     COMPOSITION,
     FREQUENCY_FILINGS,
     PERIOD,
+    COMMODITY,
   }
   const [searchOption, setSeachOption] = useState<SearchOption>(
     SearchOption.TIN,
@@ -90,7 +91,11 @@ const TrackAppliation = () => {
     const months: string[] = [];
 
     // Generate years
-    for (let year = startDate.getFullYear(); year <= currentDate.getFullYear(); year++) {
+    for (
+      let year = startDate.getFullYear();
+      year <= currentDate.getFullYear();
+      year++
+    ) {
       years.push(year.toString());
     }
 
@@ -103,7 +108,7 @@ const TrackAppliation = () => {
         // April is at index 3
         if (
           month < currentDate.getMonth() ||
-          (month === currentDate.getMonth())
+          month === currentDate.getMonth()
         ) {
           months.push(monthNames[month]);
         }
@@ -121,7 +126,18 @@ const TrackAppliation = () => {
   const [compositionFilter, setCompositionFilter] = useState<string>("");
   const [frequencyFilingsFilter, setFrequencyFilingsFilter] =
     useState<string>("");
+  const [commodityFilter, setCommodityFilter] = useState<string>("LIQUOR");
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
+
+  const commodityOptions = [
+    "LIQUOR",
+    "FUEL",
+    "OTHER",
+    "OIDC",
+    "MANUFACTURER",
+    "WHOLESALER",
+    "RESTAURANT",
+  ];
 
   const [searchDate, setSearchDate] = useState<
     [Dayjs | null, Dayjs | null] | null
@@ -197,6 +213,7 @@ const TrackAppliation = () => {
           });
         }
       }
+
       setLoading(false);
     };
     init();
@@ -351,6 +368,38 @@ const TrackAppliation = () => {
       setSearch(true);
     }
   };
+
+  const commoditysearch = async () => {
+    if (!user) return toast.error("User not found. Please login again.");
+
+    if (commodityFilter === "") {
+      return toast.error("Select a commodity");
+    }
+
+    const search_response = await DeptPendingReturn({
+      dept: user?.selectOffice ?? "DIU",
+      commodity: commodityFilter,
+      take: 10,
+      skip: 0,
+    });
+    if (search_response.status && search_response.data.result) {
+      setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      setSearch(true);
+    } else {
+      setDvatData([]);
+      setPaginatin({
+        skip: 0,
+        take: 10,
+        total: 0,
+      });
+      setSearch(true);
+    }
+  };
   const handleDownloadExcel = async () => {
     try {
       toast.loading("Preparing Excel file...");
@@ -378,6 +427,8 @@ const TrackAppliation = () => {
           frequencyFilingsFilter
         ) {
           searchParams.frequencyFilings = frequencyFilingsFilter;
+        } else if (searchOption === SearchOption.COMMODITY && commodityFilter) {
+          searchParams.commodity = commodityFilter;
         }
       }
 
@@ -394,6 +445,7 @@ const TrackAppliation = () => {
       const excelData = response.data.map((item: ResponseType) => ({
         "TIN Number": item.dvat04.tinNumber,
         "Trade Name": item.dvat04.tradename,
+        Commodity: item.dvat04.commodity,
         "Dealer Name": item.dvat04.name,
         Composition: item.dvat04.compositionScheme ? "Yes" : "No",
         "Frequency Filings": item.dvat04.frequencyFilings,
@@ -534,6 +586,26 @@ const TrackAppliation = () => {
           dept: user.selectOffice ?? "DIU",
           month: periodMonth,
           year: periodYear,
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+
+        if (search_response.status && search_response.data.result) {
+          setDvatData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
+          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.COMMODITY) {
+        if (commodityFilter === "") {
+          return toast.error("Select a commodity");
+        }
+        const search_response = await DeptPendingReturn({
+          dept: user.selectOffice ?? "DIU",
+          commodity: commodityFilter,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -693,6 +765,7 @@ const TrackAppliation = () => {
                 Frequency Filings
               </Radio>
               <Radio value={SearchOption.PERIOD}>Period</Radio>
+              <Radio value={SearchOption.COMMODITY}>Commodity</Radio>
             </Radio.Group>
             {(() => {
               switch (searchOption) {
@@ -831,6 +904,33 @@ const TrackAppliation = () => {
                     </div>
                   );
 
+                case SearchOption.COMMODITY:
+                  return (
+                    <div className="flex gap-2">
+                      <Select
+                        placeholder="Select Commodity"
+                        value={commodityFilter}
+                        onChange={(value) => setCommodityFilter(value)}
+                        disabled={isSearch}
+                        style={{ width: 200 }}
+                        options={commodityOptions.map((commodity) => ({
+                          label: commodity,
+                          value: commodity,
+                        }))}
+                      />
+
+                      {isSearch ? (
+                        <Button onClick={init} type="primary">
+                          Reset
+                        </Button>
+                      ) : (
+                        <Button onClick={commoditysearch} type="primary">
+                          Search
+                        </Button>
+                      )}
+                    </div>
+                  );
+
                 default:
                   return null;
               }
@@ -870,6 +970,9 @@ const TrackAppliation = () => {
                       Trade Name
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center border p-2">
+                      Commodity
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
                       Composition
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center border p-2">
@@ -898,6 +1001,9 @@ const TrackAppliation = () => {
                         </TableCell>
                         <TableCell className="border text-left p-2">
                           {val.dvat04.tradename}
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          {val.dvat04.commodity}
                         </TableCell>
                         <TableCell className="border text-center p-2">
                           {val.dvat04.compositionScheme ? "COMP" : "REG"}

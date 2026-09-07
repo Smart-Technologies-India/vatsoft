@@ -547,22 +547,22 @@ const AddPaymentOnline = async (
       }
 
       const orderId = createOrderId();
-      // const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-      // await prisma.payment_intent.updateMany({
-      //   where: {
-      //     challanId: challan_response.id,
-      //     status: {
-      //       in: ["CREATED", "INITIATED"],
-      //     },
-      //     completedAt: null,
-      //   },
-      //   data: {
-      //     status: "EXPIRED",
-      //     completedAt: new Date(),
-      //     failure_reason: "Superseded by a newer payment session.",
-      //   },
-      // });
+      await prisma.payment_intent.updateMany({
+        where: {
+          challanId: challan_response.id,
+          status: {
+            in: ["CREATED", "INITIATED"],
+          },
+          completedAt: null,
+        },
+        data: {
+          status: "EXPIRED",
+          completedAt: new Date(),
+          failure_reason: "Superseded by a newer payment session.",
+        },
+      });
 
       const challanWithOrder = await prisma.challan.update({
         where: {
@@ -573,19 +573,19 @@ const AddPaymentOnline = async (
         },
       });
 
-      // await prisma.payment_intent.create({
-      //   data: {
-      //     token: orderId,
-      //     gateway_order_id: orderId,
-      //     challanId: challanWithOrder.id,
-      //     dvatid: challanWithOrder.dvatid,
-      //     returnid: challanWithOrder.returnid,
-      //     type: "DEMAND",
-      //     expected_amount: challanWithOrder.total_tax_amount,
-      //     status: "CREATED",
-      //     expiresAt,
-      //   },
-      // });
+      await prisma.payment_intent.create({
+        data: {
+          token: orderId,
+          gateway_order_id: orderId,
+          challanId: challanWithOrder.id,
+          dvatid: challanWithOrder.dvatid,
+          returnid: challanWithOrder.returnid,
+          type: "DEMAND",
+          expected_amount: challanWithOrder.total_tax_amount,
+          status: "CREATED",
+          expiresAt,
+        },
+      });
 
       return challanWithOrder;
     });

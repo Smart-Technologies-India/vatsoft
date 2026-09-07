@@ -190,7 +190,7 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
                     "Accepted values: true, false, ml, pcs, 1, 0. true/ml/1 = mL quantity (taken as-is). false/pcs/0 = pcs quantity (system multiplies by commodity pack size).",
                 },
               ]
-          : [];
+            : [];
 
     const rows = [
       {
@@ -267,7 +267,7 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
               Field: "Pcs/mL",
               "What to fill": "true/false or ml/pcs or 1/0",
               Rules:
-                "For RESTAURANT accepted values are true, false, ml, pcs, 1, 0. true/ml/1 means quantity is mL (1:1 stock deduction). false/pcs/0 means quantity is pcs (deduction = quantity x pack size).",
+                "For RESTAURANT accepted values are true, false, ml, pcs, 1, 0. For entering quantity in Pcs use any of the follows (false/pcs/0). For entering quantity in ml use any of the follows (true/ml/1).",
             },
           ]
         : []),
