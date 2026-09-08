@@ -106,7 +106,7 @@ const ShopView = () => {
     "December",
   ];
 
-  const setRentMonthDetails = (
+  const setRentMonthDetails = async (
     value: Array<return_filing & { dvat: dvat04 }>,
   ) => {
     const years: number[] = value.map((item) => parseInt(item.year));
@@ -116,7 +116,9 @@ const ShopView = () => {
 
     const currentdate: Date = get28thDate();
 
-    const monthdetails: yearsDetails[] = uniqueyears.map((year: number) => {
+    const monthdetails: yearsDetails[] = [];
+
+    for (const year of uniqueyears) {
       const ret_filing: ItemsType[] = [];
 
       for (let i = 0; i < 12; i++) {
@@ -131,6 +133,21 @@ const ShopView = () => {
               item.month == monthNames[adjustedMonth],
           );
         if (getdata) {
+          // Fetch returns_01 id by matching dvatid, month, and year
+          let returnid: number | undefined;
+          const returnByDateResponse = await getReturnByDate({
+            month: monthNames[adjustedMonth],
+            year: year.toString(),
+            dvatid: getdata.dvat.id,
+          });
+
+          if (
+            returnByDateResponse.status &&
+            returnByDateResponse.data?.id
+          ) {
+            returnid = returnByDateResponse.data.id;
+          }
+
           ret_filing.push({
             name: monthDate.toLocaleString("default", { month: "long" }),
             duedate: getdata.due_date,
@@ -145,7 +162,7 @@ const ShopView = () => {
                 : Status.DUE,
             userid: getdata.dvat.createdById.toString(),
             year: year.toString(),
-            returnid: getdata.id,
+            returnid: returnid,
             month: monthNames[adjustedMonth],
             dvatid: getdata.dvat.id,
           });
@@ -160,12 +177,12 @@ const ShopView = () => {
 
       const displayyear = `${year}`;
 
-      return {
+      monthdetails.push({
         year: year,
         rentdetails: ret_filing,
         displayyear: displayyear,
-      };
-    });
+      });
+    }
 
     setRetuirnsDetails(monthdetails);
   };
@@ -198,8 +215,9 @@ const ShopView = () => {
       const returnmonth_response = await GetReturnMonth({
         dvatid: dvat04id,
       });
+
       if (returnmonth_response.status && returnmonth_response.data) {
-        setRentMonthDetails(returnmonth_response.data);
+        await setRentMonthDetails(returnmonth_response.data);
       }
 
       const annualTurnoverResponse = await getCurrentFyAnnualTurnover({
@@ -330,6 +348,34 @@ const ShopView = () => {
               }}
             >
               C-Form
+            </Button>
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => {
+                if (!dvatData) return;
+                router.push(
+                  `/dashboard/returns/department-dvat-challan-history/${encryptURLData(
+                    dvatData?.id.toString(),
+                  )}`,
+                );
+              }}
+            >
+              Challans
+            </Button>
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => {
+                if (!dvatData) return;
+                router.push(
+                  `/dashboard/returns/department-dvat-monthly-summary/${encryptURLData(
+                    dvatData?.id.toString(),
+                  )}`,
+                );
+              }}
+            >
+              Monthly Summary
             </Button>
           </div>
           <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -535,6 +581,18 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
                   type="primary"
                   onClick={() =>
                     router.push(
+                      `/dashboard/returns/returns-dashboard/purchase_sale_report_department/${encryptURLData(
+                        props.returnid!.toString(),
+                      )}`,
+                    )
+                  }
+                >
+                  Purchase/Sale
+                </Button>
+                <Button
+                  type="primary"
+                  onClick={() =>
+                    router.push(
                       `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
                         props.userid!.toString(),
                       )}/${encryptURLData(
@@ -545,7 +603,7 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
                     )
                   }
                 >
-                  View
+                  View Return
                 </Button>
                 <Button
                   type="primary"
@@ -608,20 +666,18 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
           <Popover
             content={
               <div className="flex gap-2 flex-col">
-                {/* <Button
+                <Button
                   type="primary"
                   onClick={() =>
                     router.push(
-                      `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                        props.userid!.toString()
-                      )}?form=30A&year=${
-                        props.year
-                      }&quarter=${getQuarter()}&month=${props.name}`
+                      `/dashboard/returns/returns-dashboard/daily_purchase_sale_report/${encryptURLData(
+                        props.dvat04id.toString(),
+                      )}?month=${props.name}&year=${props.year}`,
                     )
                   }
                 >
-                  View
-                </Button>  */}
+                  Purchase/Sale
+                </Button>
                 <Button
                   type="primary"
                   onClick={() =>

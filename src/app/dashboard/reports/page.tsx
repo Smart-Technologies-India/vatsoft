@@ -4,56 +4,6 @@ import { useEffect, useState } from "react";
 import { user } from "@prisma/client";
 import GetUser from "@/action/user/getuser";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import { toast } from "react-toastify";
-
-interface CowReportResponse {
-  beneficiary_code: string;
-  name: string;
-  cowtagno: string;
-  cowname: string;
-  alias: string;
-  sex: string;
-  birthdate: Date | null;
-  weight: number | null;
-  daily_milk_produce: number;
-  no_of_calves: number;
-  bull_calves: number;
-  heifer_calves: number;
-  cowstatus: string;
-  death_date: Date | null;
-  death_reason: string | null;
-  Beneficiary_Contact: string;
-  beneficiary_type: string;
-  cow_count: number | null;
-  mother_id: number | null;
-  mother_cowtagno: string | null;
-}
-
-interface UserReportResponse {
-  beneficiary_code: string;
-  name: string;
-  alias: string;
-  contact: string;
-  contact_two: string | null;
-  beneficiary_type: string;
-  address: string;
-  village: string;
-  district: string;
-  status: string;
-  loan_id: number | null;
-  amount: number | null;
-  start_date: Date | null;
-  end_date: Date | null;
-  emi_amount: number | null;
-  emi_date: Date | null;
-  number_of_cows: number;
-  no_of_calves: number;
-  alive_cows: number;
-  sold_cows: number;
-  dead_cows: number;
-  number_of_female_calves: number;
-  number_of_male_calves: number;
-}
 
 const ReportsPage = () => {
   const router = useRouter();
@@ -161,9 +111,7 @@ const ReportsPage = () => {
           </button>
         </div>
         <div className="p-2 rounded shadow bg-white relative pb-8">
-          <p className="text-sm">
-            Dealer Registration Type Change 
-          </p>
+          <p className="text-sm">Dealer Registration Type Change</p>
 
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
@@ -180,22 +128,27 @@ const ReportsPage = () => {
       <hr className="my-4" />
       <h1>B. Revenue Reports</h1>
       <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-        {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
-          <div className="p-2 rounded shadow bg-white relative pb-8">
-            <p className="text-sm">
-              District-Wise Revenue Report (Dadra & Nager Haveli/Daman/Diu)
-            </p>
+        {user &&
+          !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+            user.role,
+          ) && (
+            <div className="p-2 rounded shadow bg-white relative pb-8">
+              <p className="text-sm">
+                District-Wise Revenue Report (Dadra & Nager Haveli/Daman/Diu)
+              </p>
 
-            <button
-              className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-              onClick={() => {
-                router.push("/dashboard/reports/revenue_reports/district_wise");
-              }}
-            >
-              View Report
-            </button>
-          </div>
-        )}
+              <button
+                className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
+                onClick={() => {
+                  router.push(
+                    "/dashboard/reports/revenue_reports/district_wise",
+                  );
+                }}
+              >
+                View Report
+              </button>
+            </div>
+          )}
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">Category-wise Revenue(Liquor / Petroleum)</p>
 
@@ -240,7 +193,41 @@ const ReportsPage = () => {
         </div>
       </div>
       <hr className="my-4" />
-      <h1>C. Commodity Reports</h1>
+      <h1>C. C-Form Reports</h1>
+      <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+        <div className="p-2 rounded shadow bg-white relative pb-8">
+          <p className="text-sm">
+            Comprehensive C-Form Analysis - View all C-Form transactions with
+            seller and purchaser details, transaction amounts, and trends
+          </p>
+
+          <button
+            className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
+            onClick={() => {
+              router.push("/dashboard/reports/cform_reports");
+            }}
+          >
+            View Report
+          </button>
+        </div>
+        <div className="p-2 rounded shadow bg-white relative pb-8">
+          <p className="text-sm">
+            C-Form Distribution by Commodity - Analyze C-Form issuance across
+            different commodity types (Fuel, Liquor, etc.)
+          </p>
+
+          <button
+            className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
+            onClick={() => {
+              router.push("/dashboard/reports/cform_reports");
+            }}
+          >
+            View Report
+          </button>
+        </div>
+      </div>
+      <hr className="my-4" />
+      <h1>D. Commodity Reports</h1>
       <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
@@ -268,23 +255,28 @@ const ReportsPage = () => {
             View Report
           </button>
         </div>
-        {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
-          <div className="p-2 rounded shadow bg-white relative pb-8">
-            <p className="text-sm">
-              District-wise Commodity Revenue Split (e.g, how much Diesel sold in
-              Diu)
-            </p>
+        {user &&
+          !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+            user.role,
+          ) && (
+            <div className="p-2 rounded shadow bg-white relative pb-8">
+              <p className="text-sm">
+                District-wise Commodity Revenue Split (e.g, how much Diesel sold
+                in Diu)
+              </p>
 
-            <button
-              className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
-              onClick={() => {
-                router.push("/dashboard/reports/commodity_reports/districtwise");
-              }}
-            >
-              View Report
-            </button>
-          </div>
-        )}
+              <button
+                className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
+                onClick={() => {
+                  router.push(
+                    "/dashboard/reports/commodity_reports/districtwise",
+                  );
+                }}
+              >
+                View Report
+              </button>
+            </div>
+          )}
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
             Commodity Sales Growth Report (Month-on-Month or Year-on-Year)
@@ -301,7 +293,7 @@ const ReportsPage = () => {
         </div>
       </div>
       <hr className="my-4" />
-      <h1>D. Dealer Behavior & Profiling</h1>
+      <h1>E. Dealer Behavior & Profiling</h1>
       <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
@@ -383,7 +375,7 @@ const ReportsPage = () => {
         </div>
       </div>
       <hr className="my-4" />
-      <h1>E. Operational Reports for Admin Review</h1>
+      <h1>F. Operational Reports for Admin Review</h1>
       <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">

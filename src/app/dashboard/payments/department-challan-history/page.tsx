@@ -32,7 +32,9 @@ import GetDeptChallanSummary from "@/action/challan/getdeptchallansummary";
 import * as XLSX from "xlsx";
 // import GetAllChallan from "@/action/challan/getallchallan";
 
-type GroupedChallan = DepartmentChallanWithRelations | SearchChallanWithRelations;
+type GroupedChallan =
+  | DepartmentChallanWithRelations
+  | SearchChallanWithRelations;
 
 type ChallanGroup = {
   key: string;
@@ -76,7 +78,7 @@ const ChallanHistory = () => {
   }
 
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.CPIN
+    SearchOption.CPIN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -95,12 +97,12 @@ const ChallanHistory = () => {
   >(null);
 
   const [monthYearFilter, setMonthYearFilter] = useState<Dayjs | null>(
-    dayjs("2026-04-01")
+    dayjs("2026-04-01"),
   );
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    dateStrings: [string, string],
   ) => {
     setSearchDate(dates);
   };
@@ -126,7 +128,7 @@ const ChallanHistory = () => {
   const fetchAllSearchResults = async (): Promise<GroupedChallan[]> => {
     try {
       let response;
-      
+
       if (isMonthFiltered && searchDate) {
         // Fetch all month-filtered results
         response = await SearchChallan({
@@ -180,7 +182,7 @@ const ChallanHistory = () => {
       if (response && response.status && response.data.result) {
         // Filter out records with zero total tax amount
         return response.data.result.filter(
-          (item) => parseAmount(item.total_tax_amount) !== 0
+          (item) => parseAmount(item.total_tax_amount) !== 0,
         );
       }
       return [];
@@ -205,8 +207,9 @@ const ChallanHistory = () => {
         .filter((challan) => parseAmount(challan.total_tax_amount) !== 0)
         .map((challan) => {
           const returnInfo =
-            (challan.returnid != null ? returnDetailsMap[challan.returnid] : null) ??
-            challan.returns_01;
+            (challan.returnid != null
+              ? returnDetailsMap[challan.returnid]
+              : null) ?? challan.returns_01;
 
           const returnPeriod =
             returnInfo && (returnInfo.month || returnInfo.quarter)
@@ -216,16 +219,17 @@ const ChallanHistory = () => {
           return {
             "TIN Number": challan.dvat.tinNumber,
             "Trade Name": challan.dvat.tradename ?? "-",
-            "Return Period": returnPeriod,
-            "CPIN": challan.cpin,
-            "Reason": challan.reason,
-            "Payment Mode": challan.paymentmode ?? "-",
-            "Status": challan.paymentstatus,
-            "VAT": parseAmount(challan.vat),
-            "Interest": parseAmount(challan.interest),
-            "Penalty": parseAmount(challan.penalty),
+            "Return Period": challan.returns_01?.is_quarterly
+              ? challan.returns_01.quarter
+              : returnPeriod,
+            CPIN: challan.cpin,
+            "Transaction Id": challan.track_id,
+            "Order Id": challan.order_id,
+            VAT: parseAmount(challan.vat),
+            Interest: parseAmount(challan.interest),
+            Penalty: parseAmount(challan.penalty),
             "Late Fees": parseAmount(challan.latefees),
-            "Others": parseAmount(challan.others),
+            Others: parseAmount(challan.others),
             "Total Amount": challan.total_tax_amount,
             "Transaction Date": challan.transaction_date
               ? formateDate(new Date(challan.transaction_date))
@@ -264,7 +268,9 @@ const ChallanHistory = () => {
       XLSX.utils.book_append_sheet(workbook, worksheet, "All Challans");
       XLSX.writeFile(workbook, `${fileName}.xlsx`);
       toast.dismiss();
-      toast.success(`Exported ${worksheetData.length} records to Excel successfully`);
+      toast.success(
+        `Exported ${worksheetData.length} records to Excel successfully`,
+      );
     } catch (error) {
       toast.dismiss();
       toast.error("Error exporting data");
@@ -276,7 +282,7 @@ const ChallanHistory = () => {
 
     // Filter out items with zero amount from the breakup
     const filteredChallans = group.challans.filter(
-      (item) => parseAmount(item.total_tax_amount) !== 0
+      (item) => parseAmount(item.total_tax_amount) !== 0,
     );
 
     if (filteredChallans.length === 0) {
@@ -297,16 +303,13 @@ const ChallanHistory = () => {
       "TIN Number": group.dvat.tinNumber,
       "Trade Name": group.dvat.tradename ?? "-",
       "Return Period": returnPeriod,
-      "CPIN": item.cpin,
-      "Reason": item.reason,
-      "Payment Mode": item.paymentmode ?? "-",
-      "Status": item.paymentstatus,
-      "VAT": parseAmount(item.vat),
-      "Interest": parseAmount(item.interest),
-      "Penalty": parseAmount(item.penalty),
+      CPIN: item.cpin,
+      VAT: parseAmount(item.vat),
+      Interest: parseAmount(item.interest),
+      Penalty: parseAmount(item.penalty),
       "Late Fees": parseAmount(item.latefees),
-      "Others": parseAmount(item.others),
-      "Total": parseAmount(item.total_tax_amount),
+      Others: parseAmount(item.others),
+      Total: parseAmount(item.total_tax_amount),
       "Transaction Date": item.transaction_date
         ? formateDate(new Date(item.transaction_date))
         : "-",
@@ -317,11 +320,11 @@ const ChallanHistory = () => {
         "TIN Number": group.dvat.tinNumber,
         "Trade Name": group.dvat.tradename ?? "-",
         "Return Period": returnPeriod,
-        "VAT": summaryTotals.vat,
-        "Interest": summaryTotals.interest,
-        "Penalty": summaryTotals.penalty,
+        VAT: summaryTotals.vat,
+        Interest: summaryTotals.interest,
+        Penalty: summaryTotals.penalty,
         "Late Fees": summaryTotals.latefees,
-        "Others": summaryTotals.others,
+        Others: summaryTotals.others,
         "Grand Total": summaryTotals.total,
       },
     ]);
@@ -365,7 +368,7 @@ const ChallanHistory = () => {
     XLSX.utils.book_append_sheet(workbook, breakupSheet, "Breakup");
     XLSX.writeFile(
       workbook,
-      `Challan-Breakup-${group.dvat.tinNumber}-${dayjs().format("YYYY-MM-DD")}.xlsx`
+      `Challan-Breakup-${group.dvat.tinNumber}-${dayjs().format("YYYY-MM-DD")}.xlsx`,
     );
     toast.success("Breakup data exported to Excel successfully");
   };
@@ -386,11 +389,14 @@ const ChallanHistory = () => {
 
     // Filter out items with zero total tax amount
     const filteredData = challanData.filter(
-      (item) => parseAmount(item.total_tax_amount) !== 0
+      (item) => parseAmount(item.total_tax_amount) !== 0,
     );
 
     filteredData.forEach((item) => {
-      const key = item.returnid != null ? `return-${item.returnid}` : `challan-${item.id}`;
+      const key =
+        item.returnid != null
+          ? `return-${item.returnid}`
+          : `challan-${item.id}`;
       const existing = groups.get(key);
 
       if (existing) {
@@ -411,7 +417,7 @@ const ChallanHistory = () => {
 
     // Filter out groups with zero total amount
     const filteredGroups = Array.from(groups.values()).filter(
-      (group) => group.totalAmount !== 0
+      (group) => group.totalAmount !== 0,
     );
 
     return filteredGroups;
@@ -468,7 +474,10 @@ const ChallanHistory = () => {
       );
 
       const nextMap = Object.fromEntries(
-        resolvedEntries.filter((entry): entry is readonly [number, NonNullable<typeof entry>[1]] => entry !== null),
+        resolvedEntries.filter(
+          (entry): entry is readonly [number, NonNullable<typeof entry>[1]] =>
+            entry !== null,
+        ),
       ) as Record<number, GroupedChallan["returns_01"]>;
 
       setReturnDetailsMap(nextMap);
@@ -787,7 +796,9 @@ const ChallanHistory = () => {
             <Button
               type="primary"
               onClick={async () => {
-                exportToExcel(`Challan-History-${dayjs().format("YYYY-MM-DD")}`);
+                exportToExcel(
+                  `Challan-History-${dayjs().format("YYYY-MM-DD")}`,
+                );
               }}
             >
               📥 Download Excel
@@ -796,7 +807,9 @@ const ChallanHistory = () => {
 
           {/* Month/Year Filter */}
           <div className="p-2 bg-gray-50 flex gap-2 items-center flex-wrap">
-            <label className="text-sm font-medium">Filter by Month/Year (Transaction Date):</label>
+            <label className="text-sm font-medium">
+              Filter by Month/Year (Transaction Date):
+            </label>
             <DatePicker
               picker="month"
               value={monthYearFilter}
@@ -833,7 +846,9 @@ const ChallanHistory = () => {
                       });
                       setSearch(true);
                       setIsMonthFiltered(true);
-                      toast.success(`Found ${search_response.data.total} records for ${monthYearFilter.format("MMMM YYYY")}`);
+                      toast.success(
+                        `Found ${search_response.data.total} records for ${monthYearFilter.format("MMMM YYYY")}`,
+                      );
                     } else {
                       toast.error("No records found for selected month");
                       setChallanData([]);
@@ -873,7 +888,9 @@ const ChallanHistory = () => {
               </p>
             </div>
             <div className="rounded border border-purple-200 bg-purple-50 p-4">
-              <p className="text-xs text-purple-600 font-medium">Last 30 Days</p>
+              <p className="text-xs text-purple-600 font-medium">
+                Last 30 Days
+              </p>
               <p className="text-2xl font-bold text-purple-900 mt-2">
                 {formatINR(paymentSummary.last30Days)}
               </p>
@@ -1163,22 +1180,32 @@ const ChallanHistory = () => {
                   <TableRow className="bg-gray-100">
                     <TableHead className="text-center px-2">CPIN</TableHead>
                     <TableHead className="text-center px-2">Reason</TableHead>
-                    <TableHead className="text-center px-2">Payment Mode</TableHead>
+                    <TableHead className="text-center px-2">
+                      Payment Mode
+                    </TableHead>
                     <TableHead className="text-center px-2">Status</TableHead>
                     <TableHead className="text-center px-2">VAT</TableHead>
                     <TableHead className="text-center px-2">Interest</TableHead>
                     <TableHead className="text-center px-2">Penalty</TableHead>
-                    <TableHead className="text-center px-2">Late Fees</TableHead>
+                    <TableHead className="text-center px-2">
+                      Late Fees
+                    </TableHead>
                     <TableHead className="text-center px-2">Others</TableHead>
                     <TableHead className="text-center px-2">Total</TableHead>
-                    <TableHead className="text-center px-2">Deposit Date</TableHead>
+                    <TableHead className="text-center px-2">
+                      Deposit Date
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {selectedGroup.challans.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="text-center p-2">{item.cpin}</TableCell>
-                      <TableCell className="text-center p-2">{item.reason}</TableCell>
+                      <TableCell className="text-center p-2">
+                        {item.cpin}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {item.reason}
+                      </TableCell>
                       <TableCell className="text-center p-2">
                         {item.paymentmode ?? "-"}
                       </TableCell>

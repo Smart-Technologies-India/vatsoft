@@ -465,7 +465,7 @@ const TrackAppliation = () => {
                         TIN Number
                       </TableHead>
                       <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-900">
-                        Purchaser Name
+                        Seller Name
                       </TableHead>
                     </TableRow>
                   </TableHeader>

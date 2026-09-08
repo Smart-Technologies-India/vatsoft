@@ -10,7 +10,7 @@ import { dvat04, return_filing } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const GetReturnMonth = async (
-  payload: GetReturnMonthPayload
+  payload: GetReturnMonthPayload,
 ): Promise<ApiResponseType<Array<return_filing & { dvat: dvat04 }> | null>> => {
   const functionname: string = GetReturnMonth.name;
   try {

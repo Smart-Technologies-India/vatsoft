@@ -5,7 +5,7 @@ import { ApiResponseType } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import { customAlphabet } from "nanoid";
-import { returns_01 } from "@prisma/client";
+import { returns_01, SelectOffice } from "@prisma/client";
 
 interface CreateCFormForReturnsResponse {
   created: number;
@@ -152,7 +152,7 @@ const CreateCFormForReturns = async (): Promise<
       cforms: [],
     };
 
-    const nanoid = customAlphabet("1234567890", 10);
+    let cformSrNoCounter = 0;
 
     // Create C-Forms for each seller-period group
     for (const [, entries] of groupedBySellerAndPeriod) {
@@ -189,7 +189,7 @@ const CreateCFormForReturns = async (): Promise<
         result.skipped += entries.length;
       } else {
         // Create new C-Form for the quarter
-        const srNo = nanoid();
+
         const now = new Date();
         const quarterDates = getQuarterDates(
           returns01.year,
@@ -197,10 +197,27 @@ const CreateCFormForReturns = async (): Promise<
         );
         const office = returns01.dvat04?.selectOffice || "Dadra_Nagar_Haveli";
 
+        const lastcform = await prisma.cform.findFirst({
+          where: {
+            deletedAt: null,
+            deletedById: null,
+            status: "ACTIVE",
+            office_of_issue: office,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        // Get the highest serial number from both cform and fform
+        const cformSerial = lastcform
+          ? parseInt(lastcform.sr_no.split("/").pop() ?? "0", 10) || 0
+          : 0;
+
         const newCForm = await prisma.cform.create({
           data: {
             dvat04Id: currentDvatId,
-            sr_no: srNo,
+            sr_no: getsrno(office, cformSerial, cformSrNoCounter++),
             seller_tin_no: sellerTin.tin_number,
             seller_name: sellerTin.name_of_dealer || "Unknown",
             seller_address: sellerTin.state || "",
@@ -309,3 +326,25 @@ const getQuarterDates = (
 };
 
 export default CreateCFormForReturns;
+
+const getsrno = (
+  selectOffice: SelectOffice,
+  last: number,
+  offset: number = 0,
+): string => {
+  let pre =
+    selectOffice == SelectOffice.Dadra_Nagar_Haveli
+      ? "DNH"
+      : selectOffice == SelectOffice.DAMAN
+        ? "DD"
+        : "DIU";
+
+  let value1 =
+    selectOffice == SelectOffice.Dadra_Nagar_Haveli
+      ? "01"
+      : selectOffice == SelectOffice.DAMAN
+        ? "02"
+        : "03";
+
+  return `${pre}/${value1}/C/${last + offset + 1}`;
+};
