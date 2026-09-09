@@ -20,7 +20,7 @@ import {
 } from "@/components/icons";
 
 ChartJS.register(...registerables);
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import type { Dayjs } from "dayjs";
 import { dvat04, user, SelectOffice } from "@prisma/client";
 import { capitalcase, encryptURLData } from "@/utils/methods";
@@ -42,6 +42,7 @@ const AfterDeathLinePage = () => {
   const router = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
+  const [isFilter, setFilter] = useState<boolean>(false);
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -62,6 +63,14 @@ const AfterDeathLinePage = () => {
     SearchOption.TIN,
   );
 
+  const [selectedCommodity, setSelectedCommodity] = useState<string | null>(
+    null,
+  );
+  const [selectedFrequency, setSelectedFrequency] = useState<string | null>(
+    null,
+  );
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+
   const onChange = (e: RadioChangeEvent) => {
     setSeachOption(e.target.value);
   };
@@ -75,6 +84,31 @@ const AfterDeathLinePage = () => {
 
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
   const [allDvatData, setAllDvatData] = useState<Array<ResponseType>>([]); // All data for statistics
+
+  // Get unique commodity and frequency values
+  const commodityOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allDvatData
+            .map((item) => item.dvat04.commodity)
+            .filter((c) => c && c.trim() !== ""),
+        ),
+      ).sort(),
+    [allDvatData],
+  );
+
+  const frequencyOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allDvatData
+            .map((item) => item.dvat04.frequencyFilings)
+            .filter((f) => f && f.trim() !== ""),
+        ),
+      ).sort(),
+    [allDvatData],
+  );
 
   const [user, setUpser] = useState<user | null>(null);
   const [selectedOffice, setSelectedOffice] = useState<SelectOffice | "ALL">(
@@ -166,7 +200,8 @@ const AfterDeathLinePage = () => {
   const lateRanges = {
     "0-5": allDvatData.filter((d) => d.pending <= 5).length,
     "6-10": allDvatData.filter((d) => d.pending > 5 && d.pending <= 10).length,
-    "11-20": allDvatData.filter((d) => d.pending > 10 && d.pending <= 20).length,
+    "11-20": allDvatData.filter((d) => d.pending > 10 && d.pending <= 20)
+      .length,
     "21+": allDvatData.filter((d) => d.pending > 20).length,
   };
 
@@ -214,12 +249,18 @@ const AfterDeathLinePage = () => {
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
-      
+
       // Set office filter based on role
-      const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userrespone.data.role)
+      const filterOffice = [
+        "VATOFFICER",
+        "DY_COMMISSIONER",
+        "JOINT_COMMISSIONER",
+      ].includes(userrespone.data.role)
         ? (userrespone.data.selectOffice ?? undefined)
-        : (selectedOffice === "ALL" ? undefined : selectedOffice);
-      
+        : selectedOffice === "ALL"
+          ? undefined
+          : selectedOffice;
+
       const payment_data = await AfterDeathline({
         dept: filterOffice,
         take: 10,
@@ -246,6 +287,41 @@ const AfterDeathLinePage = () => {
     setSearch(false);
   };
 
+  // Reset only search inputs and search state (keep filters active)
+  const resetSearch = async () => {
+    if (arnRef.current?.input) arnRef.current.input.value = "";
+    if (nameRef.current?.input) nameRef.current.input.value = "";
+    setSearch(false);
+
+    // If there are active filters, keep searching with filters only
+    if (selectedType || selectedCommodity || selectedFrequency) {
+      await handleFilterChange(
+        selectedType,
+        selectedCommodity,
+        selectedFrequency,
+      );
+    } else {
+      // If no filters, reload all data
+      await init();
+    }
+  };
+
+  // Clear all filters AND search inputs
+  const clearAllFilters = async () => {
+    // Clear all states
+    setSelectedType(null);
+    setSelectedCommodity(null);
+    setSelectedFrequency(null);
+    setFilter(false);
+
+    // Clear input fields
+    if (arnRef.current?.input) arnRef.current.input.value = "";
+    if (nameRef.current?.input) nameRef.current.input.value = "";
+
+    // Reload all data without any filters
+    await init();
+  };
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
@@ -259,12 +335,16 @@ const AfterDeathLinePage = () => {
       const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
-        
+
         // Set office filter based on role
-        const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userrespone.data.role)
+        const filterOffice = [
+          "VATOFFICER",
+          "DY_COMMISSIONER",
+          "JOINT_COMMISSIONER",
+        ].includes(userrespone.data.role)
           ? (userrespone.data.selectOffice ?? undefined)
           : undefined;
-        
+
         setSelectedOffice("ALL");
         const payment_data = await AfterDeathline({
           dept: filterOffice,
@@ -299,12 +379,18 @@ const AfterDeathLinePage = () => {
       if (!user || !selectedOffice) return;
 
       setLoading(true);
-      
+
       // Set office filter based on role
-      const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+      const filterOffice = [
+        "VATOFFICER",
+        "DY_COMMISSIONER",
+        "JOINT_COMMISSIONER",
+      ].includes(user.role)
         ? (user.selectOffice ?? undefined)
-        : (selectedOffice === "ALL" ? undefined : selectedOffice);
-      
+        : selectedOffice === "ALL"
+          ? undefined
+          : selectedOffice;
+
       const payment_data = await AfterDeathline({
         dept: filterOffice,
         take: 10,
@@ -382,22 +468,35 @@ const AfterDeathLinePage = () => {
   //   }
   // };
   const arnsearch = async () => {
+    // Allow search with just TIN or with filters
     if (
-      arnRef.current?.input?.value == undefined ||
-      arnRef.current?.input?.value == null ||
-      arnRef.current?.input?.value == ""
+      (arnRef.current?.input?.value == undefined ||
+        arnRef.current?.input?.value == null ||
+        arnRef.current?.input?.value == "") &&
+      !selectedCommodity &&
+      !selectedFrequency &&
+      !selectedType
     ) {
-      return toast.error("Enter arn number");
+      return toast.error("Enter TIN or select filters");
     }
-    
+
     // Set office filter based on role
-    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
-      ? (user.selectOffice ?? undefined)
-      : (selectedOffice === "ALL" ? undefined : selectedOffice);
-    
+    const filterOffice =
+      user &&
+      ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+        user.role,
+      )
+        ? (user.selectOffice ?? undefined)
+        : selectedOffice === "ALL"
+          ? undefined
+          : selectedOffice;
+
     const search_response = await AfterDeathline({
       dept: filterOffice,
-      arnnumber: arnRef.current?.input?.value,
+      arnnumber: arnRef.current?.input?.value || undefined,
+      commodity: selectedCommodity || undefined,
+      frequency: selectedFrequency || undefined,
+      dealerType: selectedType || undefined,
       take: 10,
       skip: 0,
     });
@@ -434,22 +533,35 @@ const AfterDeathLinePage = () => {
   // };
 
   const namesearch = async () => {
+    // Allow search with just Trade Name or with filters
     if (
-      nameRef.current?.input?.value == undefined ||
-      nameRef.current?.input?.value == null ||
-      nameRef.current?.input?.value == ""
+      (nameRef.current?.input?.value == undefined ||
+        nameRef.current?.input?.value == null ||
+        nameRef.current?.input?.value == "") &&
+      !selectedCommodity &&
+      !selectedFrequency &&
+      !selectedType
     ) {
-      return toast.error("Enter TIN Number");
+      return toast.error("Enter Trade Name or select filters");
     }
-    
+
     // Set office filter based on role
-    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
-      ? (user.selectOffice ?? undefined)
-      : (selectedOffice === "ALL" ? undefined : selectedOffice);
-    
+    const filterOffice =
+      user &&
+      ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+        user.role,
+      )
+        ? (user.selectOffice ?? undefined)
+        : selectedOffice === "ALL"
+          ? undefined
+          : selectedOffice;
+
     const search_response = await AfterDeathline({
       dept: filterOffice,
-      tradename: nameRef.current?.input?.value,
+      tradename: nameRef.current?.input?.value || undefined,
+      commodity: selectedCommodity || undefined,
+      frequency: selectedFrequency || undefined,
+      dealerType: selectedType || undefined,
       take: 10,
       skip: 0,
     });
@@ -471,21 +583,33 @@ const AfterDeathLinePage = () => {
     if (isSearch) {
       if (searchOption == SearchOption.TIN) {
         if (
-          arnRef.current?.input?.value == undefined ||
-          arnRef.current?.input?.value == null ||
-          arnRef.current?.input?.value == ""
+          (arnRef.current?.input?.value == undefined ||
+            arnRef.current?.input?.value == null ||
+            arnRef.current?.input?.value == "") &&
+          !selectedCommodity &&
+          !selectedFrequency &&
+          !selectedType
         ) {
-          return toast.error("Enter arn number");
+          return toast.error("Enter arn number or select filters");
         }
-        
+
         // Set office filter based on role
-        const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
-          ? (user.selectOffice ?? undefined)
-          : (selectedOffice === "ALL" ? undefined : selectedOffice);
-        
+        const filterOffice =
+          user &&
+          ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+            user.role,
+          )
+            ? (user.selectOffice ?? undefined)
+            : selectedOffice === "ALL"
+              ? undefined
+              : selectedOffice;
+
         const search_response = await AfterDeathline({
           dept: filterOffice,
-          arnnumber: arnRef.current?.input?.value,
+          arnnumber: arnRef.current?.input?.value || undefined,
+          commodity: selectedCommodity || undefined,
+          frequency: selectedFrequency || undefined,
+          dealerType: selectedType || undefined,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -501,21 +625,33 @@ const AfterDeathLinePage = () => {
         }
       } else if (searchOption == SearchOption.NAME) {
         if (
-          nameRef.current?.input?.value == undefined ||
-          nameRef.current?.input?.value == null ||
-          nameRef.current?.input?.value == ""
+          (nameRef.current?.input?.value == undefined ||
+            nameRef.current?.input?.value == null ||
+            nameRef.current?.input?.value == "") &&
+          !selectedCommodity &&
+          !selectedFrequency &&
+          !selectedType
         ) {
-          return toast.error("Enter TIN Number");
+          return toast.error("Enter Trade Name or select filters");
         }
-        
+
         // Set office filter based on role
-        const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
-          ? (user.selectOffice ?? undefined)
-          : (selectedOffice === "ALL" ? undefined : selectedOffice);
-        
+        const filterOffice =
+          user &&
+          ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+            user.role,
+          )
+            ? (user.selectOffice ?? undefined)
+            : selectedOffice === "ALL"
+              ? undefined
+              : selectedOffice;
+
         const search_response = await AfterDeathline({
           dept: filterOffice,
-          tradename: nameRef.current?.input?.value,
+          tradename: nameRef.current?.input?.value || undefined,
+          commodity: selectedCommodity || undefined,
+          frequency: selectedFrequency || undefined,
+          dealerType: selectedType || undefined,
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -532,10 +668,16 @@ const AfterDeathLinePage = () => {
       }
     } else {
       // Set office filter based on role
-      const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
-        ? (user.selectOffice ?? undefined)
-        : (selectedOffice === "ALL" ? undefined : selectedOffice);
-      
+      const filterOffice =
+        user &&
+        ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+          user.role,
+        )
+          ? (user.selectOffice ?? undefined)
+          : selectedOffice === "ALL"
+            ? undefined
+            : selectedOffice;
+
       const payment_data = await AfterDeathline({
         dept: filterOffice,
         take: pagesize,
@@ -549,6 +691,60 @@ const AfterDeathLinePage = () => {
           total: payment_data.data.total,
         });
       }
+    }
+  };
+
+  // Auto-trigger search when filters change
+  const handleFilterChange = async (
+    newType?: string | null,
+    newCommodity?: string | null,
+    newFrequency?: string | null,
+  ) => {
+    const filterType = newType !== undefined ? newType : selectedType;
+    const filterCommodity =
+      newCommodity !== undefined ? newCommodity : selectedCommodity;
+    const filterFrequency =
+      newFrequency !== undefined ? newFrequency : selectedFrequency;
+
+    // Only trigger search if at least one filter is selected
+    if (!filterType && !filterCommodity && !filterFrequency) {
+      return;
+    }
+
+    // Set office filter based on role
+    const filterOffice =
+      user &&
+      ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+        user.role,
+      )
+        ? (user.selectOffice ?? undefined)
+        : selectedOffice === "ALL"
+          ? undefined
+          : selectedOffice;
+
+    const search_response = await AfterDeathline({
+      dept: filterOffice,
+      arnnumber: arnRef.current?.input?.value || undefined,
+      tradename: nameRef.current?.input?.value || undefined,
+      commodity: filterCommodity || undefined,
+      frequency: filterFrequency || undefined,
+      dealerType: filterType || undefined,
+      take: pagination.take,
+      skip: 0,
+    });
+
+    if (search_response.status && search_response.data.result) {
+      setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      // Set all data for statistics calculation
+      if (search_response.data.allData) {
+        setAllDvatData(search_response.data.allData);
+      }
+      // setFilter(true);
     }
   };
 
@@ -584,46 +780,51 @@ const AfterDeathLinePage = () => {
         </div>
 
         {/* Office Filter */}
-        {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
-          <div className="bg-white p-4 shadow rounded-lg mb-6">
-            <div className="flex items-center gap-4">
-              <label className="font-semibold text-gray-700">
-                Filter by Office:
-              </label>
-              <Select
-                value={selectedOffice}
-                onChange={(value) => {
-                  setSelectedOffice(value);
-                  setSearch(false);
-                  setPaginatin({
-                    take: 10,
-                    skip: 0,
-                    total: 0,
-                  });
-                }}
-                style={{ width: 250 }}
-                disabled={isSearch}
-              >
-                <Select.Option value="ALL">All Offices</Select.Option>
-                <Select.Option value={SelectOffice.DAMAN}>DAMAN</Select.Option>
-                <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
-                <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>
-                  DNH (Dadra & Nagar Haveli)
-                </Select.Option>
-              </Select>
-              {selectedOffice !== "ALL" && (
-                <span className="text-sm text-gray-600">
-                  Showing data for:{" "}
-                  <span className="font-semibold">
-                    {selectedOffice === SelectOffice.Dadra_Nagar_Haveli
-                      ? "DNH"
-                      : selectedOffice}
+        {user &&
+          !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+            user.role,
+          ) && (
+            <div className="bg-white p-4 shadow rounded-lg mb-6">
+              <div className="flex items-center gap-4">
+                <label className="font-semibold text-gray-700">
+                  Filter by Office:
+                </label>
+                <Select
+                  value={selectedOffice}
+                  onChange={(value) => {
+                    setSelectedOffice(value);
+                    setSearch(false);
+                    setPaginatin({
+                      take: 10,
+                      skip: 0,
+                      total: 0,
+                    });
+                  }}
+                  style={{ width: 250 }}
+                  disabled={isSearch}
+                >
+                  <Select.Option value="ALL">All Offices</Select.Option>
+                  <Select.Option value={SelectOffice.DAMAN}>
+                    DAMAN
+                  </Select.Option>
+                  <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
+                  <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>
+                    DNH (Dadra & Nagar Haveli)
+                  </Select.Option>
+                </Select>
+                {selectedOffice !== "ALL" && (
+                  <span className="text-sm text-gray-600">
+                    Showing data for:{" "}
+                    <span className="font-semibold">
+                      {selectedOffice === SelectOffice.Dadra_Nagar_Haveli
+                        ? "DNH"
+                        : selectedOffice}
+                    </span>
                   </span>
-                </span>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
@@ -710,66 +911,181 @@ const AfterDeathLinePage = () => {
             <p className="font-semibold">Search & Filter Dealers</p>
           </div>
 
-          <div className="flex flex-col md:flex-row lg:gap-4 lg:items-center">
-            <Radio.Group
-              onChange={onChange}
-              value={searchOption}
-              disabled={isSearch}
-            >
-              <Radio value={SearchOption.TIN}>TIN</Radio>
-              <Radio value={SearchOption.NAME}>Trade Name</Radio>
-            </Radio.Group>
-            <div className="h-2"></div>
-            {(() => {
-              switch (searchOption) {
-                case SearchOption.TIN:
-                  return (
-                    <div className="flex gap-2">
-                      <Input
-                        className="w-60"
-                        ref={arnRef}
-                        placeholder={"Enter TIN"}
-                        disabled={isSearch}
-                      />
+          <div className="flex flex-wrap gap-4 items-end">
+            {/* Primary Search Options */}
+            <div className="flex gap-2 items-end">
+              <Radio.Group
+                onChange={onChange}
+                value={searchOption}
+                disabled={isSearch}
+              >
+                <Radio value={SearchOption.TIN}>TIN</Radio>
+                <Radio value={SearchOption.NAME}>Trade Name</Radio>
+              </Radio.Group>
+              {(() => {
+                switch (searchOption) {
+                  case SearchOption.TIN:
+                    return (
+                      <div className="flex gap-2">
+                        <Input
+                          className="w-48"
+                          ref={arnRef}
+                          placeholder={"Enter TIN"}
+                          disabled={isSearch}
+                        />
 
-                      {isSearch ? (
-                        <Button onClick={init} type="primary">
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button onClick={arnsearch} type="primary">
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
+                        {isSearch ? (
+                          <Button
+                            onClick={resetSearch}
+                            type="primary"
+                            size="middle"
+                          >
+                            Reset
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={arnsearch}
+                            type="primary"
+                            size="middle"
+                          >
+                            Search
+                          </Button>
+                        )}
+                      </div>
+                    );
 
-                case SearchOption.NAME:
-                  return (
-                    <div className="flex gap-2">
-                      <Input
-                        className="w-60"
-                        ref={nameRef}
-                        placeholder={"Enter Trade Name"}
-                        disabled={isSearch}
-                      />
+                  case SearchOption.NAME:
+                    return (
+                      <div className="flex gap-2">
+                        <Input
+                          className="w-48"
+                          ref={nameRef}
+                          placeholder={"Enter Trade Name"}
+                          disabled={isSearch}
+                        />
 
-                      {isSearch ? (
-                        <Button onClick={init} type="primary">
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button onClick={namesearch} type="primary">
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
+                        {isSearch ? (
+                          <Button
+                            onClick={resetSearch}
+                            type="primary"
+                            size="middle"
+                          >
+                            Reset
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={namesearch}
+                            type="primary"
+                            size="middle"
+                          >
+                            Search
+                          </Button>
+                        )}
+                      </div>
+                    );
 
-                default:
-                  return null;
-              }
-            })()}
+                  default:
+                    return null;
+                }
+              })()}
+            </div>
+
+            {/* Commodity, Frequency, and Type Filters */}
+            <div className="flex gap-4 items-end flex-wrap">
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Type:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Type"
+                  value={selectedType}
+                  onChange={(value) => {
+                    setSelectedType(value || null);
+                    handleFilterChange(
+                      value || null,
+                      selectedCommodity,
+                      selectedFrequency,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  <Select.Option value="REGULAR">Regular (REG)</Select.Option>
+                  <Select.Option value="COMPOSITION">
+                    Composition (COMP)
+                  </Select.Option>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Commodity:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Commodity"
+                  value={selectedCommodity}
+                  onChange={(value) => {
+                    setSelectedCommodity(value || null);
+                    handleFilterChange(
+                      selectedType,
+                      value || null,
+                      selectedFrequency,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  {commodityOptions.map((commodity) => (
+                    <Select.Option key={commodity} value={commodity}>
+                      {commodity}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Frequency:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Frequency"
+                  value={selectedFrequency}
+                  onChange={(value) => {
+                    setSelectedFrequency(value || null);
+                    handleFilterChange(
+                      selectedType,
+                      selectedCommodity,
+                      value || null,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  {frequencyOptions.map((frequency) => (
+                    <Select.Option key={frequency} value={frequency}>
+                      {frequency}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </div>
+
+              {(selectedCommodity || selectedFrequency || selectedType) && (
+                <Button
+                  type="default"
+                  onClick={clearAllFilters}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -796,6 +1112,12 @@ const AfterDeathLinePage = () => {
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
                     Last Filing Period
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
+                    Commodity
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
+                    Frequency
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
                     Late Filed Returns
@@ -831,6 +1153,12 @@ const AfterDeathLinePage = () => {
                       </TableCell>
                       <TableCell className="border text-center p-3 text-sm">
                         {val.lastfiling || "N/A"}
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-sm">
+                        {val.dvat04.commodity || "N/A"}
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-sm">
+                        {val.dvat04.frequencyFilings}
                       </TableCell>
                       <TableCell className="border text-center p-3 text-sm">
                         <span

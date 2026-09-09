@@ -46,7 +46,7 @@ const prismaClientSingleton = () => {
   const connectionConfig = getConnectionConfig();
   const adapter = new PrismaMariaDb({
     ...connectionConfig,
-    connectionLimit: parseNumber(process.env.DATABASE_CONNECTION_LIMIT) ?? 10,
+    connectionLimit: parseNumber(process.env.DATABASE_CONNECTION_LIMIT) ?? 50,
   });
 
   return new PrismaClient({

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
 import { Radio, Button, Input, Pagination, Spin, Select } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import type { Dayjs } from "dayjs";
 import { dvat04, user } from "@prisma/client";
 import { capitalcase, encryptURLData } from "@/utils/methods";
@@ -43,6 +43,7 @@ const InactiveDealers = () => {
   const router = useRouter();
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
+  const [isFilter, setFilter] = useState<boolean>(false);
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -60,12 +61,20 @@ const InactiveDealers = () => {
   }
 
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.TIN
+    SearchOption.TIN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
     setSeachOption(e.target.value);
   };
+
+  const [selectedCommodity, setSelectedCommodity] = useState<string | null>(
+    null,
+  );
+  const [selectedFrequency, setSelectedFrequency] = useState<string | null>(
+    null,
+  );
+  const [selectedType, setSelectedType] = useState<string | null>(null);
 
   const arnRef = useRef<InputRef>(null);
   const nameRef = useRef<InputRef>(null);
@@ -75,24 +84,54 @@ const InactiveDealers = () => {
   >(null);
 
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
+  const [allDvatData, setAllDvatData] = useState<Array<ResponseType>>([]);
+
+  // Get unique commodity and frequency values
+  const commodityOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allDvatData
+            .map((item) => item.dvat04.commodity)
+            .filter((c) => c && c.trim() !== ""),
+        ),
+      ).sort(),
+    [allDvatData],
+  );
+
+  const frequencyOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allDvatData
+            .map((item) => item.dvat04.frequencyFilings)
+            .filter((f) => f && f.trim() !== ""),
+        ),
+      ).sort(),
+    [allDvatData],
+  );
 
   const [user, setUpser] = useState<user | null>(null);
-  const [selectedOffice, setSelectedOffice] = useState<SelectOffice | "ALL">("ALL");
+  const [selectedOffice, setSelectedOffice] = useState<SelectOffice | "ALL">(
+    "ALL",
+  );
 
   // Calculate statistics
   const totalInactiveDealers = pagination.total;
   const totalPendingReturns = dvatData.reduce(
     (sum, item) => sum + item.pending,
-    0
+    0,
   );
   const averagePending =
     dvatData.length > 0 ? totalPendingReturns / dvatData.length : 0;
   const compositionDealers = dvatData.filter(
-    (item) => item.dvat04.compositionScheme
+    (item) => item.dvat04.compositionScheme,
   ).length;
   const regularDealers = dvatData.length - compositionDealers;
-  const maxPending = dvatData.length > 0 ? Math.max(...dvatData.map((d) => d.pending)) : 0;
-  const minPending = dvatData.length > 0 ? Math.min(...dvatData.map((d) => d.pending)) : 0;
+  const maxPending =
+    dvatData.length > 0 ? Math.max(...dvatData.map((d) => d.pending)) : 0;
+  const minPending =
+    dvatData.length > 0 ? Math.min(...dvatData.map((d) => d.pending)) : 0;
 
   const init = async () => {
     const userrespone = await GetUser({ id: userid });
@@ -106,7 +145,7 @@ const InactiveDealers = () => {
 
       if (payment_data.status && payment_data.data.result) {
         const sortedData = payment_data.data.result.sort(
-          (a: ResponseType, b: ResponseType) => b.pending - a.pending
+          (a: ResponseType, b: ResponseType) => b.pending - a.pending,
         );
         setPaginatin({
           skip: payment_data.data.skip,
@@ -114,10 +153,46 @@ const InactiveDealers = () => {
           total: payment_data.data.total,
         });
         setDvatData(sortedData);
+        // Set all data for statistics and filter options
+        if (payment_data.data.allData) {
+          setAllDvatData(payment_data.data.allData);
+        }
       }
     }
 
     setSearch(false);
+  };
+
+  // Reset only search inputs and search state (keep filters active)
+  const resetSearch = async () => {
+    if (arnRef.current?.input) arnRef.current.input.value = "";
+    if (nameRef.current?.input) nameRef.current.input.value = "";
+    setSearch(false);
+
+    // If there are active filters, keep searching with filters only
+    if (selectedType || selectedCommodity || selectedFrequency) {
+      await handleFilterChange(selectedType, selectedCommodity, selectedFrequency);
+    } else {
+      // If no filters, reload all data
+      await init();
+    }
+  };
+
+  // Clear all filters AND search inputs
+  const clearAllFilters = async () => {
+    // Clear all states
+    setSelectedType(null);
+    setSelectedCommodity(null);
+    setSelectedFrequency(null);
+    setFilter(false);
+    setSearch(false);
+
+    // Clear input fields
+    if (arnRef.current?.input) arnRef.current.input.value = "";
+    if (nameRef.current?.input) nameRef.current.input.value = "";
+
+    // Reload all data without any filters
+    await init();
   };
 
   useEffect(() => {
@@ -142,7 +217,7 @@ const InactiveDealers = () => {
 
         if (payment_data.status && payment_data.data.result) {
           const sortedData = payment_data.data.result.sort(
-            (a: ResponseType, b: ResponseType) => b.pending - a.pending
+            (a: ResponseType, b: ResponseType) => b.pending - a.pending,
           );
           setDvatData(sortedData);
           setPaginatin({
@@ -150,6 +225,10 @@ const InactiveDealers = () => {
             take: payment_data.data.take,
             total: payment_data.data.total,
           });
+          // Set all data for statistics and filter options
+          if (payment_data.data.allData) {
+            setAllDvatData(payment_data.data.allData);
+          }
         }
       }
       setLoading(false);
@@ -161,7 +240,7 @@ const InactiveDealers = () => {
   useEffect(() => {
     const loadDataByOffice = async () => {
       if (!user || !selectedOffice) return;
-      
+
       setLoading(true);
       const payment_data = await GetInactiveDealers({
         dept: selectedOffice === "ALL" ? undefined : selectedOffice,
@@ -171,7 +250,7 @@ const InactiveDealers = () => {
 
       if (payment_data.status && payment_data.data.result) {
         const sortedData = payment_data.data.result.sort(
-          (a: ResponseType, b: ResponseType) => b.pending - a.pending
+          (a: ResponseType, b: ResponseType) => b.pending - a.pending,
         );
         setDvatData(sortedData);
         setPaginatin({
@@ -179,6 +258,10 @@ const InactiveDealers = () => {
           take: payment_data.data.take,
           total: payment_data.data.total,
         });
+        // Set all data for statistics and filter options
+        if (payment_data.data.allData) {
+          setAllDvatData(payment_data.data.allData);
+        }
       }
       setLoading(false);
     };
@@ -216,93 +299,137 @@ const InactiveDealers = () => {
     }
   };
 
-  // const get_month = (composition: boolean, month: string): string => {
-  //   if (composition) {
-  //     if (["January", "February", "March"].includes(capitalcase(month))) {
-  //       return "Jan-Mar";
-  //     } else if (["April", "May", "June"].includes(capitalcase(month))) {
-  //       return "Apr-Jun";
-  //     } else if (["July", "August", "September"].includes(capitalcase(month))) {
-  //       return "Jul-Sep";
-  //     } else if (
-  //       ["October", "November", "December"].includes(capitalcase(month))
-  //     ) {
-  //       return "Oct-Dec";
-  //     } else {
-  //       return "Jan-Mar";
-  //     }
-  //   } else {
-  //     return month;
-  //   }
-  // };
   const arnsearch = async () => {
+    // Allow search with just TIN or with filters
     if (
-      arnRef.current?.input?.value == undefined ||
-      arnRef.current?.input?.value == null ||
-      arnRef.current?.input?.value == ""
+      (arnRef.current?.input?.value == undefined ||
+        arnRef.current?.input?.value == null ||
+        arnRef.current?.input?.value == "") &&
+      !selectedCommodity &&
+      !selectedFrequency &&
+      !selectedType
     ) {
-      return toast.error("Enter arn number");
+      return toast.error("Enter TIN or select filters");
     }
     const search_response = await GetInactiveDealers({
-      arnnumber: arnRef.current?.input?.value,
+      arnnumber: arnRef.current?.input?.value || undefined,
+      commodity: selectedCommodity || undefined,
+      frequency: selectedFrequency || undefined,
+      dealerType: selectedType || undefined,
       dept: selectedOffice === "ALL" ? undefined : selectedOffice,
       take: 10,
       skip: 0,
     });
     if (search_response.status && search_response.data.result) {
       setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      // Set all data for statistics and filter options
+      if (search_response.data.allData) {
+        setAllDvatData(search_response.data.allData);
+      }
       setSearch(true);
     }
   };
-
-  // const datesearch = async () => {
-  //   if (searchDate == null || searchDate.length <= 1) {
-  //     return toast.error("Select state date and end date");
-  //   }
-
-  //   const search_response = await SearchDeptPendingReturn({
-  //     fromdate: searchDate[0]?.toDate(),
-  //     todate: searchDate[1]?.toDate(),
-  //     take: 10,
-  //     skip: 0,
-  //   });
-  //   if (search_response.status && search_response.data.result) {
-  //     setDvatData(search_response.data.result);
-  //     setSearch(true);
-  //   }
-  // };
 
   const namesearch = async () => {
+    // Allow search with just Trade Name or with filters
     if (
-      nameRef.current?.input?.value == undefined ||
-      nameRef.current?.input?.value == null ||
-      nameRef.current?.input?.value == ""
+      (nameRef.current?.input?.value == undefined ||
+        nameRef.current?.input?.value == null ||
+        nameRef.current?.input?.value == "") &&
+      !selectedCommodity &&
+      !selectedFrequency &&
+      !selectedType
     ) {
-      return toast.error("Enter TIN Number");
+      return toast.error("Enter Trade Name or select filters");
     }
     const search_response = await GetInactiveDealers({
-      tradename: nameRef.current?.input?.value,
+      tradename: nameRef.current?.input?.value || undefined,
+      commodity: selectedCommodity || undefined,
+      frequency: selectedFrequency || undefined,
+      dealerType: selectedType || undefined,
       dept: selectedOffice === "ALL" ? undefined : selectedOffice,
       take: 10,
       skip: 0,
     });
     if (search_response.status && search_response.data.result) {
       setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      // Set all data for statistics and filter options
+      if (search_response.data.allData) {
+        setAllDvatData(search_response.data.allData);
+      }
       setSearch(true);
     }
   };
+
+  // Auto-trigger search when filters change
+  const handleFilterChange = async (
+    newType?: string | null,
+    newCommodity?: string | null,
+    newFrequency?: string | null,
+  ) => {
+    const filterType = newType !== undefined ? newType : selectedType;
+    const filterCommodity = newCommodity !== undefined ? newCommodity : selectedCommodity;
+    const filterFrequency = newFrequency !== undefined ? newFrequency : selectedFrequency;
+
+    // Only trigger search if at least one filter is selected
+    if (!filterType && !filterCommodity && !filterFrequency) {
+      return;
+    }
+
+    const search_response = await GetInactiveDealers({
+      arnnumber: arnRef.current?.input?.value || undefined,
+      tradename: nameRef.current?.input?.value || undefined,
+      commodity: filterCommodity || undefined,
+      frequency: filterFrequency || undefined,
+      dealerType: filterType || undefined,
+      dept: selectedOffice === "ALL" ? undefined : selectedOffice,
+      take: pagination.take,
+      skip: 0,
+    });
+
+    if (search_response.status && search_response.data.result) {
+      setDvatData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      // Set all data for statistics and filter options
+      if (search_response.data.allData) {
+        setAllDvatData(search_response.data.allData);
+      }
+      setFilter(true);
+    }
+  };
+
   const onChangePageCount = async (page: number, pagesize: number) => {
-    if (isSearch) {
+    if (isSearch || isFilter) {
       if (searchOption == SearchOption.TIN) {
         if (
-          arnRef.current?.input?.value == undefined ||
-          arnRef.current?.input?.value == null ||
-          arnRef.current?.input?.value == ""
+          (arnRef.current?.input?.value == undefined ||
+            arnRef.current?.input?.value == null ||
+            arnRef.current?.input?.value == "") &&
+          !selectedCommodity &&
+          !selectedFrequency &&
+          !selectedType
         ) {
-          return toast.error("Enter arn number");
+          return toast.error("Enter TIN or select filters");
         }
         const search_response = await GetInactiveDealers({
-          arnnumber: arnRef.current?.input?.value,
+          arnnumber: arnRef.current?.input?.value || undefined,
+          commodity: selectedCommodity || undefined,
+          frequency: selectedFrequency || undefined,
+          dealerType: selectedType || undefined,
           dept: selectedOffice === "ALL" ? undefined : selectedOffice,
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -315,18 +442,28 @@ const InactiveDealers = () => {
             take: search_response.data.take,
             total: search_response.data.total,
           });
+          // Set all data for statistics and filter options
+          if (search_response.data.allData) {
+            setAllDvatData(search_response.data.allData);
+          }
           setSearch(true);
         }
       } else if (searchOption == SearchOption.NAME) {
         if (
-          nameRef.current?.input?.value == undefined ||
-          nameRef.current?.input?.value == null ||
-          nameRef.current?.input?.value == ""
+          (nameRef.current?.input?.value == undefined ||
+            nameRef.current?.input?.value == null ||
+            nameRef.current?.input?.value == "") &&
+          !selectedCommodity &&
+          !selectedFrequency &&
+          !selectedType
         ) {
-          return toast.error("Enter TIN Number");
+          return toast.error("Enter Trade Name or select filters");
         }
         const search_response = await GetInactiveDealers({
-          tradename: nameRef.current?.input?.value,
+          tradename: nameRef.current?.input?.value || undefined,
+          commodity: selectedCommodity || undefined,
+          frequency: selectedFrequency || undefined,
+          dealerType: selectedType || undefined,
           dept: selectedOffice === "ALL" ? undefined : selectedOffice,
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -339,6 +476,10 @@ const InactiveDealers = () => {
             take: search_response.data.take,
             total: search_response.data.total,
           });
+          // Set all data for statistics and filter options
+          if (search_response.data.allData) {
+            setAllDvatData(search_response.data.allData);
+          }
           setSearch(true);
         }
       }
@@ -355,6 +496,10 @@ const InactiveDealers = () => {
           take: payment_data.data.take,
           total: payment_data.data.total,
         });
+        // Set all data for statistics and filter options
+        if (payment_data.data.allData) {
+          setAllDvatData(payment_data.data.allData);
+        }
       }
     }
   };
@@ -412,7 +557,7 @@ const InactiveDealers = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Inactive Dealers");
     XLSX.writeFile(
       wb,
-      `Inactive_Dealers_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+      `Inactive_Dealers_Report_${new Date().toISOString().split("T")[0]}.xlsx`,
     );
     toast.success("Report exported successfully!");
   };
@@ -553,38 +698,52 @@ const InactiveDealers = () => {
         </div>
 
         {/* Office Filter */}
-        {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
-          <div className="bg-white p-4 shadow rounded-lg mb-6">
-            <div className="flex items-center gap-4">
-              <label className="font-semibold text-gray-700">Filter by Office:</label>
-              <Select
-                value={selectedOffice}
-                onChange={(value) => {
-                  setSelectedOffice(value);
-                  setSearch(false);
-                  // Reset pagination when office changes
-                  setPaginatin({
-                    take: 10,
-                    skip: 0,
-                    total: 0,
-                  });
-                }}
-                style={{ width: 250 }}
-                disabled={isSearch}
-              >
-                <Select.Option value="ALL">All Offices</Select.Option>
-                <Select.Option value={SelectOffice.DAMAN}>DAMAN</Select.Option>
-                <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
-                <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>DNH (Dadra & Nagar Haveli)</Select.Option>
-              </Select>
-              {selectedOffice !== "ALL" && (
-                <span className="text-sm text-gray-600">
-                  Showing data for: <span className="font-semibold">{selectedOffice === SelectOffice.Dadra_Nagar_Haveli ? "DNH" : selectedOffice}</span>
-                </span>
-              )}
+        {user &&
+          !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+            user.role,
+          ) && (
+            <div className="bg-white p-4 shadow rounded-lg mb-6">
+              <div className="flex items-center gap-4">
+                <label className="font-semibold text-gray-700">
+                  Filter by Office:
+                </label>
+                <Select
+                  value={selectedOffice}
+                  onChange={(value) => {
+                    setSelectedOffice(value);
+                    setSearch(false);
+                    // Reset pagination when office changes
+                    setPaginatin({
+                      take: 10,
+                      skip: 0,
+                      total: 0,
+                    });
+                  }}
+                  style={{ width: 250 }}
+                  disabled={isSearch}
+                >
+                  <Select.Option value="ALL">All Offices</Select.Option>
+                  <Select.Option value={SelectOffice.DAMAN}>
+                    DAMAN
+                  </Select.Option>
+                  <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
+                  <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>
+                    DNH (Dadra & Nagar Haveli)
+                  </Select.Option>
+                </Select>
+                {selectedOffice !== "ALL" && (
+                  <span className="text-sm text-gray-600">
+                    Showing data for:{" "}
+                    <span className="font-semibold">
+                      {selectedOffice === SelectOffice.Dadra_Nagar_Haveli
+                        ? "DNH"
+                        : selectedOffice}
+                    </span>
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
@@ -611,14 +770,18 @@ const InactiveDealers = () => {
 
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
             <MaterialSymbolsPersonRounded className="w-8 h-8 opacity-70 mb-2" />
-            <p className="text-2xl font-bold">{regularDealers}/{compositionDealers}</p>
+            <p className="text-2xl font-bold">
+              {regularDealers}/{compositionDealers}
+            </p>
             <p className="text-xs opacity-90">REG / COMP</p>
             <p className="text-xs opacity-75 mt-1">Dealer Types</p>
           </div>
 
           <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg shadow-md p-6 text-white">
             <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
-            <p className="text-lg font-bold">{maxPending} / {minPending}</p>
+            <p className="text-lg font-bold">
+              {maxPending} / {minPending}
+            </p>
             <p className="text-xs opacity-90">Max / Min Pending</p>
             <p className="text-xs opacity-75 mt-1">Return Range</p>
           </div>
@@ -666,67 +829,182 @@ const InactiveDealers = () => {
           <div className="bg-blue-500 p-3 text-white rounded-t-lg -mt-4 -mx-4 mb-4">
             <p className="font-semibold">Search & Filter Dealers</p>
           </div>
-          
-          <div className="flex flex-col md:flex-row lg:gap-4 lg:items-center">
-            <Radio.Group
-              onChange={onChange}
-              value={searchOption}
-              disabled={isSearch}
-            >
-              <Radio value={SearchOption.TIN}>TIN</Radio>
-              <Radio value={SearchOption.NAME}>Trade Name</Radio>
-            </Radio.Group>
-            <div className="h-2"></div>
-            {(() => {
-              switch (searchOption) {
-                case SearchOption.TIN:
-                  return (
-                    <div className="flex gap-2">
-                      <Input
-                        className="w-60"
-                        ref={arnRef}
-                        placeholder={"Enter TIN"}
-                        disabled={isSearch}
-                      />
 
-                      {isSearch ? (
-                        <Button onClick={init} type="primary">
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button onClick={arnsearch} type="primary">
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
+          <div className="flex flex-wrap gap-4 items-end">
+            {/* Primary Search Options */}
+            <div className="flex gap-2 items-end">
+              <Radio.Group
+                onChange={onChange}
+                value={searchOption}
+                disabled={isSearch}
+              >
+                <Radio value={SearchOption.TIN}>TIN</Radio>
+                <Radio value={SearchOption.NAME}>Trade Name</Radio>
+              </Radio.Group>
+              {(() => {
+                switch (searchOption) {
+                  case SearchOption.TIN:
+                    return (
+                      <div className="flex gap-2">
+                        <Input
+                          className="w-48"
+                          ref={arnRef}
+                          placeholder={"Enter TIN"}
+                          disabled={isSearch}
+                        />
 
-                case SearchOption.NAME:
-                  return (
-                    <div className="flex gap-2">
-                      <Input
-                        className="w-60"
-                        ref={nameRef}
-                        placeholder={"Enter Trade Name"}
-                        disabled={isSearch}
-                      />
+                        {isSearch ? (
+                          <Button
+                            onClick={resetSearch}
+                            type="primary"
+                            size="middle"
+                          >
+                            Reset
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={arnsearch}
+                            type="primary"
+                            size="middle"
+                          >
+                            Search
+                          </Button>
+                        )}
+                      </div>
+                    );
 
-                      {isSearch ? (
-                        <Button onClick={init} type="primary">
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button onClick={namesearch} type="primary">
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
+                  case SearchOption.NAME:
+                    return (
+                      <div className="flex gap-2">
+                        <Input
+                          className="w-48"
+                          ref={nameRef}
+                          placeholder={"Enter Trade Name"}
+                          disabled={isSearch}
+                        />
 
-                default:
-                  return null;
-              }
-            })()}
+                        {isSearch ? (
+                          <Button
+                            onClick={resetSearch}
+                            type="primary"
+                            size="middle"
+                          >
+                            Reset
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={namesearch}
+                            type="primary"
+                            size="middle"
+                          >
+                            Search
+                          </Button>
+                        )}
+                      </div>
+                    );
+
+                  default:
+                    return null;
+                }
+              })()}
+            </div>
+
+            {/* Commodity, Frequency, and Type Filters */}
+            <div className="flex gap-4 items-end flex-wrap">
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Type:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Type"
+                  value={selectedType}
+                  onChange={(value) => {
+                    setSelectedType(value || null);
+                    handleFilterChange(
+                      value || null,
+                      selectedCommodity,
+                      selectedFrequency,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  <Select.Option value="REGULAR">Regular (REG)</Select.Option>
+                  <Select.Option value="COMPOSITION">
+                    Composition (COMP)
+                  </Select.Option>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Commodity:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Commodity"
+                  value={selectedCommodity}
+                  onChange={(value) => {
+                    setSelectedCommodity(value || null);
+                    handleFilterChange(
+                      selectedType,
+                      value || null,
+                      selectedFrequency,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  {commodityOptions.map((commodity) => (
+                    <Select.Option key={commodity} value={commodity}>
+                      {commodity}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Frequency:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Frequency"
+                  value={selectedFrequency}
+                  onChange={(value) => {
+                    setSelectedFrequency(value || null);
+                    handleFilterChange(
+                      selectedType,
+                      selectedCommodity,
+                      value || null,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  {frequencyOptions.map((frequency) => (
+                    <Select.Option key={frequency} value={frequency}>
+                      {frequency}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </div>
+
+              {(selectedCommodity || selectedFrequency || selectedType) && (
+                <Button
+                  type="default"
+                  onClick={clearAllFilters}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -753,6 +1031,12 @@ const InactiveDealers = () => {
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
                     Last Filing Period
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
+                    Commodity
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
+                    Frequency
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
                     Pending Returns
@@ -790,15 +1074,21 @@ const InactiveDealers = () => {
                         {val.lastfiling || "N/A"}
                       </TableCell>
                       <TableCell className="border text-center p-3 text-sm">
+                        {val.dvat04.commodity || "N/A"}
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-sm">
+                        {val.dvat04.frequencyFilings}
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-sm">
                         <span
                           className={`inline-flex px-3 py-1 rounded-full text-sm font-bold ${
                             val.pending > 20
                               ? "bg-red-100 text-red-800"
                               : val.pending > 10
-                              ? "bg-orange-100 text-orange-800"
-                              : val.pending > 5
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-green-100 text-green-800"
+                                ? "bg-orange-100 text-orange-800"
+                                : val.pending > 5
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-green-100 text-green-800"
                           }`}
                         >
                           {val.pending}
@@ -811,8 +1101,8 @@ const InactiveDealers = () => {
                           onClick={() => {
                             router.push(
                               `/dashboard/returns/department-pending-return/${encryptURLData(
-                                val.dvat04.id.toString()
-                              )}`
+                                val.dvat04.id.toString(),
+                              )}`,
                             );
                           }}
                         >

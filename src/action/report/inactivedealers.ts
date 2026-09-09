@@ -19,6 +19,9 @@ interface ResponseType {
 interface GetInactiveDealersPayload {
   arnnumber?: string;
   tradename?: string;
+  commodity?: string;
+  frequency?: string;
+  dealerType?: string;
   dept?: SelectOffice;
   skip: number;
   take: number;
@@ -51,6 +54,9 @@ const GetInactiveDealers = async (
               { name: { contains: payload.tradename } },
             ],
           }),
+          ...(payload.dealerType && {
+            compositionScheme: payload.dealerType === "COMPOSITION",
+          }),
           ...(payload.dept && { selectOffice: payload.dept }),
           deletedAt: null,
           deletedBy: null,
@@ -70,6 +76,19 @@ const GetInactiveDealers = async (
         functionname,
       });
 
+    // Filter by commodity and frequency after fetching (since they are enum fields)
+    let filteredResponse = dvat04response;
+    if (payload.commodity) {
+      filteredResponse = filteredResponse.filter(
+        (item: any) => item.dvat?.commodity === payload.commodity,
+      );
+    }
+    if (payload.frequency) {
+      filteredResponse = filteredResponse.filter(
+        (item: any) => item.dvat?.frequencyFilings === payload.frequency,
+      );
+    }
+
     const notice = await prisma.order_notice.findMany({
       where: {
         deletedAt: null,
@@ -83,12 +102,12 @@ const GetInactiveDealers = async (
     let resMap = new Map<number, ResponseType>(); // Track dvat04 by ID
     const currentDate = new Date();
 
-    for (let i = 0; i < dvat04response.length; i++) {
-      const currentDvat: dvat04 = dvat04response[i].dvat;
-      const filingStatus: boolean = dvat04response[i].filing_status;
-      const currentLastFiling: string = `${dvat04response[i].month}-${dvat04response[i].year}`;
-      const dueDate: Date | null = dvat04response[i].due_date
-        ? new Date(dvat04response[i].due_date!)
+    for (let i = 0; i < filteredResponse.length; i++) {
+      const currentDvat: dvat04 = filteredResponse[i].dvat;
+      const filingStatus: boolean = filteredResponse[i].filing_status;
+      const currentLastFiling: string = `${filteredResponse[i].month}-${filteredResponse[i].year}`;
+      const dueDate: Date | null = filteredResponse[i].due_date
+        ? new Date(filteredResponse[i].due_date!)
         : null;
 
       if (currentDvat) {
@@ -145,7 +164,7 @@ const GetInactiveDealers = async (
 
     // Convert Map to an array
     const res: ResponseType[] = Array.from(resMap.values()).filter(
-      (val: ResponseType) => val.pending != 0 && val.pending > 5
+      (val: ResponseType) => val.pending != 0 && val.pending > 3
     );
 
     res.forEach((response) => {
@@ -164,6 +183,7 @@ const GetInactiveDealers = async (
       message: "Pending returns data get successfully",
       functionname,
       data: paginatedData,
+      allData: res,
       skip: payload.skip,
       take: payload.take,
       total: res.length ?? 0,
