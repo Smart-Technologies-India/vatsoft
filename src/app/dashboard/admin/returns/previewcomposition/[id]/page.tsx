@@ -41,6 +41,7 @@ const AdminDvat16ReturnPreview = () => {
   const returnid: number = parseInt(
     decryptURLData(Array.isArray(id) ? id[0] : id, router),
   );
+  console.log(returnid);
 
   const [isDownload, setDownload] = useState<boolean>(false);
 

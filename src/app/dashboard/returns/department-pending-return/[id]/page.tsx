@@ -87,8 +87,6 @@ const ShopView = () => {
   const [annualTurnover, setAnnualTurnover] = useState<number>(0);
   const [taxLiability, setTaxLiability] = useState<number>(0);
 
-  // const [returnMonth, setReturnMonth] = useState<return_filing[]>([]);
-
   const [returndetails, setRetuirnsDetails] = useState<yearsDetails[]>([]);
 
   const monthNames = [
@@ -141,10 +139,7 @@ const ShopView = () => {
             dvatid: getdata.dvat.id,
           });
 
-          if (
-            returnByDateResponse.status &&
-            returnByDateResponse.data?.id
-          ) {
+          if (returnByDateResponse.status && returnByDateResponse.data?.id) {
             returnid = returnByDateResponse.data.id;
           }
 
@@ -257,6 +252,20 @@ const ShopView = () => {
               Dealer Details
             </p>
             <div className="grow"></div>
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => {
+                if (!dvatData) return;
+                router.push(
+                  `/dashboard/returns/department-pending-return/${encryptURLData(
+                    dvatData?.id.toString(),
+                  )}/assessment`,
+                );
+              }}
+            >
+              Assessment
+            </Button>
             <Button
               size="small"
               type="primary"

@@ -868,10 +868,9 @@ const TrackAppliation = () => {
                             key={index}
                             className="hover:bg-gray-50 transition-colors"
                           >
-                            {/* E:\web\vatsoft\src\app\dashboard\admin\returns\previewcomposition\[id]\page.tsx */}
                             <TableCell className="border text-center p-3">
                               <Link
-                                href={`/dashboard/${val.dvat04.compositionScheme ? "admin/returns/previewcomposition" : "returns/returns-dashboard/preview"}/${encryptURLData(
+                                href={`/dashboard/${val.compositionScheme ? "admin/returns/previewcomposition" : "returns/returns-dashboard/preview"}/${encryptURLData(
                                   val.id.toString(),
                                 )}?form=30A&year=${val.year}&quarter=${
                                   val.quarter
