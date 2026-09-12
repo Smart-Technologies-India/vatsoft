@@ -56,13 +56,22 @@ const DealersConsistentlyCompliant = async (
       "December",
     ];
 
+    // Get months whose due dates have passed (due date = 28th of next month)
     const monthsArray: string[] = [];
-    const yearsSet = new Set<string>(); // to avoid duplicate years
-
+    const yearsSet = new Set<string>();
+    
+    let monthsToCheck = 0;
     for (let i = 0; i < 6; i++) {
       const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      monthsArray.push(months[date.getMonth()]);
-      yearsSet.add(date.getFullYear().toString());
+      // Due date is 28th of next month
+      const dueDate = new Date(date.getFullYear(), date.getMonth() + 1, 28);
+      
+      // Only include months whose due date has passed
+      if (dueDate <= today) {
+        monthsArray.push(months[date.getMonth()]);
+        yearsSet.add(date.getFullYear().toString());
+        monthsToCheck++;
+      }
     }
 
     // Optional: reverse months to go from oldest to latest
@@ -147,10 +156,10 @@ const DealersConsistentlyCompliant = async (
     }
 
     // Convert Map to an array and filter only compliant dealers
-    // A dealer is compliant if they have filed all 6 returns on time (FILED status)
-    // If any return is LATEFILED or PENDINGFILING, they are not compliant
+    // A dealer is compliant if they have filed all required returns on time (FILED status)
+    // Only counts months whose due dates have passed
     const res: ResponseType[] = Array.from(resMap.values()).filter(
-      (val: ResponseType) => val.isLate == false && val.pending == 6,
+      (val: ResponseType) => val.isLate == false && val.pending == monthsToCheck,
     );
 
     const paginatedData = res.slice(payload.skip, payload.skip + payload.take);

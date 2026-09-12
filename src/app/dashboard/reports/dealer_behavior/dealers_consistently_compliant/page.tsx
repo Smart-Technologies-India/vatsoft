@@ -40,8 +40,33 @@ const DealersConsistentlyCompliantReport = () => {
   const [searchTin, setSearchTin] = useState("");
   const [searchTradename, setSearchTradename] = useState("");
   const [skip, setSkip] = useState(0);
-  const [take] = useState(100);
+  const [take, setTake] = useState(25);
   const [total, setTotal] = useState(0);
+
+  // Calculate months from April 2026 to current date (only count months whose due date has passed)
+  // Filing due date is typically the 28th of the next month
+  const getMonthsFromApril2026 = () => {
+    const now = new Date();
+    const aprilStart = new Date(2026, 3, 1); // April 2026 (0-indexed)
+    
+    let monthsCount = 0;
+    let currentMonth = new Date(aprilStart);
+    
+    while (currentMonth < now) {
+      // Due date is 28th of next month
+      const dueDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 28);
+      
+      if (dueDate <= now) {
+        monthsCount++;
+      }
+      
+      currentMonth.setMonth(currentMonth.getMonth() + 1);
+    }
+    
+    return Math.max(1, monthsCount);
+  };
+
+  const totalMonthsToCheck = getMonthsFromApril2026();
 
   useEffect(() => {
     const init = async () => {
@@ -83,7 +108,7 @@ const DealersConsistentlyCompliantReport = () => {
       setLoading(false);
     };
     init();
-  }, [city, skip, searchTin, searchTradename]);
+  }, [city, skip, take, searchTin, searchTradename]);
 
   const exportToExcel = () => {
     if (!reportData || reportData.length === 0) {
@@ -104,7 +129,7 @@ const DealersConsistentlyCompliantReport = () => {
         "Contact",
         "Address",
         "Last Filing",
-        "Filed Returns (Last 6 months)",
+        `Filed Returns (April 2026 - Now) / ${totalMonthsToCheck}`,
       ],
     ];
 
@@ -135,7 +160,7 @@ const DealersConsistentlyCompliantReport = () => {
     labels: topCompliantDealers.map((d) => (d.dvat04.tradename || "N/A").substring(0, 20)),
     datasets: [
       {
-        label: "Filed Returns (Last 6 months)",
+        label: `Filed Returns (April 2026 - Now) / ${totalMonthsToCheck}`,
         data: topCompliantDealers.map((d) => d.pending),
         backgroundColor: "#10b981",
         borderColor: "#059669",
@@ -151,12 +176,19 @@ const DealersConsistentlyCompliantReport = () => {
     scales: {
       x: {
         beginAtZero: true,
-        max: 6,
+        max: totalMonthsToCheck,
         ticks: {
           font: {
             size: 11,
           },
           stepSize: 1,
+          callback: function(value: any) {
+            // Show only integer values
+            if (Number.isInteger(value)) {
+              return value;
+            }
+            return '';
+          }
         },
       },
       y: {
@@ -174,7 +206,7 @@ const DealersConsistentlyCompliantReport = () => {
       tooltip: {
         callbacks: {
           label: function (context: any) {
-            return "Filed Returns: " + context.parsed.x + " / 6 months";
+            return "Filed Returns: " + context.parsed.x + " / " + totalMonthsToCheck + " months";
           },
         },
       },
@@ -311,7 +343,7 @@ const DealersConsistentlyCompliantReport = () => {
                       reportData.length
                     ).toFixed(1)
                   : "0"}{" "}
-                / 6
+                / {totalMonthsToCheck}
               </div>
             </div>
           </div>
@@ -326,7 +358,7 @@ const DealersConsistentlyCompliantReport = () => {
         <>
           <div className="bg-white rounded-lg shadow-sm mt-4 p-4">
             <h2 className="text-lg font-semibold mb-4">
-              Top 10 Most Compliant Dealers
+              Top 10 Most Compliant Dealers (April 2026 - Now)
             </h2>
             <div style={{ height: "400px" }}>
               <Bar data={chartData} options={chartOptions} />
@@ -337,89 +369,90 @@ const DealersConsistentlyCompliantReport = () => {
             <h2 className="text-lg font-semibold mb-4">
               All Compliant Dealers ({numberWithIndianFormat(total)})
             </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border p-2 text-left text-sm">#</th>
-                    <th className="border p-2 text-left text-sm">TIN Number</th>
-                    <th className="border p-2 text-left text-sm">Dealer Name</th>
-                    <th className="border p-2 text-left text-sm">Trade Name</th>
-                    <th className="border p-2 text-left text-sm">Commodity</th>
-                    <th className="border p-2 text-left text-sm">District</th>
-                    <th className="border p-2 text-left text-sm">Contact</th>
-                    <th className="border p-2 text-left text-sm">Last Filing</th>
-                    <th className="border p-2 text-center text-sm">
-                      Filed Returns
-                      <br />
-                      <span className="text-xs text-gray-500">(Last 6 months)</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reportData.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="border p-4 text-center text-gray-500">
-                        No data available
-                      </td>
-                    </tr>
-                  ) : (
-                    reportData.map((dealer, index) => (
-                      <tr key={dealer.dvat04.id} className="hover:bg-gray-50">
-                        <td className="border p-2 text-sm">{skip + index + 1}</td>
-                        <td className="border p-2 text-sm">
-                          {dealer.dvat04.tinNumber || "N/A"}
-                        </td>
-                        <td className="border p-2 text-sm">{dealer.dvat04.name || "N/A"}</td>
-                        <td className="border p-2 text-sm">
-                          {dealer.dvat04.tradename || "N/A"}
-                        </td>
-                        <td className="border p-2 text-sm">
-                          <Badge
-                            color={getCommodityColor(dealer.dvat04.commodity)}
-                            text={dealer.dvat04.commodity || "N/A"}
-                          />
-                        </td>
-                        <td className="border p-2 text-sm">
-                          {dealer.dvat04.selectOffice || "N/A"}
-                        </td>
-                        <td className="border p-2 text-sm">
-                          {dealer.dvat04.contact_one || "N/A"}
-                        </td>
-                        <td className="border p-2 text-sm">{dealer.lastfiling}</td>
-                        <td className="border p-2 text-center text-sm">
-                          <span className="inline-flex items-center justify-center w-12 h-8 bg-green-100 text-green-700 rounded font-semibold">
-                            {dealer.pending} / 6
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {total > take && (
-              <div className="mt-4 flex justify-center gap-2">
-                <button
-                  onClick={() => setSkip(Math.max(0, skip - take))}
-                  disabled={skip === 0}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <span className="px-4 py-2 bg-gray-100 rounded">
-                  {skip / take + 1} / {Math.ceil(total / take)}
-                </span>
-                <button
-                  onClick={() => setSkip(skip + take)}
-                  disabled={skip + take >= total}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            )}
+            <Table
+              columns={[
+                {
+                  title: "#",
+                  key: "index",
+                  width: 50,
+                  render: (_: any, __: any, index: number) => skip + index + 1,
+                },
+                {
+                  title: "TIN Number",
+                  dataIndex: ["dvat04", "tinNumber"],
+                  key: "tinNumber",
+                  render: (text: string) => text || "N/A",
+                },
+                {
+                  title: "Dealer Name",
+                  dataIndex: ["dvat04", "name"],
+                  key: "name",
+                  render: (text: string) => text || "N/A",
+                },
+                {
+                  title: "Trade Name",
+                  dataIndex: ["dvat04", "tradename"],
+                  key: "tradename",
+                  render: (text: string) => text || "N/A",
+                },
+                {
+                  title: "Commodity",
+                  dataIndex: ["dvat04", "commodity"],
+                  key: "commodity",
+                  render: (commodity: string) => (
+                    <Badge
+                      color={getCommodityColor(commodity)}
+                      text={commodity || "N/A"}
+                    />
+                  ),
+                },
+                {
+                  title: "District",
+                  dataIndex: ["dvat04", "selectOffice"],
+                  key: "selectOffice",
+                  render: (text: string) => text || "N/A",
+                },
+                {
+                  title: "Contact",
+                  dataIndex: ["dvat04", "contact_one"],
+                  key: "contact_one",
+                  render: (text: string) => text || "N/A",
+                },
+                {
+                  title: "Last Filing",
+                  dataIndex: "lastfiling",
+                  key: "lastfiling",
+                },
+                {
+                  title: "Filed Returns (April 2026 - Now)",
+                  dataIndex: "pending",
+                  key: "pending",
+                  align: "center" as const,
+                  render: (pending: number) => (
+                    <span className="inline-flex items-center justify-center px-2 h-8 bg-green-100 text-green-700 rounded font-semibold">
+                      {pending} / {totalMonthsToCheck}
+                    </span>
+                  ),
+                },
+              ]}
+              dataSource={reportData}
+              rowKey={(record) => record.dvat04.id}
+              pagination={{
+                current: Math.floor(skip / take) + 1,
+                pageSize: take,
+                total: total,
+                onChange: (page) => setSkip((page - 1) * take),
+                onShowSizeChange: (_: number, pageSize: number) => {
+                  setTake(pageSize);
+                  setSkip(0);
+                },
+                pageSizeOptions: ["10", "25", "50", "100"],
+                showSizeChanger: true,
+                showTotal: (total, range) => `${range[0]}-${range[1]} of ${numberWithIndianFormat(total)}`,
+              }}
+              loading={loading}
+              scroll={{ x: 1200 }}
+            />
           </div>
         </>
       )}

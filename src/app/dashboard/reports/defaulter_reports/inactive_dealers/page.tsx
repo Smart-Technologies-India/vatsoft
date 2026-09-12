@@ -35,6 +35,8 @@ interface ResponseType {
   dvat04: dvat04;
   lastfiling: string;
   pending: number;
+  hasSale: boolean;
+  hasPurchase: boolean;
 }
 
 const InactiveDealers = () => {
@@ -171,7 +173,11 @@ const InactiveDealers = () => {
 
     // If there are active filters, keep searching with filters only
     if (selectedType || selectedCommodity || selectedFrequency) {
-      await handleFilterChange(selectedType, selectedCommodity, selectedFrequency);
+      await handleFilterChange(
+        selectedType,
+        selectedCommodity,
+        selectedFrequency,
+      );
     } else {
       // If no filters, reload all data
       await init();
@@ -378,8 +384,10 @@ const InactiveDealers = () => {
     newFrequency?: string | null,
   ) => {
     const filterType = newType !== undefined ? newType : selectedType;
-    const filterCommodity = newCommodity !== undefined ? newCommodity : selectedCommodity;
-    const filterFrequency = newFrequency !== undefined ? newFrequency : selectedFrequency;
+    const filterCommodity =
+      newCommodity !== undefined ? newCommodity : selectedCommodity;
+    const filterFrequency =
+      newFrequency !== undefined ? newFrequency : selectedFrequency;
 
     // Only trigger search if at least one filter is selected
     if (!filterType && !filterCommodity && !filterFrequency) {
@@ -516,6 +524,8 @@ const InactiveDealers = () => {
         "Type",
         "Last Filing Period",
         "Pending Returns",
+        "Sale",
+        "Purchase",
       ],
     ];
 
@@ -526,6 +536,8 @@ const InactiveDealers = () => {
         item.dvat04.compositionScheme ? "COMP" : "REG",
         item.lastfiling || "",
         item.pending.toString(),
+        item.hasSale ? "Yes" : "No",
+        item.hasPurchase ? "Yes" : "No",
       ]);
     });
 
@@ -747,28 +759,28 @@ const InactiveDealers = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-md p-6 text-white">
+          <div className="bg-linear-to-br from-red-500 to-red-600 rounded-lg shadow-md p-6 text-white">
             <Fa6RegularBuilding className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">{totalInactiveDealers}</p>
             <p className="text-xs opacity-90">Inactive Dealers</p>
             <p className="text-xs opacity-75 mt-1">Total Count</p>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-6 text-white">
+          <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-6 text-white">
             <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">{totalPendingReturns}</p>
             <p className="text-xs opacity-90">Total Pending</p>
             <p className="text-xs opacity-75 mt-1">All Returns</p>
           </div>
 
-          <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg shadow-md p-6 text-white">
+          <div className="bg-linear-to-br from-yellow-500 to-yellow-600 rounded-lg shadow-md p-6 text-white">
             <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">{averagePending.toFixed(1)}</p>
             <p className="text-xs opacity-90">Avg Pending</p>
             <p className="text-xs opacity-75 mt-1">Per Dealer</p>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
+          <div className="bg-linear-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
             <MaterialSymbolsPersonRounded className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">
               {regularDealers}/{compositionDealers}
@@ -777,7 +789,7 @@ const InactiveDealers = () => {
             <p className="text-xs opacity-75 mt-1">Dealer Types</p>
           </div>
 
-          <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg shadow-md p-6 text-white">
+          <div className="bg-linear-to-br from-pink-500 to-pink-600 rounded-lg shadow-md p-6 text-white">
             <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-lg font-bold">
               {maxPending} / {minPending}
@@ -1042,6 +1054,12 @@ const InactiveDealers = () => {
                     Pending Returns
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
+                    Sale
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
+                    Purchase
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
                     Action
                   </TableHead>
                 </TableRow>
@@ -1092,6 +1110,28 @@ const InactiveDealers = () => {
                           }`}
                         >
                           {val.pending}
+                        </span>
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-sm">
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                            val.hasSale
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {val.hasSale ? "Yes" : "No"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-sm">
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                            val.hasPurchase
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {val.hasPurchase ? "Yes" : "No"}
                         </span>
                       </TableCell>
                       <TableCell className="border text-center p-3">

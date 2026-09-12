@@ -1,6 +1,8 @@
 "use client";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import CreateFirstStock from "@/action/firststock/firststockcreat";
+import GetFirstStockByDvat from "@/action/firststock/getfirststockbydvat";
+import GetProductDetails from "@/action/stock/getproductdetails";
 import {
   Table,
   TableBody,
@@ -50,10 +52,36 @@ const FirstStock = () => {
     const dvat = await GetDvat04ByTin({ tinNumber: searchTin });
     if (dvat.status && dvat.data) {
       setDvatData(dvat.data);
+      
+      // Fetch product summary for this DVAT
+      setLoadingSummary(true);
+      const summaryResponse = await GetProductDetails({
+        dvat04Id: dvat.data.id,
+        commodityMasterId: 0, // Using 0 to get overall summary
+      });
+      if (summaryResponse.status && summaryResponse.data) {
+        setProductSummary(summaryResponse.data);
+      } else {
+        setProductSummary(null);
+      }
+      
+      // Fetch existing first_stock data
+      const firstStockResponse = await GetFirstStockByDvat({
+        dvat04Id: dvat.data.id,
+      });
+      if (firstStockResponse.status && firstStockResponse.data) {
+        setExistingFirstStock(firstStockResponse.data);
+      } else {
+        setExistingFirstStock([]);
+      }
+      setLoadingSummary(false);
+      
       toast.success("DVAT record found");
     } else {
       toast.error(dvat.message || "DVAT record not found");
       setDvatData(null);
+      setProductSummary(null);
+      setExistingFirstStock([]);
     }
     setIsSearching(false);
   };
@@ -79,7 +107,25 @@ const FirstStock = () => {
     quantity: number;
   }
 
+  interface ExistingFirstStock {
+    id: number;
+    product_name: string;
+    quantity: number;
+    description: string | null;
+    commodity_master_id: number;
+    crate_size: number;
+  }
+
+  interface ProductSummary {
+    lastPurchaseDate: string | null;
+    lastSaleDate: string | null;
+    isStockSnapshot: boolean;
+  }
+
   const [stock, setStock] = useState<StockData[]>([]);
+  const [existingFirstStock, setExistingFirstStock] = useState<ExistingFirstStock[]>([]);
+  const [productSummary, setProductSummary] = useState<ProductSummary | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
   const [open, setOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
@@ -182,12 +228,38 @@ const FirstStock = () => {
                       setDvatData(null);
                       setStock([]);
                       setSearchTin("");
+                      setProductSummary(null);
+                      setExistingFirstStock([]);
                     }}
                   >
                     Clear
                   </Button>
                 </div>
               </div>
+
+              {/* Product Summary Section */}
+              {!loadingSummary && productSummary && (
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <p className="text-sm text-gray-600 mb-1">Last Purchase Date</p>
+                    <p className="text-lg font-semibold text-blue-600">
+                      {productSummary.lastPurchaseDate || "N/A"}
+                    </p>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <p className="text-sm text-gray-600 mb-1">Last Sale Date</p>
+                    <p className="text-lg font-semibold text-purple-600">
+                      {productSummary.lastSaleDate || "N/A"}
+                    </p>
+                  </div>
+                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <p className="text-sm text-gray-600 mb-1">Stock Snapshot</p>
+                    <p className={`text-lg font-semibold ${productSummary.isStockSnapshot ? "text-green-600" : "text-red-600"}`}>
+                      {productSummary.isStockSnapshot ? "Yes" : "No"}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-2 mb-4">
                 <p className="text-lg font-semibold items-center">Stock</p>
@@ -225,9 +297,52 @@ const FirstStock = () => {
                 showIcon
               />
 
-              {stock.length != 0 ? (
-                <>
-                  <Table className="border mt-2">
+              {/* Existing First Stock Data */}
+              {existingFirstStock.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold mb-2">Existing First Stock</h3>
+                  <Table className="border">
+                    <TableHeader>
+                      <TableRow className="bg-gray-100">
+                        <TableHead className="whitespace-nowrap w-14 border text-center p-2">
+                          Sr. No.
+                        </TableHead>
+                        <TableHead className="whitespace-nowrap w-56 border text-center p-2">
+                          Product Name
+                        </TableHead>
+                        <TableHead className="whitespace-nowrap border text-center p-2">
+                          Quantity
+                        </TableHead>
+                        <TableHead className="whitespace-nowrap border text-center p-2">
+                          Description
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {existingFirstStock.map((val: ExistingFirstStock, index: number) => {
+                        const crates = Math.floor(val.quantity / val.crate_size);
+                        const pcs = val.quantity % val.crate_size;
+                        const displayQty = crates > 0 ? `${crates} Crate ${pcs > 0 ? `${pcs} Pcs` : ''}` : `${val.quantity} Pcs`;
+                        
+                        return (
+                          <TableRow key={val.id}>
+                            <TableCell className="p-2 border text-center">{index + 1}</TableCell>
+                            <TableCell className="p-2 border text-left">{val.product_name}</TableCell>
+                            <TableCell className="p-2 border text-center">{displayQty}</TableCell>
+                            <TableCell className="p-2 border text-left">{val.description || "N/A"}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              {/* New Stock Being Added */}
+              {stock.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold mb-2">New Stock to Add</h3>
+                  <Table className="border">
                     <TableHeader>
                       <TableRow className="bg-gray-100">
                         <TableHead className="whitespace-nowrap w-14 border text-center p-2">
@@ -302,16 +417,18 @@ const FirstStock = () => {
                       Submit
                     </Button>
                   </div>
-                </>
-              ) : (
+                </div>
+              )}
+
+              {existingFirstStock.length === 0 && stock.length === 0 && (
                 <Alert
                   style={{
                     marginTop: "10px",
                     padding: "8px",
                   }}
-                  type="error"
+                  type="info"
                   showIcon
-                  description="There is no stock. Click 'Add Products' to add items."
+                  description="No first stock records found. Click 'Add Products' to add items."
                 />
               )}
             </>
@@ -406,6 +523,7 @@ const MultipleProductForm = (props: MultipleProductFormProps) => {
 
   useEffect(() => {
     if (searchText.trim() === "") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFilteredProducts(commodityMaster);
     } else {
       const filtered = commodityMaster.filter(product =>
@@ -476,7 +594,7 @@ const MultipleProductForm = (props: MultipleProductFormProps) => {
       newStockItems.push({
         id: null,
         item: commodityItem,
-        quantity: quantity
+        quantity: quantity,
       });
     }
 

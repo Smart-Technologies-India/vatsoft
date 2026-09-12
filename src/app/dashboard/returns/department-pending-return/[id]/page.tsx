@@ -5,7 +5,6 @@ import {
   capitalcase,
   decryptURLData,
   encryptURLData,
-  formateDate,
   get28thDate,
 } from "@/utils/methods";
 import Link from "next/link";
@@ -13,7 +12,6 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   AntDesignCheckOutlined,
-  AntDesignMenuOutlined,
   CarbonWarningSquare,
   Fa6RegularCalendarXmark,
   Fa6RegularHourglassHalf,
@@ -30,6 +28,8 @@ import GetReturnMonth from "@/action/dvat/getreturnmonth";
 import getReturnByDate from "@/action/return/getreturnentrybydate";
 import getCurrentFyAnnualTurnover from "@/action/return/getcurrentfyannualturnover";
 import getCurrentFyTaxLiability from "@/action/return/getcurrentfytaxliability";
+import { getCurrentUserId } from "@/lib/auth";
+import GetUser from "@/action/user/getuser";
 
 enum Status {
   INACTIVE,
@@ -185,12 +185,23 @@ const ShopView = () => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+      const userid = await getCurrentUserId();
+      if (!userid) {
+        setIsLoading(false);
+        router.back();
+        return;
+      }
+      const user = await GetUser({
+        id: userid,
+      });
+      if (user.data) {
+        setUser(user.data);
+      }
       const dvat_response = await GetDvat04({
         id: dvat04id,
       });
       if (dvat_response.status && dvat_response.data) {
         setDvatData(dvat_response.data);
-        setUser(dvat_response.data.createdBy);
       }
 
       const pendingreturn_response = await GetPendingReturn({
@@ -252,20 +263,23 @@ const ShopView = () => {
               Dealer Details
             </p>
             <div className="grow"></div>
-            <Button
-              size="small"
-              type="primary"
-              onClick={() => {
-                if (!dvatData) return;
-                router.push(
-                  `/dashboard/returns/department-pending-return/${encryptURLData(
-                    dvatData?.id.toString(),
-                  )}/assessment`,
-                );
-              }}
-            >
-              Assessment
-            </Button>
+            {["VATOFFICER"].includes(user?.role ?? ``) && (
+              <Button
+                size="small"
+                type="primary"
+                onClick={() => {
+                  if (!dvatData) return;
+                  router.push(
+                    `/dashboard/returns/department-pending-return/${encryptURLData(
+                      dvatData?.id.toString(),
+                    )}/assessment`,
+                  );
+                }}
+              >
+                Assessment
+              </Button>
+            )}
+
             <Button
               size="small"
               type="primary"
@@ -372,20 +386,22 @@ const ShopView = () => {
             >
               Challans
             </Button>
-            <Button
-              size="small"
-              type="primary"
-              onClick={() => {
-                if (!dvatData) return;
-                router.push(
-                  `/dashboard/returns/department-dvat-monthly-summary/${encryptURLData(
-                    dvatData?.id.toString(),
-                  )}`,
-                );
-              }}
-            >
-              Monthly Summary
-            </Button>
+            {["VATOFFICER"].includes(user?.role ?? ``) && (
+              <Button
+                size="small"
+                type="primary"
+                onClick={() => {
+                  if (!dvatData) return;
+                  router.push(
+                    `/dashboard/returns/department-dvat-monthly-summary/${encryptURLData(
+                      dvatData?.id.toString(),
+                    )}`,
+                  );
+                }}
+              >
+                Monthly Summary
+              </Button>
+            )}
           </div>
           <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* <p className="text-xs text-gray-500 leading-4">

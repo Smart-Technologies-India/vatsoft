@@ -87,6 +87,7 @@ interface SaleLossItem {
   commodity: string;
   quantity: number;
   commodityPrice: number;
+  salePrice: number;
   commodityVat: number;
   saleVat: number;
   vatLossPerUnit: number;
@@ -285,6 +286,7 @@ const AssessmentPage = () => {
       invoice_date: Date;
       quantity: number;
       vatamount: string;
+      amount_unit: string;
       commodity_master: {
         product_name: string;
         sale_price: string;
@@ -335,6 +337,7 @@ const AssessmentPage = () => {
               commodity: sale.commodity_master.product_name,
               quantity: sale.quantity,
               commodityPrice: commodityPrice,
+              salePrice: parseFloat(sale.amount_unit || "0"),
               commodityVat: commodityVat,
               saleVat: saleVat,
               vatLossPerUnit: vatLossPerUnit,
@@ -357,6 +360,7 @@ const AssessmentPage = () => {
                   commodity: sale.commodity_master.product_name,
                   quantity: sale.quantity,
                   commodityPrice: commodityPrice,
+                  salePrice: parseFloat(sale.amount_unit || "0"),
                   commodityVat: commodityVat,
                   saleVat: saleVat,
                   vatLossPerUnit: vatLossPerUnit,
@@ -419,9 +423,10 @@ const AssessmentPage = () => {
         (sum, m) => sum + m.totalAmount,
         0,
       );
-      
-      const challanFlag = totalChallanInterest + totalChallanPenalty > 1 ? " ⚠️" : "";
-      
+
+      const challanFlag =
+        totalChallanInterest + totalChallanPenalty > 1 ? " ⚠️" : "";
+
       summary += `Total Challans Paid: ${totalChallansPaid}\n`;
       summary += `Total VAT: ${formatINR(totalChallanVat)}\n`;
       summary += `Total Interest: ${formatINR(totalChallanInterest)}\n`;
@@ -504,15 +509,40 @@ const AssessmentPage = () => {
         (m) => m.returnsFiled,
       ).length;
 
+      const totalFiled = yearlyReturnAssessment.reduce(
+        (sum, y) => sum + y.filed,
+        0,
+      );
+      const totalLateFiled = yearlyReturnAssessment.reduce(
+        (sum, y) => sum + y.late_filed,
+        0,
+      );
+      const totalDue = yearlyReturnAssessment.reduce(
+        (sum, y) => sum + y.due,
+        0,
+      );
+      const totalPending = yearlyReturnAssessment.reduce(
+        (sum, y) => sum + y.pending,
+        0,
+      );
+      const totalReturns = totalFiled + totalLateFiled + totalPending;
+
       const vatFlag = totalSalesVat < totalPurchaseVat ? " 🚩" : "";
       let returnsFlag = "";
-      if (monthlySalePurchaseData.length >= 4) {
-        if (returnsFiled === 2) {
-          returnsFlag = " 🚩";
-        } else if (returnsFiled === 3) {
-          returnsFlag = " ⚠️";
-        }
+      if (totalReturns - 1 == returnsFiled) {
+        returnsFlag = " ⚠️";
+      } else if (totalReturns == returnsFiled) {
+        returnsFlag = " ✅";
+      } else {
+        returnsFlag = " 🚩";
       }
+      // if (totalPending >= 4) {
+      //   if (returnsFiled === 2) {
+      //     returnsFlag = " 🚩";
+      //   } else if (returnsFiled === 3) {
+      //     returnsFlag = " ⚠️";
+      //   }
+      // }
 
       summary += `Sales Count: ${totalSalesCount}\n`;
       summary += `Sales Amount: ${formatINR(totalSalesAmount)}\n`;
@@ -520,7 +550,7 @@ const AssessmentPage = () => {
       summary += `Purchase Count: ${totalPurchaseCount}\n`;
       summary += `Purchase Amount: ${formatINR(totalPurchaseAmount)}\n`;
       summary += `Purchase VAT: ${formatINR(totalPurchaseVat)}${vatFlag}\n`;
-      summary += `Returns Filed: ${returnsFiled}/${monthlySalePurchaseData.length} months${returnsFlag}\n`;
+      summary += `Returns Filed: ${returnsFiled}/${totalReturns} months${returnsFlag}\n`;
     } else {
       summary += "No sales and purchase data available\n";
     }
@@ -1182,11 +1212,11 @@ const AssessmentPage = () => {
                   <div>
                     <div className="mb-4">
                       <h2 className="text-lg font-semibold text-gray-900">
-                        Month-wise VAT Loss Report (≤10% VAT Loss)
+                        Month-wise VAT Loss Report (&gt;10% VAT Loss)
                       </h2>
                       <p className="text-sm text-gray-600 mt-1">
                         This report identifies sales where the VAT charged is
-                        less than the commodity standard VAT by 10% or less.
+                        less than the commodity standard VAT by 10% or more.
                       </p>
                     </div>
 
@@ -1243,6 +1273,14 @@ const AssessmentPage = () => {
                                     title: "Commodity Price",
                                     dataIndex: "commodityPrice",
                                     key: "commodityPrice",
+                                    align: "right" as const,
+                                    width: 130,
+                                    render: (value: number) => formatINR(value),
+                                  },
+                                  {
+                                    title: "Sale Price",
+                                    dataIndex: "salePrice",
+                                    key: "salePrice",
                                     align: "right" as const,
                                     width: 130,
                                     render: (value: number) => formatINR(value),
