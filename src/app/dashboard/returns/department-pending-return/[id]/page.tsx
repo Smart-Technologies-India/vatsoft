@@ -263,7 +263,8 @@ const ShopView = () => {
               Dealer Details
             </p>
             <div className="grow"></div>
-            {["VATOFFICER"].includes(user?.role ?? ``) && (
+
+            {["VATOFFICER", "VATOFFICER_DNH"].includes(user?.role ?? ``) && (
               <Button
                 size="small"
                 type="primary"
@@ -386,7 +387,7 @@ const ShopView = () => {
             >
               Challans
             </Button>
-            {["VATOFFICER"].includes(user?.role ?? ``) && (
+            {["VATOFFICER", "VATOFFICER_DNH"].includes(user?.role ?? ``) && (
               <Button
                 size="small"
                 type="primary"

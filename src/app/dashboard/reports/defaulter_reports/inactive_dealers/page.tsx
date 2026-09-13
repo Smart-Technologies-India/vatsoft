@@ -77,6 +77,8 @@ const InactiveDealers = () => {
     null,
   );
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedSale, setSelectedSale] = useState<string | null>(null);
+  const [selectedPurchase, setSelectedPurchase] = useState<string | null>(null);
 
   const arnRef = useRef<InputRef>(null);
   const nameRef = useRef<InputRef>(null);
@@ -172,11 +174,13 @@ const InactiveDealers = () => {
     setSearch(false);
 
     // If there are active filters, keep searching with filters only
-    if (selectedType || selectedCommodity || selectedFrequency) {
+    if (selectedType || selectedCommodity || selectedFrequency || selectedSale || selectedPurchase) {
       await handleFilterChange(
         selectedType,
         selectedCommodity,
         selectedFrequency,
+        selectedSale,
+        selectedPurchase,
       );
     } else {
       // If no filters, reload all data
@@ -190,6 +194,8 @@ const InactiveDealers = () => {
     setSelectedType(null);
     setSelectedCommodity(null);
     setSelectedFrequency(null);
+    setSelectedSale(null);
+    setSelectedPurchase(null);
     setFilter(false);
     setSearch(false);
 
@@ -382,18 +388,38 @@ const InactiveDealers = () => {
     newType?: string | null,
     newCommodity?: string | null,
     newFrequency?: string | null,
+    newSale?: string | null,
+    newPurchase?: string | null,
   ) => {
     const filterType = newType !== undefined ? newType : selectedType;
     const filterCommodity =
       newCommodity !== undefined ? newCommodity : selectedCommodity;
     const filterFrequency =
       newFrequency !== undefined ? newFrequency : selectedFrequency;
+    const filterSale = newSale !== undefined ? newSale : selectedSale;
+    const filterPurchase = newPurchase !== undefined ? newPurchase : selectedPurchase;
 
     // Only trigger search if at least one filter is selected
-    if (!filterType && !filterCommodity && !filterFrequency) {
+    if (!filterType && !filterCommodity && !filterFrequency && !filterSale && !filterPurchase) {
       return;
     }
 
+    // Filter data client-side for Sale and Purchase
+    let filteredData = dvatData;
+
+    if (filterSale) {
+      filteredData = filteredData.filter(
+        (item) => item.hasSale === (filterSale === "YES"),
+      );
+    }
+
+    if (filterPurchase) {
+      filteredData = filteredData.filter(
+        (item) => item.hasPurchase === (filterPurchase === "YES"),
+      );
+    }
+
+    // Still call the backend for other filters
     const search_response = await GetInactiveDealers({
       arnnumber: arnRef.current?.input?.value || undefined,
       tradename: nameRef.current?.input?.value || undefined,
@@ -406,17 +432,30 @@ const InactiveDealers = () => {
     });
 
     if (search_response.status && search_response.data.result) {
-      setDvatData(search_response.data.result);
+      // Apply Sale and Purchase filters to the result
+      let resultData = search_response.data.result;
+      if (filterSale) {
+        resultData = resultData.filter(
+          (item) => item.hasSale === (filterSale === "YES"),
+        );
+      }
+      if (filterPurchase) {
+        resultData = resultData.filter(
+          (item) => item.hasPurchase === (filterPurchase === "YES"),
+        );
+      }
+
+      setDvatData(resultData);
       setPaginatin({
         skip: search_response.data.skip,
         take: search_response.data.take,
-        total: search_response.data.total,
+        total: resultData.length,
       });
       // Set all data for statistics and filter options
       if (search_response.data.allData) {
         setAllDvatData(search_response.data.allData);
       }
-      setFilter(true);
+      // setFilter(true);
     }
   };
 
@@ -937,6 +976,8 @@ const InactiveDealers = () => {
                       value || null,
                       selectedCommodity,
                       selectedFrequency,
+                      selectedSale,
+                      selectedPurchase,
                     );
                   }}
                   style={{ width: "100%" }}
@@ -964,6 +1005,8 @@ const InactiveDealers = () => {
                       selectedType,
                       value || null,
                       selectedFrequency,
+                      selectedSale,
+                      selectedPurchase,
                     );
                   }}
                   style={{ width: "100%" }}
@@ -992,6 +1035,8 @@ const InactiveDealers = () => {
                       selectedType,
                       selectedCommodity,
                       value || null,
+                      selectedSale,
+                      selectedPurchase,
                     );
                   }}
                   style={{ width: "100%" }}
@@ -1006,7 +1051,61 @@ const InactiveDealers = () => {
                 </Select>
               </div>
 
-              {(selectedCommodity || selectedFrequency || selectedType) && (
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Sale:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Sale Status"
+                  value={selectedSale}
+                  onChange={(value) => {
+                    setSelectedSale(value || null);
+                    handleFilterChange(
+                      selectedType,
+                      selectedCommodity,
+                      selectedFrequency,
+                      value || null,
+                      selectedPurchase,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  <Select.Option value="YES">Yes</Select.Option>
+                  <Select.Option value="NO">No</Select.Option>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Purchase:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Purchase Status"
+                  value={selectedPurchase}
+                  onChange={(value) => {
+                    setSelectedPurchase(value || null);
+                    handleFilterChange(
+                      selectedType,
+                      selectedCommodity,
+                      selectedFrequency,
+                      selectedSale,
+                      value || null,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  <Select.Option value="YES">Yes</Select.Option>
+                  <Select.Option value="NO">No</Select.Option>
+                </Select>
+              </div>
+
+              {(selectedCommodity || selectedFrequency || selectedType || selectedSale || selectedPurchase) && (
                 <Button
                   type="default"
                   onClick={clearAllFilters}

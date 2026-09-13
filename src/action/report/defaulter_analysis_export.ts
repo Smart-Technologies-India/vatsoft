@@ -12,6 +12,11 @@ interface ResponseType {
   pendingCount: number;
   defaultCount: number;
   lastYearDefaults: number;
+  hasSale: boolean;
+  hasPurchase: boolean;
+  pendingMonth?: string;
+  pendingYear?: string;
+  isQuarterly?: boolean;
 }
 
 interface DefaulterAnalysisExportPayload {
@@ -88,6 +93,11 @@ const DefaulterAnalysisExport = async (
           pendingCount: 0,
           defaultCount: 0,
           lastYearDefaults: 0,
+          hasSale: false,
+          hasPurchase: false,
+          pendingMonth: "",
+          pendingYear: "",
+          isQuarterly: currentDvat.frequencyFilings === "QUARTERLY",
         });
       }
     }
@@ -141,6 +151,11 @@ const DefaulterAnalysisExport = async (
           pendingCount: 0,
           defaultCount: 0,
           lastYearDefaults: 0,
+          hasSale: false,
+          hasPurchase: false,
+          pendingMonth: "",
+          pendingYear: "",
+          isQuarterly: currentDvat.frequencyFilings === "QUARTERLY",
         });
       }
 
@@ -161,27 +176,33 @@ const DefaulterAnalysisExport = async (
         }
       } else if (dueDate && dueDate < currentDate) {
         const isQuarterly = currentDvat.frequencyFilings === "QUARTERLY";
-        
+
         // For quarterly filing, only count if it's the last month of the quarter
         if (isQuarterly) {
           const lastMonthOfQuarter = getLastMonthOfQuarter(filing.month);
           if (filing.month === lastMonthOfQuarter) {
             resItem.pendingCount += 1;
+            resItem.pendingMonth = filing.month;
+            resItem.pendingYear = filing.year;
           }
         } else {
           // For monthly filing, count every overdue month
           resItem.pendingCount += 1;
+          resItem.pendingMonth = filing.month;
+          resItem.pendingYear = filing.year;
         }
       }
 
       // Count all unfiled returns as defaults
-      resItem.defaultCount = returnFilings
-        .filter((rf) => rf.dvat.id === currentDvat.id && rf.filing_status === false)
-        .length;
+      resItem.defaultCount = returnFilings.filter(
+        (rf) => rf.dvat.id === currentDvat.id && rf.filing_status === false,
+      ).length;
 
       // Count defaults in last 12 entries
       resItem.lastYearDefaults = returnFilings
-        .filter((rf) => rf.dvat.id === currentDvat.id && rf.filing_status === false)
+        .filter(
+          (rf) => rf.dvat.id === currentDvat.id && rf.filing_status === false,
+        )
         .slice(-12).length;
     }
 
@@ -190,6 +211,77 @@ const DefaulterAnalysisExport = async (
     const res: ResponseType[] = Array.from(resMap.values())
       .filter((val: ResponseType) => val.lastYearDefaults >= 3)
       .sort((a, b) => b.defaultCount - a.defaultCount);
+
+    // Check for sales and purchases in pending period
+    const getMonthsInSameQuarter = (month: string): string[] => {
+      for (const [quarter, months] of Object.entries(quarterMonthsMap)) {
+        if (months.includes(month)) {
+          return months;
+        }
+      }
+      return [month];
+    };
+
+    for (const response of res) {
+      if (response.pendingMonth && response.pendingYear) {
+        const year = parseInt(response.pendingYear);
+        const monthsToCheck = response.isQuarterly
+          ? getMonthsInSameQuarter(response.pendingMonth)
+          : [response.pendingMonth];
+
+        // Build date ranges for all months to check
+        const dateRanges: Array<{ start: Date; end: Date }> = [];
+        for (const month of monthsToCheck) {
+          const monthIndex = monthNames.indexOf(month);
+          if (monthIndex >= 0) {
+            dateRanges.push({
+              start: new Date(year, monthIndex, 1),
+              end: new Date(year, monthIndex + 1, 0, 23, 59, 59),
+            });
+          }
+        }
+
+        // Check for sales in daily_sale table
+        let hasSale = false;
+        for (const range of dateRanges) {
+          const saleCount = await prisma.daily_sale.count({
+            where: {
+              dvat04Id: response.dvat04.id,
+              createdAt: {
+                gte: range.start,
+                lte: range.end,
+              },
+              deletedAt: null,
+            },
+          });
+          if (saleCount > 0) {
+            hasSale = true;
+            break;
+          }
+        }
+        response.hasSale = hasSale;
+
+        // Check for purchases in daily_purchase table
+        let hasPurchase = false;
+        for (const range of dateRanges) {
+          const purchaseCount = await prisma.daily_purchase.count({
+            where: {
+              dvat04Id: response.dvat04.id,
+              createdAt: {
+                gte: range.start,
+                lte: range.end,
+              },
+              deletedAt: null,
+            },
+          });
+          if (purchaseCount > 0) {
+            hasPurchase = true;
+            break;
+          }
+        }
+        response.hasPurchase = hasPurchase;
+      }
+    }
 
     return {
       status: true,

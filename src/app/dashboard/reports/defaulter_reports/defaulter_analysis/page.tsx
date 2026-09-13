@@ -20,7 +20,7 @@ import {
 } from "@/components/icons";
 
 ChartJS.register(...registerables);
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import type { Dayjs } from "dayjs";
 
 import { dvat04, user, SelectOffice } from "@prisma/client";
@@ -38,6 +38,8 @@ interface ResponseType {
   pendingCount: number;
   defaultCount: number;
   lastYearDefaults: number;
+  hasSale: boolean;
+  hasPurchase: boolean;
 }
 
 const TrackAppliation = () => {
@@ -69,6 +71,13 @@ const TrackAppliation = () => {
     setSeachOption(e.target.value);
   };
 
+  const [selectedCommodity, setSelectedCommodity] = useState<string | null>(null);
+  const [selectedFrequency, setSelectedFrequency] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedSale, setSelectedSale] = useState<string | null>(null);
+  const [selectedPurchase, setSelectedPurchase] = useState<string | null>(null);
+  const [isFilter, setFilter] = useState<boolean>(false);
+
   const arnRef = useRef<InputRef>(null);
   const nameRef = useRef<InputRef>(null);
 
@@ -82,6 +91,31 @@ const TrackAppliation = () => {
   const [user, setUpser] = useState<user | null>(null);
   const [selectedOffice, setSelectedOffice] = useState<SelectOffice | "ALL">(
     "ALL",
+  );
+
+  // Get unique commodity and frequency values
+  const commodityOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allData
+            .map((item) => item.dvat04.commodity)
+            .filter((c) => c && c.trim() !== ""),
+        ),
+      ).sort(),
+    [allData],
+  );
+
+  const frequencyOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allData
+            .map((item) => item.dvat04.frequencyFilings)
+            .filter((f) => f && f.trim() !== ""),
+        ),
+      ).sort(),
+    [allData],
   );
 
   // Calculate statistics from ALL data
@@ -124,6 +158,8 @@ const TrackAppliation = () => {
         "Pending Returns",
         "Total Defaults",
         "Defaults (Past Year)",
+        "Sale",
+        "Purchase",
       ],
       ...allData.map((item) => [
         item.dvat04.tinNumber,
@@ -133,6 +169,8 @@ const TrackAppliation = () => {
         item.pendingCount,
         item.defaultCount,
         item.lastYearDefaults,
+        item.hasSale ? "Yes" : "No",
+        item.hasPurchase ? "Yes" : "No",
       ]),
       [""],
       ["Summary"],
@@ -477,7 +515,174 @@ const TrackAppliation = () => {
       setAllData(all_data.data);
     }
   };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSelectedType(null);
+    setSelectedCommodity(null);
+    setSelectedFrequency(null);
+    setSelectedSale(null);
+    setSelectedPurchase(null);
+    setDvatData(allData.slice(0, 10));
+    setPaginatin({
+      skip: 0,
+      take: 10,
+      total: allData.length,
+    });
+  };
+
+  // Reset only search inputs and search state (keep filters active)
+  const resetSearch = async () => {
+    if (arnRef.current?.input) arnRef.current.input.value = "";
+    if (nameRef.current?.input) nameRef.current.input.value = "";
+    setSearch(false);
+
+    // If there are active filters, keep searching with filters only
+    if (selectedType || selectedCommodity || selectedFrequency || selectedSale || selectedPurchase) {
+      await handleFilterChange(
+        selectedType,
+        selectedCommodity,
+        selectedFrequency,
+        selectedSale,
+        selectedPurchase,
+      );
+    } else {
+      // If no filters, reload all data
+      await init();
+    }
+  };
+
+  // Auto-trigger filter when filters change
+  const handleFilterChange = async (
+    newType?: string | null,
+    newCommodity?: string | null,
+    newFrequency?: string | null,
+    newSale?: string | null,
+    newPurchase?: string | null,
+  ) => {
+    const filterType = newType !== undefined ? newType : selectedType;
+    const filterCommodity =
+      newCommodity !== undefined ? newCommodity : selectedCommodity;
+    const filterFrequency =
+      newFrequency !== undefined ? newFrequency : selectedFrequency;
+    const filterSale = newSale !== undefined ? newSale : selectedSale;
+    const filterPurchase =
+      newPurchase !== undefined ? newPurchase : selectedPurchase;
+
+    // Only trigger filter if at least one filter is selected
+    if (
+      !filterType &&
+      !filterCommodity &&
+      !filterFrequency &&
+      !filterSale &&
+      !filterPurchase
+    ) {
+      return;
+    }
+
+    // Filter data client-side
+    let filteredData = allData;
+
+    if (filterType) {
+      filteredData = filteredData.filter((item) => {
+        if (filterType === "REGULAR") {
+          return !item.dvat04.compositionScheme;
+        } else if (filterType === "COMPOSITION") {
+          return item.dvat04.compositionScheme;
+        }
+        return true;
+      });
+    }
+
+    if (filterCommodity) {
+      filteredData = filteredData.filter(
+        (item) => item.dvat04.commodity === filterCommodity,
+      );
+    }
+
+    if (filterFrequency) {
+      filteredData = filteredData.filter(
+        (item) => item.dvat04.frequencyFilings === filterFrequency,
+      );
+    }
+
+    if (filterSale) {
+      filteredData = filteredData.filter(
+        (item) => item.hasSale === (filterSale === "YES"),
+      );
+    }
+
+    if (filterPurchase) {
+      filteredData = filteredData.filter(
+        (item) => item.hasPurchase === (filterPurchase === "YES"),
+      );
+    }
+
+    setDvatData(filteredData.slice(0, 10));
+    setPaginatin({
+      skip: 0,
+      take: 10,
+      total: filteredData.length,
+    });
+  };
+
   const onChangePageCount = async (page: number, pagesize: number) => {
+    // Handle pagination with active filters
+    if (
+      selectedType ||
+      selectedCommodity ||
+      selectedFrequency ||
+      selectedSale ||
+      selectedPurchase
+    ) {
+      // Reapply filters to get correct page data
+      let filteredData = allData;
+
+      if (selectedType) {
+        filteredData = filteredData.filter((item) => {
+          if (selectedType === "REGULAR") {
+            return !item.dvat04.compositionScheme;
+          } else if (selectedType === "COMPOSITION") {
+            return item.dvat04.compositionScheme;
+          }
+          return true;
+        });
+      }
+
+      if (selectedCommodity) {
+        filteredData = filteredData.filter(
+          (item) => item.dvat04.commodity === selectedCommodity,
+        );
+      }
+
+      if (selectedFrequency) {
+        filteredData = filteredData.filter(
+          (item) => item.dvat04.frequencyFilings === selectedFrequency,
+        );
+      }
+
+      if (selectedSale) {
+        filteredData = filteredData.filter(
+          (item) => item.hasSale === (selectedSale === "YES"),
+        );
+      }
+
+      if (selectedPurchase) {
+        filteredData = filteredData.filter(
+          (item) => item.hasPurchase === (selectedPurchase === "YES"),
+        );
+      }
+
+      const startIndex = pagesize * (page - 1);
+      setDvatData(filteredData.slice(startIndex, startIndex + pagesize));
+      setPaginatin({
+        skip: startIndex,
+        take: pagesize,
+        total: filteredData.length,
+      });
+      return;
+    }
+
     if (isSearch) {
       if (searchOption == SearchOption.TIN) {
         if (
@@ -768,6 +973,167 @@ const TrackAppliation = () => {
                   return null;
               }
             })()}
+
+            {/* Type, Commodity, Frequency, Sale, and Purchase Filters */}
+            <div className="flex gap-4 items-end flex-wrap">
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Type:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Type"
+                  value={selectedType}
+                  onChange={(value) => {
+                    setSelectedType(value || null);
+                    handleFilterChange(
+                      value || null,
+                      selectedCommodity,
+                      selectedFrequency,
+                      selectedSale,
+                      selectedPurchase,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  <Select.Option value="REGULAR">Regular (REG)</Select.Option>
+                  <Select.Option value="COMPOSITION">
+                    Composition (COMP)
+                  </Select.Option>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Commodity:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Commodity"
+                  value={selectedCommodity}
+                  onChange={(value) => {
+                    setSelectedCommodity(value || null);
+                    handleFilterChange(
+                      selectedType,
+                      value || null,
+                      selectedFrequency,
+                      selectedSale,
+                      selectedPurchase,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  {commodityOptions.map((commodity) => (
+                    <Select.Option key={commodity} value={commodity}>
+                      {commodity}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Frequency:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Frequency"
+                  value={selectedFrequency}
+                  onChange={(value) => {
+                    setSelectedFrequency(value || null);
+                    handleFilterChange(
+                      selectedType,
+                      selectedCommodity,
+                      value || null,
+                      selectedSale,
+                      selectedPurchase,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  {frequencyOptions.map((frequency) => (
+                    <Select.Option key={frequency} value={frequency}>
+                      {frequency}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Sale:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Sale Status"
+                  value={selectedSale}
+                  onChange={(value) => {
+                    setSelectedSale(value || null);
+                    handleFilterChange(
+                      selectedType,
+                      selectedCommodity,
+                      selectedFrequency,
+                      value || null,
+                      selectedPurchase,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  <Select.Option value="YES">Yes</Select.Option>
+                  <Select.Option value="NO">No</Select.Option>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1 min-w-40">
+                <label className="text-xs font-medium text-gray-700">
+                  Purchase:
+                </label>
+                <Select
+                  allowClear
+                  placeholder="Select Purchase Status"
+                  value={selectedPurchase}
+                  onChange={(value) => {
+                    setSelectedPurchase(value || null);
+                    handleFilterChange(
+                      selectedType,
+                      selectedCommodity,
+                      selectedFrequency,
+                      selectedSale,
+                      value || null,
+                    );
+                  }}
+                  style={{ width: "100%" }}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  <Select.Option value="YES">Yes</Select.Option>
+                  <Select.Option value="NO">No</Select.Option>
+                </Select>
+              </div>
+
+              {(selectedCommodity ||
+                selectedFrequency ||
+                selectedType ||
+                selectedSale ||
+                selectedPurchase) && (
+                <Button
+                  type="default"
+                  onClick={clearAllFilters}
+                  disabled={isFilter}
+                  size="small"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -796,7 +1162,19 @@ const TrackAppliation = () => {
                     Last Filing Period
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
+                    Commodity
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
+                    Frequency
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
                     Pending Returns
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
+                    Sale
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
+                    Purchase
                   </TableHead>
                   {/* <TableHead className="whitespace-nowrap text-center border p-3 font-semibold text-gray-700">
                     Total Defaults
@@ -836,6 +1214,12 @@ const TrackAppliation = () => {
                       <TableCell className="border text-center p-3 text-sm">
                         {val.lastfiling || "N/A"}
                       </TableCell>
+                      <TableCell className="border text-left p-3 text-sm">
+                        {val.dvat04.commodity || "N/A"}
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-sm">
+                        {val.dvat04.frequencyFilings || "N/A"}
+                      </TableCell>
                       <TableCell className="border text-center p-3 text-sm">
                         <span
                           className={`inline-flex px-3 py-1 rounded-full text-sm font-bold ${
@@ -849,6 +1233,28 @@ const TrackAppliation = () => {
                           }`}
                         >
                           {val.pendingCount}
+                        </span>
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-sm">
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                            val.hasSale
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {val.hasSale ? "Yes" : "No"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-sm">
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                            val.hasPurchase
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {val.hasPurchase ? "Yes" : "No"}
                         </span>
                       </TableCell>
                       {/* <TableCell className="border text-center p-3 text-sm">

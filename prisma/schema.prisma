@@ -376,6 +376,7 @@ model dvat04 {
   creditdebitnotes                creditdebitnote[]
   interestWorkings                interest_working[]
   returns01Works                  returns_01_work[]
+  returnsNotfiledWorks            returns_notfiled_work[]
 
   @@index([createdById], map: "dvat04_createdById_fkey")
   @@index([deletedById], map: "dvat04_deletedById_fkey")
@@ -2031,6 +2032,26 @@ model returns_01_work {
   shortfall              Decimal?          @db.Decimal(10, 0)
   status                 ReturnWorkStatus  @default(VERIFY)
   remark                 String?           @db.LongText
+}
+
+model returns_notfiled_work {
+  id               Int               @id @default(autoincrement())
+  dvatId           Int
+  dvat04           dvat04            @relation(fields: [dvatId], references: [id])
+  month            String?
+  frequency        FrequencyFilings?
+  tinNumber        String?
+  tradeName        String?
+  selectOffice     SelectOffice?
+  commodity        String?
+  vatamount        String?
+  RPAID_total      Decimal?          @db.Decimal(10, 0)
+  balance          String?
+  due_date         DateTime?
+  interest         String?
+  penalty          String?
+  total_tax_amount String?
+  remark           String?           @db.LongText
 }
 
 enum NotificationType {
