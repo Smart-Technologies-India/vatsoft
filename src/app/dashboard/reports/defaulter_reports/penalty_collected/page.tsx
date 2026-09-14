@@ -113,7 +113,10 @@ const AfterDeathLinePage = () => {
   const [user, setUpser] = useState<user | null>(null);
 
   // Calculate statistics from ALL data, not just paginated data
-  const totalInterest = allDvatData.reduce((sum, item) => sum + item.interest, 0);
+  const totalInterest = allDvatData.reduce(
+    (sum, item) => sum + item.interest,
+    0,
+  );
   const totalPenalty = allDvatData.reduce((sum, item) => sum + item.penalty, 0);
   const totalInterestCount = allDvatData.reduce(
     (sum, item) => sum + item.interest_count,
@@ -133,12 +136,16 @@ const AfterDeathLinePage = () => {
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
-      
+
       // Set office filter based on role
-      const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userrespone.data.role)
+      const filterOffice = [
+        "VATOFFICER",
+        "DY_COMMISSIONER",
+        "JOINT_COMMISSIONER",
+      ].includes(userrespone.data.role)
         ? (userrespone.data.selectOffice ?? undefined)
         : selectedOffice;
-      
+
       const payment_data = await OutstandingDealers({
         dept: filterOffice,
         take: 10,
@@ -182,12 +189,16 @@ const AfterDeathLinePage = () => {
       const userrespone = await GetUser({ id: userid });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
-        
+
         // Set office filter based on role
-        const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userrespone.data.role)
+        const filterOffice = [
+          "VATOFFICER",
+          "DY_COMMISSIONER",
+          "JOINT_COMMISSIONER",
+        ].includes(userrespone.data.role)
           ? (userrespone.data.selectOffice ?? undefined)
           : selectedOffice;
-        
+
         const payment_data = await OutstandingDealers({
           dept: filterOffice,
           take: 10,
@@ -255,12 +266,16 @@ const AfterDeathLinePage = () => {
     ) {
       return toast.error("Enter arn number");
     }
-    
+
     // Set office filter based on role
-    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
-      ? (user.selectOffice ?? undefined)
-      : selectedOffice;
-    
+    const filterOffice =
+      user &&
+      ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+        user.role,
+      )
+        ? (user.selectOffice ?? undefined)
+        : selectedOffice;
+
     const search_response = await OutstandingDealers({
       dept: filterOffice,
       arnnumber: arnRef.current?.input?.value,
@@ -298,12 +313,16 @@ const AfterDeathLinePage = () => {
     ) {
       return toast.error("Enter TIN Number");
     }
-    
+
     // Set office filter based on role
-    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
-      ? (user.selectOffice ?? undefined)
-      : selectedOffice;
-    
+    const filterOffice =
+      user &&
+      ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+        user.role,
+      )
+        ? (user.selectOffice ?? undefined)
+        : selectedOffice;
+
     const search_response = await OutstandingDealers({
       dept: filterOffice,
       tradename: nameRef.current?.input?.value,
@@ -334,10 +353,14 @@ const AfterDeathLinePage = () => {
   };
   const onChangePageCount = async (page: number, pagesize: number) => {
     // Set office filter based on role
-    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
-      ? (user.selectOffice ?? undefined)
-      : selectedOffice;
-    
+    const filterOffice =
+      user &&
+      ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+        user.role,
+      )
+        ? (user.selectOffice ?? undefined)
+        : selectedOffice;
+
     if (isSearch) {
       if (searchOption == SearchOption.TIN) {
         if (
@@ -545,14 +568,14 @@ const AfterDeathLinePage = () => {
       },
     },
     plugins: {
-      legend: {
-        labels: {
-          font: {
-            size: 12,
-          },
-        },
-        position: "top",
-      },
+      // legend: {
+      //   labels: {
+      //     font: {
+      //       size: 12,
+      //     },
+      //   },
+      //   position: "top",
+      // },
       tooltip: {
         callbacks: {
           label: function (context: any) {
@@ -570,16 +593,16 @@ const AfterDeathLinePage = () => {
   const doughnutOptions: any = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "bottom",
-        labels: {
-          font: {
-            size: 11,
-          },
-        },
-      },
-    },
+    // plugins: {
+    //   legend: {
+    //     position: "bottom",
+    //     labels: {
+    //       font: {
+    //         size: 11,
+    //       },
+    //     },
+    //   },
+    // },
   };
 
   if (isLoading)
@@ -625,7 +648,9 @@ const AfterDeathLinePage = () => {
                   { label: "By Year", value: "YEAR" },
                   { label: "By Month", value: "MONTH" },
                 ]}
-                onChange={(e: RadioChangeEvent) => setFilterType(e.target.value)}
+                onChange={(e: RadioChangeEvent) =>
+                  setFilterType(e.target.value)
+                }
                 value={filterType}
                 optionType="button"
                 buttonStyle="solid"
@@ -633,7 +658,9 @@ const AfterDeathLinePage = () => {
             </div>
             {filterType === "MONTH" && (
               <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">Month</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Month
+                </label>
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -661,81 +688,108 @@ const AfterDeathLinePage = () => {
                 ))}
               </select>
             </div>
-            {user && ![
-              "VATOFFICER",
-              "DY_COMMISSIONER",
-              "JOINT_COMMISSIONER",
-            ].includes(user.role) && (
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">
-                  District/Office
-                </label>
-                <Radio.Group
-                  options={[
-                    { label: "All", value: undefined },
-                    { label: "DNH", value: "Dadra_Nagar_Haveli" as SelectOffice },
-                    { label: "DD", value: "DAMAN" as SelectOffice },
-                    { label: "DIU", value: "DIU" as SelectOffice },
-                  ]}
-                  onChange={(e: RadioChangeEvent) =>
-                    setSelectedOffice(e.target.value)
-                  }
-                  value={selectedOffice}
-                  optionType="button"
-                  buttonStyle="solid"
-                />
-              </div>
-            )}
+            {user &&
+              !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+                user.role,
+              ) && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    District/Office
+                  </label>
+                  <Radio.Group
+                    options={[
+                      { label: "All", value: undefined },
+                      {
+                        label: "DNH",
+                        value: "Dadra_Nagar_Haveli" as SelectOffice,
+                      },
+                      { label: "DD", value: "DAMAN" as SelectOffice },
+                      { label: "DIU", value: "DIU" as SelectOffice },
+                    ]}
+                    onChange={(e: RadioChangeEvent) =>
+                      setSelectedOffice(e.target.value)
+                    }
+                    value={selectedOffice}
+                    optionType="button"
+                    buttonStyle="solid"
+                  />
+                </div>
+              )}
           </div>
         </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <div className="bg-linear-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
-            <RiMoneyRupeeCircleLine className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">
               ₹{numberWithIndianFormat(totalInterest)}
             </p>
-            <p className="text-xs opacity-90">Total Interest</p>
-            <p className="text-xs opacity-75 mt-1">
-              {totalInterestCount} instances
-            </p>
+            <div className="flex mt-2">
+              <div>
+                <p className="text-xs opacity-90">Total Interest</p>
+                <p className="text-xs opacity-75 mt-1">
+                  {totalInterestCount} instances
+                </p>
+              </div>
+              <div className="grow"></div>
+              <RiMoneyRupeeCircleLine className="w-8 h-8 opacity-70 mb-2" />
+            </div>
           </div>
 
           <div className="bg-linear-to-br from-red-500 to-red-600 rounded-lg shadow-md p-6 text-white">
-            <RiMoneyRupeeCircleLine className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">
               ₹{numberWithIndianFormat(totalPenalty)}
             </p>
-            <p className="text-xs opacity-90">Total Penalty</p>
-            <p className="text-xs opacity-75 mt-1">
-              {totalPenaltyCount} instances
-            </p>
+            <div className="flex mt-2">
+              <div>
+                <p className="text-xs opacity-90">Total Penalty</p>
+                <p className="text-xs opacity-75 mt-1">
+                  {totalPenaltyCount} instances
+                </p>
+              </div>
+              <div className="grow"></div>
+              <RiMoneyRupeeCircleLine className="w-8 h-8 opacity-70 mb-2" />
+            </div>
           </div>
 
           <div className="bg-linear-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
-            <RiMoneyRupeeCircleLine className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">
               ₹{numberWithIndianFormat(totalInterest + totalPenalty)}
             </p>
-            <p className="text-xs opacity-90">Total Collected</p>
-            <p className="text-xs opacity-75 mt-1">Interest + Penalty</p>
+            <div className="flex mt-2">
+              <div>
+                <p className="text-xs opacity-90">Total Collected</p>
+                <p className="text-xs opacity-75 mt-1">Interest + Penalty</p>
+              </div>
+              <div className="grow"></div>
+              <RiMoneyRupeeCircleLine className="w-8 h-8 opacity-70 mb-2" />
+            </div>
           </div>
 
           <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-6 text-white">
-            <MaterialSymbolsPersonRounded className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">{totalDealers}</p>
-            <p className="text-xs opacity-90">Total Dealers</p>
-            <p className="text-xs opacity-75 mt-1">Paid Interest/Penalty</p>
+            <div className="flex mt-2">
+              <div>
+                <p className="text-xs opacity-90">Total Dealers</p>
+                <p className="text-xs opacity-75 mt-1">Paid Interest/Penalty</p>
+              </div>
+              <div className="grow"></div>
+              <MaterialSymbolsPersonRounded className="w-8 h-8 opacity-70 mb-2" />
+            </div>
           </div>
 
           <div className="bg-linear-to-br from-teal-500 to-teal-600 rounded-lg shadow-md p-6 text-white">
-            <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">
               {regularDealers}/{compositionDealers}
             </p>
-            <p className="text-xs opacity-90">REG / COMP</p>
-            <p className="text-xs opacity-75 mt-1">Dealer Types</p>
+            <div className="flex mt-2">
+              <div>
+                <p className="text-xs opacity-90">REG / COMP</p>
+                <p className="text-xs opacity-75 mt-1">Dealer Types</p>
+              </div>
+              <div className="grow"></div>
+              <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
+            </div>
           </div>
         </div>
 

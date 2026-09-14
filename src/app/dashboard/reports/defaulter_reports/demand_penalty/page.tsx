@@ -66,15 +66,19 @@ const AfterDeathLinePage = () => {
   }
 
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.TIN
+    SearchOption.TIN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
     setSeachOption(e.target.value);
   };
 
-  const [selectedCommodity, setSelectedCommodity] = useState<string | null>(null);
-  const [selectedFrequency, setSelectedFrequency] = useState<string | null>(null);
+  const [selectedCommodity, setSelectedCommodity] = useState<string | null>(
+    null,
+  );
+  const [selectedFrequency, setSelectedFrequency] = useState<string | null>(
+    null,
+  );
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [isFilter, setFilter] = useState<boolean>(false);
 
@@ -89,7 +93,9 @@ const AfterDeathLinePage = () => {
   const [allDvatData, setAllDvatData] = useState<Array<ResponseType>>([]);
 
   const [user, setUpser] = useState<user | null>(null);
-  const [selectedOffice, setSelectedOffice] = useState<SelectOffice | "ALL">("ALL");
+  const [selectedOffice, setSelectedOffice] = useState<SelectOffice | "ALL">(
+    "ALL",
+  );
 
   // Get unique commodity and frequency values
   const commodityOptions = useMemo(
@@ -119,12 +125,24 @@ const AfterDeathLinePage = () => {
   // Calculate statistics from full data (not just current page)
   const totalDealers = allDvatData.length;
   const totalPending = allDvatData.reduce((sum, item) => sum + item.pending, 0);
-  const totalVatAmount = allDvatData.reduce((sum, item) => sum + parseFloat(item.vatamount), 0);
-  const totalInterest = allDvatData.reduce((sum, item) => sum + parseFloat(item.interest), 0);
-  const totalPenalty = allDvatData.reduce((sum, item) => sum + parseFloat(item.penalty), 0);
-  const totalTax = allDvatData.reduce((sum, item) => sum + parseFloat(item.total), 0);
+  const totalVatAmount = allDvatData.reduce(
+    (sum, item) => sum + parseFloat(item.vatamount),
+    0,
+  );
+  const totalInterest = allDvatData.reduce(
+    (sum, item) => sum + parseFloat(item.interest),
+    0,
+  );
+  const totalPenalty = allDvatData.reduce(
+    (sum, item) => sum + parseFloat(item.penalty),
+    0,
+  );
+  const totalTax = allDvatData.reduce(
+    (sum, item) => sum + parseFloat(item.total),
+    0,
+  );
   const compositionDealers = allDvatData.filter(
-    (item) => item.dvat04.compositionScheme
+    (item) => item.dvat04.compositionScheme,
   ).length;
   const regularDealers = totalDealers - compositionDealers;
 
@@ -133,10 +151,10 @@ const AfterDeathLinePage = () => {
     try {
       setIsPopulating(true);
       const response = await PopulateNotfiledWork();
-      
+
       if (response.status) {
         toast.success(
-          `${response.message}. Inserted: ${response.data?.inserted || 0}, Updated: ${response.data?.updated || 0}`
+          `${response.message}. Inserted: ${response.data?.inserted || 0}, Updated: ${response.data?.updated || 0}`,
         );
       } else {
         toast.error(response.message);
@@ -199,13 +217,15 @@ const AfterDeathLinePage = () => {
 
   // Chart data - Top 10 dealers by total tax amount (from full data)
   const top10Dealers = [...allDvatData]
-    .sort((a, b) => parseFloat(b.total) - parseFloat(a.total) || parseFloat(b.vatamount) - parseFloat(a.vatamount))
+    .sort(
+      (a, b) =>
+        parseFloat(b.total) - parseFloat(a.total) ||
+        parseFloat(b.vatamount) - parseFloat(a.vatamount),
+    )
     .slice(0, 10);
 
   const barChartData = {
-    labels: top10Dealers.map(
-      (item) => item.dvat04.tinNumber || "Unknown"
-    ),
+    labels: top10Dealers.map((item) => item.dvat04.tinNumber || "Unknown"),
     datasets: [
       {
         label: "Total Tax Amount",
@@ -226,10 +246,7 @@ const AfterDeathLinePage = () => {
     datasets: [
       {
         data: [regularDealers, compositionDealers],
-        backgroundColor: [
-          "rgba(54, 162, 235, 0.8)",
-          "rgba(75, 192, 192, 0.8)",
-        ],
+        backgroundColor: ["rgba(54, 162, 235, 0.8)", "rgba(75, 192, 192, 0.8)"],
       },
     ],
   };
@@ -240,10 +257,7 @@ const AfterDeathLinePage = () => {
     datasets: [
       {
         data: [regularDealers, compositionDealers],
-        backgroundColor: [
-          "rgba(54, 162, 235, 0.8)",
-          "rgba(75, 192, 192, 0.8)",
-        ],
+        backgroundColor: ["rgba(54, 162, 235, 0.8)", "rgba(75, 192, 192, 0.8)"],
       },
     ],
   };
@@ -252,9 +266,9 @@ const AfterDeathLinePage = () => {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        position: "top" as const,
-      },
+      // legend: {
+      //   position: "top" as const,
+      // },
       tooltip: {
         callbacks: {
           label: function (context: any) {
@@ -291,12 +305,18 @@ const AfterDeathLinePage = () => {
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
-      
+
       // Set office filter based on role
-      const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userrespone.data.role)
+      const filterOffice = [
+        "VATOFFICER",
+        "DY_COMMISSIONER",
+        "JOINT_COMMISSIONER",
+      ].includes(userrespone.data.role)
         ? userrespone.data.selectOffice!
-        : (selectedOffice === "ALL" ? userrespone.data.selectOffice! : selectedOffice);
-      
+        : selectedOffice === "ALL"
+          ? userrespone.data.selectOffice!
+          : selectedOffice;
+
       // Load paginated data for table
       const payment_data = await NotfiledReturnsReport({
         dept: filterOffice,
@@ -342,12 +362,16 @@ const AfterDeathLinePage = () => {
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
         setSelectedOffice(userrespone.data.selectOffice!);
-        
+
         // Set office filter based on role
-        const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userrespone.data.role)
+        const filterOffice = [
+          "VATOFFICER",
+          "DY_COMMISSIONER",
+          "JOINT_COMMISSIONER",
+        ].includes(userrespone.data.role)
           ? userrespone.data.selectOffice!
           : userrespone.data.selectOffice!;
-        
+
         // Load paginated data for table
         const payment_data = await NotfiledReturnsReport({
           dept: filterOffice,
@@ -385,14 +409,20 @@ const AfterDeathLinePage = () => {
   useEffect(() => {
     const loadDataByOffice = async () => {
       if (!user || !selectedOffice) return;
-      
+
       setLoading(true);
-      
+
       // Set office filter based on role
-      const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
+      const filterOffice = [
+        "VATOFFICER",
+        "DY_COMMISSIONER",
+        "JOINT_COMMISSIONER",
+      ].includes(user.role)
         ? user.selectOffice!
-        : (selectedOffice === "ALL" ? user.selectOffice! : selectedOffice);
-      
+        : selectedOffice === "ALL"
+          ? user.selectOffice!
+          : selectedOffice;
+
       // Load paginated data for table
       const payment_data = await NotfiledReturnsReport({
         dept: filterOffice,
@@ -463,12 +493,18 @@ const AfterDeathLinePage = () => {
     ) {
       return toast.error("Enter arn number");
     }
-    
+
     // Set office filter based on role
-    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
-      ? user.selectOffice!
-      : (selectedOffice === "ALL" ? user!.selectOffice! : selectedOffice);
-    
+    const filterOffice =
+      user &&
+      ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+        user.role,
+      )
+        ? user.selectOffice!
+        : selectedOffice === "ALL"
+          ? user!.selectOffice!
+          : selectedOffice;
+
     const search_response = await NotfiledReturnsReport({
       dept: filterOffice,
       arnnumber: arnRef.current?.input?.value,
@@ -494,12 +530,18 @@ const AfterDeathLinePage = () => {
     ) {
       return toast.error("Enter TIN Number");
     }
-    
+
     // Set office filter based on role
-    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
-      ? user.selectOffice!
-      : (selectedOffice === "ALL" ? user!.selectOffice! : selectedOffice);
-    
+    const filterOffice =
+      user &&
+      ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+        user.role,
+      )
+        ? user.selectOffice!
+        : selectedOffice === "ALL"
+          ? user!.selectOffice!
+          : selectedOffice;
+
     const search_response = await NotfiledReturnsReport({
       dept: filterOffice,
       tradename: nameRef.current?.input?.value,
@@ -640,10 +682,16 @@ const AfterDeathLinePage = () => {
     }
 
     // Set office filter based on role
-    const filterOffice = user && ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role)
-      ? user.selectOffice!
-      : (selectedOffice === "ALL" ? user!.selectOffice! : selectedOffice);
-    
+    const filterOffice =
+      user &&
+      ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+        user.role,
+      )
+        ? user.selectOffice!
+        : selectedOffice === "ALL"
+          ? user!.selectOffice!
+          : selectedOffice;
+
     if (isSearch) {
       if (searchOption == SearchOption.TIN) {
         if (
@@ -724,7 +772,9 @@ const AfterDeathLinePage = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row gap-2 mb-4">
           <div className="grow">
-            <h1 className="text-2xl font-semibold">Demand Penalty & Interest Report</h1>
+            <h1 className="text-2xl font-semibold">
+              Demand Penalty & Interest Report
+            </h1>
             <p className="text-sm text-gray-600">
               Dealers with outstanding demand penalty and interest dues
             </p>
@@ -737,100 +787,152 @@ const AfterDeathLinePage = () => {
               disabled={isPopulating}
               loading={isPopulating}
             >
-              {isPopulating ? "Populating..." : "Populate Unfiled Returns"}
+              {isPopulating ? "Populating..." : "Update"}
             </Button>
-            <button
+            <Button
               onClick={exportToExcel}
               disabled={dvatData.length === 0}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               Export to Excel
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Office Filter */}
-        {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
-          <div className="bg-white p-4 shadow rounded-lg mb-6">
-            <div className="flex items-center gap-4">
-              <label className="font-semibold text-gray-700">Filter by Office:</label>
-              <Select
-                value={selectedOffice}
-                onChange={(value) => {
-                  setSelectedOffice(value);
-                  setSearch(false);
-                  setPaginatin({
-                    take: 10,
-                    skip: 0,
-                    total: 0,
-                  });
-                }}
-                style={{ width: 250 }}
-                disabled={isSearch}
-              >
-                <Select.Option value="ALL">All Offices</Select.Option>
-                <Select.Option value={SelectOffice.DAMAN}>DAMAN</Select.Option>
-                <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
-                <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>DNH (Dadra & Nagar Haveli)</Select.Option>
-              </Select>
-              {selectedOffice !== "ALL" && (
-                <span className="text-sm text-gray-600">
-                  Showing data for: <span className="font-semibold">{selectedOffice === SelectOffice.Dadra_Nagar_Haveli ? "DNH" : selectedOffice}</span>
-                </span>
-              )}
+        {user &&
+          !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+            user.role,
+          ) && (
+            <div className="bg-white p-4 shadow rounded-lg mb-6">
+              <div className="flex items-center gap-4">
+                <label className="font-semibold text-gray-700">
+                  Filter by Office:
+                </label>
+                <Select
+                  value={selectedOffice}
+                  onChange={(value) => {
+                    setSelectedOffice(value);
+                    setSearch(false);
+                    setPaginatin({
+                      take: 10,
+                      skip: 0,
+                      total: 0,
+                    });
+                  }}
+                  style={{ width: 250 }}
+                  disabled={isSearch}
+                >
+                  <Select.Option value="ALL">All Offices</Select.Option>
+                  <Select.Option value={SelectOffice.DAMAN}>
+                    DAMAN
+                  </Select.Option>
+                  <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
+                  <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>
+                    DNH (Dadra & Nagar Haveli)
+                  </Select.Option>
+                </Select>
+                {selectedOffice !== "ALL" && (
+                  <span className="text-sm text-gray-600">
+                    Showing data for:{" "}
+                    <span className="font-semibold">
+                      {selectedOffice === SelectOffice.Dadra_Nagar_Haveli
+                        ? "DNH"
+                        : selectedOffice}
+                    </span>
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
           <div className="bg-linear-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
-            <Fa6RegularBuilding className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">{totalDealers}</p>
-            <p className="text-xs opacity-90">Total Dealers</p>
-            <p className="text-xs opacity-75 mt-1">Unfiled</p>
+            <div className="flex mt-2">
+              <div>
+                <p className="text-xs opacity-90">Total Dealers</p>
+                <p className="text-xs opacity-75 mt-1">Unfiled</p>
+              </div>
+              <div className="grow"></div>
+              <Fa6RegularBuilding className="w-8 h-8 opacity-70 mb-2" />
+            </div>
           </div>
 
           <div className="bg-linear-to-br from-purple-400 to-purple-500 rounded-lg shadow-md p-6 text-white">
-            <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">{totalPending}</p>
-            <p className="text-xs opacity-90">Total Pending</p>
-            <p className="text-xs opacity-75 mt-1">Returns</p>
+            <div className="flex mt-2">
+              <div>
+                <p className="text-xs opacity-90">Total Pending</p>
+                <p className="text-xs opacity-75 mt-1">Returns</p>
+              </div>
+              <div className="grow"></div>
+              <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
+            </div>
           </div>
 
           <div className="bg-linear-to-br from-cyan-500 to-cyan-600 rounded-lg shadow-md p-6 text-white">
-            <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
-            <p className="text-2xl font-bold">₹{numberWithIndianFormat(totalVatAmount)}</p>
-            <p className="text-xs opacity-90">Total VAT Amount</p>
-            <p className="text-xs opacity-75 mt-1">In Purchases</p>
+            <p className="text-2xl font-bold">
+              ₹{numberWithIndianFormat(totalVatAmount)}
+            </p>
+            <div className="flex mt-2">
+              <div>
+                <p className="text-xs opacity-90">Total VAT Amount</p>
+                <p className="text-xs opacity-75 mt-1">In Purchases</p>
+              </div>
+              <div className="grow"></div>
+              <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
+            </div>
           </div>
 
           <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-6 text-white">
-            <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
-            <p className="text-2xl font-bold">₹{numberWithIndianFormat(totalInterest)}</p>
-            <p className="text-xs opacity-90">Total Interest</p>
-            <p className="text-xs opacity-75 mt-1">Outstanding</p>
+            <p className="text-2xl font-bold">
+              ₹{numberWithIndianFormat(totalInterest)}
+            </p>
+            <div className="flex mt-2">
+              <div>
+                <p className="text-xs opacity-90">Total Interest</p>
+                <p className="text-xs opacity-75 mt-1">Outstanding</p>
+              </div>
+              <div className="grow"></div>
+              <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
+            </div>
           </div>
 
           <div className="bg-linear-to-br from-red-500 to-red-600 rounded-lg shadow-md p-6 text-white">
-            <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
-            <p className="text-2xl font-bold">₹{numberWithIndianFormat(totalPenalty)}</p>
-            <p className="text-xs opacity-90">Total Penalty</p>
-            <p className="text-xs opacity-75 mt-1">Outstanding</p>
+            <p className="text-2xl font-bold">
+              ₹{numberWithIndianFormat(totalPenalty)}
+            </p>
+            <div className="flex mt-2">
+              <div>
+                <p className="text-xs opacity-90">Total Penalty</p>
+                <p className="text-xs opacity-75 mt-1">Outstanding</p>
+              </div>
+              <div className="grow"></div>
+              <IcOutlineReceiptLong className="w-8 h-8 opacity-70 mb-2" />
+            </div>
           </div>
 
-          <div className="bg-linear-to-br from-green-500 to-green-600 rounded-lg shadow-md p-6 text-white">
+          {/* <div className="bg-linear-to-br from-green-500 to-green-600 rounded-lg shadow-md p-6 text-white">
             <MaterialSymbolsPersonRounded className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">₹{numberWithIndianFormat(totalTax)}</p>
             <p className="text-xs opacity-90">Total Tax Amount</p>
             <p className="text-xs opacity-75 mt-1">Payable</p>
-          </div>
+          </div> */}
 
           <div className="bg-linear-to-br from-indigo-500 to-indigo-600 rounded-lg shadow-md p-6 text-white">
-            <MaterialSymbolsPersonRounded className="w-8 h-8 opacity-70 mb-2" />
-            <p className="text-2xl font-bold">{regularDealers}/{compositionDealers}</p>
-            <p className="text-xs opacity-90">REG / COMP</p>
-            <p className="text-xs opacity-75 mt-1">Dealer Types</p>
+            <p className="text-2xl font-bold">
+              {regularDealers}/{compositionDealers}
+            </p>
+            <div className="flex mt-2">
+              <div>
+                <p className="text-xs opacity-90">REG / COMP</p>
+                <p className="text-xs opacity-75 mt-1">Dealer Types</p>
+              </div>
+              <div className="grow"></div>
+              <MaterialSymbolsPersonRounded className="w-8 h-8 opacity-70 mb-2" />
+            </div>
           </div>
         </div>
 
@@ -862,21 +964,21 @@ const AfterDeathLinePage = () => {
         </div>
 
         {/* Additional Chart */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        {/* <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">
             Dealer Type Distribution
           </h2>
           <div className="h-80 flex items-center justify-center">
             <Pie data={pieChartData} options={pieOptions} />
           </div>
-        </div>
+        </div> */}
 
         {/* Search and Filter Section */}
         <div className="bg-white p-4 shadow rounded-lg mb-4">
           <div className="bg-blue-500 p-3 text-white rounded-t-lg -mt-4 -mx-4 mb-4">
             <p className="font-semibold">Search & Filter Dealers</p>
           </div>
-          
+
           <div className="flex flex-col md:flex-row lg:gap-4 lg:items-center">
             <Radio.Group
               onChange={onChange}

@@ -870,7 +870,7 @@ const TrackAppliation = () => {
                           >
                             <TableCell className="border text-center p-3">
                               <Link
-                                href={`/dashboard/${val.compositionScheme ? "admin/returns/previewcomposition" : "returns/returns-dashboard/preview"}/${encryptURLData(
+                                href={`/dashboard/${val.compositionScheme ? "admin/returns/previewcomposition" : "admin/returns/preview"}/${encryptURLData(
                                   val.id.toString(),
                                 )}?form=30A&year=${val.year}&quarter=${
                                   val.quarter

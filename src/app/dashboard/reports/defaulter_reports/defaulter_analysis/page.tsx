@@ -1190,7 +1190,7 @@ const TrackAppliation = () => {
               <TableBody>
                 {dvatData.map((val: ResponseType, index: number) => {
                   return (
-                    <TableRow key={index} className="hover:bg-gray-50">
+                    <TableRow key={val.dvat04.id} className="hover:bg-gray-50">
                       <TableCell className="border text-center p-3 text-sm">
                         {pagination.skip + index + 1}
                       </TableCell>

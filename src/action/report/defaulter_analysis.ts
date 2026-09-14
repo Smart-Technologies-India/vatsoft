@@ -195,7 +195,6 @@ const DefaulterAnalysis = async (
       });
     }
 
-
     // // Convert Map to array and filter dealers with 3+ defaults in the past year
     const res: ResponseType[] = Array.from(resMap.values())
       .filter((val: ResponseType) => val.lastYearDefaults >= 3)
@@ -203,8 +202,18 @@ const DefaulterAnalysis = async (
 
     // Check for sales and purchases in pending period
     const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
 
     const getMonthsInSameQuarter = (month: string): string[] => {
@@ -219,12 +228,12 @@ const DefaulterAnalysis = async (
     for (const response of res) {
       if (response.pendingMonth && response.pendingYear) {
         const year = parseInt(response.pendingYear);
-        const monthsToCheck = response.isQuarterly 
+        const monthsToCheck = response.isQuarterly
           ? getMonthsInSameQuarter(response.pendingMonth)
           : [response.pendingMonth];
-
+   
         // Build date ranges for all months to check
-        const dateRanges: Array<{start: Date, end: Date}> = [];
+        const dateRanges: Array<{ start: Date; end: Date }> = [];
         for (const month of monthsToCheck) {
           const monthIndex = monthNames.indexOf(month);
           if (monthIndex >= 0) {
@@ -238,12 +247,14 @@ const DefaulterAnalysis = async (
         // Check for sales in daily_sale table
         let hasSale = false;
         for (const range of dateRanges) {
+          const start_date = new Date(2026, 3, 1); // April 1, 2026 (month is 0-indexed)
+          const end_date = new Date(2026, 6, 31, 23, 59, 59); // July 31, 2026 (month is 0-indexed)
           const saleCount = await prisma.daily_sale.count({
             where: {
               dvat04Id: response.dvat04.id,
-              createdAt: {
-                gte: range.start,
-                lte: range.end,
+              invoice_date: {
+                gte: start_date,
+                lte: end_date,
               },
               deletedAt: null,
             },
@@ -258,12 +269,15 @@ const DefaulterAnalysis = async (
         // Check for purchases in daily_purchase table
         let hasPurchase = false;
         for (const range of dateRanges) {
+          const start_date = new Date(2026, 3, 1); // April 1, 2026 (month is 0-indexed)
+          const end_date = new Date(2026, 6, 31, 23, 59, 59); // July 31, 2026 (month is 0-indexed)
+
           const purchaseCount = await prisma.daily_purchase.count({
             where: {
               dvat04Id: response.dvat04.id,
-              createdAt: {
-                gte: range.start,
-                lte: range.end,
+              invoice_date: {
+                gte: start_date,
+                lte: end_date,
               },
               deletedAt: null,
             },

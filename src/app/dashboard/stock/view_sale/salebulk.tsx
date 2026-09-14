@@ -103,6 +103,17 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     totalRows: 0,
   });
 
+  const [isInsufficientStockModalOpen, setIsInsufficientStockModalOpen] =
+    useState(false);
+  const [insufficientStockData, setInsufficientStockData] = useState<
+    Array<{
+      invoiceNo: string;
+      commodityName: string;
+      requested: number;
+      available: number;
+    }>
+  >([]);
+
   const router = useRouter();
 
   const [dvatdata, setDvatData] = useState<dvat04>();
@@ -343,6 +354,115 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         "Please fix all errors in the uploaded data before proceeding.",
       );
       return;
+    }
+
+    // Fetch current stock for validation (only for non-manufacturer bulk uploads)
+    if (!isManufacturerBulkUpload && ![821, 35].includes(dvatdata.id)) {
+      try {
+        // Fetch all stock records by paginating through all pages
+        const stockMap: Record<number, number> = {};
+        let skip = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+          const stockResponse = await GetAllStock({
+            dvatid: dvatdata.id,
+            take: pageSize,
+            skip,
+          });
+
+          if (!stockResponse.status || !stockResponse.data?.result) {
+            toast.error("Unable to fetch stock information for validation.");
+            return;
+          }
+
+          // Build stock map: commodity_id -> available quantity
+          if (Array.isArray(stockResponse.data.result)) {
+            for (const stock of stockResponse.data.result) {
+              stockMap[stock.commodity_masterId] = stock.quantity;
+            }
+          }
+
+          // Check if there are more pages
+          const totalFetched = skip + stockResponse.data.result.length;
+          hasMore = totalFetched < stockResponse.data.total;
+          skip += pageSize;
+        }
+
+        // Validate quantities for each row - checking TOTAL per commodity across all rows
+        // Build map of total quantities requested per commodity
+        const commodityTotalMap: Record<number, number> = {};
+        for (const row of tabledata) {
+          if (row.item_code > 0) {
+            commodityTotalMap[row.item_code] =
+              (commodityTotalMap[row.item_code] ?? 0) + row.quantity;
+          }
+        }
+
+        // Build insufficiency map with all affected invoices per commodity
+        const insufficientStockByItemCode: Record<
+          number,
+          {
+            invoiceNos: string[];
+            commodityName: string;
+            totalRequested: number;
+            available: number;
+          }
+        > = {};
+
+        const processedCommodities = new Set<number>();
+        for (const row of tabledata) {
+          if (row.item_code > 0 && !processedCommodities.has(row.item_code)) {
+            const availableStock = stockMap[row.item_code] ?? 0;
+            const totalRequested = commodityTotalMap[row.item_code] ?? 0;
+
+            if (totalRequested > availableStock) {
+              // Find all invoice numbers for this commodity
+              const invoiceNos = tabledata
+                .filter((r) => r.item_code === row.item_code)
+                .map((r) => r.invoice_no);
+
+              insufficientStockByItemCode[row.item_code] = {
+                invoiceNos,
+                commodityName: row.commodity_name ?? "Unknown",
+                totalRequested,
+                available: availableStock,
+              };
+            }
+            processedCommodities.add(row.item_code);
+          }
+        }
+
+        // Convert to array format for modal display
+        const insufficientStockRows: Array<{
+          invoiceNo: string;
+          commodityName: string;
+          requested: number;
+          available: number;
+        }> = [];
+
+        for (const itemCode in insufficientStockByItemCode) {
+          const data = insufficientStockByItemCode[itemCode];
+          insufficientStockRows.push({
+            invoiceNo: data.invoiceNos.join(", "),
+            commodityName: data.commodityName,
+            requested: data.totalRequested,
+            available: data.available,
+          });
+        }
+
+        // If any commodity has insufficient stock, show modal and prevent upload
+        if (insufficientStockRows.length > 0) {
+          setInsufficientStockData(insufficientStockRows);
+          setIsInsufficientStockModalOpen(true);
+          return;
+        }
+      } catch (error) {
+        toast.error("Error validating stock quantities.");
+        console.error(error);
+        return;
+      }
     }
 
     const entries = tabledata.map((row) => {
@@ -1240,17 +1360,35 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         !manufacturerBulkUploadDvatIds.has(dvatdata.id) &&
         dvatdata.commodity !== "RESTAURANT"
       ) {
-        const stockResponse = await GetAllStock({
-          dvatid: dvatdata.id,
-          take: 10000,
-          skip: 0,
-        });
-        if (stockResponse.status && stockResponse.data?.result) {
-          const stockMap: { [commodityId: number]: number } = {};
-          for (const s of stockResponse.data.result) {
-            stockMap[s.commodity_masterId] =
-              (stockMap[s.commodity_masterId] ?? 0) + s.quantity;
+        const stockMap: { [commodityId: number]: number } = {};
+        let skip = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+
+        // Fetch all stock records by paginating through all pages
+        while (hasMore) {
+          const stockResponse = await GetAllStock({
+            dvatid: dvatdata.id,
+            take: pageSize,
+            skip,
+          });
+
+          if (stockResponse.status && stockResponse.data?.result) {
+            for (const s of stockResponse.data.result) {
+              stockMap[s.commodity_masterId] =
+                (stockMap[s.commodity_masterId] ?? 0) + s.quantity;
+            }
+
+            // Check if there are more pages
+            const totalFetched = skip + stockResponse.data.result.length;
+            hasMore = totalFetched < stockResponse.data.total;
+            skip += pageSize;
+          } else {
+            hasMore = false;
           }
+        }
+
+        if (Object.keys(stockMap).length > 0) {
 
           // Sum quantities per item_code across rows with valid item codes
           const uploadQuantityMap: { [itemCode: number]: number } = {};
@@ -1681,6 +1819,57 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             className="mt-2"
           />
         )}
+      </Modal>
+
+      <Modal
+        title="Insufficient Stock"
+        open={isInsufficientStockModalOpen}
+        onCancel={() => setIsInsufficientStockModalOpen(false)}
+        footer={[
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => setIsInsufficientStockModalOpen(false)}
+          >
+            Close
+          </Button>,
+        ]}
+        width={900}
+      >
+        <p className="mb-4 text-sm text-red-600">
+          The following entries have insufficient stock. Please update the
+          quantities and try again.
+        </p>
+        <div className="overflow-x-auto">
+          <Table className="border">
+            <TableHeader>
+              <TableRow className="bg-red-50">
+                <TableHead className="border text-center">Invoice No</TableHead>
+                <TableHead className="border text-center">Commodity Name</TableHead>
+                <TableHead className="border text-center">Requested Qty</TableHead>
+                <TableHead className="border text-center">Available Qty</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {insufficientStockData.map((row, index) => (
+                <TableRow key={index}>
+                  <TableCell className="p-2 border text-center font-medium">
+                    {row.invoiceNo}
+                  </TableCell>
+                  <TableCell className="p-2 border text-center">
+                    {row.commodityName}
+                  </TableCell>
+                  <TableCell className="p-2 border text-center text-red-600 font-semibold">
+                    {row.requested}
+                  </TableCell>
+                  <TableCell className="p-2 border text-center text-green-600 font-semibold">
+                    {row.available}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </Modal>
 
       <div className="hidden">

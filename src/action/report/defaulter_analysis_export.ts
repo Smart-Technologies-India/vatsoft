@@ -244,12 +244,14 @@ const DefaulterAnalysisExport = async (
         // Check for sales in daily_sale table
         let hasSale = false;
         for (const range of dateRanges) {
+          const start_date = new Date(2026, 3, 1); // April 1, 2026 (month is 0-indexed)
+          const end_date = new Date(2026, 6, 31, 23, 59, 59); // July 31, 2026 (month is 0-indexed)
           const saleCount = await prisma.daily_sale.count({
             where: {
               dvat04Id: response.dvat04.id,
-              createdAt: {
-                gte: range.start,
-                lte: range.end,
+              invoice_date: {
+                gte: start_date,
+                lte: end_date,
               },
               deletedAt: null,
             },
@@ -264,10 +266,12 @@ const DefaulterAnalysisExport = async (
         // Check for purchases in daily_purchase table
         let hasPurchase = false;
         for (const range of dateRanges) {
+          const start_date = new Date(2026, 3, 1); // April 1, 2026 (month is 0-indexed)
+          const end_date = new Date(2026, 6, 31, 23, 59, 59); // July 31, 2026 (month is 0-indexed)
           const purchaseCount = await prisma.daily_purchase.count({
             where: {
               dvat04Id: response.dvat04.id,
-              createdAt: {
+              invoice_date: {
                 gte: range.start,
                 lte: range.end,
               },
