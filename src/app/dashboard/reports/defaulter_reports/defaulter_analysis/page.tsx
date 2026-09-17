@@ -263,7 +263,7 @@ const TrackAppliation = () => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: "top" as const,
+        display: false,
       },
     },
   };
