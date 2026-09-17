@@ -44,6 +44,7 @@ import {
   TheBalance,
 } from "@/components/dvatreturn/vatcalculation";
 import GetReturnChallans from "@/action/return/getreturnchallans";
+import { getCurrentUserRole } from "@/lib/auth";
 
 const AdminDvat16ReturnPreview = () => {
   const router = useRouter();
@@ -182,6 +183,12 @@ const AdminDvat16ReturnPreview = () => {
   useEffect(() => {
     const init = async () => {
       const authResponse = await getAuthenticatedUserId();
+
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
+      
       if (!authResponse.status || !authResponse.data) {
         toast.error(authResponse.message);
         return router.push("/");
@@ -237,7 +244,9 @@ const AdminDvat16ReturnPreview = () => {
         })[] = [selectedReturn];
 
         if (isQuarterlyFiling) {
-          const effectiveQuarter = getQuarterForMonth(selectedReturn.month ?? "");
+          const effectiveQuarter = getQuarterForMonth(
+            selectedReturn.month ?? "",
+          );
           const quarterMonths = effectiveQuarter
             ? getQuarterMonths(effectiveQuarter)
             : [];
@@ -276,7 +285,9 @@ const AdminDvat16ReturnPreview = () => {
         );
 
         // Get last month due and cash
-        const currentMonthIndex = monthNames.indexOf(selectedReturn.month ?? "");
+        const currentMonthIndex = monthNames.indexOf(
+          selectedReturn.month ?? "",
+        );
         if (currentMonthIndex !== -1) {
           const lastMonthIndex = (currentMonthIndex - 1 + 12) % 12;
           const lastMonth: string = monthNames[lastMonthIndex];

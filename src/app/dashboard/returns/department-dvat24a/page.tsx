@@ -1,11 +1,12 @@
 "use client";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { DepartmentCreateDvat24AProvider } from "@/components/forms/department/departmentcreatedvat24a";
+import { getCurrentUserRole } from "@/lib/auth";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-const CreateDvat24A = async () => {
+const CreateDvat24A = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
   useEffect(() => {
@@ -16,6 +17,10 @@ const CreateDvat24A = async () => {
         return router.push("/");
       }
       setUserid(authResponse.data);
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
     };
     init();
   }, []);

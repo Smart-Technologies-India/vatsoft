@@ -20,7 +20,7 @@ interface ResponseType {
 interface OutstandingDealersPayload {
   arnnumber?: string;
   tradename?: string;
-  dept?: SelectOffice;
+  dept?: SelectOffice | "ALL";
   skip: number;
   take: number;
   filterType?: "MONTH" | "YEAR";
@@ -81,7 +81,7 @@ const OutstandingDealers = async (
               { name: { contains: payload.tradename } },
             ],
           }),
-          ...(payload.dept && { selectOffice: payload.dept }),
+          ...(payload.dept && payload.dept !== "ALL" && { selectOffice: payload.dept }),
           deletedAt: null,
           deletedBy: null,
         },

@@ -25,6 +25,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
 import { decryptURLData } from "@/utils/methods";
+import { getCurrentUserRole } from "@/lib/auth";
 
 type DispatchFormValues = {
   invoiceNumber: string;
@@ -113,7 +114,11 @@ export default function DispatchPage() {
   });
 
   const { handleSubmit, register, reset } = methods;
-  const { handleSubmit: handleEditSubmit, register: editRegister, reset: editReset } = editMethods;
+  const {
+    handleSubmit: handleEditSubmit,
+    register: editRegister,
+    reset: editReset,
+  } = editMethods;
 
   const currentWorkflowStatus = useMemo(() => {
     return deriveWorkflowStatus(invoice?.rows || []);
@@ -124,6 +129,10 @@ export default function DispatchPage() {
   useEffect(() => {
     const loadInvoice = async () => {
       setLoading(true);
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
       const res = await GetVatpaidInvoiceById(id);
       const data = res.data;
 
@@ -151,11 +160,13 @@ export default function DispatchPage() {
           const completedResponse = await GetCompletedDailyPurchaseView(id);
           if (completedResponse.status && completedResponse.data) {
             setCompletedPurchaseView(completedResponse.data);
-            
+
             // Initialize edit form with completed invoice data
             editReset({
               invoiceNumber: completedResponse.data.invoiceNumber,
-              invoiceDate: new Date(completedResponse.data.invoiceDate).toISOString(),
+              invoiceDate: new Date(
+                completedResponse.data.invoiceDate,
+              ).toISOString(),
               cstpurchase: completedResponse.data.cstPurchase,
             });
           } else {
@@ -284,18 +295,20 @@ export default function DispatchPage() {
     if (res.status) {
       toast.success("Invoice updated successfully.");
       setIsEditMode(false);
-      
+
       // Reload the data
       const reloadRes = await GetVatpaidInvoiceById(id);
       if (reloadRes.status && reloadRes.data) {
         setInvoice(reloadRes.data);
-        
+
         const completedResponse = await GetCompletedDailyPurchaseView(id);
         if (completedResponse.status && completedResponse.data) {
           setCompletedPurchaseView(completedResponse.data);
           editReset({
             invoiceNumber: completedResponse.data.invoiceNumber,
-            invoiceDate: new Date(completedResponse.data.invoiceDate).toISOString(),
+            invoiceDate: new Date(
+              completedResponse.data.invoiceDate,
+            ).toISOString(),
             cstpurchase: completedResponse.data.cstPurchase,
           });
         }
@@ -303,7 +316,7 @@ export default function DispatchPage() {
     } else {
       toast.error(res.message || "Failed to update invoice.");
     }
-    
+
     setIsUpdating(false);
   };
 
@@ -442,7 +455,9 @@ export default function DispatchPage() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-gray-500 mb-1">Invoice Date</div>
+                      <div className="text-xs text-gray-500 mb-1">
+                        Invoice Date
+                      </div>
                       <div className="text-sm font-semibold text-gray-800">
                         {completedPurchaseView?.invoiceDate
                           ? format(
@@ -453,7 +468,9 @@ export default function DispatchPage() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-gray-500 mb-1">CST Purchase</div>
+                      <div className="text-xs text-gray-500 mb-1">
+                        CST Purchase
+                      </div>
                       <div className="text-sm font-semibold text-gray-800">
                         {completedPurchaseView?.cstPurchase}
                       </div>
@@ -467,13 +484,17 @@ export default function DispatchPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <div className="text-xs text-gray-500 mb-1">Dealer Name</div>
+                      <div className="text-xs text-gray-500 mb-1">
+                        Dealer Name
+                      </div>
                       <div className="text-sm font-medium text-gray-800">
                         {invoice.buyer.name_of_dealer}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-gray-500 mb-1">TIN Number</div>
+                      <div className="text-xs text-gray-500 mb-1">
+                        TIN Number
+                      </div>
                       <div className="text-sm font-medium text-gray-800">
                         {invoice.buyer.tin_number}
                       </div>

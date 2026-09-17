@@ -28,6 +28,8 @@ import { Button, Drawer, Pagination, Spin } from "antd";
 import { FormProvider, useForm } from "react-hook-form";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { getCurrentUserRole } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 const EMPTY_FORM: RefineryDealerForm = {
   dealerId: "",
@@ -56,6 +58,7 @@ const tankerLabel = (value: string | null): string => {
 };
 
 const DealerMasterPage = () => {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -100,6 +103,10 @@ const DealerMasterPage = () => {
   const refreshData = async () => {
     setIsLoading(true);
 
+    const userrole = await getCurrentUserRole();
+    if (userrole == "USER" || userrole == null || userrole == undefined) {
+      return router.back();
+    }
     try {
       const [entriesResponse, optionsResponse] = await Promise.all([
         GetUserRefineryDealer(),

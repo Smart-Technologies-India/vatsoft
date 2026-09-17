@@ -25,6 +25,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetAllPendingReturn from "@/action/dvat/getallpendingreturn";
 import { MdiDownload } from "@/components/icons";
 import * as XLSX from "xlsx";
+import { getCurrentUserRole } from "@/lib/auth";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -191,6 +192,10 @@ const TrackAppliation = () => {
       }
 
       setUserId(authResponse.data);
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
       const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);

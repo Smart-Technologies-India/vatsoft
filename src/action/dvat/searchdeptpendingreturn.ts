@@ -14,7 +14,7 @@ interface DeptPendingReturnPayload {
   todate?: Date;
   arnnumber?: string;
   tradename?: string;
-  dept?: SelectOffice;
+  dept?: SelectOffice | "ALL";
   skip: number;
   take: number;
 }
@@ -47,7 +47,7 @@ const SearchDeptPendingReturn = async (
         deletedAt: null,
         deletedById: null,
         dvat: {
-          ...(payload.dept && { selectOffice: payload.dept }),
+          ...(payload.dept && payload.dept !== "ALL" && { selectOffice: payload.dept }),
           ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
           ...(payload.tradename && {
             OR: [

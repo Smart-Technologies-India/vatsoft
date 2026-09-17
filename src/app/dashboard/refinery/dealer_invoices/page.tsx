@@ -17,8 +17,11 @@ import {
 import { Button, Modal, Pagination, Spin } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { getCurrentUserRole } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 const DealerInvoicesPage = () => {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [dealers, setDealers] = useState<RefinerySaleDealer[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -28,7 +31,7 @@ const DealerInvoicesPage = () => {
     "COMPLETED" | "VATPAID"
   >("COMPLETED");
   const [filteredDealers, setFilteredDealers] = useState<RefinerySaleDealer[]>(
-    []
+    [],
   );
   const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetail[]>([]);
   const [pagination, setPagination] = useState({
@@ -67,6 +70,10 @@ const DealerInvoicesPage = () => {
 
   const refreshData = async () => {
     setIsLoading(true);
+    const userrole = await getCurrentUserRole();
+    if (userrole == "USER" || userrole == null || userrole == undefined) {
+      return router.back();
+    }
 
     try {
       const response = await GetRefinerySaleDealers();
@@ -117,7 +124,7 @@ const DealerInvoicesPage = () => {
     setFilteredDealers(completed);
     setSelectedStatusType("COMPLETED");
     setSelectedDealerName("All Dealers - Completed");
-    
+
     // Fetch invoice details for all completed dealers
     setModalLoading(true);
     try {
@@ -128,7 +135,11 @@ const DealerInvoicesPage = () => {
           allInvoices.push(...response.data);
         }
       }
-      const sorted = allInvoices.sort((a, b) => new Date(b.invoice_date).getTime() - new Date(a.invoice_date).getTime());
+      const sorted = allInvoices.sort(
+        (a, b) =>
+          new Date(b.invoice_date).getTime() -
+          new Date(a.invoice_date).getTime(),
+      );
       setInvoiceDetails(sorted);
       setModalPagination({ take: 10, skip: 0, total: sorted.length });
     } catch (error) {
@@ -136,7 +147,7 @@ const DealerInvoicesPage = () => {
     } finally {
       setModalLoading(false);
     }
-    
+
     setModalOpen(true);
   };
 
@@ -145,7 +156,7 @@ const DealerInvoicesPage = () => {
     setFilteredDealers(vatpaid);
     setSelectedStatusType("VATPAID");
     setSelectedDealerName("All Dealers - VAT Paid");
-    
+
     // Fetch invoice details for all vatpaid dealers
     setModalLoading(true);
     try {
@@ -156,7 +167,11 @@ const DealerInvoicesPage = () => {
           allInvoices.push(...response.data);
         }
       }
-      const sorted = allInvoices.sort((a, b) => new Date(b.invoice_date).getTime() - new Date(a.invoice_date).getTime());
+      const sorted = allInvoices.sort(
+        (a, b) =>
+          new Date(b.invoice_date).getTime() -
+          new Date(a.invoice_date).getTime(),
+      );
       setInvoiceDetails(sorted);
       setModalPagination({ take: 10, skip: 0, total: sorted.length });
     } catch (error) {
@@ -164,7 +179,7 @@ const DealerInvoicesPage = () => {
     } finally {
       setModalLoading(false);
     }
-    
+
     setModalOpen(true);
   };
 
@@ -172,13 +187,17 @@ const DealerInvoicesPage = () => {
     setFilteredDealers([dealer]);
     setSelectedStatusType("COMPLETED");
     setSelectedDealerName(`${dealer.name_of_dealer} - Completed`);
-    
+
     // Fetch invoice details
     setModalLoading(true);
     try {
       const response = await GetDealerInvoiceDetails(dealer.id, "COMPLETED");
       if (response.status && response.data) {
-        const sorted = response.data.sort((a, b) => new Date(b.invoice_date).getTime() - new Date(a.invoice_date).getTime());
+        const sorted = response.data.sort(
+          (a, b) =>
+            new Date(b.invoice_date).getTime() -
+            new Date(a.invoice_date).getTime(),
+        );
         setInvoiceDetails(sorted);
         setModalPagination({ take: 10, skip: 0, total: sorted.length });
       } else {
@@ -191,7 +210,7 @@ const DealerInvoicesPage = () => {
     } finally {
       setModalLoading(false);
     }
-    
+
     setModalOpen(true);
   };
 
@@ -199,13 +218,17 @@ const DealerInvoicesPage = () => {
     setFilteredDealers([dealer]);
     setSelectedStatusType("VATPAID");
     setSelectedDealerName(`${dealer.name_of_dealer} - VAT Paid`);
-    
+
     // Fetch invoice details
     setModalLoading(true);
     try {
       const response = await GetDealerInvoiceDetails(dealer.id, "VATPAID");
       if (response.status && response.data) {
-        const sorted = response.data.sort((a, b) => new Date(b.invoice_date).getTime() - new Date(a.invoice_date).getTime());
+        const sorted = response.data.sort(
+          (a, b) =>
+            new Date(b.invoice_date).getTime() -
+            new Date(a.invoice_date).getTime(),
+        );
         setInvoiceDetails(sorted);
         setModalPagination({ take: 10, skip: 0, total: sorted.length });
       } else {
@@ -218,7 +241,7 @@ const DealerInvoicesPage = () => {
     } finally {
       setModalLoading(false);
     }
-    
+
     setModalOpen(true);
   };
 
@@ -314,7 +337,10 @@ const DealerInvoicesPage = () => {
               <TableBody>
                 {pagedDealers.length > 0 ? (
                   pagedDealers.map((dealer) => (
-                    <TableRow key={dealer.id} className="border-b hover:bg-gray-50">
+                    <TableRow
+                      key={dealer.id}
+                      className="border-b hover:bg-gray-50"
+                    >
                       <TableCell className="p-2 text-center text-xs font-medium">
                         {dealer.tin_number || "-"}
                       </TableCell>
@@ -338,7 +364,9 @@ const DealerInvoicesPage = () => {
                       </TableCell>
                       <TableCell className="p-2 text-center text-xs">
                         {dealer.lastInvoiceDate
-                          ? new Date(dealer.lastInvoiceDate).toLocaleDateString()
+                          ? new Date(
+                              dealer.lastInvoiceDate,
+                            ).toLocaleDateString()
                           : "-"}
                       </TableCell>
                     </TableRow>

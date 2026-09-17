@@ -17,7 +17,7 @@ interface ResponseType {
 }
 
 interface DeptPendingReturnPayload {
-  dept?: SelectOffice;
+  dept?: SelectOffice | "ALL";
   arnnumber?: string;
   tradename?: string;
   frequencyFilings?: string;
@@ -65,7 +65,7 @@ const DeptPendingReturn = async (
 
     const dvatRecords = await prisma.dvat04.findMany({
       where: {
-        ...(payload.dept && { selectOffice: payload.dept }),
+        ...(payload.dept && payload.dept !== "ALL" && { selectOffice: payload.dept }),
         ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
         ...(payload.frequencyFilings && { frequencyFilings: payload.frequencyFilings as FrequencyFilings }),
         ...(payload.compositionScheme !== undefined && { compositionScheme: payload.compositionScheme }),

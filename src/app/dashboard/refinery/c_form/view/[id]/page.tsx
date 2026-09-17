@@ -12,6 +12,7 @@ import { Button } from "antd";
 import GetCformById from "@/action/cform/getcfrombyid";
 import GetCformEntry, { CformReturnData } from "@/action/cform/getcfromenrty";
 import Image from "next/image";
+import { getCurrentUserRole } from "@/lib/auth";
 const formateDatecus = (date: Date): string => {
   const day = date.getDate();
   const month = date.getMonth() + 1;
@@ -51,6 +52,10 @@ const CFROM = () => {
     const init = async () => {
       setLoading(true);
 
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
       const cform_response = await GetCformById({
         id: cformid,
       });
@@ -68,7 +73,10 @@ const CFROM = () => {
         });
 
         if (cform_entry_respone.data && cform_entry_respone.status) {
-          const grouped: Record<string, (CformReturnData & { returns_entry: returns_entry })> = {};
+          const grouped: Record<
+            string,
+            CformReturnData & { returns_entry: returns_entry }
+          > = {};
 
           for (const entry of cform_entry_respone.data) {
             const key = entry.returns_entry.invoice_number;
@@ -79,9 +87,17 @@ const CFROM = () => {
               const existing = grouped[key];
 
               // Merge comma-separated strings (avoid duplicates if needed)
-              const existingDesc = existing.description_of_goods || existing.returns_entry.description_of_goods || "";
-              const newDesc = entry.description_of_goods || entry.returns_entry.description_of_goods || "";
-              existing.description_of_goods = existingDesc ? `${existingDesc}, ${newDesc}` : newDesc;
+              const existingDesc =
+                existing.description_of_goods ||
+                existing.returns_entry.description_of_goods ||
+                "";
+              const newDesc =
+                entry.description_of_goods ||
+                entry.returns_entry.description_of_goods ||
+                "";
+              existing.description_of_goods = existingDesc
+                ? `${existingDesc}, ${newDesc}`
+                : newDesc;
 
               const total_invoice_numberSum =
                 parseFloat(existing.returns_entry.total_invoice_number || "0") +
@@ -95,7 +111,11 @@ const CFROM = () => {
           // Post-processing step: Update description_of_goods for all grouped entries
           for (const key in grouped) {
             const entry = grouped[key];
-            const desc = (entry.description_of_goods || entry.returns_entry.description_of_goods || "").toLowerCase();
+            const desc = (
+              entry.description_of_goods ||
+              entry.returns_entry.description_of_goods ||
+              ""
+            ).toLowerCase();
 
             if (
               desc.includes("diesel") ||

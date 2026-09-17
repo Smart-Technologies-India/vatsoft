@@ -23,6 +23,7 @@ import SearchReturnPayment from "@/action/return/searchreturnpayment";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import { getCurrentUserRole } from "@/lib/auth";
 
 const TrackAppliation = () => {
   const router = useRouter();
@@ -46,7 +47,7 @@ const TrackAppliation = () => {
     RETURN,
   }
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.ARN
+    SearchOption.ARN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -59,7 +60,7 @@ const TrackAppliation = () => {
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    dateStrings: [string, string],
   ) => {
     setSearchDate(dates);
   };
@@ -99,7 +100,10 @@ const TrackAppliation = () => {
         return router.push("/");
       }
       setUserid(authResponse.data);
-
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
       const dvat_response = await GetUserDvat04();
 
       if (dvat_response.data && dvat_response.status) {
@@ -308,7 +312,9 @@ const TrackAppliation = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-1 h-7 bg-gray-300 rounded-full"></div>
-                <h1 className="text-xl font-semibold text-gray-900">Track Return Status</h1>
+                <h1 className="text-xl font-semibold text-gray-900">
+                  Track Return Status
+                </h1>
               </div>
               <Button
                 type="default"
@@ -413,54 +419,57 @@ const TrackAppliation = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-              {paymentData.map((val: returns_01, index: number) => {
-                return (
-                  <TableRow key={index} className="hover:bg-gray-50 transition-colors">
-                    <TableCell className="border text-center p-3">
-                      <Link
-                        href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                          val.createdById.toString()
-                        )}?form=30A&year=${val.year}&quarter=${
-                          val.quarter
-                        }&month=${val.month}`}
-                        className="text-gray-700 hover:text-gray-900 font-medium hover:underline"
-                      >
-                        {val.rr_number}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="border text-center p-3 text-gray-900">
-                      {val.return_type}
-                    </TableCell>
-                    <TableCell className="border text-center p-3 text-gray-900">
-                      {get_years(
-                        new Date(val.transaction_date!).toLocaleString(
-                          "en-US",
-                          {
-                            month: "long",
-                          }
-                        ),
-                        val.year
-                      )}
-                    </TableCell>
-                    <TableCell className="border text-center p-3 text-gray-900">
-                      {val.month}
-                    </TableCell>
-                    <TableCell className="border text-center p-3 text-gray-900">
-                      {formateDate(new Date(val.transaction_date!))}
-                    </TableCell>
-                    <TableCell className="border text-center p-3">
-                      <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
-                        Filed
-                      </span>
-                    </TableCell>
-                    <TableCell className="border text-center p-3 text-gray-900">
-                      {val.paymentmode}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                {paymentData.map((val: returns_01, index: number) => {
+                  return (
+                    <TableRow
+                      key={index}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <TableCell className="border text-center p-3">
+                        <Link
+                          href={`/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                            val.createdById.toString(),
+                          )}?form=30A&year=${val.year}&quarter=${
+                            val.quarter
+                          }&month=${val.month}`}
+                          className="text-gray-700 hover:text-gray-900 font-medium hover:underline"
+                        >
+                          {val.rr_number}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-gray-900">
+                        {val.return_type}
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-gray-900">
+                        {get_years(
+                          new Date(val.transaction_date!).toLocaleString(
+                            "en-US",
+                            {
+                              month: "long",
+                            },
+                          ),
+                          val.year,
+                        )}
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-gray-900">
+                        {val.month}
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-gray-900">
+                        {formateDate(new Date(val.transaction_date!))}
+                      </TableCell>
+                      <TableCell className="border text-center p-3">
+                        <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                          Filed
+                        </span>
+                      </TableCell>
+                      <TableCell className="border text-center p-3 text-gray-900">
+                        {val.paymentmode}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
           {/* Pagination Section */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">

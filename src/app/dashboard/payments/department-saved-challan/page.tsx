@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { toast } from "react-toastify";
+import { getCurrentUserRole } from "@/lib/auth";
 
 const CreateChallan = () => {
   const router = useRouter();
@@ -14,9 +15,14 @@ const CreateChallan = () => {
         toast.error(authResponse.message);
         return router.push("/");
       }
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
     };
     init();
   }, []);
+
   return (
     <>
       <div className="p-2">

@@ -6,6 +6,8 @@ import GetRefineryPriceLast7Days, {
   RefineryPriceDayData,
 } from "@/action/refinery_price/getrefineryprices";
 import AddRefineryDayPrice from "@/action/refinery_price/upsertrefineryprice";
+import { getCurrentUserRole } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -44,6 +46,7 @@ const parseDDMMYYYYToApiDate = (value: string): string | null => {
 };
 
 export default function DealerMasterPricePage() {
+  const router = useRouter();
   const [dayLabels, setDayLabels] = useState<string[]>([]);
   const [categories, setCategories] = useState<RefineryPriceDayData[]>([]);
   const [commodityOptions, setCommodityOptions] = useState<
@@ -64,6 +67,7 @@ export default function DealerMasterPricePage() {
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
+
     const response = await GetRefineryPriceLast7Days({
       dvatid: selectedDvatId || undefined,
     });
@@ -87,6 +91,13 @@ export default function DealerMasterPricePage() {
       void loadData();
     }, 0);
 
+    const init = async () => {
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
+    };
+    init();
     return () => clearTimeout(timer);
   }, [loadData]);
 
@@ -167,12 +178,15 @@ export default function DealerMasterPricePage() {
               </label>
               <select
                 value={selectedDvatId || ""}
-                onChange={(e) => setSelectedDvatId(parseInt(e.target.value, 10))}
+                onChange={(e) =>
+                  setSelectedDvatId(parseInt(e.target.value, 10))
+                }
                 className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-300"
               >
                 {dealerOptions.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.tinNumber} - {item.tradeName || item.dealerName || "NA"}
+                    {item.tinNumber} -{" "}
+                    {item.tradeName || item.dealerName || "NA"}
                   </option>
                 ))}
               </select>
@@ -184,7 +198,9 @@ export default function DealerMasterPricePage() {
               </label>
               <select
                 value={selectedCommodityId || ""}
-                onChange={(e) => setSelectedCommodityId(parseInt(e.target.value, 10))}
+                onChange={(e) =>
+                  setSelectedCommodityId(parseInt(e.target.value, 10))
+                }
                 className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-orange-300"
               >
                 {commodityOptions.map((item) => (

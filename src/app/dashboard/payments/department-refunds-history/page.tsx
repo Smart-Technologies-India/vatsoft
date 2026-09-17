@@ -24,6 +24,7 @@ import GetUser from "@/action/user/getuser";
 import { MdiDownload } from "@/components/icons";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import { getCurrentUserRole } from "@/lib/auth";
 
 const RefundsHistory = () => {
   const router = useRouter();
@@ -47,7 +48,7 @@ const RefundsHistory = () => {
   }
 
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.CPIN
+    SearchOption.CPIN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -62,7 +63,7 @@ const RefundsHistory = () => {
 
   const onChangeDate = (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    dateStrings: [string, string],
   ) => {
     setSearchDate(dates);
   };
@@ -104,6 +105,10 @@ const RefundsHistory = () => {
       }
       setUserid(authResponse.data);
 
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
       const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
@@ -365,7 +370,7 @@ const RefundsHistory = () => {
                         <Link
                           className="text-blue-500"
                           href={`/dashboard/payments/refunds/${encryptURLData(
-                            val.id.toString()
+                            val.id.toString(),
                           )}`}
                         >
                           {val.cpin}
@@ -397,8 +402,8 @@ const RefundsHistory = () => {
                           onClick={() =>
                             generatePDF(
                               `/dashboard/payments/refunds/${encryptURLData(
-                                val.id.toString()
-                              )}?sidebar=no`
+                                val.id.toString(),
+                              )}?sidebar=no`,
                             )
                           }
                         />

@@ -1,7 +1,7 @@
 "use server";
 
 import { errorToString } from "@/utils/methods";
-import { cform } from "@prisma/client";
+import { cform, dvat04 } from "@prisma/client";
 import prisma from "../../../prisma/database";
 import {
   createPaginationResponse,
@@ -11,6 +11,8 @@ import {
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
 interface GetRefineryCformPayload {
+  searchType?: "NONE" | "DVAT_TIN" | "DVAT_NAME";
+  searchValue?: string;
   tin: string;
   take: number;
   skip: number;
@@ -18,7 +20,7 @@ interface GetRefineryCformPayload {
 
 const GetRefineryCform = async (
   payload: GetRefineryCformPayload,
-): Promise<PaginationResponse<Array<cform> | null>> => {
+): Promise<PaginationResponse<Array<cform & { dvat04: dvat04 }> | null>> => {
   const functionname: string = GetRefineryCform.name;
 
   try {
@@ -33,31 +35,47 @@ const GetRefineryCform = async (
       } as any;
     }
 
+    // Build the where clause based on search criteria
+    let whereClause: any = {
+      deletedAt: null,
+      deletedById: null,
+      status: "ACTIVE",
+      seller_tin_no: {
+        contains: payload.tin,
+      },
+    };
+
+    // Search by DVAT TIN number
+    if (payload.searchType === "DVAT_TIN" && payload.searchValue) {
+      whereClause.dvat04 = {
+        tinNumber: {
+          contains: payload.searchValue,
+        },
+      };
+    }
+    // Search by DVAT trade name
+    else if (payload.searchType === "DVAT_NAME" && payload.searchValue) {
+      whereClause.dvat04 = {
+        tradename: {
+          contains: payload.searchValue,
+        },
+      };
+    }
+
     const [cform_data, totalCount] = await Promise.all([
       prisma.cform.findMany({
-        where: {
-          deletedAt: null,
-          deletedById: null,
-          status: "ACTIVE",
-          seller_tin_no: {
-            contains: payload.tin,
-          },
-        },
+        where: whereClause,
         orderBy: {
           createdAt: "desc",
+        },
+        include: {
+          dvat04: true,
         },
         take: payload.take,
         skip: payload.skip,
       }),
       prisma.cform.count({
-        where: {
-          deletedAt: null,
-          deletedById: null,
-          status: "ACTIVE",
-          seller_tin_no: {
-            contains: payload.tin,
-          },
-        },
+        where: whereClause,
       }),
     ]);
 

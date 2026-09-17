@@ -3,15 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import {
-  Button,
-  Drawer,
-  Input,
-  Pagination,
-  Select,
-  Spin,
-  Tag,
-} from "antd";
+import { Button, Drawer, Input, Pagination, Select, Spin, Tag } from "antd";
 
 import GetAllMissingInvoiceComplaints from "@/action/missing_invoice/getallmissinginvoicecomplaints";
 import UpdateMissingInvoiceStatus from "@/action/missing_invoice/updatemissinginvoicestatus";
@@ -19,7 +11,12 @@ import SearchTinNumber from "@/action/dvat/searchtin";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import type { MissingInvoiceComplaintWithCreator } from "@/models/missinginvoice";
 import { formateDate } from "@/utils/methods";
-import { dvat04, MissingInvoiceStatus, MissingInvoiceType, user } from "@prisma/client";
+import {
+  dvat04,
+  MissingInvoiceStatus,
+  MissingInvoiceType,
+  user,
+} from "@prisma/client";
 import {
   Table,
   TableBody,
@@ -28,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getCurrentUserRole } from "@/lib/auth";
 
 const STATUS_OPTIONS: { value: MissingInvoiceStatus | ""; label: string }[] = [
   { value: "", label: "All Statuses" },
@@ -54,16 +52,21 @@ const AdminMissingInvoicePage = () => {
   const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [rows, setRows] = useState<Array<MissingInvoiceComplaintWithCreator>>([]);
+  const [rows, setRows] = useState<Array<MissingInvoiceComplaintWithCreator>>(
+    [],
+  );
   const [pagination, setPagination] = useState({ take: 10, skip: 0, total: 0 });
 
-  const [filterStatus, setFilterStatus] = useState<MissingInvoiceStatus | "">("");
+  const [filterStatus, setFilterStatus] = useState<MissingInvoiceStatus | "">(
+    "",
+  );
   const [filterType, setFilterType] = useState<MissingInvoiceType | "">("");
   const [searchText, setSearchText] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<MissingInvoiceComplaintWithCreator | null>(null);
+  const [selectedRow, setSelectedRow] =
+    useState<MissingInvoiceComplaintWithCreator | null>(null);
   const [newStatus, setNewStatus] = useState<MissingInvoiceStatus>("PENDING");
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -110,6 +113,11 @@ const AdminMissingInvoicePage = () => {
       setIsLoading(true);
 
       const authResponse = await getAuthenticatedUserId();
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
+
       if (!authResponse.status || !authResponse.data) {
         toast.error(authResponse.message);
         router.push("/");
@@ -167,13 +175,19 @@ const AdminMissingInvoicePage = () => {
     if (row.supplier_tin || row.customer_tin_no) {
       setIsFetchingTins(true);
       const fetches = await Promise.all([
-        row.supplier_tin ? SearchTinNumber({ tinumber: row.supplier_tin }) : Promise.resolve(null),
-        row.customer_tin_no ? SearchTinNumber({ tinumber: row.customer_tin_no }) : Promise.resolve(null),
+        row.supplier_tin
+          ? SearchTinNumber({ tinumber: row.supplier_tin })
+          : Promise.resolve(null),
+        row.customer_tin_no
+          ? SearchTinNumber({ tinumber: row.customer_tin_no })
+          : Promise.resolve(null),
       ]);
       setIsFetchingTins(false);
 
-      if (fetches[0]?.status && fetches[0].data) setSupplierInfo(fetches[0].data);
-      if (fetches[1]?.status && fetches[1].data) setCustomerInfo(fetches[1].data);
+      if (fetches[0]?.status && fetches[0].data)
+        setSupplierInfo(fetches[0].data);
+      if (fetches[1]?.status && fetches[1].data)
+        setCustomerInfo(fetches[1].data);
     }
   };
 
@@ -195,7 +209,13 @@ const AdminMissingInvoicePage = () => {
     toast.success("Status updated successfully.");
     setDrawerOpen(false);
     setSelectedRow(null);
-    await loadComplaints(pagination.take, pagination.skip, filterStatus, filterType, searchText);
+    await loadComplaints(
+      pagination.take,
+      pagination.skip,
+      filterStatus,
+      filterType,
+      searchText,
+    );
   };
 
   if (isLoading) {
@@ -259,25 +279,58 @@ const AdminMissingInvoicePage = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50 border-b">
-                      <TableHead className="text-center p-2 text-xs">Type</TableHead>
-                      <TableHead className="text-center p-2 text-xs">Invoice No.</TableHead>
-                      <TableHead className="text-center p-2 text-xs">Taxable Amount</TableHead>
-                      <TableHead className="text-center p-2 text-xs">VAT Amount</TableHead>
-                      <TableHead className="text-center p-2 text-xs">Invoice Date</TableHead>
-                      <TableHead className="text-center p-2 text-xs">Supplier TIN</TableHead>
-                      <TableHead className="text-center p-2 text-xs">Customer TIN</TableHead>
-                      <TableHead className="text-center p-2 text-xs">Customer Name</TableHead>
-                      <TableHead className="text-center p-2 text-xs">Submitted By</TableHead>
-                      <TableHead className="text-center p-2 text-xs">Status</TableHead>
-                      <TableHead className="text-center p-2 text-xs">Created On</TableHead>
-                      <TableHead className="text-center p-2 text-xs">Action</TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        Type
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        Invoice No.
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        Taxable Amount
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        VAT Amount
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        Invoice Date
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        Supplier TIN
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        Customer TIN
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        Customer Name
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        Submitted By
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        Status
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        Created On
+                      </TableHead>
+                      <TableHead className="text-center p-2 text-xs">
+                        Action
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {rows.map((row) => (
-                      <TableRow key={row.id} className="border-b hover:bg-gray-50">
+                      <TableRow
+                        key={row.id}
+                        className="border-b hover:bg-gray-50"
+                      >
                         <TableCell className="text-center text-xs p-2">
-                          <Tag color={row.invoice_type === "MISSING_SALE" ? "green" : "blue"}>
+                          <Tag
+                            color={
+                              row.invoice_type === "MISSING_SALE"
+                                ? "green"
+                                : "blue"
+                            }
+                          >
                             {row.invoice_type}
                           </Tag>
                         </TableCell>
@@ -291,7 +344,9 @@ const AdminMissingInvoicePage = () => {
                           {row.vat_amount}
                         </TableCell>
                         <TableCell className="text-center text-xs p-2">
-                          {row.invoice_date ? formateDate(row.invoice_date) : "-"}
+                          {row.invoice_date
+                            ? formateDate(row.invoice_date)
+                            : "-"}
                         </TableCell>
                         <TableCell className="text-center text-xs p-2">
                           {row.supplier_tin ?? "-"}
@@ -304,12 +359,17 @@ const AdminMissingInvoicePage = () => {
                         </TableCell>
                         <TableCell className="text-center text-xs p-2">
                           <div>
-                            {row.createdBy.firstName ?? ""} {row.createdBy.lastName ?? ""}
+                            {row.createdBy.firstName ?? ""}{" "}
+                            {row.createdBy.lastName ?? ""}
                           </div>
-                          <div className="text-gray-400">{row.createdBy.mobileOne}</div>
+                          <div className="text-gray-400">
+                            {row.createdBy.mobileOne}
+                          </div>
                         </TableCell>
                         <TableCell className="text-center text-xs p-2">
-                          <Tag color={STATUS_COLORS[row.status]}>{row.status}</Tag>
+                          <Tag color={STATUS_COLORS[row.status]}>
+                            {row.status}
+                          </Tag>
                         </TableCell>
                         <TableCell className="text-center text-xs p-2">
                           {formateDate(row.createdAt)}
@@ -365,7 +425,14 @@ const AdminMissingInvoicePage = () => {
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
               <div>
                 <p className="text-gray-500">Invoice Type</p>
-                <Tag color={selectedRow.invoice_type === "MISSING_SALE" ? "green" : "blue"} className="mt-1">
+                <Tag
+                  color={
+                    selectedRow.invoice_type === "MISSING_SALE"
+                      ? "green"
+                      : "blue"
+                  }
+                  className="mt-1"
+                >
                   {selectedRow.invoice_type}
                 </Tag>
               </div>
@@ -384,7 +451,9 @@ const AdminMissingInvoicePage = () => {
               <div>
                 <p className="text-gray-500">Invoice Date</p>
                 <p className="font-medium mt-1">
-                  {selectedRow.invoice_date ? formateDate(selectedRow.invoice_date) : "-"}
+                  {selectedRow.invoice_date
+                    ? formateDate(selectedRow.invoice_date)
+                    : "-"}
                 </p>
               </div>
               <div>
@@ -396,12 +465,16 @@ const AdminMissingInvoicePage = () => {
               <div className="col-span-2">
                 <p className="text-gray-500">Submitted By</p>
                 <p className="font-medium mt-1">
-                  {selectedRow.createdBy.firstName ?? ""} {selectedRow.createdBy.lastName ?? ""} &mdash; {selectedRow.createdBy.mobileOne}
+                  {selectedRow.createdBy.firstName ?? ""}{" "}
+                  {selectedRow.createdBy.lastName ?? ""} &mdash;{" "}
+                  {selectedRow.createdBy.mobileOne}
                 </p>
               </div>
               <div className="col-span-2">
                 <p className="text-gray-500">Created On</p>
-                <p className="font-medium mt-1">{formateDate(selectedRow.createdAt)}</p>
+                <p className="font-medium mt-1">
+                  {formateDate(selectedRow.createdAt)}
+                </p>
               </div>
             </div>
 
@@ -419,7 +492,9 @@ const AdminMissingInvoicePage = () => {
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                     <div>
                       <p className="text-gray-500">Trade Name</p>
-                      <p className="font-medium">{supplierInfo.tradename ?? "-"}</p>
+                      <p className="font-medium">
+                        {supplierInfo.tradename ?? "-"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Name</p>
@@ -427,11 +502,15 @@ const AdminMissingInvoicePage = () => {
                     </div>
                     <div>
                       <p className="text-gray-500">Contact 1</p>
-                      <p className="font-medium">{supplierInfo.contact_one ?? "-"}</p>
+                      <p className="font-medium">
+                        {supplierInfo.contact_one ?? "-"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Contact 2</p>
-                      <p className="font-medium">{supplierInfo.contact_two ?? "-"}</p>
+                      <p className="font-medium">
+                        {supplierInfo.contact_two ?? "-"}
+                      </p>
                     </div>
                     <div className="col-span-2">
                       <p className="text-gray-500">Email</p>
@@ -440,14 +519,22 @@ const AdminMissingInvoicePage = () => {
                     <div className="col-span-2">
                       <p className="text-gray-500">Address</p>
                       <p className="font-medium">
-                        {[supplierInfo.buildingNumber, supplierInfo.area, supplierInfo.address, supplierInfo.city, supplierInfo.pincode]
+                        {[
+                          supplierInfo.buildingNumber,
+                          supplierInfo.area,
+                          supplierInfo.address,
+                          supplierInfo.city,
+                          supplierInfo.pincode,
+                        ]
                           .filter(Boolean)
                           .join(", ") || "-"}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-red-500">Dealer not found in DVAT records.</p>
+                  <p className="text-xs text-red-500">
+                    Dealer not found in DVAT records.
+                  </p>
                 )}
               </div>
             )}
@@ -466,7 +553,9 @@ const AdminMissingInvoicePage = () => {
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                     <div>
                       <p className="text-gray-500">Trade Name</p>
-                      <p className="font-medium">{customerInfo.tradename ?? "-"}</p>
+                      <p className="font-medium">
+                        {customerInfo.tradename ?? "-"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Name</p>
@@ -474,11 +563,15 @@ const AdminMissingInvoicePage = () => {
                     </div>
                     <div>
                       <p className="text-gray-500">Contact 1</p>
-                      <p className="font-medium">{customerInfo.contact_one ?? "-"}</p>
+                      <p className="font-medium">
+                        {customerInfo.contact_one ?? "-"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Contact 2</p>
-                      <p className="font-medium">{customerInfo.contact_two ?? "-"}</p>
+                      <p className="font-medium">
+                        {customerInfo.contact_two ?? "-"}
+                      </p>
                     </div>
                     <div className="col-span-2">
                       <p className="text-gray-500">Email</p>
@@ -487,14 +580,22 @@ const AdminMissingInvoicePage = () => {
                     <div className="col-span-2">
                       <p className="text-gray-500">Address</p>
                       <p className="font-medium">
-                        {[customerInfo.buildingNumber, customerInfo.area, customerInfo.address, customerInfo.city, customerInfo.pincode]
+                        {[
+                          customerInfo.buildingNumber,
+                          customerInfo.area,
+                          customerInfo.address,
+                          customerInfo.city,
+                          customerInfo.pincode,
+                        ]
                           .filter(Boolean)
                           .join(", ") || "-"}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-red-500">Dealer not found in DVAT records.</p>
+                  <p className="text-xs text-red-500">
+                    Dealer not found in DVAT records.
+                  </p>
                 )}
               </div>
             )}
@@ -507,14 +608,18 @@ const AdminMissingInvoicePage = () => {
             </div>
 
             <div className="border-t pt-3">
-              <label className="text-xs text-gray-600 block mb-1">Update Status</label>
+              <label className="text-xs text-gray-600 block mb-1">
+                Update Status
+              </label>
               <Select
                 value={newStatus}
                 onChange={(val) => setNewStatus(val as MissingInvoiceStatus)}
-                options={STATUS_OPTIONS.filter((o) => o.value !== "").map((o) => ({
-                  value: o.value,
-                  label: o.label,
-                }))}
+                options={STATUS_OPTIONS.filter((o) => o.value !== "").map(
+                  (o) => ({
+                    value: o.value,
+                    label: o.label,
+                  }),
+                )}
                 className="w-full mb-3"
               />
               <Button

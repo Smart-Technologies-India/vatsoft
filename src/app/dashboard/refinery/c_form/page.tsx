@@ -22,6 +22,19 @@ import GetRefineryCform from "@/action/refinery_cform/getrefineryform";
 import GetCurrentRefinery from "@/action/refinery/getcurrentrefinery";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import { getCurrentUserRole } from "@/lib/auth";
+
+// Indian number formatting function (e.g., 344234 -> 3,44,234)
+const formatIndianNumber = (num: number): string => {
+  if (!Number.isFinite(num)) return "0";
+  const numStr = Math.floor(num).toString();
+  if (numStr.length <= 3) return numStr;
+
+  const lastThree = numStr.slice(-3);
+  const remaining = numStr.slice(0, -3);
+  const withCommas = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+  return `${withCommas},${lastThree}`;
+};
 
 const RefineryCformStatus = () => {
   const router = useRouter();
@@ -40,19 +53,22 @@ const RefineryCformStatus = () => {
   });
 
   enum SearchOption {
-    NAME,
-    TIN,
+    DVAT_TIN,
+    DVAT_NAME,
   }
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.TIN,
+    SearchOption.DVAT_TIN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
     setSeachOption(e.target.value);
   };
 
-  const [cformData, setCformData] = useState<Array<cform>>([]);
+  const [cformData, setCformData] = useState<Array<cform & { dvat04: dvat04 }>>(
+    [],
+  );
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
+  const [tin, settin] = useState<string>("");
 
   const init = async () => {
     setLoading(true);
@@ -61,6 +77,7 @@ const RefineryCformStatus = () => {
       const refinery_tin = refinery_response.data.tinNumber;
 
       const cform_data = await GetRefineryCform({
+        searchType: "NONE",
         tin: refinery_tin,
         take: 10,
         skip: 0,
@@ -73,10 +90,7 @@ const RefineryCformStatus = () => {
           take: cform_data.data.take,
           total: cform_data.data.total,
         });
-        if (tinRef.current?.input) {
-          tinRef.current.input.value = refinery_tin;
-        }
-        setSearch(true);
+        settin(refinery_tin);
       }
     }
     const dvat_response = await GetUserDvat04();
@@ -84,17 +98,22 @@ const RefineryCformStatus = () => {
       setDvatData(dvat_response.data);
     }
     setLoading(false);
+    setSearch(false);
   };
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+
       const authResponse = await getAuthenticatedUserId();
       if (!authResponse.status || !authResponse.data) {
         toast.error(authResponse.message);
         return router.push("/");
       }
       setUserid(authResponse.data);
-
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
       const dvat_response = await GetUserDvat04();
       if (dvat_response.data && dvat_response.status) {
         setDvatData(dvat_response.data);
@@ -107,6 +126,7 @@ const RefineryCformStatus = () => {
 
         // Automatically load C-forms for current refinery's TIN
         const cform_data = await GetRefineryCform({
+          searchType: "NONE",
           tin: refinery_tin,
           take: 10,
           skip: 0,
@@ -120,10 +140,7 @@ const RefineryCformStatus = () => {
             total: cform_data.data.total,
           });
           // Set search state to show we're filtering by refinery TIN
-          if (tinRef.current?.input) {
-            tinRef.current.input.value = refinery_tin;
-          }
-          setSearch(true);
+          settin(refinery_tin);
         }
       }
 
@@ -132,19 +149,22 @@ const RefineryCformStatus = () => {
     init();
   }, [userid]);
 
-  const tinRef = useRef<InputRef>(null);
+  // const tinRef = useRef<InputRef>(null);
+  const dvatTinRef = useRef<InputRef>(null);
   const nameRef = useRef<InputRef>(null);
 
-  const tinsearch = async () => {
+  const dvatTinSearch = async () => {
     if (
-      tinRef.current?.input?.value == undefined ||
-      tinRef.current?.input?.value == null ||
-      tinRef.current?.input?.value == ""
+      dvatTinRef.current?.input?.value == undefined ||
+      dvatTinRef.current?.input?.value == null ||
+      dvatTinRef.current?.input?.value == ""
     ) {
-      return toast.error("Enter Seller TIN number");
+      return toast.error("Enter DVAT TIN number");
     }
     const search_response = await GetRefineryCform({
-      tin: tinRef.current?.input?.value,
+      searchType: "DVAT_TIN",
+      searchValue: dvatTinRef.current?.input?.value,
+      tin: tin || "",
       take: 10,
       skip: 0,
     });
@@ -156,25 +176,53 @@ const RefineryCformStatus = () => {
         total: search_response.data.total,
       });
       setSearch(true);
+    } else {
+      toast.error(search_response.message || "No records found");
     }
   };
 
-  const namesearch = async () => {
-    toast.info("Search by seller name is only available when filtering by TIN");
+  const dvatNameSearch = async () => {
+    if (
+      nameRef.current?.input?.value == undefined ||
+      nameRef.current?.input?.value == null ||
+      nameRef.current?.input?.value == ""
+    ) {
+      return toast.error("Enter DVAT Trade Name");
+    }
+    const search_response = await GetRefineryCform({
+      searchType: "DVAT_NAME",
+      searchValue: nameRef.current?.input?.value,
+      tin: tin || "",
+      take: 10,
+      skip: 0,
+    });
+    if (search_response.status && search_response.data?.result) {
+      setCformData(search_response.data.result);
+      setPaginatin({
+        skip: search_response.data.skip,
+        take: search_response.data.take,
+        total: search_response.data.total,
+      });
+      setSearch(true);
+    } else {
+      toast.error(search_response.message || "No records found");
+    }
   };
 
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (isSearch) {
-      if (searchOption == SearchOption.TIN) {
+      if (searchOption == SearchOption.DVAT_TIN) {
         if (
-          tinRef.current?.input?.value == undefined ||
-          tinRef.current?.input?.value == null ||
-          tinRef.current?.input?.value == ""
+          dvatTinRef.current?.input?.value == undefined ||
+          dvatTinRef.current?.input?.value == null ||
+          dvatTinRef.current?.input?.value == ""
         ) {
-          return toast.error("Enter Seller TIN number");
+          return toast.error("Enter DVAT TIN number");
         }
         const search_response = await GetRefineryCform({
-          tin: tinRef.current?.input?.value,
+          searchType: "DVAT_TIN",
+          searchValue: dvatTinRef.current?.input?.value,
+          tin: tin || "",
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -185,12 +233,35 @@ const RefineryCformStatus = () => {
             take: search_response.data.take,
             total: search_response.data.total,
           });
-          setSearch(true);
+        }
+      } else if (searchOption == SearchOption.DVAT_NAME) {
+        if (
+          nameRef.current?.input?.value == undefined ||
+          nameRef.current?.input?.value == null ||
+          nameRef.current?.input?.value == ""
+        ) {
+          return toast.error("Enter DVAT Trade Name");
+        }
+        const search_response = await GetRefineryCform({
+          searchType: "DVAT_NAME",
+          searchValue: nameRef.current?.input?.value,
+          tin: tin || "",
+          take: pagesize,
+          skip: pagesize * (page - 1),
+        });
+        if (search_response.status && search_response.data?.result) {
+          setCformData(search_response.data.result);
+          setPaginatin({
+            skip: search_response.data.skip,
+            take: search_response.data.take,
+            total: search_response.data.total,
+          });
         }
       }
     } else {
       const cform_data = await GetRefineryCform({
-        tin: tinRef.current?.input?.value || "",
+        searchType: "NONE",
+        tin: tin || "",
         take: pagesize,
         skip: pagesize * (page - 1),
       });
@@ -254,234 +325,241 @@ const RefineryCformStatus = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-indigo-50 p-4">
-        {/* Header Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <div className="w-1.5 h-8 bg-linear-to-b from-blue-500 to-indigo-600 rounded-full"></div>
-                Refinery C-Form
-              </h1>
-              <p className="text-sm text-gray-500 mt-2 ml-4">
-                View and manage your Refinery C-Form declarations
-              </p>
+      <main className="p-3 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+            <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+              <div>
+                <h1 className="text-lg font-medium text-gray-900">
+                  Refinery C-Form
+                </h1>
+              </div>
+              <div className="grow"></div>
             </div>
           </div>
+
+          {cformData.length == 0 && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <Alert
+                style={{
+                  borderRadius: "0.375rem",
+                }}
+                type="error"
+                showIcon
+                description="There is no Refinery C-Form."
+              />
+            </div>
+          )}
+
+          {cformData.length != 0 && (
+            <>
+              {/* Search and Filter Section */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-3">
+                <div className="mb-3 space-y-3">
+                  <div className="flex flex-col md:flex-row md:items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-gray-700">
+                        Search by:
+                      </span>
+                      <Radio.Group
+                        onChange={onChange}
+                        value={searchOption}
+                        className="flex gap-3"
+                      >
+                        <Radio value={SearchOption.DVAT_TIN}>
+                          <span className="text-xs">DVAT TIN</span>
+                        </Radio>
+                        <Radio value={SearchOption.DVAT_NAME}>
+                          <span className="text-xs">Trade Name</span>
+                        </Radio>
+                      </Radio.Group>
+                    </div>
+
+                    {(() => {
+                      switch (searchOption) {
+                        case SearchOption.DVAT_TIN:
+                          return (
+                            <div className="flex gap-2">
+                              <Input
+                                size="small"
+                                maxLength={11}
+                                className="flex-1 md:flex-none md:w-40"
+                                ref={dvatTinRef}
+                                placeholder="Enter TIN Number"
+                              />
+
+                              {isSearch ? (
+                                <Button
+                                  size="small"
+                                  onClick={init}
+                                  type="primary"
+                                  className="bg-blue-500 hover:bg-blue-600"
+                                >
+                                  Reset
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="small"
+                                  onClick={dvatTinSearch}
+                                  type="primary"
+                                  className="bg-blue-500 hover:bg-blue-600"
+                                >
+                                  Search
+                                </Button>
+                              )}
+                            </div>
+                          );
+
+                        case SearchOption.DVAT_NAME:
+                          return (
+                            <div className="flex gap-2">
+                              <Input
+                                size="small"
+                                className="flex-1 md:flex-none md:w-40"
+                                ref={nameRef}
+                                placeholder="Enter Trade Name"
+                              />
+
+                              {isSearch ? (
+                                <Button
+                                  size="small"
+                                  onClick={init}
+                                  type="primary"
+                                  className="bg-blue-500 hover:bg-blue-600"
+                                >
+                                  Reset
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="small"
+                                  onClick={dvatNameSearch}
+                                  type="primary"
+                                  className="bg-blue-500 hover:bg-blue-600"
+                                >
+                                  Search
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        default:
+                          return null;
+                      }
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Results Table Card */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50 border-b">
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          SR No
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          C-Form Type
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Period
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          TIN Number
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Seller Name
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Amount
+                        </TableHead>
+                        <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                          Action
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {cformData.map(
+                        (val: cform & { dvat04: dvat04 }, index: number) => {
+                          return (
+                            <TableRow
+                              key={index}
+                              className="border-b hover:bg-gray-50"
+                            >
+                              <TableCell className="p-2 text-center text-xs">
+                                <span className="font-medium text-gray-900">
+                                  {val.sr_no}
+                                </span>
+                              </TableCell>
+                              <TableCell className="p-2 text-center text-xs text-gray-700">
+                                {val.cform_type}
+                              </TableCell>
+                              <TableCell className="p-2 text-center text-xs text-gray-700">
+                                {getMonthRange(val.to_period)}
+                              </TableCell>
+                              <TableCell className="p-2 text-center text-xs font-medium text-gray-900">
+                                {val.dvat04.tinNumber}
+                              </TableCell>
+                              <TableCell className="p-2 text-center text-xs text-gray-700">
+                                {val.dvat04.tradename}
+                              </TableCell>
+                              <TableCell className="p-2 text-center text-xs font-medium text-gray-900">
+                                ₹{formatIndianNumber(parseFloat(val.amount ?? "0"))}
+                              </TableCell>
+                              <TableCell className="p-2 text-center text-xs">
+                                <Link
+                                  href={`/dashboard/refinery/c_form/view/${encryptURLData(
+                                    val.id.toString(),
+                                  )}`}
+                                  className="text-blue-600 hover:text-blue-800 underline"
+                                >
+                                  View
+                                </Link>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        },
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination Section */}
+                <div className="bg-gray-50 border-t border-gray-200 p-3">
+                  <div className="lg:hidden">
+                    <Pagination
+                      align="center"
+                      defaultCurrent={1}
+                      onChange={onChangePageCount}
+                      showSizeChanger
+                      total={pagination.total}
+                      showTotal={(total: number) => `Total ${total} items`}
+                      size="small"
+                    />
+                  </div>
+                  <div className="hidden lg:block">
+                    <Pagination
+                      showQuickJumper
+                      align="center"
+                      defaultCurrent={1}
+                      onChange={onChangePageCount}
+                      showSizeChanger
+                      pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+                      total={pagination.total}
+                      responsive={true}
+                      showTotal={(total: number, range: number[]) =>
+                        `${range[0]}-${range[1]} of ${total} items`
+                      }
+                      size="small"
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
-
-        {cformData.length == 0 && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <Alert
-              style={{
-                borderRadius: "0.5rem",
-              }}
-              type="error"
-              showIcon
-              description="There is no Refinery C-Form."
-            />
-          </div>
-        )}
-
-        {cformData.length != 0 && (
-          <>
-            {/* Search Section Card */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4">
-              <div className="flex flex-col md:flex-row gap-4 md:items-center">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    Search by:
-                  </span>
-                  <Radio.Group
-                    onChange={onChange}
-                    value={searchOption}
-                    disabled={isSearch}
-                    className="flex gap-2"
-                  >
-                    <Radio value={SearchOption.TIN}>
-                      <span className="text-sm">TIN Number</span>
-                    </Radio>
-                    <Radio value={SearchOption.NAME}>
-                      <span className="text-sm">Seller Name</span>
-                    </Radio>
-                  </Radio.Group>
-                </div>
-
-                {(() => {
-                  switch (searchOption) {
-                    case SearchOption.TIN:
-                      return (
-                        <div className="flex gap-2 flex-1">
-                          <Input
-                            maxLength={11}
-                            className="max-w-xs"
-                            ref={tinRef}
-                            placeholder="Enter Seller TIN Number"
-                            disabled={isSearch}
-                          />
-
-                          {isSearch ? (
-                            <Button
-                              onClick={init}
-                              type="primary"
-                              className="bg-blue-500 hover:bg-blue-600"
-                            >
-                              Reset
-                            </Button>
-                          ) : (
-                            <Button
-                              onClick={tinsearch}
-                              type="primary"
-                              className="bg-blue-500 hover:bg-blue-600"
-                            >
-                              Search
-                            </Button>
-                          )}
-                        </div>
-                      );
-
-                    case SearchOption.NAME:
-                      return (
-                        <div className="flex gap-2 flex-1">
-                          <Input
-                            className="max-w-xs"
-                            ref={nameRef}
-                            placeholder="Enter Seller Name"
-                            disabled={isSearch}
-                          />
-
-                          {isSearch ? (
-                            <Button
-                              onClick={init}
-                              type="primary"
-                              className="bg-blue-500 hover:bg-blue-600"
-                            >
-                              Reset
-                            </Button>
-                          ) : (
-                            <Button
-                              onClick={namesearch}
-                              type="primary"
-                              className="bg-blue-500 hover:bg-blue-600"
-                            >
-                              Search
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    default:
-                      return null;
-                  }
-                })()}
-              </div>
-            </div>
-
-            {/* Results Table Card */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table className="border-0">
-                  <TableHeader>
-                    <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100">
-                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        SR No
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        C-Form Type
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        Period
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        TIN Number
-                      </TableHead>
-
-                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        Seller Name
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        Amount
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap text-center border border-gray-200 p-3 font-semibold text-gray-700">
-                        Action
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cformData.map((val: cform, index: number) => {
-                      return (
-                        <TableRow
-                          key={index}
-                          className="hover:bg-blue-50 transition-colors"
-                        >
-                          <TableCell className="border border-gray-200 text-center p-3">
-                            <span className="font-medium text-gray-900">
-                              {val.sr_no}
-                            </span>
-                          </TableCell>
-                          <TableCell className="border border-gray-200 text-center p-3 text-gray-700">
-                            {val.cform_type}
-                          </TableCell>
-                          <TableCell className="border border-gray-200 text-center p-3 text-gray-700">
-                            {getMonthRange(val.to_period)}
-                          </TableCell>
-                          <TableCell className="border border-gray-200 text-center p-3 font-medium text-gray-900">
-                            {val.seller_tin_no}
-                          </TableCell>
-                          <TableCell className="border border-gray-200 text-center p-3 text-gray-700">
-                            {val.seller_name}
-                          </TableCell>
-                          <TableCell className="border border-gray-200 text-center p-3 font-medium text-gray-900">
-                            ₹{parseFloat(val.amount ?? "0").toFixed(2)}
-                          </TableCell>
-                          <TableCell className="border border-gray-200 text-center p-3">
-                            <Link
-                              href={`/dashboard/refinery/c_form/view/${encryptURLData(
-                                val.id.toString(),
-                              )}`}
-                              className="text-blue-500 hover:text-blue-700 font-medium hover:underline"
-                            >
-                              View
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Pagination Section */}
-              <div className="bg-gray-50 border-t border-gray-200 p-4">
-                <div className="lg:hidden">
-                  <Pagination
-                    align="center"
-                    defaultCurrent={1}
-                    onChange={onChangePageCount}
-                    showSizeChanger
-                    total={pagination.total}
-                    showTotal={(total: number) => `Total ${total} items`}
-                  />
-                </div>
-                <div className="hidden lg:block">
-                  <Pagination
-                    showQuickJumper
-                    align="center"
-                    defaultCurrent={1}
-                    onChange={onChangePageCount}
-                    showSizeChanger
-                    pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                    total={pagination.total}
-                    responsive={true}
-                    showTotal={(total: number, range: number[]) =>
-                      `${range[0]}-${range[1]} of ${total} items`
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+      </main>
     </>
   );
 };

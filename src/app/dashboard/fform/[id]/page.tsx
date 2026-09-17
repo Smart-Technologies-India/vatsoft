@@ -115,6 +115,8 @@ const FFROM = () => {
               entry.description_of_goods = "Lubricant";
             } else if (desc.includes("cng") || desc.includes("png")) {
               entry.description_of_goods = "NG";
+            } else if (desc.includes("aviation turbine fuel")) {
+              entry.description_of_goods = "ATF";
             } else {
               entry.description_of_goods = "IMFL/BEER";
             }
@@ -229,7 +231,7 @@ const FFROM = () => {
                 (Continued...)
               </div>
               <div className="border border-black p-2 h-full w-full relative">
-                <div className="scale-[0.3] absolute top-10 -right-10">
+                <div className="scale-[0.3] absolute top-5 -right-10">
                   <Barcode
                     value={fformdata ? fformdata.sr_no : ""}
                     fontSize={30}
@@ -237,25 +239,44 @@ const FFROM = () => {
                 </div>
                 <div className="p-4 text-center text-xs">Original</div>
                 <div className="text-center text-sm font-medium">
-                  CENTRAL SALES TAX
+                  THE CENTRAL SALES TAX
+                </div>
+                <div className="text-center text-sm font-medium">
+                  (Registration & Turnover) Rules, 1957
                 </div>
                 <div className="text-center text-sm font-medium">
                   FORM &lsquo;F&lsquo;
                 </div>
                 <div className="text-center text-xs font-medium mt-4">
-                  Form of declaration
-                </div>
-                <div className="text-center text-xs font-normal mt-2">
-                  ________________[Form F Declaration]________________
+                  (FORM OF DECLARATION TO BE ISSUED BY THE TRANSFEREE) [See Rule
+                  12(5)]
                 </div>
 
                 <table border={1} className="w-5/6 mx-auto mt-6">
                   <tbody className="w-full">
                     <tr className="w-full">
-                      <td className="px-2 text-xs leading-6 w-[50%] -translate-y-4">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Serial No
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        {fformdata ? fformdata.sr_no : ""}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Name of the issuing state:
+                      </td>
+                      <td className="px-2 text-xs text-nowrap leading-6 w-[50%]">
+                        {fformdata?.office_of_issue == "Dadra_Nagar_Haveli"
+                          ? "Dadra and Nagar Haveli"
+                          : fformdata?.office_of_issue}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
                         Office of Issue:
                       </td>
-                      <td className="px-2 text-xs text-nowrap leading-6 w-[50%] -translate-y-4">
+                      <td className="px-2 text-xs text-nowrap leading-6 w-[50%]">
                         Dept. of VAT -{" "}
                         {fformdata?.office_of_issue == "Dadra_Nagar_Haveli"
                           ? "Dadra and Nagar Haveli"
@@ -263,10 +284,10 @@ const FFROM = () => {
                       </td>
                     </tr>
                     <tr className="w-full">
-                      <td className="px-2 text-xs leading-6 w-[50%] -translate-y-4">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
                         Date of Issue :
                       </td>
-                      <td className="px-2 text-xs leading-6 w-[50%] -translate-y-4">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
                         {formateDate(
                           new Date(fformdata?.createdAt!),
                         ).replaceAll("-", "/")}
@@ -277,10 +298,6 @@ const FFROM = () => {
                         Quarter & Year :{" "}
                       </td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {/* {fformdata?.from_period.toLocaleString("default", {
-                          month: "short",
-                        })}
-                        - */}
                         {fformdata?.to_period.toLocaleString("default", {
                           month: "short",
                         })}
@@ -315,89 +332,139 @@ const FFROM = () => {
                           : ""}
                       </td>
                     </tr>
+                  </tbody>
+                </table>
+
+                <p className="px-2 w-5/6 mx-auto text-xs text-justify leading-6">
+                  To
+                </p>
+                <p className="px-2 w-5/6 mx-auto text-xs text-justify leading-6">
+                  {fformdata ? fformdata.seller_name : ""} (#Seller)
+                </p>
+                <p className="px-2 w-5/6 mx-auto text-xs text-justify leading-6">
+                  Registration Certificate No. of the Transferor{" "}
+                  {fformdata ? fformdata.seller_tin_no : ""}
+                </p>
+                <br />
+
+                <p className="px-2 w-5/6 mx-auto text-xs text-justify leading-6 tracking-tighter">
+                  Certified that the goods transferred to me/us as per details
+                  below have been received and duly accounted for:-
+                </p>
+
+                <table border={1} className="w-5/6 mx-auto">
+                  <tbody className="w-full">
                     <tr className="w-full">
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        Serial No
+                        Description of the goods sent
                       </td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {fformdata ? fformdata.sr_no : ""}
+                        (see table below)
                       </td>
                     </tr>
                     <tr className="w-full">
-                      <td className="px-2 text-xs leading-6 w-[50%]">To</td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {fformdata ? fformdata.seller_name : ""} (#Seller)
+                        Quantity or weight
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        (see table below)
                       </td>
                     </tr>
                     <tr className="w-full">
-                      <td className="px-2 text-xs leading-6  w-[50%]">
-                        Seller TIN No
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Value of the goods
                       </td>
-                      <td className="px-2 text-xs leading-6  w-[50%]">
-                        {fformdata ? fformdata.seller_tin_no : ""}
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        (see table below)
                       </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[80%]">
+                        Number and date of invoice [or challan or any other
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        document under which goods were sent
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        (see table below)
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Name of Railway, Steamer or Ferry Station or Airport
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        or Post Office from where the goods were dispatched
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        No. and date of Railway Receipt or Postal Receipt or
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Goods Receipt with Trip sheet of lorry or any other
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        document indicating the means of transport
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Date on which delivery was taken by the transferee
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">Amount</td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        {fformdata?.amount}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        The above statements are true to the best of my
+                        knowledge and belief.
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
                     </tr>
                   </tbody>
                 </table>
 
-                <p className="w-5/6 mx-auto my-6 text-xs text-justify leading-6">
-                  [Certified that the goods ordered for in our purchase order
-                  No.............dated.........................as stated below*]
-                  are for **resale.....................use in
-                  manufacture/processing of goods for sale .........in the
-                  telecommunication network.... use in mining
-                  .....................................use in
-                  generation/distribution of
-                  power.....................................................
-                  packing of goods for sale/resale
-                  .............................................and are covered
-                  by my/our registration certificate
-                  No....................dated...................issued under the
-                  Central Sales Tax Act.[It is further certified that I/We
-                  am/are not registered in the State
-                  of.................................... in which the goods
-                  covered by this Form are/will be delivered.]
-                </p>
-
-                <p className="text-left w-5/6 mx-auto mt-4 text-xs leading-6">
-                  Name and address of the purchasing dealer in full:{" "}
-                  {dvatdata ? dvatdata.tradename : ""},
-                  {dvatdata ? dvatdata.address : ""}
-                </p>
-                <p className="text-left w-5/6 mx-auto text-xs leading-6">
-                  Date .............
-                </p>
-                <p className="text-left w-5/6 mx-auto text-xs leading-6">
-                  [The above statements are true to the best of my knowledge and
-                  belief.
-                </p>
                 <p className="text-right mt-4 text-xs leading-6">
                   (Signature)...................................................
                 </p>
                 <p className="text-right text-xs leading-6">
-                  (Name of the person signing the certificate)
+                  (Name of the person signing the declaration)
                 </p>
                 <p className="text-right text-xs leading-6">
-                  (Status of the person signing the certificate in relation to
-                  the dealer)].
+                  (Status of the person signing the declaration in relation to
+                  the transferee)].
                 </p>
-                <p className="text-left mt-4 text-xs leading-6">
-                  [*Particulars of Bill/Cash Memo[/Challan]
+                <p className="text-right text-xs leading-6">
+                  (Status of the person signing the declaration in relation to
+                  the transferor)].
                 </p>
-                <p className="text-left text-xs leading-6">
-                  Date...............No..................Amount: Rs.
-                  {fformdata?.amount}
-                </p>
-                <p className="text-left text-xs leading-6">
-                  Name and Address of the seller with name of the State:{" "}
-                  {fformdata ? fformdata.seller_name : ""},{" "}
-                  {fformdata ? fformdata.seller_address : ""}
-                </p>
+
                 <p className="text-left text-xs leading-6">
                   **Strike out whichever is not applicable.
                 </p>
                 <p className="text-left text-xs leading-6">
-                  Note 1. To be furnished to the prescribed authority.)
+                  Note 1. To be furnished to the assessing authority in
+                  accordance with rules framed under Section 13(4)(e).)
                 </p>
               </div>
             </div>
@@ -525,7 +592,7 @@ const FFROM = () => {
                             {val.total_invoice_number}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
-                            For Resale
+                            Branch Transfer
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
                             {formateDatecus(
@@ -559,7 +626,7 @@ const FFROM = () => {
                 (Continued...)
               </div>
               <div className="border border-black p-2 h-full w-full relative">
-                <div className="scale-[0.3] absolute top-10 -right-10">
+                <div className="scale-[0.3] absolute top-5 -right-10">
                   <Barcode
                     value={fformdata ? fformdata.sr_no : ""}
                     fontSize={30}
@@ -567,281 +634,39 @@ const FFROM = () => {
                 </div>
                 <div className="p-4 text-center text-xs">Duplicate</div>
                 <div className="text-center text-sm font-medium">
-                  CENTRAL SALES TAX
+                  THE CENTRAL SALES TAX
+                </div>
+                <div className="text-center text-sm font-medium">
+                  (Registration & Turnover) Rules, 1957
                 </div>
                 <div className="text-center text-sm font-medium">
                   FORM &lsquo;F&lsquo;
                 </div>
                 <div className="text-center text-xs font-medium mt-4">
-                  Form of declaration
-                </div>
-                <div className="text-center text-xs font-normal mt-2">
-                  ________________[Form F Declaration]________________
+                  (FORM OF DECLARATION TO BE ISSUED BY THE TRANSFEREE) [See Rule
+                  12(5)]
                 </div>
 
                 <table border={1} className="w-5/6 mx-auto mt-6">
                   <tbody className="w-full">
                     <tr className="w-full">
-                      <td className="px-2 text-xs leading-6 w-[50%] -translate-y-4">
-                        Office of Issue:
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Serial No
                       </td>
-                      <td className="px-2 text-xs text-nowrap leading-6 w-[50%] -translate-y-4">
-                        Dept. of VAT –{" "}
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        {fformdata ? fformdata.sr_no : ""}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Name of the issuing state:
+                      </td>
+                      <td className="px-2 text-xs text-nowrap leading-6 w-[50%]">
                         {fformdata?.office_of_issue == "Dadra_Nagar_Haveli"
                           ? "Dadra and Nagar Haveli"
                           : fformdata?.office_of_issue}
                       </td>
                     </tr>
-                    <tr className="w-full">
-                      <td className="px-2 text-xs leading-6 w-[50%] -translate-y-4">
-                        Date of Issue :
-                      </td>
-                      <td className="px-2 text-xs leading-6 w-[50%] -translate-y-4">
-                        {formateDate(
-                          new Date(fformdata?.createdAt!),
-                        ).replaceAll("-", "/")}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-
-                <p className="w-5/6 mx-auto my-6 text-xs text-justify leading-6">
-                  [Certified that the goods ordered for in our purchase order
-                  No.............dated.........................as stated below*]
-                  are for **resale.....................use in
-                  manufacture/processing of goods for sale .........in the
-                  telecommunication network.... use in mining
-                  .....................................use in
-                  generation/distribution of
-                  power.....................................................
-                  packing of goods for sale/resale
-                  .............................................and are covered
-                  by my/our registration certificate
-                  No....................dated...................issued under the
-                  Central Sales Tax Act.[It is further certified that I/We
-                  am/are not registered in the State
-                  of.................................... in which the goods
-                  covered by this Form are/will be delivered.]
-                </p>
-
-                <p className="text-left w-5/6 mx-auto mt-4 text-xs leading-6">
-                  Name and address of the purchasing dealer in full:{" "}
-                  {dvatdata ? dvatdata.tradename : ""},
-                  {dvatdata ? dvatdata.address : ""}
-                </p>
-                <p className="text-left w-5/6 mx-auto text-xs leading-6">
-                  Date .............
-                </p>
-                <p className="text-left w-5/6 mx-auto text-xs leading-6">
-                  [The above statements are true to the best of my knowledge and
-                  belief.
-                </p>
-                <p className="text-right mt-4 text-xs leading-6">
-                  (Signature)...................................................
-                </p>
-                <p className="text-right text-xs leading-6">
-                  (Name of the person signing the certificate)
-                </p>
-                <p className="text-right text-xs leading-6">
-                  (Status of the person signing the certificate in relation to
-                  the dealer)].
-                </p>
-                <p className="text-left mt-4 text-xs leading-6">
-                  [*Particulars of Bill/Cash Memo[/Challan]
-                </p>
-                <p className="text-left text-xs leading-6">
-                  Date...............No..................Amount: Rs.
-                  {fformdata?.amount}
-                </p>
-                <p className="text-left text-xs leading-6">
-                  Name and Address of the seller with name of the State:{" "}
-                  {fformdata ? fformdata.seller_name : ""},{" "}
-                  {fformdata ? fformdata.seller_address : ""}
-                </p>
-                <p className="text-left text-xs leading-6">
-                  **Strike out whichever is not applicable.
-                </p>
-              </div>
-            </div>
-
-            {pages.map((pageData, pageIndex) => (
-              <div
-                key={pageIndex}
-                className="bg-white p-8 shadow h-290.75 w-198.5 mx-auto relative font-bold"
-                style={{
-                  pageBreakAfter:
-                    pageIndex === pages.length - 1 ? "auto" : "always",
-                }}
-              >
-                <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
-                  <Image
-                    src="/cform_bg.png"
-                    alt="logo"
-                    fill={true}
-                    className="p-8"
-                  />
-                </div>
-                <div className="absolute bottom-28 right-12 text-xs font-normal text-black ">
-                  (Continued...)
-                </div>
-                <div className="border border-black p-2 h-full w-full relative">
-                  <div className="scale-[0.3] absolute top-10 -right-10">
-                    <Barcode
-                      value={fformdata ? fformdata.sr_no : ""}
-                      fontSize={30}
-                    />
-                  </div>
-                  <div className="flex">
-                    <div className="grow"></div>
-                    <div className="text-xs leading-6">
-                      <h1>Form &lsquo;F&lsquo;</h1>
-                      <h1>Annexure </h1>
-                    </div>
-                  </div>
-                  <table border={1} className="w-5/6 mx-auto mt-6">
-                    <tbody className="w-full">
-                      <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          Office of Issue
-                        </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          Dept. of VAT -{" "}
-                          {fformdata?.office_of_issue == "Dadra_Nagar_Haveli"
-                            ? "Dadra and Nagar Haveli"
-                            : fformdata?.office_of_issue}
-                        </td>
-                      </tr>
-                      <tr className="w-full">
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          Date of Issue :
-                        </td>
-                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          {formateDate(new Date()).replaceAll("-", "/")}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  <table
-                    border={1}
-                    className="mx-4 mt-6"
-                    style={{ pageBreakInside: "avoid" }}
-                  >
-                    <thead style={{ display: "table-header-group" }}>
-                      <tr>
-                        <td
-                          className="border border-black text-xs leading-6 text-center"
-                          colSpan={7}
-                        >
-                          INVOICE DETAILS
-                        </td>
-                      </tr>
-                    </thead>
-                    <tbody className="w-full">
-                      <tr
-                        className="w-full"
-                        style={{ pageBreakInside: "avoid" }}
-                      >
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[4%]">
-                          No.
-                        </td>
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
-                          Inv. No
-                        </td>
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
-                          Inv.Date
-                        </td>
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
-                          Commodity Desc.
-                        </td>
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
-                          Inv. Value(Rs)
-                        </td>
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
-                          Purpose
-                        </td>
-                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
-                          Pur. Ord. No./Date
-                        </td>
-                      </tr>
-                      {pageData.map((val: returns_entry, index) => (
-                        <tr
-                          key={index}
-                          className="w-full"
-                          style={{ pageBreakInside: "avoid" }}
-                        >
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[4%]">
-                            {pageIndex * PAGE_SIZE + index + 1}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.invoice_number}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
-                            {formateDatecus(
-                              new Date(val.invoice_date),
-                            ).replaceAll("-", "/")}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
-                            {val.description_of_goods}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
-                            {val.total_invoice_number}
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
-                            For Resale
-                          </td>
-                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
-                            {formateDatecus(
-                              new Date(val.invoice_date),
-                            ).replaceAll("-", "/")}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ))}
-            {/* part two end here */}
-
-            {/* part three start here */}
-            <div
-              className="bg-white p-8 shadow h-290.75 w-198.5 mx-auto relative font-bold"
-              id="mainpdf"
-            >
-              <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
-                <Image
-                  src="/cform_bg.png"
-                  alt="logo"
-                  fill={true}
-                  className="p-8"
-                />
-              </div>
-              <div className="absolute bottom-28 right-12 text-xs font-normal text-black ">
-                (Continued...)
-              </div>
-              <div className="border border-black p-2 h-full w-full relative">
-                <div className="scale-[0.3] absolute top-10 -right-10">
-                  <Barcode
-                    value={fformdata ? fformdata.sr_no : ""}
-                    fontSize={30}
-                  />
-                </div>
-                <div className="p-4 text-center text-xs">Counterfoil</div>
-                <div className="text-center text-sm font-medium">
-                  CENTRAL SALES TAX
-                </div>
-                <div className="text-center text-sm font-medium">
-                  FORM &lsquo;F&lsquo;
-                </div>
-                <div className="text-center text-xs font-medium mt-4">
-                  Form of declaration
-                </div>
-                <div className="text-center text-xs font-normal mt-2">
-                  ________________[Form F Declaration]________________
-                </div>
-
-                <table border={1} className="w-5/6 mx-auto mt-6">
-                  <tbody className="w-full">
                     <tr className="w-full">
                       <td className="px-2 text-xs leading-6 w-[50%]">
                         Office of Issue:
@@ -868,10 +693,6 @@ const FFROM = () => {
                         Quarter & Year :{" "}
                       </td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {fformdata?.from_period.toLocaleString("default", {
-                          month: "short",
-                        })}
-                        -
                         {fformdata?.to_period.toLocaleString("default", {
                           month: "short",
                         })}
@@ -906,89 +727,139 @@ const FFROM = () => {
                           : ""}
                       </td>
                     </tr>
+                  </tbody>
+                </table>
+
+                <p className="px-2 w-5/6 mx-auto text-xs text-justify leading-6">
+                  To
+                </p>
+                <p className="px-2 w-5/6 mx-auto text-xs text-justify leading-6">
+                  {fformdata ? fformdata.seller_name : ""} (#Seller)
+                </p>
+                <p className="px-2 w-5/6 mx-auto text-xs text-justify leading-6">
+                  Registration Certificate No. of the Transferor{" "}
+                  {fformdata ? fformdata.seller_tin_no : ""}
+                </p>
+                <br />
+
+                <p className="px-2 w-5/6 mx-auto text-xs text-justify leading-6 tracking-tighter">
+                  Certified that the goods transferred to me/us as per details
+                  below have been received and duly accounted for:-
+                </p>
+
+                <table border={1} className="w-5/6 mx-auto">
+                  <tbody className="w-full">
                     <tr className="w-full">
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        Serial No
+                        Description of the goods sent
                       </td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {fformdata ? fformdata.sr_no : ""}
+                        (see table below)
                       </td>
                     </tr>
                     <tr className="w-full">
-                      <td className="px-2 text-xs leading-6 w-[50%]">To</td>
                       <td className="px-2 text-xs leading-6 w-[50%]">
-                        {fformdata ? fformdata.seller_name : ""} (#Seller)
+                        Quantity or weight
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        (see table below)
                       </td>
                     </tr>
                     <tr className="w-full">
-                      <td className="px-2 text-xs leading-6  w-[50%]">
-                        Seller TIN No
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Value of the goods
                       </td>
-                      <td className="px-2 text-xs leading-6  w-[50%]">
-                        {fformdata ? fformdata.seller_tin_no : ""}
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        (see table below)
                       </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[80%]">
+                        Number and date of invoice [or challan or any other
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        document under which goods were sent
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        (see table below)
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Name of Railway, Steamer or Ferry Station or Airport
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        or Post Office from where the goods were dispatched
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        No. and date of Railway Receipt or Postal Receipt or
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Goods Receipt with Trip sheet of lorry or any other
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        document indicating the means of transport
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Date on which delivery was taken by the transferee
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">Amount</td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        {fformdata?.amount}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        The above statements are true to the best of my
+                        knowledge and belief.
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
                     </tr>
                   </tbody>
                 </table>
 
-                <p className="w-5/6 mx-auto my-6 text-xs text-justify leading-6">
-                  [Certified that the goods ordered for in our purchase order
-                  No.............dated.........................as stated below*]
-                  are for **resale.....................use in
-                  manufacture/processing of goods for sale .........in the
-                  telecommunication network.... use in mining
-                  .....................................use in
-                  generation/distribution of
-                  power.....................................................
-                  packing of goods for sale/resale
-                  .............................................and are covered
-                  by my/our registration certificate
-                  No....................dated...................issued under the
-                  Central Sales Tax Act.[It is further certified that I/We
-                  am/are not registered in the State
-                  of.................................... in which the goods
-                  covered by this Form are/will be delivered.]
-                </p>
-
-                <p className="text-left w-5/6 mx-auto mt-4 text-xs leading-6">
-                  Name and address of the purchasing dealer in full:{" "}
-                  {dvatdata ? dvatdata.tradename : ""},
-                  {dvatdata ? dvatdata.address : ""}
-                </p>
-                <p className="text-left w-5/6 mx-auto text-xs leading-6">
-                  Date .............
-                </p>
-                <p className="text-left w-5/6 mx-auto text-xs leading-6">
-                  [The above statements are true to the best of my knowledge and
-                  belief.
-                </p>
                 <p className="text-right mt-4 text-xs leading-6">
                   (Signature)...................................................
                 </p>
                 <p className="text-right text-xs leading-6">
-                  (Name of the person signing the certificate)
+                  (Name of the person signing the declaration)
                 </p>
                 <p className="text-right text-xs leading-6">
-                  (Status of the person signing the certificate in relation to
-                  the dealer)].
+                  (Status of the person signing the declaration in relation to
+                  the transferee)].
                 </p>
-                <p className="text-left mt-4 text-xs leading-6">
-                  [*Particulars of Bill/Cash Memo[/Challan]
+                <p className="text-right text-xs leading-6">
+                  (Status of the person signing the declaration in relation to
+                  the transferor)].
                 </p>
-                <p className="text-left text-xs leading-6">
-                  Date...............No..................Amount: Rs.
-                  {fformdata?.amount}
-                </p>
-                <p className="text-left text-xs leading-6">
-                  Name and Address of the seller with name of the State:{" "}
-                  {fformdata ? fformdata.seller_name : ""},{" "}
-                  {fformdata ? fformdata.seller_address : ""}
-                </p>
+
                 <p className="text-left text-xs leading-6">
                   **Strike out whichever is not applicable.
                 </p>
                 <p className="text-left text-xs leading-6">
-                  Note 1. To be furnished to the prescribed authority.)
+                  Note 1. To be furnished to the assessing authority in
+                  accordance with rules framed under Section 13(4)(e).)
                 </p>
               </div>
             </div>
@@ -1116,7 +987,401 @@ const FFROM = () => {
                             {val.total_invoice_number}
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
-                            For Resale
+                            Branch Transfer
+                          </td>
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                            {formateDatecus(
+                              new Date(val.invoice_date),
+                            ).replaceAll("-", "/")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+            {/* part two end here */}
+
+            {/* part three start here */}
+            <div
+              className="bg-white p-8 shadow h-290.75 w-198.5 mx-auto relative font-bold"
+              id="mainpdf"
+            >
+              <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
+                <Image
+                  src="/cform_bg.png"
+                  alt="logo"
+                  fill={true}
+                  className="p-8"
+                />
+              </div>
+              <div className="absolute bottom-28 right-12 text-xs font-normal text-black ">
+                (Continued...)
+              </div>
+              <div className="border border-black p-2 h-full w-full relative">
+                <div className="scale-[0.3] absolute top-5 -right-10">
+                  <Barcode
+                    value={fformdata ? fformdata.sr_no : ""}
+                    fontSize={30}
+                  />
+                </div>
+                <div className="p-4 text-center text-xs">Counterfoil</div>
+                <div className="text-center text-sm font-medium">
+                  THE CENTRAL SALES TAX
+                </div>
+                <div className="text-center text-sm font-medium">
+                  (Registration & Turnover) Rules, 1957
+                </div>
+                <div className="text-center text-sm font-medium">
+                  FORM &lsquo;F&lsquo;
+                </div>
+                <div className="text-center text-xs font-medium mt-4">
+                  (FORM OF DECLARATION TO BE ISSUED BY THE TRANSFEREE) [See Rule
+                  12(5)]
+                </div>
+
+                <table border={1} className="w-5/6 mx-auto mt-6">
+                  <tbody className="w-full">
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Serial No
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        {fformdata ? fformdata.sr_no : ""}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Name of the issuing state:
+                      </td>
+                      <td className="px-2 text-xs text-nowrap leading-6 w-[50%]">
+                        {fformdata?.office_of_issue == "Dadra_Nagar_Haveli"
+                          ? "Dadra and Nagar Haveli"
+                          : fformdata?.office_of_issue}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Office of Issue:
+                      </td>
+                      <td className="px-2 text-xs text-nowrap leading-6 w-[50%]">
+                        Dept. of VAT -{" "}
+                        {fformdata?.office_of_issue == "Dadra_Nagar_Haveli"
+                          ? "Dadra and Nagar Haveli"
+                          : fformdata?.office_of_issue}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Date of Issue :
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        {formateDate(
+                          new Date(fformdata?.createdAt!),
+                        ).replaceAll("-", "/")}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Quarter & Year :{" "}
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        {fformdata?.to_period.toLocaleString("default", {
+                          month: "short",
+                        })}
+                        ,{fformdata?.from_period.getFullYear()}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2  text-xs leading-6 w-[50%]">
+                        Name of the purchasing dealer
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        {dvatdata ? dvatdata.tradename : ""}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        to whom issued along with his RC NO
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        {dvatdata && dvatdata.tinNumber}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Date from which registration is valid
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        {fformdata
+                          ? formateDate(
+                              new Date(fformdata.valid_date),
+                            ).replaceAll("-", "/")
+                          : ""}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <p className="px-2 w-5/6 mx-auto text-xs text-justify leading-6">
+                  To
+                </p>
+                <p className="px-2 w-5/6 mx-auto text-xs text-justify leading-6">
+                  {fformdata ? fformdata.seller_name : ""} (#Seller)
+                </p>
+                <p className="px-2 w-5/6 mx-auto text-xs text-justify leading-6">
+                  Registration Certificate No. of the Transferor{" "}
+                  {fformdata ? fformdata.seller_tin_no : ""}
+                </p>
+                <br />
+
+                <p className="px-2 w-5/6 mx-auto text-xs text-justify leading-6 tracking-tighter">
+                  Certified that the goods transferred to me/us as per details
+                  below have been received and duly accounted for:-
+                </p>
+
+                <table border={1} className="w-5/6 mx-auto">
+                  <tbody className="w-full">
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Description of the goods sent
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        (see table below)
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Quantity or weight
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        (see table below)
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Value of the goods
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        (see table below)
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[80%]">
+                        Number and date of invoice [or challan or any other
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        document under which goods were sent
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        (see table below)
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Name of Railway, Steamer or Ferry Station or Airport
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        or Post Office from where the goods were dispatched
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        No. and date of Railway Receipt or Postal Receipt or
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Goods Receipt with Trip sheet of lorry or any other
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        document indicating the means of transport
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        Date on which delivery was taken by the transferee
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">Amount</td>
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        {fformdata?.amount}
+                      </td>
+                    </tr>
+                    <tr className="w-full">
+                      <td className="px-2 text-xs leading-6 w-[50%]">
+                        The above statements are true to the best of my
+                        knowledge and belief.
+                      </td>
+                      <td className="px-2 text-xs leading-6 w-[50%]"></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <p className="text-right mt-4 text-xs leading-6">
+                  (Signature)...................................................
+                </p>
+                <p className="text-right text-xs leading-6">
+                  (Name of the person signing the declaration)
+                </p>
+                <p className="text-right text-xs leading-6">
+                  (Status of the person signing the declaration in relation to
+                  the transferee)].
+                </p>
+                <p className="text-right text-xs leading-6">
+                  (Status of the person signing the declaration in relation to
+                  the transferor)].
+                </p>
+
+                <p className="text-left text-xs leading-6">
+                  **Strike out whichever is not applicable.
+                </p>
+                <p className="text-left text-xs leading-6">
+                  Note 1. To be furnished to the assessing authority in
+                  accordance with rules framed under Section 13(4)(e).)
+                </p>
+              </div>
+            </div>
+
+            {pages.map((pageData, pageIndex) => (
+              <div
+                key={pageIndex}
+                className="bg-white p-8 shadow h-290.75 w-198.5 mx-auto relative font-bold"
+                style={{
+                  pageBreakAfter:
+                    pageIndex === pages.length - 1 ? "auto" : "always",
+                }}
+              >
+                <div className="top-0 left-0 h-full w-full absolute p-8 opacity-80">
+                  <Image
+                    src="/cform_bg.png"
+                    alt="logo"
+                    fill={true}
+                    className="p-8"
+                  />
+                </div>
+                <div className="absolute bottom-28 right-12 text-xs font-normal text-black ">
+                  (Continued...)
+                </div>
+                <div className="border border-black p-2 h-full w-full relative">
+                  <div className="scale-[0.3] absolute top-10 -right-10">
+                    <Barcode
+                      value={fformdata ? fformdata.sr_no : ""}
+                      fontSize={30}
+                    />
+                  </div>
+                  <div className="flex">
+                    <div className="grow"></div>
+                    <div className="text-xs leading-6">
+                      <h1>Form &lsquo;F&lsquo;</h1>
+                      <h1>Annexure </h1>
+                    </div>
+                  </div>
+                  <table border={1} className="w-5/6 mx-auto mt-6">
+                    <tbody className="w-full">
+                      <tr className="w-full">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
+                          Office of Issue
+                        </td>
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
+                          Dept. of VAT -{" "}
+                          {fformdata?.office_of_issue == "Dadra_Nagar_Haveli"
+                            ? "Dadra and Nagar Haveli"
+                            : fformdata?.office_of_issue}
+                        </td>
+                      </tr>
+                      <tr className="w-full">
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
+                          Date of Issue :
+                        </td>
+                        <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
+                          {formateDate(new Date()).replaceAll("-", "/")}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <table
+                    border={1}
+                    className="mx-4 mt-6"
+                    style={{ pageBreakInside: "avoid" }}
+                  >
+                    <thead style={{ display: "table-header-group" }}>
+                      <tr>
+                        <td
+                          className="border border-black text-xs leading-6 text-center"
+                          colSpan={7}
+                        >
+                          INVOICE DETAILS
+                        </td>
+                      </tr>
+                    </thead>
+                    <tbody className="w-full">
+                      <tr
+                        className="w-full"
+                        style={{ pageBreakInside: "avoid" }}
+                      >
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[4%]">
+                          No.
+                        </td>
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
+                          Inv. No
+                        </td>
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                          Inv.Date
+                        </td>
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
+                          Commodity Desc.
+                        </td>
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                          Inv. Value(Rs)
+                        </td>
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
+                          Purpose
+                        </td>
+                        <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                          Pur. Ord. No./Date
+                        </td>
+                      </tr>
+                      {pageData.map((val: returns_entry, index) => (
+                        <tr
+                          key={index}
+                          className="w-full"
+                          style={{ pageBreakInside: "avoid" }}
+                        >
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[4%]">
+                            {pageIndex * PAGE_SIZE + index + 1}
+                          </td>
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
+                            {val.invoice_number}
+                          </td>
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
+                            {formateDatecus(
+                              new Date(val.invoice_date),
+                            ).replaceAll("-", "/")}
+                          </td>
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[22%]">
+                            {val.description_of_goods}
+                          </td>
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[14%]">
+                            {val.total_invoice_number}
+                          </td>
+                          <td className="px-2 py-1 border border-black text-xs leading-6 w-[20%]">
+                            Branch Transfer
                           </td>
                           <td className="px-2 py-1 border border-black text-xs leading-6 w-[10%]">
                             {formateDatecus(

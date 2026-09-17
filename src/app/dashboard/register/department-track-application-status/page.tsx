@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-
 import {
   Table,
   TableBody,
@@ -36,6 +35,7 @@ import {
 import DvatTrackApplicationStatus from "@/action/new/composition/dvattrackapplicationstatus";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import { getCurrentUserRole } from "@/lib/auth";
 
 enum DataType {
   DVAT04 = "DVAT04",
@@ -407,6 +407,7 @@ const TrackAppliation = () => {
 
   useEffect(() => {
     const init = async () => {
+
       const data: TableData[] = [];
       const authResponse = await getAuthenticatedUserId();
       if (!authResponse.status || !authResponse.data) {
@@ -415,6 +416,10 @@ const TrackAppliation = () => {
       }
       setUserid(authResponse.data);
 
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
       const userresponse = await GetUser({
         id: authResponse.data,
       });
@@ -496,10 +501,7 @@ const TrackAppliation = () => {
         <div className="bg-white p-2 shadow mt-4">
           <div className="bg-blue-500 p-2 text-white flex justify-between items-center">
             <p>Track Application Status</p>
-            <Button
-              type="primary"
-              onClick={() => setIsDrawerOpen(true)}
-            >
+            <Button type="primary" onClick={() => setIsDrawerOpen(true)}>
               ℹ️ Info
             </Button>
           </div>
@@ -517,8 +519,8 @@ const TrackAppliation = () => {
                     Pending for Processing
                   </TableCell>
                   <TableCell className="text-left p-2">
-                    Application filed successfully. Pending with Tax Officer
-                    for Processing.*
+                    Application filed successfully. Pending with Tax Officer for
+                    Processing.*
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -536,8 +538,8 @@ const TrackAppliation = () => {
                     Clarification filed-Pending for Order
                   </TableCell>
                   <TableCell className="text-left p-2">
-                    Clarification filed successfully by Applicant. Pending
-                    with Tax Officer for Order.*
+                    Clarification filed successfully by Applicant. Pending with
+                    Tax Officer for Order.*
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -545,23 +547,19 @@ const TrackAppliation = () => {
                     Clarification not filed Pending for Order
                   </TableCell>
                   <TableCell className="text-left p-2">
-                    Clarification not filed by the Applicant. Pending with
-                    Tax Officer for Rejection.*
+                    Clarification not filed by the Applicant. Pending with Tax
+                    Officer for Rejection.*
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="text-left w-60 p-2">
-                    Approved
-                  </TableCell>
+                  <TableCell className="text-left w-60 p-2">Approved</TableCell>
                   <TableCell className="text-left p-2">
                     Application is Approved. Registration ID and possward
                     emailed to Applicant.
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="text-left w-60 p-2">
-                    Rejected
-                  </TableCell>
+                  <TableCell className="text-left w-60 p-2">Rejected</TableCell>
                   <TableCell className="text-left p-2">
                     Application is Rejected by tax officer.
                   </TableCell>

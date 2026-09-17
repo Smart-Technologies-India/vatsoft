@@ -16,6 +16,8 @@ import { Button, Spin, Modal, Tabs } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import AddCreditDebitNote from "@/components/creditdebitnote/addcreditdebitnote";
+import { getCurrentUserRole } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 const formatDate = (value: Date | string) => {
   return new Intl.DateTimeFormat("en-GB", {
@@ -38,10 +40,13 @@ const getStatusColor = (status: string) => {
 };
 
 const CreditDebitNotePage = () => {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [notes, setNotes] = useState<CurrentDvatCreditDebitNote[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [drawerMode, setDrawerMode] = useState<"credit" | "debit" | "goods-return">("credit");
+  const [drawerMode, setDrawerMode] = useState<
+    "credit" | "debit" | "goods-return"
+  >("credit");
   const [deleteModalState, setDeleteModalState] = useState<{
     open: boolean;
     noteId: number | null;
@@ -54,6 +59,10 @@ const CreditDebitNotePage = () => {
 
   const loadNotes = async () => {
     setIsLoading(true);
+    const userrole = await getCurrentUserRole();
+    if (userrole == "USER" || userrole == null || userrole == undefined) {
+      return router.back();
+    }
     try {
       const response = await GetCurrentDvatCreditDebitNotes();
       if (!response.status || !response.data) {
@@ -87,7 +96,9 @@ const CreditDebitNotePage = () => {
           isDeleting: false,
         });
 
-        toast.success(response.message || "Credit/Debit note deleted successfully.");
+        toast.success(
+          response.message || "Credit/Debit note deleted successfully.",
+        );
         await loadNotes();
       } else {
         toast.error(response.message || "Failed to delete credit/debit note.");
@@ -162,9 +173,7 @@ const CreditDebitNotePage = () => {
     if (tableNotes.length === 0) {
       return (
         <div className="bg-white p-12 text-center">
-          <p className="text-gray-500">
-            No notes found for current DVAT.
-          </p>
+          <p className="text-gray-500">No notes found for current DVAT.</p>
         </div>
       );
     }
@@ -287,15 +296,10 @@ const CreditDebitNotePage = () => {
             </h1>
             <div className="grow"></div>
             <div className="flex gap-2">
-              <Button
-                type="primary"
-                onClick={() => openDrawer("credit")}
-              >
+              <Button type="primary" onClick={() => openDrawer("credit")}>
                 Add Credit Note
               </Button>
-              <Button
-                onClick={() => openDrawer("debit")}
-              >
+              <Button onClick={() => openDrawer("debit")}>
                 Add Debit Note
               </Button>
               {/* <Button
@@ -310,9 +314,7 @@ const CreditDebitNotePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
             <p className="text-xs text-gray-600 mb-1">Total Notes</p>
-            <p className="text-lg font-medium text-gray-900">
-              {notes.length}
-            </p>
+            <p className="text-lg font-medium text-gray-900">{notes.length}</p>
           </div>
           <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
             <p className="text-xs text-gray-600 mb-1">Total VAT Amount</p>
@@ -367,7 +369,8 @@ const CreditDebitNotePage = () => {
           onOk={handleDeleteConfirm}
         >
           <p>
-            Are you sure you want to delete this credit/debit note? This action cannot be undone.
+            Are you sure you want to delete this credit/debit note? This action
+            cannot be undone.
           </p>
         </Modal>
       </div>

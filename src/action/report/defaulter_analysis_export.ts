@@ -20,7 +20,7 @@ interface ResponseType {
 }
 
 interface DefaulterAnalysisExportPayload {
-  dept?: SelectOffice;
+  dept?: SelectOffice | "ALL";
   arnnumber?: string;
   tradename?: string;
 }
@@ -46,7 +46,7 @@ const DefaulterAnalysisExport = async (
         deletedAt: null,
         deletedById: null,
         dvat: {
-          ...(payload.dept && { selectOffice: payload.dept }),
+          ...(payload.dept && payload.dept !== "ALL" && { selectOffice: payload.dept }),
           ...(payload.arnnumber && { tinNumber: payload.arnnumber }),
           ...(payload.tradename && {
             OR: [

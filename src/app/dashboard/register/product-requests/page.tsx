@@ -10,6 +10,7 @@ import { product_request, ProductRequest } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { ProcessProductRequestProvider } from "@/components/forms/product_request/processproductrequest";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { getCurrentUserRole } from "@/lib/auth";
 
 interface ProductRequestWithUser extends product_request {
   requestedBy: {
@@ -34,17 +35,17 @@ const ProductRequestsPage = () => {
   >([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchProductName, setSearchProductName] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ProductRequest | undefined>();
+  const [statusFilter, setStatusFilter] = useState<
+    ProductRequest | undefined
+  >();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] =
     useState<ProductRequestWithUser | null>(null);
 
-  const fetchProductRequests = async (
-    filters?: {
-      productName?: string;
-      status?: ProductRequest;
-    }
-  ) => {
+  const fetchProductRequests = async (filters?: {
+    productName?: string;
+    status?: ProductRequest;
+  }) => {
     setLoading(true);
     const response = await GetAllProductRequests(filters);
     if (response.status && response.data) {
@@ -64,6 +65,10 @@ const ProductRequestsPage = () => {
         return router.push("/");
       }
       setUserid(authResponse.data);
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
     };
     init();
   }, []);
@@ -92,9 +97,10 @@ const ProductRequestsPage = () => {
       "Company Name": r.company_name,
       "Pack Type": r.pack_type,
       "Crate Size": r.crate_size,
-      "Requested By": `${r.requestedBy.firstName ?? ""} ${r.requestedBy.lastName ?? ""}`.trim(),
-      "Mobile": r.requestedBy.mobileOne,
-      "Email": r.requestedBy.email ?? "",
+      "Requested By":
+        `${r.requestedBy.firstName ?? ""} ${r.requestedBy.lastName ?? ""}`.trim(),
+      Mobile: r.requestedBy.mobileOne,
+      Email: r.requestedBy.email ?? "",
       Status: r.status,
       "Created At": new Date(r.createdAt).toLocaleString(),
     }));
@@ -200,7 +206,9 @@ const ProductRequestsPage = () => {
           type="primary"
           size="small"
           onClick={() => handleProcess(record)}
-          disabled={record.status === "APPROVED" || record.status === "REJECTED"}
+          disabled={
+            record.status === "APPROVED" || record.status === "REJECTED"
+          }
         >
           Process
         </Button>
@@ -215,7 +223,8 @@ const ProductRequestsPage = () => {
   };
 
   const sortedProductRequests = [...productRequests].sort((a, b) => {
-    const statusDifference = statusPriority[a.status] - statusPriority[b.status];
+    const statusDifference =
+      statusPriority[a.status] - statusPriority[b.status];
     if (statusDifference !== 0) {
       return statusDifference;
     }
@@ -228,7 +237,9 @@ const ProductRequestsPage = () => {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Product Requests Management</h1>
         <div className="flex gap-2">
-          <Button onClick={downloadExcel} type="primary">Download Excel</Button>
+          <Button onClick={downloadExcel} type="primary">
+            Download Excel
+          </Button>
           <Button onClick={() => router.back()}>Back</Button>
         </div>
       </div>

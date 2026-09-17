@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getCurrentUserRole } from "@/lib/auth";
 
 interface ReturnDueFormState {
   id?: number;
@@ -160,6 +161,10 @@ const DepartmentReturnDatePage = () => {
         toast.error(authResponse.message);
         router.push("/");
         return;
+      }
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
       }
 
       await loadRows(10, 0);
@@ -333,7 +338,7 @@ const DepartmentReturnDatePage = () => {
           </div>
 
           <div className="grow" />
-{/* 
+          {/* 
           <div className="flex flex-wrap gap-2 items-center">
             <Input
               size="small"

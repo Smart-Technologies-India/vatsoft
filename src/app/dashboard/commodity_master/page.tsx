@@ -12,8 +12,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getCurrentUserRole } from "@/lib/auth";
 import { commodity_master, Status } from "@prisma/client";
-import { Button, Drawer, Pagination, Popover, Input, Select, Radio } from "antd";
+import {
+  Button,
+  Drawer,
+  Pagination,
+  Popover,
+  Input,
+  Select,
+  Radio,
+} from "antd";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
@@ -34,7 +43,9 @@ const CommodityMaster = () => {
   const [commodty, setCommodity] = useState<commodity_master[]>([]);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [searchType, setSearchType] = useState<"all" | "name" | "description" | "type">("all");
+  const [searchType, setSearchType] = useState<
+    "all" | "name" | "description" | "type"
+  >("all");
   const [selectedProductType, setSelectedProductType] = useState<string>("all");
   const [open, setOpen] = useState(false);
   const [comm, setComm] = useState<commodity_master | null>(null);
@@ -106,6 +117,7 @@ const CommodityMaster = () => {
   useEffect(() => {
     const init = async () => {
       const authResponse = await getAuthenticatedUserId();
+
       if (!authResponse.status || !authResponse.data) {
         toast.error(authResponse.message);
         return router.push("/");
@@ -133,7 +145,13 @@ const CommodityMaster = () => {
       fetchCommodities(1, pagination.take);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, searchType, selectedProductType, fetchCommodities, pagination.take]);
+  }, [
+    searchTerm,
+    searchType,
+    selectedProductType,
+    fetchCommodities,
+    pagination.take,
+  ]);
 
   const showDrawer = async (id: number) => {
     try {
@@ -363,7 +381,11 @@ const CommodityMaster = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Search by:
                 </label>
-                <Radio.Group value={searchType} onChange={(e) => setSearchType(e.target.value)} className="flex gap-4 flex-wrap">
+                <Radio.Group
+                  value={searchType}
+                  onChange={(e) => setSearchType(e.target.value)}
+                  className="flex gap-4 flex-wrap"
+                >
                   <Radio value="all">All Fields</Radio>
                   <Radio value="name">Product Name</Radio>
                   <Radio value="description">Description</Radio>

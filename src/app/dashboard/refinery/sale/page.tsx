@@ -35,6 +35,7 @@ import { formatDate } from "date-fns";
 import { enc } from "crypto-js";
 import { encryptURLData } from "@/utils/methods";
 import * as XLSX from "xlsx";
+import { getCurrentUserRole } from "@/lib/auth";
 
 type RefinerySaleWithRelations = refinery_sale & {
   commodity_master: commodity_master;
@@ -156,10 +157,19 @@ const RefinerySalePage = () => {
       }
     });
 
-    return Array.from(grouped.values()).sort(
-      (a, b) =>
-        b.invoice_date.getTime() - a.invoice_date.getTime() || b.id - a.id,
-    );
+    return Array.from(grouped.values()).sort((a, b) => {
+      // First, prioritize VATPAID status
+      if (a.refinery_status === "VATPAID" && b.refinery_status !== "VATPAID") {
+        return -1;
+      }
+      if (a.refinery_status !== "VATPAID" && b.refinery_status === "VATPAID") {
+        return 1;
+      }
+      // Then sort by invoice_date descending
+      return (
+        b.invoice_date.getTime() - a.invoice_date.getTime() || b.id - a.id
+      );
+    });
   }, [saleEntries]);
 
   const totalTaxableValue = useMemo(() => {
@@ -316,6 +326,10 @@ const RefinerySalePage = () => {
   const loadData = async () => {
     setIsPageLoading(true);
     try {
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
       const salesResponse = await GetUserRefinerySale();
 
       if (salesResponse.status && salesResponse.data) {
@@ -339,7 +353,7 @@ const RefinerySalePage = () => {
     try {
       // Group entries by invoice number
       const invoiceGroups: Record<string, typeof saleEntries> = {};
-      saleEntries.forEach(entry => {
+      saleEntries.forEach((entry) => {
         if (!invoiceGroups[entry.invoice_number]) {
           invoiceGroups[entry.invoice_number] = [];
         }
@@ -348,36 +362,41 @@ const RefinerySalePage = () => {
 
       // Prepare data for Excel export with all item details
       let srNo = 1;
-      const reportData = Object.values(invoiceGroups).flatMap((invoiceItems) => {
-        return invoiceItems.map((entry, itemIndex) => {
-          let cstValue = "";
-          
-          // Only show CST on first item of each invoice
-          if (itemIndex === 0) {
-            if (entry.refinery_status === "COMPLETED") {
-              cstValue = formatCurrency(Number(entry.cst_purchase || 0));
-            } else if (entry.refinery_status === "VATPAID") {
-              cstValue = "0";
-            } else {
-              cstValue = "N/A";
+      const reportData = Object.values(invoiceGroups).flatMap(
+        (invoiceItems) => {
+          return invoiceItems.map((entry, itemIndex) => {
+            let cstValue = "";
+
+            // Only show CST on first item of each invoice
+            if (itemIndex === 0) {
+              if (entry.refinery_status === "COMPLETED") {
+                cstValue = formatCurrency(Number(entry.cst_purchase || 0));
+              } else if (entry.refinery_status === "VATPAID") {
+                cstValue = "0";
+              } else {
+                cstValue = "N/A";
+              }
             }
-          }
-          // For remaining items in same invoice, CST is blank
-          
-          return {
-            "Sr. No.": srNo++,
-            "Invoice No.": entry.invoice_number,
-            "Invoice Date": formatDate(new Date(entry.invoice_date), "dd/MM/yyyy"),
-            "Purchaser TIN": entry.seller_tin_number.tin_number,
-            "Purchaser Name": entry.seller_tin_number.name_of_dealer,
-            "Product Name": entry.commodity_master.product_name,
-            "Quantity": formatQuantity(Number(entry.quantity || 0)),
-            "CST Purchase (₹)": cstValue,
-            "Status": entry.refinery_status || "SALE",
-            "Created Date": formatDateTime(new Date(entry.createdAt)),
-          };
-        });
-      });
+            // For remaining items in same invoice, CST is blank
+
+            return {
+              "Sr. No.": srNo++,
+              "Invoice No.": entry.invoice_number,
+              "Invoice Date": formatDate(
+                new Date(entry.invoice_date),
+                "dd/MM/yyyy",
+              ),
+              "Purchaser TIN": entry.seller_tin_number.tin_number,
+              "Purchaser Name": entry.seller_tin_number.name_of_dealer,
+              "Product Name": entry.commodity_master.product_name,
+              Quantity: formatQuantity(Number(entry.quantity || 0)),
+              "CST Purchase (₹)": cstValue,
+              Status: entry.refinery_status || "SALE",
+              "Created Date": formatDateTime(new Date(entry.createdAt)),
+            };
+          });
+        },
+      );
 
       // Create workbook and worksheet
       const workbook = XLSX.utils.book_new();
@@ -444,9 +463,9 @@ const RefinerySalePage = () => {
                 className="h-9 rounded border border-gray-300 px-3 text-sm outline-none focus:border-blue-500"
               >
                 <option value="all">All Status</option>
+                <option value="VATPAID">VATPAID</option>
                 <option value="SALE">SALE</option>
                 <option value="PAID">PAID</option>
-                <option value="VATPAID">VATPAID</option>
                 <option value="DISPATCH">DISPATCH</option>
                 <option value="COMPLETED">COMPLETED</option>
               </select>

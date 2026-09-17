@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Drawer } from "antd";
-import Lottie from "lottie-react";
+import { Lottie } from "lottie-react";
 import { dvat04, user } from "@prisma/client";
 import OfficerDashboardPage from "@/components/dashboard/officerdashboard";
 import RefineryDashboard from "@/components/dashboard/refinerydashboard";
@@ -267,7 +267,8 @@ const Page = () => {
                 <span className="h-32 w-32 overflow-hidden">
                   {chatAnimationData ? (
                     <Lottie
-                      animationData={chatAnimationData}
+                      // animationData={chatAnimationData}
+                      src="/cs.json"
                       loop
                       autoplay
                       className="h-full w-full"

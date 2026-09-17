@@ -25,6 +25,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
 import { MdiDownload } from "@/components/icons";
 import * as XLSX from "xlsx";
+import { getCurrentUserRole } from "@/lib/auth";
 
 const TrackAppliation = () => {
   const router = useRouter();
@@ -136,6 +137,10 @@ const TrackAppliation = () => {
         return router.push("/");
       }
       setUserid(authResponse.data);
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
       const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);

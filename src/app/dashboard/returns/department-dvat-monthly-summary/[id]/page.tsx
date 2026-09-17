@@ -11,6 +11,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetDvat04 from "@/action/register/getdvat04";
 import GetMonthlySaleAndPurchaseSummary from "@/action/stock/getmonthlysaleandpurchasesummary";
 import * as XLSX from "xlsx";
+import { getCurrentUserRole } from "@/lib/auth";
 
 interface MonthlySummary {
   month: number;
@@ -59,6 +60,10 @@ const DvatMonthlySummary = () => {
           toast.error(authResponse.message);
           router.push("/");
           return;
+        }
+        const userrole = await getCurrentUserRole();
+        if (userrole == "USER" || userrole == null || userrole == undefined) {
+          return router.back();
         }
 
         // Fetch DVAT04 data

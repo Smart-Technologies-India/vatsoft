@@ -2,7 +2,7 @@
 "use client";
 
 import { Button, Drawer, Input, Modal } from "antd";
-import Lottie from "lottie-react";
+import { Lottie } from "lottie-react";
 import Marquee from "react-fast-marquee";
 import {
   Dispatch,
@@ -812,7 +812,8 @@ export default function HomePage() {
         <span className="h-32 w-32 overflow-hidden">
           {chatAnimationData ? (
             <Lottie
-              animationData={chatAnimationData}
+              // animationData={chatAnimationData}
+              src="/cs.json"
               loop
               autoplay
               className="h-full w-full"

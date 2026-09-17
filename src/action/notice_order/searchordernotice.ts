@@ -15,7 +15,7 @@ interface SearchNoticeOrderPayload {
   todate?: Date;
   tax_period_year?: string;
   tax_period_month?: string;
-  dept?: SelectOffice;
+  dept?: SelectOffice | "ALL";
   form_type?: FormType;
   tin?: string;
   tradename?: string;
@@ -68,7 +68,7 @@ const SearchNoticeOrder = async (
           dvat: {
             ...(payload.userid && { createdById: payload.userid }),
             ...(payload.dvatid && { id: payload.dvatid }),
-            ...(payload.dept && { selectOffice: payload.dept }),
+            ...(payload.dept && payload.dept !== "ALL" && { selectOffice: payload.dept }),
             ...(payload.tin && {
               tinNumber: {
                 contains: payload.tin,
@@ -122,7 +122,7 @@ const SearchNoticeOrder = async (
           dvat: {
             ...(payload.userid && { createdById: payload.userid }),
             ...(payload.dvatid && { id: payload.dvatid }),
-            ...(payload.dept && { selectOffice: payload.dept }),
+            ...(payload.dept && payload.dept !== "ALL" && { selectOffice: payload.dept }),
             ...(payload.tin && {
               tinNumber: {
                 contains: payload.tin,

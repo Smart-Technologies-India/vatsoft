@@ -27,7 +27,7 @@ interface GetInactiveDealersPayload {
   commodity?: string;
   frequency?: string;
   dealerType?: string;
-  dept?: SelectOffice;
+  dept?: SelectOffice | "ALL";
   skip: number;
   take: number;
 }
@@ -62,7 +62,7 @@ const GetInactiveDealers = async (
           ...(payload.dealerType && {
             compositionScheme: payload.dealerType === "COMPOSITION",
           }),
-          ...(payload.dept && { selectOffice: payload.dept }),
+          ...(payload.dept && payload.dept !== "ALL" && { selectOffice: payload.dept }),
           deletedAt: null,
           deletedBy: null,
         },

@@ -20,6 +20,7 @@ import GetDvatChallan, {
   type DvatChallanWithRelations,
 } from "@/action/challan/getdvatchallan";
 import * as XLSX from "xlsx";
+import { getCurrentUserRole } from "@/lib/auth";
 
 const inrFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -81,6 +82,10 @@ const DvatChallanHistory = () => {
           setDvatData(dvatResponse.data);
         }
 
+        const userrole = await getCurrentUserRole();
+        if (userrole == "USER" || userrole == null || userrole == undefined) {
+          return router.back();
+        }
         // Fetch challans for this DVAT
         const response = await GetDvatChallan({
           dvatid: dvatId,
@@ -89,7 +94,9 @@ const DvatChallanHistory = () => {
         });
 
         if (response.status && response.data?.result) {
-          setChallans((response.data.result as DvatChallanWithRelations[]) || []);
+          setChallans(
+            (response.data.result as DvatChallanWithRelations[]) || [],
+          );
           setPagination((prev) => ({
             ...prev,
             total: response.data.total ?? 0,
@@ -131,7 +138,8 @@ const DvatChallanHistory = () => {
         .filter((challan) => parseAmount(challan.total_tax_amount) !== 0)
         .map((challan) => {
           const returnPeriod =
-            challan.returns_01 && (challan.returns_01.month || challan.returns_01.quarter)
+            challan.returns_01 &&
+            (challan.returns_01.month || challan.returns_01.quarter)
               ? `${challan.returns_01.month || challan.returns_01.quarter} ${challan.returns_01.year}`
               : "-";
 
@@ -308,7 +316,10 @@ const DvatChallanHistory = () => {
             <tbody className="divide-y divide-gray-200">
               {filteredChallans.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
+                  <td
+                    colSpan={10}
+                    className="px-4 py-8 text-center text-gray-500"
+                  >
                     No challans found
                   </td>
                 </tr>
@@ -347,9 +358,7 @@ const DvatChallanHistory = () => {
                     <td className="px-4 py-3">
                       <Tag
                         color={
-                          challan.paymentstatus === "PAID"
-                            ? "green"
-                            : "orange"
+                          challan.paymentstatus === "PAID" ? "green" : "orange"
                         }
                       >
                         {challan.paymentstatus}

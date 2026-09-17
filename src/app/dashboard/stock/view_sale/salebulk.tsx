@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 import {
@@ -1389,7 +1389,6 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         }
 
         if (Object.keys(stockMap).length > 0) {
-
           // Sum quantities per item_code across rows with valid item codes
           const uploadQuantityMap: { [itemCode: number]: number } = {};
           for (const row of parsedRows) {
@@ -1403,7 +1402,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             if (row.item_code > 0) {
               const availablePcs = stockMap[row.item_code] ?? 0;
               const totalRequested = uploadQuantityMap[row.item_code] ?? 0;
-              
+
               if (totalRequested > availablePcs) {
                 if (!row.errorname.includes("* Insufficient stock")) {
                   row.error = true;
@@ -1845,9 +1844,15 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             <TableHeader>
               <TableRow className="bg-red-50">
                 <TableHead className="border text-center">Invoice No</TableHead>
-                <TableHead className="border text-center">Commodity Name</TableHead>
-                <TableHead className="border text-center">Requested Qty</TableHead>
-                <TableHead className="border text-center">Available Qty</TableHead>
+                <TableHead className="border text-center">
+                  Commodity Name
+                </TableHead>
+                <TableHead className="border text-center">
+                  Requested Qty
+                </TableHead>
+                <TableHead className="border text-center">
+                  Available Qty
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

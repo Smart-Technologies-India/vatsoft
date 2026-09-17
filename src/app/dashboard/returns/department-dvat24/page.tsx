@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { toast } from "react-toastify";
+import { getCurrentUserRole } from "@/lib/auth";
 
 const CreateDvat24 = () => {
   const router = useRouter();
@@ -16,6 +17,10 @@ const CreateDvat24 = () => {
         return router.push("/");
       }
       setUserid(authResponse.data);
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
     };
     init();
   }, []);

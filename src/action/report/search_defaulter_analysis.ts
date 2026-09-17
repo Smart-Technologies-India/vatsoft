@@ -18,7 +18,7 @@ interface ResponseType {
 }
 
 interface SearchDefaulterAnalysisPayload {
-  dept?: SelectOffice;
+  dept?: SelectOffice | "ALL";
   arnnumber: string;
   tradename?: string;
   skip: number;
@@ -47,7 +47,7 @@ const SearchDefaulterAnalysis = async (
         deletedById: null,
         return_status: "PENDINGFILING",
         dvat: {
-          ...(payload.dept && { selectOffice: payload.dept }),
+          ...(payload.dept && payload.dept !== "ALL" && { selectOffice: payload.dept }),
           tinNumber: payload.arnnumber,
           ...(payload.tradename && {
             OR: [

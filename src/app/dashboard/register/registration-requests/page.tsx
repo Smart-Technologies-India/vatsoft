@@ -37,6 +37,7 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
+import { getCurrentUserRole } from "@/lib/auth";
 
 type RegistrationRequestRow = dvat04 & { first_stock: first_stock[] };
 
@@ -58,6 +59,10 @@ const RegistrationRequests = () => {
         return router.push("/");
       }
       setUserid(authResponse.data);
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
 
       const userresponse = await GetUser({
         id: authResponse.data,
@@ -97,19 +102,24 @@ const RegistrationRequests = () => {
         accessorKey: "tradename",
         header: "Trade Name",
         cell: ({ row }) => (
-          <span className="text-sm text-gray-900">{row.original.tradename}</span>
+          <span className="text-sm text-gray-900">
+            {row.original.tradename}
+          </span>
         ),
       },
       {
         accessorKey: "contact_one",
         header: "Contact",
         cell: ({ row }) => (
-          <span className="text-sm text-gray-700">{row.original.contact_one}</span>
+          <span className="text-sm text-gray-700">
+            {row.original.contact_one}
+          </span>
         ),
       },
       {
         id: "schemeType",
-        accessorFn: (row) => (row.compositionScheme ? "Composition" : "Regular"),
+        accessorFn: (row) =>
+          row.compositionScheme ? "Composition" : "Regular",
         header: "Scheme Type",
         cell: ({ row }) => (
           <span
@@ -180,7 +190,11 @@ const RegistrationRequests = () => {
         return true;
       }
 
-      return [row.original.tinNumber, row.original.tradename, row.original.contact_one]
+      return [
+        row.original.tinNumber,
+        row.original.tradename,
+        row.original.contact_one,
+      ]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(searchValue));
     },
@@ -196,9 +210,12 @@ const RegistrationRequests = () => {
   });
 
   const schemeFilterValue =
-    (table.getColumn("schemeType")?.getFilterValue() as string | undefined) ?? "";
+    (table.getColumn("schemeType")?.getFilterValue() as string | undefined) ??
+    "";
   const frequencyFilterValue =
-    (table.getColumn("frequencyFilings")?.getFilterValue() as string | undefined) ?? "";
+    (table.getColumn("frequencyFilings")?.getFilterValue() as
+      | string
+      | undefined) ?? "";
 
   const getRowStatusColor = (status: string) => {
     if (status === "APPROVED") return "bg-emerald-50";
@@ -259,7 +276,9 @@ const RegistrationRequests = () => {
                     <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
                       <Input
                         value={globalFilter}
-                        onChange={(event) => setGlobalFilter(event.target.value)}
+                        onChange={(event) =>
+                          setGlobalFilter(event.target.value)
+                        }
                         placeholder="Search by TIN, trade name, or contact"
                         className="bg-white"
                       />
@@ -291,7 +310,8 @@ const RegistrationRequests = () => {
                       </select>
                     </div>
                     <div className="text-sm text-gray-600">
-                      Showing {table.getFilteredRowModel().rows.length} matching records
+                      Showing {table.getFilteredRowModel().rows.length} matching
+                      records
                     </div>
                   </div>
                 </div>
@@ -300,7 +320,10 @@ const RegistrationRequests = () => {
                   <Table className="border-0">
                     <TableHeader>
                       {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id} className="bg-gray-50 border-b">
+                        <TableRow
+                          key={headerGroup.id}
+                          className="bg-gray-50 border-b"
+                        >
                           {headerGroup.headers.map((header) => (
                             <TableHead
                               key={header.id}
@@ -308,27 +331,31 @@ const RegistrationRequests = () => {
                             >
                               {header.isPlaceholder ? null : (
                                 <div
-                                  className={header.column.getCanSort()
-                                    ? "flex cursor-pointer select-none items-center gap-1"
-                                    : "flex items-center gap-1"}
+                                  className={
+                                    header.column.getCanSort()
+                                      ? "flex cursor-pointer select-none items-center gap-1"
+                                      : "flex items-center gap-1"
+                                  }
                                   onClick={header.column.getToggleSortingHandler()}
                                 >
                                   {flexRender(
                                     header.column.columnDef.header,
                                     header.getContext(),
                                   )}
-                                  {header.column.getCanSort() ? (
-                                    {
-                                      asc: (
-                                        <MaterialSymbolsKeyboardArrowUpRounded className="h-4 w-4" />
-                                      ),
-                                      desc: (
-                                        <MaterialSymbolsKeyboardArrowDownRounded className="h-4 w-4" />
-                                      ),
-                                    }[header.column.getIsSorted() as string] ?? (
-                                      <MaterialSymbolsKeyboardArrowDownRounded className="h-4 w-4 opacity-30" />
-                                    )
-                                  ) : null}
+                                  {header.column.getCanSort()
+                                    ? ({
+                                        asc: (
+                                          <MaterialSymbolsKeyboardArrowUpRounded className="h-4 w-4" />
+                                        ),
+                                        desc: (
+                                          <MaterialSymbolsKeyboardArrowDownRounded className="h-4 w-4" />
+                                        ),
+                                      }[
+                                        header.column.getIsSorted() as string
+                                      ] ?? (
+                                        <MaterialSymbolsKeyboardArrowDownRounded className="h-4 w-4 opacity-30" />
+                                      ))
+                                    : null}
                                 </div>
                               )}
                             </TableHead>
@@ -372,12 +399,15 @@ const RegistrationRequests = () => {
 
                 <div className="flex flex-col gap-3 border-t border-gray-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm text-gray-600">
-                    Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+                    Page {table.getState().pagination.pageIndex + 1} of{" "}
+                    {table.getPageCount() || 1}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <select
                       value={table.getState().pagination.pageSize}
-                      onChange={(event) => table.setPageSize(Number(event.target.value))}
+                      onChange={(event) =>
+                        table.setPageSize(Number(event.target.value))
+                      }
                       className="flex h-9 rounded-md border border-input bg-white px-2 text-sm"
                     >
                       {[10, 20, 50].map((pageSize) => (

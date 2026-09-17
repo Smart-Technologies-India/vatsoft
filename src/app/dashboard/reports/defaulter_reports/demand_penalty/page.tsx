@@ -122,26 +122,61 @@ const AfterDeathLinePage = () => {
     [allDvatData],
   );
 
-  // Calculate statistics from full data (not just current page)
-  const totalDealers = allDvatData.length;
-  const totalPending = allDvatData.reduce((sum, item) => sum + item.pending, 0);
-  const totalVatAmount = allDvatData.reduce(
+  // Determine which data to use for calculations based on active filters
+  const dataForCalculation = useMemo(() => {
+    if (selectedType || selectedCommodity || selectedFrequency) {
+      // If filters are active, use filtered data for totals
+      let filteredData = allDvatData;
+
+      if (selectedType) {
+        filteredData = filteredData.filter((item) => {
+          if (selectedType === "REGULAR") {
+            return !item.dvat04.compositionScheme;
+          } else if (selectedType === "COMPOSITION") {
+            return item.dvat04.compositionScheme;
+          }
+          return true;
+        });
+      }
+
+      if (selectedCommodity) {
+        filteredData = filteredData.filter(
+          (item) => item.dvat04.commodity === selectedCommodity,
+        );
+      }
+
+      if (selectedFrequency) {
+        filteredData = filteredData.filter(
+          (item) => item.dvat04.frequencyFilings === selectedFrequency,
+        );
+      }
+
+      return filteredData;
+    }
+    // Otherwise use all data
+    return allDvatData;
+  }, [allDvatData, selectedType, selectedCommodity, selectedFrequency]);
+
+  // Calculate statistics from data (filtered or all based on active filters)
+  const totalDealers = dataForCalculation.length;
+  const totalPending = dataForCalculation.reduce((sum, item) => sum + item.pending, 0);
+  const totalVatAmount = dataForCalculation.reduce(
     (sum, item) => sum + parseFloat(item.vatamount),
     0,
   );
-  const totalInterest = allDvatData.reduce(
+  const totalInterest = dataForCalculation.reduce(
     (sum, item) => sum + parseFloat(item.interest),
     0,
   );
-  const totalPenalty = allDvatData.reduce(
+  const totalPenalty = dataForCalculation.reduce(
     (sum, item) => sum + parseFloat(item.penalty),
     0,
   );
-  const totalTax = allDvatData.reduce(
+  const totalTax = dataForCalculation.reduce(
     (sum, item) => sum + parseFloat(item.total),
     0,
   );
-  const compositionDealers = allDvatData.filter(
+  const compositionDealers = dataForCalculation.filter(
     (item) => item.dvat04.compositionScheme,
   ).length;
   const regularDealers = totalDealers - compositionDealers;
@@ -314,7 +349,7 @@ const AfterDeathLinePage = () => {
       ].includes(userrespone.data.role)
         ? userrespone.data.selectOffice!
         : selectedOffice === "ALL"
-          ? userrespone.data.selectOffice!
+          ? "ALL"
           : selectedOffice;
 
       // Load paginated data for table
@@ -420,7 +455,7 @@ const AfterDeathLinePage = () => {
       ].includes(user.role)
         ? user.selectOffice!
         : selectedOffice === "ALL"
-          ? user.selectOffice!
+          ? "ALL"
           : selectedOffice;
 
       // Load paginated data for table
@@ -502,7 +537,7 @@ const AfterDeathLinePage = () => {
       )
         ? user.selectOffice!
         : selectedOffice === "ALL"
-          ? user!.selectOffice!
+          ? "ALL"
           : selectedOffice;
 
     const search_response = await NotfiledReturnsReport({
@@ -539,7 +574,7 @@ const AfterDeathLinePage = () => {
       )
         ? user.selectOffice!
         : selectedOffice === "ALL"
-          ? user!.selectOffice!
+          ? "ALL"
           : selectedOffice;
 
     const search_response = await NotfiledReturnsReport({
@@ -689,7 +724,7 @@ const AfterDeathLinePage = () => {
       )
         ? user.selectOffice!
         : selectedOffice === "ALL"
-          ? user!.selectOffice!
+          ? "ALL"
           : selectedOffice;
 
     if (isSearch) {

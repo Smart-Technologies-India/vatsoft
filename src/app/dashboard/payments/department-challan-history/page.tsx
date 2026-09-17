@@ -30,6 +30,7 @@ import SearchChallan, {
 } from "@/action/challan/searchchallan";
 import GetDeptChallanSummary from "@/action/challan/getdeptchallansummary";
 import * as XLSX from "xlsx";
+import { getCurrentUserRole } from "@/lib/auth";
 // import GetAllChallan from "@/action/challan/getallchallan";
 
 type GroupedChallan =
@@ -449,6 +450,10 @@ const ChallanHistory = () => {
 
   useEffect(() => {
     const loadReturnDetails = async () => {
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
       const uniqueReturnIds = Array.from(
         new Set(
           challanData

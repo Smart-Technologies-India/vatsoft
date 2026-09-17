@@ -29,6 +29,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { challan } from "@prisma/client";
 import { CompositionCalculation } from "@/components/dvatreturn/vatcalculation";
 import GetReturnChallans from "@/action/return/getreturnchallans";
+import { getCurrentUserRole } from "@/lib/auth";
 
 // interface PercentageOutput {
 //   increase: string;
@@ -101,6 +102,12 @@ const AdminDvat16ReturnPreview = () => {
         toast.error(authResponse.message);
         return router.push("/");
       }
+
+      const userrole = await getCurrentUserRole();
+      if (userrole == "USER" || userrole == null || userrole == undefined) {
+        return router.back();
+      }
+
       const user_response = await GetUser({
         id: authResponse.data,
       });
@@ -129,12 +136,13 @@ const AdminDvat16ReturnPreview = () => {
           setChallans(challans_response.data);
         }
       } else {
-        toast.error(returnformsresponse.message || "Failed to fetch return data");
+        toast.error(
+          returnformsresponse.message || "Failed to fetch return data",
+        );
       }
     };
     init();
   }, [returnid]);
-
 
   const get_rr_number = (): string => {
     const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
@@ -306,7 +314,7 @@ const AdminDvat16ReturnPreview = () => {
       toast.error("Unable to download pdf try again.");
     }
   };
- 
+
   const showSubmit = (): boolean => {
     if (!return01) return false;
     const compositionCalculation = new CompositionCalculation(
@@ -317,12 +325,10 @@ const AdminDvat16ReturnPreview = () => {
     );
 
     return compositionCalculation.total() <= 0;
-   
   };
 
   return (
     <>
-
       <Modal
         title="Confirmation"
         open={paymentSubmitBox}
