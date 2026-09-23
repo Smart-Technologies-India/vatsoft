@@ -21,6 +21,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import { SortingState } from "@tanstack/react-table";
+import ServerTime from "@/action/servertime";
 
 type DailyPurchaseFilteredSummary = {
   overallSummary: DailyPurchaseSummary;
@@ -50,12 +51,12 @@ const formatMonthInputValue = (date: Date): string => {
 const formatAmount = (value: number | string | null | undefined): string => {
   const numericValue = typeof value === "number" ? value : Number(value ?? 0);
   if (!Number.isFinite(numericValue)) return "₹0.00";
-  
+
   const formatted = numericValue.toFixed(2);
   const parts = formatted.split(".");
   const integerPart = parts[0];
   const decimalPart = parts[1];
-  
+
   // Format integer part in Indian format (e.g., 1,22,23,340)
   const lastThree = integerPart.substring(integerPart.length - 3);
   const otherNumbers = integerPart.substring(0, integerPart.length - 3);
@@ -63,7 +64,7 @@ const formatAmount = (value: number | string | null | undefined): string => {
     otherNumbers === ""
       ? lastThree
       : otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + lastThree;
-  
+
   return `₹${indianFormat}.${decimalPart}`;
 };
 
@@ -72,7 +73,7 @@ const formatIndianNumber = (num: number): string => {
   if (!Number.isFinite(num)) return "0";
   const numStr = Math.floor(num).toString();
   if (numStr.length <= 3) return numStr;
-  
+
   const lastThree = numStr.slice(-3);
   const remaining = numStr.slice(0, -3);
   const withCommas = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
@@ -108,8 +109,9 @@ const ViewConvertedPurchase = () => {
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedPeriod, setSelectedPeriod] = useState<string>(
-    formatMonthInputValue(new Date()),
+    formatMonthInputValue(ServerTime().data as Date),
   );
+
   const [dateFilter, setDateFilter] = useState<{
     startDate: string;
     endDate: string;
@@ -154,7 +156,11 @@ const ViewConvertedPurchase = () => {
         endDate: dateFilter.endDate,
       });
 
-      if (!response.status || !response.data.result || response.data.result.length === 0) {
+      if (
+        !response.status ||
+        !response.data.result ||
+        response.data.result.length === 0
+      ) {
         toast.warning("No data to download.");
         setIsDownloading(false);
         return;
@@ -163,22 +169,24 @@ const ViewConvertedPurchase = () => {
       // Flatten all records from all invoices
       let srNo = 1;
       const data: any[] = [];
-      
+
       response.data.result.forEach((group) => {
         group.records.forEach((record) => {
           data.push({
             "Sr. No.": srNo++,
             "Invoice No.": group.invoice_number,
             "Invoice Date": formateDate(group.invoice_date),
-            "Seller": group.seller_tin_number.name_of_dealer,
-            "TIN": group.seller_tin_number.tin_number,
+            Seller: group.seller_tin_number.name_of_dealer,
+            TIN: group.seller_tin_number.tin_number,
             "Product Name": record.commodity_master.product_name,
             "Item ID": record.commodity_master.id,
-            "Quantity": record.quantity,
+            Quantity: record.quantity,
             "Taxable Value": Number(record.amount).toFixed(2),
             "Tax %": record.tax_percent,
             "VAT Amount": Number(record.vatamount).toFixed(2),
-            "Invoice Value": (Number(record.amount) + Number(record.vatamount)).toFixed(2),
+            "Invoice Value": (
+              Number(record.amount) + Number(record.vatamount)
+            ).toFixed(2),
           });
         });
       });
@@ -186,7 +194,7 @@ const ViewConvertedPurchase = () => {
       const worksheet = XLSX.utils.json_to_sheet(data);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Items");
-      
+
       // Set column widths
       const colWidths = [
         { wch: 8 },
@@ -204,9 +212,11 @@ const ViewConvertedPurchase = () => {
       ];
       worksheet["!cols"] = colWidths;
 
-      const fileName = `Converted_Purchase_Items_${new Date().toISOString().split("T")[0]}.xlsx`;
+      const fileName = `Converted_Purchase_Items_${(ServerTime().data as Date).toISOString().split("T")[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
-      toast.success(`Excel file downloaded successfully! (${data.length} items)`);
+      toast.success(
+        `Excel file downloaded successfully! (${data.length} items)`,
+      );
     } catch (error) {
       console.error("Download error:", error);
       toast.error("Failed to download Excel file.");
@@ -257,7 +267,9 @@ const ViewConvertedPurchase = () => {
           const summary = allResponse.data.summary as
             | DailyPurchaseFilteredSummary
             | undefined;
-          setOverallSummary(summary?.overallSummary ?? DEFAULT_PURCHASE_SUMMARY);
+          setOverallSummary(
+            summary?.overallSummary ?? DEFAULT_PURCHASE_SUMMARY,
+          );
           setFilteredSummary(
             summary?.filteredSummary ?? DEFAULT_PURCHASE_SUMMARY,
           );
@@ -283,7 +295,9 @@ const ViewConvertedPurchase = () => {
           const summary = response.data.summary as
             | DailyPurchaseFilteredSummary
             | undefined;
-          setOverallSummary(summary?.overallSummary ?? DEFAULT_PURCHASE_SUMMARY);
+          setOverallSummary(
+            summary?.overallSummary ?? DEFAULT_PURCHASE_SUMMARY,
+          );
           setFilteredSummary(
             summary?.filteredSummary ?? DEFAULT_PURCHASE_SUMMARY,
           );
@@ -333,9 +347,9 @@ const ViewConvertedPurchase = () => {
 
         if (dvat_response.status && dvat_response.data) {
           setDvatData(dvat_response.data);
-          
+
           // Calculate current month's start and end dates
-          const today = new Date();
+          const today = ServerTime().data as Date;
           const year = today.getFullYear();
           const monthIndex = today.getMonth();
           const currentMonthStart = new Date(year, monthIndex, 1);
@@ -364,7 +378,7 @@ const ViewConvertedPurchase = () => {
   }, [fetchConvertedPurchase]);
 
   const maxSelectableMonth = useMemo(() => {
-    const today = new Date();
+    const today = ServerTime().data as Date;
     return formatMonthInputValue(today);
   }, []);
 
@@ -389,7 +403,7 @@ const ViewConvertedPurchase = () => {
     const monthIndex = Number(monthString) - 1;
     const startDate = new Date(year, monthIndex, 1);
     const monthEndDate = new Date(year, monthIndex + 1, 0);
-    const today = new Date();
+    const today = ServerTime().data as Date;
 
     const endDate =
       year === today.getFullYear() && monthIndex === today.getMonth()
@@ -470,7 +484,7 @@ const ViewConvertedPurchase = () => {
     const monthIndex = Number(monthString) - 1;
     const startDate = new Date(year, monthIndex, 1);
     const monthEndDate = new Date(year, monthIndex + 1, 0);
-    const today = new Date();
+    const today = ServerTime().data as Date;
 
     const endDate =
       year === today.getFullYear() && monthIndex === today.getMonth()
@@ -532,7 +546,9 @@ const ViewConvertedPurchase = () => {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div>
                   <p className="text-xs text-gray-600">Invoice Number</p>
-                  <p className="font-semibold">{selectedGroup.invoice_number}</p>
+                  <p className="font-semibold">
+                    {selectedGroup.invoice_number}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Invoice Date</p>
@@ -614,7 +630,7 @@ const ViewConvertedPurchase = () => {
                       <TableCell className="p-2 border text-center text-xs">
                         {formatAmount(
                           parseFloat(record.vatamount) +
-                            parseFloat(record.amount)
+                            parseFloat(record.amount),
                         )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
@@ -722,7 +738,7 @@ const ViewConvertedPurchase = () => {
                       const date = new Date(startDate);
                       date.setMonth(startDate.getMonth() + i);
 
-                      const today = new Date();
+                      const today = ServerTime().data as Date;
                       if (date > today) return null;
 
                       const value = formatMonthInputValue(date);

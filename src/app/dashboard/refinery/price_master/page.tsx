@@ -6,6 +6,7 @@ import GetRefineryPriceLast7Days, {
   RefineryPriceDayData,
 } from "@/action/refinery_price/getrefineryprices";
 import AddRefineryDayPrice from "@/action/refinery_price/upsertrefineryprice";
+import ServerTime from "@/action/servertime";
 import { getCurrentUserRole } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -61,7 +62,7 @@ export default function DealerMasterPricePage() {
   const [selectedCommodityId, setSelectedCommodityId] = useState<number>(0);
   const [newPrice, setNewPrice] = useState("");
   const [effectiveDate, setEffectiveDate] = useState<string>(
-    formatDateDDMMYYYY(new Date()),
+    formatDateDDMMYYYY(ServerTime().data as Date),
   );
   const [isSaving, setIsSaving] = useState(false);
 

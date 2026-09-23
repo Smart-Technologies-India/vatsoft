@@ -31,6 +31,7 @@ import * as XLSX from "xlsx";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUser from "@/action/user/getuser";
+import ServerTime from "@/action/servertime";
 
 type DailySaleFilteredSummary = {
   overallSummary: DailySaleSummary;
@@ -86,7 +87,7 @@ const GeneratedInvoicePage = () => {
   // Search and Filter states
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedPeriod, setSelectedPeriod] = useState<string>(
-    formatMonthInputValue(new Date()),
+    formatMonthInputValue(ServerTime().data as Date),
   );
   const [dateFilter, setDateFilter] = useState<{
     startDate: string;
@@ -139,7 +140,7 @@ const GeneratedInvoicePage = () => {
   };
 
   const maxSelectableMonth = useMemo(
-    () => formatMonthInputValue(new Date()),
+    () => formatMonthInputValue(ServerTime().data as Date),
     [],
   );
 
@@ -301,7 +302,7 @@ const GeneratedInvoicePage = () => {
     const monthIndex = Number(monthString) - 1;
     const startDate = new Date(year, monthIndex, 1);
     const monthEndDate = new Date(year, monthIndex + 1, 0);
-    const today = new Date();
+    const today = ServerTime().data as Date;
 
     const endDate =
       year === today.getFullYear() && monthIndex === today.getMonth()
@@ -397,7 +398,7 @@ const GeneratedInvoicePage = () => {
       ];
       worksheet["!cols"] = colWidths;
 
-      const fileName = `Invoice_Items_${new Date().toISOString().split("T")[0]}.xlsx`;
+      const fileName = `Invoice_Items_${(ServerTime().data as Date).toISOString().split("T")[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
       toast.success(`Excel file downloaded successfully! (${data.length} items)`);
     } catch (error) {
@@ -685,7 +686,7 @@ const GeneratedInvoicePage = () => {
                       const date = new Date(startDate);
                       date.setMonth(startDate.getMonth() + i);
                       
-                      const today = new Date();
+                      const today = ServerTime().data as Date;
                       // Stop if we exceed current month
                       if (date > today) return null;
                       

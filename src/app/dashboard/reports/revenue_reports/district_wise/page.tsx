@@ -8,6 +8,7 @@ import { Chart as ChartJS, registerables } from "chart.js";
 import DistrictWiseRevenue from "@/action/report/districtwiserevenue";
 import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
+import ServerTime from "@/action/servertime";
 
 ChartJS.register(...registerables);
 
@@ -33,7 +34,7 @@ const DistrictWiseReport = () => {
   >(undefined);
 
   const [filterType, setFilterType] = useState<"MONTH" | "YEAR">("YEAR");
-  const currentDate = new Date();
+  const currentDate = ServerTime().data as Date;
   const [selectedMonth, setSelectedMonth] = useState<number>(
     currentDate.getMonth() + 1,
   );
@@ -130,7 +131,7 @@ const DistrictWiseReport = () => {
     XLSX.utils.book_append_sheet(wb, ws, "District Wise Revenue");
     XLSX.writeFile(
       wb,
-      `District_Wise_Revenue_${new Date().toISOString().split("T")[0]}.xlsx`
+      `District_Wise_Revenue_${(ServerTime().data as Date).toISOString().split("T")[0]}.xlsx`
     );
     toast.success("Report exported successfully!");
   };

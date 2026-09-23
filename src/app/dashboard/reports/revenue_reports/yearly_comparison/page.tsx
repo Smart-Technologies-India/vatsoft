@@ -16,6 +16,7 @@ import { user } from "@prisma/client";
 import GetUser from "@/action/user/getuser";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import ServerTime from "@/action/servertime";
 
 ChartJS.register(...registerables);
 
@@ -249,7 +250,7 @@ const YearlyComparisonReport = () => {
 
   // Generate financial year options (current and last 9 years = 10 options total)
   const generateFinancialYears = () => {
-    const currentDate = new Date();
+    const currentDate = ServerTime().data as Date;
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth();
     const currentFY = currentMonth >= 3 ? currentYear : currentYear - 1;

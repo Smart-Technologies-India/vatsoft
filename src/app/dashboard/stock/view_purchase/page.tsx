@@ -48,6 +48,7 @@ import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import PurchaseBulk from "./purchasebulk";
 import DownloadPurchaseSample from "./downloadpurchasesample";
+import ServerTime from "@/action/servertime";
 
 type DailyPurchaseFilteredSummary = {
   overallSummary: DailyPurchaseSummary;
@@ -334,7 +335,7 @@ const DocumentWiseDetails = () => {
           }
 
           // Calculate current month's start and end dates
-          const today = new Date();
+          const today = ServerTime().data as Date;
           const year = today.getFullYear();
           const monthIndex = today.getMonth();
           const currentMonthStart = new Date(year, monthIndex, 1);
@@ -545,7 +546,7 @@ const DocumentWiseDetails = () => {
       .filter((date) => !Number.isNaN(date.getTime()))
       .sort((a, b) => a.getTime() - b.getTime());
 
-    return validDates[0] ?? toDateOnly(new Date());
+    return validDates[0] ?? toDateOnly(ServerTime().data as Date);
   };
 
   const getMonthlyDueDate = (periodDate: Date): Date =>
@@ -569,7 +570,7 @@ const DocumentWiseDetails = () => {
   };
 
   const canGenerateDvat30A = (): { allowed: boolean; message?: string } => {
-    const today = toDateOnly(new Date());
+    const today = toDateOnly(ServerTime().data as Date);
     const periodDate = getApplicablePeriodDate();
     const filingFrequency = dvatdata?.frequencyFilings?.toUpperCase();
     const dueDate =
@@ -1008,7 +1009,7 @@ const DocumentWiseDetails = () => {
   >("invoice_date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [selectedPeriod, setSelectedPeriod] = useState<string>(
-    formatMonthInputValue(new Date()),
+    formatMonthInputValue(ServerTime().data as Date),
   );
   const [dateFilter, setDateFilter] = useState<{
     startDate: string;
@@ -1111,7 +1112,7 @@ const DocumentWiseDetails = () => {
     const monthIndex = Number(monthString) - 1;
     const startDate = new Date(year, monthIndex, 1);
     const monthEndDate = new Date(year, monthIndex + 1, 0);
-    const today = new Date();
+    const today = ServerTime().data as Date;
 
     // Determine the actual end date to use
     let endDate: Date;
@@ -1236,7 +1237,7 @@ const DocumentWiseDetails = () => {
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Invoice Details");
 
-      const fileDate = new Date().toISOString().slice(0, 10);
+      const fileDate = (ServerTime().data as Date).toISOString().slice(0, 10);
       XLSX.writeFile(workbook, `dailyPurchase_report_${fileDate}.xlsx`);
       toast.success(
         `Excel file downloaded successfully! (${detailRows.length} items)`,
@@ -1700,7 +1701,7 @@ const DocumentWiseDetails = () => {
   }, [dvatdata?.commodity]);
 
   const maxSelectableMonth = useMemo(
-    () => formatMonthInputValue(new Date()),
+    () => formatMonthInputValue(ServerTime().data as Date),
     [],
   );
 
@@ -2647,7 +2648,7 @@ const DocumentWiseDetails = () => {
                       const date = new Date(startDate);
                       date.setMonth(startDate.getMonth() + i);
 
-                      const today = new Date();
+                      const today = ServerTime().data as Date;
                       if (date > today) return null;
 
                       const value = formatMonthInputValue(date);

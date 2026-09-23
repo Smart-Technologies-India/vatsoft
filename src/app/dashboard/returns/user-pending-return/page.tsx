@@ -20,6 +20,7 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUser from "@/action/user/getuser";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { toast } from "react-toastify";
+import ServerTime from "@/action/servertime";
 
 enum Status {
   INACTIVE,
@@ -103,7 +104,7 @@ const ShopView = () => {
       return self.indexOf(value) === index;
     });
 
-    const currentdate = new Date();
+    const currentdate = ServerTime().data as Date;
 
     const monthdetails: yearsDetails[] = uniqueyears.map((year: number) => {
       const ret_filing: ItemsType[] = [];

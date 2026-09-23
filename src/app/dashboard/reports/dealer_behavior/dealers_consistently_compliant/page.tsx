@@ -11,6 +11,7 @@ import { SelectOffice, user } from "@prisma/client";
 import GetUser from "@/action/user/getuser";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import ServerTime from "@/action/servertime";
 
 ChartJS.register(...registerables);
 
@@ -46,7 +47,7 @@ const DealersConsistentlyCompliantReport = () => {
   // Calculate months from April 2026 to current date (only count months whose due date has passed)
   // Filing due date is typically the 28th of the next month
   const getMonthsFromApril2026 = () => {
-    const now = new Date();
+    const now = ServerTime().data as Date;
     const aprilStart = new Date(2026, 3, 1); // April 2026 (0-indexed)
     
     let monthsCount = 0;

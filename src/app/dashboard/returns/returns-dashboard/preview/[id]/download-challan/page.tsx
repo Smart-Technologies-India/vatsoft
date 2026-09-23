@@ -38,6 +38,7 @@ import {
   NetTaxCalculation,
 } from "@/components/dvatreturn/vatcalculation";
 import GetReturnChallans from "@/action/return/getreturnchallans";
+import ServerTime from "@/action/servertime";
 
 interface PercentageOutput {
   increase: string;
@@ -83,7 +84,9 @@ const getNewYear = (year: string, month: string): string => {
 
 const DownloadChallan = ({ params }: { params: { id: string } }) => {
   const router = useRouter();
-  const toWords = new ToWords();
+  const toWords = new ToWords({
+    localeCode: "en-IN",
+  });
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [return01, setReturn01] = useState<
@@ -304,7 +307,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
             ? "0"
             : return01.dvat04?.compositionScheme
               ? "0"
-              : centralSales?.netpayable().toFixed(0) ?? "0";
+              : (centralSales?.netpayable().toFixed(0) ?? "0");
 
         const submitPendingPayment =
           return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
@@ -430,7 +433,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
             ? "0"
             : return01.dvat04?.compositionScheme
               ? "0"
-              : centralSales?.netpayable().toFixed(0) ?? "0";
+              : (centralSales?.netpayable().toFixed(0) ?? "0");
 
         const submitPendingPayment =
           return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
@@ -494,7 +497,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
 
   const get_rr_number = (): string => {
     const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
-    const today = new Date();
+    const today = ServerTime().data as Date;
     const month = ("0" + (today.getMonth() + 1)).slice(-2);
     const day = ("0" + today.getDate()).slice(-2);
     const return_id = parseInt(return01?.id.toString() ?? "0") + 4000;
@@ -773,7 +776,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
                 <TableCell className="text-left p-2 border">Interest</TableCell>
                 <TableCell className="text-center p-2 border">
                   {return01?.dvat04.compositionScheme
-                    ? compositionCalculation?.getInterest().toFixed(0) ?? "0"
+                    ? (compositionCalculation?.getInterest().toFixed(0) ?? "0")
                     : remainingInterest.toFixed(0)}
                 </TableCell>
               </TableRow>
@@ -783,7 +786,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
                 </TableCell>
                 <TableCell className="text-center p-2 border">
                   {return01?.dvat04.compositionScheme
-                    ? compositionCalculation?.getPenalty().toFixed(0) ?? "0"
+                    ? (compositionCalculation?.getPenalty().toFixed(0) ?? "0")
                     : remainingPenalty.toFixed(0)}
                 </TableCell>
               </TableRow>
@@ -792,7 +795,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
                 <TableCell className="text-center p-2 border">
                   {return01?.dvat04.compositionScheme
                     ? "0"
-                    : centralSales?.netpayable().toFixed(0) ?? "0"}
+                    : (centralSales?.netpayable().toFixed(0) ?? "0")}
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -897,9 +900,7 @@ const DownloadChallan = ({ params }: { params: { id: string } }) => {
                           disabled={isOnlineProcessing}
                           onClick={onOnlinePayment}
                         >
-                          {isOnlineProcessing
-                            ? "Redirecting..."
-                            : "Pay Online"}
+                          {isOnlineProcessing ? "Redirecting..." : "Pay Online"}
                         </Button>
                       )}
                     </div>

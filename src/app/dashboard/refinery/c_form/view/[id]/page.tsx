@@ -18,6 +18,7 @@ import GetCformById from "@/action/cform/getcfrombyid";
 import GetCformEntry, { CformReturnData } from "@/action/cform/getcfromenrty";
 import Image from "next/image";
 import { getCurrentUserRole } from "@/lib/auth";
+import ServerTime from "@/action/servertime";
 const formateDatecus = (date: Date): string => {
   const day = date.getDate();
   const month = date.getMonth() + 1;
@@ -435,7 +436,7 @@ const CFROM = () => {
                           Date of Issue :
                         </td>
                         <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          {formateDate(new Date()).replaceAll("-", "/")}
+                          {formateDate(ServerTime().data as Date).replaceAll("-", "/")}
                         </td>
                       </tr>
                     </tbody>
@@ -764,7 +765,7 @@ const CFROM = () => {
                           Date of Issue :
                         </td>
                         <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          {formateDate(new Date()).replaceAll("-", "/")}
+                          {formateDate(ServerTime().data as Date).replaceAll("-", "/")}
                         </td>
                       </tr>
                     </tbody>
@@ -1091,7 +1092,7 @@ const CFROM = () => {
                           Date of Issue :
                         </td>
                         <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          {formateDate(new Date()).replaceAll("-", "/")}
+                          {formateDate(ServerTime().data as Date).replaceAll("-", "/")}
                         </td>
                       </tr>
                     </tbody>

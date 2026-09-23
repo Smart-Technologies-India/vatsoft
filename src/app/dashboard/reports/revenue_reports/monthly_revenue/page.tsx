@@ -14,6 +14,7 @@ import { user } from "@prisma/client";
 import GetUser from "@/action/user/getuser";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import ServerTime from "@/action/servertime";
 
 ChartJS.register(...registerables);
 
@@ -103,7 +104,7 @@ const MonthlyRevenueReport = () => {
     const ws = XLSX.utils.aoa_to_sheet(worksheetData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Monthly Revenue");
-    XLSX.writeFile(wb, `Monthly_Revenue_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(wb, `Monthly_Revenue_Report_${(ServerTime().data as Date).toISOString().split('T')[0]}.xlsx`);
     toast.success("Report exported successfully!");
   };
 

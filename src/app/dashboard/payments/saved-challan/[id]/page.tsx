@@ -28,6 +28,7 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUser from "@/action/user/getuser";
 import { Button } from "antd";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import ServerTime from "@/action/servertime";
 
 const ChallanData = () => {
   const searchParams = useSearchParams();
@@ -48,7 +49,9 @@ const ChallanData = () => {
   // const [user, setUser] = useState<user | null>(null);
   const [dvat, setDvat] = useState<dvat04 | null>(null);
 
-  const toWords = new ToWords();
+  const toWords = new ToWords({
+    localeCode: "en-IN",
+  });
 
   useEffect(() => {
     const init = async () => {
@@ -687,7 +690,7 @@ const ChallanData = () => {
               <div className="rounded-md border border-gray-300 bg-white px-3 py-2 text-right">
                 <p className="text-xs text-gray-500">Receipt Date</p>
                 <p className="text-sm font-medium text-gray-800">
-                  {formatDateTime(new Date())}
+                  {formatDateTime(ServerTime().data as Date)}
                 </p>
               </div>
             </div>

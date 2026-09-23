@@ -18,6 +18,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import GetUser from "@/action/user/getuser";
+import ServerTime from "@/action/servertime";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -32,7 +33,7 @@ const PetroleumCommodityPage = () => {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [total, setTotal] = useState<number>(0);
 
-  const currentDate = new Date();
+  const currentDate = ServerTime().data as Date;
   const [selectedMonth, setSelectedMonth] = useState<number>(
     currentDate.getMonth() + 1,
   );

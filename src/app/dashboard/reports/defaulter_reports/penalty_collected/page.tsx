@@ -28,6 +28,7 @@ import {
   MaterialSymbolsPersonRounded,
   IcOutlineReceiptLong,
 } from "@/components/icons";
+import ServerTime from "@/action/servertime";
 
 ChartJS.register(...registerables);
 
@@ -49,7 +50,7 @@ const AfterDeathLinePage = () => {
   >(undefined);
 
   const [filterType, setFilterType] = useState<"MONTH" | "YEAR">("YEAR");
-  const currentDate = new Date();
+  const currentDate = ServerTime().data as Date;
   const [selectedMonth, setSelectedMonth] = useState<number>(
     currentDate.getMonth() + 1,
   );
@@ -500,7 +501,7 @@ const AfterDeathLinePage = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Penalty Collected Report");
     XLSX.writeFile(
       wb,
-      `Interest_Penalty_Collected_Report_${new Date().toISOString().split("T")[0]}.xlsx`,
+      `Interest_Penalty_Collected_Report_${(ServerTime().data as Date).toISOString().split("T")[0]}.xlsx`,
     );
     toast.success("Report exported successfully!");
   };

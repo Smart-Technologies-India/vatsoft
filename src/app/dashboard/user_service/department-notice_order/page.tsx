@@ -21,6 +21,7 @@ import GetUser from "@/action/user/getuser";
 import SearchNoticeOrder from "@/action/notice_order/searchordernotice";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import ServerTime from "@/action/servertime";
 
 const SupplierDetails = () => {
   const router = useRouter();
@@ -86,12 +87,16 @@ const SupplierDetails = () => {
   // Generate available years and months from April 2026 to current date
   const getAvailableYearsAndMonths = () => {
     const startDate = new Date(2026, 3, 1); // April 2026 (month is 0-indexed)
-    const currentDate = new Date();
+    const currentDate = ServerTime().data as Date;
     const years: string[] = [];
     const months: string[] = [];
 
     // Generate years
-    for (let year = startDate.getFullYear(); year <= currentDate.getFullYear(); year++) {
+    for (
+      let year = startDate.getFullYear();
+      year <= currentDate.getFullYear();
+      year++
+    ) {
       years.push(year.toString());
     }
 
@@ -104,7 +109,7 @@ const SupplierDetails = () => {
         // April is at index 3
         if (
           month < currentDate.getMonth() ||
-          (month === currentDate.getMonth())
+          month === currentDate.getMonth()
         ) {
           months.push(monthNames[month]);
         }
@@ -654,7 +659,7 @@ const SupplierDetails = () => {
       ];
 
       // Download the file
-      writeFile(wb, `Notices_Orders_${new Date().getTime()}.xlsx`);
+      writeFile(wb, `Notices_Orders_${(ServerTime().data as Date).getTime()}.xlsx`);
       toast.success("Downloaded successfully!");
     } catch (error) {
       console.error("Download error:", error);

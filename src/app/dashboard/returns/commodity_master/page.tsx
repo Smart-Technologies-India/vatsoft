@@ -3,6 +3,7 @@
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
+import ServerTime from "@/action/servertime";
 import {
   Table,
   TableBody,
@@ -157,7 +158,7 @@ const CommodityMasterPage = () => {
 
     XLSX.writeFile(
       workbook,
-      `commodity_master_${new Date().toISOString().split("T")[0]}.xlsx`,
+      `commodity_master_${(ServerTime().data as Date).toISOString().split("T")[0]}.xlsx`,
     );
     toast.success("Commodity master exported successfully!");
   };

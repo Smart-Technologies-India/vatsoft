@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import ServerTime from "@/action/servertime";
 
 type ChangeType = "Composition to Regular" | "Quarterly to Monthly";
 
@@ -188,7 +189,7 @@ const DealerRegistrationTypeChangePage = () => {
         (dealer) => dealer.status === "APPROVED",
       );
 
-      const currentFinancialYearStart = getCurrentFinancialYearStart(new Date());
+      const currentFinancialYearStart = getCurrentFinancialYearStart(ServerTime().data as Date);
       const previousFinancialYearStart = (currentFinancialYearStart - 1).toString();
 
       const metricsResponse = await getCurrentFyMetricsBulk({

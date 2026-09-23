@@ -56,7 +56,9 @@ export const DepartmentCreateDvat24AProvider = (
 
 const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
   const router = useRouter();
-  const toWords = new ToWords();
+  const toWords = new ToWords({
+    localeCode: "en-IN",
+  });
   const searchParams = useSearchParams();
 
   const [isSearch, setSearch] = useState<boolean>(false);
@@ -235,7 +237,8 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
       if (return01_response.status && return01_response.data) {
         setReturn01Data(return01_response.data);
         // Calculate period based on frequency
-        const iscomp: boolean = return01_response.data.dvat04.compositionScheme ?? false;
+        const iscomp: boolean =
+          return01_response.data.dvat04.compositionScheme ?? false;
         const from_year: string = return01_response.data.year;
         const from_month: string = return01_response.data.month!;
         const currentMonthIndex = monthNames.indexOf(from_month);
@@ -264,7 +267,11 @@ const CreateDVAT24APage = (props: DepartmentCreateDvat24AProviderProps) => {
           }
         }
 
-        const from_date: Date = new Date(parseInt(from_year), currentMonthIndex, 1);
+        const from_date: Date = new Date(
+          parseInt(from_year),
+          currentMonthIndex,
+          1,
+        );
         const to_date: Date = new Date(
           parseInt(to_year),
           monthNames.indexOf(to_month),

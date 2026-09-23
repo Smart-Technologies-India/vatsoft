@@ -45,7 +45,9 @@ export const DepartmentCreateChallanProvider = (
 
 const CreateChallanPage = (props: DepartmentCreateChallanProviderProps) => {
   const router = useRouter();
-  const toWords = new ToWords();
+  const toWords = new ToWords({
+    localeCode: "en-IN",
+  });
 
   const [isSearch, setSearch] = useState<boolean>(false);
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);

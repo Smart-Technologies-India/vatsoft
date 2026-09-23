@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
+import ServerTime from "@/action/servertime";
 
 const TallyPurchasePage = () => {
   const router = useRouter();
@@ -347,7 +348,7 @@ const TallyPurchasePage = () => {
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Tally Purchase");
-    const fileDate = new Date().toISOString().slice(0, 10);
+    const fileDate = (ServerTime().data as Date).toISOString().slice(0, 10);
     XLSX.writeFile(workbook, `tallyPurchase_report_${fileDate}.xlsx`);
   };
 

@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { MdiDownload } from "@/components/icons";
 import * as XLSX from "xlsx";
 import { getCurrentUserRole } from "@/lib/auth";
+import ServerTime from "@/action/servertime";
 
 const TrackAppliation = () => {
   const router = useRouter();
@@ -88,7 +89,7 @@ const TrackAppliation = () => {
   // Generate available years and months from April 2026 to current date
   const getAvailableYearsAndMonths = () => {
     const startDate = new Date(2026, 3, 1); // April 2026 (month is 0-indexed)
-    const currentDate = new Date();
+    const currentDate = ServerTime().data as Date;
     const years: string[] = [];
     const months: string[] = [];
 
@@ -622,7 +623,7 @@ const TrackAppliation = () => {
       worksheet["!cols"] = columnWidths;
 
       // Download file
-      XLSX.writeFile(workbook, `Return_Status_${new Date().getTime()}.xlsx`);
+      XLSX.writeFile(workbook, `Return_Status_${(ServerTime().data as Date).getTime()}.xlsx`);
 
       toast.dismiss();
       toast.success(

@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import {
-  FieldErrors,
   FormProvider,
   useForm,
   useFormContext,
@@ -36,6 +35,7 @@ import Anx1Create from "@/action/anx1/addanx1";
 import DeleteAnx1 from "@/action/anx1/deleteanx1";
 import { encryptURLData, onFormError } from "@/utils/methods";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
+import ServerTime from "@/action/servertime";
 
 type Anx1ProviderProps = {
   dvatid: number;
@@ -237,7 +237,7 @@ const Anx1 = (props: Anx1ProviderProps) => {
                 title="Date Of Birth"
                 maxdate={dayjs(
                   new Date(
-                    new Date().setFullYear(new Date().getFullYear() - 15)
+                    (ServerTime().data as Date).setFullYear((ServerTime().data as Date).getFullYear() - 15)
                   )
                 )}
               />

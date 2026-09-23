@@ -58,7 +58,9 @@ export const DepartmentPayCSTProvider = (
 
 const PayChallanPage = (props: DepartmentPayCSTProviderProps) => {
   const router = useRouter();
-  const toWords = new ToWords();
+  const toWords = new ToWords({
+    localeCode: "en-IN",
+  });
 
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
   const [returnPeriod, setReturnPeriod] = useState<string>("-");

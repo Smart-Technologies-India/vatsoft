@@ -18,6 +18,7 @@ import CreateStock from "@/action/stock/createstock";
 import { CreateStockForm, CreateStockSchema } from "@/schema/create_stock";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import ServerTime from "@/action/servertime";
 
 type CreateStockProviderProps = {
   userid: number;
@@ -119,7 +120,7 @@ const CreateStockData = (props: CreateStockProviderProps) => {
 
   const getMonthDateas = (): GetMonthDateas => {
     // Get the current month and year
-    const currentDate = new Date();
+    const currentDate = ServerTime().data as Date;
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.toLocaleString("default", {
       month: "long",

@@ -67,6 +67,7 @@ import GetUser from "@/action/user/getuser";
 import { toast } from "react-toastify";
 import { Chart as ChartJS, registerables } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
+import ServerTime from "@/action/servertime";
 
 // Pie Chart Data and Options
 const pieOptions: any = {
@@ -866,7 +867,7 @@ const OfficerDashboardPage = () => {
             >
               <div className="flex items-center justify-between mb-0.5">
                 <span className="text-xs font-medium text-gray-600">
-                  {format(new Date(), "MMMM")}
+                  {format(ServerTime().data as Date, "MMMM")}
                 </span>
                 <div
                   className={`w-2 h-2 rounded-full ${
@@ -898,7 +899,7 @@ const OfficerDashboardPage = () => {
             >
               <div className="flex items-center justify-between mb-0.5">
                 <span className="text-xs font-medium text-gray-600">
-                  {format(subMonths(new Date(), 1), "MMMM")}
+                  {format(subMonths(ServerTime().data as Date, 1), "MMMM")}
                 </span>
                 <div
                   className={`w-2 h-2 rounded-full ${

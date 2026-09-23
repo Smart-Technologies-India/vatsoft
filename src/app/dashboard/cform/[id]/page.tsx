@@ -18,6 +18,7 @@ import GetCformById from "@/action/cform/getcfrombyid";
 import GetDvat04 from "@/action/register/getdvat04";
 import GetCformEntry from "@/action/cform/getcfromenrty";
 import Image from "next/image";
+import ServerTime from "@/action/servertime";
 
 const formateDatecus = (date: Date): string => {
   const day = date.getDate();
@@ -463,7 +464,7 @@ const CFROM = () => {
                           Date of Issue :
                         </td>
                         <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          {formateDate(new Date()).replaceAll("-", "/")}
+                          {formateDate(ServerTime().data as Date).replaceAll("-", "/")}
                         </td>
                       </tr>
                     </tbody>
@@ -808,7 +809,7 @@ const CFROM = () => {
                           Date of Issue :
                         </td>
                         <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          {formateDate(new Date()).replaceAll("-", "/")}
+                          {formateDate(ServerTime().data as Date).replaceAll("-", "/")}
                         </td>
                       </tr>
                     </tbody>
@@ -1151,7 +1152,7 @@ const CFROM = () => {
                           Date of Issue :
                         </td>
                         <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          {formateDate(new Date()).replaceAll("-", "/")}
+                          {formateDate(ServerTime().data as Date).replaceAll("-", "/")}
                         </td>
                       </tr>
                     </tbody>

@@ -14,6 +14,7 @@ import GetDvatChallan, {
 import GetReturnMonth from "@/action/dvat/getreturnmonth";
 import GetMonthlySaleAndPurchaseSummary from "@/action/stock/getmonthlysaleandpurchasesummary";
 import GetDailySaleWithLossAnalysis from "@/action/stock/getdailysalewithlossanalysis";
+import ServerTime from "@/action/servertime";
 
 const inrFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -255,7 +256,7 @@ const AssessmentPage = () => {
             }
           } else {
             // Not filed
-            const currentdate = new Date();
+            const currentdate = ServerTime().data as Date;
             if (getdata.due_date! < currentdate) {
               pendingCount++;
             } else {

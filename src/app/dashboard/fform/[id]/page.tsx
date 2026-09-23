@@ -20,6 +20,7 @@ import GetDvat04 from "@/action/register/getdvat04";
 import GetFformEntry from "@/action/fform/getfformenrty";
 import Image from "next/image";
 import { nanoid } from "nanoid";
+import ServerTime from "@/action/servertime";
 
 const formateDatecus = (date: Date): string => {
   const day = date.getDate();
@@ -522,7 +523,7 @@ const FFROM = () => {
                           Date of Issue :
                         </td>
                         <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          {formateDate(new Date()).replaceAll("-", "/")}
+                          {formateDate(ServerTime().data as Date).replaceAll("-", "/")}
                         </td>
                       </tr>
                     </tbody>
@@ -920,7 +921,7 @@ const FFROM = () => {
                           Date of Issue :
                         </td>
                         <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          {formateDate(new Date()).replaceAll("-", "/")}
+                          {formateDate(ServerTime().data as Date).replaceAll("-", "/")}
                         </td>
                       </tr>
                     </tbody>
@@ -1317,7 +1318,7 @@ const FFROM = () => {
                           Date of Issue :
                         </td>
                         <td className="px-2 py-1 text-xs leading-6 w-[50%] -translate-y-4">
-                          {formateDate(new Date()).replaceAll("-", "/")}
+                          {formateDate(ServerTime().data as Date).replaceAll("-", "/")}
                         </td>
                       </tr>
                     </tbody>

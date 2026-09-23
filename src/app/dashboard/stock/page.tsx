@@ -49,6 +49,7 @@ import { formateDate } from "@/utils/methods";
 import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import CreateMultiDailyPurchase from "@/action/stock/createmultidailypurchase";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import ServerTime from "@/action/servertime";
 
 type StockRow = stock & { commodity_master: commodity_master };
 
@@ -586,7 +587,7 @@ const CommodityMaster = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Stock");
 
     // Generate filename with timestamp
-    const timestamp = new Date().toISOString().split("T")[0];
+    const timestamp = (ServerTime().data as Date).toISOString().split("T")[0];
     const filename = `stock_${quantityCount}_${timestamp}.xlsx`;
 
     // Write file

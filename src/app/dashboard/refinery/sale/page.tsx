@@ -36,6 +36,7 @@ import { enc } from "crypto-js";
 import { encryptURLData } from "@/utils/methods";
 import * as XLSX from "xlsx";
 import { getCurrentUserRole } from "@/lib/auth";
+import ServerTime from "@/action/servertime";
 
 type RefinerySaleWithRelations = refinery_sale & {
   commodity_master: commodity_master;
@@ -421,7 +422,7 @@ const RefinerySalePage = () => {
       XLSX.utils.book_append_sheet(workbook, worksheet, "Sale Report");
 
       // Generate Excel file and trigger download
-      const fileName = `Refinery_Sale_Report_${formatDate(new Date(), "ddMMyyyyHHmmss")}.xlsx`;
+      const fileName = `Refinery_Sale_Report_${formatDate(ServerTime().data as Date, "ddMMyyyyHHmmss")}.xlsx`;
       XLSX.writeFile(workbook, fileName);
 
       toast.success("Sale report downloaded successfully.");

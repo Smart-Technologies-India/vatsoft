@@ -52,6 +52,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import UpdateStockQuantityFromSheet from "@/action/stock/updatestockquantityfromsheet";
 import GetPendingAcceptStatus from "@/action/stock/getpendingacceptstatus";
 import ApplyStockUpdatesInChunks from "@/action/stock/applystockupdatesinchunks";
+import ServerTime from "@/action/servertime";
 
 type StockRow = stock & { commodity_master: commodity_master };
 
@@ -624,7 +625,7 @@ const CommodityMaster = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Stock");
 
     // Generate filename with timestamp
-    const timestamp = new Date().toISOString().split("T")[0];
+    const timestamp = (ServerTime().data as Date).toISOString().split("T")[0];
     const filename = `stock_${quantityCount}_${timestamp}.xlsx`;
 
     // Write file

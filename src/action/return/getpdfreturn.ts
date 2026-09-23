@@ -19,7 +19,7 @@ interface getPdfReturnPayload {
 }
 
 const getPdfReturn = async (
-  payload: getPdfReturnPayload
+  payload: getPdfReturnPayload,
 ): Promise<
   ApiResponseType<{
     returns_entry: Array<
@@ -43,32 +43,20 @@ const getPdfReturn = async (
       };
     }
 
-    const dvat04resonse = await prisma.dvat04.findFirst({
+    // Optimize: Combine dvat04 fetch with returns_01 in a single query using OR
+    console.log("first call time start");
+    const firstCallStartTime = new Date();
+    const return01response = await prisma.returns_01.findFirst({
       where: {
         deletedAt: null,
         deletedById: null,
-        id: dvatid,
-        // createdById: payload.userid,
-      },
-    });
-
-    if (!dvat04resonse) {
-      return {
-        status: false,
-        data: null,
-        message: "User is not register yet. Please try again.",
-        functionname: "getPdfReturn",
-      };
-    }
-
-    let return01response = await prisma.returns_01.findFirst({
-      where: {
-        deletedAt: null,
-        deletedById: null,
-        dvat04Id: dvat04resonse.id,
+        dvat04Id: dvatid,
         year: payload.year,
         month: payload.month,
-        return_type: "REVISED",
+        OR: [{ return_type: "REVISED" }, { return_type: "ORIGINAL" }],
+      },
+      orderBy: {
+        return_type: "desc", // REVISED comes before ORIGINAL
       },
       include: {
         createdBy: true,
@@ -79,27 +67,10 @@ const getPdfReturn = async (
         },
       },
     });
-
-    if (!return01response) {
-      return01response = await prisma.returns_01.findFirst({
-        where: {
-          deletedAt: null,
-          deletedById: null,
-          dvat04Id: dvat04resonse.id,
-          year: payload.year,
-          month: payload.month,
-          return_type: "ORIGINAL",
-        },
-        include: {
-          createdBy: true,
-          dvat04: {
-            include: {
-              registration: true,
-            },
-          },
-        },
-      });
-    }
+    console.log(
+      "first call time end",
+      new Date().getTime() - firstCallStartTime.getTime(),
+    );
 
     if (!return01response) {
       return {
@@ -110,6 +81,9 @@ const getPdfReturn = async (
       };
     }
 
+    // Optimize: Fetch returns_entry with only necessary relations
+    console.log("second call time start");
+    const secondCallStartTime = new Date();
     const returnforms = await prisma.returns_entry.findMany({
       where: {
         deletedAt: null,
@@ -119,15 +93,18 @@ const getPdfReturn = async (
       },
       include: {
         seller_tin_number: true,
-        state: true,
       },
     });
+    console.log(
+      "second call time end",
+      new Date().getTime() - secondCallStartTime.getTime(),
+    );
 
-    if (!returnforms)
+    if (!returnforms || returnforms.length === 0)
       return {
         status: false,
         data: null,
-        message: "Unable to get return froms. Please try again.",
+        message: "Unable to get return forms. Please try again.",
         functionname: "getPdfReturn",
       };
 

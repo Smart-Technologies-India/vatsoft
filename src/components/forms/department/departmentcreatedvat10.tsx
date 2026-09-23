@@ -19,6 +19,7 @@ import { CreateDvat10Schema, CreateDvat10Form } from "@/schema/dvat10";
 import dayjs from "dayjs";
 import CreateDvat10 from "@/action/notice_order/createdvat10";
 import utc from "dayjs/plugin/utc";
+import ServerTime from "@/action/servertime";
 
 dayjs.extend(utc);
 
@@ -41,7 +42,9 @@ export const DepartmentCreateDvat10Provider = (
 
 const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
   const router = useRouter();
-  const toWords = new ToWords();
+  const toWords = new ToWords({
+    localeCode: "en-IN",
+  });
   const searchParams = useSearchParams();
 
   const [isSearch, setSearch] = useState<boolean>(false);
@@ -220,7 +223,7 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
   // Generate available years and months from April 2026 to current date
   const getAvailableYearsAndMonths = () => {
     const startDate = new Date(2026, 3, 1); // April 2026 (month is 0-indexed)
-    const currentDate = new Date();
+    const currentDate = ServerTime().data as Date;
     const years: string[] = [];
     const months: string[] = [];
 
@@ -356,14 +359,16 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
         reset({
           dvat24_reason: "NOTFURNISHED",
           due_date: dayjs(
-            new Date().setDate(new Date().getDate() + 15),
+            (ServerTime().data as Date).setDate(
+              (ServerTime().data as Date).getDate() + 15,
+            ),
           ).toISOString(),
         });
         const dvat_response = await SearchTinNumber({
           tinumber: tinNumber,
         });
         if (dvat_response.status && dvat_response.data) {
-          const currentday = new Date();
+          const currentday = ServerTime().data as Date;
           const period_response = getPeriodNoReturnId(
             currentday.getFullYear().toString(),
             monthNames[currentday.getMonth()],

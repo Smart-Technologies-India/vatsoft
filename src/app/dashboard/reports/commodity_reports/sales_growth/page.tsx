@@ -16,6 +16,7 @@ import { user } from "@prisma/client";
 import GetUser from "@/action/user/getuser";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import ServerTime from "@/action/servertime";
 
 ChartJS.register(...registerables);
 
@@ -50,7 +51,7 @@ const CommoditySalesGrowthReport = () => {
     "MONTH_ON_MONTH" | "YEAR_ON_YEAR"
   >("MONTH_ON_MONTH");
 
-  const currentDate = new Date();
+  const currentDate = ServerTime().data as Date;
   const [selectedMonth, setSelectedMonth] = useState<number>(
     currentDate.getMonth() + 1,
   );

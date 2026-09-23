@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getCurrentUserRole } from "@/lib/auth";
+import ServerTime from "@/action/servertime";
 
 interface ReturnDueFormState {
   id?: number;
@@ -69,7 +70,7 @@ const toDisplayDate = (year: number, month: number, day: number): string => {
 // Edit is allowed only for the previous calendar month, and only before its payment due date.
 // toDisplayDate uses new Date(year, month, day) where month is 1-indexed (i.e., month=4 → May).
 const getEditAllowed = (row: return_due): boolean => {
-  const today = new Date();
+  const today = ServerTime().data as Date;
   const todayYear = today.getFullYear();
   const todayMonth = today.getMonth() + 1; // 1-indexed
 
@@ -90,7 +91,7 @@ const getEditAllowed = (row: return_due): boolean => {
 };
 
 const initialFormState: ReturnDueFormState = {
-  year: new Date().getFullYear(),
+  year: (ServerTime().data as Date).getFullYear(),
   quarter: Quarter.QUARTER1,
   month: 4,
   payment: 15,

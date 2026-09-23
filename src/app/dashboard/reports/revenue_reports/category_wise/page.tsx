@@ -21,6 +21,7 @@ import { user } from "@prisma/client";
 import GetUser from "@/action/user/getuser";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import ServerTime from "@/action/servertime";
 
 ChartJS.register(...registerables);
 
@@ -73,7 +74,7 @@ const CategoryWiseReport = () => {
     "FUEL" | "LIQUOR" | undefined
   >(undefined);
 
-  const currentDate = new Date();
+  const currentDate = ServerTime().data as Date;
   const [selectedMonth, setSelectedMonth] = useState<number>(
     currentDate.getMonth() + 1,
   );
@@ -200,7 +201,7 @@ const CategoryWiseReport = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Category Report");
     XLSX.writeFile(
       wb,
-      `Category_Wise_Report_${new Date().toISOString().split("T")[0]}.xlsx`,
+      `Category_Wise_Report_${(ServerTime().data as Date).toISOString().split("T")[0]}.xlsx`,
     );
     toast.success("Report exported successfully!");
   };

@@ -40,6 +40,7 @@ import S2AdjustmentOfTax from "@/components/dvatreturn/8_s2adjustment";
 import CentralSales from "@/components/dvatreturn/9_centralsales";
 import FORM_DVAT_16 from "@/components/dvatreturn/10_fromdvat16";
 import GetReturnChallans from "@/action/return/getreturnchallans";
+import ServerTime from "@/action/servertime";
 
 interface PercentageOutput {
   increase: string;
@@ -229,7 +230,7 @@ const Dvat16ReturnPreview = () => {
         //   setAllNil(true);
         // }
 
-        const currentDate = new Date();
+        const currentDate = ServerTime().data as Date;
 
         // Get the month index from the month name
         let monthIndex = monthNames.indexOf(

@@ -28,6 +28,7 @@ import { toast } from "react-toastify";
 import GetUser from "@/action/user/getuser";
 import TimeLineSummary from "@/action/report/timeline_summary";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import ServerTime from "@/action/servertime";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -43,7 +44,7 @@ const AfterDeathLinePage = () => {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
 
-  const currentDate = new Date();
+  const currentDate = ServerTime().data as Date;
   const [selectedYear, setSelectedYear] = useState<number>(
     currentDate.getFullYear(),
   );

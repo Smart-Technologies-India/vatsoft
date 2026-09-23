@@ -42,7 +42,9 @@ export const CreateRefundProvider = (props: CreateChallanProviderProps) => {
 
 const CreateRefundPage = (props: CreateChallanProviderProps) => {
   const router = useRouter();
-  const toWords = new ToWords();
+  const toWords = new ToWords({
+    localeCode: "en-IN",
+  });
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
   useEffect(() => {
     const init = async () => {

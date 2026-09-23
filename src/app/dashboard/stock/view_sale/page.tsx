@@ -51,6 +51,7 @@ import GetAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import DownloadSaleSample from "./downloadsalesample";
 import GetReturnMonth from "@/action/dvat/getreturnmonth";
 import SaleBulkUpload from "./salebulk";
+import ServerTime from "@/action/servertime";
 
 type DailySaleFilteredSummary = {
   overallSummary: DailySaleSummary;
@@ -105,7 +106,7 @@ const DocumentWiseDetails = () => {
   >("invoice_date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedPeriod, setSelectedPeriod] = useState<string>(
-    formatMonthInputValue(new Date()),
+    formatMonthInputValue(ServerTime().data as Date),
   );
   const [dateFilter, setDateFilter] = useState<{
     startDate: string;
@@ -135,7 +136,7 @@ const DocumentWiseDetails = () => {
     : overallSaleSummary;
 
   const maxSelectableMonth = useMemo(
-    () => formatMonthInputValue(new Date()),
+    () => formatMonthInputValue(ServerTime().data as Date),
     [],
   );
 
@@ -328,7 +329,7 @@ const DocumentWiseDetails = () => {
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Invoice Details");
 
-      const fileDate = new Date().toISOString().slice(0, 10);
+      const fileDate = (ServerTime().data as Date).toISOString().slice(0, 10);
       XLSX.writeFile(workbook, `dailySale_report_${fileDate}.xlsx`);
       toast.success(
         `Excel file downloaded successfully! (${detailRows.length} items)`,
@@ -422,7 +423,7 @@ const DocumentWiseDetails = () => {
           await loadFiledReturnPeriods(dvat_response.data.id);
 
           // Calculate current month's start and end dates
-          const today = new Date();
+          const today = ServerTime().data as Date;
           const year = today.getFullYear();
           const monthIndex = today.getMonth();
           const currentMonthStart = new Date(year, monthIndex, 1);
@@ -714,7 +715,7 @@ const DocumentWiseDetails = () => {
     const monthIndex = Number(monthString) - 1;
     const startDate = new Date(year, monthIndex, 1);
     const monthEndDate = new Date(year, monthIndex + 1, 0);
-    const today = new Date();
+    const today = ServerTime().data as Date;
 
     // Determine the actual end date to use
     let endDate: Date;
@@ -912,7 +913,7 @@ const DocumentWiseDetails = () => {
   };
 
   const canGenerateDvat31 = (): { allowed: boolean; message?: string } => {
-    const today = toDateOnly(new Date());
+    const today = toDateOnly(ServerTime().data as Date);
     const periodDate = getApplicablePeriodDate();
     const filingFrequency = dvatdata?.frequencyFilings?.toUpperCase();
 
@@ -953,9 +954,13 @@ const DocumentWiseDetails = () => {
       const autoAcceptResponse = await AutoAcceptSaleByDays({
         startDate: new Date(
           dateFilter.startDate ||
-            new Date(new Date().setMonth(new Date().getMonth() - 1)),
+            new Date(
+              (ServerTime().data as Date).setMonth(
+                (ServerTime().data as Date).getMonth() - 1,
+              ),
+            ),
         ),
-        endDate: new Date(dateFilter.endDate || new Date()),
+        endDate: new Date(dateFilter.endDate || (ServerTime().data as Date)),
       });
 
       if (autoAcceptResponse.status && autoAcceptResponse.data) {
@@ -2392,7 +2397,7 @@ const DocumentWiseDetails = () => {
                       const date = new Date(startDate);
                       date.setMonth(startDate.getMonth() + i);
 
-                      const today = new Date();
+                      const today = ServerTime().data as Date;
                       if (date > today) return null;
 
                       const value = formatMonthInputValue(date);

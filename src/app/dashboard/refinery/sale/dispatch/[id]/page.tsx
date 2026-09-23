@@ -26,6 +26,7 @@ import { toast } from "react-toastify";
 import { format } from "date-fns";
 import { decryptURLData } from "@/utils/methods";
 import { getCurrentUserRole } from "@/lib/auth";
+import ServerTime from "@/action/servertime";
 
 type DispatchFormValues = {
   invoiceNumber: string;
@@ -146,7 +147,7 @@ export default function DispatchPage() {
           invoiceNumber: data.invoiceNumber,
           invoiceDate:
             workflowStatus === "VATPAID"
-              ? new Date().toISOString()
+              ? (ServerTime().data as Date).toISOString()
               : new Date(data.invoiceDate).toISOString(),
           vehicleNumber: tankerList[0] || undefined,
           lineItems: data.rows.map((row) => ({

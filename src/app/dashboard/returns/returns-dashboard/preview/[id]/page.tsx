@@ -44,6 +44,7 @@ import {
   TheBalance,
 } from "@/components/dvatreturn/vatcalculation";
 import GetReturnChallans from "@/action/return/getreturnchallans";
+import ServerTime from "@/action/servertime";
 
 const Dvat16ReturnPreview = () => {
   const router = useRouter();
@@ -113,7 +114,7 @@ const Dvat16ReturnPreview = () => {
     isComp: boolean = false,
     filing_date: Date,
   ) => {
-    const currentDate = new Date();
+    const currentDate = ServerTime().data as Date;
 
     const monthNames = [
       "January",
@@ -389,7 +390,7 @@ const Dvat16ReturnPreview = () => {
 
   const get_rr_number = (): string => {
     const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
-    const today = new Date();
+    const today = ServerTime().data as Date;
     const month = ("0" + (today.getMonth() + 1)).slice(-2);
     const day = ("0" + today.getDate()).slice(-2);
     const return_id = parseInt(return01?.id.toString() ?? "0") + 4000;

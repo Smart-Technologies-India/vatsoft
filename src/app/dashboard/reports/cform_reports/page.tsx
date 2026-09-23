@@ -28,6 +28,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import numberWithIndianFormat from "@/utils/methods";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
+import ServerTime from "@/action/servertime";
 
 ChartJS.register(...registerables);
 
@@ -215,7 +216,7 @@ const CFormReportsPage = () => {
     XLSX.utils.book_append_sheet(wb, ws, "C-Form Reports");
     XLSX.writeFile(
       wb,
-      `CForm_Reports_${format(new Date(), "dd-MMM-yyyy")}.xlsx`,
+      `CForm_Reports_${format(ServerTime().data as Date, "dd-MMM-yyyy")}.xlsx`,
     );
   };
 

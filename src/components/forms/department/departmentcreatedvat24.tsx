@@ -58,7 +58,9 @@ export const DepartmentCreateDvat24Provider = (
 
 const CreateDVAT24Page = (props: DepartmentCreateDvat24ProviderProps) => {
   const router = useRouter();
-  const toWords = new ToWords();
+  const toWords = new ToWords({
+    localeCode: "en-IN",
+  });
   const searchParams = useSearchParams();
 
   const [isSearch, setSearch] = useState<boolean>(false);

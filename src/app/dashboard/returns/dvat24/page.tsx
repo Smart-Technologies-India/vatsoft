@@ -33,7 +33,9 @@ type ResponseType = {
 const Dvat24Page = () => {
   const router = useRouter();
   const searchParam = useSearchParams();
-  const toWords = new ToWords();
+  const toWords = new ToWords({
+    localeCode: "en-IN",
+  });
 
   const [data, setData] = useState<ResponseType | null>(null);
   const [isUserRole, setIsUserRole] = useState<boolean>(false);

@@ -30,6 +30,7 @@ import TinLoginOtp from "@/action/user/tinloginotp";
 import SendForgetPasswordOtp from "@/action/user/sendforgetpasswordotp";
 import VerifyForgetPasswordOtp from "@/action/user/verifyforgetpasswordotp";
 import ResetForgetPassword from "@/action/user/resetforgotpassword";
+import ServerTime from "@/action/servertime";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -178,7 +179,7 @@ function DateCard({ title, paymentdate, returndate }: DateCardProps) {
 }
 
 const MonthlyCardSection = () => {
-  const currentDate = new Date();
+  const currentDate = ServerTime().data as Date;
   const months = Array.from({ length: 3 }, (_, i) =>
     addMonths(currentDate, i - 1),
   ).map((date) => ({
@@ -223,7 +224,7 @@ const QuarterCardSection = () => {
   ];
 
   const quarters = useMemo(() => {
-    const currentDate = new Date();
+    const currentDate = ServerTime().data as Date;
     const currentMonth = currentDate.toLocaleString("default", {
       month: "long",
     });

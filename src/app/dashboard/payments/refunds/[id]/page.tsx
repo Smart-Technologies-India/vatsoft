@@ -40,7 +40,7 @@ const RefundsData = () => {
   const router = useRouter();
   const { id } = useParams<{ id: string | string[] }>();
   const refundsid = parseInt(
-    decryptURLData(Array.isArray(id) ? id[0] : id, router)
+    decryptURLData(Array.isArray(id) ? id[0] : id, router),
   );
   const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
@@ -48,7 +48,9 @@ const RefundsData = () => {
   const [user, setUser] = useState<user | null>(null);
   const [dvat, setDvat] = useState<dvat04 | null>(null);
 
-  const toWords = new ToWords();
+  const toWords = new ToWords({
+    localeCode: "en-IN",
+  });
 
   const [currentUser, setCurrentUser] = useState<user | null>();
 
@@ -89,7 +91,6 @@ const RefundsData = () => {
     };
     init();
   }, [refundsid, userid]);
-
 
   const {
     register,
@@ -207,9 +208,7 @@ const RefundsData = () => {
               </TableHeader>
               <TableBody>
                 <TableRow>
-                  <TableCell className="text-left p-2 border">
-                    VAT
-                  </TableCell>
+                  <TableCell className="text-left p-2 border">VAT</TableCell>
                   <TableCell className="text-center p-2 border ">
                     {refundsData?.vat}
                   </TableCell>
@@ -259,8 +258,8 @@ const RefundsData = () => {
                   <TableCell className="text-center p-2 border">
                     {capitalcase(
                       toWords.convert(
-                        parseInt(refundsData?.total_tax_amount ?? "0")
-                      )
+                        parseInt(refundsData?.total_tax_amount ?? "0"),
+                      ),
                     )}
                   </TableCell>
                 </TableRow>
@@ -301,8 +300,8 @@ const RefundsData = () => {
                     onClick={() =>
                       generatePDF(
                         `/dashboard/payments/refunds/${encryptURLData(
-                          refundsData.id.toString()
-                        )}?sidebar=no`
+                          refundsData.id.toString(),
+                        )}?sidebar=no`,
                       )
                     }
                   >

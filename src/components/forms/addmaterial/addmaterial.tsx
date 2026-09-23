@@ -24,6 +24,7 @@ import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import CreateMaterial from "@/action/stock/creatematerial";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import ServerTime from "@/action/servertime";
 
 type AddMaterialProviderProps = {
   userid: number;
@@ -132,7 +133,7 @@ const AddMaterial = (props: AddMaterialProviderProps) => {
 
   const getMonthDateas = (): GetMonthDateas => {
     // Get the current month and year
-    const currentDate = new Date();
+    const currentDate = ServerTime().data as Date;
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.toLocaleString("default", {
       month: "long",

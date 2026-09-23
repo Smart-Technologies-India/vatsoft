@@ -28,6 +28,7 @@ import {
   IcOutlineReceiptLong,
   Fa6RegularBuilding,
 } from "@/components/icons";
+import ServerTime from "@/action/servertime";
 
 ChartJS.register(...registerables);
 
@@ -608,7 +609,7 @@ const InactiveDealers = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Inactive Dealers");
     XLSX.writeFile(
       wb,
-      `Inactive_Dealers_Report_${new Date().toISOString().split("T")[0]}.xlsx`,
+      `Inactive_Dealers_Report_${(ServerTime().data as Date).toISOString().split("T")[0]}.xlsx`,
     );
     toast.success("Report exported successfully!");
   };

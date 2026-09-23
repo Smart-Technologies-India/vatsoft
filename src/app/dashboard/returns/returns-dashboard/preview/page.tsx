@@ -35,7 +35,6 @@ import GetUser from "@/action/user/getuser";
 import AddPaymentSubmit from "@/action/return/addpaymentsubmit";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
-
 import TurnOver from "@/components/dvatreturn/1_turnver";
 import R1TurnOverOfPurchase from "@/components/dvatreturn/2_turnoverofpurchase";
 import NetTax from "@/components/dvatreturn/3_nettax";
@@ -47,6 +46,7 @@ import S2AdjustmentOfTax from "@/components/dvatreturn/8_s2adjustment";
 import CentralSales from "@/components/dvatreturn/9_centralsales";
 import FORM_DVAT_16 from "@/components/dvatreturn/10_fromdvat16";
 import GetReturnChallans from "@/action/return/getreturnchallans";
+import ServerTime from "@/action/servertime";
 
 interface PercentageOutput {
   increase: string;
@@ -124,7 +124,7 @@ const Dvat16ReturnPreview = () => {
     isComp: boolean = false,
     filing_date: Date,
   ) => {
-    const currentDate = new Date();
+    const currentDate = ServerTime().data as Date;
 
     const monthNames = [
       "January",
@@ -372,7 +372,7 @@ const Dvat16ReturnPreview = () => {
 
   const get_rr_number = (): string => {
     const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
-    const today = new Date();
+    const today = ServerTime().data as Date;
     const month = ("0" + (today.getMonth() + 1)).slice(-2);
     const day = ("0" + today.getDate()).slice(-2);
     const return_id = parseInt(return01?.id.toString() ?? "0") + 4000;
@@ -772,7 +772,7 @@ const Dvat16ReturnPreview = () => {
     dueDate: Date,
     payments: challan[],
     annualRate = 15,
-    asOfDate: Date = new Date(),
+    asOfDate: Date = ServerTime().data as Date,
   ): number => {
     if (!Number.isFinite(totalDue) || totalDue <= 0) return 0;
 
@@ -859,7 +859,7 @@ const Dvat16ReturnPreview = () => {
   };
 
   const getInterestDueDate = (): Date => {
-    if (!return01) return new Date();
+    if (!return01) return ServerTime().data as Date;
     const monthNames = [
       "January",
       "February",

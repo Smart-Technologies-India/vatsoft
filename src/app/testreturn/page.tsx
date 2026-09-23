@@ -7,6 +7,7 @@ import GetReturnsData, { type ReturnsData } from "@/action/return/getreturnsdata
 import SearchReturn from "@/action/return/searchreturn";
 import { TestReturn, CreateInterestWorking } from "@/action/testreturn";
 import dayjs, { Dayjs } from "dayjs";
+import ServerTime from "@/action/servertime";
 
 type TabName = "getReturnsData" | "interestCalculator" | "searchReturns" | "testReturn" | "createInterestWorking";
 
@@ -86,7 +87,7 @@ const TestReturnPage = () => {
       // Simple interest calculation (can be expanded with complex payment logic)
       const totalDue = parseFloat(interestCalc.totalDue);
       const dueDate = new Date(interestCalc.dueDate.toDate());
-      const asOfDate = interestCalc.asOfDate ? new Date(interestCalc.asOfDate.toDate()) : new Date();
+      const asOfDate = interestCalc.asOfDate ? new Date(interestCalc.asOfDate.toDate()) : ServerTime().data as Date;
       const annualRate = parseFloat(interestCalc.annualRate) || 15;
 
       const daysDiff = Math.floor((asOfDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));

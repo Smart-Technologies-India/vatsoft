@@ -17,6 +17,7 @@ import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { user } from "@prisma/client";
 import GetUser from "@/action/user/getuser";
+import ServerTime from "@/action/servertime";
 
 const LiquorCommodityPage = () => {
   const router = useRouter();
@@ -25,7 +26,7 @@ const LiquorCommodityPage = () => {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [total, setTotal] = useState<number>(0);
 
-  const currentDate = new Date();
+  const currentDate = ServerTime().data as Date;
   const [selectedMonth, setSelectedMonth] = useState<number>(
     currentDate.getMonth() + 1,
   );

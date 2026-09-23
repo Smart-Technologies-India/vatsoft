@@ -16,6 +16,7 @@ import {
   useWatch,
 } from "react-hook-form";
 import { toast } from "react-toastify";
+import ServerTime from "@/action/servertime";
 
 type EntryMode = "single" | "multiple";
 
@@ -49,7 +50,7 @@ const toDateTimeLocalValue = (date: Date): string => {
 };
 
 const generateInvoiceNumber = () => {
-  const now = new Date();
+  const now = ServerTime().data as Date;
   const pad = (value: number) => value.toString().padStart(2, "0");
   const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   const random = Math.floor(100 + Math.random() * 900);
@@ -77,7 +78,7 @@ const AddRefinery = ({ open, onClose, onCreated }: AddRefineryProps) => {
       entryMode: "single",
       purchaserTin: undefined,
       invoiceNumber: generateInvoiceNumber(),
-      invoiceDate: toDateTimeLocalValue(new Date()),
+      invoiceDate: toDateTimeLocalValue(ServerTime().data as Date),
       entries: [
         {
           selectedCommodityId: undefined,
@@ -194,7 +195,7 @@ const AddRefinery = ({ open, onClose, onCreated }: AddRefineryProps) => {
       entryMode: "single",
       purchaserTin: undefined,
       invoiceNumber: generateInvoiceNumber(),
-      invoiceDate: toDateTimeLocalValue(new Date()),
+      invoiceDate: toDateTimeLocalValue(ServerTime().data as Date),
       entries: [
         {
           selectedCommodityId: undefined,

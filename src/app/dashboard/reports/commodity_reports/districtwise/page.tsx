@@ -12,12 +12,13 @@ import { useEffect, useState } from "react";
 import numberWithIndianFormat from "@/utils/methods";
 import { Alert, Radio, RadioChangeEvent } from "antd";
 import DistrictWiseCommodityReport from "@/action/report/districtwisecommodityreport";
+import ServerTime from "@/action/servertime";
 
 const DistrictWiseCommodityPage = () => {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [total, setTotal] = useState<number>(0);
 
-  const currentDate = new Date();
+  const currentDate = ServerTime().data as Date;
   const [selectedMonth, setSelectedMonth] = useState<number>(
     currentDate.getMonth() + 1,
   );

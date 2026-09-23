@@ -23,6 +23,7 @@ import { addMonths, format } from "date-fns";
 
 import { FluentEye12Regular, FluentEyeOff16Regular } from "@/components/icons";
 import DvatPasswordLogin from "@/action/user/dvatpasswordlogin";
+import ServerTime from "@/action/servertime";
 
 const Home = () => {
   const faqs = [
@@ -1183,7 +1184,7 @@ function DateCard({ title, paymentdate, returndate }: DateCardProps) {
 
 const CardComponent = () => {
   // Get current date and calculate current month and next two months
-  const currentDate = new Date();
+  const currentDate = ServerTime().data as Date;
   const months = Array.from({ length: 3 }, (_, i) =>
     addMonths(currentDate, i - 1),
   ).map((date) => ({
@@ -1229,7 +1230,7 @@ const CardQuarterComponent = () => {
     ["January", "February", "March"],
   ];
 
-  const currentDate = new Date();
+  const currentDate = ServerTime().data as Date;
   const currentMonth = currentDate.toLocaleString("default", { month: "long" });
 
   // Find the current quarter group

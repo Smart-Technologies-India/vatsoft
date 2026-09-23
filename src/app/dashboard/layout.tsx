@@ -32,14 +32,7 @@ export default function DashboardLayout({
   const path = usePathname();
   const init = async () => {
     setLoading(true);
-    // const searchPath = path.endsWith("/") ? path.slice(0, -1) : path;
-    // if (
-    //   searchPath ==
-    //     "/dashboard/returns/returns-dashboard/invoices/bluckupload" ||
-    //   searchPath.includes("/dashboard/returns/returns-dashboard/preview/")
-    // ) {
-    //   setBluck(true);
-    // }
+
     const authResponse = await getAuthenticatedUserId();
     if (!authResponse.status || !authResponse.data) {
       toast.error(authResponse.message);

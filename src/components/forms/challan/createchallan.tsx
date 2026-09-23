@@ -50,7 +50,9 @@ export const CreateChallanProvider = (props: CreateChallanProviderProps) => {
 
 const CreateChallanPage = (props: CreateChallanProviderProps) => {
   const router = useRouter();
-  const toWords = new ToWords();
+  const toWords = new ToWords({
+    localeCode: "en-IN",
+  });
 
   const challanReason: OptionValue[] = [
     { value: "MONTHLYPAYMENT", label: "MONTHLYPAYMENT" },
@@ -150,82 +152,86 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
               </TableHeader>
               <TableBody>
                 <TableRow className="border-b hover:bg-gray-50">
+                  <TableCell className="text-left p-2 text-xs">VAT</TableCell>
+                  <TableCell className="text-center p-2">
+                    <TaxtInput<CreateChallanForm>
+                      name="vat"
+                      required={true}
+                      numdes={true}
+                    />
+                  </TableCell>
+                </TableRow>
+                <TableRow className="border-b hover:bg-gray-50">
                   <TableCell className="text-left p-2 text-xs">
-                    VAT
+                    Interest
                   </TableCell>
                   <TableCell className="text-center p-2">
-                  <TaxtInput<CreateChallanForm>
-                    name="vat"
-                    required={true}
-                    numdes={true}
-                  />
-                </TableCell>
-              </TableRow>
-              <TableRow className="border-b hover:bg-gray-50">
-                <TableCell className="text-left p-2 text-xs">
-                  Interest
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  <TaxtInput<CreateChallanForm>
-                    name="interest"
-                    required={true}
-                    numdes={true}
-                  />
-                </TableCell>
-              </TableRow>
-              <TableRow className="border-b hover:bg-gray-50">
-                <TableCell className="text-left p-2 text-xs">
-                  Late Fees
-                </TableCell>
-                <TableCell className="text-center p-2">
-                  <TaxtInput<CreateChallanForm>
-                    name="latefees"
-                    required={true}
-                    numdes={true}
-                  />
-                </TableCell>
-              </TableRow>
-              <TableRow className="border-b hover:bg-gray-50">
-                <TableCell className="text-left p-2 text-xs">Penalty</TableCell>
-                <TableCell className="text-center p-2">
-                  <TaxtInput<CreateChallanForm>
-                    name="penalty"
-                    numdes={true}
-                    required={true}
-                  />
-                </TableCell>
-              </TableRow>
-              <TableRow className="border-b hover:bg-gray-50">
-                <TableCell className="text-left p-2 text-xs">Others</TableCell>
-                <TableCell className="text-center p-2">
-                  <TaxtInput<CreateChallanForm>
-                    name="others"
-                    required={true}
-                    numdes={true}
-                  />
-                </TableCell>
-              </TableRow>
-              <TableRow className="bg-gray-50 border-b font-medium">
-                <TableCell className="text-left p-2 text-xs">
-                  Total Challan Amount:
-                </TableCell>
-                <TableCell className="text-left p-2 text-xs">
-                  {getTotalAmount()}
-                </TableCell>
-              </TableRow>
-              <TableRow className="border-b">
-                <TableCell className="text-left p-2 text-xs">
-                  Total amount paid (in words): Rupees
-                </TableCell>
-                <TableCell className="text-left p-2 text-xs">
-                  {capitalcase(toWords.convert(getTotalAmount()))}
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+                    <TaxtInput<CreateChallanForm>
+                      name="interest"
+                      required={true}
+                      numdes={true}
+                    />
+                  </TableCell>
+                </TableRow>
+                <TableRow className="border-b hover:bg-gray-50">
+                  <TableCell className="text-left p-2 text-xs">
+                    Late Fees
+                  </TableCell>
+                  <TableCell className="text-center p-2">
+                    <TaxtInput<CreateChallanForm>
+                      name="latefees"
+                      required={true}
+                      numdes={true}
+                    />
+                  </TableCell>
+                </TableRow>
+                <TableRow className="border-b hover:bg-gray-50">
+                  <TableCell className="text-left p-2 text-xs">
+                    Penalty
+                  </TableCell>
+                  <TableCell className="text-center p-2">
+                    <TaxtInput<CreateChallanForm>
+                      name="penalty"
+                      numdes={true}
+                      required={true}
+                    />
+                  </TableCell>
+                </TableRow>
+                <TableRow className="border-b hover:bg-gray-50">
+                  <TableCell className="text-left p-2 text-xs">
+                    Others
+                  </TableCell>
+                  <TableCell className="text-center p-2">
+                    <TaxtInput<CreateChallanForm>
+                      name="others"
+                      required={true}
+                      numdes={true}
+                    />
+                  </TableCell>
+                </TableRow>
+                <TableRow className="bg-gray-50 border-b font-medium">
+                  <TableCell className="text-left p-2 text-xs">
+                    Total Challan Amount:
+                  </TableCell>
+                  <TableCell className="text-left p-2 text-xs">
+                    {getTotalAmount()}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="border-b">
+                  <TableCell className="text-left p-2 text-xs">
+                    Total amount paid (in words): Rupees
+                  </TableCell>
+                  <TableCell className="text-left p-2 text-xs">
+                    {capitalcase(toWords.convert(getTotalAmount()))}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
           <div className="lg:w-96 shrink-0 p-3 bg-gray-50 rounded border border-gray-200">
-            <p className="text-center text-lg font-semibold text-gray-900">Form DVAT 20</p>
+            <p className="text-center text-lg font-semibold text-gray-900">
+              Form DVAT 20
+            </p>
             <p className="mt-2 text-xs text-gray-700">
               (See Rule 28 of the Dadra and Nagar Haveli and Daman and Diu Value
               Added Tax Rules, 2021)
@@ -234,7 +240,9 @@ const CreateChallanPage = (props: CreateChallanProviderProps) => {
               Challan for the Dadra and Nagar Haveli and Daman and Diu Value
               Added Regulation, 2005
             </p>
-            <p className="mt-2 text-xs text-gray-700">Credited: Consolidated Fund of India</p>
+            <p className="mt-2 text-xs text-gray-700">
+              Credited: Consolidated Fund of India
+            </p>
             <p className="mt-2 text-xs text-gray-700">
               Head: 0040, Value Added Tax Receipt - Value Added Tax Receipt
             </p>

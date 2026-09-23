@@ -12,6 +12,7 @@ import { user } from "@prisma/client";
 import GetUser from "@/action/user/getuser";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
+import ServerTime from "@/action/servertime";
 
 ChartJS.register(...registerables);
 
@@ -42,7 +43,7 @@ const TopRevenueDealersReport = () => {
     "FUEL" | "LIQUOR" | undefined
   >(undefined);
   const [selectedYear, setSelectedYear] = useState<string>(
-    new Date().getFullYear().toString(),
+    (ServerTime().data as Date).getFullYear().toString(),
   );
 
   useEffect(() => {
@@ -218,7 +219,7 @@ const TopRevenueDealersReport = () => {
   ];
 
   // Generate year options (current year and 5 years back)
-  const currentYear = new Date().getFullYear();
+  const currentYear = (ServerTime().data as Date).getFullYear();
   const yearOptions = Array.from({ length: 6 }, (_, i) => ({
     value: (currentYear - i).toString(),
     label: (currentYear - i).toString(),

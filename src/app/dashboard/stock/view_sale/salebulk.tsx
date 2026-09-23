@@ -24,6 +24,7 @@ import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
 import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
 import GetUnacceptedSales from "@/action/stock/getunacceptedsales";
+import ServerTime from "@/action/servertime";
 
 interface SaleBulkUploadProps {
   setToolbarActionsOpen: (open: boolean) => void;
@@ -620,7 +621,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         { wch: 18 }, // Pending Invoices
       ];
 
-      const fileName = `unaccepted_sales_${new Date().getTime()}.xlsx`;
+      const fileName = `unaccepted_sales_${(ServerTime().data as Date).getTime()}.xlsx`;
       XLSX.writeFile(workbook, fileName);
 
       toast.success(

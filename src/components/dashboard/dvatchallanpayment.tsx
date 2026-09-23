@@ -38,6 +38,7 @@ import {
   NetTaxCalculation,
 } from "../dvatreturn/vatcalculation";
 import GetReturnChallans from "@/action/return/getreturnchallans";
+import ServerTime from "@/action/servertime";
 
 interface PercentageOutput {
   increase: string;
@@ -87,10 +88,10 @@ const getNewYear = (year: string, month: string): string => {
 
 export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   const router = useRouter();
-  const toWords = new ToWords();
+  const toWords = new ToWords({
+    localeCode: "en-IN",
+  });
 
-
-  
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [return01, setReturn01] = useState<
     (returns_01 & { dvat04: dvat04 }) | null
@@ -243,7 +244,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
   const get_rr_number = (): string => {
     const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
-    const today = new Date();
+    const today = ServerTime().data as Date;
     const month = ("0" + (today.getMonth() + 1)).slice(-2);
     const day = ("0" + today.getDate()).slice(-2);
     const return_id = parseInt(return01?.id.toString() ?? "0") + 4000;
@@ -590,7 +591,6 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
   // compostion start here
 
   const getVatAmountcomp = (): number => {
-   
     return (
       compositionCalculation.getInvoicePercentage("1").decrease - paidvatamount
     );

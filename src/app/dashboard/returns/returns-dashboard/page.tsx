@@ -26,6 +26,7 @@ import GetUserLastPandingReturn from "@/action/return/userlastpandingreturn";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import AddNil from "@/action/return/addnil";
 import ValidatePreviewData from "@/action/return/validatepreviewdata";
+import ServerTime from "@/action/servertime";
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -75,7 +76,7 @@ const ReturnDashboard = () => {
   const [returns_entryData, setReturns_entryData] = useState<returns_entry[]>(
     [],
   );
-  const [chatAnimationData, setChatAnimationData] = useState<any>(null);
+  // const [chatAnimationData, setChatAnimationData] = useState<any>(null);
   const [isHelpDrawerOpen, setIsHelpDrawerOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<
     Array<{ id: number; role: "bot" | "user"; text: string }>
@@ -93,7 +94,7 @@ const ReturnDashboard = () => {
   const thinkingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chatListRef = useRef<HTMLDivElement | null>(null);
 
-  const [duedate, setDueDate] = useState<Date>(new Date());
+  const [duedate, setDueDate] = useState<Date>(ServerTime().data as Date);
 
   useEffect(() => {
     const init = async () => {
@@ -107,23 +108,13 @@ const ReturnDashboard = () => {
     init();
   }, []);
 
-  const getQuarterMonths = (selectedQuarter: Quarter): string[] => {
-    const quarterMonthsMap: Record<Quarter, string[]> = {
-      QUARTER1: ["April", "May", "June"],
-      QUARTER2: ["July", "August", "September"],
-      QUARTER3: ["October", "November", "December"],
-      QUARTER4: ["January", "February", "March"],
-    };
-
-    return quarterMonthsMap[selectedQuarter] ?? [];
-  };
-
   const search = async (
     year: string,
     period: string,
     filingFrequency?: string,
   ) => {
     setSearch(true);
+
     const monthNames = [
       "January",
       "February",
@@ -199,7 +190,6 @@ const ReturnDashboard = () => {
         effectiveQuarter,
       );
 
-
       if (quarterlyResponse.status && quarterlyResponse.data) {
         // For quarterly filing, use the first return from the array
         // (represents the aggregated quarterly return)
@@ -210,11 +200,15 @@ const ReturnDashboard = () => {
         setReturn01(null);
       }
     } else {
+      const timeStart = new Date();
+      console.log("sec start")
       // For non-quarterly (normal) filing, keep existing logic - fetch only the selected period
       const returnformsresponse = await getPdfReturn({
         year: fetchYear,
         month: period,
       });
+      console.log("End");
+      console.log("sec end", new Date().getTime() - timeStart.getTime());
 
       if (returnformsresponse.status && returnformsresponse.data) {
         setReturn01(returnformsresponse.data.returns_01);
@@ -278,8 +272,12 @@ const ReturnDashboard = () => {
   };
 
   const [lastPending, setLastPending] = useState<return_filing | null>(null);
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple initializations
+    if (hasInitialized.current) return;
+    
     const monthNames = [
       "January",
       "February",
@@ -296,7 +294,7 @@ const ReturnDashboard = () => {
     ];
 
     // setDateValue(currentDate);
-    let currentDate: Date = new Date();
+    let currentDate: Date = ServerTime().data as Date;
 
     const fiscalYearStartMonth = 3; // April
     const currentMonth = currentDate.getMonth();
@@ -327,11 +325,11 @@ const ReturnDashboard = () => {
         setDvatdata(response.data);
 
         const quarters = getQuarterList(
-          new Date(),
+          ServerTime().data as Date,
           currentMonth === fiscalYearStartMonth
             ? (fiscalYear - 1).toString()
             : fiscalYear.toString(),
-          response.data?.vatLiableDate ?? new Date(),
+          response.data?.vatLiableDate ?? (ServerTime().data as Date),
         );
 
         // Derive quarter and period from last pending filing,
@@ -414,15 +412,6 @@ const ReturnDashboard = () => {
             lastyear = vatliableDate.getFullYear().toString();
           }
 
-          // if (lastmonth == null) {
-          //   return toast.error("No month found");
-          // }
-          // if (lastyear == null) {
-          //   return toast.error("No year found");
-          // }
-
-          // const last_next_month = monthNames.indexOf(lastmonth) + 1;
-
           // For quarterly filing: check lastPending first, don't advance if unfiled
           let last_next_month: number;
           if (response.data.frequencyFilings === "QUARTERLY" && isfail) {
@@ -462,6 +451,7 @@ const ReturnDashboard = () => {
       }
     };
     init();
+    hasInitialized.current = true;
   }, [userid]);
 
   interface PeriodValue {
@@ -470,7 +460,8 @@ const ReturnDashboard = () => {
   }
 
   const getYearList = (dateValue: Date): PeriodValue[] => {
-    const liableDate: Date = davtdata?.vatLiableDate ?? new Date();
+    const liableDate: Date =
+      davtdata?.vatLiableDate ?? (ServerTime().data as Date);
 
     // Fiscal year starts from April (month 3)
     const getFiscalYearStart = (date: Date) => {
@@ -484,16 +475,9 @@ const ReturnDashboard = () => {
       }
     };
 
-    const startYear = getFiscalYearStart(liableDate);
     const currentFY = getFiscalYearStart(dateValue);
 
     const periodValues: PeriodValue[] = [];
-
-    // // Push previous fiscal year
-    // periodValues.push({
-    //   value: (currentFY - 1).toString(),
-    //   label: `${currentFY - 1}-${currentFY.toString().slice(-2)}`,
-    // });
 
     // Push current fiscal year
     periodValues.push({
@@ -502,13 +486,6 @@ const ReturnDashboard = () => {
     });
 
     return periodValues;
-  };
-
-  const getFinancialYear = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = date.getMonth(); // 0-based
-
-    return month >= 3 ? `${year}` : `${year - 1}`;
   };
 
   const getQuarterList = (
@@ -624,7 +601,6 @@ const ReturnDashboard = () => {
     };
 
     const quarterMonths = quarterMonthsMap[quarter];
-
 
     for (const month of quarterMonths) {
       // Current year condition
@@ -812,30 +788,6 @@ const ReturnDashboard = () => {
   }
 
   const [isDownload, setDownload] = useState<boolean>(false);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadChatAnimation = async () => {
-      try {
-        const response = await fetch("/cs.json");
-        if (!response.ok) return;
-
-        const data = await response.json();
-        if (mounted) {
-          setChatAnimationData(data);
-        }
-      } catch {
-        // Keep fallback text if animation cannot be loaded.
-      }
-    };
-
-    loadChatAnimation();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -1148,14 +1100,16 @@ const ReturnDashboard = () => {
       >
         <div className="space-y-3">
           <div className="p-3 bg-red-50 border border-red-200 rounded">
-            <p className="text-sm font-semibold text-red-800">⚠️ Pending Records Found</p>
+            <p className="text-sm font-semibold text-red-800">
+              ⚠️ Pending Records Found
+            </p>
             <p className="text-xs text-red-700 mt-2 whitespace-pre-wrap">
               {validationErrorMessage}
             </p>
           </div>
           <p className="text-xs text-gray-600">
-            Please process all pending records through the &quot;Add Record&quot; buttons
-            before generating the preview.
+            Please process all pending records through the &quot;Add
+            Record&quot; buttons before generating the preview.
           </p>
         </div>
       </Modal>
@@ -1220,15 +1174,15 @@ const ReturnDashboard = () => {
                   value={year}
                   placeholder="Select a year"
                   size="small"
-                  options={getYearList(new Date())}
+                  options={getYearList(ServerTime().data as Date)}
                   onChange={(val: string) => {
                     if (!val) return;
                     setYear(val.toString());
 
                     const quarters = getQuarterList(
-                      new Date(),
+                      ServerTime().data as Date,
                       val,
-                      davtdata?.vatLiableDate ?? new Date(),
+                      davtdata?.vatLiableDate ?? (ServerTime().data as Date),
                     );
 
                     const selectedQuarter = quarters[0]?.value as Quarter;
@@ -1300,9 +1254,9 @@ const ReturnDashboard = () => {
                   placeholder="Select quarter"
                   size="small"
                   options={getQuarterList(
-                    new Date(),
+                    ServerTime().data as Date,
                     year!,
-                    davtdata?.vatLiableDate ?? new Date(),
+                    davtdata?.vatLiableDate ?? (ServerTime().data as Date),
                   )}
                   onChange={(val: Quarter) => {
                     if (!val || !davtdata) return;
@@ -1375,10 +1329,10 @@ const ReturnDashboard = () => {
                     placeholder="Select Period"
                     size="small"
                     options={getPeriodList(
-                      new Date(),
+                      ServerTime().data as Date,
                       year!,
                       quarter,
-                      davtdata?.vatLiableDate ?? new Date(),
+                      davtdata?.vatLiableDate ?? (ServerTime().data as Date),
                     )}
                     onChange={(val: string) => {
                       if (!val) return;
@@ -1398,93 +1352,57 @@ const ReturnDashboard = () => {
           </div>
           {isSearch && (
             <>
-              {/* {lastPending != null ? (
-              <>
-                <div className="bg-white w-full px-4 py-2 rounded-xl font-normal pb-4 p-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-between mt-4 border">
-                  <div>
-                    <p className="text-sm">RR Number</p>
-                    <p className="text-sm  font-medium">N/A</p>
-                  </div>
-                  <div>
-                    <p className="text-sm">User TIN Number</p>
-                    <p className="text-sm  font-medium">
-                      {davtdata?.tinNumber}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm">Filing Date</p>
-                    <p className="text-sm  font-medium">
-                      {formateDate(lastPending.due_date!)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm">Status</p>
-                    <p className="text-sm  font-medium">Due - Not Filed</p>
-                  </div>
-                  <div>
-                    <p className="text-sm">Return Type</p>
-                    <p className="text-sm  font-medium">
-                      {return01?.return_type ?? "ORIGINAL"}
-                    </p>
-                  </div>
+              <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                <div>
+                  <p className="text-xs text-gray-600">RR Number</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {return01?.rr_number == null ||
+                    return01?.rr_number == undefined ||
+                    return01?.rr_number == ""
+                      ? "N/A"
+                      : return01?.rr_number}
+                  </p>
                 </div>
-              </>
-            ) : ( */}
-              <>
-                <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-600">RR Number</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {return01?.rr_number == null ||
-                      return01?.rr_number == undefined ||
-                      return01?.rr_number == ""
-                        ? "N/A"
-                        : return01?.rr_number}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600">User TIN Number</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {davtdata?.tinNumber}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-gray-600">
-                      {return01?.rr_number != "" &&
-                      return01?.rr_number != undefined &&
-                      return01?.rr_number != null
-                        ? "Filed Date"
-                        : "Filing Date"}
-                    </p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {return01?.rr_number != "" &&
-                      return01?.rr_number != undefined &&
-                      return01?.rr_number != null
-                        ? formateDate(return01.filing_datetime)
-                        : formateDate(duedate)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600">Status</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {return01?.rr_number != "" &&
-                      return01?.rr_number != undefined &&
-                      return01?.rr_number != null
-                        ? "Filed"
-                        : "Due - Not Filed"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600">Return Type</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {return01?.return_type ?? "ORIGINAL"}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-xs text-gray-600">User TIN Number</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {davtdata?.tinNumber}
+                  </p>
                 </div>
-              </>
-              {/* )} */}
+
+                <div>
+                  <p className="text-xs text-gray-600">
+                    {return01?.rr_number != "" &&
+                    return01?.rr_number != undefined &&
+                    return01?.rr_number != null
+                      ? "Filed Date"
+                      : "Filing Date"}
+                  </p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {return01?.rr_number != "" &&
+                    return01?.rr_number != undefined &&
+                    return01?.rr_number != null
+                      ? formateDate(return01.filing_datetime)
+                      : formateDate(duedate)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Status</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {return01?.rr_number != "" &&
+                    return01?.rr_number != undefined &&
+                    return01?.rr_number != null
+                      ? "Filed"
+                      : "Due - Not Filed"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Return Type</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {return01?.return_type ?? "ORIGINAL"}
+                  </p>
+                </div>
+              </div>
 
               <div className="grid w-full grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 <Card

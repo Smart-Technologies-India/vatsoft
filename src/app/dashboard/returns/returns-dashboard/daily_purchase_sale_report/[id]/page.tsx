@@ -10,13 +10,19 @@ import {
   tin_number_master,
   commodity_master,
 } from "@prisma/client";
-import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import { Tabs, Table, Button, Spin, Input, Space } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { SearchOutlined } from "@ant-design/icons";
+import ServerTime from "@/action/servertime";
 
 type DailySaleWithRelations = daily_sale & {
   seller_tin_number: tin_number_master;
@@ -94,7 +100,7 @@ const DailyPurchaseSaleReportPage = () => {
         }
 
         // Fetch current month/year if not provided in query params
-        const currentDate = new Date();
+        const currentDate = ServerTime().data as Date;
         const fetchMonth =
           monthParam ||
           currentDate.toLocaleString("default", { month: "long" });
@@ -146,7 +152,9 @@ const DailyPurchaseSaleReportPage = () => {
       taxPercent: item.tax_percent || "0",
       amount: parseFloat(item.amount || "0") || 0,
       vatAmount: parseFloat(item.vatamount || "0") || 0,
-      total: (parseFloat(item.amount || "0") || 0) + (parseFloat(item.vatamount || "0") || 0),
+      total:
+        (parseFloat(item.amount || "0") || 0) +
+        (parseFloat(item.vatamount || "0") || 0),
     }));
   };
 
@@ -289,7 +297,9 @@ const DailyPurchaseSaleReportPage = () => {
         "S.No": index + 1,
         Section: sectionTitle,
         "Invoice No": item.invoice_number || "-",
-        "Invoice Date": item.invoice_date ? formateDate(item.invoice_date) : "-",
+        "Invoice Date": item.invoice_date
+          ? formateDate(item.invoice_date)
+          : "-",
         "Seller TIN": item.seller_tin_number?.tin_number || "-",
         Name: item.seller_tin_number?.name_of_dealer || "-",
         Commodity: item.commodity_master?.product_name || "-",
@@ -297,7 +307,10 @@ const DailyPurchaseSaleReportPage = () => {
         "Tax %": item.tax_percent || "0",
         Amount: Number(parseFloat(item.amount || "0") || 0),
         "VAT Amount": Number(parseFloat(item.vatamount || "0") || 0),
-        Total: Number((parseFloat(item.amount || "0") || 0) + (parseFloat(item.vatamount || "0") || 0)),
+        Total: Number(
+          (parseFloat(item.amount || "0") || 0) +
+            (parseFloat(item.vatamount || "0") || 0),
+        ),
       }));
 
     const workbook = XLSX.utils.book_new();
@@ -351,7 +364,9 @@ const DailyPurchaseSaleReportPage = () => {
       const nameMatch =
         searchTermsForTab.name === "" ||
         (item.name &&
-          item.name.toLowerCase().includes(searchTermsForTab.name.toLowerCase()));
+          item.name
+            .toLowerCase()
+            .includes(searchTermsForTab.name.toLowerCase()));
 
       return invoiceMatch && tinMatch && nameMatch;
     });
@@ -471,7 +486,9 @@ const DailyPurchaseSaleReportPage = () => {
     {
       key: "2",
       label: "Daily Purchases",
-      children: <RenderTabContent entries={dailyPurchases} tabKey="purchases" />,
+      children: (
+        <RenderTabContent entries={dailyPurchases} tabKey="purchases" />
+      ),
     },
   ];
 
@@ -485,7 +502,9 @@ const DailyPurchaseSaleReportPage = () => {
           Back
         </button>
         <button
-          onClick={() => generatePDF(pathname, "daily_purchase_sale_report.pdf")}
+          onClick={() =>
+            generatePDF(pathname, "daily_purchase_sale_report.pdf")
+          }
           className="py-1 px-4 border text-white text-xs rounded bg-[#162e57]"
         >
           Download PDF
@@ -545,7 +564,9 @@ const DailyPurchaseSaleReportPage = () => {
 
           <Spin spinning={loading} tip="Loading...">
             {dailySales.length === 0 && dailyPurchases.length === 0 ? (
-              <p className="text-sm text-gray-500">No transaction data found.</p>
+              <p className="text-sm text-gray-500">
+                No transaction data found.
+              </p>
             ) : (
               <Tabs items={tabItems} />
             )}
