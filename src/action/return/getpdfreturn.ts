@@ -44,8 +44,6 @@ const getPdfReturn = async (
     }
 
     // Optimize: Combine dvat04 fetch with returns_01 in a single query using OR
-    console.log("first call time start");
-    const firstCallStartTime = new Date();
     const return01response = await prisma.returns_01.findFirst({
       where: {
         deletedAt: null,
@@ -67,10 +65,6 @@ const getPdfReturn = async (
         },
       },
     });
-    console.log(
-      "first call time end",
-      new Date().getTime() - firstCallStartTime.getTime(),
-    );
 
     if (!return01response) {
       return {
@@ -82,8 +76,6 @@ const getPdfReturn = async (
     }
 
     // Optimize: Fetch returns_entry with only necessary relations
-    console.log("second call time start");
-    const secondCallStartTime = new Date();
     const returnforms = await prisma.returns_entry.findMany({
       where: {
         deletedAt: null,
@@ -95,10 +87,6 @@ const getPdfReturn = async (
         seller_tin_number: true,
       },
     });
-    console.log(
-      "second call time end",
-      new Date().getTime() - secondCallStartTime.getTime(),
-    );
 
     if (!returnforms || returnforms.length === 0)
       return {

@@ -201,14 +201,11 @@ const ReturnDashboard = () => {
       }
     } else {
       const timeStart = new Date();
-      console.log("sec start")
       // For non-quarterly (normal) filing, keep existing logic - fetch only the selected period
       const returnformsresponse = await getPdfReturn({
         year: fetchYear,
         month: period,
       });
-      console.log("End");
-      console.log("sec end", new Date().getTime() - timeStart.getTime());
 
       if (returnformsresponse.status && returnformsresponse.data) {
         setReturn01(returnformsresponse.data.returns_01);

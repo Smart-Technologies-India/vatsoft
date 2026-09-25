@@ -2,19 +2,8 @@
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetAllStock from "@/action/stock/getallstock";
 import CheckStockUpdateSnapshot from "@/action/stock/checkstockupdatesnapshot";
-import { AddMaterialProvider } from "@/components/forms/addmaterial/addmaterial";
-import { CreateStockProvider } from "@/components/forms/createstock/createstock";
-import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
 import { Input } from "@/components/ui/input";
 import * as XLSX from "xlsx";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   flexRender,
   getCoreRowModel,
@@ -25,40 +14,21 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  commodity_master,
-  dvat04,
-  stock,
-  tin_number_master,
-} from "@prisma/client";
-import {
-  Alert,
-  Button,
-  Drawer,
-  Modal,
-  Pagination,
-  Radio,
-  RadioChangeEvent,
-} from "antd";
+import { commodity_master, dvat04, stock } from "@prisma/client";
+import { Button, Pagination, Radio, RadioChangeEvent } from "antd";
 import { useRouter } from "next/navigation";
-import { SetStateAction, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import Papa from "papaparse";
-import AllCommodityMaster from "@/action/commoditymaster/allcommoditymaster";
-import { formateDate } from "@/utils/methods";
-import getAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
-import CreateMultiDailyPurchase from "@/action/stock/createmultidailypurchase";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import ServerTime from "@/action/servertime";
 
 type StockRow = stock & { commodity_master: commodity_master };
 
-// Indian number formatting function (e.g., 34423 -> 3,44,23)
 const formatIndianNumber = (num: number): string => {
   if (!Number.isFinite(num)) return "0";
   const numStr = Math.floor(num).toString();
   if (numStr.length <= 3) return numStr;
-  
+
   const lastThree = numStr.slice(-3);
   const remaining = numStr.slice(0, -3);
   const withCommas = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
@@ -85,11 +55,6 @@ const CommodityMaster = () => {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [hasSnapshotData, setHasSnapshotData] = useState<boolean>(false);
 
-  const [commodityMaster, setCommodityMaster] = useState<
-    Array<commodity_master>
-  >([]);
-
-  const [tindata, setTindata] = useState<Array<tin_number_master>>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [stockFilter, setStockFilter] = useState<"available" | "all" | "zero">(
@@ -160,16 +125,6 @@ const CommodityMaster = () => {
       setDvatData(dvat.data);
       await loadAllStocks(dvat.data.id);
     }
-    const commodity_response = await AllCommodityMaster({});
-
-    if (commodity_response.status && commodity_response.data) {
-      setCommodityMaster(commodity_response.data);
-    }
-    const getalltinnumber = await getAllTinNumberMaster();
-
-    if (getalltinnumber.status && getalltinnumber.data) {
-      setTindata(getalltinnumber.data);
-    }
 
     // setLoading(false);
   };
@@ -189,26 +144,11 @@ const CommodityMaster = () => {
         setDvatData(dvat.data);
         await loadAllStocks(dvat.data.id);
       }
-      const commodity_response = await AllCommodityMaster({});
-
-      if (commodity_response.status && commodity_response.data) {
-        setCommodityMaster(commodity_response.data);
-      }
-      const getalltinnumber = await getAllTinNumberMaster();
-
-      if (getalltinnumber.status && getalltinnumber.data) {
-        setTindata(getalltinnumber.data);
-      }
 
       setLoading(false);
     };
     init();
   }, [userid]);
-
-  const [addBox, setAddBox] = useState<boolean>(false);
-  const [stockBox, setStockBox] = useState<boolean>(false);
-  const [materialBox, setMaterialBox] = useState<boolean>(false);
-  // const [commid, setCommid] = useState<number>();
 
   const [quantityCount, setQuantityCount] = useState("pcs");
 
@@ -321,7 +261,9 @@ const CommodityMaster = () => {
                 if (!Number.isFinite(packSize) || packSize <= 0) {
                   return "-";
                 }
-                return formatIndianNumber(Number(row.original.quantity) * packSize);
+                return formatIndianNumber(
+                  Number(row.original.quantity) * packSize,
+                );
               },
             } as ColumnDef<StockRow>,
           ]
@@ -405,143 +347,6 @@ const CommodityMaster = () => {
   }
   const [tabledata, setTableData] = useState<CsvData[]>([]);
 
-  const handleCSVChange = async (
-    value: React.ChangeEvent<HTMLInputElement>,
-    setFun: (value: SetStateAction<File | null>) => void,
-  ) => {
-    if (value!.target.files?.length == 0) {
-      value.target.value = ""; // Reset input so same file can be selected again
-      return;
-    }
-
-    if (
-      value!.target.files![0].type.endsWith("/csv") ||
-      value!.target.files![0].type.endsWith("/vnd.ms-excel")
-    ) {
-      const file = value!.target.files![0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        const text = reader.result as string;
-        Papa.parse(text, {
-          header: true,
-          complete: (results) => {
-            let groupedData: { [key: string]: number } = {};
-
-            results.data.forEach((value: any) => {
-              const key = `${value["invoice_no"]}_${value["oidc_code"]}_${value["quantity"]}`;
-              groupedData[key] = (groupedData[key] || 0) + 1;
-            });
-
-            // Group by invoice_no for TIN consistency check
-            const invoiceTinMap: { [invoiceNo: string]: Set<string> } = {};
-            results.data.forEach((row: any) => {
-              const inv = row["invoice_no"];
-              const tin = row["tin"];
-              if (!invoiceTinMap[inv]) invoiceTinMap[inv] = new Set();
-              if (tin) invoiceTinMap[inv].add(tin);
-            });
-
-            // Find invoice_no with more than one unique TIN
-            const invoiceWithMultipleTIN = new Set(
-              Object.entries(invoiceTinMap)
-                .filter(([_, tins]) => tins.size > 1)
-                .map(([inv]) => inv),
-            );
-
-            let recatoredata = results.data.map((value: any) => {
-              const key = `${value["invoice_no"]}_${value["oidc_code"]}_${value["quantity"]}`;
-              const isDuplicate = groupedData[key] > 1;
-
-              const matchedCommodity = commodityMaster.find(
-                (commodity) => commodity.oidc_code === value["oidc_code"],
-              );
-
-              const isallnull =
-                (value["tin"] == null ||
-                  value["tin"] == "" ||
-                  value["tin"] == undefined) &&
-                (value["invoice_date"] == null ||
-                  value["invoice_date"] == "" ||
-                  value["invoice_date"] == undefined) &&
-                (value["invoice_no"] == null ||
-                  value["invoice_no"] == "" ||
-                  value["invoice_no"] == undefined) &&
-                (value["oidc_code"] == null ||
-                  value["oidc_code"] == "" ||
-                  value["oidc_code"] == undefined) &&
-                (value["quantity"] == null ||
-                  value["quantity"] == "" ||
-                  value["quantity"] == undefined);
-              if (isallnull) {
-                return {
-                  tin: "",
-                  invoice_date: "",
-                  invoice_no: "",
-                  oidc_code: "",
-                  quantity: "",
-                  error: true,
-                  errorname: "All fields are empty",
-                  mrp: null,
-                  crate_size: null,
-                  product_name: null,
-                };
-              }
-
-              // Mark error if invoice_no has multiple TINs
-              const tinError = invoiceWithMultipleTIN.has(value["invoice_no"]);
-
-              const mydata: CsvData = {
-                tin: value["tin"],
-                invoice_date: value["invoice_date"],
-                invoice_no: value["invoice_no"],
-                oidc_code: value["oidc_code"],
-                quantity: value["quantity"],
-                error: !matchedCommodity || isDuplicate || tinError,
-                errorname: !matchedCommodity
-                  ? "OIDC code not found in commodity master"
-                  : isDuplicate
-                    ? "Duplicate entry"
-                    : tinError
-                      ? "Multiple TINs for same invoice no."
-                      : null,
-                mrp: matchedCommodity ? matchedCommodity.mrp : null,
-                crate_size: matchedCommodity
-                  ? matchedCommodity.crate_size
-                  : null,
-                product_name: matchedCommodity
-                  ? matchedCommodity.product_name
-                  : null,
-              };
-
-              return mydata;
-            });
-            setTableData(recatoredata);
-
-            setIsBulkModalOpen(true);
-            setLoading(false);
-            value.target.value = ""; // Reset input after successful read
-          },
-          error: (error: any) => {
-            toast.error("Error parsing CSV file");
-            setLoading(false);
-            value.target.value = ""; // Reset input on error
-          },
-        });
-      };
-      reader.onerror = (error: any) => {
-        toast.error("Error reading CSV file");
-        setLoading(false);
-        value.target.value = ""; // Reset input on error
-      };
-      reader.readAsText(file);
-    } else {
-      toast.error("Please select an image file.", { theme: "light" });
-      value.target.value = ""; // Reset input on invalid file
-    }
-  };
-
-  // csv section end here
-
   const handleDownloadStockAsXlsx = () => {
     if (!filteredStocks || filteredStocks.length === 0) {
       toast.error("No data to download");
@@ -595,71 +400,6 @@ const CommodityMaster = () => {
     toast.success("Stock data downloaded successfully");
   };
 
-  const handleBulkUpload = async () => {
-    if (!tabledata || tabledata.length === 0) {
-      return toast.error("No data to upload.");
-    }
-
-    // If any row has error, prevent upload and show error
-    if (tabledata.some((row) => row.error)) {
-      toast.error(
-        "Please fix all errors in the uploaded data before proceeding.",
-      );
-      return;
-    }
-
-    const entries = tabledata
-      .filter((row) => !row.error) // Only process valid rows
-      .map((row) => ({
-        dvatid: dvatdata!.id,
-        commodityid: commodityMaster.find(
-          (commodity) => commodity.oidc_code === row.oidc_code,
-        )?.id!,
-        quantity: parseInt(row.quantity),
-        seller_tin_id: tindata.find((tin) => tin.tin_number === row.tin)?.id!,
-        invoice_number: row.invoice_no,
-        invoice_date: new Date(row.invoice_date),
-        tax_percent: "2",
-        // tax_percent: commodityMaster.find(
-        //   (commodity) => commodity.oidc_code === row.oidc_code
-        // )?.taxable_at!,
-        amount: (
-          parseFloat(row.quantity) *
-          parseFloat(
-            commodityMaster.find(
-              (commodity) => commodity.oidc_code === row.oidc_code,
-            )?.sale_price!,
-          )
-        ).toFixed(2),
-        vatamount: (
-          (parseFloat(row.quantity) *
-            parseFloat(
-              commodityMaster.find(
-                (commodity) => commodity.oidc_code === row.oidc_code,
-              )?.sale_price!,
-            ) *
-            2) /
-          100
-        ).toFixed(2),
-        amount_unit: commodityMaster.find(
-          (commodity) => commodity.oidc_code === row.oidc_code,
-        )?.sale_price!,
-        createdById: userid,
-        against_cfrom: false,
-        batch_name: null,
-      }));
-
-    const response = await CreateMultiDailyPurchase({ entries });
-
-    if (response.status && response.data) {
-      toast.success("Bulk upload successful.");
-      setIsBulkModalOpen(false);
-      await init(); // Refresh data
-    } else {
-      toast.error(response.message);
-    }
-  };
-
   if (isLoading)
     return (
       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
@@ -668,169 +408,6 @@ const CommodityMaster = () => {
     );
   return (
     <>
-      <Modal
-        title={
-          <div className="text-xl font-semibold text-gray-800">Bulk Upload</div>
-        }
-        open={isBulkModalOpen}
-        onOk={handleBulkUpload}
-        width={1100}
-        onCancel={() => {
-          setIsBulkModalOpen(false);
-          setCsv(null);
-          setTableData([]);
-        }}
-        okText="Upload"
-        cancelText="Cancel"
-        okButtonProps={{
-          className: "bg-blue-600 hover:bg-blue-700",
-        }}
-      >
-        <div className="overflow-x-auto rounded-lg shadow-sm">
-          <Table className="border border-gray-200 mt-4">
-            <TableHeader>
-              <TableRow className="bg-linear-to-r from-blue-50 to-indigo-50">
-                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
-                  Sr. No.
-                </TableHead>
-                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
-                  TIN Number
-                </TableHead>
-                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
-                  Product Name
-                </TableHead>
-                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
-                  MRP
-                </TableHead>
-                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
-                  Invoice No.
-                </TableHead>
-                <TableHead className="border border-gray-200 whitespace-nowrap text-center font-semibold text-gray-700 py-3">
-                  Invoice Date
-                </TableHead>
-                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
-                  OIDC Code
-                </TableHead>
-                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
-                  Quantity
-                </TableHead>
-                <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
-                  Crate Size
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tabledata
-                .filter((val) => val.tin != "")
-                .map((val: CsvData, index: number) => (
-                  <TableRow
-                    key={index}
-                    className={`${
-                      val.error
-                        ? "bg-red-50 hover:bg-red-100"
-                        : "hover:bg-gray-50"
-                    } transition-colors`}
-                  >
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {index + 1}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.tin}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.product_name}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm font-medium">
-                      {val.mrp}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.invoice_no}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.invoice_date == null ||
-                      val.invoice_date == "" ||
-                      val.invoice_date == undefined
-                        ? "-"
-                        : formateDate(new Date(val.invoice_date))}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm font-mono">
-                      {val.oidc_code}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm font-medium">
-                      {val.quantity}
-                    </TableCell>
-                    <TableCell className="p-3 border border-gray-200 text-center text-sm">
-                      {val.crate_size}
-                    </TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </div>
-        {tabledata.some((val) => val.errorname) && (
-          <Alert
-            title={tabledata.find((val) => val.errorname)?.errorname}
-            type="error"
-            showIcon
-            className="mt-4 rounded-lg"
-          />
-        )}
-      </Modal>
-      <Drawer
-        placement="right"
-        closeIcon={null}
-        onClose={() => {
-          setMaterialBox(false);
-        }}
-        open={materialBox}
-        size="large"
-      >
-        <div className="mb-3 pb-2 border-b">
-          <h2 className="text-sm font-medium text-gray-900">
-            Add Raw Material
-          </h2>
-        </div>
-        <AddMaterialProvider
-          userid={userid}
-          setAddBox={setMaterialBox}
-          init={init}
-        />
-      </Drawer>
-      <Drawer
-        placement="right"
-        closeIcon={null}
-        onClose={() => {
-          setAddBox(false);
-        }}
-        open={addBox}
-        size="large"
-      >
-        <div className="mb-3 pb-2 border-b">
-          <h2 className="text-sm font-medium text-gray-900">Add Purchase</h2>
-        </div>
-        <DailyPurchaseMasterProvider setAddBox={setAddBox} init={init} />
-      </Drawer>
-      <Drawer
-        placement="right"
-        closeIcon={null}
-        onClose={() => {
-          setStockBox(false);
-        }}
-        open={stockBox}
-        size="large"
-      >
-        <div className="mb-3 pb-2 border-b">
-          <h2 className="text-sm font-medium text-gray-900">
-            Add Production Stock
-          </h2>
-        </div>
-        <CreateStockProvider
-          userid={userid}
-          setAddBox={setStockBox}
-          init={init}
-        />
-      </Drawer>
-
       <main className="p-3 bg-gray-50">
         <div className=" mx-auto">
           {/* Header Card */}
@@ -863,78 +440,12 @@ const CommodityMaster = () => {
                   </div>
                 )}
 
-                {/* Fuel-specific Upload */}
-                {/* {dvatdata?.commodity == "FUEL" && (
-                  <div className="flex gap-2 items-center">
-                    <Button
-                      size="small"
-                      type="primary"
-                      onClick={() => csvRef.current?.click()}
-                    >
-                      {csv ? "Change Sheet" : "Upload Sheet"}
-                    </Button>
-                    <div className="hidden">
-                      <input
-                        type="file"
-                        ref={csvRef}
-                        accept="application/vnd.ms-excel, text/csv"
-                        onChange={(val) => handleCSVChange(val, setCsv)}
-                      />
-                    </div>
-                    <a
-                      download={"vatsoft_purchase.csv"}
-                      href="/vatsoft_purchase.csv"
-                      className="inline-flex items-center px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
-                    >
-                      Download Sheet
-                    </a>
-                  </div>
-                )} */}
-
-                {/* Manufacturer-specific Buttons */}
-                {/* {dvatdata && (dvatdata.commodity == "MANUFACTURER" ) && (
-                  <>
-                    <Button
-                      size="small"
-                      type="primary"
-                      onClick={() => setStockBox(true)}
-                    >
-                      Add Production
-                    </Button>
-                    <Button
-                      size="small"
-                      type="primary"
-                      onClick={() => setMaterialBox(true)}
-                    >
-                      Add Raw Material
-                    </Button>
-                  </>
-                )} */}
-
-                {/* Common Buttons */}
-                {dvatdata?.commodity != "RESTAURANT" && (
-                  <Button
-                    size="small"
-                    type="primary"
-                    onClick={() => setAddBox(true)}
-                  >
-                    Add Purchase
-                  </Button>
-                )}
                 <Button
                   size="small"
                   type="default"
                   onClick={handleDownloadStockAsXlsx}
                 >
                   Download Stock
-                </Button>
-
-                <Button
-                  size="small"
-                  type="default"
-                  onClick={() => router.push("/dashboard/stock/view_purchase")}
-                >
-                  View Purchase
                 </Button>
 
                 {dvatdata?.commodity == "FUEL" && (
@@ -946,17 +457,6 @@ const CommodityMaster = () => {
                     Refinery Purchase
                   </Button>
                 )}
-                {/* {dvatdata && (dvatdata.commodity == "MANUFACTURER") && (
-                  <Button
-                    size="small"
-                    type="default"
-                    onClick={() =>
-                      router.push("/dashboard/stock/manufacturer_purchase")
-                    }
-                  >
-                    Manufacturer Purchase
-                  </Button>
-                )} */}
               </div>
             </div>
           </div>
@@ -995,10 +495,10 @@ const CommodityMaster = () => {
               </div>
 
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
+                <table className="w-full">
+                  <thead>
                     {table.getHeaderGroups().map((headerGroup) => (
-                      <TableRow
+                      <tr
                         key={headerGroup.id}
                         className="bg-gray-50 border-b"
                       >
@@ -1012,7 +512,7 @@ const CommodityMaster = () => {
                               : "text-center";
 
                           return (
-                            <TableHead
+                            <th
                               key={header.id}
                               className={`p-2 font-medium text-gray-700 text-xs ${alignClass}`}
                             >
@@ -1042,16 +542,16 @@ const CommodityMaster = () => {
                                   header.getContext(),
                                 )
                               )}
-                            </TableHead>
+                            </th>
                           );
                         })}
-                      </TableRow>
+                      </tr>
                     ))}
-                  </TableHeader>
-                  <TableBody>
+                  </thead>
+                  <tbody>
                     {table.getRowModel().rows.length > 0 ? (
                       table.getRowModel().rows.map((row) => (
-                        <TableRow
+                        <tr
                           key={row.id}
                           className="border-b hover:bg-gray-50"
                         >
@@ -1063,7 +563,7 @@ const CommodityMaster = () => {
                                 : "text-center";
 
                             return (
-                              <TableCell
+                              <td
                                 key={cell.id}
                                 className={`p-2 text-xs ${alignClass}${
                                   cell.column.id === "description"
@@ -1075,23 +575,23 @@ const CommodityMaster = () => {
                                   cell.column.columnDef.cell,
                                   cell.getContext(),
                                 )}
-                              </TableCell>
+                              </td>
                             );
                           })}
-                        </TableRow>
+                        </tr>
                       ))
                     ) : (
-                      <TableRow>
-                        <TableCell
+                      <tr>
+                        <td
                           colSpan={columns.length}
                           className="p-4 text-center text-sm text-gray-500"
                         >
                           No matching stock records found.
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     )}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               </div>
 
               {/* Pagination Section */}

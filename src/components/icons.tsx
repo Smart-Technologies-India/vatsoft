@@ -552,7 +552,7 @@ export function IcBaselineRefresh(props: SVGProps<SVGSVGElement>) {
 }
 
 export function MaterialSymbolsCalendarClockRounded(
-  props: SVGProps<SVGSVGElement>
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -585,7 +585,7 @@ export function MaterialSymbolsExclamation(props: SVGProps<SVGSVGElement>) {
 }
 
 export function MaterialSymbolsFreeCancellation(
-  props: SVGProps<SVGSVGElement>
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -689,7 +689,7 @@ export function MdiReceiptTextClock(props: SVGProps<SVGSVGElement>) {
 }
 
 export function MaterialSymbolsLightErrorOutlineRounded(
-  props: SVGProps<SVGSVGElement>
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -725,7 +725,7 @@ export function CarbonChevronDown(props: SVGProps<SVGSVGElement>) {
 }
 
 export function MaterialSymbolsKeyboardDoubleArrowLeft(
-  props: SVGProps<SVGSVGElement>
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -744,7 +744,7 @@ export function MaterialSymbolsKeyboardDoubleArrowLeft(
 }
 
 export function MaterialSymbolsKeyboardDoubleArrowRight(
-  props: SVGProps<SVGSVGElement>
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -963,7 +963,7 @@ export function CarbonSoftwareResourceResource(props: SVGProps<SVGSVGElement>) {
 }
 
 export function MaterialSymbolsDoNotDisturbOnOutline(
-  props: SVGProps<SVGSVGElement>
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1102,7 +1102,7 @@ export function TablerRefresh(props: SVGProps<SVGSVGElement>) {
 }
 
 export function MaterialSymbolsKeyboardArrowDownRounded(
-  props: SVGProps<SVGSVGElement>
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1121,7 +1121,7 @@ export function MaterialSymbolsKeyboardArrowDownRounded(
 }
 
 export function MaterialSymbolsKeyboardArrowUpRounded(
-  props: SVGProps<SVGSVGElement>
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1235,7 +1235,7 @@ export function FluentNotepadPerson16Regular(props: SVGProps<SVGSVGElement>) {
 }
 
 export function FluentWalletCreditCard20Regular(
-  props: SVGProps<SVGSVGElement>
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1685,6 +1685,60 @@ export function FluentAlignBottom24Regular(props: SVGProps<SVGSVGElement>) {
       <path
         fill="currentColor"
         d="M2.75 21a.75.75 0 0 1 0-1.5h18.5a.75.75 0 0 1 0 1.5zM4 15.75A2.25 2.25 0 0 0 6.25 18h2.5A2.25 2.25 0 0 0 11 15.75V5.25A2.25 2.25 0 0 0 8.75 3h-2.5A2.25 2.25 0 0 0 4 5.25zm2.25.75a.75.75 0 0 1-.75-.75V5.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75zm6.75-.75A2.25 2.25 0 0 0 15.25 18h2.5A2.25 2.25 0 0 0 20 15.75v-7a2.25 2.25 0 0 0-2.25-2.25h-2.5A2.25 2.25 0 0 0 13 8.75zm2.25.75a.75.75 0 0 1-.75-.75v-7a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 .75.75v7a.75.75 0 0 1-.75.75z"
+      />
+    </svg>
+  );
+}
+
+export function IcBaselineInsertChartOutlined(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      {/* Icon from Google Material Icons by Material Design Authors - https://github.com/material-icons/material-icons/blob/master/LICENSE */}
+      <path
+        fill="currentColor"
+        d="M9 17H7v-7h2zm4 0h-2V7h2zm4 0h-2v-4h2zm2.5 2.1h-15V5h15zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2"
+      />
+    </svg>
+  );
+}
+
+export function IcOutlineAddShoppingCart(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      {/* Icon from Google Material Icons by Material Design Authors - https://github.com/material-icons/material-icons/blob/master/LICENSE */}
+      <path
+        fill="currentColor"
+        d="M11 9h2V6h3V4h-3V1h-2v3H8v2h3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2s-.9-2-2-2m10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2s2-.9 2-2s-.9-2-2-2m-8.9-5h7.45c.75 0 1.41-.41 1.75-1.03l3.86-7.01L19.42 4l-3.87 7H8.53L4.27 2H1v2h2l3.6 7.59l-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7z"
+      />
+    </svg>
+  );
+}
+
+export function IcBaselineShoppingCartCheckout(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      {/* Icon from Google Material Icons by Material Design Authors - https://github.com/material-icons/material-icons/blob/master/LICENSE */}
+      <path
+        fill="currentColor"
+        d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2s-.9-2-2-2m10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2s2-.9 2-2s-.9-2-2-2m-8.9-5h7.45c.75 0 1.41-.41 1.75-1.03L21 4.96L19.25 4l-3.7 7H8.53L4.27 2H1v2h2l3.6 7.59l-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7zM12 2l4 4l-4 4l-1.41-1.41L12.17 7H8V5h4.17l-1.59-1.59z"
       />
     </svg>
   );

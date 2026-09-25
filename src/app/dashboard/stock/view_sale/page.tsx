@@ -46,7 +46,6 @@ import * as XLSX from "xlsx";
 import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
 import GetAllDvat04 from "@/action/dvat/getalldvat";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import GetUser from "@/action/user/getuser";
 import GetAllTinNumberMaster from "@/action/tin_number/getalltinnumber";
 import DownloadSaleSample from "./downloadsalesample";
 import GetReturnMonth from "@/action/dvat/getreturnmonth";
@@ -189,50 +188,8 @@ const DocumentWiseDetails = () => {
   //   const [name, setName] = useState<string>("");
 
   const [userid, setUserid] = useState<number>(0);
-  const [user, setUser] = useState<any>(null);
-  const [chatAnimationData, setChatAnimationData] = useState<any>(null);
-  const [isHelpDrawerOpen, setIsHelpDrawerOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<
-    Array<{ id: number; role: "bot" | "user"; text: string }>
-  >([
-    {
-      id: 1,
-      role: "bot",
-      text: "Welcome to Sales Help. Ask questions about managing your sales data.",
-    },
-  ]);
-  const [isBotTyping, setIsBotTyping] = useState(false);
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const messageIdRef = useRef(1);
-  const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const thinkingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const chatListRef = useRef<HTMLDivElement | null>(null);
 
-  const normalizedStatus = (dvatdata?.status ?? "").toUpperCase();
   const normalizeTin = (tinNumber: string): string => tinNumber.trim();
-
-  const salesChatOptions = [
-    {
-      question: "How do I add a new sales invoice?",
-      answer:
-        "Click the Add button at the top of this page. Fill in invoice details including date, TIN, product, and quantity. Then save to add it to your sales records.",
-    },
-    {
-      question: "What does Generate DVAT 31/31 A do?",
-      answer:
-        "This converts your sales data into DVAT 31 or 31 A return format, preparing it for filing with the department.",
-    },
-    // {
-    //   question: "How can I download my sales data?",
-    //   answer:
-    //     "Use the Download Sheet link at the top right. It exports your current sales records as CSV file for backup or import into other tools.",
-    // },
-    // {
-    //   question: "How do I delete or correct a sales entry?",
-    //   answer:
-    //     "Click the Actions menu next to the sales record. You can delete the entry, and then re-add it with correct details.",
-    // },
-  ];
 
   const downloadDailySaleReport = async () => {
     if (!dvatdata) {
@@ -402,6 +359,7 @@ const DocumentWiseDetails = () => {
   }, []);
 
   // Phase 1: Load essential data (auth, DVAT, current month sales)
+  // OPTIMIZED: Parallelize Return Periods + Daily Sale after getting DVAT
   useEffect(() => {
     const initEssentialData = async () => {
       setIsLoading(true);
@@ -413,33 +371,34 @@ const DocumentWiseDetails = () => {
         }
         setUserid(authResponse.data);
 
-        const userresponse = await GetUser({ id: authResponse.data });
-        if (userresponse.status) setUser(userresponse.data!);
-
         const dvat_response = await GetUserDvat04Anx({});
 
         if (dvat_response.status && dvat_response.data) {
           setDvatData(dvat_response.data);
-          await loadFiledReturnPeriods(dvat_response.data.id);
+          const dvatId = dvat_response.data.id;
 
-          // Calculate current month's start and end dates
+          // Calculate current month's start and end dates for daily sale query
           const today = ServerTime().data as Date;
           const year = today.getFullYear();
           const monthIndex = today.getMonth();
           const currentMonthStart = new Date(year, monthIndex, 1);
           const currentMonthEnd = today;
 
-          const daily_sale_response = await GetUserDailySaleFiltered({
-            dvatid: dvat_response.data.id,
-            skip: 0,
-            take: 25,
-            searchTerm: "",
-            sortField: "invoice_date",
-            sortOrder: "desc",
-            startDate: formatDateInputValue(currentMonthStart),
-            endDate: formatDateInputValue(currentMonthEnd),
-            acceptStatusFilter: "all",
-          });
+          // OPTIMIZATION: Parallelize Return Periods + Daily Sale queries
+          const [returnMonthResponse, daily_sale_response] = await Promise.all([
+            loadFiledReturnPeriods(dvatId),
+            GetUserDailySaleFiltered({
+              dvatid: dvatId,
+              skip: 0,
+              take: 25,
+              searchTerm: "",
+              sortField: "invoice_date",
+              sortOrder: "desc",
+              startDate: formatDateInputValue(currentMonthStart),
+              endDate: formatDateInputValue(currentMonthEnd),
+              acceptStatusFilter: "all",
+            }),
+          ]);
 
           if (daily_sale_response.status && daily_sale_response.data.result) {
             setPaginatin({
@@ -466,51 +425,65 @@ const DocumentWiseDetails = () => {
     initEssentialData();
   }, [router, loadFiledReturnPeriods]);
 
-  // Phase 2: Load validation data in background (all DVAT and TIN records)
-  useEffect(() => {
-    const loadValidationData = async () => {
-      try {
-        const [allDvatResponse, allTinMasterResponse] = await Promise.all([
-          GetAllDvat04({}),
-          GetAllTinNumberMaster(),
-        ]);
+  const [isValidationDataReady, setIsValidationDataReady] = useState(false);
 
-        if (allDvatResponse.status && allDvatResponse.data) {
-          setAllDvatTinNumbers(
-            new Set(
-              allDvatResponse.data
-                .map((row) => row.tinNumber)
-                .filter((tin): tin is string => Boolean(tin))
-                .map(normalizeTin),
-            ),
-          );
-        } else {
-          setAllDvatTinNumbers(new Set());
-        }
+  // OPTIMIZATION: Lazy load only when needed (removed auto-loading)
+  const isValidationDataLoaded = useRef(false);
+  const loadValidationDataOnDemand = useCallback(async () => {
+    if (isValidationDataLoaded.current) return; // Skip if already loaded
 
-        if (allTinMasterResponse.status && allTinMasterResponse.data) {
-          setAllTinMasterTinNumbers(
-            new Set(
-              allTinMasterResponse.data
-                .map((row) => row.tin_number)
-                .filter((tin): tin is string => Boolean(tin))
-                .map(normalizeTin),
-            ),
-          );
-        } else {
-          setAllTinMasterTinNumbers(new Set());
-        }
-      } catch (error) {
+    try {
+      const [allDvatResponse, allTinMasterResponse] = await Promise.all([
+        GetAllDvat04({}),
+        GetAllTinNumberMaster(),
+      ]);
+
+      if (allDvatResponse.status && allDvatResponse.data) {
+        setAllDvatTinNumbers(
+          new Set(
+            allDvatResponse.data
+              .map((row) => row.tinNumber)
+              .filter((tin): tin is string => Boolean(tin))
+              .map(normalizeTin),
+          ),
+        );
+      } else {
         setAllDvatTinNumbers(new Set());
+      }
+
+      if (allTinMasterResponse.status && allTinMasterResponse.data) {
+        setAllTinMasterTinNumbers(
+          new Set(
+            allTinMasterResponse.data
+              .map((row) => row.tin_number)
+              .filter((tin): tin is string => Boolean(tin))
+              .map(normalizeTin),
+          ),
+        );
+      } else {
         setAllTinMasterTinNumbers(new Set());
       }
-    };
-    loadValidationData();
+
+      isValidationDataLoaded.current = true;
+      setIsValidationDataReady(true);
+    } catch (error) {
+      setAllDvatTinNumbers(new Set());
+      setAllTinMasterTinNumbers(new Set());
+      isValidationDataLoaded.current = true;
+      setIsValidationDataReady(true);
+    }
   }, []);
 
   const canManualAcceptSale = useCallback(
     (tinNumber: string): boolean => {
       if (!tinNumber) return false;
+
+      // Trigger lazy load if not ready (will load in background)
+      if (!isValidationDataReady) {
+        loadValidationDataOnDemand();
+        return false; // Return false while loading
+      }
+
       const normalizedTin = normalizeTin(tinNumber);
       const existsInDvat = allDvatTinNumbers.has(normalizedTin);
       const existsInTinMaster = allTinMasterTinNumbers.has(normalizedTin);
@@ -519,37 +492,13 @@ const DocumentWiseDetails = () => {
       // and does not exist in dvat04.
       return existsInTinMaster && !existsInDvat;
     },
-    [allDvatTinNumbers, allTinMasterTinNumbers],
+    [
+      isValidationDataReady,
+      allDvatTinNumbers,
+      allTinMasterTinNumbers,
+      loadValidationDataOnDemand,
+    ],
   );
-
-  const handleAcceptSingleRecord = async (
-    record: GroupedDailySale["records"][number],
-  ) => {
-    setIsSingleAcceptLoading(true);
-
-    let response = await AcceptSaleForPendingProcess({
-      saleId: record.id,
-    });
-
-    if (
-      !response.status &&
-      response.message === "Seller DVAT status is not pendingprocess."
-    ) {
-      response = await AcceptSaleWithoutDvat({
-        saleId: record.id,
-      });
-    }
-
-    setIsSingleAcceptLoading(false);
-
-    if (response.status && response.data) {
-      toast.success("Sale record accepted.");
-      await init();
-      return;
-    }
-
-    toast.error(response.message);
-  };
 
   const handleAcceptGroupRecords = async (group: GroupedDailySale) => {
     const pendingRecords = group.records.filter((record) => !record.is_accept);
@@ -586,60 +535,6 @@ const DocumentWiseDetails = () => {
       setIsSingleAcceptLoading(false);
     }
   };
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadChatAnimation = async () => {
-      try {
-        const response = await fetch("/cs.json");
-        if (!response.ok) return;
-
-        const data = await response.json();
-        if (mounted) {
-          setChatAnimationData(data);
-        }
-      } catch {
-        // Keep fallback text if animation cannot be loaded.
-      }
-    };
-
-    loadChatAnimation();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (typingTimerRef.current) {
-        clearInterval(typingTimerRef.current);
-      }
-      if (thinkingTimerRef.current) {
-        clearTimeout(thinkingTimerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!chatListRef.current) return;
-    if (!shouldAutoScroll) return;
-    chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
-  }, [chatMessages, isBotTyping, shouldAutoScroll]);
-
-  useEffect(() => {
-    setChatMessages([
-      {
-        id: 1,
-        role: "bot",
-        text: "Your registration is pending. Ask me about managing sales entries while awaiting approval.",
-      },
-    ]);
-    messageIdRef.current = 1;
-    setIsBotTyping(false);
-    setShouldAutoScroll(true);
-  }, []);
 
   useEffect(() => {
     if (!dvatdata?.id) return;
@@ -739,82 +634,6 @@ const DocumentWiseDetails = () => {
       endDate: endDateStr,
     });
   }, [selectedPeriod]);
-
-  const handleChatScroll = () => {
-    if (!chatListRef.current) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = chatListRef.current;
-    const isNearBottom = scrollHeight - (scrollTop + clientHeight) < 48;
-
-    setShouldAutoScroll(isNearBottom);
-  };
-
-  const appendTypedBotMessage = (answer: string) => {
-    if (typingTimerRef.current) {
-      clearInterval(typingTimerRef.current);
-      typingTimerRef.current = null;
-    }
-    if (thinkingTimerRef.current) {
-      clearTimeout(thinkingTimerRef.current);
-      thinkingTimerRef.current = null;
-    }
-
-    setIsBotTyping(true);
-    const botMessageId = messageIdRef.current + 1;
-    messageIdRef.current = botMessageId;
-
-    setChatMessages((prev) => [
-      ...prev,
-      {
-        id: botMessageId,
-        role: "bot",
-        text: "",
-      },
-    ]);
-
-    const thinkingDelay = 900 + Math.floor(Math.random() * 600);
-    thinkingTimerRef.current = setTimeout(() => {
-      let index = 0;
-      typingTimerRef.current = setInterval(() => {
-        index += 1;
-        const nextText = answer.slice(0, index);
-
-        setChatMessages((prev) =>
-          prev.map((message) =>
-            message.id === botMessageId
-              ? {
-                  ...message,
-                  text: nextText,
-                }
-              : message,
-          ),
-        );
-
-        if (index >= answer.length) {
-          if (typingTimerRef.current) {
-            clearInterval(typingTimerRef.current);
-            typingTimerRef.current = null;
-          }
-          setIsBotTyping(false);
-        }
-      }, 16);
-    }, thinkingDelay);
-  };
-
-  const onSelectChatOption = (question: string, answer: string) => {
-    if (isBotTyping) return;
-
-    const userMessageId = messageIdRef.current + 1;
-    messageIdRef.current = userMessageId;
-
-    setChatMessages((prev) => [
-      ...prev,
-      { id: userMessageId, role: "user", text: question },
-    ]);
-
-    setShouldAutoScroll(true);
-    appendTypedBotMessage(answer);
-  };
 
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (!dvatdata?.id) return;
@@ -2140,6 +1959,31 @@ const DocumentWiseDetails = () => {
                 </h1>
               </div>
               <div className="grow"></div>
+
+              {(dvatdata?.commodity === "OIDC" ||
+                [84, 542, 93].includes(dvatdata?.id ?? 0)) && (
+                <Button
+                  size="small"
+                  type="default"
+                  onClick={() => {
+                    setToolbarActionsOpen(false);
+                    router.push("/dashboard/stock/tally_sale");
+                  }}
+                >
+                  Tally Sale
+                </Button>
+              )}
+              <Button
+                size="small"
+                type="default"
+                onClick={() => {
+                  setToolbarActionsOpen(false);
+                  router.push("/dashboard/stock/view_generated_invoice");
+                }}
+              >
+                Generated Invoices
+              </Button>
+
               <div className="flex flex-wrap gap-2 items-center">
                 {dvatdata?.commodity != "FUEL" && (
                   <div className="flex items-center gap-2">
@@ -2155,6 +1999,7 @@ const DocumentWiseDetails = () => {
                     </Radio.Group>
                   </div>
                 )}
+
                 <Popover
                   trigger={["hover", "click"]}
                   placement="bottomRight"
@@ -2167,21 +2012,6 @@ const DocumentWiseDetails = () => {
                           Sale Actions
                         </p>
                         <div className="mt-2 flex flex-col gap-2">
-                          {(dvatdata?.commodity === "OIDC" ||
-                            [84, 542, 93].includes(dvatdata?.id ?? 0)) && (
-                            <Button
-                              size="small"
-                              block
-                              type="default"
-                              onClick={() => {
-                                setToolbarActionsOpen(false);
-                                router.push("/dashboard/stock/tally_sale");
-                              }}
-                            >
-                              Tally Sale
-                            </Button>
-                          )}
-
                           {dailySale.length > 0 && (
                             <Button
                               size="small"
@@ -2225,20 +2055,6 @@ const DocumentWiseDetails = () => {
                             </Button>
                           )}
 
-                          <Button
-                            size="small"
-                            block
-                            type="default"
-                            onClick={() => {
-                              setToolbarActionsOpen(false);
-                              router.push(
-                                "/dashboard/stock/view_generated_invoice",
-                              );
-                            }}
-                          >
-                            Generated Invoices
-                          </Button>
-
                           <DownloadSaleSample
                             commodity={dvatdata?.commodity ?? "OTHER"}
                             setToolbarActionsOpen={setToolbarActionsOpen}
@@ -2248,19 +2064,6 @@ const DocumentWiseDetails = () => {
                             filedReturnPeriods={filedReturnPeriods}
                             onUploadComplete={init}
                           />
-
-                          <Button
-                            size="small"
-                            block
-                            type="default"
-                            loading={isDownloadingSaleDailyReport}
-                            onClick={() => {
-                              setToolbarActionsOpen(false);
-                              downloadDailySaleReport();
-                            }}
-                          >
-                            Sale Report
-                          </Button>
 
                           <Button
                             size="small"
@@ -2334,7 +2137,7 @@ const DocumentWiseDetails = () => {
           <div className="bg-white rounded shadow-sm border p-3">
             {/* Search, Sort, and Filter Controls */}
             <div className="mb-4 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-8 gap-3 items-end">
+              <div className="flex gap-3 items-end">
                 <div className="xl:col-span-2">
                   <label className="text-xs font-medium text-gray-700 mb-1 block">
                     Search
@@ -2429,6 +2232,7 @@ const DocumentWiseDetails = () => {
                     ]}
                   />
                 </div>
+                <div className="grow"></div>
 
                 <div className="flex gap-2">
                   {(searchTerm || selectedPeriod) && (
@@ -2634,26 +2438,6 @@ const DocumentWiseDetails = () => {
                                     Fill Invoice No.
                                   </button>
                                 ) : null}
-                                {/* <button
-                                  onClick={() => {
-                                    setCreditNoteGroup(group);
-                                    setCreditNoteBox(true);
-                                    handelClose(index);
-                                  }}
-                                  className="text-sm bg-white border hover:border-green-500 hover:text-green-600 text-gray-700 py-1 px-3 rounded"
-                                >
-                                  Credit Note
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setDebitNoteGroup(group);
-                                    setDebitNoteBox(true);
-                                    handelClose(index);
-                                  }}
-                                  className="text-sm bg-white border hover:border-amber-500 hover:text-amber-600 text-gray-700 py-1 px-3 rounded"
-                                >
-                                  Debit Note
-                                </button> */}
                               </div>
                             }
                             title="Actions"
@@ -2755,119 +2539,6 @@ const DocumentWiseDetails = () => {
           </div>
         </div>
       </main>
-
-      <>
-        {/* <button
-          type="button"
-          aria-label="Open help chat"
-          onClick={() => setIsHelpDrawerOpen(true)}
-          className="fixed right-5 bottom-5 z-60 flex flex-col items-center hover:scale-105 transition-transform"
-        >
-          <span className="h-32 w-32 overflow-hidden">
-            {chatAnimationData ? (
-              <Lottie
-                animationData={chatAnimationData}
-                loop
-                autoplay
-                className="h-full w-full"
-              />
-            ) : (
-              <span className="h-full w-full grid place-items-center text-[#0f2f67] text-xs font-semibold">
-                Help
-              </span>
-            )}
-          </span>
-          <span className="-translate-y-4 text-lg font-semibold text-[#0f2f67] bg-white/90 px-2 rounded-full border-blue-800 border-2">
-            Need Help
-          </span>
-        </button> */}
-
-        <Drawer
-          title={
-            <span className="text-slate-800 font-semibold">Sales Help</span>
-          }
-          placement="right"
-          size={380}
-          open={isHelpDrawerOpen}
-          onClose={() => setIsHelpDrawerOpen(false)}
-        >
-          <div className="h-full flex flex-col gap-3">
-            <div
-              ref={chatListRef}
-              onScroll={handleChatScroll}
-              className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 h-[62vh] overflow-y-auto flex flex-col gap-2"
-            >
-              <div className="grow" />
-              {chatMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex items-end gap-2 ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  {message.role === "bot" && (
-                    <span className="h-8 w-8 rounded-full bg-slate-700 text-white text-xs font-semibold flex items-center justify-center shrink-0">
-                      H
-                    </span>
-                  )}
-
-                  <div
-                    className={`w-fit max-w-[82%] px-2.5 py-1.5 text-sm ${
-                      message.role === "bot"
-                        ? "bg-white border border-slate-200 text-slate-700 rounded-br-lg rounded-tl-lg rounded-tr-lg"
-                        : "bg-slate-700 text-white rounded-bl-lg rounded-tl-lg rounded-tr-lg"
-                    }`}
-                  >
-                    <p
-                      className={`text-[11px] font-semibold mb-1 ${
-                        message.role === "bot"
-                          ? "text-slate-700"
-                          : "text-slate-200"
-                      }`}
-                    >
-                      {message.role === "bot" ? "Maya" : "You"}
-                    </p>
-
-                    {message.text || (
-                      <span className="inline-flex items-center gap-1.5 text-slate-500">
-                        <span className="text-xs text-slate-500 mr-1">
-                          Thinking
-                        </span>
-                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></span>
-                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:120ms]"></span>
-                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:240ms]"></span>
-                      </span>
-                    )}
-                  </div>
-
-                  {message.role === "user" && (
-                    <span className="h-8 w-8 rounded-full bg-amber-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">
-                      U
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {!isBotTyping && (
-              <div className="bg-white border border-slate-200 rounded-lg p-2 flex flex-wrap gap-2">
-                {salesChatOptions.map((option) => (
-                  <button
-                    key={option.question}
-                    type="button"
-                    onClick={() =>
-                      onSelectChatOption(option.question, option.answer)
-                    }
-                    className="text-left text-sm px-3 py-1.5 border border-slate-200 text-slate-700 rounded-full hover:bg-slate-50 transition-colors"
-                  >
-                    {option.question}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </Drawer>
-      </>
     </>
   );
 };

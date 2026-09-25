@@ -1,14 +1,7 @@
 "use client";
 
 import { Alert, Button, Pagination, Table as AntTable, Tag } from "antd";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 import { useEffect, useState } from "react";
 import { dvat04 } from "@prisma/client";
 import { decryptURLData, formateDate } from "@/utils/methods";
@@ -19,6 +12,7 @@ import GetDvat04 from "@/action/register/getdvat04";
 import GetDvatChallan, {
   type DvatChallanWithRelations,
 } from "@/action/challan/getdvatchallan";
+import GetDvatChallanSummary from "@/action/challan/getdvatchallansummary";
 import * as XLSX from "xlsx";
 import { getCurrentUserRole } from "@/lib/auth";
 
@@ -46,6 +40,10 @@ const DvatChallanHistory = () => {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [dvatData, setDvatData] = useState<dvat04 | null>(null);
   const [challans, setChallans] = useState<DvatChallanWithRelations[]>([]);
+  const [summary, setSummary] = useState<{
+    total: number;
+    totalAmount: string;
+  } | null>(null);
 
   const [pagination, setPagination] = useState<{
     take: number;
@@ -86,9 +84,19 @@ const DvatChallanHistory = () => {
         if (userrole == "USER" || userrole == null || userrole == undefined) {
           return router.back();
         }
-        // Fetch challans for this DVAT
+
+        // Fetch summary data from all pages
+        const summaryResponse = await GetDvatChallanSummary({
+          dvatid: dvatId,
+        });
+        if (summaryResponse.status && summaryResponse.data) {
+          setSummary(summaryResponse.data);
+        }
+
+        // Fetch challans for this DVAT (paginated for table)
         const response = await GetDvatChallan({
           dvatid: dvatId,
+          paymentstatus: "PAID",
           skip: pagination.skip,
           take: pagination.take,
         });
@@ -227,7 +235,11 @@ const DvatChallanHistory = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <p>Summary of DVAT Challans</p>
+
+        <p>Total Challans: {summary?.total ?? 0}</p>
+        <p>Total Amount: {formatINR(Number.parseFloat(summary?.totalAmount ?? "0") || 0)}</p>
+        {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div
             onClick={() => setSelectedGroup("all")}
             className={`p-4 rounded-lg cursor-pointer border-2 transition-all ${
@@ -238,7 +250,7 @@ const DvatChallanHistory = () => {
           >
             <p className="text-xs text-gray-600 mb-1">All Challans</p>
             <p className="text-xl font-semibold text-gray-900">
-              {challans.length}
+              {summary?.total ?? 0}
             </p>
           </div>
           <div
@@ -251,7 +263,7 @@ const DvatChallanHistory = () => {
           >
             <p className="text-xs text-gray-600 mb-1">Paid</p>
             <p className="text-xl font-semibold text-green-600">
-              {challans.filter((c) => c.paymentstatus === "PAID").length}
+              {summary?.paid ?? 0}
             </p>
           </div>
           <div
@@ -264,16 +276,16 @@ const DvatChallanHistory = () => {
           >
             <p className="text-xs text-gray-600 mb-1">Pending</p>
             <p className="text-xl font-semibold text-orange-600">
-              {challans.filter((c) => c.paymentstatus !== "PAID").length}
+              {summary?.pending ?? 0}
             </p>
           </div>
           <div className="p-4 rounded-lg border-2 border-gray-200">
             <p className="text-xs text-gray-600 mb-1">Total Amount</p>
             <p className="text-xl font-semibold text-gray-900">
-              {formatINR(getTotalAmount())}
+              {formatINR(Number.parseFloat(summary?.totalAmount ?? "0") || 0)}
             </p>
           </div>
-        </div>
+        </div> */}
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">

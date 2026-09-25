@@ -10,6 +10,9 @@ import {
   FluentMdl2ViewDashboard,
   FluentNotepadPerson16Regular,
   FluentWalletCreditCard20Regular,
+  IcBaselineInsertChartOutlined,
+  IcBaselineShoppingCartCheckout,
+  IcOutlineAddShoppingCart,
   LucideUser,
   MaterialSymbolsCloseSmall,
   SolarBellBold,
@@ -208,7 +211,7 @@ const Sidebar = (props: SidebarProps) => {
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
-              icon={<FluentCalendar12Regular className="w-5 h-5" />}
+              icon={<IcBaselineShoppingCartCheckout className="w-5 h-5" />}
               name="Sale"
               path={path}
               pathcheck={"/dashboard/stock/view_sale"}
@@ -216,7 +219,15 @@ const Sidebar = (props: SidebarProps) => {
             />
             <MenuTab
               click={() => props.setIsOpen(false)}
-              icon={<FluentBuildingBank48Regular className="w-5 h-5" />}
+              icon={<IcOutlineAddShoppingCart className="w-5 h-5" />}
+              name="Purchase"
+              path={path}
+              pathcheck={"/dashboard/stock/view_purchase"}
+              collapsed={isCollapsed}
+            />
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<IcBaselineInsertChartOutlined className="w-5 h-5" />}
               name="Stock"
               path={path}
               pathcheck={"/dashboard/stock"}

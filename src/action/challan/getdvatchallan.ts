@@ -24,7 +24,6 @@ const GetDvatChallan = async (
   payload: GetDvatChallanPayload,
 ): Promise<PaginationResponse<DvatChallanWithRelations[] | null>> => {
   const functionname: string = GetDvatChallan.name;
-  console.log(`Fetching DVAT Challans for DVAT ID: ${payload.dvatid}`);
 
   try {
     const [challanData, totalCount] = await Promise.all([

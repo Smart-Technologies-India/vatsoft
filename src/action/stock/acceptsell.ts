@@ -3,7 +3,6 @@ import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface AcceptSalePayload {
   dvatid: number;
   commodityid: number;
-  createdById: number;
   quantity: number;
   puchaseid: number;
   urn: string;
@@ -11,7 +10,7 @@ interface AcceptSalePayload {
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { daily_purchase, stock } from "@prisma/client";
+import { daily_purchase } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const AcceptSale = async (
@@ -42,51 +41,37 @@ const AcceptSale = async (
         },
       });
 
-      if (isstock) {
-        const stock_respone = await prisma.stock.update({
-          where: {
-            id: isstock.id,
-          },
-          data: {
-            quantity: payload.quantity + isstock.quantity,
-            updatedById: payload.createdById,
-          },
-        });
-
-        if (!stock_respone) {
-          throw new Error("Unable to update stock.");
-        }
-      } else {
-        const stock_respone = await prisma.stock.create({
-          data: {
-            quantity: payload.quantity,
-            commodity_masterId: payload.commodityid,
-            dvat04Id: payload.dvatid,
-            createdById: payload.createdById,
-            status: "ACTIVE",
-          },
-        });
-
-        if (!stock_respone) {
-          throw new Error("Unable to create new stock.");
-        }
+      if (!isstock) {
+        throw new Error("Stock not found");
       }
 
-      const is_purchase = await prisma.daily_purchase.findFirst({
+      const stock_respone = await prisma.stock.upsert({
+        where: {
+          id: isstock.id,
+        },
+        update: {
+          quantity: payload.quantity + isstock.quantity,
+          updatedById: currentUserId,
+        },
+        create: {
+          quantity: payload.quantity,
+          commodity_masterId: payload.commodityid,
+          dvat04Id: payload.dvatid,
+          createdById: currentUserId,
+          status: "ACTIVE",
+        },
+      });
+
+      if (!stock_respone) {
+        throw new Error("Unable to update or create stock.");
+      }
+
+      const purchase_update = await prisma.daily_purchase.update({
         where: {
           id: payload.puchaseid,
           status: "ACTIVE",
           deletedAt: null,
           deletedById: null,
-        },
-      });
-
-      if (!is_purchase) {
-        throw new Error("Unable to find daily purchase");
-      }
-      const purchase_update = await prisma.daily_purchase.update({
-        where: {
-          id: is_purchase.id,
         },
         data: {
           is_accept: true,
@@ -96,22 +81,13 @@ const AcceptSale = async (
       if (!purchase_update) {
         throw new Error("Unable to update daily purchase");
       }
-      const is_sale = await prisma.daily_sale.findFirst({
+
+      const sale_udpate = await prisma.daily_sale.updateMany({
         where: {
-          urn_number: is_purchase.urn_number,
+          urn_number: purchase_update.urn_number,
           status: "ACTIVE",
           deletedAt: null,
           deletedById: null,
-        },
-      });
-
-      if (!is_sale) {
-        throw new Error("Sale not found");
-      }
-
-      const sale_udpate = await prisma.daily_sale.update({
-        where: {
-          id: is_sale.id,
         },
         data: {
           is_accept: true,
@@ -122,7 +98,7 @@ const AcceptSale = async (
         throw new Error("Unable to update sale");
       }
 
-      return is_purchase;
+      return purchase_update;
     });
 
     return createResponse({

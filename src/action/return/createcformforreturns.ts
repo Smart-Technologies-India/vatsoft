@@ -143,8 +143,6 @@ const CreateCFormForReturns = async (): Promise<
       }
       groupedBySellerAndPeriod.get(key)!.push(entry);
     });
-    // console.log(groupedBySellerAndPeriod);
-    // console.log(groupedBySellerAndPeriod.size);
 
     const result: CreateCFormForReturnsResponse = {
       created: 0,

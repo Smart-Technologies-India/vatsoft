@@ -1,7 +1,7 @@
 "use client";
-import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import AcceptSale from "@/action/stock/acceptsell";
+import GroupAcceptSale from "@/action/stock/groupacceptsale";
 import ConvertDvat30A from "@/action/stock/convertdvat30a";
 import GetDvat30AProgress from "@/action/stock/getdvat30aprogress";
 import DeletePurchase from "@/action/stock/deletepurchase";
@@ -15,9 +15,8 @@ import GetUserDailyPurchase, {
 } from "@/action/stock/getuserdailypurchase";
 import GetUserDailyPurchaseFiltered from "@/action/stock/getuserdailypurchasefiltered";
 import { DailyPurchaseMasterProvider } from "@/components/forms/dailypurchase/dailypurchase";
-import { PurchaseCreditNoteDrawer } from "@/components/forms/purchasecreditnote/purchasecreditnotedrawer";
-import { PurchaseDebitNoteDrawer } from "@/components/forms/purchasedebitnote/purchasedebitnotedrawer";
 import { AntDesignMenuOutlined } from "@/components/icons";
+
 import {
   Table,
   TableBody,
@@ -29,7 +28,7 @@ import {
 
 import { useMemo } from "react";
 import { encryptURLData, formateDate } from "@/utils/methods";
-import { commodity_master, dvat04, tin_number_master } from "@prisma/client";
+import { dvat04 } from "@prisma/client";
 import {
   Alert,
   Button,
@@ -48,6 +47,7 @@ import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import PurchaseBulk from "./purchasebulk";
 import DownloadPurchaseSample from "./downloadpurchasesample";
+import { PurchaseBulkDelete } from "./purchasebulkdelete";
 import ServerTime from "@/action/servertime";
 
 type DailyPurchaseFilteredSummary = {
@@ -173,54 +173,12 @@ const DocumentWiseDetails = () => {
     useState<GroupedDailyPurchase | null>(null);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
-  //   const [name, setName] = useState<string>("");
-
-  const [userid, setUserid] = useState<number>(0);
-  const [chatAnimationData, setChatAnimationData] = useState<any>(null);
-  const [isHelpDrawerOpen, setIsHelpDrawerOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<
-    Array<{ id: number; role: "bot" | "user"; text: string }>
-  >([
-    {
-      id: 1,
-      role: "bot",
-      text: "Welcome to Purchase Help. Ask questions about managing your purchase invoices.",
-    },
-  ]);
-  const [isBotTyping, setIsBotTyping] = useState(false);
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const messageIdRef = useRef(1);
-  const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const thinkingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const chatListRef = useRef<HTMLDivElement | null>(null);
+  // const [userid, setUserid] = useState<number>(0);
 
   const [stockSnapshotExists, setStockSnapshotExists] =
     useState<boolean>(false);
   const [isStockSnapshotAcceptLoading, setIsStockSnapshotAcceptLoading] =
     useState<boolean>(false);
-
-  const purchaseChatOptions = [
-    {
-      question: "How do I add a purchase invoice?",
-      answer:
-        "Click the Add Purchase button. Enter seller TIN, invoice details, and commodity/quantity information. Save to add it to your purchase records.",
-    },
-    {
-      question: "What does Generate DVAT 30 A do?",
-      answer:
-        "This converts your purchase data into DVAT 30 A return format, preparing it for filing with the department.",
-    },
-    {
-      question: "How do I accept or mark purchase records?",
-      answer:
-        "If the seller TIN starts with 25 or 26, you'll see an Accept button. Click it to mark the record as accepted for processing.",
-    },
-    // {
-    //   question: "How do I delete a purchase entry?",
-    //   answer:
-    //     "Click the Actions menu next to the purchase record. Select Delete and confirm. You can then re-add with corrected details.",
-    // },
-  ];
 
   const fetchPurchasePage = useCallback(
     async ({
@@ -312,13 +270,6 @@ const DocumentWiseDetails = () => {
     const initEssentialData = async () => {
       setLoading(true);
       try {
-        const authResponse = await getAuthenticatedUserId();
-        if (!authResponse.status || !authResponse.data) {
-          toast.error(authResponse.message);
-          return router.push("/");
-        }
-        setUserid(authResponse.data);
-
         const dvat_response = await GetUserDvat04();
 
         if (dvat_response.status && dvat_response.data) {
@@ -360,136 +311,6 @@ const DocumentWiseDetails = () => {
     initEssentialData();
   }, [router, fetchPurchasePage]);
 
-  useEffect(() => {
-    let mounted = true;
-
-    const loadChatAnimation = async () => {
-      try {
-        const response = await fetch("/cs.json");
-        if (!response.ok) return;
-
-        const data = await response.json();
-        if (mounted) {
-          setChatAnimationData(data);
-        }
-      } catch {
-        // Keep fallback text if animation cannot be loaded.
-      }
-    };
-
-    loadChatAnimation();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (typingTimerRef.current) {
-        clearInterval(typingTimerRef.current);
-      }
-      if (thinkingTimerRef.current) {
-        clearTimeout(thinkingTimerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!chatListRef.current) return;
-    if (!shouldAutoScroll) return;
-    chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
-  }, [chatMessages, isBotTyping, shouldAutoScroll]);
-
-  useEffect(() => {
-    setChatMessages([
-      {
-        id: 1,
-        role: "bot",
-        text: "Your registration is pending. Ask me about managing purchase records while awaiting approval.",
-      },
-    ]);
-    messageIdRef.current = 1;
-    setIsBotTyping(false);
-    setShouldAutoScroll(true);
-  }, []);
-
-  const handleChatScroll = () => {
-    if (!chatListRef.current) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = chatListRef.current;
-    const isNearBottom = scrollHeight - (scrollTop + clientHeight) < 48;
-
-    setShouldAutoScroll(isNearBottom);
-  };
-
-  const appendTypedBotMessage = (answer: string) => {
-    if (typingTimerRef.current) {
-      clearInterval(typingTimerRef.current);
-      typingTimerRef.current = null;
-    }
-    if (thinkingTimerRef.current) {
-      clearTimeout(thinkingTimerRef.current);
-      thinkingTimerRef.current = null;
-    }
-
-    setIsBotTyping(true);
-    const botMessageId = messageIdRef.current + 1;
-    messageIdRef.current = botMessageId;
-
-    setChatMessages((prev) => [
-      ...prev,
-      {
-        id: botMessageId,
-        role: "bot",
-        text: "",
-      },
-    ]);
-
-    const thinkingDelay = 900 + Math.floor(Math.random() * 600);
-    thinkingTimerRef.current = setTimeout(() => {
-      let index = 0;
-      typingTimerRef.current = setInterval(() => {
-        index += 1;
-        const nextText = answer.slice(0, index);
-
-        setChatMessages((prev) =>
-          prev.map((message) =>
-            message.id === botMessageId
-              ? {
-                  ...message,
-                  text: nextText,
-                }
-              : message,
-          ),
-        );
-
-        if (index >= answer.length) {
-          if (typingTimerRef.current) {
-            clearInterval(typingTimerRef.current);
-            typingTimerRef.current = null;
-          }
-          setIsBotTyping(false);
-        }
-      }, 16);
-    }, thinkingDelay);
-  };
-
-  const onSelectChatOption = (question: string, answer: string) => {
-    if (isBotTyping) return;
-
-    const userMessageId = messageIdRef.current + 1;
-    messageIdRef.current = userMessageId;
-
-    setChatMessages((prev) => [
-      ...prev,
-      { id: userMessageId, role: "user", text: question },
-    ]);
-
-    setShouldAutoScroll(true);
-    appendTypedBotMessage(answer);
-  };
-
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (!dvatdata?.id) return;
 
@@ -523,12 +344,6 @@ const DocumentWiseDetails = () => {
   const finalizePollingRef = useRef<ReturnType<typeof setInterval> | null>(
     null,
   );
-  const [creditNoteBox, setCreditNoteBox] = useState<boolean>(false);
-  const [creditNoteGroup, setCreditNoteGroup] =
-    useState<GroupedDailyPurchase | null>(null);
-  const [debitNoteBox, setDebitNoteBox] = useState<boolean>(false);
-  const [debitNoteGroup, setDebitNoteGroup] =
-    useState<GroupedDailyPurchase | null>(null);
 
   const formatEligibilityDate = (date: Date): string => {
     const day = String(date.getDate()).padStart(2, "0");
@@ -742,53 +557,6 @@ const DocumentWiseDetails = () => {
 
   const [deletebox, setDeleteBox] = useState<boolean>(false);
   const [deleteRecord, setDeleteRecord] = useState<number | null>(null);
-  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] =
-    useState<boolean>(false);
-  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] =
-    useState<boolean>(false);
-  const [isBulkDeleteLoading, setIsBulkDeleteLoading] =
-    useState<boolean>(false);
-  const [isBulkDeleting, setIsBulkDeleting] = useState<boolean>(false);
-  const [bulkDeleteRows, setBulkDeleteRows] = useState<
-    Array<{
-      id: number;
-      invoice_number: string;
-      invoice_date: Date;
-      trade_name: string;
-      tin_number: string;
-      product_name: string;
-      quantity: number;
-      invoice_value: number;
-    }>
-  >([]);
-
-  // Grouped data for TanStack Table
-  const groupedBulkDeleteRows = useMemo(() => {
-    // Group by tin_number, invoice_date, invoice_number
-    const groups: Record<
-      string,
-      { groupKey: string; groupLabel: string; rows: typeof bulkDeleteRows }
-    > = {};
-    for (const row of bulkDeleteRows) {
-      const groupKey = [
-        row.tin_number,
-        row.invoice_date.toString(),
-        row.invoice_number,
-      ].join("|");
-      if (!groups[groupKey]) {
-        groups[groupKey] = {
-          groupKey,
-          groupLabel: `TIN: ${row.tin_number} | Date: ${formateDate(row.invoice_date)} | Invoice: ${row.invoice_number}`,
-          rows: [],
-        };
-      }
-      groups[groupKey].rows.push(row);
-    }
-    return Object.values(groups);
-  }, [bulkDeleteRows]);
-  const [selectedBulkDeleteIds, setSelectedBulkDeleteIds] = useState<number[]>(
-    [],
-  );
   const [deleteImpact, setDeleteImpact] = useState<{
     creditNoteCount: number;
     debitNoteCount: number;
@@ -838,132 +606,6 @@ const DocumentWiseDetails = () => {
     });
   };
 
-  const delete_purchase_entries = async (ids: number[]) => {
-    if (ids.length === 0) {
-      toast.error("No purchase record selected to delete.");
-      return;
-    }
-
-    let successCount = 0;
-    let failedCount = 0;
-    let error = "";
-
-    for (const id of ids) {
-      const response = await DeletePurchase({
-        id,
-      });
-
-      if (response.data && response.status) {
-        successCount += 1;
-      } else {
-        failedCount += 1;
-        error = response.message || "Unknown error";
-      }
-    }
-
-    if (successCount > 0) {
-      toast.success(`${successCount} purchase record(s) deleted successfully.`);
-    }
-    if (failedCount > 0) {
-      toast.error(
-        `${failedCount} purchase record(s) could not be deleted. Error: ${error}`,
-      );
-    }
-
-    await init();
-    setDeleteBox(false);
-    setDeleteRecord(null);
-    setDeleteImpact({
-      creditNoteCount: 0,
-      debitNoteCount: 0,
-      totalLinkedCount: 0,
-    });
-  };
-
-  const openBulkDeleteModal = async () => {
-    if (!dvatdata) {
-      toast.error("DVAT not found.");
-      return;
-    }
-
-    setIsBulkDeleteLoading(true);
-    setSelectedBulkDeleteIds([]);
-
-    try {
-      const purchaseResponse = await GetUserDailyPurchase({
-        dvatid: dvatdata.id,
-        skip: 0,
-        take: Math.max(pagination.total, 10000),
-      });
-
-      if (!purchaseResponse.status || !purchaseResponse.data.result) {
-        toast.error("Unable to load purchase entries for bulk delete.");
-        return;
-      }
-
-      const rows = purchaseResponse.data.result.flatMap((group) =>
-        group.records
-          .filter((record) => !record.is_accept)
-          .map((record) => ({
-            id: record.id,
-            invoice_number: group.invoice_number,
-            invoice_date: group.invoice_date,
-            trade_name: group.seller_tin_number.name_of_dealer,
-            tin_number: group.seller_tin_number.tin_number,
-            product_name: record.commodity_master.product_name,
-            quantity: record.quantity,
-            invoice_value:
-              parseFloat(record.amount) + parseFloat(record.vatamount),
-          })),
-      );
-
-      setBulkDeleteRows(rows);
-      setIsBulkDeleteModalOpen(true);
-
-      if (rows.length === 0) {
-        toast.info("No non-accepted purchase items found.");
-      }
-    } catch {
-      toast.error("Unable to load purchase entries for bulk delete.");
-    } finally {
-      setIsBulkDeleteLoading(false);
-    }
-  };
-
-  const toggleBulkDeleteSelection = (id: number, checked: boolean) => {
-    setSelectedBulkDeleteIds((prev) => {
-      if (checked) {
-        if (prev.includes(id)) return prev;
-        return [...prev, id];
-      }
-
-      return prev.filter((val) => val !== id);
-    });
-  };
-
-  const toggleBulkDeleteSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedBulkDeleteIds(bulkDeleteRows.map((row) => row.id));
-      return;
-    }
-
-    setSelectedBulkDeleteIds([]);
-  };
-
-  const handleConfirmBulkDelete = async () => {
-    if (selectedBulkDeleteIds.length === 0) {
-      toast.error("Select at least one purchase item to delete.");
-      return;
-    }
-    setIsBulkDeleting(true);
-    await delete_purchase_entries(selectedBulkDeleteIds);
-    setIsBulkDeleting(false);
-    setIsBulkDeleteConfirmOpen(false);
-    setIsBulkDeleteModalOpen(false);
-    setSelectedBulkDeleteIds([]);
-    setBulkDeleteRows([]);
-  };
-
   const [quantityCount, setQuantityCount] = useState("pcs");
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
@@ -987,14 +629,14 @@ const DocumentWiseDetails = () => {
     currentInvoice: "",
   });
   const [isGroupAcceptLoading, setIsGroupAcceptLoading] = useState(false);
-  const [isSingleAcceptLoading, setIsSingleAcceptLoading] =
-    useState<boolean>(false);
+  // const [isSingleAcceptLoading, setIsSingleAcceptLoading] =
+  //   useState<boolean>(false);
   const [isRejectAllLoading, setIsRejectAllLoading] = useState(false);
   const [isGroupRejectLoading, setIsGroupRejectLoading] = useState(false);
-  const [isSingleRejectLoading, setIsSingleRejectLoading] =
-    useState<boolean>(false);
-  const [isPurchaseReportLoading, setIsPurchaseReportLoading] =
-    useState<boolean>(false);
+  // const [isSingleRejectLoading, setIsSingleRejectLoading] =
+  //   useState<boolean>(false);
+  // const [isPurchaseReportLoading, setIsPurchaseReportLoading] =
+  //   useState<boolean>(false);
   const [isDownloadingDailyPurchase, setIsDownloadingDailyPurchase] =
     useState<boolean>(false);
 
@@ -1038,26 +680,41 @@ const DocumentWiseDetails = () => {
       setSortOrder("asc");
     }
   };
+  const canAcceptRecord = (record: GroupedDailyPurchase["records"][number]) => {
+    if (!isTinAcceptable(record.seller_tin_number.tin_number)) {
+      return false;
+    }
 
-  const canAcceptRecord = useCallback(
-    (record: GroupedDailyPurchase["records"][number]) => {
-      if (!isTinAcceptable(record.seller_tin_number.tin_number)) {
-        return false;
-      }
+    if (record.is_accept) {
+      return false;
+    }
 
-      if (record.is_accept) {
-        return false;
-      }
+    if (!isRestaurantCommodity) {
+      return true;
+    }
 
-      if (!isRestaurantCommodity) {
-        return true;
-      }
+    return isAprilOrMay2026(record.invoice_date);
+  };
 
-      return isAprilOrMay2026(record.invoice_date);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
+  // const canAcceptRecord = useCallback(
+  //   (record: GroupedDailyPurchase["records"][number]) => {
+  //     if (!isTinAcceptable(record.seller_tin_number.tin_number)) {
+  //       return false;
+  //     }
+
+  //     if (record.is_accept) {
+  //       return false;
+  //     }
+
+  //     if (!isRestaurantCommodity) {
+  //       return true;
+  //     }
+
+  //     return isAprilOrMay2026(record.invoice_date);
+  //   },
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  //   [],
+  // );
 
   useEffect(() => {
     if (!dvatdata?.id) return;
@@ -1124,7 +781,7 @@ const DocumentWiseDetails = () => {
 
     // Format start date as is (beginning of month)
     const startDateStr = formatDateInputValue(startDate);
-    
+
     // Format end date ensuring we capture the full day by adding 1 day and subtracting 1 second
     // This ensures the date range includes the entire last day of the month
     const nextDay = new Date(endDate);
@@ -1386,7 +1043,6 @@ const DocumentWiseDetails = () => {
 
       const response = await AcceptSale({
         commodityid: record.commodity_master.id,
-        createdById: userid,
         dvatid: dvatdata.id,
         quantity: quantityToUse,
         puchaseid: record.id,
@@ -1434,84 +1090,110 @@ const DocumentWiseDetails = () => {
     if (pendingRecords.length === 0) return;
 
     setIsGroupAcceptLoading(true);
-    let successCount = 0;
-    let failedCount = 0;
+
+    interface GroupedCommodity {
+      commodityid: number;
+      totalQuantity: number;
+      purchaseIds: number[];
+      urnNumbers: string[];
+    }
+
+    const groupcommodity = new Map<number, GroupedCommodity>();
 
     for (const record of pendingRecords) {
-      const response = await AcceptSale({
-        commodityid: record.commodity_master.id,
-        createdById: userid,
-        dvatid: dvatdata.id,
-        quantity: record.quantity,
-        puchaseid: record.id,
-        urn: record.urn_number ?? "",
-      });
-
-      if (response.status && response.data) {
-        successCount += 1;
-        markRecordAccepted(record.id);
+      const commodityid = record.commodity_master.id;
+      const existingGroup = groupcommodity.get(commodityid);
+      if (existingGroup) {
+        existingGroup.totalQuantity += record.quantity;
+        existingGroup.purchaseIds.push(record.id);
+        existingGroup.urnNumbers.push(record.urn_number ?? "");
       } else {
-        failedCount += 1;
+        groupcommodity.set(commodityid, {
+          commodityid,
+          totalQuantity: record.quantity,
+          purchaseIds: [record.id],
+          urnNumbers: [record.urn_number ?? ""],
+        });
       }
     }
 
+    // Call the GroupAcceptSale action with grouped commodities
+    const response = await GroupAcceptSale(
+      dvatdata.id,
+      Array.from(groupcommodity.values()),
+    );
+
     setIsGroupAcceptLoading(false);
 
-    if (successCount > 0) {
-      toast.success(`${successCount} record(s) accepted.`);
-      await init();
-    }
-    if (failedCount > 0) {
-      toast.error(`${failedCount} record(s) could not be accepted.`);
-    }
-  };
-
-  const handleAcceptSingleRecord = async (
-    record: GroupedDailyPurchase["records"][number],
-  ) => {
-    if (!dvatdata) {
-      toast.error("DVAT not found.");
-      return;
-    }
-
-    setIsSingleAcceptLoading(true);
-
-    const response = await AcceptSale({
-      commodityid: record.commodity_master.id,
-      createdById: userid,
-      dvatid: dvatdata.id,
-      quantity: record.quantity,
-      puchaseid: record.id,
-      urn: record.urn_number ?? "",
-    });
-
-    setIsSingleAcceptLoading(false);
-
     if (response.status && response.data) {
-      markRecordAccepted(record.id);
-      toast.success("Purchase record accepted.");
-      await init();
+      const { successCount, failedCount, failedCommodities } = response.data;
+
+      if (successCount > 0) {
+        // Mark all accepted records as accepted in UI
+        for (const purchaseId of pendingRecords.map((r) => r.id)) {
+          markRecordAccepted(purchaseId);
+        }
+        toast.success(`${successCount} record(s) accepted.`);
+        await init();
+      }
+
+      if (failedCount > 0) {
+        toast.error(
+          `${failedCount} record(s) could not be accepted.\n${failedCommodities.join(
+            "\n",
+          )}`,
+        );
+      }
     } else {
-      toast.error(response.message);
+      toast.error(response.message || "Failed to accept records.");
     }
   };
 
-  const handleRejectSingleRecord = async (
-    record: GroupedDailyPurchase["records"][number],
-  ) => {
-    setIsSingleRejectLoading(true);
+  // const handleAcceptSingleRecord = async (
+  //   record: GroupedDailyPurchase["records"][number],
+  // ) => {
+  //   if (!dvatdata) {
+  //     toast.error("DVAT not found.");
+  //     return;
+  //   }
 
-    const response = await RejectPurchase({ id: record.id });
+  //   setIsSingleAcceptLoading(true);
 
-    setIsSingleRejectLoading(false);
+  //   const response = await AcceptSale({
+  //     commodityid: record.commodity_master.id,
+  //     dvatid: dvatdata.id,
+  //     quantity: record.quantity,
+  //     puchaseid: record.id,
+  //     urn: record.urn_number ?? "",
+  //   });
 
-    if (response.status && response.data) {
-      toast.success("Purchase record rejected.");
-      await init();
-    } else {
-      toast.error(response.message);
-    }
-  };
+  //   setIsSingleAcceptLoading(false);
+
+  //   if (response.status && response.data) {
+  //     markRecordAccepted(record.id);
+  //     toast.success("Purchase record accepted.");
+  //     await init();
+  //   } else {
+  //     toast.error(response.message);
+  //   }
+  // };
+
+  // const handleRejectSingleRecord = async (
+  //   record: GroupedDailyPurchase["records"][number],
+  // ) => {
+  //   setIsSingleRejectLoading(true);
+
+  //   const response = await RejectPurchase({ id: record.id });
+
+  //   setIsSingleRejectLoading(false);
+
+  //   if (response.status && response.data) {
+  //     toast.success("Purchase record rejected.");
+  //     await init();
+  //   } else {
+  //     toast.error(response.message);
+  //   }
+  // };
 
   const handleRejectGroupAll = async () => {
     if (!selectedGroup || !dvatdata) return;
@@ -1588,41 +1270,40 @@ const DocumentWiseDetails = () => {
     }
   };
 
-  const handleAcceptSnapshotSingle = async (
-    record: GroupedDailyPurchase["records"][number],
-  ) => {
-    if (!dvatdata) {
-      toast.error("DVAT not found.");
-      return;
-    }
+  // const handleAcceptSnapshotSingle = async (
+  //   record: GroupedDailyPurchase["records"][number],
+  // ) => {
+  //   if (!dvatdata) {
+  //     toast.error("DVAT not found.");
+  //     return;
+  //   }
 
-    setIsSingleAcceptLoading(true);
+  //   setIsSingleAcceptLoading(true);
 
-    // Convert quantity from pieces to ML (1 piece = pack_size ML)
-    const quantityInML =
-      record.quantity * parseInt(record.commodity_master.pack_size ?? "0", 10);
+  //   // Convert quantity from pieces to ML (1 piece = pack_size ML)
+  //   const quantityInML =
+  //     record.quantity * parseInt(record.commodity_master.pack_size ?? "0", 10);
 
-    const response = await AcceptSale({
-      commodityid: record.commodity_master.id,
-      createdById: userid,
-      dvatid: dvatdata.id,
-      quantity: quantityInML, // ML quantity
-      puchaseid: record.id,
-      urn: record.urn_number ?? "",
-    });
+  //   const response = await AcceptSale({
+  //     commodityid: record.commodity_master.id,
+  //     dvatid: dvatdata.id,
+  //     quantity: quantityInML, // ML quantity
+  //     puchaseid: record.id,
+  //     urn: record.urn_number ?? "",
+  //   });
 
-    setIsSingleAcceptLoading(false);
+  //   setIsSingleAcceptLoading(false);
 
-    if (response.status && response.data) {
-      markRecordAccepted(record.id);
-      toast.success(
-        `Purchase record accepted. Quantity converted: ${record.quantity} pcs → ${quantityInML} ML`,
-      );
-      await init();
-    } else {
-      toast.error(response.message);
-    }
-  };
+  //   if (response.status && response.data) {
+  //     markRecordAccepted(record.id);
+  //     toast.success(
+  //       `Purchase record accepted. Quantity converted: ${record.quantity} pcs → ${quantityInML} ML`,
+  //     );
+  //     await init();
+  //   } else {
+  //     toast.error(response.message);
+  //   }
+  // };
 
   const handleAcceptSnapshotAll = async () => {
     if (!dvatdata || !selectedGroup) {
@@ -1648,7 +1329,6 @@ const DocumentWiseDetails = () => {
 
       const response = await AcceptSale({
         commodityid: record.commodity_master.id,
-        createdById: userid,
         dvatid: dvatdata.id,
         quantity: quantityInML, // ML quantity
         puchaseid: record.id,
@@ -1933,56 +1613,7 @@ const DocumentWiseDetails = () => {
         </div>
         <DailyPurchaseMasterProvider setAddBox={setAddBox} init={init} />
       </Drawer>
-      <Drawer
-        placement="right"
-        closeIcon={null}
-        onClose={() => {
-          setCreditNoteBox(false);
-          setCreditNoteGroup(null);
-        }}
-        open={creditNoteBox}
-        size="large"
-      >
-        <div className="mb-3 pb-2 border-b">
-          <h2 className="text-sm font-medium text-gray-900">
-            Purchase Credit Note
-          </h2>
-        </div>
-        {creditNoteGroup && dvatdata && (
-          <PurchaseCreditNoteDrawer
-            group={creditNoteGroup}
-            dvat04Id={dvatdata.id}
-            userid={userid}
-            setOpen={setCreditNoteBox}
-            init={init}
-          />
-        )}
-      </Drawer>
-      <Drawer
-        placement="right"
-        closeIcon={null}
-        onClose={() => {
-          setDebitNoteBox(false);
-          setDebitNoteGroup(null);
-        }}
-        open={debitNoteBox}
-        size="large"
-      >
-        <div className="mb-3 pb-2 border-b">
-          <h2 className="text-sm font-medium text-gray-900">
-            Purchase Debit Note
-          </h2>
-        </div>
-        {debitNoteGroup && dvatdata && (
-          <PurchaseDebitNoteDrawer
-            group={debitNoteGroup}
-            dvat04Id={dvatdata.id}
-            userid={userid}
-            setOpen={setDebitNoteBox}
-            init={init}
-          />
-        )}
-      </Drawer>
+
       <Modal
         title={
           <div className="text-rose-600 font-semibold text-base">
@@ -2152,197 +1783,6 @@ const DocumentWiseDetails = () => {
         </div>
       </Modal>
 
-      <Modal
-        title="Bulk Delete Purchase Items"
-        open={isBulkDeleteModalOpen}
-        width={1200}
-        onCancel={() => {
-          setIsBulkDeleteModalOpen(false);
-          setSelectedBulkDeleteIds([]);
-          setBulkDeleteRows([]);
-        }}
-        footer={null}
-      >
-        <div className="mb-3 flex flex-wrap items-center gap-3">
-          <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={
-                bulkDeleteRows.length > 0 &&
-                selectedBulkDeleteIds.length === bulkDeleteRows.length
-              }
-              onChange={(event) =>
-                toggleBulkDeleteSelectAll(event.target.checked)
-              }
-              disabled={bulkDeleteRows.length === 0}
-            />
-            Select All
-          </label>
-          <span className="text-xs text-gray-600">
-            Selected: {selectedBulkDeleteIds.length} / {bulkDeleteRows.length}
-          </span>
-        </div>
-
-        <div className="max-h-[60vh] overflow-auto border rounded">
-          {/* TanStack Table for grouped selection */}
-          {groupedBulkDeleteRows.length === 0 ? (
-            <div className="text-center text-sm py-4">
-              No non-accepted purchase items available.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-100">
-                  <TableHead className="border text-center text-xs">
-                    Pick
-                  </TableHead>
-                  <TableHead className="border text-center text-xs">
-                    Invoice No.
-                  </TableHead>
-                  <TableHead className="border text-center text-xs">
-                    Invoice Date
-                  </TableHead>
-                  <TableHead className="border text-center text-xs">
-                    Trade Name
-                  </TableHead>
-                  <TableHead className="border text-center text-xs">
-                    TIN Number
-                  </TableHead>
-                  <TableHead className="border text-center text-xs">
-                    Product
-                  </TableHead>
-                  <TableHead className="border text-center text-xs">
-                    Quantity
-                  </TableHead>
-                  <TableHead className="border text-center text-xs">
-                    Invoice Value
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {groupedBulkDeleteRows.map((group) => {
-                  const allSelected = group.rows.every((row) =>
-                    selectedBulkDeleteIds.includes(row.id),
-                  );
-                  const someSelected = group.rows.some((row) =>
-                    selectedBulkDeleteIds.includes(row.id),
-                  );
-                  return [
-                    <TableRow
-                      key={`group-${group.groupKey}`}
-                      className="bg-blue-50"
-                    >
-                      <TableCell className="border text-center text-xs">
-                        <input
-                          type="checkbox"
-                          checked={allSelected}
-                          ref={(el) => {
-                            if (el)
-                              el.indeterminate = !allSelected && someSelected;
-                          }}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            if (checked) {
-                              // Add all group row ids
-                              setSelectedBulkDeleteIds((prev) => [
-                                ...prev,
-                                ...group.rows
-                                  .map((r) => r.id)
-                                  .filter((id) => !prev.includes(id)),
-                              ]);
-                            } else {
-                              // Remove all group row ids
-                              setSelectedBulkDeleteIds((prev) =>
-                                prev.filter(
-                                  (id) => !group.rows.some((r) => r.id === id),
-                                ),
-                              );
-                            }
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell
-                        colSpan={7}
-                        className="border text-xs font-semibold"
-                      >
-                        {group.groupLabel}
-                      </TableCell>
-                    </TableRow>,
-                    ...group.rows.map((row) => (
-                      <TableRow key={row.id} className="hover:bg-gray-50">
-                        <TableCell className="border text-center text-xs text-gray-400">
-                          —
-                        </TableCell>
-                        <TableCell className="border text-center text-xs">
-                          {row.invoice_number}
-                        </TableCell>
-                        <TableCell className="border text-center text-xs">
-                          {formateDate(row.invoice_date)}
-                        </TableCell>
-                        <TableCell className="border text-center text-xs">
-                          {row.trade_name}
-                        </TableCell>
-                        <TableCell className="border text-center text-xs">
-                          {row.tin_number}
-                        </TableCell>
-                        <TableCell className="border text-center text-xs">
-                          {row.product_name}
-                        </TableCell>
-                        <TableCell className="border text-center text-xs">
-                          {row.quantity}
-                        </TableCell>
-                        <TableCell className="border text-center text-xs">
-                          {formatIndianNumber(row.invoice_value)}
-                        </TableCell>
-                      </TableRow>
-                    )),
-                  ];
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-
-        <div className="mt-3 flex gap-2">
-          <div className="grow"></div>
-          <Button
-            onClick={() => {
-              setIsBulkDeleteModalOpen(false);
-              setSelectedBulkDeleteIds([]);
-              setBulkDeleteRows([]);
-            }}
-          >
-            Close
-          </Button>
-          <Button
-            danger
-            type="primary"
-            disabled={selectedBulkDeleteIds.length === 0}
-            onClick={() => setIsBulkDeleteConfirmOpen(true)}
-          >
-            Delete Selected
-          </Button>
-        </div>
-      </Modal>
-
-      <Modal
-        title="Confirm Bulk Delete"
-        open={isBulkDeleteConfirmOpen}
-        onCancel={() => setIsBulkDeleteConfirmOpen(false)}
-        onOk={handleConfirmBulkDelete}
-        okText="Delete Permanently"
-        okButtonProps={{ danger: true, loading: isBulkDeleting }}
-      >
-        <p className="text-sm text-gray-700">
-          You are about to delete {selectedBulkDeleteIds.length} purchase
-          item(s).
-        </p>
-        <p className="mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-          Warning: This action cannot be reversed. Deleted items cannot be
-          restored.
-        </p>
-      </Modal>
-
       <main className="p-3 bg-gray-50">
         <div className=" mx-auto">
           {/* Header Card */}
@@ -2356,6 +1796,32 @@ const DocumentWiseDetails = () => {
               </div>
 
               <div className="grow"></div>
+              {(dvatdata?.commodity === "OIDC" ||
+                [84, 542, 93].includes(dvatdata?.id ?? 0)) && (
+                <Button
+                  size="small"
+                  // block
+                  type="default"
+                  onClick={() => {
+                    setToolbarActionsOpen(false);
+                    router.push("/dashboard/stock/tally_purchase");
+                  }}
+                >
+                  Tally Purchase
+                </Button>
+              )}
+
+              <Button
+                size="small"
+                // block
+                type="default"
+                onClick={() => {
+                  setToolbarActionsOpen(false);
+                  router.push("/dashboard/stock/view_converted_purchase");
+                }}
+              >
+                View Generated Invoices
+              </Button>
 
               {/* Controls Section */}
               <div className="flex flex-wrap gap-2 items-center">
@@ -2386,21 +1852,6 @@ const DocumentWiseDetails = () => {
                           Purchase Actions
                         </p>
                         <div className="mt-2 flex flex-col gap-2">
-                          {(dvatdata?.commodity === "OIDC" ||
-                            [84, 542, 93].includes(dvatdata?.id ?? 0)) && (
-                            <Button
-                              size="small"
-                              block
-                              type="default"
-                              onClick={() => {
-                                setToolbarActionsOpen(false);
-                                router.push("/dashboard/stock/tally_purchase");
-                              }}
-                            >
-                              Tally Purchase
-                            </Button>
-                          )}
-
                           {dailyPurchase.length > 0 && (
                             <Button
                               size="small"
@@ -2423,20 +1874,6 @@ const DocumentWiseDetails = () => {
                               Generate DVAT 30/30 A
                             </Button>
                           )}
-
-                          <Button
-                            size="small"
-                            block
-                            type="default"
-                            onClick={() => {
-                              setToolbarActionsOpen(false);
-                              router.push(
-                                "/dashboard/stock/view_converted_purchase",
-                              );
-                            }}
-                          >
-                            View Generated Invoices
-                          </Button>
 
                           {hasPendingAcceptable && (
                             <>
@@ -2517,32 +1954,12 @@ const DocumentWiseDetails = () => {
                           )}
 
                           {!hidePurchaseManagementActions && (
-                            <Button
-                              size="small"
-                              block
-                              type="default"
-                              loading={isBulkDeleteLoading}
-                              onClick={() => {
-                                setToolbarActionsOpen(false);
-                                openBulkDeleteModal();
-                              }}
-                            >
-                              Bulk Delete
-                            </Button>
+                            <PurchaseBulkDelete
+                              dvatid={dvatdata?.id}
+                              pagination={pagination}
+                              onDeleteComplete={init}
+                            />
                           )}
-
-                          <Button
-                            size="small"
-                            block
-                            type="default"
-                            loading={isPurchaseReportLoading}
-                            onClick={() => {
-                              setToolbarActionsOpen(false);
-                              downloadDailyPurchaseReport();
-                            }}
-                          >
-                            Purchase Report
-                          </Button>
 
                           {!hidePurchaseManagementActions && (
                             <Button
@@ -2618,7 +2035,7 @@ const DocumentWiseDetails = () => {
           <div className="bg-white rounded shadow-sm border p-3">
             {/* Search, Sort, and Filter Controls */}
             <div className="mb-4 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-8 gap-3 items-end">
+              <div className="flex gap-3 items-end">
                 <div className="xl:col-span-2">
                   <label className="text-xs font-medium text-gray-700 mb-1 block">
                     Search
@@ -2714,6 +2131,8 @@ const DocumentWiseDetails = () => {
                     ]}
                   />
                 </div>
+
+                <div className="grow"></div>
 
                 <div className="flex gap-2">
                   {(searchTerm || selectedPeriod) && (
@@ -2943,7 +2362,7 @@ const DocumentWiseDetails = () => {
                                         </button>
                                       </>
                                     )}
-                                  {group.count === 1 &&
+                                  {/* {group.count === 1 &&
                                     (group.seller_tin_number.tin_number.startsWith(
                                       "25",
                                     ) ||
@@ -3003,27 +2422,7 @@ const DocumentWiseDetails = () => {
                                             : "Reject"}
                                         </button>
                                       </>
-                                    )}
-                                  {/* <button
-                                    onClick={() => {
-                                      setCreditNoteGroup(group);
-                                      setCreditNoteBox(true);
-                                      handelClose(index);
-                                    }}
-                                    className="text-sm bg-white border hover:border-green-500 hover:text-green-600 text-gray-700 py-1 px-3 rounded"
-                                  >
-                                    Credit Note
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setDebitNoteGroup(group);
-                                      setDebitNoteBox(true);
-                                      handelClose(index);
-                                    }}
-                                    className="text-sm bg-white border hover:border-amber-500 hover:text-amber-600 text-gray-700 py-1 px-3 rounded"
-                                  >
-                                    Debit Note
-                                  </button> */}
+                                    )} */}
                                 </div>
                               }
                               title="Actions"
@@ -3125,119 +2524,6 @@ const DocumentWiseDetails = () => {
           </div>
         </div>
       </main>
-
-      <>
-        {/* <button
-          type="button"
-          aria-label="Open help chat"
-          onClick={() => setIsHelpDrawerOpen(true)}
-          className="fixed right-5 bottom-5 z-60 flex flex-col items-center hover:scale-105 transition-transform"
-        >
-          <span className="h-32 w-32 overflow-hidden">
-            {chatAnimationData ? (
-              <Lottie
-                animationData={chatAnimationData}
-                loop
-                autoplay
-                className="h-full w-full"
-              />
-            ) : (
-              <span className="h-full w-full grid place-items-center text-[#0f2f67] text-xs font-semibold">
-                Help
-              </span>
-            )}
-          </span>
-          <span className="-translate-y-4 text-lg font-semibold text-[#0f2f67] bg-white/90 px-2 rounded-full border-blue-800 border-2">
-            Need Help
-          </span>
-        </button> */}
-
-        <Drawer
-          title={
-            <span className="text-slate-800 font-semibold">Purchase Help</span>
-          }
-          placement="right"
-          size={380}
-          open={isHelpDrawerOpen}
-          onClose={() => setIsHelpDrawerOpen(false)}
-        >
-          <div className="h-full flex flex-col gap-3">
-            <div
-              ref={chatListRef}
-              onScroll={handleChatScroll}
-              className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 h-[62vh] overflow-y-auto flex flex-col gap-2"
-            >
-              <div className="grow" />
-              {chatMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex items-end gap-2 ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  {message.role === "bot" && (
-                    <span className="h-8 w-8 rounded-full bg-slate-700 text-white text-xs font-semibold flex items-center justify-center shrink-0">
-                      H
-                    </span>
-                  )}
-
-                  <div
-                    className={`w-fit max-w-[82%] px-2.5 py-1.5 text-sm ${
-                      message.role === "bot"
-                        ? "bg-white border border-slate-200 text-slate-700 rounded-br-lg rounded-tl-lg rounded-tr-lg"
-                        : "bg-slate-700 text-white rounded-bl-lg rounded-tl-lg rounded-tr-lg"
-                    }`}
-                  >
-                    <p
-                      className={`text-[11px] font-semibold mb-1 ${
-                        message.role === "bot"
-                          ? "text-slate-700"
-                          : "text-slate-200"
-                      }`}
-                    >
-                      {message.role === "bot" ? "Maya" : "You"}
-                    </p>
-
-                    {message.text || (
-                      <span className="inline-flex items-center gap-1.5 text-slate-500">
-                        <span className="text-xs text-slate-500 mr-1">
-                          Thinking
-                        </span>
-                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></span>
-                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:120ms]"></span>
-                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:240ms]"></span>
-                      </span>
-                    )}
-                  </div>
-
-                  {message.role === "user" && (
-                    <span className="h-8 w-8 rounded-full bg-amber-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">
-                      U
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {!isBotTyping && (
-              <div className="bg-white border border-slate-200 rounded-lg p-2 flex flex-wrap gap-2">
-                {purchaseChatOptions.map((option) => (
-                  <button
-                    key={option.question}
-                    type="button"
-                    onClick={() =>
-                      onSelectChatOption(option.question, option.answer)
-                    }
-                    className="text-left text-sm px-3 py-1.5 border border-slate-200 text-slate-700 rounded-full hover:bg-slate-50 transition-colors"
-                  >
-                    {option.question}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </Drawer>
-      </>
     </>
   );
 };
