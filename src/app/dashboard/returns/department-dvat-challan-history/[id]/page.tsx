@@ -234,7 +234,7 @@ const DvatChallanHistory = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4 flex gap-4 flex-wrap">
         <p>Summary of DVAT Challans</p>
 
         <p>Total Challans: {summary?.total ?? 0}</p>

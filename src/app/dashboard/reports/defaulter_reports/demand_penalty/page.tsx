@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
 import { Radio, Button, Input, Pagination, Spin, Select } from "antd";
-import { Bar, Doughnut, Pie } from "react-chartjs-2";
+import { Bar, Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, registerables } from "chart.js";
 import * as XLSX from "xlsx";
 import {
@@ -23,16 +23,14 @@ ChartJS.register(...registerables);
 import { useEffect, useRef, useState, useMemo } from "react";
 import type { Dayjs } from "dayjs";
 import { dvat04, user, SelectOffice } from "@prisma/client";
-import { capitalcase, encryptURLData } from "@/utils/methods";
+import { capitalcase } from "@/utils/methods";
 import numberWithIndianFormat from "@/utils/methods";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import GetUser from "@/action/user/getuser";
-import DemandPenalty from "@/action/report/demand_penalty";
 import PopulateNotfiledWork from "@/action/report/populate_notfiled_work";
 import NotfiledReturnsReport from "@/action/report/notfiled_returns_report";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-// import DemandPenalty from "@/action/report/outstanding";
 
 interface ResponseType {
   dvat04: dvat04;
@@ -159,7 +157,10 @@ const AfterDeathLinePage = () => {
 
   // Calculate statistics from data (filtered or all based on active filters)
   const totalDealers = dataForCalculation.length;
-  const totalPending = dataForCalculation.reduce((sum, item) => sum + item.pending, 0);
+  const totalPending = dataForCalculation.reduce(
+    (sum, item) => sum + item.pending,
+    0,
+  );
   const totalVatAmount = dataForCalculation.reduce(
     (sum, item) => sum + parseFloat(item.vatamount),
     0,
@@ -884,7 +885,7 @@ const AfterDeathLinePage = () => {
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
           <div className="bg-linear-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
-            <p className="text-2xl font-bold">{totalDealers}</p>
+            <p className="text-xl font-bold">{totalDealers}</p>
             <div className="flex mt-2">
               <div>
                 <p className="text-xs opacity-90">Total Dealers</p>
@@ -895,8 +896,8 @@ const AfterDeathLinePage = () => {
             </div>
           </div>
 
-          <div className="bg-linear-to-br from-purple-400 to-purple-500 rounded-lg shadow-md p-6 text-white">
-            <p className="text-2xl font-bold">{totalPending}</p>
+          <div className="bg-linear-to-br from-purple-400 to-purple-500 rounded-lg shadow-md p-3 text-white">
+            <p className="text-xl font-bold">{totalPending}</p>
             <div className="flex mt-2">
               <div>
                 <p className="text-xs opacity-90">Total Pending</p>
@@ -907,8 +908,8 @@ const AfterDeathLinePage = () => {
             </div>
           </div>
 
-          <div className="bg-linear-to-br from-cyan-500 to-cyan-600 rounded-lg shadow-md p-6 text-white">
-            <p className="text-2xl font-bold">
+          <div className="bg-linear-to-br from-cyan-500 to-cyan-600 rounded-lg shadow-md p-3 text-white">
+            <p className="text-xl font-bold">
               ₹{numberWithIndianFormat(totalVatAmount)}
             </p>
             <div className="flex mt-2">
@@ -921,8 +922,8 @@ const AfterDeathLinePage = () => {
             </div>
           </div>
 
-          <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-6 text-white">
-            <p className="text-2xl font-bold">
+          <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-3 text-white">
+            <p className="text-xl font-bold">
               ₹{numberWithIndianFormat(totalInterest)}
             </p>
             <div className="flex mt-2">
@@ -935,8 +936,8 @@ const AfterDeathLinePage = () => {
             </div>
           </div>
 
-          <div className="bg-linear-to-br from-red-500 to-red-600 rounded-lg shadow-md p-6 text-white">
-            <p className="text-2xl font-bold">
+          <div className="bg-linear-to-br from-red-500 to-red-600 rounded-lg shadow-md p-3 text-white">
+            <p className="text-xl font-bold">
               ₹{numberWithIndianFormat(totalPenalty)}
             </p>
             <div className="flex mt-2">
@@ -949,15 +950,15 @@ const AfterDeathLinePage = () => {
             </div>
           </div>
 
-          {/* <div className="bg-linear-to-br from-green-500 to-green-600 rounded-lg shadow-md p-6 text-white">
+          {/* <div className="bg-linear-to-br from-green-500 to-green-600 rounded-lg shadow-md p-3 text-white">
             <MaterialSymbolsPersonRounded className="w-8 h-8 opacity-70 mb-2" />
             <p className="text-2xl font-bold">₹{numberWithIndianFormat(totalTax)}</p>
             <p className="text-xs opacity-90">Total Tax Amount</p>
             <p className="text-xs opacity-75 mt-1">Payable</p>
           </div> */}
 
-          <div className="bg-linear-to-br from-indigo-500 to-indigo-600 rounded-lg shadow-md p-6 text-white">
-            <p className="text-2xl font-bold">
+          <div className="bg-linear-to-br from-indigo-500 to-indigo-600 rounded-lg shadow-md p-3 text-white">
+            <p className="text-xl font-bold">
               {regularDealers}/{compositionDealers}
             </p>
             <div className="flex mt-2">

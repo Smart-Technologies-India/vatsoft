@@ -17,6 +17,7 @@ interface NotfiledResponseType {
   interest: string;
   penalty: string;
   total: string;
+  balance: string;
 }
 
 interface NotfiledReportPayload {
@@ -59,7 +60,10 @@ const NotfiledReturnsReport = async (
           ...(payload.dealerType && {
             compositionScheme: payload.dealerType === "COMPOSITION",
           }),
-          ...(payload.dept && payload.dept !== "ALL" && { selectOffice: payload.dept as SelectOffice }),
+          ...(payload.dept &&
+            payload.dept !== "ALL" && {
+              selectOffice: payload.dept as SelectOffice,
+            }),
           deletedAt: null,
           deletedBy: null,
         },
@@ -98,17 +102,24 @@ const NotfiledReturnsReport = async (
         resMap.set(dvat04Id, {
           dvat04: filing.dvat04,
           pending: 1,
-          vatamount: filing.vatamount || "0",
+          vatamount:
+            filing.balance && parseFloat(filing.balance) < 0
+              ? "0"
+              : filing.vatamount || "0",
           interest: filing.interest || "0",
           penalty: filing.penalty || "0",
           total: filing.total_tax_amount || "0",
+          balance: filing.balance || "0",
         });
       } else {
         // If dealer already exists, sum up the values and increment pending count
         const existing = resMap.get(dvat04Id)!;
         existing.pending = existing.pending + 1;
         existing.vatamount = (
-          parseFloat(existing.vatamount) + parseFloat(filing.vatamount || "0")
+          parseFloat(existing.vatamount) +
+          (parseFloat(filing.balance || "0") < 0
+            ? 0
+            : parseFloat(filing.vatamount || "0"))
         ).toFixed(2);
         existing.interest = (
           parseFloat(existing.interest) + parseFloat(filing.interest || "0")

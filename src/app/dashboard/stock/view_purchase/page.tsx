@@ -680,6 +680,22 @@ const DocumentWiseDetails = () => {
       setSortOrder("asc");
     }
   };
+  // const canAcceptRecord = (record: GroupedDailyPurchase["records"][number]) => {
+  //   if (!isTinAcceptable(record.seller_tin_number.tin_number)) {
+  //     return false;
+  //   }
+
+  //   if (record.is_accept) {
+  //     return false;
+  //   }
+
+  //   if (!isRestaurantCommodity) {
+  //     return true;
+  //   }
+
+  //   return isAprilOrMay2026(record.invoice_date);
+  // };
+
   const canAcceptRecord = (record: GroupedDailyPurchase["records"][number]) => {
     if (!isTinAcceptable(record.seller_tin_number.tin_number)) {
       return false;
@@ -695,26 +711,6 @@ const DocumentWiseDetails = () => {
 
     return isAprilOrMay2026(record.invoice_date);
   };
-
-  // const canAcceptRecord = useCallback(
-  //   (record: GroupedDailyPurchase["records"][number]) => {
-  //     if (!isTinAcceptable(record.seller_tin_number.tin_number)) {
-  //       return false;
-  //     }
-
-  //     if (record.is_accept) {
-  //       return false;
-  //     }
-
-  //     if (!isRestaurantCommodity) {
-  //       return true;
-  //     }
-
-  //     return isAprilOrMay2026(record.invoice_date);
-  //   },
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  //   [],
-  // );
 
   useEffect(() => {
     if (!dvatdata?.id) return;
