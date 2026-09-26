@@ -425,7 +425,6 @@ const TrackAppliation = () => {
       }
     } catch (error: any) {
       toast.error("Error creating C-Forms");
-      console.error(error);
     } finally {
       setIsCreatingCForm(false);
     }

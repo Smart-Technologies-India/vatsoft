@@ -58,17 +58,13 @@ const GroupAcceptSale = async (
             },
           });
 
-          if (!isstock) {
-            throw new Error("Stock not found for commodity");
-          }
-
           // 2. Update stock with total quantity
           const stock_response = await prisma.stock.upsert({
             where: {
-              id: isstock.id,
+              id: isstock ? isstock.id : 0,
             },
             update: {
-              quantity: group.totalQuantity + isstock.quantity,
+              quantity: group.totalQuantity + (isstock ? isstock.quantity : 0),
               updatedById: currentUserId,
             },
             create: {
@@ -85,6 +81,7 @@ const GroupAcceptSale = async (
           }
 
           // 3. Update all purchase records in this group to mark as accepted
+          console.log(`Processing commodity ID ${group.purchaseIds}`);
           const purchases_update = await prisma.daily_purchase.updateMany({
             where: {
               id: {
@@ -98,6 +95,9 @@ const GroupAcceptSale = async (
               is_accept: true,
             },
           });
+          console.log(
+            `Updated ${purchases_update} purchase records for commodity ID ${group.commodityid}`,
+          );
 
           if (!purchases_update) {
             throw new Error("Unable to update daily purchase records");

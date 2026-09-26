@@ -34,7 +34,7 @@ const CreateCFormForReturns = async (): Promise<
     // Get all returns_entry that belong to DVAT_30_A (C-Form applicable) entries
     // but don't have a corresponding cform_returns record
     // Include all months as they are grouped by quarters
-    const quarterMonths = ["March", "June", "September", "December"];
+    // const quarterMonths = ["March", "June", "September", "December"];
 
     const returnsWithoutCForm = await prisma.returns_entry.findMany({
       where: {
@@ -46,9 +46,9 @@ const CreateCFormForReturns = async (): Promise<
           deletedAt: null,
           deletedById: null,
           status: "PAID",
-          month: {
-            in: quarterMonths,
-          },
+          // month: {
+          //   in: quarterMonths,
+          // },
           // Include returns from all months (will be grouped by quarters)
         },
         // Entries that don't have a cform_returns record

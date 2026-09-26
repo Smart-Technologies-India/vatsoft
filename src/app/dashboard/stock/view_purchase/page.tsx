@@ -78,12 +78,12 @@ const formatMonthInputValue = (date: Date): string => {
 const isTinAcceptable = (tinNumber: string): boolean =>
   tinNumber.startsWith("25") || tinNumber.startsWith("26");
 
-const isAprilOrMay2026 = (inputDate: Date | string): boolean => {
-  const date = new Date(inputDate);
-  if (Number.isNaN(date.getTime())) return false;
+const isAprilOrMay2026 = (inputDate: Date): boolean => {
+  // const date = new Date(inputDate);
+  // if (Number.isNaN(date.getTime())) return false;
 
-  const year = date.getFullYear();
-  const month = date.getMonth();
+  const year = inputDate.getFullYear();
+  const month = inputDate.getMonth();
   return year === 2026 && (month === 3 || month === 4);
 };
 
@@ -680,21 +680,6 @@ const DocumentWiseDetails = () => {
       setSortOrder("asc");
     }
   };
-  // const canAcceptRecord = (record: GroupedDailyPurchase["records"][number]) => {
-  //   if (!isTinAcceptable(record.seller_tin_number.tin_number)) {
-  //     return false;
-  //   }
-
-  //   if (record.is_accept) {
-  //     return false;
-  //   }
-
-  //   if (!isRestaurantCommodity) {
-  //     return true;
-  //   }
-
-  //   return isAprilOrMay2026(record.invoice_date);
-  // };
 
   const canAcceptRecord = (record: GroupedDailyPurchase["records"][number]) => {
     if (!isTinAcceptable(record.seller_tin_number.tin_number)) {
@@ -705,11 +690,12 @@ const DocumentWiseDetails = () => {
       return false;
     }
 
-    // if (!isRestaurantCommodity) {
-    //   return true;
-    // }
+    if (!isRestaurantCommodity) {
+      return true;
+    }
 
-    return isAprilOrMay2026(record.invoice_date);
+    // return isAprilOrMay2026(record.invoice_date);
+    return true;
   };
 
   useEffect(() => {
@@ -1112,6 +1098,8 @@ const DocumentWiseDetails = () => {
         });
       }
     }
+
+    console.log(Array.from(groupcommodity.values()));
 
     // Call the GroupAcceptSale action with grouped commodities
     const response = await GroupAcceptSale(
