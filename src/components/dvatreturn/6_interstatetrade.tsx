@@ -1,7 +1,6 @@
 import { DvatType, returns_entry } from "@prisma/client";
 import { InterState } from "./vatcalculation";
 
-
 interface InterStateTradeProps {
   returnsentrys: returns_entry[];
 }
@@ -73,10 +72,10 @@ const InterStateTrade = (props: InterStateTradeProps) => {
             Section 5(1) of the Act)
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {interState.get10_5(DvatType.DVAT_31_A).increase}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            0
+            {interState.get10_5(DvatType.DVAT_30_A).increase}
           </td>
         </tr>
         <tr className="w-full">

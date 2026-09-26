@@ -574,7 +574,7 @@ export class InterState {
       decrease: parseFloat(decrease.toFixed(2)),
     };
   };
-  get10_7 = (dvattype: DvatType): PercentageOutput => {
+  get10_5 = (dvattype: DvatType): PercentageOutput => {
     let increase: number = 0;
     let decrease: number = 0;
     const output: returns_entry[] = this.returns_entry.filter(
@@ -582,6 +582,24 @@ export class InterState {
         val.dvat_type == dvattype &&
         val.category_of_entry == CategoryOfEntry.INVOICE &&
         val.sale_of_interstate == SaleOfInterstate.EXPORT_OUTOF_INDIA,
+    );
+    for (let i = 0; i < output.length; i++) {
+      increase = increase + parseFloat(output[i].total_invoice_number ?? "0");
+      decrease = decrease + parseFloat(output[i].vatamount ?? "0");
+    }
+    return {
+      increase: parseFloat(increase.toFixed(2)),
+      decrease: parseFloat(decrease.toFixed(2)),
+    };
+  };
+  get10_7 = (dvattype: DvatType): PercentageOutput => {
+    let increase: number = 0;
+    let decrease: number = 0;
+    const output: returns_entry[] = this.returns_entry.filter(
+      (val: returns_entry) =>
+        val.dvat_type == dvattype &&
+        val.category_of_entry == CategoryOfEntry.INVOICE &&
+        val.sale_of_interstate == SaleOfInterstate.EXEMPT_US6,
     );
     for (let i = 0; i < output.length; i++) {
       increase = increase + parseFloat(output[i].total_invoice_number ?? "0");
@@ -617,6 +635,7 @@ export class InterState {
       this.get10_2(DvatType.DVAT_30_A).increase +
       this.get10_3(DvatType.DVAT_30_A).increase +
       this.get10_4(DvatType.DVAT_30_A).increase +
+      this.get10_5(DvatType.DVAT_30_A).increase +
       this.get10_6(DvatType.DVAT_30_A).increase +
       this.get10_7(DvatType.DVAT_30_A).increase +
       this.get10_8(DvatType.DVAT_30_A).increase +
@@ -630,6 +649,7 @@ export class InterState {
       this.get10_2(DvatType.DVAT_31_A).increase +
       this.get10_3(DvatType.DVAT_31_A).increase +
       this.get10_4(DvatType.DVAT_31_A).increase +
+      this.get10_5(DvatType.DVAT_31_A).increase +
       this.get10_6(DvatType.DVAT_31_A).increase +
       this.get10_7(DvatType.DVAT_31_A).increase +
       this.get10_8(DvatType.DVAT_31_A).increase +

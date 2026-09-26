@@ -7,7 +7,6 @@ import { handleNumberChange } from "@/utils/methods";
 import { useRef, useState } from "react";
 
 const Grievance = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmit, setIsSubmit] = useState<boolean>(false);
 
   const firstnameRef = useRef<HTMLInputElement>(null);
@@ -15,7 +14,6 @@ const Grievance = () => {
   const addressRef = useRef<HTMLTextAreaElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const mobileRef = useRef<HTMLInputElement>(null);
-  const altMobileRef = useRef<HTMLInputElement>(null);
   const panRef = useRef<HTMLInputElement>(null);
   const aadharRef = useRef<HTMLInputElement>(null);
 

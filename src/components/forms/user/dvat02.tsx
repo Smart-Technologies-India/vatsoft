@@ -1,10 +1,5 @@
 "use client";
-import {
-  FieldErrors,
-  FormProvider,
-  useForm,
-  useFormContext,
-} from "react-hook-form";
+import { FormProvider, useForm, useFormContext } from "react-hook-form";
 
 import { TaxtInput } from "../inputfields/textinput";
 import { valibotResolver } from "@hookform/resolvers/valibot";
@@ -12,9 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MultiSelect } from "../inputfields/multiselect";
 import { CommodityData, OptionValue } from "@/models/main";
-import { YesNoRabioInput } from "../inputfields/yesnoradioinput";
 
-import { DateSelect } from "../inputfields/dateselect";
 import { TaxtAreaInput } from "../inputfields/textareainput";
 import GetDvat04 from "@/action/register/getdvat04";
 import { ApiResponseType } from "@/models/response";
@@ -23,24 +16,13 @@ import {
   commodity,
   dvat04,
   FrequencyFilings,
-  NatureOfBusiness,
-  SelectOffice,
 } from "@prisma/client";
-import DvatUpdate from "@/action/user/register/dvat1";
 import { toast } from "react-toastify";
 import { Dvat2Form, Dvat2Schema } from "@/schema/dvat2";
-import { Checkbox } from "antd";
+import { Checkbox, Select } from "antd";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
 import { RabioInput } from "../inputfields/radioinput";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -174,8 +156,8 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
     if (userrespone.status) {
       router.push(
         `/dashboard/new-registration/${encryptURLData(
-          props.dvatid.toString()
-        )}/dvat3`
+          props.dvatid.toString(),
+        )}/dvat3`,
       );
     } else {
       toast.error(userrespone.message);
@@ -570,23 +552,17 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             </Label>
             <Select
               value={selectCom}
-              onValueChange={(val: string) => {
+              onChange={(val: string) => {
                 setSelectCom(val);
               }}
-            >
-              <SelectTrigger className="focus-visible:ring-transparent mt-1  h-8 px-2 py-1 text-xs rounded-sm">
-                <SelectValue placeholder="Select Commodity" />
-              </SelectTrigger>
-              <SelectContent className="max-h-64">
-                <SelectGroup>
-                  {commodity.map((com, index) => (
-                    <SelectItem value={com.id.toString()} key={index}>
-                      {com.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+              placeholder="Select Commodity"
+              className="mt-1 w-full"
+              style={{ height: "32px" }}
+              options={commodity.map((com) => ({
+                label: com.name,
+                value: com.id.toString(),
+              }))}
+            />
           </div>
           <div className="flex-1">
             <Label htmlFor="purpose" className="text-sm font-normal">
@@ -594,22 +570,23 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             </Label>
             <Select
               value={purpose ?? undefined}
-              onValueChange={(val) => {
+              onChange={(val) => {
                 setPurpose(val as CommidityPursose);
               }}
-            >
-              <SelectTrigger className="focus-visible:ring-transparent mt-1  h-8 px-2 py-1 text-xs rounded-sm">
-                <SelectValue placeholder="Select Purpose" />
-              </SelectTrigger>
-              <SelectContent className="max-h-64">
-                <SelectGroup>
-                  <SelectItem value={"COMMODITY_TRADED"}>
-                    COMMODITY TRADED
-                  </SelectItem>
-                  <SelectItem value={"MANUFACTURED"}>MANUFACTURED</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+              placeholder="Select Purpose"
+              className="mt-1 w-full"
+              style={{ height: "32px" }}
+              options={[
+                {
+                  label: "COMMODITY TRADED",
+                  value: "COMMODITY_TRADED",
+                },
+                {
+                  label: "MANUFACTURED",
+                  value: "MANUFACTURED",
+                },
+              ]}
+            />
           </div>
         </div>
 
@@ -738,8 +715,8 @@ const Dvat04 = (props: Dvat01ProviderProps) => {
             e.preventDefault();
             router.push(
               `/dashboard/new-registration/${encryptURLData(
-                props.dvatid.toString()
-              )}/dvat1`
+                props.dvatid.toString(),
+              )}/dvat1`,
             );
           }}
           className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white mt-2 cursor-pointer"

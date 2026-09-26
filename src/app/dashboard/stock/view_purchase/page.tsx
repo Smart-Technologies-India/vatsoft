@@ -705,9 +705,9 @@ const DocumentWiseDetails = () => {
       return false;
     }
 
-    if (!isRestaurantCommodity) {
-      return true;
-    }
+    // if (!isRestaurantCommodity) {
+    //   return true;
+    // }
 
     return isAprilOrMay2026(record.invoice_date);
   };

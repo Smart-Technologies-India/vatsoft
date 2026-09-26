@@ -22,7 +22,7 @@ import {
   onFormError,
 } from "@/utils/methods";
 import { Separator } from "@/components/ui/separator";
-import { FieldErrors, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
   SubmitPaymentForm,
   SubmitPaymentSchema,

@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "antd";
 import { ApiResponseType } from "@/models/response";
 import Anx1Update from "@/action/anx1/updateauth";
 import GetAnx1 from "@/action/anx1/getanx1";
@@ -27,7 +27,7 @@ const Dvat2Page = () => {
   const router = useRouter();
   const { dvatid } = useParams<{ dvatid: string | string[] }>();
   const dvat04id = parseInt(
-    decryptURLData(Array.isArray(dvatid) ? dvatid[0] : dvatid, router)
+    decryptURLData(Array.isArray(dvatid) ? dvatid[0] : dvatid, router),
   );
 
   const [userid, setUserid] = useState<number>(0);
@@ -41,7 +41,7 @@ const Dvat2Page = () => {
 
   const handelSubmit = () => {
     router.push(
-      `/dashboard/register/${encryptURLData(dvat04id.toString())}/preview`
+      `/dashboard/register/${encryptURLData(dvat04id.toString())}/preview`,
     );
   };
 
@@ -143,8 +143,8 @@ const Dvat2Page = () => {
                     <TableCell>{data.contact}</TableCell>
                     <TableCell>
                       <Switch
-                        onCheckedChange={(e: boolean) => {
-                          updateAnx1Auth(data.id, e);
+                        onChange={(checked: boolean) => {
+                          updateAnx1Auth(data.id, checked);
                         }}
                         checked={data.isAuthorisedSignatory}
                       />
@@ -166,14 +166,14 @@ const Dvat2Page = () => {
                 ) {
                   router.push(
                     `/dashboard/new-registration/${encryptURLData(
-                      dvat04id.toString()
-                    )}/anx1`
+                      dvat04id.toString(),
+                    )}/anx1`,
                   );
                 } else {
                   router.push(
                     `/dashboard/new-registration/${encryptURLData(
-                      dvat04id.toString()
-                    )}/anx2`
+                      dvat04id.toString(),
+                    )}/anx2`,
                   );
                 }
               }}

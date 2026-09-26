@@ -71,8 +71,12 @@ const TrackAppliation = () => {
     setSeachOption(e.target.value);
   };
 
-  const [selectedCommodity, setSelectedCommodity] = useState<string | null>(null);
-  const [selectedFrequency, setSelectedFrequency] = useState<string | null>(null);
+  const [selectedCommodity, setSelectedCommodity] = useState<string | null>(
+    null,
+  );
+  const [selectedFrequency, setSelectedFrequency] = useState<string | null>(
+    null,
+  );
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedSale, setSelectedSale] = useState<string | null>(null);
   const [selectedPurchase, setSelectedPurchase] = useState<string | null>(null);
@@ -272,7 +276,7 @@ const TrackAppliation = () => {
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
       const office = selectedOffice === "ALL" ? undefined : selectedOffice;
-      
+
       // Load paginated data for table
       const payment_data = await DefaulterAnalysis({
         dept: office,
@@ -316,7 +320,7 @@ const TrackAppliation = () => {
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
         setSelectedOffice(userrespone.data.selectOffice!);
-        
+
         // Load paginated data for table
         const payment_data = await DefaulterAnalysis({
           dept: userrespone.data.selectOffice!,
@@ -355,7 +359,7 @@ const TrackAppliation = () => {
 
       setLoading(true);
       const office = selectedOffice === "ALL" ? undefined : selectedOffice;
-      
+
       // Load paginated data for table
       const payment_data = await DefaulterAnalysis({
         dept: office,
@@ -381,7 +385,7 @@ const TrackAppliation = () => {
       if (all_data.status && all_data.data) {
         setAllData(all_data.data);
       }
-      
+
       setLoading(false);
     };
 
@@ -446,7 +450,7 @@ const TrackAppliation = () => {
       return toast.error("Enter arn number");
     }
     const office = selectedOffice === "ALL" ? undefined : selectedOffice;
-    
+
     // Load paginated data for table
     const search_response = await DefaulterAnalysis({
       dept: office,
@@ -485,7 +489,7 @@ const TrackAppliation = () => {
       return toast.error("Enter TIN Number");
     }
     const office = selectedOffice === "ALL" ? undefined : selectedOffice;
-    
+
     // Load paginated data for table
     const search_response = await DefaulterAnalysis({
       dept: office,
@@ -538,7 +542,13 @@ const TrackAppliation = () => {
     setSearch(false);
 
     // If there are active filters, keep searching with filters only
-    if (selectedType || selectedCommodity || selectedFrequency || selectedSale || selectedPurchase) {
+    if (
+      selectedType ||
+      selectedCommodity ||
+      selectedFrequency ||
+      selectedSale ||
+      selectedPurchase
+    ) {
       await handleFilterChange(
         selectedType,
         selectedCommodity,
@@ -787,46 +797,51 @@ const TrackAppliation = () => {
         </div>
 
         {/* Office Filter */}
-        {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
-          <div className="bg-white p-4 shadow rounded-lg mb-6">
-            <div className="flex items-center gap-4">
-              <label className="font-semibold text-gray-700">
-                Filter by Office:
-              </label>
-              <Select
-                value={selectedOffice}
-                onChange={(value) => {
-                  setSelectedOffice(value);
-                  setSearch(false);
-                  setPaginatin({
-                    take: 10,
-                    skip: 0,
-                    total: 0,
-                  });
-                }}
-                style={{ width: 250 }}
-                disabled={isSearch}
-              >
-                <Select.Option value="ALL">All Offices</Select.Option>
-                <Select.Option value={SelectOffice.DAMAN}>DAMAN</Select.Option>
-                <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
-                <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>
-                  DNH (Dadra & Nagar Haveli)
-                </Select.Option>
-              </Select>
-              {selectedOffice !== "ALL" && (
-                <span className="text-sm text-gray-600">
-                  Showing data for:{" "}
-                  <span className="font-semibold">
-                    {selectedOffice === SelectOffice.Dadra_Nagar_Haveli
-                      ? "DNH"
-                      : selectedOffice}
+        {user &&
+          !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+            user.role,
+          ) && (
+            <div className="bg-white p-4 shadow rounded-lg mb-6">
+              <div className="flex items-center gap-4">
+                <label className="font-semibold text-gray-700">
+                  Filter by Office:
+                </label>
+                <Select
+                  value={selectedOffice}
+                  onChange={(value) => {
+                    setSelectedOffice(value);
+                    setSearch(false);
+                    setPaginatin({
+                      take: 10,
+                      skip: 0,
+                      total: 0,
+                    });
+                  }}
+                  style={{ width: 250 }}
+                  disabled={isSearch}
+                >
+                  <Select.Option value="ALL">All Offices</Select.Option>
+                  <Select.Option value={SelectOffice.DAMAN}>
+                    DAMAN
+                  </Select.Option>
+                  <Select.Option value={SelectOffice.DIU}>DIU</Select.Option>
+                  <Select.Option value={SelectOffice.Dadra_Nagar_Haveli}>
+                    DNH (Dadra & Nagar Haveli)
+                  </Select.Option>
+                </Select>
+                {selectedOffice !== "ALL" && (
+                  <span className="text-sm text-gray-600">
+                    Showing data for:{" "}
+                    <span className="font-semibold">
+                      {selectedOffice === SelectOffice.Dadra_Nagar_Haveli
+                        ? "DNH"
+                        : selectedOffice}
+                    </span>
                   </span>
-                </span>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
@@ -898,14 +913,14 @@ const TrackAppliation = () => {
         </div>
 
         {/* Additional Chart */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        {/* <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">
             Dealers by Pending Returns Range
           </h2>
           <div className="h-80 flex items-center justify-center">
             <Pie data={pieChartData} options={pieOptions} />
           </div>
-        </div>
+        </div> */}
 
         {/* Search and Filter Section */}
         <div className="bg-white p-4 shadow rounded-lg mb-4">
@@ -913,22 +928,26 @@ const TrackAppliation = () => {
             <p className="font-semibold">Search & Filter Dealers</p>
           </div>
 
-          <div className="flex flex-col md:flex-row lg:gap-4 lg:items-center">
-            <Radio.Group
-              onChange={onChange}
-              value={searchOption}
-              disabled={isSearch}
-            >
-              <Radio value={SearchOption.TIN}>TIN</Radio>
-              <Radio value={SearchOption.NAME}>Trade Name</Radio>
-            </Radio.Group>
-            <div className="h-2"></div>
+          <div className="flex flex-col md:flex-row lg:gap-2 lg:items-center">
+            <div>
+              <Radio.Group
+                size="small"
+                onChange={onChange}
+                value={searchOption}
+                disabled={isSearch}
+              >
+                <Radio value={SearchOption.TIN}>TIN</Radio>
+                <Radio value={SearchOption.NAME}>Trade Name</Radio>
+              </Radio.Group>
+            </div>
+            {/* <div className="h-2"></div> */}
             {(() => {
               switch (searchOption) {
                 case SearchOption.TIN:
                   return (
                     <div className="flex gap-2">
                       <Input
+                        size="small"
                         className="w-60"
                         ref={arnRef}
                         placeholder={"Enter TIN"}
@@ -936,11 +955,11 @@ const TrackAppliation = () => {
                       />
 
                       {isSearch ? (
-                        <Button onClick={init} type="primary">
+                        <Button onClick={init} type="primary" size="small">
                           Reset
                         </Button>
                       ) : (
-                        <Button onClick={arnsearch} type="primary">
+                        <Button onClick={arnsearch} type="primary" size="small">
                           Search
                         </Button>
                       )}
@@ -951,6 +970,7 @@ const TrackAppliation = () => {
                   return (
                     <div className="flex gap-2">
                       <Input
+                        size="small"
                         className="w-60"
                         ref={nameRef}
                         placeholder={"Enter Trade Name"}
@@ -958,11 +978,15 @@ const TrackAppliation = () => {
                       />
 
                       {isSearch ? (
-                        <Button onClick={init} type="primary">
+                        <Button onClick={init} type="primary" size="small">
                           Reset
                         </Button>
                       ) : (
-                        <Button onClick={namesearch} type="primary">
+                        <Button
+                          onClick={namesearch}
+                          type="primary"
+                          size="small"
+                        >
                           Search
                         </Button>
                       )}
@@ -973,9 +997,10 @@ const TrackAppliation = () => {
                   return null;
               }
             })()}
+            <div className="grow"></div>
 
             {/* Type, Commodity, Frequency, Sale, and Purchase Filters */}
-            <div className="flex gap-4 items-end flex-wrap">
+            <div className="flex gap-2 items-end flex-wrap">
               <div className="flex flex-col gap-1 min-w-40">
                 <label className="text-xs font-medium text-gray-700">
                   Type:
