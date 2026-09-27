@@ -12,14 +12,13 @@ import { user } from "@prisma/client";
 import GetUser from "@/action/user/getuser";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
-import ServerTime from "@/action/servertime";
 
 ChartJS.register(...registerables);
 
 const TopRevenueDealersReport = () => {
   const router = useRouter();
   const [user, setUser] = useState<user | null>(null);
-  
+
   interface DealerRevenueData {
     id: number;
     tinNumber: string;
@@ -42,14 +41,15 @@ const TopRevenueDealersReport = () => {
   const [commoditydata, setCommoditydata] = useState<
     "FUEL" | "LIQUOR" | undefined
   >(undefined);
-  const [selectedYear, setSelectedYear] = useState<string>(
-    (ServerTime().data as Date).getFullYear().toString(),
-  );
+  // Year, Month, Quarter filters
+  const [selectedYear, setSelectedYear] = useState<string>("2026");
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [selectedQuarter, setSelectedQuarter] = useState<string>("");
 
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      
+
       // Fetch authenticated user
       const authResponse = await getAuthenticatedUserId();
       if (!authResponse.status || !authResponse.data) {
@@ -57,20 +57,37 @@ const TopRevenueDealersReport = () => {
         router.push("/");
         return;
       }
-      
+
       const userResponse = await GetUser({ id: authResponse.data });
       if (userResponse.status && userResponse.data) {
         setUser(userResponse.data);
-        
+
         // Set office filter based on role
-        const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userResponse.data.role)
+        const filterOffice = [
+          "VATOFFICER",
+          "DY_COMMISSIONER",
+          "JOINT_COMMISSIONER",
+        ].includes(userResponse.data.role)
           ? (userResponse.data.selectOffice ?? undefined)
           : city;
-        
+
+        // Determine which month to use: selectedMonth > quarter mapping > empty
+        let monthToUse = selectedMonth;
+        if (!monthToUse && selectedQuarter) {
+          const quarterMonthMap: Record<string, string> = {
+            Q1: "04",
+            Q2: "07",
+            Q3: "10",
+            Q4: "01",
+          };
+          monthToUse = quarterMonthMap[selectedQuarter];
+        }
+
         const response = await TopRevenueDealers({
           selectOffice: filterOffice,
           selectCommodity: commoditydata,
           year: selectedYear,
+          month: monthToUse,
           limit: 10,
         });
         if (response.status && response.data) {
@@ -83,7 +100,7 @@ const TopRevenueDealersReport = () => {
       setLoading(false);
     };
     init();
-  }, [city, commoditydata, selectedYear]);
+  }, [city, commoditydata, selectedYear, selectedMonth, selectedQuarter]);
 
   const exportToExcel = () => {
     if (!reportData || reportData.length === 0) return;
@@ -92,7 +109,7 @@ const TopRevenueDealersReport = () => {
       [
         "Top 10 Highest Revenue-Contributing Dealers",
         "",
-        `Year: ${selectedYear}`,
+        `Period: ${selectedMonth}/${selectedYear}`,
       ],
       [""],
       [
@@ -127,7 +144,7 @@ const TopRevenueDealersReport = () => {
     const ws = XLSX.utils.aoa_to_sheet(worksheetData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Top Revenue Dealers");
-    XLSX.writeFile(wb, `Top_Revenue_Dealers_${selectedYear}.xlsx`);
+    XLSX.writeFile(wb, `Top_Revenue_Dealers_${selectedYear}_${selectedMonth}.xlsx`);
     toast.success("Report exported successfully!");
   };
 
@@ -218,12 +235,148 @@ const TopRevenueDealersReport = () => {
     { label: "LIQUOR", value: "LIQUOR" },
   ];
 
-  // Generate year options (current year and 5 years back)
-  const currentYear = (ServerTime().data as Date).getFullYear();
-  const yearOptions = Array.from({ length: 6 }, (_, i) => ({
-    value: (currentYear - i).toString(),
-    label: (currentYear - i).toString(),
-  }));
+  // Generate year options
+  const generateYearOptions = () => {
+    const options: { value: string; label: string }[] = [];
+    for (let i = 2020; i <= 2026; i++) {
+      options.push({
+        value: i.toString(),
+        label: i.toString(),
+      });
+    }
+    return options;
+  };
+
+  // Generate month options
+  const generateMonthOptions = () => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const options: { value: string; label: string }[] = [];
+    for (let i = 1; i <= 12; i++) {
+      options.push({
+        value: String(i).padStart(2, "0"),
+        label: monthNames[i - 1],
+      });
+    }
+    return options;
+  };
+
+  // Generate quarter options
+  const generateQuarterOptions = () => {
+    return [
+      { value: "Q1", label: "Q1 (Apr-Jun)" },
+      { value: "Q2", label: "Q2 (Jul-Sep)" },
+      { value: "Q3", label: "Q3 (Oct-Dec)" },
+      { value: "Q4", label: "Q4 (Jan-Mar)" },
+    ];
+  };
+
+  // Handle quarter change - updates month and clears month selection
+  const handleQuarterChange = (quarter: string) => {
+    setSelectedQuarter(quarter);
+    // Clear month when quarter is selected
+    if (quarter) {
+      setSelectedMonth("");
+    }
+  };
+
+  // Handle month change - clears quarter selection
+  const handleMonthChange = (month: string) => {
+    setSelectedMonth(month);
+    // Clear quarter when month is selected
+    if (month) {
+      setSelectedQuarter("");
+    }
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedMonth("");
+    setSelectedQuarter("");
+  };
+
+  // Generate financial year label from selected year and month
+  const getFinancialYearLabel = () => {
+    const monthNum = parseInt(selectedMonth);
+    if (monthNum >= 4) {
+      const nextYear = parseInt(selectedYear) + 1;
+      return `FY ${selectedYear}-${String(nextYear).slice(-2)}`;
+    } else {
+      const prevYear = parseInt(selectedYear) - 1;
+      return `FY ${prevYear}-${String(selectedYear).slice(-2)}`;
+    }
+  };
+
+  // Generate financial year month options (April to March)
+  const generateFinancialYearMonths = () => {
+    const options: { value: string; label: string }[] = [];
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    // Generate months for current and previous 5 financial years
+    // Financial year: April (month 4) to March (month 3)
+    for (let fy = 0; fy < 6; fy++) {
+      const fyStartYear = 2026 - fy;
+
+      // Add months April to March for this financial year
+      for (let month = 4; month <= 12; month++) {
+        const value = `${fyStartYear}-${String(month).padStart(2, "0")}`;
+        const label = `${monthNames[month - 1]} ${fyStartYear}`;
+        options.push({ value, label });
+      }
+
+      for (let month = 1; month <= 3; month++) {
+        const fyEndYear = fyStartYear + 1;
+        const value = `${fyEndYear}-${String(month).padStart(2, "0")}`;
+        const label = `${monthNames[month - 1]} ${fyEndYear}`;
+        options.push({ value, label });
+      }
+    }
+
+    return options;
+  };
+
+  // Generate financial year options (e.g., 2026-27, 2025-26)
+  const generateFinancialYearOptions = () => {
+    const options: { value: string; label: string }[] = [];
+    for (let i = 0; i < 6; i++) {
+      const startYear = 2026 - i;
+      const endYear = startYear + 1;
+      options.push({
+        value: `${startYear}-${String(endYear).slice(-2)}`,
+        label: `FY ${startYear}-${String(endYear).slice(-2)}`,
+      });
+    }
+    return options;
+  };
+
+  const quarterOptions = generateQuarterOptions();
+  const yearOptions = generateYearOptions();
+  const monthOptions = generateMonthOptions();
 
   const getCommodityColor = (commodity: string) => {
     switch (commodity) {
@@ -248,7 +401,8 @@ const TopRevenueDealersReport = () => {
       <div className="flex flex-col lg:flex-row gap-2">
         <div className="grow">
           <h1 className="text-2xl font-semibold">
-            Top 10 Highest Revenue-Contributing Dealers
+            Top 10 Highest Revenue-Contributing Dealers -{" "}
+            {getFinancialYearLabel()}
           </h1>
           <p className="text-sm text-gray-600">
             View highest revenue contributing dealers per district and category
@@ -266,7 +420,7 @@ const TopRevenueDealersReport = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm mt-4 p-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center">
+        <div className="flex flex-col md:flex-row gap-4 items-center flex-wrap">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Year</label>
             <Select
@@ -276,20 +430,51 @@ const TopRevenueDealersReport = () => {
               style={{ width: 120 }}
             />
           </div>
-          {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">
-                District
-              </label>
-              <Radio.Group
-                options={citys}
-                onChange={onCityChange}
-                value={city}
-                optionType="button"
-                buttonStyle="solid"
-              />
-            </div>
-          )}
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Quarter (Optional)</label>
+            <Select
+              value={selectedQuarter}
+              onChange={handleQuarterChange}
+              options={quarterOptions}
+              placeholder="Select quarter..."
+              allowClear
+              style={{ width: 140 }}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Month (Optional)</label>
+            <Select
+              value={selectedMonth}
+              onChange={handleMonthChange}
+              options={monthOptions}
+              placeholder="Select month..."
+              allowClear
+              style={{ width: 150 }}
+            />
+          </div>
+          <button
+            onClick={clearFilters}
+            className="mt-6 px-4 py-2 text-sm bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+          >
+            Clear Filters
+          </button>
+          {user &&
+            !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+              user.role,
+            ) && (
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">
+                  District
+                </label>
+                <Radio.Group
+                  options={citys}
+                  onChange={onCityChange}
+                  value={city}
+                  optionType="button"
+                  buttonStyle="solid"
+                />
+              </div>
+            )}
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">
               Commodity

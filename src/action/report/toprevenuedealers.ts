@@ -8,6 +8,7 @@ interface TopRevenueDealersPayload {
   selectOffice?: "Dadra_Nagar_Haveli" | "DAMAN" | "DIU";
   selectCommodity?: "FUEL" | "LIQUOR";
   year?: string;
+  month?: string;
   limit?: number;
 }
 
@@ -46,7 +47,24 @@ const TopRevenueDealers = async (
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const selectedYear = payload.year || currentYear.toString();
+    const selectedMonth = payload.month;
     const limit = payload.limit || 10;
+    
+    // Map month number to month name for filtering
+    const monthNumberToName: { [key: string]: string } = {
+      "01": "January",
+      "02": "February",
+      "03": "March",
+      "04": "April",
+      "05": "May",
+      "06": "June",
+      "07": "July",
+      "08": "August",
+      "09": "September",
+      "10": "October",
+      "11": "November",
+      "12": "December",
+    };
 
     // Build where clause for dvat04
     const dvatWhereClause: any = {
@@ -85,16 +103,26 @@ const TopRevenueDealers = async (
     const dealerRevenueList: DealerRevenueData[] = [];
 
     for (const dealer of dealers) {
-      // Get all returns for this dealer for the selected year
+      // Get all returns for this dealer for the selected year and month
+      const returnsWhereClause: any = {
+        dvat04Id: dealer.id,
+        status: "PAID",
+        file_status: "ACTIVE",
+        year: selectedYear,
+        deletedAt: null,
+        deletedById: null,
+      };
+      
+      // Add month filter if provided
+      if (selectedMonth) {
+        const monthName = monthNumberToName[selectedMonth];
+        if (monthName) {
+          returnsWhereClause.month = monthName;
+        }
+      }
+      
       const returns = await prisma.returns_01.findMany({
-        where: {
-          dvat04Id: dealer.id,
-          status: "PAID",
-          file_status: "ACTIVE",
-          year: selectedYear,
-          deletedAt: null,
-          deletedById: null,
-        },
+        where: returnsWhereClause,
         select: {
           vatamount: true,
         },

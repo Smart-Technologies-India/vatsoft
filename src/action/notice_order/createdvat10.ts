@@ -10,7 +10,6 @@ import dayjs from "dayjs";
 
 interface CreateDvat10Payload {
   dvatid: number;
-  createdby: number;
   remark?: string;
   tax_period_from: Date;
   tax_period_to: Date;
@@ -54,7 +53,7 @@ const CreateDvat10 = async (
         form_type: "DVAT10",
         issuedId: payload.issuedId,
         officerId: payload.officerId,
-        createdById: payload.createdby,
+        createdById: currentUserId,
         ...(payload.remark && { remark: payload.remark }),
       },
       include: {
@@ -107,8 +106,12 @@ const CreateDvat10 = async (
           `Dear ${dealerName}, Notice has been issued against your VAT account for ${noticePeriod}. Kindly check the VAT portal for details. -VAT DDD.`,
         );
         await fetch(
-          `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${mobile}&message=${smsMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`,
+          `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${mobile}&message=${smsMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1707174989483820875`,
         );
+        // const log = await fetch(
+        //   `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+919773356997&message=${smsMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1707174989483820875`,
+        // );
+        // console.log("SMS log:", log);
       }
     } catch (smsError) {
       console.log("SMS send failed:", smsError);

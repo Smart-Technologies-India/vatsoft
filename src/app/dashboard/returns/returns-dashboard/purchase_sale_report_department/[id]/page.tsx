@@ -233,6 +233,7 @@ const PurchaseSaleReportByIdPage = () => {
       sellerTin: item.seller_tin_number?.tin_number || "-",
       name: item.seller_tin_number?.name_of_dealer || "-",
       quantity: item.quantity ?? 0,
+      description_of_goods: item.description_of_goods || "-",
       taxPercent: item.tax_percent || "0",
       amount: parseFloat(item.amount || "0") || 0,
       vatAmount: parseFloat(item.vatamount || "0") || 0,
@@ -267,9 +268,15 @@ const PurchaseSaleReportByIdPage = () => {
       align: "center",
     },
     {
-      title: "Name",
+      title: "Seller Name",
       dataIndex: "name",
       key: "name",
+      align: "center",
+    },
+    {
+      title: "Name",
+      dataIndex: "description_of_goods",
+      key: "description_of_goods",
       align: "center",
     },
     {
@@ -581,21 +588,6 @@ const PurchaseSaleReportByIdPage = () => {
             />
           </Space>
         </div>
-
-        <div>
-          <p className="text-xs text-gray-600 mb-2">
-            Showing {filteredData.length} of {tableData.length} entries
-          </p>
-          <Table
-            columns={getTableColumns()}
-            dataSource={filteredData}
-            pagination={{ pageSize: 20 }}
-            size="small"
-            bordered
-            scroll={{ x: 1200 }}
-          />
-        </div>
-
         {summaryData.length > 0 && (
           <div>
             <h4 className="font-semibold text-sm mb-3">Tax Summary</h4>
@@ -642,6 +634,20 @@ const PurchaseSaleReportByIdPage = () => {
             />
           </div>
         )}
+
+        <div>
+          <p className="text-xs text-gray-600 mb-2">
+            Showing {filteredData.length} of {tableData.length} entries
+          </p>
+          <Table
+            columns={getTableColumns()}
+            dataSource={filteredData}
+            pagination={{ pageSize: 20 }}
+            size="small"
+            bordered
+            scroll={{ x: 1200 }}
+          />
+        </div>
       </div>
     );
   };

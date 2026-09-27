@@ -7,6 +7,7 @@ import prisma from "../../../prisma/database";
 
 export interface ReturnEntryWithRelations {
   id: number;
+  returns_01Id: number;
   urn_number: string;
   invoice_number: string;
   invoice_date: Date;
@@ -27,6 +28,17 @@ export interface ReturnEntryWithRelations {
     id: number;
     tinNumber: string | null;
     tradename: string | null;
+  };
+  returns_01: {
+    id: number;
+    month: string | null;
+    year: string | null;
+    return_type: string | null;
+    dvat04: {
+      id: number;
+      tinNumber: string | null;
+      tradename: string | null;
+    };
   };
 }
 
@@ -89,22 +101,31 @@ const GetReturnEntryByType = async (): Promise<
 
     // Transform and group data
     const transformedEntries: ReturnEntryWithRelations[] = allReturnEntries.map(
-      (entry) => ({
-        id: entry.id,
-        urn_number: entry.urn_number,
-        invoice_number: entry.invoice_number,
-        invoice_date: entry.invoice_date,
-        total_invoice_number: entry.total_invoice_number,
-        amount: entry.amount,
-        vatamount: entry.vatamount,
-        tax_percent: entry.tax_percent,
-        quantity: entry.quantity,
-        description_of_goods: entry.description_of_goods,
-        remarks: entry.remarks,
-        purchase_type: entry.purchase_type,
-        seller_tin_number: entry.seller_tin_number,
-        dvat: entry.returns_01.dvat04,
-      } as ReturnEntryWithRelations),
+      (entry) =>
+        ({
+          id: entry.id,
+          returns_01Id: entry.returns_01Id,
+          urn_number: entry.urn_number,
+          invoice_number: entry.invoice_number,
+          invoice_date: entry.invoice_date,
+          total_invoice_number: entry.total_invoice_number,
+          amount: entry.amount,
+          vatamount: entry.vatamount,
+          tax_percent: entry.tax_percent,
+          quantity: entry.quantity,
+          description_of_goods: entry.description_of_goods,
+          remarks: entry.remarks,
+          purchase_type: entry.purchase_type,
+          seller_tin_number: entry.seller_tin_number,
+          dvat: entry.returns_01.dvat04,
+          returns_01: {
+            id: entry.returns_01.id,
+            month: entry.returns_01.month,
+            year: entry.returns_01.year,
+            return_type: entry.returns_01.return_type,
+            dvat04: entry.returns_01.dvat04,
+          },
+        }) as ReturnEntryWithRelations,
     );
 
     // Group by purchase type

@@ -193,7 +193,7 @@ const ReportsPage = () => {
         </div>
       </div>
       <hr className="my-4" />
-      <h1>C. C-Form Reports</h1>
+      <h1>C. CST-Form Reports</h1>
       <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
@@ -210,7 +210,7 @@ const ReportsPage = () => {
             View Report
           </button>
         </div>
-        <div className="p-2 rounded shadow bg-white relative pb-8">
+        {/* <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
             C-Form Distribution by Commodity - Analyze C-Form issuance across
             different commodity types (Fuel, Liquor, etc.)
@@ -220,6 +220,18 @@ const ReportsPage = () => {
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
               router.push("/dashboard/reports/cform_reports");
+            }}
+          >
+            View Report
+          </button>
+        </div> */}
+        <div className="p-2 rounded shadow bg-white relative pb-8">
+          <p className="text-sm">C,H,F,I Forms</p>
+
+          <button
+            className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
+            onClick={() => {
+              router.push("/dashboard/reports/chfi_details");
             }}
           >
             View Report

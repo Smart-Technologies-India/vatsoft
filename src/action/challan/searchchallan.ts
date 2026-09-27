@@ -40,8 +40,6 @@ const paymentStatuses: PaymentStatus[] = [
 interface SearchChallanPayload {
   dvatid?: number;
   cpin?: string;
-  fromdate?: Date;
-  todate?: Date;
   transactionFromDate?: Date;
   transactionToDate?: Date;
   dept?: SelectOffice;
@@ -137,13 +135,12 @@ const buildWhere = (payload: SearchChallanPayload) => {
     ...(payload.dvatid && { dvatid: payload.dvatid }),
     ...(payload.cpin && { cpin: payload.cpin }),
     ...(payload.paymentstatus && { paymentstatus: payload.paymentstatus }),
-    ...(payload.fromdate &&
-      payload.todate && {
-        createdAt: { gte: payload.fromdate, lte: payload.todate },
-      }),
     ...(payload.transactionFromDate &&
       payload.transactionToDate && {
-        transaction_date: { gte: payload.transactionFromDate, lte: payload.transactionToDate },
+        transaction_date: {
+          gte: payload.transactionFromDate,
+          lte: payload.transactionToDate,
+        },
       }),
     ...(andConditions.length > 0 && { AND: andConditions }),
   };
@@ -167,7 +164,7 @@ const SearchChallan = async (
     }
 
     const where = buildWhere(payload);
-  
+
     const [challan, totalCount] = await Promise.all([
       prisma.challan.findMany({
         where,
@@ -180,8 +177,6 @@ const SearchChallan = async (
       }),
       prisma.challan.count({ where }),
     ]);
-
-
 
     return createPaginationResponse({
       message: challan ? "Challan Get successfully" : "Unable to get challan.",

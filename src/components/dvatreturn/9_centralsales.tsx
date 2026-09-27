@@ -25,14 +25,6 @@ const CentralSales = (props: CentralSalesProps) => {
     parseFloat(props.lastMonthCash),
     props.isComp,
   );
-  const thebalance = new TheBalance(
-    props.returnsentrys,
-    props.paidChallans,
-    props.return01,
-    parseFloat(props.lastMonthDue),
-    parseFloat(props.lastMonthCash),
-    props.isComp,
-  );
 
   return (
     <table
@@ -127,7 +119,6 @@ const CentralSales = (props: CentralSalesProps) => {
             Balance turnover of Inter State Sales and Sales within the State
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-           
             {centralSales.balance_turnover()}
           </td>
         </tr>
@@ -140,7 +131,6 @@ const CentralSales = (props: CentralSalesProps) => {
             Deduct turnover Sales within the State
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-           
             {centralSales.deduct_turnover()}
           </td>
         </tr>
@@ -155,7 +145,6 @@ const CentralSales = (props: CentralSalesProps) => {
             Balance-/turnover of Inter-State Sales
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-           
             {centralSales.balance_turnover_of_inter_State()}
           </td>
         </tr>
@@ -579,11 +568,9 @@ const CentralSales = (props: CentralSalesProps) => {
             Total
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-           
             {centralSales.total_increase()}
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-            
             {centralSales.total_decrease()}
           </td>
         </tr>
@@ -594,7 +581,6 @@ const CentralSales = (props: CentralSalesProps) => {
           </td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]"></td>
           <td className="border border-black px-2 leading-4 text-[0.6rem]">
-           
             {centralSales.adjusted_vat()}
           </td>
         </tr>

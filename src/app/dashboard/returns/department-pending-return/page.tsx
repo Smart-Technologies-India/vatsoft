@@ -9,13 +9,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
-import { Radio, Button, Input, Pagination, Alert, Drawer, Select } from "antd";
+import { Radio, Button, Input, Pagination, Alert, Drawer, Select, Modal } from "antd";
 import { useEffect, useRef, useState } from "react";
 
 import type { Dayjs } from "dayjs";
 
 import { dvat04, user } from "@prisma/client";
 import DeptPendingReturn from "@/action/dvat/deptpendingreturn";
+import CreateDvat10 from "@/action/notice_order/createdvat10";
+import GetReturnMonth from "@/action/dvat/getreturnmonth";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import GetUser from "@/action/user/getuser";
@@ -153,6 +155,23 @@ const TrackAppliation = () => {
   };
 
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
+  const [noticeLoading, setNoticeLoading] = useState<number | null>(null);
+  
+  // Modal state for period selection
+  const [noticeModalOpen, setNoticeModalOpen] = useState<boolean>(false);
+  const [selectedDvatForNotice, setSelectedDvatForNotice] = useState<{
+    dvat: dvat04;
+    dvatId: number;
+  } | null>(null);
+  const [availablePendingPeriods, setAvailablePendingPeriods] = useState<
+    Array<{ month: string; year: string }>
+  >([]);
+  const [selectedNoticeMonth, setSelectedNoticeMonth] = useState<string | null>(
+    null
+  );
+  const [selectedNoticeYear, setSelectedNoticeYear] = useState<string | null>(
+    null
+  );
 
   const [user, setUpser] = useState<user>();
 
@@ -489,6 +508,96 @@ const TrackAppliation = () => {
       toast.dismiss();
       toast.error("Error downloading file");
       console.error("Download error:", error);
+    }
+  };
+
+  const handleCreateNotice = async (dvat: dvat04, dvatId: number) => {
+    try {
+      // Fetch pending periods for this dealer
+      const response = await GetReturnMonth({ dvatid: dvatId });
+      
+      if (!response.status || !response.data) {
+        toast.error("No return periods found for this dealer");
+        return;
+      }
+
+      // Get current date to filter for pending/overdue periods
+      const currentDate = new Date();
+      const pendingPeriods: Array<{ month: string; year: string }> = [];
+
+      response.data.forEach((filing) => {
+        const dueDate = filing.due_date ? new Date(filing.due_date) : null;
+        
+        // Include periods that are overdue and not yet filed
+        if (!filing.filing_status && dueDate && dueDate < currentDate) {
+          pendingPeriods.push({
+            month: filing.month,
+            year: filing.year,
+          });
+        }
+      });
+
+      if (pendingPeriods.length === 0) {
+        toast.error("No pending periods found for this dealer");
+        return;
+      }
+
+      // Open modal with available periods
+      setSelectedDvatForNotice({ dvat, dvatId });
+      setAvailablePendingPeriods(pendingPeriods);
+      setSelectedNoticeMonth(null);
+      setSelectedNoticeYear(null);
+      setNoticeModalOpen(true);
+    } catch (error) {
+      toast.error("Error fetching pending periods");
+      console.error("Error:", error);
+    }
+  };
+
+  const handleCreateNoticeSubmit = async () => {
+    try {
+      if (!selectedDvatForNotice || !selectedNoticeMonth || !selectedNoticeYear) {
+        toast.error("Please select a period");
+        return;
+      }
+
+      if (!user) return toast.error("User not found. Please login again.");
+      if (!userid) return toast.error("User ID not found.");
+
+      setNoticeLoading(selectedDvatForNotice.dvatId);
+      toast.loading("Creating notice...");
+
+      // Get the month index for date calculation
+      const monthIndex = monthNames.indexOf(selectedNoticeMonth);
+      const year = parseInt(selectedNoticeYear);
+      
+      // Calculate tax period from and to dates based on selected month
+      const taxPeriodFrom = new Date(year, monthIndex, 1);
+      const taxPeriodTo = new Date(year, monthIndex + 1, 0);
+      const dueDate = new Date(new Date().getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+
+      const response = await CreateDvat10({
+        dvatid: selectedDvatForNotice.dvatId,
+        tax_period_from: taxPeriodFrom,
+        tax_period_to: taxPeriodTo,
+        due_date: dueDate,
+        issuedId: userid,
+        officerId: userid,
+      });
+
+      toast.dismiss();
+      if (response.status) {
+        toast.success("Notice created and sent successfully!");
+        setNoticeModalOpen(false);
+      } else {
+        toast.error(response.message || "Failed to create notice");
+      }
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Error creating notice");
+      console.error("Notice creation error:", error);
+    } finally {
+      setNoticeLoading(null);
     }
   };
 
@@ -994,6 +1103,9 @@ const TrackAppliation = () => {
                       Notice
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center border p-2">
+                      Create Notice
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center border p-2">
                       View
                     </TableHead>
                   </TableRow>
@@ -1031,6 +1143,16 @@ const TrackAppliation = () => {
                           >
                             {val.notice}
                           </Link>
+                        </TableCell>
+                        <TableCell className="border text-center p-2">
+                          <Button
+                            type="dashed"
+                            onClick={() => handleCreateNotice(val.dvat04, val.dvat04.id)}
+                            loading={noticeLoading === val.dvat04.id}
+                            disabled={noticeLoading !== null && noticeLoading !== val.dvat04.id}
+                          >
+                            Generate
+                          </Button>
                         </TableCell>
                         <TableCell className="border text-center p-2">
                           <Button
@@ -1081,6 +1203,81 @@ const TrackAppliation = () => {
           )}
         </div>
       </div>
+
+      {/* Period Selection Modal */}
+      <Modal
+        title="Select Period for Notice"
+        open={noticeModalOpen}
+        onOk={handleCreateNoticeSubmit}
+        onCancel={() => setNoticeModalOpen(false)}
+        okText="Create & Send Notice"
+        cancelText="Cancel"
+        okButtonProps={{
+          loading: noticeLoading !== null,
+          disabled: !selectedNoticeMonth || !selectedNoticeYear,
+        }}
+      >
+        {selectedDvatForNotice && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-semibold mb-2">
+                Dealer: {selectedDvatForNotice.dvat.tradename}
+              </h3>
+              <p className="text-sm text-gray-600">
+                TIN: {selectedDvatForNotice.dvat.tinNumber}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Select Year
+              </label>
+              <Select
+                placeholder="Select Year"
+                value={selectedNoticeYear}
+                onChange={(value) => setSelectedNoticeYear(value)}
+                options={[
+                  ...new Set(availablePendingPeriods.map((p) => p.year)),
+                ].map((year) => ({
+                  label: year,
+                  value: year,
+                }))}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Select Month
+              </label>
+              <Select
+                placeholder="Select Month"
+                value={selectedNoticeMonth}
+                onChange={(value) => setSelectedNoticeMonth(value)}
+                options={availablePendingPeriods
+                  .filter((p) => p.year === selectedNoticeYear)
+                  .map((p) => ({
+                    label: p.month,
+                    value: p.month,
+                  }))}
+                className="w-full"
+              />
+            </div>
+
+            {/* {selectedNoticeMonth && selectedNoticeYear && (
+              <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                <p className="text-sm text-gray-700">
+                  <strong>Notice will be created for:</strong>
+                  <br />
+                  Period: {selectedNoticeMonth} {selectedNoticeYear}
+                  <br />
+                  Due Date: 3 days from now
+                </p>
+              </div>
+            )} */}
+          </div>
+        )}
+      </Modal>
     </>
   );
 };

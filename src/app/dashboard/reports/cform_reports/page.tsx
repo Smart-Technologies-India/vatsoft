@@ -88,6 +88,7 @@ const CFormReportsPage = () => {
     sellerName: "",
     sellerTin: "",
     purchaserTin: "",
+    purchaserName: "",
   });
 
   // Initialize user and set default office
@@ -160,7 +161,10 @@ const CFormReportsPage = () => {
     const matchesPurchaserTin = (item.purchaserTin || "")
       .toLowerCase()
       .includes(filters.purchaserTin.toLowerCase());
-    return matchesSellerName && matchesSellerTin && matchesPurchaserTin;
+    const matchesPurchaserName = (item.purchaserName || "")
+      .toLowerCase()
+      .includes(filters.purchaserName.toLowerCase());
+    return matchesSellerName && matchesSellerTin && matchesPurchaserTin && matchesPurchaserName;
   });
 
   const exportToExcel = () => {
@@ -535,7 +539,7 @@ const CFormReportsPage = () => {
       {/* Filters and Export */}
       <div className="bg-white p-6 rounded-lg shadow mb-6">
         <h2 className="text-lg font-bold mb-4">Filters & Export</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Input
             placeholder="Filter by Seller Name"
             value={filters.sellerName}
@@ -550,6 +554,11 @@ const CFormReportsPage = () => {
             placeholder="Filter by Purchaser TIN"
             value={filters.purchaserTin}
             onChange={(e) => handleFilterChange("purchaserTin", e.target.value)}
+          />
+          <Input
+            placeholder="Filter by Purchaser Name"
+            value={filters.purchaserName}
+            onChange={(e) => handleFilterChange("purchaserName", e.target.value)}
           />
           <Button
             type="primary"

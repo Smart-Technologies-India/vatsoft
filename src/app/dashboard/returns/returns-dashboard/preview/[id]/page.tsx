@@ -66,7 +66,7 @@ const Dvat16ReturnPreview = () => {
   const [paymentSubmitBox, setPaymentSubmitBox] = useState<boolean>(false);
   const searchparam = useSearchParams();
   const [user, setUser] = useState<user | null>();
-  const [lateFees, setLateFees] = useState<number>(0);
+  // const [lateFees, setLateFees] = useState<number>(0);
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
   const [lastmonthcash, setLastMonthCash] = useState<string>("0");
 
@@ -107,79 +107,79 @@ const Dvat16ReturnPreview = () => {
     return year;
   };
 
-  const getLateFees = (
-    year: string,
-    month: string,
-    rr_number: string,
-    isComp: boolean = false,
-    filing_date: Date,
-  ) => {
-    const currentDate = ServerTime().data as Date;
+  // const getLateFees = (
+  //   year: string,
+  //   month: string,
+  //   rr_number: string,
+  //   isComp: boolean = false,
+  //   filing_date: Date,
+  // ) => {
+  //   const currentDate = ServerTime().data as Date;
 
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
+  //   const monthNames = [
+  //     "January",
+  //     "February",
+  //     "March",
+  //     "April",
+  //     "May",
+  //     "June",
+  //     "July",
+  //     "August",
+  //     "September",
+  //     "October",
+  //     "November",
+  //     "December",
+  //   ];
 
-    let monthIndex = monthNames.indexOf(month);
-    let newYear = parseInt(year);
+  //   let monthIndex = monthNames.indexOf(month);
+  //   let newYear = parseInt(year);
 
-    if (isComp) {
-      if (["January", "February", "March"].includes(month)) {
-        monthIndex = 3;
-      } else if (["April", "May", "June"].includes(month)) {
-        monthIndex = 6;
-      } else if (["July", "August", "September"].includes(month)) {
-        monthIndex = 9;
-      } else {
-        monthIndex = 0;
-        newYear += 1;
-      }
-    } else {
-      if (monthIndex === 11) {
-        newYear += 1;
-        monthIndex = 0;
-      } else {
-        monthIndex += 1;
-      }
-    }
+  //   if (isComp) {
+  //     if (["January", "February", "March"].includes(month)) {
+  //       monthIndex = 3;
+  //     } else if (["April", "May", "June"].includes(month)) {
+  //       monthIndex = 6;
+  //     } else if (["July", "August", "September"].includes(month)) {
+  //       monthIndex = 9;
+  //     } else {
+  //       monthIndex = 0;
+  //       newYear += 1;
+  //     }
+  //   } else {
+  //     if (monthIndex === 11) {
+  //       newYear += 1;
+  //       monthIndex = 0;
+  //     } else {
+  //       monthIndex += 1;
+  //     }
+  //   }
 
-    const idiff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 16),
-      currentDate,
-    );
-    // setInterestDiffDays(idiff_days);
+  //   const idiff_days = getDaysBetweenDates(
+  //     new Date(newYear, monthIndex, 16),
+  //     currentDate,
+  //   );
+  //   setInterestDiffDays(idiff_days);
 
-    let pdiff_days = 0;
+  //   let pdiff_days = 0;
 
-    if (rr_number == null || rr_number == undefined || rr_number == "") {
-      pdiff_days = getDaysBetweenDates(
-        new Date(newYear, monthIndex, 29),
-        currentDate,
-      );
+  //   if (rr_number == null || rr_number == undefined || rr_number == "") {
+  //     pdiff_days = getDaysBetweenDates(
+  //       new Date(newYear, monthIndex, 29),
+  //       currentDate,
+  //     );
 
-      // setPenaltyDiffDays(pdiff_days);
-      setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
-    } else {
-      pdiff_days = getDaysBetweenDates(
-        new Date(newYear, monthIndex, 29),
-        filing_date,
-      );
+  //     // setPenaltyDiffDays(pdiff_days);
+  //     setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
+  //   } else {
+  //     pdiff_days = getDaysBetweenDates(
+  //       new Date(newYear, monthIndex, 29),
+  //       filing_date,
+  //     );
 
-      // setPenaltyDiffDays(pdiff_days);
-      setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
-    }
-  };
+  //     // setPenaltyDiffDays(pdiff_days);
+  //     setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
+  //   }
+  // };
 
   useEffect(() => {
     const init = async () => {
@@ -287,36 +287,36 @@ const Dvat16ReturnPreview = () => {
         setQuarterlyReturns(allQuarterlyReturns);
         serReturns_entryData(mergedEntries);
 
-        const dvat_30: boolean =
-          mergedEntries.filter(
-            (val: returns_entry) =>
-              val.dvat_type == DvatType.DVAT_30 && val.isnil == true,
-          ).length > 0;
-        const dvat_30a: boolean =
-          mergedEntries.filter(
-            (val: returns_entry) =>
-              val.dvat_type == DvatType.DVAT_30_A && val.isnil == true,
-          ).length > 0;
-        const dvat_31: boolean =
-          mergedEntries.filter(
-            (val: returns_entry) =>
-              val.dvat_type == DvatType.DVAT_31 && val.isnil == true,
-          ).length > 0;
-        const dvat_31a: boolean =
-          mergedEntries.filter(
-            (val: returns_entry) =>
-              val.dvat_type == DvatType.DVAT_31_A && val.isnil == true,
-          ).length > 0;
+        // const dvat_30: boolean =
+        //   mergedEntries.filter(
+        //     (val: returns_entry) =>
+        //       val.dvat_type == DvatType.DVAT_30 && val.isnil == true,
+        //   ).length > 0;
+        // const dvat_30a: boolean =
+        //   mergedEntries.filter(
+        //     (val: returns_entry) =>
+        //       val.dvat_type == DvatType.DVAT_30_A && val.isnil == true,
+        //   ).length > 0;
+        // const dvat_31: boolean =
+        //   mergedEntries.filter(
+        //     (val: returns_entry) =>
+        //       val.dvat_type == DvatType.DVAT_31 && val.isnil == true,
+        //   ).length > 0;
+        // const dvat_31a: boolean =
+        //   mergedEntries.filter(
+        //     (val: returns_entry) =>
+        //       val.dvat_type == DvatType.DVAT_31_A && val.isnil == true,
+        //   ).length > 0;
 
         // setAllNil(dvat_30 && dvat_30a && dvat_31 && dvat_31a);
 
-        getLateFees(
-          selectedReturn.year,
-          selectedReturn.month ?? "",
-          selectedReturn.rr_number ?? "",
-          selectedReturn.dvat04?.frequencyFilings === "QUARTERLY",
-          new Date(selectedReturn.filing_datetime),
-        );
+        // getLateFees(
+        //   selectedReturn.year,
+        //   selectedReturn.month ?? "",
+        //   selectedReturn.rr_number ?? "",
+        //   selectedReturn.dvat04?.frequencyFilings === "QUARTERLY",
+        //   new Date(selectedReturn.filing_datetime),
+        // );
 
         const payment_response = await CheckPayment({
           id: selectedReturn.id,
@@ -356,17 +356,17 @@ const Dvat16ReturnPreview = () => {
     init();
   }, [searchparam]);
 
-  useEffect(() => {
-    if (return01 == null) return;
+  // useEffect(() => {
+  //   if (return01 == null) return;
 
-    getLateFees(
-      return01.year,
-      return01.month ?? "",
-      return01.rr_number ?? "",
-      return01.dvat04?.frequencyFilings === "QUARTERLY",
-      new Date(return01.filing_datetime),
-    );
-  }, [return01]);
+  //   getLateFees(
+  //     return01.year,
+  //     return01.month ?? "",
+  //     return01.rr_number ?? "",
+  //     return01.dvat04?.frequencyFilings === "QUARTERLY",
+  //     new Date(return01.filing_datetime),
+  //   );
+  // }, [return01]);
 
   const getTaxPeriod = (): string => {
     const year: string = searchparam.get("year") ?? "";

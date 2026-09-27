@@ -63,7 +63,7 @@ const sendReturnFiledSmsByIds = async ({ dvatId, returnId }) => {
   );
 
   await fetch(
-    `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${mobile}&message=${smsMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1707174989299822848`,
+    `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+91${mobile}&message=${smsMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1707174989452986435`,
   );
 
   return { sent: true, message: "SMS sent successfully." };

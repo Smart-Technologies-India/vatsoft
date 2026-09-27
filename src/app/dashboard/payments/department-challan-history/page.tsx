@@ -133,8 +133,8 @@ const ChallanHistory = () => {
       if (isMonthFiltered && searchDate) {
         // Fetch all month-filtered results
         response = await SearchChallan({
-          transactionFromDate: searchDate[0]?.toDate(),
-          transactionToDate: searchDate[1]?.toDate(),
+          transactionFromDate: searchDate[0]?.startOf("day").toDate(),
+          transactionToDate: searchDate[1]?.endOf("day").toDate(),
           dept: user?.selectOffice!,
           paymentstatus: "PAID",
           take: 10000,
@@ -161,8 +161,8 @@ const ChallanHistory = () => {
         } else if (searchOption === SearchOption.DATE) {
           if (searchDate) {
             response = await SearchChallan({
-              fromdate: searchDate[0]?.toDate(),
-              todate: searchDate[1]?.toDate(),
+              transactionFromDate: searchDate[0]?.startOf("day").toDate(),
+              transactionToDate: searchDate[1]?.endOf("day").toDate(),
               dept: user?.selectOffice!,
               paymentstatus: "PAID",
               take: 10000,
@@ -635,8 +635,8 @@ const ChallanHistory = () => {
     }
 
     const search_response = await SearchChallan({
-      fromdate: searchDate[0]?.toDate(),
-      todate: searchDate[1]?.toDate(),
+      transactionFromDate: searchDate[0]?.startOf("day").toDate(),
+      transactionToDate: searchDate[1]?.endOf("day").toDate(),
       dept: user?.selectOffice!,
       paymentstatus: "PAID",
       take: 10,
@@ -656,8 +656,8 @@ const ChallanHistory = () => {
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (isMonthFiltered && monthYearFilter && searchDate) {
       const search_response = await SearchChallan({
-        transactionFromDate: searchDate[0]?.toDate(),
-        transactionToDate: searchDate[1]?.toDate(),
+        transactionFromDate: searchDate[0]?.startOf("day").toDate(),
+        transactionToDate: searchDate[1]?.endOf("day").toDate(),
         dept: user?.selectOffice!,
         paymentstatus: "PAID",
         take: pagesize,
@@ -730,8 +730,8 @@ const ChallanHistory = () => {
         }
 
         const search_response = await SearchChallan({
-          fromdate: searchDate[0]?.toDate(),
-          todate: searchDate[1]?.toDate(),
+          transactionFromDate: searchDate[0]?.startOf("day").toDate(),
+          transactionToDate: searchDate[1]?.endOf("day").toDate(),
           dept: user?.selectOffice!,
           paymentstatus: "PAID",
           take: pagesize,
@@ -835,8 +835,10 @@ const ChallanHistory = () => {
                 if (monthYearFilter && searchDate) {
                   try {
                     const search_response = await SearchChallan({
-                      transactionFromDate: searchDate[0]?.toDate(),
-                      transactionToDate: searchDate[1]?.toDate(),
+                      transactionFromDate: searchDate[0]
+                        ?.startOf("day")
+                        .toDate(),
+                      transactionToDate: searchDate[1]?.endOf("day").toDate(),
                       dept: user?.selectOffice!,
                       paymentstatus: "PAID",
                       take: 10,
@@ -1009,8 +1011,18 @@ const ChallanHistory = () => {
                       Trade Name
                     </TableHead>
                     <TableHead className="whitespace-nowrap text-center w-36 px-2">
+                      Type
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center w-36 px-2">
+                      Commodity
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center w-36 px-2">
+                      Frequency
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap text-center w-36 px-2">
                       Return Period
                     </TableHead>
+
                     <TableHead className="whitespace-nowrap text-center px-2">
                       Payments
                     </TableHead>
@@ -1033,6 +1045,15 @@ const ChallanHistory = () => {
                       </TableCell>
                       <TableCell className="text-center p-2">
                         {group.dvat.tradename ?? "-"}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {group.dvat.compositionScheme ? "Comp" : "Reg"}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {group.dvat.commodity}
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {group.dvat.frequencyFilings}
                       </TableCell>
                       <TableCell className="text-center p-2">
                         {getReturnPeriodLabel(group)}

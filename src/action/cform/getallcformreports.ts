@@ -56,16 +56,14 @@ interface CFormReportResponse {
   functionname: string;
 }
 
-const GetAllCFormReports = async (
-  filters?: {
-    startDate?: Date;
-    endDate?: Date;
-    sellerTin?: string;
-    sellerName?: string;
-    cformType?: string;
-    office?: SelectOffice;
-  }
-): Promise<CFormReportResponse> => {
+const GetAllCFormReports = async (filters?: {
+  startDate?: Date;
+  endDate?: Date;
+  sellerTin?: string;
+  sellerName?: string;
+  cformType?: string;
+  office?: SelectOffice;
+}): Promise<CFormReportResponse> => {
   const functionname: string = GetAllCFormReports.name;
 
   try {
@@ -134,7 +132,7 @@ const GetAllCFormReports = async (
       toPeriod: form.to_period,
       cformType: form.cform_type,
       officeOfIssue: form.office_of_issue,
-      purchaserName: form.dvat04?.name ?? null,
+      purchaserName: form.dvat04?.tradename ?? null,
       purchaserTin: form.dvat04?.tinNumber ?? null,
       purchaserAddress: form.dvat04?.address ?? null,
       purchaserCommodity: form.dvat04?.commodity ?? null,
@@ -217,10 +215,7 @@ const GetAllCFormReports = async (
       .sort((a, b) => b.count - a.count);
 
     // Monthly trend
-    const monthlyMap = new Map<
-      string,
-      { count: number; amount: number }
-    >();
+    const monthlyMap = new Map<string, { count: number; amount: number }>();
     transformedData.forEach((item) => {
       const monthKey = new Date(item.dateOfIssue).toLocaleString("default", {
         month: "long",

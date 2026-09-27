@@ -7,7 +7,6 @@ import {
   encryptURLData,
   get28thDate,
 } from "@/utils/methods";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -20,7 +19,7 @@ import {
   MaterialSymbolsDoNotDisturbOnOutline,
 } from "@/components/icons";
 import { dvat04, return_filing, user } from "@prisma/client";
-import { Button, Popover } from "antd";
+import { Button, Popover, Select } from "antd";
 import GetDvat04 from "@/action/register/getdvat04";
 import GetPendingReturn from "@/action/dvat/getpendingreturn";
 import GetPendingChallan from "@/action/challan/getPendingChallan";
@@ -88,6 +87,8 @@ const ShopView = () => {
   const [taxLiability, setTaxLiability] = useState<number>(0);
 
   const [returndetails, setRetuirnsDetails] = useState<yearsDetails[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [filteredPendingCount, setFilteredPendingCount] = useState<number>(0);
 
   const monthNames = [
     "January",
@@ -103,6 +104,27 @@ const ShopView = () => {
     "November",
     "December",
   ];
+
+  // Calculate filtered pending count when month is selected
+  useEffect(() => {
+    if (!selectedMonth || !returndetails) {
+      setFilteredPendingCount(pendingreturn?.pending || 0);
+      return;
+    }
+
+    let pendingCount = 0;
+    for (const yearDetails of returndetails) {
+      for (const monthDetail of yearDetails.rentdetails) {
+        if (
+          monthDetail.name === selectedMonth &&
+          monthDetail.status === Status.PENDING
+        ) {
+          pendingCount++;
+        }
+      }
+    }
+    setFilteredPendingCount(pendingCount);
+  }, [selectedMonth, returndetails, pendingreturn]);
 
   const setRentMonthDetails = async (
     value: Array<return_filing & { dvat: dvat04 }>,
@@ -287,6 +309,20 @@ const ShopView = () => {
               onClick={() => {
                 if (!dvatData) return;
                 router.push(
+                  `/dashboard/returns/gross-details/${encryptURLData(
+                    dvatData?.id.toString(),
+                  )}`,
+                );
+              }}
+            >
+              GTO
+            </Button>
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => {
+                if (!dvatData) return;
+                router.push(
                   `/dashboard/returns/user-stock/${encryptURLData(
                     dvatData?.id.toString(),
                   )}`,
@@ -329,7 +365,9 @@ const ShopView = () => {
             <p className="text-xs text-gray-500 leading-4">
               Liquor/Fuel
               <br />
-              <span className="text-sm text-gray-900 font-medium">Liquor</span>
+              <span className="text-sm text-gray-900 font-medium">
+                {dvatData?.commodity}
+              </span>
             </p>
             <p className="text-xs text-gray-500 leading-4">
               Composition/Regular <br />
@@ -404,59 +442,86 @@ const ShopView = () => {
               </Button>
             )}
           </div>
-          <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* <p className="text-xs text-gray-500 leading-4">
-              VAT Liable Date <br />
-              <span className="text-sm text-gray-900 font-medium">
-                {formateDate(dvatData?.vatLiableDate!)}
-              </span>
-            </p> */}
+          <div className="px-4 py-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">
+                  Filter by Month
+                </label>
+                <Select
+                  placeholder="Select month..."
+                  allowClear
+                  value={selectedMonth}
+                  onChange={(value) => setSelectedMonth(value || "")}
+                  options={[
+                    { label: "All Months", value: "" },
+                    ...monthNames.map((month) => ({
+                      label: month,
+                      value: month,
+                    })),
+                  ]}
+                  className="w-full"
+                />
+              </div>
+            </div>
 
-            <p className="text-xs text-gray-500 leading-4">
-              Last Filed Return Period <br />
-              <span className="text-sm text-gray-900 font-medium">
-                {pendingreturn?.lastfiling}
-              </span>
-            </p>
-            <p className="text-xs text-gray-500 leading-4">
-              Pending Returns <br />
-              <span className="text-sm text-gray-900 font-medium">
-                {pendingreturn?.pending}
-              </span>
-            </p>
-            <p className="text-xs text-gray-500 leading-4">
-              Demand Pending <br />
-              <span className="text-sm text-gray-900 font-medium">
-                {pendingchallan.count}
-              </span>
-            </p>
-            <p className="text-xs text-gray-500 leading-4">
-              Demand Amount Pending <br />
-              <span className="text-sm text-gray-900 font-medium">
-                {pendingchallan.pending.toLocaleString("en-IN", {
-                  maximumFractionDigits: 2,
-                  minimumFractionDigits: 0,
-                })}
-              </span>
-            </p>
-            <p className="text-xs text-gray-500 leading-4">
-              Annual turnover <br />
-              <span className="text-sm text-gray-900 font-medium">
-                {annualTurnover.toLocaleString("en-IN", {
-                  maximumFractionDigits: 2,
-                  minimumFractionDigits: 0,
-                })}
-              </span>
-            </p>
-            <p className="text-xs text-gray-500 leading-4">
-              Tax liability <br />
-              <span className="text-sm text-gray-900 font-medium">
-                {taxLiability.toLocaleString("en-IN", {
-                  maximumFractionDigits: 2,
-                  minimumFractionDigits: 0,
-                })}
-              </span>
-            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* <p className="text-xs text-gray-500 leading-4">
+                VAT Liable Date <br />
+                <span className="text-sm text-gray-900 font-medium">
+                  {formateDate(dvatData?.vatLiableDate!)}
+                </span>
+              </p> */}
+
+              <p className="text-xs text-gray-500 leading-4">
+                Last Filed Return Period <br />
+                <span className="text-sm text-gray-900 font-medium">
+                  {pendingreturn?.lastfiling}
+                </span>
+              </p>
+              <p className="text-xs text-gray-500 leading-4">
+                Pending Returns {selectedMonth && `(${selectedMonth})`}
+                <br />
+                <span className="text-sm text-gray-900 font-medium">
+                  {selectedMonth
+                    ? filteredPendingCount
+                    : pendingreturn?.pending}
+                </span>
+              </p>
+              <p className="text-xs text-gray-500 leading-4">
+                Demand Pending <br />
+                <span className="text-sm text-gray-900 font-medium">
+                  {pendingchallan.count}
+                </span>
+              </p>
+              <p className="text-xs text-gray-500 leading-4">
+                Demand Amount Pending <br />
+                <span className="text-sm text-gray-900 font-medium">
+                  {pendingchallan.pending.toLocaleString("en-IN", {
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 0,
+                  })}
+                </span>
+              </p>
+              <p className="text-xs text-gray-500 leading-4">
+                Annual turnover <br />
+                <span className="text-sm text-gray-900 font-medium">
+                  {annualTurnover.toLocaleString("en-IN", {
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 0,
+                  })}
+                </span>
+              </p>
+              <p className="text-xs text-gray-500 leading-4">
+                Tax liability <br />
+                <span className="text-sm text-gray-900 font-medium">
+                  {taxLiability.toLocaleString("en-IN", {
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 0,
+                  })}
+                </span>
+              </p>
+            </div>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Spin, Tabs, Table, Button, Drawer, Tag, Empty, Input, Space } from "antd";
+import { Spin, Tabs, Table, Button, Drawer, Empty, Input, Space } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { toast } from "react-toastify";
 import {
@@ -35,13 +35,27 @@ interface DvatGroup {
   entries: ReturnEntryWithRelations[];
 }
 
+interface ReturnIdGroup {
+  returns_01Id: number;
+  returns_01: any;
+  entries: ReturnEntryWithRelations[];
+  totalQuantity: number;
+  totalAmount: string;
+  totalVat: string;
+  totalTax: string;
+}
+
 const CformDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [cformData, setCformData] = useState<GroupedReturnEntry | null>(null);
   const [fformData, setFformData] = useState<GroupedReturnEntry | null>(null);
   const [exportData, setExportData] = useState<GroupedReturnEntry | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState<ReturnEntryWithRelations | null>(null);
+  const [selectedRecord, setSelectedRecord] =
+    useState<ReturnEntryWithRelations | null>(null);
+  const [selectedReturnGroup, setSelectedReturnGroup] =
+    useState<ReturnIdGroup | null>(null);
+  const [isReturnGroupModalOpen, setIsReturnGroupModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("cform");
 
@@ -88,18 +102,109 @@ const CformDetailsPage = () => {
     return Array.from(grouped.values());
   };
 
+  const groupByReturnId = (
+    entries: ReturnEntryWithRelations[],
+  ): ReturnIdGroup[] => {
+    const grouped = new Map<number, ReturnIdGroup>();
+    entries.forEach((entry) => {
+      const key = entry.returns_01Id;
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          returns_01Id: key,
+          returns_01: entry.returns_01,
+          entries: [],
+          totalQuantity: 0,
+          totalAmount: "0",
+          totalVat: "0",
+          totalTax: "0",
+        });
+      }
+      grouped.get(key)!.entries.push(entry);
+    });
+
+    // Calculate totals for each group
+    grouped.forEach((group) => {
+      group.totalQuantity = group.entries.reduce(
+        (sum, e) => sum + (e.quantity || 0),
+        0,
+      );
+      group.totalAmount = group.entries
+        .reduce((sum, e) => sum + parseFloat(e.amount || "0"), 0)
+        .toString();
+      group.totalVat = group.entries
+        .reduce((sum, e) => sum + parseFloat(e.vatamount || "0"), 0)
+        .toString();
+      group.totalTax = group.entries
+        .reduce((sum, e) => sum + parseFloat(e.tax_percent || "0"), 0)
+        .toString();
+    });
+
+    return Array.from(grouped.values());
+  };
+
   const getFilteredEntries = (entries: ReturnEntryWithRelations[]) => {
     return entries.filter(
       (entry) =>
-        entry.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.seller_tin_number.tin_number
-          .toLowerCase()
+        entry.returns_01?.dvat04?.tinNumber
+          ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
-        entry.description_of_goods
+        entry.returns_01?.dvat04?.tradename
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase()),
     );
   };
+
+  const groupedColumns: ColumnsType<ReturnIdGroup> = [
+    {
+      title: "Return ID",
+      dataIndex: "returns_01Id",
+      key: "returns_01Id",
+      width: 100,
+      render: (text) => <span className="font-medium">{text}</span>,
+    },
+    {
+      title: "Buyer TIN",
+      key: "buyer_tin",
+      width: 120,
+      render: (_, record) => record.returns_01.dvat04.tinNumber || "-",
+    },
+    {
+      title: "Buyer Name",
+      key: "buyer_name",
+      width: 200,
+      render: (_, record) => record.returns_01.dvat04.tradename || "-",
+    },
+    {
+      title: "Total Amount",
+      key: "total_amount",
+      width: 200,
+      render: (_, record) =>
+        formatINR(
+          (
+            parseFloat(record.totalAmount || "0") +
+            parseFloat(record.totalVat || "0")
+          ).toString() || "0",
+        ),
+    },
+    {
+      title: "Action",
+      key: "action",
+      width: 100,
+      fixed: "right" as const,
+      render: (_, record) => (
+        <Button
+          type="primary"
+          size="small"
+          onClick={() => {
+            setSelectedReturnGroup(record);
+            setIsReturnGroupModalOpen(true);
+          }}
+        >
+          View Items
+        </Button>
+      ),
+    },
+  ];
 
   const columns: ColumnsType<ReturnEntryWithRelations> = [
     {
@@ -166,7 +271,7 @@ const CformDetailsPage = () => {
       key: "tax_percent",
       width: 80,
       align: "right" as const,
-      render: (tax) => tax ? `${tax}%` : "-",
+      render: (tax) => (tax ? `${tax}%` : "-"),
     },
     {
       title: "Total",
@@ -196,18 +301,19 @@ const CformDetailsPage = () => {
     },
   ];
 
-  const renderTabContent = (data: GroupedReturnEntry | null) => {
+  const renderTabContent = (
+    data: GroupedReturnEntry | null,
+    isGroupedView: boolean = false,
+  ) => {
     if (!data) {
       return (
-        <Empty
-          description="No data available"
-          style={{ marginTop: "50px" }}
-        />
+        <Empty description="No data available" style={{ marginTop: "50px" }} />
       );
     }
 
     const dvatGroups = groupByDvat(data.entries);
     const filteredEntries = getFilteredEntries(data.entries);
+    const returnIdGroups = groupByReturnId(filteredEntries);
 
     return (
       <div className="space-y-4">
@@ -220,7 +326,11 @@ const CformDetailsPage = () => {
               </div>
               <div>
                 <p className="text-xs text-gray-600">Total Records</p>
-                <p className="text-xl font-semibold">{data.total}</p>
+                <p className="text-xl font-semibold">
+                  {isGroupedView
+                    ? returnIdGroups.length
+                    : filteredEntries.length}
+                </p>
               </div>
             </div>
           </div>
@@ -270,7 +380,7 @@ const CformDetailsPage = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <Space>
             <Input
-              placeholder="Search by Invoice No., Seller TIN, or Description..."
+              placeholder="Search by Buyer TIN or Buyer Name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{ width: 300 }}
@@ -279,21 +389,27 @@ const CformDetailsPage = () => {
               onClick={() => {
                 const exportData = filteredEntries.map((entry) => ({
                   "Invoice No": entry.invoice_number,
-                  "Invoice Date": new Date(entry.invoice_date).toLocaleDateString("en-IN"),
+                  "Invoice Date": new Date(
+                    entry.invoice_date,
+                  ).toLocaleDateString("en-IN"),
                   "Seller TIN": entry.seller_tin_number.tin_number,
                   "Seller Name": entry.seller_tin_number.name_of_dealer || "-",
                   "DVAT Name": entry.dvat.tradename || "-",
-                  "Description": entry.description_of_goods || "-",
-                  "Quantity": entry.quantity || "-",
-                  "Amount": entry.amount || "0",
+                  Description: entry.description_of_goods || "-",
+                  Quantity: entry.quantity || "-",
+                  Amount: entry.amount || "0",
                   "VAT Amount": entry.vatamount || "0",
                   "Tax %": entry.tax_percent || "-",
-                  "Total": entry.total_invoice_number || "0",
+                  Total: entry.total_invoice_number || "0",
                 }));
 
                 const worksheet = XLSX.utils.json_to_sheet(exportData);
                 const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Return Entries");
+                XLSX.utils.book_append_sheet(
+                  workbook,
+                  worksheet,
+                  "Return Entries",
+                );
                 XLSX.writeFile(workbook, `return_entries_${activeTab}.xlsx`);
                 toast.success("Exported successfully");
               }}
@@ -305,14 +421,25 @@ const CformDetailsPage = () => {
 
         {/* Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <Table
-            columns={columns}
-            dataSource={filteredEntries}
-            rowKey="id"
-            scroll={{ x: 1200 }}
-            pagination={{ pageSize: 10, showSizeChanger: true }}
-            size="small"
-          />
+          {isGroupedView ? (
+            <Table
+              columns={groupedColumns as any}
+              dataSource={returnIdGroups}
+              rowKey="returns_01Id"
+              scroll={{ x: 1200 }}
+              pagination={{ pageSize: 10, showSizeChanger: true }}
+              size="small"
+            />
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={filteredEntries}
+              rowKey="id"
+              scroll={{ x: 1200 }}
+              pagination={{ pageSize: 10, showSizeChanger: true }}
+              size="small"
+            />
+          )}
         </div>
       </div>
     );
@@ -333,7 +460,8 @@ const CformDetailsPage = () => {
           Return Entry Details
         </h1>
         <p className="text-sm text-gray-600">
-          View and manage return entries grouped by type (C-Form, F-Form, Export)
+          View and manage return entries grouped by type (C-Form, F-Form,
+          Export)
         </p>
       </div>
 
@@ -344,22 +472,149 @@ const CformDetailsPage = () => {
           items={[
             {
               key: "cform",
-              label: `C-Form (${cformData?.total || 0})`,
-              children: renderTabContent(cformData),
+              label: `C-Form (${groupByReturnId(getFilteredEntries(cformData?.entries || [])).length || 0})`,
+              children: renderTabContent(cformData, true),
             },
             {
               key: "fform",
-              label: `F-Form (${fformData?.total || 0})`,
-              children: renderTabContent(fformData),
+              label: `F-Form (${groupByReturnId(getFilteredEntries(fformData?.entries || [])).length || 0})`,
+              children: renderTabContent(fformData, true),
             },
             {
               key: "export",
-              label: `Export (${exportData?.total || 0})`,
-              children: renderTabContent(exportData),
+              label: `Export (${groupByReturnId(getFilteredEntries(exportData?.entries || [])).length || 0})`,
+              children: renderTabContent(exportData, true),
             },
           ]}
         />
       </div>
+
+      {/* Return Group Modal */}
+      {selectedReturnGroup && (
+        <Drawer
+          title={`Return ID: ${selectedReturnGroup.returns_01Id} - Items Details`}
+          placement="right"
+          onClose={() => {
+            setIsReturnGroupModalOpen(false);
+            setSelectedReturnGroup(null);
+          }}
+          open={isReturnGroupModalOpen}
+          width={900}
+        >
+          <div className="space-y-4">
+            {/* Header Info */}
+            <div className="p-3 bg-gray-50 rounded">
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <p className="text-xs text-gray-600">Return ID</p>
+                  <p className="font-semibold">
+                    {selectedReturnGroup.returns_01Id}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Return Type</p>
+                  <p className="font-semibold">
+                    {selectedReturnGroup.returns_01?.return_type || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Month/Year</p>
+                  <p className="font-semibold">
+                    {selectedReturnGroup.returns_01?.month || "-"} /{" "}
+                    {selectedReturnGroup.returns_01?.year || "-"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Items Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 p-2 text-left">
+                      Sr. No.
+                    </th>
+                    <th className="border border-gray-300 p-2 text-left">
+                      Invoice No.
+                    </th>
+                    <th className="border border-gray-300 p-2 text-left">
+                      Seller TIN
+                    </th>
+                    <th className="border border-gray-300 p-2 text-left">
+                      Seller Name
+                    </th>
+                    <th className="border border-gray-300 p-2 text-center">
+                      Quantity
+                    </th>
+                    <th className="border border-gray-300 p-2 text-right">
+                      Amount
+                    </th>
+                    <th className="border border-gray-300 p-2 text-right">
+                      VAT Amount
+                    </th>
+                    <th className="border border-gray-300 p-2 text-right">
+                      Tax %
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedReturnGroup.entries.map((entry, idx) => (
+                    <tr key={entry.id} className="hover:bg-gray-50">
+                      <td className="border border-gray-300 p-2">{idx + 1}</td>
+                      <td className="border border-gray-300 p-2">
+                        {entry.invoice_number}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {entry.seller_tin_number.tin_number}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {entry.seller_tin_number.name_of_dealer}
+                      </td>
+                      <td className="border border-gray-300 p-2 text-center">
+                        {entry.quantity || "-"}
+                      </td>
+                      <td className="border border-gray-300 p-2 text-right">
+                        {formatINR(entry.amount || "0")}
+                      </td>
+                      <td className="border border-gray-300 p-2 text-right">
+                        {formatINR(entry.vatamount || "0")}
+                      </td>
+                      <td className="border border-gray-300 p-2 text-right">
+                        {entry.tax_percent ? `${entry.tax_percent}%` : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Summary Footer */}
+            <div className="p-3 bg-gray-50 rounded border border-gray-200">
+              <div className="grid grid-cols-4 gap-2">
+                <div>
+                  <p className="text-xs text-gray-600">Total Quantity</p>
+                  <p className="font-semibold">
+                    {selectedReturnGroup.totalQuantity}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Total Amount</p>
+                  <p className="font-semibold">
+                    {formatINR(selectedReturnGroup.totalAmount)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Total VAT Amount</p>
+                  <p className="font-semibold">
+                    {formatINR(selectedReturnGroup.totalVat)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Drawer>
+      )}
 
       {/* Detail Drawer */}
       <Drawer
@@ -410,16 +665,22 @@ const CformDetailsPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-gray-600">Amount</p>
-                  <p className="font-semibold">{formatINR(selectedRecord.amount || "0")}</p>
+                  <p className="font-semibold">
+                    {formatINR(selectedRecord.amount || "0")}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">VAT Amount</p>
-                  <p className="font-semibold">{formatINR(selectedRecord.vatamount || "0")}</p>
+                  <p className="font-semibold">
+                    {formatINR(selectedRecord.vatamount || "0")}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Tax %</p>
                   <p className="font-semibold">
-                    {selectedRecord.tax_percent ? `${selectedRecord.tax_percent}%` : "-"}
+                    {selectedRecord.tax_percent
+                      ? `${selectedRecord.tax_percent}%`
+                      : "-"}
                   </p>
                 </div>
                 <div>
@@ -430,14 +691,18 @@ const CformDetailsPage = () => {
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Quantity</p>
-                  <p className="font-semibold">{selectedRecord.quantity || "-"}</p>
+                  <p className="font-semibold">
+                    {selectedRecord.quantity || "-"}
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="border-t pt-4">
               <p className="text-xs text-gray-600">Description</p>
-              <p className="font-semibold">{selectedRecord.description_of_goods || "-"}</p>
+              <p className="font-semibold">
+                {selectedRecord.description_of_goods || "-"}
+              </p>
             </div>
 
             <div className="border-t pt-4">

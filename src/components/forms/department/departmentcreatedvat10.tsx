@@ -325,7 +325,6 @@ const CreateDVAT24Page = (props: DepartmentCreateDvat10ProviderProps) => {
 
     const dvat24_response = await CreateDvat10({
       dvatid: dvatdata?.id,
-      createdby: props.userid,
       tax_period_from: fixDate(fromDate),
       tax_period_to: fixDate(toDate),
       due_date: fixDate(new Date(data.due_date)),
