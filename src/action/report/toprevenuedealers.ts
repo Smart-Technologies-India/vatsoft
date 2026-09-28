@@ -79,9 +79,13 @@ const TopRevenueDealers = async (
 
     if (payload.selectCommodity) {
       if (payload.selectCommodity === "FUEL") {
+        // Show only FUEL
         dvatWhereClause.commodity = "FUEL";
       } else if (payload.selectCommodity === "LIQUOR") {
-        dvatWhereClause.commodity = "LIQUOR";
+        // Show all except FUEL (LIQUOR and other commodities)
+        dvatWhereClause.commodity = {
+          not: "FUEL",
+        };
       }
     }
 

@@ -87,8 +87,6 @@ const ShopView = () => {
   const [taxLiability, setTaxLiability] = useState<number>(0);
 
   const [returndetails, setRetuirnsDetails] = useState<yearsDetails[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<string>("");
-  const [filteredPendingCount, setFilteredPendingCount] = useState<number>(0);
 
   const monthNames = [
     "January",
@@ -105,26 +103,7 @@ const ShopView = () => {
     "December",
   ];
 
-  // Calculate filtered pending count when month is selected
-  useEffect(() => {
-    if (!selectedMonth || !returndetails) {
-      setFilteredPendingCount(pendingreturn?.pending || 0);
-      return;
-    }
 
-    let pendingCount = 0;
-    for (const yearDetails of returndetails) {
-      for (const monthDetail of yearDetails.rentdetails) {
-        if (
-          monthDetail.name === selectedMonth &&
-          monthDetail.status === Status.PENDING
-        ) {
-          pendingCount++;
-        }
-      }
-    }
-    setFilteredPendingCount(pendingCount);
-  }, [selectedMonth, returndetails, pendingreturn]);
 
   const setRentMonthDetails = async (
     value: Array<return_filing & { dvat: dvat04 }>,
@@ -443,28 +422,6 @@ const ShopView = () => {
             )}
           </div>
           <div className="px-4 py-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">
-                  Filter by Month
-                </label>
-                <Select
-                  placeholder="Select month..."
-                  allowClear
-                  value={selectedMonth}
-                  onChange={(value) => setSelectedMonth(value || "")}
-                  options={[
-                    { label: "All Months", value: "" },
-                    ...monthNames.map((month) => ({
-                      label: month,
-                      value: month,
-                    })),
-                  ]}
-                  className="w-full"
-                />
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* <p className="text-xs text-gray-500 leading-4">
                 VAT Liable Date <br />
@@ -480,12 +437,10 @@ const ShopView = () => {
                 </span>
               </p>
               <p className="text-xs text-gray-500 leading-4">
-                Pending Returns {selectedMonth && `(${selectedMonth})`}
+                Pending Returns
                 <br />
                 <span className="text-sm text-gray-900 font-medium">
-                  {selectedMonth
-                    ? filteredPendingCount
-                    : pendingreturn?.pending}
+                  {pendingreturn?.pending}
                 </span>
               </p>
               <p className="text-xs text-gray-500 leading-4">

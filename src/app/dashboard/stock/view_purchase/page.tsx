@@ -1099,7 +1099,6 @@ const DocumentWiseDetails = () => {
       }
     }
 
-    console.log(Array.from(groupcommodity.values()));
 
     // Call the GroupAcceptSale action with grouped commodities
     const response = await GroupAcceptSale(

@@ -41,16 +41,12 @@ const AcceptSale = async (
         },
       });
 
-      if (!isstock) {
-        throw new Error("Stock not found");
-      }
-
       const stock_respone = await prisma.stock.upsert({
         where: {
-          id: isstock.id,
+          id: isstock ? isstock.id : 0,
         },
         update: {
-          quantity: payload.quantity + isstock.quantity,
+          quantity: payload.quantity + (isstock ? isstock.quantity : 0),
           updatedById: currentUserId,
         },
         create: {

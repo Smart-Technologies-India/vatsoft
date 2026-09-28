@@ -1,10 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { decryptURLData, encryptURLData } from "@/utils/methods";
+import { decryptURLData } from "@/utils/methods";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { dvat04, return_filing } from "@prisma/client";
+import { dvat04, Dvat04Commodity, return_filing } from "@prisma/client";
 import { Table, Button, Card, Empty, Spin, Tabs } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import GetDvat04 from "@/action/register/getdvat04";
@@ -102,6 +102,7 @@ const AssessmentPage = () => {
   const dvat04id = parseInt(
     decryptURLData(Array.isArray(id) ? id[0] : id, router),
   );
+  console.log(dvat04id);
 
   const [isLoading, setIsLoading] = useState(true);
   const [dvatData, setDvatData] = useState<dvat04 | null>(null);
@@ -281,6 +282,7 @@ const AssessmentPage = () => {
   };
 
   const calculateSaleLossReport = async (
+    commodity: Dvat04Commodity,
     dailySalesData: Array<{
       id: number;
       invoice_number: string;
@@ -293,6 +295,7 @@ const AssessmentPage = () => {
         sale_price: string;
         taxable_at: string;
         crate_size: number;
+        pack_size: string | null;
       };
     }>,
   ) => {
@@ -317,7 +320,11 @@ const AssessmentPage = () => {
       const commodityVat =
         ((commodityPrice * taxablePercent) / (100 + taxablePercent)) *
         sale.quantity;
-      const saleVat = parseFloat(sale.vatamount || "0");
+      const saleVat =
+        commodity == "RESTAURANT"
+          ? parseFloat(sale.vatamount || "0") *
+            parseFloat(sale.commodity_master.pack_size ?? "1")
+          : parseFloat(sale.vatamount || "0");
 
       // Only check if there's a VAT loss (commodity VAT > sale VAT)
       if (commodityVat > saleVat) {
@@ -338,7 +345,11 @@ const AssessmentPage = () => {
               commodity: sale.commodity_master.product_name,
               quantity: sale.quantity,
               commodityPrice: commodityPrice,
-              salePrice: parseFloat(sale.amount_unit || "0"),
+              salePrice:
+                commodity == "RESTAURANT"
+                  ? parseFloat(sale.amount_unit || "0") *
+                    parseFloat(sale.commodity_master.pack_size ?? "1")
+                  : parseFloat(sale.amount_unit || "0"),
               commodityVat: commodityVat,
               saleVat: saleVat,
               vatLossPerUnit: vatLossPerUnit,
@@ -361,7 +372,11 @@ const AssessmentPage = () => {
                   commodity: sale.commodity_master.product_name,
                   quantity: sale.quantity,
                   commodityPrice: commodityPrice,
-                  salePrice: parseFloat(sale.amount_unit || "0"),
+                  salePrice:
+                    commodity == "RESTAURANT"
+                      ? parseFloat(sale.amount_unit || "0") *
+                        parseFloat(sale.commodity_master.pack_size ?? "1")
+                      : parseFloat(sale.amount_unit || "0"),
                   commodityVat: commodityVat,
                   saleVat: saleVat,
                   vatLossPerUnit: vatLossPerUnit,
@@ -610,6 +625,7 @@ const AssessmentPage = () => {
         const dvat_response = await GetDvat04({
           id: dvat04id,
         });
+
         if (dvat_response.status && dvat_response.data) {
           setDvatData(dvat_response.data);
         }
@@ -662,13 +678,18 @@ const AssessmentPage = () => {
           setMonthlySalePurchaseData(enrichedData);
         }
 
-        // Fetch daily sales data for loss analysis
-        const dailySalesResponse = await GetDailySaleWithLossAnalysis({
-          dvatid: dvat04id,
-        });
+        if (dvat_response.status && dvat_response.data) {
+          // Fetch daily sales data for loss analysis
+          const dailySalesResponse = await GetDailySaleWithLossAnalysis({
+            dvatid: dvat04id,
+          });
 
-        if (dailySalesResponse.status && dailySalesResponse.data) {
-          await calculateSaleLossReport(dailySalesResponse.data);
+          if (dailySalesResponse.status && dailySalesResponse.data) {
+            await calculateSaleLossReport(
+              dvat_response.data.commodity || "LIQUOR",
+              dailySalesResponse.data,
+            );
+          }
         }
       } catch (error) {
         console.error("Error loading assessment data:", error);
