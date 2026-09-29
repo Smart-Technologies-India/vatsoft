@@ -86,7 +86,7 @@ const ReportsPage = () => {
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
               router.push(
-                "/dashboard/reports/defaulter_reports/afterdeathline",
+                "/dashboard/reports/defaulter_reports/after_dead_line",
               );
             }}
           >

@@ -89,7 +89,7 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
                 },
               },
               create: {
-                createdById: 1,
+                createdById: currentUserId,
                 filing_status: false,
                 dvatid: dvat.id,
                 year,

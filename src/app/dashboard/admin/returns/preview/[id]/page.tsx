@@ -37,7 +37,6 @@ import S1_1Adjustment from "@/components/dvatreturn/7_s1adjustment";
 import S2AdjustmentOfTax from "@/components/dvatreturn/8_s2adjustment";
 import CentralSales from "@/components/dvatreturn/9_centralsales";
 import FORM_DVAT_16 from "@/components/dvatreturn/10_fromdvat16";
-import AddPaymentSubmit from "@/action/return/addpaymentsubmit";
 import {
   CentralSalesCalculation,
   NetTaxCalculation,
@@ -66,10 +65,6 @@ const AdminDvat16ReturnPreview = () => {
   >([]);
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
   const [paidChallans, setPaidChallans] = useState<challan[]>([]);
-  const [payment, setPayment] = useState<boolean>(false);
-  const [paymentSubmitBox, setPaymentSubmitBox] = useState<boolean>(false);
-  const [user, setUser] = useState<user | null>();
-  const [lateFees, setLateFees] = useState<number>(0);
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
   const [lastmonthcash, setLastMonthCash] = useState<string>("0");
 
@@ -103,84 +98,6 @@ const AdminDvat16ReturnPreview = () => {
     return quarterMonthsMap[selectedQuarter] ?? [];
   };
 
-  const getNewYear = (year: string, month: string): string => {
-    if (["January", "February", "March"].includes(month)) {
-      return (parseInt(year) + 1).toString();
-    }
-    return year;
-  };
-
-  const getLateFees = (
-    year: string,
-    month: string,
-    rr_number: string,
-    isComp: boolean = false,
-    filing_date: Date,
-  ) => {
-    const currentDate = ServerTime().data as Date;
-
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-
-    let monthIndex = monthNames.indexOf(month);
-    let newYear = parseInt(year);
-
-    if (isComp) {
-      if (["January", "February", "March"].includes(month)) {
-        monthIndex = 3;
-      } else if (["April", "May", "June"].includes(month)) {
-        monthIndex = 6;
-      } else if (["July", "August", "September"].includes(month)) {
-        monthIndex = 9;
-      } else {
-        monthIndex = 0;
-        newYear += 1;
-      }
-    } else {
-      if (monthIndex === 11) {
-        newYear += 1;
-        monthIndex = 0;
-      } else {
-        monthIndex += 1;
-      }
-    }
-
-    const idiff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 16),
-      currentDate,
-    );
-
-    let pdiff_days = 0;
-
-    if (rr_number == null || rr_number == undefined || rr_number == "") {
-      pdiff_days = getDaysBetweenDates(
-        new Date(newYear, monthIndex, 29),
-        currentDate,
-      );
-
-      setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
-    } else {
-      pdiff_days = getDaysBetweenDates(
-        new Date(newYear, monthIndex, 29),
-        filing_date,
-      );
-
-      setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
-    }
-  };
-
   useEffect(() => {
     const init = async () => {
       const authResponse = await getAuthenticatedUserId();
@@ -189,17 +106,10 @@ const AdminDvat16ReturnPreview = () => {
       if (userrole == "USER" || userrole == null || userrole == undefined) {
         return router.back();
       }
-      
+
       if (!authResponse.status || !authResponse.data) {
         toast.error(authResponse.message);
         return router.push("/");
-      }
-
-      const user_response = await GetUser({
-        id: authResponse.data,
-      });
-      if (user_response.status && user_response.data) {
-        setUser(user_response.data);
       }
 
       const returnResponse = await GetReturnByIdWithQuarterly({
@@ -277,14 +187,6 @@ const AdminDvat16ReturnPreview = () => {
         setQuarterlyReturns(allQuarterlyReturns);
         serReturns_entryData(mergedEntries);
 
-        getLateFees(
-          selectedReturn.year,
-          selectedReturn.month ?? "",
-          selectedReturn.rr_number ?? "",
-          selectedReturn.dvat04?.frequencyFilings === "QUARTERLY",
-          new Date(selectedReturn.filing_datetime),
-        );
-
         // Get last month due and cash
         const currentMonthIndex = monthNames.indexOf(
           selectedReturn.month ?? "",
@@ -307,18 +209,6 @@ const AdminDvat16ReturnPreview = () => {
     };
     init();
   }, [returnid]);
-
-  useEffect(() => {
-    if (return01 == null) return;
-
-    getLateFees(
-      return01.year,
-      return01.month ?? "",
-      return01.rr_number ?? "",
-      return01.dvat04?.frequencyFilings === "QUARTERLY",
-      new Date(return01.filing_datetime),
-    );
-  }, [return01]);
 
   const getTaxPeriod = (): string => {
     if (return01?.dvat04.frequencyFilings == "QUARTERLY") {
@@ -347,134 +237,6 @@ const AdminDvat16ReturnPreview = () => {
     const return_id = parseInt(return01?.id.toString() ?? "0") + 4000;
 
     return `${rr_no}${month}${day}${return_id}`;
-  };
-
-  const onSubmitPayment = async () => {
-    if (return01 == null) return toast.error("There is not return from here");
-
-    const lastPayment = await CheckLastPayment({
-      id: return01.id,
-    });
-
-    if (!lastPayment.status) {
-      toast.error(lastPayment.message);
-      setPaymentSubmitBox(false);
-      return;
-    }
-
-    if (lastPayment.data == false) {
-      toast.error(lastPayment.message);
-      setPaymentSubmitBox(false);
-      return;
-    }
-
-    const thebalance = new TheBalance(
-      returns_entryData ?? [],
-      paidChallans,
-      return01,
-      parseFloat(lastmonthdue),
-      parseFloat(lastmonthcash),
-      return01.dvat04.frequencyFilings === "QUARTERLY",
-    );
-    const netTaxCalculation = new NetTaxCalculation(
-      returns_entryData ?? [],
-      paidChallans,
-      return01,
-      parseFloat(lastmonthdue),
-      parseFloat(lastmonthcash),
-      return01.dvat04.frequencyFilings === "QUARTERLY",
-    );
-
-    const pending_cash = thebalance.excess_cash_payment();
-    const pending_payment = thebalance.balance_carried_forward();
-
-    const penalty = netTaxCalculation.getPenalty();
-    const interest = netTaxCalculation.getInterest();
-    const vat = netTaxCalculation.getR6_1();
-    const rrNumber = get_rr_number();
-
-    const returnsToUpdate =
-      return01.dvat04?.frequencyFilings === "QUARTERLY"
-        ? quarterlyReturns
-        : [return01];
-
-    try {
-      const effectiveQuarter = getQuarterForMonth(return01.month ?? "");
-      const quarterlyFilingMonths =
-        return01.dvat04?.frequencyFilings === "QUARTERLY" && effectiveQuarter
-          ? getQuarterMonths(effectiveQuarter)
-          : [];
-      const lastMonthOfQuarter =
-        quarterlyFilingMonths[quarterlyFilingMonths.length - 1];
-
-      for (let i = 0; i < returnsToUpdate.length; i++) {
-        const returnToUpdate = returnsToUpdate[i];
-        const isLastReturn =
-          return01.dvat04?.frequencyFilings === "QUARTERLY"
-            ? returnToUpdate.month === lastMonthOfQuarter
-            : true;
-
-        const submitPenalty =
-          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
-            ? "0"
-            : penalty.toFixed(2);
-        const submitInterest =
-          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
-            ? "0"
-            : interest.toFixed(2);
-        const submitVat =
-          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
-            ? "0"
-            : vat.toFixed(2);
-        const submitTotal =
-          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
-            ? "0"
-            : (vat + interest + penalty).toFixed(2);
-
-        if (isLastReturn || return01.dvat04?.frequencyFilings !== "QUARTERLY") {
-          const response = await AddPaymentSubmit({
-            id: returnToUpdate.id ?? 0,
-            rr_number: rrNumber,
-            pending_payment: pending_payment.toFixed(2),
-            pending_cash: pending_cash.toFixed(2),
-            penalty: submitPenalty,
-            vatamount: submitVat,
-            interestamount: submitInterest,
-            totaltaxamount: submitTotal,
-          });
-
-          if (!response.status) {
-            toast.error(response.message);
-            setPaymentSubmitBox(false);
-            return;
-          }
-        } else {
-          const response = await AddPaymentSubmit({
-            id: returnToUpdate.id,
-            rr_number: rrNumber,
-            pending_payment: "0",
-            pending_cash: "0",
-            penalty: "0",
-            vatamount: "0",
-            interestamount: "0",
-            totaltaxamount: "0",
-          });
-
-          if (!response.status) {
-            toast.error(response.message);
-            setPaymentSubmitBox(false);
-            return;
-          }
-        }
-      }
-
-      toast.success("Return(s) submitted successfully");
-      setPaymentSubmitBox(false);
-      router.push(`/dashboard/admin/returns`);
-    } catch (error) {
-      toast.error("Error submitting return(s)");
-      setPaymentSubmitBox(false);
-    }
   };
 
   const generatePDF = async (path: string) => {
@@ -555,31 +317,6 @@ const AdminDvat16ReturnPreview = () => {
 
   return (
     <>
-      <Modal
-        title="Confirmation"
-        open={paymentSubmitBox}
-        footer={null}
-        closeIcon={false}
-      >
-        <p>Are you sure you want to submit the return?</p>
-        <div className="flex  gap-2 mt-2">
-          <div className="grow"></div>
-          <button
-            className="py-1 rounded-md border px-4 text-sm text-gray-600"
-            onClick={() => {
-              setPaymentSubmitBox(false);
-            }}
-          >
-            Close
-          </button>
-          <button
-            onClick={onSubmitPayment}
-            className="py-1 rounded-md bg-blue-500 px-4 text-sm text-white"
-          >
-            Submit
-          </button>
-        </div>
-      </Modal>
       {return01 && (
         <section className="px-5 relative mainpdf" id="mainpdf">
           <main className="bg-white mt-6 p-4 w-full xl:w-5/6 mx-auto">
@@ -868,48 +605,6 @@ const AdminDvat16ReturnPreview = () => {
             >
               {isDownload ? "Downloading..." : "Download"}
             </Button>
-
-            {!payment && (
-              <>
-                {showSubmitButton() ? (
-                  <>
-                    <Button
-                      type="primary"
-                      onClick={() => {
-                        setPaymentSubmitBox(true);
-                      }}
-                    >
-                      Submit
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    type="primary"
-                    onClick={async () => {
-                      const lastPayment = await CheckLastPayment({
-                        id: return01.id ?? 0,
-                      });
-                      if (!lastPayment.status) {
-                        toast.error(lastPayment.message);
-                        return;
-                      }
-
-                      if (lastPayment.data == false) {
-                        toast.error(lastPayment.message);
-                        return;
-                      }
-                      router.push(
-                        `/dashboard/admin/returns/preview/${encryptURLData(
-                          return01.id.toString(),
-                        )}/challan-payment`,
-                      );
-                    }}
-                  >
-                    Proceed to Pay
-                  </Button>
-                )}
-              </>
-            )}
           </div>
         </section>
       )}

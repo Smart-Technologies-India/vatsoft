@@ -3,14 +3,7 @@
 import { addPrismaDatabaseDate, errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
-import {
-  CategoryOfEntry,
-  DvatType,
-  PurchaseType,
-  returns_01,
-  ReturnType,
-  SelectOffice,
-} from "@prisma/client";
+import { returns_01, SelectOffice } from "@prisma/client";
 
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface AddSubmitPaymentPayload {

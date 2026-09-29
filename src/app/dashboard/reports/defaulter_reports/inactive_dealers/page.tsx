@@ -175,7 +175,13 @@ const InactiveDealers = () => {
     setSearch(false);
 
     // If there are active filters, keep searching with filters only
-    if (selectedType || selectedCommodity || selectedFrequency || selectedSale || selectedPurchase) {
+    if (
+      selectedType ||
+      selectedCommodity ||
+      selectedFrequency ||
+      selectedSale ||
+      selectedPurchase
+    ) {
       await handleFilterChange(
         selectedType,
         selectedCommodity,
@@ -398,10 +404,17 @@ const InactiveDealers = () => {
     const filterFrequency =
       newFrequency !== undefined ? newFrequency : selectedFrequency;
     const filterSale = newSale !== undefined ? newSale : selectedSale;
-    const filterPurchase = newPurchase !== undefined ? newPurchase : selectedPurchase;
+    const filterPurchase =
+      newPurchase !== undefined ? newPurchase : selectedPurchase;
 
     // Only trigger search if at least one filter is selected
-    if (!filterType && !filterCommodity && !filterFrequency && !filterSale && !filterPurchase) {
+    if (
+      !filterType &&
+      !filterCommodity &&
+      !filterFrequency &&
+      !filterSale &&
+      !filterPurchase
+    ) {
       return;
     }
 
@@ -647,24 +660,6 @@ const InactiveDealers = () => {
     "20+": dvatData.filter((d) => d.pending > 20).length,
   };
 
-  const pieChartData: any = {
-    labels: ["1-5 Returns", "6-10 Returns", "11-20 Returns", "20+ Returns"],
-    datasets: [
-      {
-        label: "Dealers by Pending Range",
-        data: [
-          pendingRanges["1-5"],
-          pendingRanges["6-10"],
-          pendingRanges["11-20"],
-          pendingRanges["20+"],
-        ],
-        backgroundColor: ["#10b981", "#f59e0b", "#ef4444", "#7c3aed"],
-        borderColor: "#fff",
-        borderWidth: 2,
-      },
-    ],
-  };
-
   const chartOptions: any = {
     responsive: true,
     maintainAspectRatio: false,
@@ -863,16 +858,6 @@ const InactiveDealers = () => {
             <div className="h-80 flex items-center justify-center">
               <Doughnut data={doughnutData} options={pieOptions} />
             </div>
-          </div>
-        </div>
-
-        {/* Additional Chart */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">
-            Dealers by Pending Returns Range
-          </h2>
-          <div className="h-80 flex items-center justify-center">
-            <Pie data={pieChartData} options={pieOptions} />
           </div>
         </div>
 
@@ -1106,7 +1091,11 @@ const InactiveDealers = () => {
                 </Select>
               </div>
 
-              {(selectedCommodity || selectedFrequency || selectedType || selectedSale || selectedPurchase) && (
+              {(selectedCommodity ||
+                selectedFrequency ||
+                selectedType ||
+                selectedSale ||
+                selectedPurchase) && (
                 <Button
                   type="default"
                   onClick={clearAllFilters}

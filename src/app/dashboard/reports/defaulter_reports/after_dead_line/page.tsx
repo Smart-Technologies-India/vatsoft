@@ -205,21 +205,6 @@ const AfterDeathLinePage = () => {
     "21+": allDvatData.filter((d) => d.pending > 20).length,
   };
 
-  const pieChartData = {
-    labels: ["0-5 Late", "6-10 Late", "11-20 Late", "21+ Late"],
-    datasets: [
-      {
-        data: Object.values(lateRanges),
-        backgroundColor: [
-          "rgba(75, 192, 192, 0.8)",
-          "rgba(255, 206, 86, 0.8)",
-          "rgba(255, 159, 64, 0.8)",
-          "rgba(255, 99, 132, 0.8)",
-        ],
-      },
-    ],
-  };
-
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -892,16 +877,6 @@ const AfterDeathLinePage = () => {
             <div className="h-80 flex items-center justify-center">
               <Doughnut data={doughnutData} options={pieOptions} />
             </div>
-          </div>
-        </div>
-
-        {/* Additional Chart */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">
-            Dealers by Late Returns Range
-          </h2>
-          <div className="h-80 flex items-center justify-center">
-            <Pie data={pieChartData} options={pieOptions} />
           </div>
         </div>
 

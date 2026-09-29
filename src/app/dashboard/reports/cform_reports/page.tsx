@@ -305,11 +305,11 @@ const CFormReportsPage = () => {
 
   // Chart data - Top Sellers
   const topSellersData = {
-    labels: summary?.topSellers.map((s) => s.name) ?? [],
+    labels: summary?.topSellers?.map((s) => s.name) ?? [],
     datasets: [
       {
         label: "Count of C-Forms",
-        data: summary?.topSellers.map((s) => s.count) ?? [],
+        data: summary?.topSellers?.map((s) => s.count) ?? [],
         backgroundColor: "rgba(54, 162, 235, 0.5)",
         borderColor: "rgba(54, 162, 235, 1)",
         borderWidth: 1,
@@ -319,11 +319,11 @@ const CFormReportsPage = () => {
 
   // Chart data - Top Commodities
   const topCommoditiesData = {
-    labels: summary?.topCommodities.map((c) => c.name) ?? [],
+    labels: summary?.topCommodities?.map((c) => c.name) ?? [],
     datasets: [
       {
         label: "Count",
-        data: summary?.topCommodities.map((c) => c.count) ?? [],
+        data: summary?.topCommodities?.map((c) => c.count) ?? [],
         backgroundColor: [
           "rgba(255, 99, 132, 0.6)",
           "rgba(54, 162, 235, 0.6)",
@@ -338,11 +338,11 @@ const CFormReportsPage = () => {
 
   // Chart data - Monthly Trend
   const monthlyTrendData = {
-    labels: summary?.monthlyTrend.map((m) => m.month) ?? [],
+    labels: summary?.monthlyTrend?.map((m) => m.month) ?? [],
     datasets: [
       {
         label: "C-Forms Count",
-        data: summary?.monthlyTrend.map((m) => m.count) ?? [],
+        data: summary?.monthlyTrend?.map((m) => m.count) ?? [],
         borderColor: "rgba(75, 192, 192, 1)",
         backgroundColor: "rgba(75, 192, 192, 0.1)",
         tension: 0.3,
@@ -351,7 +351,7 @@ const CFormReportsPage = () => {
       {
         label: "Amount (₹ in lakhs)",
         data:
-          summary?.monthlyTrend.map((m) => Math.round(m.amount / 100000)) ?? [],
+          summary?.monthlyTrend?.map((m) => Math.round(m.amount / 100000)) ?? [],
         borderColor: "rgba(153, 102, 255, 1)",
         backgroundColor: "rgba(153, 102, 255, 0.1)",
         tension: 0.3,
@@ -364,6 +364,17 @@ const CFormReportsPage = () => {
     return (
       <div className="flex justify-center items-center h-screen">
         <Spin size="large" tip="Loading C-Form Reports..." />
+      </div>
+    );
+  }
+
+  if (!summary) {
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <h1 className="text-3xl font-bold mb-2">C-Form Reports</h1>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <p className="text-gray-600">No data available. Please refresh the page.</p>
+        </div>
       </div>
     );
   }
