@@ -27,9 +27,6 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
     const due_date_of_month = 28;
 
     const currentdate = dayjs();
-    // const currentMonth = currentdate.format("MMMM"); // Get the current month name
-    // const currentYear = currentdate.year().toString();
-    // const nextMonthDate = currentdate.add(1, "month").date(due_date_of_month);
 
     const dvat_response = await prisma.dvat04.findMany({
       where: {
@@ -54,8 +51,18 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
       dvat_response.map(async (dvat) => {
         const liableDate: Dayjs = dayjs(dvat.vatLiableDate ?? new Date());
         const startMonth = liableDate.startOf("month");
-        const endMonth = currentdate.startOf("month");
-
+        // then the 1 month of current month
+        const endMonth = currentdate
+          .startOf("month")
+          .subtract(1, "month")
+          .add(5, "day");
+        console.log(dvat.id);
+        console.log(
+          "Start Month:",
+          startMonth.toDate(),
+          "End Month:",
+          endMonth.toDate(),
+        );
         const months: Dayjs[] = [];
         let monthIterator = startMonth;
 

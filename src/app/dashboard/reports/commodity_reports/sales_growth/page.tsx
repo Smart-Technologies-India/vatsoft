@@ -5,7 +5,7 @@ import {
   MaterialSymbolsKeyboardArrowUpRounded,
 } from "@/components/icons";
 import numberWithIndianFormat from "@/utils/methods";
-import { Radio, RadioChangeEvent, Spin, Tabs } from "antd";
+import { Radio, RadioChangeEvent, Spin, Tabs, Pagination } from "antd";
 import { useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, registerables } from "chart.js";
@@ -40,6 +40,13 @@ const CommoditySalesGrowthReport = () => {
   }
 
   const [reportData, setReportData] = useState<CommodityGrowthData[]>([]);
+  const [allReportData, setAllReportData] = useState<CommodityGrowthData[]>([]);
+  const [paginationInfo, setPaginationInfo] = useState({
+    total: 0,
+    page: 1,
+    pageSize: 10,
+    totalPages: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState<
     "Dadra_Nagar_Haveli" | "DAMAN" | "DIU" | undefined
@@ -50,6 +57,8 @@ const CommoditySalesGrowthReport = () => {
   const [growthType, setGrowthType] = useState<
     "MONTH_ON_MONTH" | "YEAR_ON_YEAR"
   >("MONTH_ON_MONTH");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const currentDate = ServerTime().data as Date;
   const [selectedMonth, setSelectedMonth] = useState<number>(
@@ -106,21 +115,43 @@ const CommoditySalesGrowthReport = () => {
           growthType: growthType,
           month: growthType === "MONTH_ON_MONTH" ? selectedMonth : undefined,
           year: selectedYear,
+          page: currentPage,
+          pageSize: pageSize,
         });
         if (response.status && response.data) {
           setReportData(response.data);
+          if (response.pagination) {
+            setPaginationInfo(response.pagination);
+          }
+          // Store all data for charts and summary (fetch without pagination)
+          if (currentPage === 1) {
+            // Only fetch all data on first page to avoid redundant calls
+            const allDataResponse = await CommoditySalesGrowth({
+              selectOffice: filterOffice,
+              selectCommodity: commoditydata,
+              growthType: growthType,
+              month: growthType === "MONTH_ON_MONTH" ? selectedMonth : undefined,
+              year: selectedYear,
+              page: 1,
+              pageSize: response.pagination?.total || 1000,
+            });
+            if (allDataResponse.status && allDataResponse.data) {
+              setAllReportData(allDataResponse.data);
+            }
+          }
         } else {
           toast.error(response.message || "Failed to load data");
           setReportData([]);
+          setAllReportData([]);
         }
       }
       setLoading(false);
     };
     init();
-  }, [city, commoditydata, growthType, selectedMonth, selectedYear]);
+  }, [city, commoditydata, growthType, selectedMonth, selectedYear, currentPage, pageSize]);
 
   const exportToExcel = () => {
-    if (!reportData || reportData.length === 0) return;
+    if (!allReportData || allReportData.length === 0) return;
 
     const worksheetData = [
       [
@@ -146,7 +177,7 @@ const CommoditySalesGrowthReport = () => {
       ],
     ];
 
-    reportData.forEach((item) => {
+    allReportData.forEach((item) => {
       worksheetData.push([
         item.commodityName,
         item.currentPeriod,
@@ -174,8 +205,8 @@ const CommoditySalesGrowthReport = () => {
     toast.success("Report exported successfully!");
   };
 
-  const topGrowthData = reportData.slice(0, 10);
-  const bottomGrowthData = reportData.slice(-10).reverse();
+  const topGrowthData = allReportData.slice(0, 10);
+  const bottomGrowthData = allReportData.slice(-10).reverse();
 
   const chartDataTop: any = {
     labels: topGrowthData.map((item) => item.commodityName),
@@ -292,7 +323,7 @@ const CommoditySalesGrowthReport = () => {
         <div className="shrink-0">
           <button
             onClick={exportToExcel}
-            disabled={!reportData || reportData.length === 0}
+            disabled={!allReportData || allReportData.length === 0}
             className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             Export to Excel
@@ -377,7 +408,7 @@ const CommoditySalesGrowthReport = () => {
         <div className="flex justify-center items-center h-96">
           <Spin size="large" />
         </div>
-      ) : reportData && reportData.length > 0 ? (
+      ) : allReportData && allReportData.length > 0 ? (
         <>
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
@@ -386,7 +417,7 @@ const CommoditySalesGrowthReport = () => {
                 <div>
                   <p className="text-sm opacity-90">Total Commodities</p>
                   <p className="text-3xl font-bold mt-1">
-                    {reportData.length}
+                    {paginationInfo.total}
                   </p>
                 </div>
                 <FluentMdl2Home className="w-12 h-12 opacity-30" />
@@ -399,7 +430,7 @@ const CommoditySalesGrowthReport = () => {
                   <p className="text-sm opacity-90">Positive Growth</p>
                   <p className="text-3xl font-bold mt-1">
                     {
-                      reportData.filter(
+                      allReportData.filter(
                         (item) => item.amountGrowthPercent > 0
                       ).length
                     }
@@ -415,7 +446,7 @@ const CommoditySalesGrowthReport = () => {
                   <p className="text-sm opacity-90">Negative Growth</p>
                   <p className="text-3xl font-bold mt-1">
                     {
-                      reportData.filter(
+                      allReportData.filter(
                         (item) => item.amountGrowthPercent < 0
                       ).length
                     }
@@ -539,6 +570,46 @@ const CommoditySalesGrowthReport = () => {
                   })}
                 </tbody>
               </table>
+            </div>
+            
+            {/* Pagination */}
+            <div className="bg-gray-50 px-4 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {(currentPage - 1) * pageSize + 1} to{" "}
+                {Math.min(currentPage * pageSize, paginationInfo.total)} of{" "}
+                {paginationInfo.total} commodities
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Rows per page:</label>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      const newPageSize = Number(e.target.value);
+                      setPageSize(newPageSize);
+                      setCurrentPage(1);
+                    }}
+                    className="px-2 py-1 rounded border border-gray-300 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
+                <Pagination
+                  current={currentPage}
+                  pageSize={pageSize}
+                  total={paginationInfo.total}
+                  onChange={(page) => setCurrentPage(page)}
+                  onShowSizeChange={(current, size) => {
+                    setPageSize(size);
+                    setCurrentPage(1);
+                  }}
+                  showSizeChanger={false}
+                  showQuickJumper
+                />
+              </div>
             </div>
           </div>
         </>

@@ -9,7 +9,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
-import { Radio, Button, Input, Pagination, Alert, Drawer, Select, Modal } from "antd";
+import {
+  Radio,
+  Button,
+  Input,
+  Pagination,
+  Alert,
+  Drawer,
+  Select,
+  Modal,
+} from "antd";
 import { useEffect, useRef, useState } from "react";
 
 import type { Dayjs } from "dayjs";
@@ -156,7 +165,7 @@ const TrackAppliation = () => {
 
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
   const [noticeLoading, setNoticeLoading] = useState<number | null>(null);
-  
+
   // Modal state for period selection
   const [noticeModalOpen, setNoticeModalOpen] = useState<boolean>(false);
   const [selectedDvatForNotice, setSelectedDvatForNotice] = useState<{
@@ -167,10 +176,10 @@ const TrackAppliation = () => {
     Array<{ month: string; year: string }>
   >([]);
   const [selectedNoticeMonth, setSelectedNoticeMonth] = useState<string | null>(
-    null
+    null,
   );
   const [selectedNoticeYear, setSelectedNoticeYear] = useState<string | null>(
-    null
+    null,
   );
 
   const [user, setUpser] = useState<user>();
@@ -498,7 +507,10 @@ const TrackAppliation = () => {
       worksheet["!cols"] = columnWidths;
 
       // Download file
-      XLSX.writeFile(workbook, `Pending_Returns_${(ServerTime().data as Date).getTime()}.xlsx`);
+      XLSX.writeFile(
+        workbook,
+        `Pending_Returns_${(ServerTime().data as Date).getTime()}.xlsx`,
+      );
 
       toast.dismiss();
       toast.success(
@@ -515,7 +527,7 @@ const TrackAppliation = () => {
     try {
       // Fetch pending periods for this dealer
       const response = await GetReturnMonth({ dvatid: dvatId });
-      
+
       if (!response.status || !response.data) {
         toast.error("No return periods found for this dealer");
         return;
@@ -527,7 +539,7 @@ const TrackAppliation = () => {
 
       response.data.forEach((filing) => {
         const dueDate = filing.due_date ? new Date(filing.due_date) : null;
-        
+
         // Include periods that are overdue and not yet filed
         if (!filing.filing_status && dueDate && dueDate < currentDate) {
           pendingPeriods.push({
@@ -556,7 +568,11 @@ const TrackAppliation = () => {
 
   const handleCreateNoticeSubmit = async () => {
     try {
-      if (!selectedDvatForNotice || !selectedNoticeMonth || !selectedNoticeYear) {
+      if (
+        !selectedDvatForNotice ||
+        !selectedNoticeMonth ||
+        !selectedNoticeYear
+      ) {
         toast.error("Please select a period");
         return;
       }
@@ -570,7 +586,7 @@ const TrackAppliation = () => {
       // Get the month index for date calculation
       const monthIndex = monthNames.indexOf(selectedNoticeMonth);
       const year = parseInt(selectedNoticeYear);
-      
+
       // Calculate tax period from and to dates based on selected month
       const taxPeriodFrom = new Date(year, monthIndex, 1);
       const taxPeriodTo = new Date(year, monthIndex + 1, 0);
@@ -1147,9 +1163,14 @@ const TrackAppliation = () => {
                         <TableCell className="border text-center p-2">
                           <Button
                             type="dashed"
-                            onClick={() => handleCreateNotice(val.dvat04, val.dvat04.id)}
+                            onClick={() =>
+                              handleCreateNotice(val.dvat04, val.dvat04.id)
+                            }
                             loading={noticeLoading === val.dvat04.id}
-                            disabled={noticeLoading !== null && noticeLoading !== val.dvat04.id}
+                            disabled={
+                              noticeLoading !== null &&
+                              noticeLoading !== val.dvat04.id
+                            }
                           >
                             Generate
                           </Button>
@@ -1263,18 +1284,6 @@ const TrackAppliation = () => {
                 className="w-full"
               />
             </div>
-
-            {/* {selectedNoticeMonth && selectedNoticeYear && (
-              <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                <p className="text-sm text-gray-700">
-                  <strong>Notice will be created for:</strong>
-                  <br />
-                  Period: {selectedNoticeMonth} {selectedNoticeYear}
-                  <br />
-                  Due Date: 3 days from now
-                </p>
-              </div>
-            )} */}
           </div>
         )}
       </Modal>

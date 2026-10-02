@@ -1,18 +1,17 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import GetReturnByIdWithQuarterly from "@/action/return/getreturnbyidwithquarterly";
+import GetReturnByDvatAndMonth from "@/action/return/getreturnbydvatandmonth";
 import {
   decryptURLData,
   encryptURLData,
   formatDateTime,
   formateDate,
-  getDaysBetweenDates,
   getPrismaDatabaseDate,
 } from "@/utils/methods";
 import {
   challan,
   dvat04,
-  DvatType,
   Quarter,
   registration,
   returns_01,
@@ -21,10 +20,8 @@ import {
 } from "@prisma/client";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button, Modal } from "antd";
+import { Button } from "antd";
 import { toast } from "react-toastify";
-import CheckLastPayment from "@/action/return/checklastpayment";
-import GetUser from "@/action/user/getuser";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 
 import TurnOver from "@/components/dvatreturn/1_turnver";
@@ -195,10 +192,31 @@ const AdminDvat16ReturnPreview = () => {
           const lastMonthIndex = (currentMonthIndex - 1 + 12) % 12;
           const lastMonth: string = monthNames[lastMonthIndex];
 
-          // For admin, we'd need to fetch last month's return for the same DVAT
-          // Since we don't have a direct action for this, we'll use placeholder values
-          setLastMonthDue(selectedReturn.pending_payment ?? "0");
-          setLastMonthCash(selectedReturn.cash_payment ?? "0");
+          // Calculate the last month's year
+          const lastMonthYear =
+            selectedReturn.month === "January"
+              ? (parseInt(selectedReturn.year) - 1).toString()
+              : selectedReturn.year;
+
+          // Fetch last month's return for the same DVAT
+          const lastMonthResponse = await GetReturnByDvatAndMonth({
+            dvat04Id: selectedReturn.dvat04Id,
+            month: lastMonth,
+            year: lastMonthYear,
+          });
+
+          if (lastMonthResponse.status && lastMonthResponse.data) {
+            setLastMonthDue(
+              lastMonthResponse.data.returns_01.pending_payment ?? "0",
+            );
+            setLastMonthCash(
+              lastMonthResponse.data.returns_01.cash_payment ?? "0",
+            );
+          } else {
+            // If no previous month return exists, use zero
+            setLastMonthDue("0");
+            setLastMonthCash("0");
+          }
         }
       } else {
         setReturn01(null);

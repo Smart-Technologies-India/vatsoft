@@ -19,7 +19,7 @@ ChartJS.register(...registerables);
 const DealerTypeRevenueReport = () => {
   const router = useRouter();
   const [user, setUser] = useState<user | null>(null);
-  
+
   interface MonthlyRevenue {
     month: string;
     fuelRevenue: number;
@@ -45,7 +45,13 @@ const DealerTypeRevenueReport = () => {
     "Dadra_Nagar_Haveli" | "DAMAN" | "DIU" | undefined
   >(undefined);
   const [selectedYear, setSelectedYear] = useState<string>(
-    (ServerTime().data as Date).getFullYear().toString()
+    (ServerTime().data as Date).getFullYear().toString(),
+  );
+  const [selectedMonth, setSelectedMonth] = useState<string | undefined>(
+    undefined,
+  );
+  const [selectedQuarter, setSelectedQuarter] = useState<string | undefined>(
+    undefined,
   );
 
   const monthNames: { [key: string]: string } = {
@@ -66,7 +72,7 @@ const DealerTypeRevenueReport = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      
+
       // Fetch authenticated user
       const authResponse = await getAuthenticatedUserId();
       if (!authResponse.status || !authResponse.data) {
@@ -74,19 +80,25 @@ const DealerTypeRevenueReport = () => {
         router.push("/");
         return;
       }
-      
+
       const userResponse = await GetUser({ id: authResponse.data });
       if (userResponse.status && userResponse.data) {
         setUser(userResponse.data);
-        
+
         // Set office filter based on role
-        const filterOffice = ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(userResponse.data.role)
+        const filterOffice = [
+          "VATOFFICER",
+          "DY_COMMISSIONER",
+          "JOINT_COMMISSIONER",
+        ].includes(userResponse.data.role)
           ? (userResponse.data.selectOffice ?? undefined)
           : city;
-        
+
         const response = await DealerTypeRevenue({
           selectOffice: filterOffice,
           year: selectedYear,
+          month: selectedMonth,
+          quarter: selectedQuarter,
         });
         if (response.status && response.data) {
           setReportData(response.data);
@@ -97,7 +109,7 @@ const DealerTypeRevenueReport = () => {
       setLoading(false);
     };
     init();
-  }, [city, selectedYear]);
+  }, [city, selectedYear, selectedMonth, selectedQuarter, router]);
 
   const exportToExcel = () => {
     if (!reportData) return;
@@ -188,7 +200,7 @@ const DealerTypeRevenueReport = () => {
                 : reportData.liquorPercentage
               : 0;
             return `${label}: ₹${numberWithIndianFormat(value)} (${percentage.toFixed(
-              2
+              2,
             )}%)`;
           },
         },
@@ -285,6 +297,53 @@ const DealerTypeRevenueReport = () => {
     label: (currentYear - i).toString(),
   }));
 
+  // Month options
+  const monthOptions = [
+    { value: undefined, label: "All Months" },
+    { value: "January", label: "January" },
+    { value: "February", label: "February" },
+    { value: "March", label: "March" },
+    { value: "April", label: "April" },
+    { value: "May", label: "May" },
+    { value: "June", label: "June" },
+    { value: "July", label: "July" },
+    { value: "August", label: "August" },
+    { value: "September", label: "September" },
+    { value: "October", label: "October" },
+    { value: "November", label: "November" },
+    { value: "December", label: "December" },
+  ];
+
+  // Quarter options
+  const quarterOptions = [
+    { value: undefined, label: "All Quarters" },
+    { value: "Q1", label: "Q1 (Apr - Jun)" },
+    { value: "Q2", label: "Q2 (Jul - Sep)" },
+    { value: "Q3", label: "Q3 (Oct - Dec)" },
+    { value: "Q4", label: "Q4 (Jan - Mar)" },
+  ];
+
+  const handleMonthChange = (value: string | undefined) => {
+    setSelectedMonth(value);
+    if (value !== undefined) {
+      setSelectedQuarter(undefined);
+    }
+  };
+
+  const handleQuarterChange = (value: string | undefined) => {
+    setSelectedQuarter(value);
+    if (value !== undefined) {
+      setSelectedMonth(undefined);
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSelectedYear((ServerTime().data as Date).getFullYear().toString());
+    setSelectedMonth(undefined);
+    setSelectedQuarter(undefined);
+    setCity(undefined);
+  };
+
   return (
     <main className="p-6">
       <div className="flex flex-col lg:flex-row gap-2">
@@ -308,7 +367,7 @@ const DealerTypeRevenueReport = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm mt-4 p-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center">
+        <div className="flex flex-col md:flex-row gap-4 items-end md:items-center">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Year</label>
             <Select
@@ -318,20 +377,49 @@ const DealerTypeRevenueReport = () => {
               style={{ width: 120 }}
             />
           </div>
-          {user && !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(user.role) && (
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">
-                District
-              </label>
-              <Radio.Group
-                options={citys}
-                onChange={onCityChange}
-                value={city}
-                optionType="button"
-                buttonStyle="solid"
-              />
-            </div>
-          )}
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Month</label>
+            <Select
+              value={selectedMonth}
+              onChange={handleMonthChange}
+              options={monthOptions}
+              style={{ width: 140 }}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Quarter</label>
+            <Select
+              value={selectedQuarter}
+              onChange={handleQuarterChange}
+              options={quarterOptions}
+              style={{ width: 140 }}
+            />
+          </div>
+          {user &&
+            !["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+              user.role,
+            ) && (
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">
+                  District
+                </label>
+                <Radio.Group
+                  options={citys}
+                  onChange={onCityChange}
+                  value={city}
+                  optionType="button"
+                  buttonStyle="solid"
+                />
+              </div>
+            )}
+          <div className="pt-6">
+            <button
+              onClick={handleClearFilters}
+              className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 transition-colors"
+            >
+              Clear Filters
+            </button>
+          </div>
         </div>
       </div>
 
@@ -496,7 +584,7 @@ const DealerTypeRevenueReport = () => {
                       ₹
                       {numberWithIndianFormat(
                         reportData.totalFuelRevenue +
-                          reportData.totalLiquorRevenue
+                          reportData.totalLiquorRevenue,
                       )}
                     </td>
                   </tr>

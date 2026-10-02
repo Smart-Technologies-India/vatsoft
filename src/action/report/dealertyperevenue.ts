@@ -7,6 +7,8 @@ import prisma from "../../../prisma/database";
 interface DealerTypeRevenuePayload {
   selectOffice?: "Dadra_Nagar_Haveli" | "DAMAN" | "DIU";
   year?: string;
+  month?: string;
+  quarter?: string;
 }
 
 interface MonthlyRevenue {
@@ -50,11 +52,40 @@ const DealerTypeRevenue = async (
     const currentYear = currentDate.getFullYear();
     const selectedYear = payload.year || currentYear.toString();
 
+    // Convert quarter to months
+    const getMonthsForQuarter = (quarter: string): string[] => {
+      const quarterMonthsMap: { [key: string]: string[] } = {
+        Q1: ["April", "May", "June"],
+        Q2: ["July", "August", "September"],
+        Q3: ["October", "November", "December"],
+        Q4: ["January", "February", "March"],
+      };
+      return quarterMonthsMap[quarter] || [];
+    };
+
     // Build where clause for dvat04
     const dvatWhereClause: any = {};
 
     if (payload.selectOffice) {
       dvatWhereClause.selectOffice = payload.selectOffice;
+    }
+
+    // Build where clause for returns based on month or quarter
+    const returnsWhereClause: any = {
+      deletedAt: null,
+      deletedById: null,
+      status: "PAID",
+      file_status: "ACTIVE",
+      year: selectedYear,
+    };
+
+    if (payload.month) {
+      returnsWhereClause.month = payload.month;
+    } else if (payload.quarter) {
+      const monthsInQuarter = getMonthsForQuarter(payload.quarter);
+      returnsWhereClause.month = {
+        in: monthsInQuarter,
+      };
     }
 
     // Fetch all dealers count by type
@@ -69,7 +100,9 @@ const DealerTypeRevenue = async (
     const liquorDealersCount = await prisma.dvat04.count({
       where: {
         ...dvatWhereClause,
-        commodity: "LIQUOR",
+        commodity: {
+          not: "FUEL",
+        },
         status: "APPROVED",
       },
     });
@@ -84,11 +117,7 @@ const DealerTypeRevenue = async (
           deletedAt: null,
           deletedById: null,
         },
-        deletedAt: null,
-        deletedById: null,
-        status: "PAID",
-        file_status: "ACTIVE",
-        year: selectedYear,
+        ...returnsWhereClause,
       },
       select: {
         month: true,
@@ -99,18 +128,17 @@ const DealerTypeRevenue = async (
     // Fetch revenue data for liquor dealers
     const liquorReturns = await prisma.returns_01.findMany({
       where: {
-        deletedAt: null,
-        deletedById: null,
         dvat04: {
           ...dvatWhereClause,
-          commodity: "LIQUOR",
+          // commodity: "LIQUOR",
+          commodity: {
+            not: "FUEL",
+          },
           status: "APPROVED",
           deletedAt: null,
           deletedById: null,
         },
-        status: "PAID",
-        file_status: "ACTIVE",
-        year: selectedYear,
+        ...returnsWhereClause,
       },
       select: {
         month: true,
@@ -178,7 +206,12 @@ const DealerTypeRevenue = async (
         fuelRevenue: 0,
         liquorRevenue: 0,
       };
-      existing.fuelRevenue += Math.max(0, parseFloat(ret.vatamount || "0"));
+      existing.fuelRevenue += Math.max(
+        0,
+        parseFloat(ret.vatamount || "0") < 0
+          ? 0
+          : parseFloat(ret.vatamount || "0"),
+      );
       monthlyDataMap.set(monthNum, existing);
     });
 
@@ -194,7 +227,12 @@ const DealerTypeRevenue = async (
         fuelRevenue: 0,
         liquorRevenue: 0,
       };
-      existing.liquorRevenue += Math.max(0, parseFloat(ret.vatamount || "0"));
+      existing.liquorRevenue += Math.max(
+        0,
+        parseFloat(ret.vatamount || "0") < 0
+          ? 0
+          : parseFloat(ret.vatamount || "0"),
+      );
       monthlyDataMap.set(monthNum, existing);
     });
 
@@ -214,21 +252,25 @@ const DealerTypeRevenue = async (
     });
 
     // Calculate totals
-    const totalFuelRevenue = Math.max(0, monthlyData.reduce(
-      (sum, item) => sum + item.fuelRevenue,
+    const totalFuelRevenue = Math.max(
       0,
-    ));
-    const totalLiquorRevenue = Math.max(0, monthlyData.reduce(
-      (sum, item) => sum + item.liquorRevenue,
+      monthlyData.reduce((sum, item) => sum + item.fuelRevenue, 0),
+    );
+    const totalLiquorRevenue = Math.max(
       0,
-    ));
+      monthlyData.reduce((sum, item) => sum + item.liquorRevenue, 0),
+    );
     const totalRevenue = totalFuelRevenue + totalLiquorRevenue;
 
     // Calculate percentages
-    const fuelPercentage = Math.max(0,
-      totalRevenue === 0 ? 0 : (totalFuelRevenue / totalRevenue) * 100);
-    const liquorPercentage = Math.max(0,
-      totalRevenue === 0 ? 0 : (totalLiquorRevenue / totalRevenue) * 100);
+    const fuelPercentage = Math.max(
+      0,
+      totalRevenue === 0 ? 0 : (totalFuelRevenue / totalRevenue) * 100,
+    );
+    const liquorPercentage = Math.max(
+      0,
+      totalRevenue === 0 ? 0 : (totalLiquorRevenue / totalRevenue) * 100,
+    );
 
     return {
       status: true,

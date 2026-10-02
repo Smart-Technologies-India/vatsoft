@@ -682,6 +682,7 @@ model returns_entry {
   @@index([updatedById], map: "returns_entry_updatedById_fkey")
   @@index([quantity], map: "returns_entry_quantity_idx")
   @@index([invoice_number], map: "returns_entry_invoice_number_idx")
+  @@index([invoice_date], map: "returns_entry_invoice_date_idx")
 }
 
 model department_doc_upload {

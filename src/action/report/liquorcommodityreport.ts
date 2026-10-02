@@ -1,20 +1,10 @@
 "use server";
-import { getCurrentUserId } from "@/lib/auth";
 
+import { getCurrentUserId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import { errorToString } from "@/utils/methods";
 import { SelectOffice } from "@prisma/client";
 import prisma from "../../../prisma/database";
-
-function getDateMonthsAgo(date: Date, monthsAgo: number): Date {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-
-  // Calculate new month and year
-  const newMonth = month - monthsAgo;
-  const newDate = new Date(year, newMonth, 1); // handles negative months correctly
-  return newDate;
-}
 
 const LiquorCommodityReport = async (
   year: string,
@@ -49,11 +39,11 @@ const LiquorCommodityReport = async (
     }
 
     const targetYear = parseInt(year) || new Date().getFullYear();
-    
+
     // If month is provided, query that specific month
     // If not, query the entire year
     let dateFilter: any;
-    
+
     if (month) {
       const targetMonth = parseInt(month);
       const firstDateOfMonth = new Date(targetYear, targetMonth - 1, 1);
@@ -71,6 +61,8 @@ const LiquorCommodityReport = async (
         lt: lastDateOfYear,
       };
     }
+
+    const start = new Date();
 
     // Fetch commodity data first to filter at database level
     const commodityData = await prisma.commodity_master.findMany({
@@ -93,6 +85,10 @@ const LiquorCommodityReport = async (
         deletedById: null,
         status: "ACTIVE",
       },
+      select: {
+        id: true,
+        product_name: true,
+      },
     });
 
     if (commodityData.length === 0) {
@@ -104,6 +100,11 @@ const LiquorCommodityReport = async (
     }
 
     const commodityIds = commodityData.map((c) => c.id);
+    console.log(
+      `Fetched ${commodityIds.length} commodity IDs in ${(new Date().getTime() - start.getTime()) / 1000} seconds.`,
+    );
+
+    const sec_start = new Date();
 
     // Fetch all matching records with minimal fields to reduce memory footprint
     // Using select instead of include to avoid loading unnecessary data
@@ -142,6 +143,9 @@ const LiquorCommodityReport = async (
       });
     }
 
+    console.log(
+      `Starting aggregation of ${response.length} entries at ${(new Date().getTime() - sec_start.getTime()) / 1000} seconds.`,
+    );
     // Create commodity lookup map for O(1) access
     const commodityMap = new Map(commodityData.map((c) => [c.id, c]));
 
@@ -159,10 +163,14 @@ const LiquorCommodityReport = async (
       }
     > = {};
 
+    let skippedCount = 0;
     for (const entry of response) {
       const commodityId = entry.commodity_masterId;
       const userOffice = entry.createdBy?.selectOffice;
-      if (!commodityId || !userOffice) continue;
+      if (!commodityId || !userOffice) {
+        skippedCount++;
+        continue;
+      }
 
       const commodity = commodityMap.get(commodityId);
       if (!commodity) continue;
@@ -191,9 +199,17 @@ const LiquorCommodityReport = async (
       );
     }
 
+    console.log(
+      `Skipped ${skippedCount} entries due to missing commodityId or userOffice`,
+    );
+
     // Sort by total amount for consistent ordering
     const allAggregatedData = Object.values(aggregationMap).sort(
       (a, b) => b.total_amount - a.total_amount,
+    );
+
+    console.log(
+      `Aggregated ${allAggregatedData.length} unique groups (commodity + office combinations) in ${(new Date().getTime() - sec_start.getTime()) / 1000} seconds.`,
     );
 
     // Apply pagination to aggregated results

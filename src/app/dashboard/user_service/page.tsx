@@ -71,7 +71,7 @@ const Page = () => {
               <DashboardCards
                 title="View Notice and Order"
                 description="Check any notices and orders issued by the VAT department."
-                link="/dashboard/user_service/department-notice_order"
+                link="/dashboard/returns/department-pending-return"
               />
               <DashboardCards
                 title="Send Notification"

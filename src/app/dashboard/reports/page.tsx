@@ -289,7 +289,7 @@ const ReportsPage = () => {
               </button>
             </div>
           )}
-        <div className="p-2 rounded shadow bg-white relative pb-8">
+        {/* <div className="p-2 rounded shadow bg-white relative pb-8">
           <p className="text-sm">
             Commodity Sales Growth Report (Month-on-Month or Year-on-Year)
           </p>
@@ -302,7 +302,7 @@ const ReportsPage = () => {
           >
             View Report
           </button>
-        </div>
+        </div> */}
       </div>
       <hr className="my-4" />
       <h1>E. Dealer Behavior & Profiling</h1>
@@ -397,7 +397,7 @@ const ReportsPage = () => {
           <button
             className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
             onClick={() => {
-              router.push("/dashboard/user_service/department-notice_order");
+              router.push("/dashboard/returns/department-pending-return");
             }}
           >
             View Report

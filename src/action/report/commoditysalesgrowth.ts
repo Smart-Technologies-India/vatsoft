@@ -10,6 +10,8 @@ interface CommoditySalesGrowthPayload {
   growthType: "MONTH_ON_MONTH" | "YEAR_ON_YEAR";
   month?: number;
   year?: number;
+  page?: number;
+  pageSize?: number;
 }
 
 interface CommodityGrowthData {
@@ -32,6 +34,12 @@ const CommoditySalesGrowth = async (
 ): Promise<{
   status: boolean;
   data?: CommodityGrowthData[];
+  pagination?: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
   message?: string;
 }> => {
   try {
@@ -266,9 +274,24 @@ const CommoditySalesGrowth = async (
     // Sort by amount growth percentage (descending)
     growthData.sort((a, b) => b.amountGrowthPercent - a.amountGrowthPercent);
 
+    // Pagination
+    const pageSize = payload.pageSize || 10;
+    const page = payload.page || 1;
+    const totalItems = growthData.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedData = growthData.slice(startIndex, endIndex);
+
     return {
       status: true,
-      data: growthData,
+      data: paginatedData,
+      pagination: {
+        total: totalItems,
+        page: page,
+        pageSize: pageSize,
+        totalPages: totalPages,
+      },
     };
   } catch (e) {
     return {

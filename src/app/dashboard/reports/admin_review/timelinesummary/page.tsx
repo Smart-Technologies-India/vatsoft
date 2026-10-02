@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import type { InputRef, RadioChangeEvent } from "antd";
 import { Radio, Button, Input, Pagination, Spin } from "antd";
-import { Bar, Doughnut, Pie } from "react-chartjs-2";
+import { Bar, Pie } from "react-chartjs-2";
 import { Chart as ChartJS, registerables } from "chart.js";
 import * as XLSX from "xlsx";
 import {
@@ -70,7 +70,7 @@ const AfterDeathLinePage = () => {
   }
 
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.TIN
+    SearchOption.TIN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -92,7 +92,7 @@ const AfterDeathLinePage = () => {
   const totalPending = allDvatData.reduce((sum, item) => sum + item.pending, 0);
   const totalDue = allDvatData.reduce((sum, item) => sum + item.due, 0);
   const compositionDealers = allDvatData.filter(
-    (item) => item.dvat04.compositionScheme
+    (item) => item.dvat04.compositionScheme,
   ).length;
   const regularDealers = totalDealers - compositionDealers;
 
@@ -136,10 +136,7 @@ const AfterDeathLinePage = () => {
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Timeline Summary");
-    XLSX.writeFile(
-      workbook,
-      `timeline_summary_report_${selectedYear}.xlsx`
-    );
+    XLSX.writeFile(workbook, `timeline_summary_report_${selectedYear}.xlsx`);
   };
 
   // Chart data - Top 10 dealers by late returns (from all data)
@@ -168,18 +165,6 @@ const AfterDeathLinePage = () => {
     ],
   };
 
-  // Dealer type distribution
-  const doughnutData = {
-    labels: ["Regular Dealers", "Composition Dealers"],
-    datasets: [
-      {
-        data: [regularDealers, compositionDealers],
-        backgroundColor: ["rgba(59, 130, 246, 0.8)", "rgba(34, 197, 94, 0.8)"],
-      },
-    ],
-  };
-
-  // Filing status distribution
   const pieChartData = {
     labels: ["Timely Filed", "Late Filing", "Pending"],
     datasets: [
@@ -523,21 +508,11 @@ const AfterDeathLinePage = () => {
 
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-lg font-semibold mb-4">
-              Dealer Type Distribution
+              Overall Filing Status Distribution
             </h2>
             <div className="h-80 flex items-center justify-center">
-              <Doughnut data={doughnutData} options={pieOptions} />
+              <Pie data={pieChartData} options={pieOptions} />
             </div>
-          </div>
-        </div>
-
-        {/* Filing Status Pie Chart */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">
-            Overall Filing Status Distribution
-          </h2>
-          <div className="h-80 flex items-center justify-center">
-            <Pie data={pieChartData} options={pieOptions} />
           </div>
         </div>
 
@@ -670,8 +645,8 @@ const AfterDeathLinePage = () => {
                           onClick={() => {
                             router.push(
                               `/dashboard/returns/department-pending-return/${encryptURLData(
-                                val.dvat04.id.toString()
-                              )}`
+                                val.dvat04.id.toString(),
+                              )}`,
                             );
                           }}
                         >
@@ -682,7 +657,10 @@ const AfterDeathLinePage = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                    <TableCell
+                      colSpan={8}
+                      className="text-center py-8 text-gray-500"
+                    >
                       No data available
                     </TableCell>
                   </TableRow>
