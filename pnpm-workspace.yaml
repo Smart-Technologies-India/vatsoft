@@ -7,11 +7,12 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
-  - framer-motion@13.3.0
+  - framer-motion@13.3.0 || 13.5.0
   - lucide-react@1.46.0
   - moment@2.31.0
-  - motion-dom@13.3.0
-  - motion-utils@13.3.0
+  - motion-dom@13.3.0 || 13.5.0
+  - motion-utils@13.3.0 || 13.5.0
+  - '@types/node@26.6.4'
 onlyBuiltDependencies:
   - '@prisma/client'
   - '@prisma/engines'
