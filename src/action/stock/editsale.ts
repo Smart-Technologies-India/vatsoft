@@ -176,7 +176,6 @@ const EditSale = async (
             is_against_iform: payload.is_against_iform ?? false,
             is_export: payload.is_export ?? false,
             is_against_e1form: payload.is_against_e1 ?? false,
-            is_exempt6_2: payload.is_exempt6_2 ?? false,
             updatedById: payload.createdById,
           },
         });
