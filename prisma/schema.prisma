@@ -328,6 +328,7 @@ model dvat04 {
   numberOfSignatory               Int?
   nameOfManager                   String?
   nameOfSignatory                 String?
+  wallet                          String?                     @default("0")
   status                          DvatStatus                  @default(NONE)
   createdAt                       DateTime                    @default(now())
   createdById                     Int
@@ -377,6 +378,7 @@ model dvat04 {
   interestWorkings                interest_working[]
   returns01Works                  returns_01_work[]
   returnsNotfiledWorks            returns_notfiled_work[]
+  walletHistories                 wallet_history[]
 
   @@index([createdById], map: "dvat04_createdById_fkey")
   @@index([deletedById], map: "dvat04_deletedById_fkey")
@@ -387,6 +389,30 @@ model dvat04 {
   @@index([selectComTwoId], map: "dvat04_selectComTwoId_fkey")
   @@index([tin_master_id], map: "dvat04_tin_master_id_fkey")
   @@index([updatedById], map: "dvat04_updatedById_fkey")
+}
+
+enum WALLETTYPE {
+  CREDIT
+  DEBIT
+}
+
+model wallet_history {
+  id                Int           @id @default(autoincrement())
+  dvatId            Int
+  dvat              dvat04        @relation(fields: [dvatId], references: [id])
+  refineryId        Int
+  refinery          refinery_sale @relation(fields: [refineryId], references: [id])
+  old_quantity      String
+  new_quantity      String
+  old_amount        String
+  new_amount        String
+  difference_amount String
+  invoice_number    String
+  type              WALLETTYPE
+  status            Status        @default(ACTIVE)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
 }
 
 model commodity {
@@ -1438,6 +1464,7 @@ model edit_sale {
   is_export           Boolean           @default(false)
   is_h_export         Boolean           @default(false)
   is_against_e1       Boolean           @default(false)
+  is_exempt6_2        Boolean           @default(false)
   is_exempt           Boolean           @default(false)
   batch_name          String?
   createdAt           DateTime          @default(now())
@@ -1871,6 +1898,7 @@ model refinery_sale {
   seller_tin_number      tin_number_master          @relation(fields: [seller_tin_numberId], references: [id])
   updatedBy              user?                      @relation("refinery_sale_updatedBy", fields: [updatedById], references: [id])
   refinerySaleChangeLogs refinery_sale_change_log[]
+  walletHistories        wallet_history[]
 }
 
 model refinery_sale_change_log {
