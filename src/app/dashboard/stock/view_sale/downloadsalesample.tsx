@@ -75,6 +75,7 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
             "Is Against C Form": "false",
             "Is Against F Form": "false",
             "Is Exempt": "false",
+            "Is Exempt U/s 6(2)": "false",
           };
         }
 
@@ -83,6 +84,7 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
             "Is Against C Form": "true",
             "Is Against F Form": "false",
             "Is Exempt": "false",
+            "Is Exempt U/s 6(2)": "false",
           };
         }
 
@@ -90,6 +92,7 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
           "Is Against C Form": "false",
           "Is Against F Form": "true",
           "Is Exempt": "true",
+          "Is Exempt U/s 6(2)": "true",
         };
       }
 
@@ -176,6 +179,12 @@ const DownloadSaleSample = (props: DownloadSaleSampleProps) => {
               },
               {
                 Field: "Is Exempt",
+                "What to fill": "true or false",
+                Rules:
+                  "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
+              },
+              {
+                Field: "Is Exempt U/s 6(2)",
                 "What to fill": "true or false",
                 Rules:
                   "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",

@@ -45,13 +45,13 @@ const OutstandingDealers = async (
 
     // Build date filter condition using transaction_date
     const dateFilter: any = {};
-    
+
     if (payload.year) {
       if (payload.filterType === "MONTH" && payload.month) {
         // Filter by specific month and year using transaction_date
         const startDate = new Date(payload.year, payload.month - 1, 1);
         const endDate = new Date(payload.year, payload.month, 1);
-        
+
         dateFilter.transaction_date = {
           gte: startDate,
           lt: endDate,
@@ -60,7 +60,7 @@ const OutstandingDealers = async (
         // Filter by year only using transaction_date
         const startDate = new Date(payload.year, 0, 1);
         const endDate = new Date(payload.year + 1, 0, 1);
-        
+
         dateFilter.transaction_date = {
           gte: startDate,
           lt: endDate,
@@ -81,7 +81,8 @@ const OutstandingDealers = async (
               { name: { contains: payload.tradename } },
             ],
           }),
-          ...(payload.dept && payload.dept !== "ALL" && { selectOffice: payload.dept }),
+          ...(payload.dept &&
+            payload.dept !== "ALL" && { selectOffice: payload.dept }),
           deletedAt: null,
           deletedBy: null,
         },
@@ -139,32 +140,8 @@ const OutstandingDealers = async (
       }
     }
 
-    // interface NoticeType {
-    //   dvat04id: number;
-    //   notice_count: number;
-    // }
-
-    // let noticeMap = new Map<number, NoticeType>(); // Track dvat04 by ID
-
-    // for (let i = 0; i < notice.length; i++) {
-    //   if (noticeMap.has(notice[i].dvatid)) {
-    //     let existingData: NoticeType = noticeMap.get(
-    //       notice[i].dvatid
-    //     ) as NoticeType;
-    //     existingData.notice_count += 1;
-    //   } else {
-    //     noticeMap.set(notice[i].dvatid, {
-    //       dvat04id: notice[i].dvatid,
-    //       notice_count: 1,
-    //     });
-    //   }
-    // }
-
-    // const notice_count = Array.from(noticeMap.values());
-
     // Convert Map to an array
     const res: ResponseType[] = Array.from(resMap.values());
-
 
     const paginatedData = res.slice(payload.skip, payload.skip + payload.take);
 

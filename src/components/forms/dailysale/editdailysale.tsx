@@ -48,7 +48,8 @@ type AgainstType =
   | "IFORM"
   | "H_EXPORT"
   | "E1"
-  | "EXPORT";
+  | "EXPORT"
+  | "EXEMPT6_2";
 export const EditDailySaleProvider = (props: EditDailySaleProviderProps) => {
   const methods = useForm<DailySaleForm>({
     resolver: valibotResolver(DailySaleSchema),
@@ -92,7 +93,8 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
       againstType === "IFORM" ||
       againstType === "H_EXPORT" ||
       againstType === "E1" ||
-      againstType === "EXPORT"
+      againstType === "EXPORT" ||
+      againstType === "EXEMPT6_2"
     )
       return "0";
     return commoditymaster?.taxable_at ?? "0";
@@ -168,6 +170,8 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
         setAgainstType("E1");
       } else if (props.data.is_export) {
         setAgainstType("EXPORT");
+      } else if (props.data.is_exempt6_2) {
+        setAgainstType("EXEMPT6_2");
       } else {
         setAgainstType("NONE");
       }
@@ -307,6 +311,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
       is_against_iform: againstType === "IFORM",
       is_h_export: againstType === "H_EXPORT",
       is_against_e1: againstType === "E1",
+      is_exempt6_2: againstType === "EXEMPT6_2",
     });
 
     if (stock_response.status) {
@@ -407,6 +412,7 @@ const EditDailySale = (props: EditDailySaleProviderProps) => {
                       { value: "H_EXPORT", label: "H Form Export" },
                       { value: "E1", label: "Against E1 Form" },
                       { value: "EXPORT", label: "Direct Export" },
+                      { value: "EXEMPT6_2", label: "Exempt U/s 6(2)" },
                     ]}
                   />
                 </div>

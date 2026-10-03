@@ -20,6 +20,7 @@ interface EditSalePayload {
   is_h_export?: boolean;
   is_against_e1?: boolean;
   is_exempt?: boolean;
+  is_exempt6_2?: boolean;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -110,6 +111,7 @@ const EditSale = async (
           is_h_export: payload.is_h_export ?? false,
           is_against_e1: payload.is_against_e1 ?? false,
           is_export: payload.is_export ?? false,
+          is_exempt6_2: payload.is_exempt6_2 ?? false,
           is_dvat_31: false,
           createdById: payload.createdById,
           is_local:
@@ -174,6 +176,7 @@ const EditSale = async (
             is_against_iform: payload.is_against_iform ?? false,
             is_export: payload.is_export ?? false,
             is_against_e1form: payload.is_against_e1 ?? false,
+            is_exempt6_2: payload.is_exempt6_2 ?? false,
             updatedById: payload.createdById,
           },
         });

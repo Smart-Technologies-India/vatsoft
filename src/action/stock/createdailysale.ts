@@ -18,6 +18,7 @@ interface CreateDailySalePayload {
   is_against_iform?: boolean;
   is_h_export?: boolean;
   is_against_e1?: boolean;
+  is_exempt6_2?: boolean;
   is_export: boolean;
 }
 
@@ -170,6 +171,7 @@ const CreateDailySale = async (
           is_against_iform: payload.is_against_iform ?? false,
           is_h_export: payload.is_h_export ?? false,
           is_against_e1: payload.is_against_e1 ?? false,
+          is_exempt6_2: payload.is_exempt6_2 ?? false,
           is_export: payload.is_export,
           is_local:
             purchaser_response.tin_number.startsWith("25") ||

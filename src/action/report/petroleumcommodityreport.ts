@@ -58,14 +58,17 @@ const PetroleumCommodityReport = async (
     }
 
     const targetYear = parseInt(year) || new Date().getFullYear();
-    
+
     // If month is provided and not empty, query that specific month
     // If not, query the entire year
     let dateFilter: any;
-    
+
     // Normalize month - treat empty string as no month
-    const normalizedMonth = month && typeof month === "string" && month.trim() ? month.trim() : undefined;
-    
+    const normalizedMonth =
+      month && typeof month === "string" && month.trim()
+        ? month.trim()
+        : undefined;
+
     if (normalizedMonth && normalizedMonth.length > 0) {
       const targetMonth = parseInt(normalizedMonth, 10);
       // Validate month is between 1 and 12
@@ -136,9 +139,13 @@ const PetroleumCommodityReport = async (
         total_invoice_number: true,
         vatamount: true,
         commodity_masterId: true,
-        createdBy: {
+        returns_01: {
           select: {
-            selectOffice: true,
+            dvat04: {
+              select: {
+                selectOffice: true,
+              },
+            },
           },
         },
       },
@@ -171,7 +178,7 @@ const PetroleumCommodityReport = async (
 
     for (const entry of response) {
       const commodityId = entry.commodity_masterId;
-      const userOffice = entry.createdBy?.selectOffice;
+      const userOffice = entry.returns_01?.dvat04?.selectOffice;
       if (!commodityId || !userOffice) continue;
 
       const commodity = commodityMap.get(commodityId);

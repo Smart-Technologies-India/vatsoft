@@ -53,6 +53,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     against_cfrom: boolean;
     is_against_fform: boolean;
     is_exempt: boolean;
+    is_exempt6_2: boolean;
     is_against_iform: boolean;
     is_h_export: boolean;
     is_against_e1: boolean;
@@ -268,6 +269,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     if (["export", "isexport", "directexport"].includes(normalized)) {
       return "EXPORT";
     }
+    if (["exempt6_2", "isexempt6_2"].includes(normalized)) return "EXEMPT6_2";
 
     return null;
   };
@@ -288,6 +290,8 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         return "Against E1";
       case "EXPORT":
         return "Export";
+      case "EXEMPT6_2":
+        return "Exempt U/s 6(2)";
       default:
         return "Regular";
     }
@@ -301,6 +305,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     if (row.is_exempt) return "Exempt";
     if (row.is_h_export) return "H Export";
     if (row.is_export) return "Export";
+    if (row.is_exempt6_2) return "Exempt U/s 6(2)";
     return "Regular";
   };
 
@@ -513,6 +518,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         is_exempt: row.is_exempt,
         is_against_iform: row.is_against_iform,
         is_h_export: row.is_h_export,
+        is_exempt6_2: row.is_exempt6_2,
         is_against_e1: row.is_against_e1,
         is_export: row.is_export,
         batch_name: null,
@@ -826,6 +832,13 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             "is export",
             "is_export",
           ]);
+          const is_exempt6_2_raw = readSheetField(row, [
+            "Is Exempt U/s 6(2)",
+            "is exempt u/s 6(2)",
+            "is_exempt_u_s_6_2",
+            "Exempt U/s 6(2)",
+            "exempt u/s 6(2)",
+          ]);
           const sale_type_raw = readSheetField(row, [
             "Type",
             "type",
@@ -833,6 +846,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             "sale type",
             "sale_type",
           ]);
+
           const pcs_ml_raw = readSheetField(row, [
             "Pcs/mL",
             "pcs/ml",
@@ -850,6 +864,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             normalizeText(against_cfrom_raw) === "" &&
             normalizeText(is_against_fform_raw) === "" &&
             normalizeText(is_exempt_raw) === "" &&
+            normalizeText(is_exempt6_2_raw) === "" &&
             normalizeText(is_against_iform_raw) === "" &&
             normalizeText(is_h_export_raw) === "" &&
             normalizeText(is_against_e1_raw) === "" &&
@@ -1055,6 +1070,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           const parsedHExport = parseBooleanValue(is_h_export_raw);
           const parsedAgainstE1 = parseBooleanValue(is_against_e1_raw);
           const parsedIsExport = parseBooleanValue(is_export_raw);
+          const parsedIsExempt6_2 = parseBooleanValue(is_exempt6_2_raw);
           const normalizedType = normalizeSaleType(sale_type_raw);
 
           const booleanColumnInputs: Array<{
@@ -1091,6 +1107,11 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               label: "Is Against E1",
               raw: is_against_e1_raw,
               parsed: parsedAgainstE1,
+            },
+            {
+              label: "Is Exempt U/s 6(2)",
+              raw: is_exempt6_2_raw,
+              parsed: parsedIsExempt6_2,
             },
             {
               label: "Is Export",
@@ -1132,6 +1153,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                       parsed: parsedAgainstFForm,
                     },
                     { label: "Is Exempt", parsed: parsedIsExempt },
+                    { label: "Is Exempt U/s 6(2)", parsed: parsedIsExempt6_2 },
                   ]
                 : [];
 
@@ -1156,6 +1178,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             { key: "IFORM", value: parsedAgainstIForm },
             { key: "H_EXPORT", value: parsedHExport },
             { key: "E1", value: parsedAgainstE1 },
+            { key: "EXEMPT6_2", value: parsedIsExempt6_2 },
             { key: "EXPORT", value: parsedIsExport },
           ].filter((item) => item.value === true);
 
@@ -1173,7 +1196,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               : commodityType === "WHOLESALER"
                 ? ["CFORM"]
                 : commodityType === "FUEL"
-                  ? ["CFORM", "FFORM", "EXEMPT"]
+                  ? ["CFORM", "FFORM", "EXEMPT", "EXEMPT6_2"]
                   : [];
 
           const selectedAllowedFlags = selectedFlags.filter((flag) =>
@@ -1277,6 +1300,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           const is_h_export = saleType === "H_EXPORT";
           const is_against_e1 = saleType === "E1";
           const is_export = saleType === "EXPORT";
+          const is_exempt6_2 = saleType === "EXEMPT6_2";
 
           return {
             tin_number,
@@ -1302,6 +1326,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             is_h_export,
             is_against_e1,
             is_export,
+            is_exempt6_2,
             seller_tin_id: sellerTin?.id ?? null,
             commodity_name: selectedCommodity?.product_name ?? null,
             tax_percent: selectedCommodity?.taxable_at ?? null,
@@ -1483,6 +1508,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           item.row.is_exempt ? "true" : "false",
           item.row.is_h_export ? "true" : "false",
           item.row.is_export ? "true" : "false",
+          item.row.is_exempt6_2 ? "true" : "false",
           item.row.errorname ?? "",
         ]
           .join(" ")
@@ -1517,6 +1543,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
           return item.row.total_invoice_value ?? 0;
         case "against_cform":
           return item.row.sale_type;
+
         default:
           return item.originalIndex;
       }
