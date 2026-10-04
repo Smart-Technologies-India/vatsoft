@@ -32,7 +32,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { formatDate } from "date-fns";
-import { enc } from "crypto-js";
 import { encryptURLData } from "@/utils/methods";
 import * as XLSX from "xlsx";
 import { getCurrentUserRole } from "@/lib/auth";

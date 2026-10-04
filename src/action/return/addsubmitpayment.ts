@@ -70,7 +70,7 @@ const AddSubmitPayment = async (
           status: "ACTIVE",
         },
         data: {
-          transaction_date: addPrismaDatabaseDate(new Date()).toISOString(),
+          transaction_date: new Date(),
           paymentmode: "ONLINE",
           rr_number: payload.rr_number,
           filing_datetime: new Date(),

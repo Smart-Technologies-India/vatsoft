@@ -18,6 +18,11 @@ export interface DispatchPayload {
     kilo_liter: string;
   }>;
   cstpurchase: string;
+  vatDifference?: number;
+  oldQuantityLitres?: number;
+  newQuantityLitres?: number;
+  oldTotalAmount?: number;
+  newTotalAmount?: number;
 }
 
 const DispatchRefinerySale = async (
@@ -333,6 +338,40 @@ const DispatchRefinerySale = async (
           message: `Failed to create daily purchase record: ${stockResponse.message}`,
         });
       }
+    }
+
+    // Update wallet and create wallet_history entry if VAT difference is provided
+    if (payload.vatDifference !== undefined && payload.vatDifference !== 0) {
+      const currentWallet = Number(sellerDvat.wallet || "0");
+      const newWallet = currentWallet + payload.vatDifference;
+
+      // Update DVAT04 wallet
+      await prisma.dvat04.update({
+        where: { id: sellerDvat.id },
+        data: {
+          wallet: newWallet.toFixed(0),
+          updatedById: currentUserId,
+          updatedAt: new Date(),
+        },
+      });
+
+      // Create wallet_history entry
+      await prisma.wallet_history.create({
+        data: {
+          dvatId: sellerDvat.id,
+          refineryId: targetSale.refineryId,
+          old_quantity: String(payload.oldQuantityLitres || "0"),
+          new_quantity: String(payload.newQuantityLitres || "0"),
+          old_amount: String((payload.oldTotalAmount || 0).toFixed(2)),
+          new_amount: String((payload.newTotalAmount || 0).toFixed(2)),
+          old_wallet: currentWallet.toFixed(0),
+          new_wallet: newWallet.toFixed(0),
+          difference_amount: payload.vatDifference.toFixed(2),
+          invoice_number: payload.invoice_number,
+          type: payload.vatDifference >= 0 ? "CREDIT" : "DEBIT",
+          status: "ACTIVE",
+        },
+      });
     }
 
     return {

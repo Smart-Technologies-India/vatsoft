@@ -1,4 +1,6 @@
 import ServerTime from "@/action/servertime";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import {
   CategoryOfEntry,
   challan,
@@ -13,6 +15,8 @@ import {
   SaleOfInterstate,
 } from "@prisma/client";
 
+dayjs.extend(utc);
+
 interface PercentageOutput {
   increase: number;
   decrease: number;
@@ -23,13 +27,12 @@ const isNegative = (value: number): boolean => {
 };
 
 function getDaysBetweenDates(startDate: Date, endDate: Date): number {
-  // Calculate the difference in milliseconds
-  const differenceInTime = endDate.getTime() - startDate.getTime();
+  // Convert dates to dayjs objects and normalize to UTC midnight for accurate day counting
+  const start = dayjs.utc(startDate).startOf("day");
+  const end = dayjs.utc(endDate).startOf("day");
 
-  // Convert milliseconds to days
-  const differenceInDays = differenceInTime / (1000 * 3600 * 24);
-
-  return Math.ceil(differenceInDays); // Rounds up to the nearest whole day
+  // Calculate the difference in complete days (inclusive - counts both start and end dates)
+  return Math.floor(end.diff(start, "day", true));
 }
 
 class CreditDebit {
@@ -755,6 +758,7 @@ export class NetTaxCalculation extends CreditDebit {
         new Date(parseInt(year), monthIndex, 29),
         new Date(this.return01.transaction_date ?? currentDate.toISOString()),
       );
+
       return isNegative(Math.min(100 * pdiff_days, 10000))
         ? 0
         : Math.min(100 * pdiff_days, 10000);
@@ -806,7 +810,7 @@ export class NetTaxCalculation extends CreditDebit {
       }
     }
 
-    return new Date(computedYear, monthIndex, 15);
+    return new Date(Date.UTC(computedYear, monthIndex, 15, 0, 0, 0));
   };
 
   calculateInterest = (
@@ -1658,7 +1662,7 @@ export class CompositionCalculation {
       }
     }
 
-    return new Date(computedYear, monthIndex, 15);
+    return new Date(Date.UTC(computedYear, monthIndex, 15, 0, 0, 0));
   };
 
   calculateInterest = (

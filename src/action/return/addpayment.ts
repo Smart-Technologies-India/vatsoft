@@ -88,7 +88,7 @@ const AddPayment = async (
 
       // For new component logic: component calls this separately for each return with already-determined values
       // Just update the specific return, don't divide or find other quarterly returns
-      const transactionDate = addPrismaDatabaseDate(new Date()).toISOString();
+      const transactionDate =new Date();
       const filingDate = new Date();
 
       const returnresponse = await prisma.returns_01.update({

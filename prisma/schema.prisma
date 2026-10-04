@@ -406,6 +406,8 @@ model wallet_history {
   new_quantity      String
   old_amount        String
   new_amount        String
+  old_wallet        String
+  new_wallet        String
   difference_amount String
   invoice_number    String
   type              WALLETTYPE

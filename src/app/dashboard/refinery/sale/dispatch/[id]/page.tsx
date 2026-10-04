@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
 import { decryptURLData } from "@/utils/methods";
@@ -114,7 +114,7 @@ export default function DispatchPage() {
     },
   });
 
-  const { handleSubmit, register, reset } = methods;
+  const { handleSubmit, register, reset, control } = methods;
   const {
     handleSubmit: handleEditSubmit,
     register: editRegister,
@@ -126,6 +126,53 @@ export default function DispatchPage() {
   }, [invoice]);
 
   const canDispatch = currentWorkflowStatus === "VATPAID";
+
+  const lineItems = useWatch({ control, name: "lineItems" }) || [];
+
+  const lineCalculations = useMemo(() => {
+    if (!invoice) return [];
+    
+    return invoice.rows.map((row, index) => {
+      const dispatchKL = Number.parseFloat(lineItems[index]?.kiloLiter ?? "0") || 0;
+      const dispatchLitres = dispatchKL * 1000;
+      
+      // Original values from database
+      const originalKL = Number.parseFloat(String(row.quantity ?? "0")) / 1000 || 0;
+      const originalLitres = Number.parseFloat(String(row.quantity ?? "0")) || 0;
+      
+      // Calculate item price from amount and quantity
+      const originalQuantityLitres = Number.parseFloat(String(row.quantity ?? "0")) || 0;
+      const originalAmount = Number.parseFloat(String(row.amount ?? "0")) + Number.parseFloat(String(row.vatamount ?? "0")) || 0;
+      const itemPrice = originalQuantityLitres > 0 ? originalAmount / originalQuantityLitres : 0;
+      
+      const taxPercent = Number.parseFloat(String(row.tax_percent ?? "0")) || 0;
+      
+      // Current (modified) values
+      const totalInvoiceValue = dispatchLitres * itemPrice;
+      const taxableValue = totalInvoiceValue / (1 + taxPercent / 100);
+      const vatAmount = (taxableValue * taxPercent) / 100;
+
+      // Original calculated values
+      const originalTotalInvoiceValue = originalLitres * itemPrice;
+      const originalTaxableValue = originalTotalInvoiceValue / (1 + taxPercent / 100);
+      const originalVatAmount = (originalTaxableValue * taxPercent) / 100;
+
+      return {
+        itemPrice,
+        dispatchKL,
+        dispatchLitres,
+        originalKL,
+        originalLitres,
+        taxPercent,
+        taxableValue,
+        vatAmount,
+        totalInvoiceValue,
+        originalTotalInvoiceValue,
+        originalTaxableValue,
+        originalVatAmount,
+      };
+    });
+  }, [invoice, lineItems]);
 
   useEffect(() => {
     const loadInvoice = async () => {
@@ -237,6 +284,30 @@ export default function DispatchPage() {
 
     setSubmitting(true);
 
+    // Calculate VAT difference (Original VAT - Changed VAT)
+    const vatDifference = lineCalculations.reduce(
+      (sum, calc) => sum + (calc.originalVatAmount - calc.vatAmount),
+      0,
+    );
+
+    // Calculate original and new quantities and amounts
+    const oldQuantityLitres = lineCalculations.reduce(
+      (sum, calc) => sum + calc.originalLitres,
+      0,
+    );
+    const newQuantityLitres = lineCalculations.reduce(
+      (sum, calc) => sum + calc.dispatchLitres,
+      0,
+    );
+    const oldTotalAmount = lineCalculations.reduce(
+      (sum, calc) => sum + calc.originalVatAmount,
+      0,
+    );
+    const newTotalAmount = lineCalculations.reduce(
+      (sum, calc) => sum + calc.vatAmount,
+      0,
+    );
+
     const res = await DispatchRefinerySale({
       id,
       invoice_number: data.invoiceNumber,
@@ -247,6 +318,11 @@ export default function DispatchPage() {
         kilo_liter: String(item.kiloLiter),
       })),
       cstpurchase: data.cstpurchase,
+      vatDifference,
+      oldQuantityLitres,
+      newQuantityLitres,
+      oldTotalAmount,
+      newTotalAmount,
     });
 
     if (res.status) {
@@ -363,46 +439,184 @@ export default function DispatchPage() {
                     <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
                       Product Name
                     </TableHead>
+                    {/* <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                      Item Price
+                    </TableHead> */}
                     <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
-                      Litres
+                      Qty (Litres)
                     </TableHead>
-                    <TableHead className="text-center p-2 text-xs font-medium text-gray-700 w-60">
+                    {/* <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                      Tax %
+                    </TableHead>
+                    <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                      Taxable Value
+                    </TableHead>
+                    <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                      VAT Amount
+                    </TableHead>
+                    <TableHead className="text-center p-2 text-xs font-medium text-gray-700">
+                      Total Amount
+                    </TableHead> */}
+                    <TableHead className="text-center p-2 text-xs font-medium text-gray-700 w-32">
                       Dispatch Kilo Liter
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoice.rows.map((row, index) => (
-                    <TableRow key={row.id} className="border-b w-60">
-                      <TableCell className="text-center p-2 text-xs">
-                        {row.commodity_master.product_name}
-                        <input
-                          type="hidden"
-                          {...register(`lineItems.${index}.saleId` as const, {
-                            valueAsNumber: true,
-                          })}
-                          value={row.id}
-                        />
-                      </TableCell>
-                      <TableCell className="text-center p-2 text-xs">
-                        {row.quantity.toLocaleString("en-IN")}
-                      </TableCell>
-                      <TableCell className="p-2 text-xs">
-                        <input
-                          type="number"
-                          // step="0.001"
-                          min="0"
-                          {...register(`lineItems.${index}.kiloLiter` as const)}
-                          className="h-8 w-full rounded border border-gray-300 px-2 text-xs outline-none focus:border-blue-500"
-                          placeholder="kL"
-                          disabled={!canDispatch || submitting}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {invoice.rows.map((row, index) => {
+                    const calc = lineCalculations[index];
+                    return (
+                      <TableRow key={row.id} className="border-b">
+                        <TableCell className="text-center p-2 text-xs">
+                          {row.commodity_master.product_name}
+                          <input
+                            type="hidden"
+                            {...register(`lineItems.${index}.saleId` as const, {
+                              valueAsNumber: true,
+                            })}
+                            value={row.id}
+                          />
+                        </TableCell>
+                        {/* <TableCell className="text-center p-2 text-xs font-medium text-gray-700">
+                          ₹ {calc?.itemPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell> */}
+                        <TableCell className="text-center p-2 text-xs font-medium text-gray-700">
+                          {calc?.dispatchLitres.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        </TableCell>
+                        {/* <TableCell className="text-center p-2 text-xs font-medium text-gray-700">
+                          {calc?.taxPercent.toFixed(2)}%
+                        </TableCell>
+                        <TableCell className="text-center p-2 text-xs font-medium text-blue-600">
+                          ₹ {calc?.taxableValue.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-center p-2 text-xs font-medium text-red-600">
+                          ₹ {calc?.vatAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-center p-2 text-xs font-medium text-green-600">
+                          ₹ {calc?.totalInvoiceValue.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell> */}
+                        <TableCell className="p-2 text-xs">
+                          <input
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            {...register(`lineItems.${index}.kiloLiter` as const)}
+                            className="h-8 w-full rounded border border-gray-300 px-2 text-xs outline-none focus:border-blue-500"
+                            placeholder="kL"
+                            disabled={!canDispatch || submitting}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
+
+            {/* Dispatch Summary Card - Original */}
+            {/* {lineCalculations.some((calc) => calc.originalLitres > 0) && (
+              <div className="border border-gray-200 rounded-lg p-4 mb-5 bg-blue-50">
+                <div className="text-sm font-semibold text-gray-800 mb-3">
+                  Dispatch Summary (Original)
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Total Quantity (Litres)</div>
+                    <div className="text-sm font-semibold text-gray-800">
+                      {lineCalculations.reduce((sum, calc) => sum + calc.originalLitres, 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} L
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Total Taxable Value</div>
+                    <div className="text-sm font-semibold text-blue-600">
+                      ₹ {lineCalculations.reduce((sum, calc) => sum + calc.originalTaxableValue, 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Total VAT Amount</div>
+                    <div className="text-sm font-semibold text-red-600">
+                      ₹ {lineCalculations.reduce((sum, calc) => sum + calc.originalVatAmount, 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Total Amount</div>
+                    <div className="text-sm font-semibold text-green-600">
+                      ₹ {lineCalculations.reduce((sum, calc) => sum + calc.originalTotalInvoiceValue, 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )} */}
+
+            {/* Change Dispatch Summary Card */}
+            {/* {lineCalculations.some((calc) => calc.dispatchLitres > 0) && (
+              <div className="border border-gray-200 rounded-lg p-4 mb-5 bg-yellow-50">
+                <div className="text-sm font-semibold text-gray-800 mb-3">
+                  Change Dispatch Summary (Modified)
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Total Quantity (Litres)</div>
+                    <div className="text-sm font-semibold text-gray-800">
+                      {lineCalculations.reduce((sum, calc) => sum + calc.dispatchLitres, 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} L
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Total Taxable Value</div>
+                    <div className="text-sm font-semibold text-blue-600">
+                      ₹ {lineCalculations.reduce((sum, calc) => sum + calc.taxableValue, 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Total VAT Amount</div>
+                    <div className="text-sm font-semibold text-red-600">
+                      ₹ {lineCalculations.reduce((sum, calc) => sum + calc.vatAmount, 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Total Amount</div>
+                    <div className="text-sm font-semibold text-green-600">
+                      ₹ {lineCalculations.reduce((sum, calc) => sum + calc.totalInvoiceValue, 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )} */}
+
+            {/* Different Dispatch Summary Card */}
+            {/* {lineCalculations.some((calc) => calc.dispatchLitres !== calc.originalLitres) && (
+              <div className="border border-gray-200 rounded-lg p-4 mb-5 bg-orange-50">
+                <div className="text-sm font-semibold text-gray-800 mb-3">
+                  Different Dispatch Summary (Variance)
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Total Quantity Difference (Litres)</div>
+                    <div className={`text-sm font-semibold ${lineCalculations.reduce((sum, calc) => sum + (calc.originalLitres - calc.dispatchLitres), 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {(lineCalculations.reduce((sum, calc) => sum + (calc.originalLitres - calc.dispatchLitres), 0)).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} L
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Taxable Value Difference</div>
+                    <div className={`text-sm font-semibold ${lineCalculations.reduce((sum, calc) => sum + (calc.originalTaxableValue - calc.taxableValue), 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      ₹ {(lineCalculations.reduce((sum, calc) => sum + (calc.originalTaxableValue - calc.taxableValue), 0)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">VAT Difference</div>
+                    <div className={`text-sm font-semibold ${lineCalculations.reduce((sum, calc) => sum + (calc.originalVatAmount - calc.vatAmount), 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      ₹ {(lineCalculations.reduce((sum, calc) => sum + (calc.originalVatAmount - calc.vatAmount), 0)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Total Amount Difference</div>
+                    <div className={`text-sm font-semibold ${lineCalculations.reduce((sum, calc) => sum + (calc.originalTotalInvoiceValue - calc.totalInvoiceValue), 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      ₹ {(lineCalculations.reduce((sum, calc) => sum + (calc.originalTotalInvoiceValue - calc.totalInvoiceValue), 0)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )} */}
 
             {/* Dealer Details Card */}
             <div className="border border-gray-200 rounded-lg p-4 mb-5 bg-blue-50">
