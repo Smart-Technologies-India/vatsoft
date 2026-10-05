@@ -7,22 +7,20 @@ import { customAlphabet } from "nanoid";
 import { errorToString } from "@/utils/methods";
 import { Quarter } from "@prisma/client";
 
-interface InitializeRefinerySaleVatPaymentPayload {
-  id: number;
-  payableAmount: number;
-  totalVatAmount: number;
-  walletAmount: number;
+interface AddWalletTransactionPayload {
+  amount: number;
+  remark?: string;
 }
 
-interface InitializeRefinerySaleVatPaymentResult {
+interface AddWalletTransactionResult {
   challanId: number;
-  vatAmount: string;
+  amount: string;
 }
 
-const InitializeRefinerySaleVatPayment = async (
-  payload: InitializeRefinerySaleVatPaymentPayload,
-): Promise<ApiResponseType<InitializeRefinerySaleVatPaymentResult | null>> => {
-  const functionname = InitializeRefinerySaleVatPayment.name;
+const AddWalletTransaction = async (
+  payload: AddWalletTransactionPayload,
+): Promise<ApiResponseType<AddWalletTransactionResult | null>> => {
+  const functionname = AddWalletTransaction.name;
   const cpinGenerator = customAlphabet("1234567890", 12);
 
   try {
@@ -43,9 +41,11 @@ const InitializeRefinerySaleVatPayment = async (
         id: currentDvatId,
         deletedAt: null,
         deletedById: null,
+        status: "APPROVED",
       },
       select: {
-        tin_master_id: true,
+        id: true,
+        wallet: true,
       },
     });
 
@@ -56,71 +56,21 @@ const InitializeRefinerySaleVatPayment = async (
       });
     }
 
-    const targetSale = await prisma.refinery_sale.findFirst({
-      where: {
-        id: payload.id,
-        seller_tin_numberId: currentDvat.tin_master_id,
-        deletedAt: null,
-        deletedById: null,
-        status: "ACTIVE",
-      },
-      select: {
-        id: true,
-        invoice_number: true,
-        invoice_date: true,
-        refineryId: true,
-        seller_tin_numberId: true,
-      },
-    });
-
-    if (!targetSale) {
+    if (payload.amount <= 0) {
       return createResponse({
-        message: "Invoice not found for current DVAT.",
+        message: "Amount must be greater than 0.",
         functionname,
       });
     }
 
-    const saleRows = await prisma.refinery_sale.findMany({
-      where: {
-        invoice_number: targetSale.invoice_number,
-        invoice_date: targetSale.invoice_date,
-        refineryId: targetSale.refineryId,
-        seller_tin_numberId: targetSale.seller_tin_numberId,
-        refinery_status: "SALE",
-        deletedAt: null,
-        deletedById: null,
-        status: "ACTIVE",
-      },
-      select: {
-        vatamount: true,
-      },
-    });
-
-    if (saleRows.length === 0) {
-      return createResponse({
-        message: "Tax is already paid for this invoice.",
-        functionname,
-      });
-    }
-
-    if (payload.payableAmount < 0 || payload.totalVatAmount < 0) {
-      return createResponse({
-        message: "Invalid VAT or payable amount.",
-        functionname,
-      });
-    }
-
-    const expireDate = new Date();
-    expireDate.setDate(expireDate.getDate() + 7);
-    const payableAmountStr = payload.payableAmount.toFixed(2);
-    const challanRemark = `REFINERY_SALE_VAT#${targetSale.invoice_number}#${targetSale.refineryId}#${targetSale.seller_tin_numberId}#${targetSale.id}#TOTAL_VAT:${payload.totalVatAmount.toFixed(2)}#WALLET:${payload.walletAmount.toFixed(2)}#PAYABLE:${payableAmountStr}`;
+    const amountStr = payload.amount.toFixed(2);
+    const challanRemark = `WALLET_TOPUP#AMOUNT:${amountStr}#DATE:${new Date().toISOString().split("T")[0]}${payload.remark ? `#REMARK:${payload.remark}` : ""}`;
 
     // Get current date to determine month and year
     const currentDate = new Date();
-    const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0"); // 01-12
+    const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0");
     const currentYear = String(currentDate.getFullYear());
 
- 
     const months = [
       "January",
       "February",
@@ -135,6 +85,7 @@ const InitializeRefinerySaleVatPayment = async (
       "November",
       "December",
     ];
+
     // Check if a return already exists for current month/year
     let existingReturn = await prisma.returns_01.findFirst({
       where: {
@@ -148,7 +99,6 @@ const InitializeRefinerySaleVatPayment = async (
         id: true,
       },
     });
-
 
     let returnId: number;
 
@@ -184,7 +134,7 @@ const InitializeRefinerySaleVatPayment = async (
 
     // If return doesn't exist, create a new one
     if (!existingReturn) {
-      const returnRemark = `AUTO_REFINERY_SALE_VAT#${currentYear}#${currentMonth}`;
+      const returnRemark = `AUTO_WALLET_TOPUP#${currentYear}#${currentMonth}`;
       const newReturn = await prisma.returns_01.create({
         data: {
           rr_number: ``,
@@ -206,18 +156,22 @@ const InitializeRefinerySaleVatPayment = async (
       returnId = existingReturn.id;
     }
 
+    // Create challan
+    const expireDate = new Date();
+    expireDate.setDate(expireDate.getDate() + 7);
+
     const created = await prisma.challan.create({
       data: {
         dvatid: currentDvatId,
         returnid: returnId,
         cpin: cpinGenerator(),
-        vat: payableAmountStr,
+        vat: amountStr,
         interest: "0",
         penalty: "0",
         latefees: "0",
         others: "0",
-        total_tax_amount: payableAmountStr,
-        reason: "MONTHLYPAYMENT",
+        total_tax_amount: amountStr,
+        reason: "OTHERS",
         remark: challanRemark,
         paymentmode: "ONLINE",
         paymentstatus: "CREATED",
@@ -231,7 +185,7 @@ const InitializeRefinerySaleVatPayment = async (
     // Update wallet and create wallet history entry
     const currentDvatBeforeUpdate = await prisma.dvat04.findUnique({
       where: { id: currentDvatId },
-      select: { wallet: true, tin_master_id: true },
+      select: { wallet: true },
     });
 
     if (!currentDvatBeforeUpdate) {
@@ -242,7 +196,7 @@ const InitializeRefinerySaleVatPayment = async (
     }
 
     const oldWallet = Number.parseFloat(currentDvatBeforeUpdate.wallet || "0");
-    const newWallet = oldWallet - payload.payableAmount;
+    const newWallet = oldWallet + payload.amount;
 
     // Update wallet in dvat04
     await prisma.dvat04.update({
@@ -257,26 +211,26 @@ const InitializeRefinerySaleVatPayment = async (
     await prisma.wallet_history.create({
       data: {
         dvatId: currentDvatId,
-        refineryId: targetSale.refineryId,
-        type: payload.payableAmount > 0 ? "DEBIT" : "CREDIT",
+        refineryId: 1, // Using 1 as placeholder for wallet top-up (not linked to any refinery)
+        type: "CREDIT",
         status: "ACTIVE",
-        difference_amount: payload.payableAmount.toFixed(2),
+        difference_amount: amountStr,
         old_wallet: oldWallet.toFixed(2),
         new_wallet: newWallet.toFixed(2),
         old_quantity: "0",
         new_quantity: "0",
-        old_amount: payload.totalVatAmount.toFixed(2),
-        new_amount: payload.payableAmount.toFixed(2),
-        invoice_number: targetSale.invoice_number,
+        old_amount: "0",
+        new_amount: amountStr,
+        invoice_number: `WALLET_TOPUP_${created.cpin}`,
       },
     });
 
     return createResponse({
-      message: "Refinery VAT challan created successfully.",
+      message: "Wallet top-up challan created successfully and wallet updated.",
       functionname,
       data: {
         challanId: created.id,
-        vatAmount: payableAmountStr,
+        amount: amountStr,
       },
     });
   } catch (error) {
@@ -287,4 +241,4 @@ const InitializeRefinerySaleVatPayment = async (
   }
 };
 
-export default InitializeRefinerySaleVatPayment;
+export default AddWalletTransaction;

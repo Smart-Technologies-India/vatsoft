@@ -209,6 +209,23 @@ const TrackAppliation = () => {
     }
   };
 
+  const getGroundedMonth = (quarter: number | string | null | undefined): string => {
+    if (!quarter) return "";
+    const quarterNum = typeof quarter === "string" ? parseInt(quarter, 10) : quarter;
+    switch (quarterNum) {
+      case 1:
+        return "January";
+      case 2:
+        return "April";
+      case 3:
+        return "July";
+      case 4:
+        return "October";
+      default:
+        return "";
+    }
+  };
+
   const get_month = (composition: boolean, month: string): string => {
     if (composition) {
       if (["January", "February", "March"].includes(capitalcase(month))) {
@@ -229,14 +246,14 @@ const TrackAppliation = () => {
     }
   };
 
-  // Filter payment data to show only one quarterly return per DVAT when frequencyFilings is QUARTERLY
+  // Filter payment data to show only one quarterly return per DVAT when is_quarterly is true
   const filteredPaymentData = paymentData.reduce(
     (
       acc: Array<returns_01 & { dvat04: dvat04 }>,
       current: returns_01 & { dvat04: dvat04 },
     ) => {
-      // If frequencyFilings is not QUARTERLY, include the record
-      if (current.dvat04.frequencyFilings !== "QUARTERLY") {
+      // If is_quarterly is false, include the record
+      if (!current.is_quarterly) {
         acc.push(current);
       } else {
         // For QUARTERLY, check if we already have this DVAT
@@ -563,7 +580,7 @@ const TrackAppliation = () => {
       // Apply same filtering logic for quarterly returns
       const filteredForExport = response.data.reduce(
         (acc: any[], current: any) => {
-          if (current.dvat04.frequencyFilings !== "QUARTERLY") {
+          if (!current.is_quarterly) {
             acc.push(current);
           } else {
             const dvat04IdExists = acc.some(
@@ -580,9 +597,8 @@ const TrackAppliation = () => {
 
       // Prepare data for Excel
       const excelData = filteredForExport.map((item: any) => {
-        const isQuarterly = item.dvat04.frequencyFilings === "QUARTERLY";
-        const taxPeriodDisplay = isQuarterly
-          ? getQuarterMonths(item.quarter)
+        const taxPeriodDisplay = item.is_quarterly
+          ? getGroundedMonth(item.quarter)
           : item.month;
 
         return {

@@ -145,7 +145,9 @@ const AdminDvat16ReturnPreview = () => {
         }
 
         const isQuarterlyFiling =
-          selectedReturn.dvat04?.frequencyFilings === "QUARTERLY";
+          selectedReturn?.status === "PAID"
+            ? selectedReturn?.is_quarterly
+            : selectedReturn.dvat04?.frequencyFilings === "QUARTERLY";
 
         let allQuarterlyReturns: (returns_01 & {
           dvat04: dvat04 & { registration: registration[] };
@@ -229,7 +231,11 @@ const AdminDvat16ReturnPreview = () => {
   }, [returnid]);
 
   const getTaxPeriod = (): string => {
-    if (return01?.dvat04.frequencyFilings == "QUARTERLY") {
+    const isQuarterly = return01?.status === "PAID"
+      ? return01?.is_quarterly
+      : return01?.dvat04.frequencyFilings == "QUARTERLY";
+    
+    if (isQuarterly) {
       switch (return01?.month ?? "") {
         case "June":
           return `April (${return01?.year}) - June (${return01?.year})`;
@@ -245,6 +251,14 @@ const AdminDvat16ReturnPreview = () => {
     } else {
       return return01?.month ?? "";
     }
+  };
+
+  const isQuarterlyReturn = (returnData = return01): boolean => {
+    if (!returnData) return false;
+    if (returnData?.status === "PAID") {
+      return returnData?.is_quarterly ?? false;
+    }
+    return returnData?.dvat04?.frequencyFilings === "QUARTERLY" || false;
   };
 
   const get_rr_number = (): string => {
@@ -307,7 +321,7 @@ const AdminDvat16ReturnPreview = () => {
       return01,
       parseFloat(lastmonthdue),
       parseFloat(lastmonthcash),
-      return01.dvat04.frequencyFilings === "QUARTERLY",
+      isQuarterlyReturn(),
     );
     const centralSales = new CentralSalesCalculation(
       returns_entryData ?? [],
@@ -315,7 +329,7 @@ const AdminDvat16ReturnPreview = () => {
       return01,
       parseFloat(lastmonthdue),
       parseFloat(lastmonthcash),
-      return01.dvat04.frequencyFilings === "QUARTERLY",
+      isQuarterlyReturn(),
     );
 
     const value1 =
@@ -470,7 +484,7 @@ const AdminDvat16ReturnPreview = () => {
               returnsentrys={returns_entryData ?? []}
               return01={return01}
               lastMonthDue={lastmonthdue}
-              isComp={return01.dvat04.frequencyFilings === "QUARTERLY"}
+              isComp={isQuarterlyReturn()}
               paidChallans={paidChallans}
               challan_amount={paidChallans.reduce(
                 (acc, entry) => acc + parseFloat(entry.total_tax_amount ?? "0"),
@@ -484,7 +498,7 @@ const AdminDvat16ReturnPreview = () => {
               return01={return01}
               lastMonthDue={lastmonthdue}
               lastMonthCash={lastmonthcash}
-              isComp={return01.dvat04.frequencyFilings === "QUARTERLY"}
+              isComp={isQuarterlyReturn()}
               paidChallans={paidChallans}
             />
 
@@ -494,7 +508,7 @@ const AdminDvat16ReturnPreview = () => {
               return01={return01}
               lastMonthDue={lastmonthdue}
               lastMonthCash={lastmonthcash}
-              isComp={return01.dvat04.frequencyFilings === "QUARTERLY"}
+              isComp={isQuarterlyReturn()}
               paidChallans={paidChallans}
             />
 
@@ -521,7 +535,7 @@ const AdminDvat16ReturnPreview = () => {
               return01={return01}
               lastMonthDue={lastmonthdue}
               lastMonthCash={lastmonthcash}
-              isComp={return01.dvat04.frequencyFilings === "QUARTERLY"}
+              isComp={isQuarterlyReturn()}
               paidChallans={paidChallans}
               challan_amount={paidChallans.reduce(
                 (acc, entry) => acc + parseFloat(entry.total_tax_amount ?? "0"),

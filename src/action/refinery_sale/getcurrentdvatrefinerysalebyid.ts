@@ -19,6 +19,7 @@ export interface CurrentDvatRefineryInvoiceView {
   invoiceDate: Date;
   refinery: refinery;
   rows: InvoiceRow[];
+  walletAmount: string;
 }
 
 const GetCurrentDvatRefinerySaleById = async (
@@ -47,6 +48,7 @@ const GetCurrentDvatRefinerySaleById = async (
       },
       select: {
         tin_master_id: true,
+        wallet: true,
       },
     });
 
@@ -101,6 +103,7 @@ const GetCurrentDvatRefinerySaleById = async (
         invoiceDate: targetSale.invoice_date,
         refinery: targetSale.refinery,
         rows: invoiceRows,
+        walletAmount: currentDvat.wallet || "0",
       },
     });
   } catch (error) {

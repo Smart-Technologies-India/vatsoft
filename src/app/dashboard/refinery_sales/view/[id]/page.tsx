@@ -4,6 +4,7 @@ import GetCurrentDvatRefinerySaleById, {
   CurrentDvatRefineryInvoiceView,
 } from "@/action/refinery_sale/getcurrentdvatrefinerysalebyid";
 import InitializeRefinerySaleVatPayment from "@/action/refinery_sale/initializerefinerysalevatpayment";
+import SubmitRefinerySaleVat from "@/action/refinery_sale/submitrefinerysalevat";
 import {
   Table,
   TableBody,
@@ -17,7 +18,7 @@ import { Button, Spin } from "antd";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { encryptURLData } from "@/utils/methods";
+import { decryptURLData, encryptURLData } from "@/utils/methods";
 
 const formatDate = (value: Date | string) => {
   return new Intl.DateTimeFormat("en-GB", {
@@ -32,7 +33,6 @@ const formatCurrency = (value: number) => {
 };
 
 const RefinerySaleInvoiceViewPage = () => {
-  const params = useParams<{ id: string }>();
   const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +40,10 @@ const RefinerySaleInvoiceViewPage = () => {
   const [invoiceData, setInvoiceData] =
     useState<CurrentDvatRefineryInvoiceView | null>(null);
 
-  const invoiceId = Number.parseInt(params.id, 10);
+  const { id } = useParams<{ id: string | string[] }>();
+  const invoiceId: number = parseInt(
+    decryptURLData(Array.isArray(id) ? id[0] : id, router),
+  );
 
   const loadInvoice = useCallback(async () => {
     if (!Number.isInteger(invoiceId) || invoiceId <= 0) {
@@ -106,6 +109,26 @@ const RefinerySaleInvoiceViewPage = () => {
     return "SALE";
   }, [invoiceData]);
 
+  const totalVatAmount = useMemo(() => {
+    if (!invoiceData) {
+      return 0;
+    }
+    return invoiceData.rows.reduce((sum, row) => {
+      return sum + Number.parseFloat(row.vatamount || "0");
+    }, 0);
+  }, [invoiceData]);
+
+  const walletAmount = useMemo(() => {
+    if (!invoiceData) {
+      return 0;
+    }
+    return Number.parseFloat(invoiceData.walletAmount || "0");
+  }, [invoiceData]);
+
+  const payableAmount = useMemo(() => {
+    return Math.max(0, totalVatAmount - walletAmount);
+  }, [totalVatAmount, walletAmount]);
+
   const handlePayTax = async () => {
     if (!invoiceData || !hasSaleStatus) {
       return;
@@ -115,6 +138,9 @@ const RefinerySaleInvoiceViewPage = () => {
     try {
       const response = await InitializeRefinerySaleVatPayment({
         id: invoiceId,
+        payableAmount,
+        totalVatAmount,
+        walletAmount,
       });
       if (!response.status) {
         toast.error(
@@ -132,6 +158,31 @@ const RefinerySaleInvoiceViewPage = () => {
       router.push(
         `/dashboard/payments/saved-challan/${encryptURLData(response.data.challanId.toString())}`,
       );
+    } finally {
+      setIsPayingTax(false);
+    }
+  };
+
+  const handleSubmitWithWallet = async () => {
+    if (!invoiceData || !hasSaleStatus) {
+      return;
+    }
+
+    setIsPayingTax(true);
+    try {
+      const response = await SubmitRefinerySaleVat({
+        id: invoiceId,
+        payableAmount,
+        totalVatAmount,
+        walletAmount,
+      });
+      if (!response.status) {
+        toast.error(response.message || "Unable to submit payment.");
+        return;
+      }
+
+      toast.success(response.message || "VAT submitted successfully.");
+      await loadInvoice();
     } finally {
       setIsPayingTax(false);
     }
@@ -302,15 +353,69 @@ const RefinerySaleInvoiceViewPage = () => {
             </Table>
           </div>
 
-          <div className="mt-3 flex items-center gap-2">
-            <Button
-              type="primary"
-              onClick={handlePayTax}
-              loading={isPayingTax}
-              disabled={!hasSaleStatus}
-            >
-              Pay VAT
-            </Button>
+          <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="flex-1 bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-sm text-blue-600 font-medium mb-2">
+                Payment Calculation
+              </p>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-700">Total VAT Amount:</span>
+                  <span className="font-semibold text-gray-900">
+                    ₹ {formatCurrency(totalVatAmount)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-700">Wallet Amount:</span>
+                  <span
+                    className={`font-semibold ${walletAmount >= 0 ? "text-green-600" : "text-red-600"}`}
+                  >
+                    ₹ {formatCurrency(walletAmount)}
+                  </span>
+                </div>
+                <div className="border-t border-blue-200 pt-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-700 font-medium">
+                      Payable Amount:
+                    </span>
+                    <span className="text-lg font-bold text-blue-900">
+                      ₹ {formatCurrency(payableAmount)}
+                    </span>
+                  </div>
+                  {/* <p className="text-xs text-blue-500 mt-1">
+                    {walletAmount > 0 
+                      ? `(₹${formatCurrency(totalVatAmount)} - ₹${formatCurrency(walletAmount)})`
+                      : walletAmount < 0
+                      ? `(₹${formatCurrency(totalVatAmount)} + ₹${formatCurrency(Math.abs(walletAmount))})`
+                      : `Full VAT amount`
+                    }
+                  </p> */}
+                </div>
+              </div>
+            </div>
+            {walletAmount >= totalVatAmount ? (
+              <Button
+                type="primary"
+                size="large"
+                onClick={handleSubmitWithWallet}
+                loading={isPayingTax}
+                disabled={!hasSaleStatus}
+                className="md:self-end"
+              >
+                Submit
+              </Button>
+            ) : (
+              <Button
+                type="primary"
+                size="large"
+                onClick={handlePayTax}
+                loading={isPayingTax}
+                disabled={!hasSaleStatus}
+                className="md:self-end"
+              >
+                Pay VAT
+              </Button>
+            )}
             {/* <Button
               type="primary"
               onClick={handledemoPayTax}
@@ -370,7 +475,6 @@ const RefinerySaleInvoiceViewPage = () => {
               </div>
             ))}
           </div>
-
           <div className="mt-4 rounded border border-gray-200 bg-gray-50 p-3 grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
               <p className="text-xs text-gray-600">Invoice Value</p>

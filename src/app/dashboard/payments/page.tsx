@@ -1,9 +1,10 @@
 "use client";
 
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import GetUser from "@/action/user/getuser";
 import DashboardCards from "@/components/dashboard/cards/dashboardcard";
-import { user } from "@prisma/client";
+import { Dvat04Commodity, user } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -12,9 +13,11 @@ const Page = () => {
   const [userid, setUserid] = useState<number>(0);
   const [user, setUser] = useState<user>();
   const router = useRouter();
+  const [commodity, setCommodity] = useState<Dvat04Commodity | null>(null);
 
   useEffect(() => {
     const init = async () => {
+      
       const authResponse = await getAuthenticatedUserId();
       if (!authResponse.status || !authResponse.data) {
         toast.error(authResponse.message);
@@ -24,12 +27,19 @@ const Page = () => {
       const userresponse = await GetUser({
         id: userid,
       });
+
       if (userresponse.status && userresponse.data) {
         setUser(userresponse.data);
+      }
+
+      const dvatResponse = await GetUserDvat04();
+      if (dvatResponse.status && dvatResponse.data) {
+        setCommodity(dvatResponse.data.commodity);
       }
     };
     init();
   }, [userid]);
+
   return (
     <>
       <main className="bg-linear-to-l py-4 px-4 rounded-md mt-4 w-full xl:w-5/6 xl:mx-auto">
@@ -108,6 +118,13 @@ const Page = () => {
                 description="View the history of all your VAT retunds and their statuses."
                 link="/dashboard/payments/refunds-history"
               />
+              {commodity == "FUEL" && (
+                <DashboardCards
+                  title="Wallet History"
+                  description="View the history of all your wallet transactions related to VAT payments."
+                  link="/dashboard/payments/wallet-history"
+                />
+              )}
             </>
           )}
         </div>

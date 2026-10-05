@@ -5,7 +5,6 @@ import {
   encryptURLData,
   formatDateTime,
   formateDate,
-  getDaysBetweenDates,
   getPrismaDatabaseDate,
 } from "@/utils/methods";
 import {
@@ -107,80 +106,6 @@ const Dvat16ReturnPreview = () => {
     return year;
   };
 
-  // const getLateFees = (
-  //   year: string,
-  //   month: string,
-  //   rr_number: string,
-  //   isComp: boolean = false,
-  //   filing_date: Date,
-  // ) => {
-  //   const currentDate = ServerTime().data as Date;
-
-  //   const monthNames = [
-  //     "January",
-  //     "February",
-  //     "March",
-  //     "April",
-  //     "May",
-  //     "June",
-  //     "July",
-  //     "August",
-  //     "September",
-  //     "October",
-  //     "November",
-  //     "December",
-  //   ];
-
-  //   let monthIndex = monthNames.indexOf(month);
-  //   let newYear = parseInt(year);
-
-  //   if (isComp) {
-  //     if (["January", "February", "March"].includes(month)) {
-  //       monthIndex = 3;
-  //     } else if (["April", "May", "June"].includes(month)) {
-  //       monthIndex = 6;
-  //     } else if (["July", "August", "September"].includes(month)) {
-  //       monthIndex = 9;
-  //     } else {
-  //       monthIndex = 0;
-  //       newYear += 1;
-  //     }
-  //   } else {
-  //     if (monthIndex === 11) {
-  //       newYear += 1;
-  //       monthIndex = 0;
-  //     } else {
-  //       monthIndex += 1;
-  //     }
-  //   }
-
-  //   const idiff_days = getDaysBetweenDates(
-  //     new Date(newYear, monthIndex, 16),
-  //     currentDate,
-  //   );
-  //   setInterestDiffDays(idiff_days);
-
-  //   let pdiff_days = 0;
-
-  //   if (rr_number == null || rr_number == undefined || rr_number == "") {
-  //     pdiff_days = getDaysBetweenDates(
-  //       new Date(newYear, monthIndex, 29),
-  //       currentDate,
-  //     );
-
-  //     // setPenaltyDiffDays(pdiff_days);
-  //     setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
-  //   } else {
-  //     pdiff_days = getDaysBetweenDates(
-  //       new Date(newYear, monthIndex, 29),
-  //       filing_date,
-  //     );
-
-  //     // setPenaltyDiffDays(pdiff_days);
-  //     setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
-  //   }
-  // };
-
   useEffect(() => {
     const init = async () => {
       const authResponse = await getAuthenticatedUserId();
@@ -235,7 +160,9 @@ const Dvat16ReturnPreview = () => {
         }
 
         const isQuarterlyFiling =
-          selectedReturn.dvat04?.frequencyFilings === "QUARTERLY";
+          selectedReturn?.status === "PAID"
+            ? selectedReturn?.is_quarterly
+            : selectedReturn.dvat04?.frequencyFilings === "QUARTERLY";
 
         let allQuarterlyReturns: (returns_01 & {
           dvat04: dvat04 & { registration: registration[] };
@@ -287,37 +214,6 @@ const Dvat16ReturnPreview = () => {
         setQuarterlyReturns(allQuarterlyReturns);
         serReturns_entryData(mergedEntries);
 
-        // const dvat_30: boolean =
-        //   mergedEntries.filter(
-        //     (val: returns_entry) =>
-        //       val.dvat_type == DvatType.DVAT_30 && val.isnil == true,
-        //   ).length > 0;
-        // const dvat_30a: boolean =
-        //   mergedEntries.filter(
-        //     (val: returns_entry) =>
-        //       val.dvat_type == DvatType.DVAT_30_A && val.isnil == true,
-        //   ).length > 0;
-        // const dvat_31: boolean =
-        //   mergedEntries.filter(
-        //     (val: returns_entry) =>
-        //       val.dvat_type == DvatType.DVAT_31 && val.isnil == true,
-        //   ).length > 0;
-        // const dvat_31a: boolean =
-        //   mergedEntries.filter(
-        //     (val: returns_entry) =>
-        //       val.dvat_type == DvatType.DVAT_31_A && val.isnil == true,
-        //   ).length > 0;
-
-        // setAllNil(dvat_30 && dvat_30a && dvat_31 && dvat_31a);
-
-        // getLateFees(
-        //   selectedReturn.year,
-        //   selectedReturn.month ?? "",
-        //   selectedReturn.rr_number ?? "",
-        //   selectedReturn.dvat04?.frequencyFilings === "QUARTERLY",
-        //   new Date(selectedReturn.filing_datetime),
-        // );
-
         const payment_response = await CheckPayment({
           id: selectedReturn.id,
         });
@@ -356,21 +252,13 @@ const Dvat16ReturnPreview = () => {
     init();
   }, [searchparam]);
 
-  // useEffect(() => {
-  //   if (return01 == null) return;
-
-  //   getLateFees(
-  //     return01.year,
-  //     return01.month ?? "",
-  //     return01.rr_number ?? "",
-  //     return01.dvat04?.frequencyFilings === "QUARTERLY",
-  //     new Date(return01.filing_datetime),
-  //   );
-  // }, [return01]);
-
   const getTaxPeriod = (): string => {
     const year: string = searchparam.get("year") ?? "";
-    if (return01?.dvat04.frequencyFilings == "QUARTERLY") {
+    const isQuarterly = return01?.status === "PAID" 
+      ? return01?.is_quarterly 
+      : return01?.dvat04.frequencyFilings == "QUARTERLY";
+    
+    if (isQuarterly) {
       switch (searchparam.get("month") ?? "") {
         case "June":
           return `April (${year}) - June (${year})`;
@@ -386,6 +274,15 @@ const Dvat16ReturnPreview = () => {
     } else {
       return searchparam.get("month") ?? "";
     }
+  };
+
+  const isQuarterlyReturn = (returnData = return01): boolean => {
+    console.log("Checking if return is quarterly:", returnData);
+    if (!returnData) return false;
+    if (returnData?.status === "PAID") {
+      return returnData?.is_quarterly ?? false;
+    }
+    return returnData?.dvat04?.frequencyFilings === "QUARTERLY" || false;
   };
 
   const get_rr_number = (): string => {
@@ -423,7 +320,7 @@ const Dvat16ReturnPreview = () => {
       return01,
       parseFloat(lastmonthdue),
       parseFloat(lastmonthcash),
-      return01.dvat04.frequencyFilings === "QUARTERLY",
+      isQuarterlyReturn(),
     );
     const netTaxCalculation = new NetTaxCalculation(
       returns_entryData ?? [],
@@ -431,7 +328,7 @@ const Dvat16ReturnPreview = () => {
       return01,
       parseFloat(lastmonthdue),
       parseFloat(lastmonthcash),
-      return01.dvat04.frequencyFilings === "QUARTERLY",
+      isQuarterlyReturn(),
     );
 
     const pending_cash = thebalance.excess_cash_payment();
@@ -448,7 +345,7 @@ const Dvat16ReturnPreview = () => {
 
     // For quarterly filing, update all 3 returns; for monthly, update only the selected return
     const returnsToUpdate =
-      return01.dvat04?.frequencyFilings === "QUARTERLY"
+      isQuarterlyReturn()
         ? quarterlyReturns
         : [return01];
 
@@ -456,7 +353,7 @@ const Dvat16ReturnPreview = () => {
       // Determine the last month of the quarter
       const effectiveQuarter = getQuarterForMonth(return01.month ?? "");
       const quarterlyFilingMonths =
-        return01.dvat04?.frequencyFilings === "QUARTERLY" && effectiveQuarter
+        isQuarterlyReturn() && effectiveQuarter
           ? getQuarterMonths(effectiveQuarter)
           : [];
       const lastMonthOfQuarter =
@@ -466,31 +363,31 @@ const Dvat16ReturnPreview = () => {
         const returnToUpdate = returnsToUpdate[i];
         // Check if this return's month is the actual last month of the quarter
         const isLastReturn =
-          return01.dvat04?.frequencyFilings === "QUARTERLY"
+          isQuarterlyReturn()
             ? returnToUpdate.month === lastMonthOfQuarter
             : true;
 
         // For quarterly: use 0 values for first two returns, actual values for last return
         // For monthly: always use actual values
         const submitPenalty =
-          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+          isQuarterlyReturn() && !isLastReturn
             ? "0"
             : penalty.toFixed(2);
         const submitInterest =
-          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+          isQuarterlyReturn() && !isLastReturn
             ? "0"
             : interest.toFixed(2);
         const submitVat =
-          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+          isQuarterlyReturn() && !isLastReturn
             ? "0"
             : vat.toFixed(2);
         const submitTotal =
-          return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
+          isQuarterlyReturn() && !isLastReturn
             ? "0"
             : (vat + interest + penalty).toFixed(2);
 
         // Only create challan for the last return; for first 2 returns, only update with zero values
-        if (isLastReturn || return01.dvat04?.frequencyFilings !== "QUARTERLY") {
+        if (isLastReturn || !isQuarterlyReturn()) {
           const response = await AddPaymentSubmit({
             id: returnToUpdate.id ?? 0,
             rr_number: rrNumber,
@@ -588,7 +485,7 @@ const Dvat16ReturnPreview = () => {
       return01,
       parseFloat(lastmonthdue),
       parseFloat(lastmonthcash),
-      return01.dvat04.frequencyFilings === "QUARTERLY",
+      isQuarterlyReturn(),
     );
     const centralSales = new CentralSalesCalculation(
       returns_entryData ?? [],
@@ -596,7 +493,7 @@ const Dvat16ReturnPreview = () => {
       return01,
       parseFloat(lastmonthdue),
       parseFloat(lastmonthcash),
-      return01.dvat04.frequencyFilings === "QUARTERLY",
+      isQuarterlyReturn(),
     );
 
     const value1 =
@@ -781,7 +678,7 @@ const Dvat16ReturnPreview = () => {
               returnsentrys={returns_entryData ?? []}
               return01={return01}
               lastMonthDue={lastmonthdue}
-              isComp={return01.dvat04.frequencyFilings === "QUARTERLY"}
+              isComp={isQuarterlyReturn()}
               paidChallans={paidChallans}
               challan_amount={paidChallans.reduce(
                 (acc, entry) => acc + parseFloat(entry.total_tax_amount ?? "0"),
@@ -795,7 +692,7 @@ const Dvat16ReturnPreview = () => {
               return01={return01}
               lastMonthDue={lastmonthdue}
               lastMonthCash={lastmonthcash}
-              isComp={return01.dvat04.frequencyFilings === "QUARTERLY"}
+              isComp={isQuarterlyReturn()}
               paidChallans={paidChallans}
             />
 
@@ -805,7 +702,7 @@ const Dvat16ReturnPreview = () => {
               return01={return01}
               lastMonthDue={lastmonthdue}
               lastMonthCash={lastmonthcash}
-              isComp={return01.dvat04.frequencyFilings === "QUARTERLY"}
+              isComp={isQuarterlyReturn()}
               paidChallans={paidChallans}
             />
 
@@ -832,7 +729,7 @@ const Dvat16ReturnPreview = () => {
               return01={return01}
               lastMonthDue={lastmonthdue}
               lastMonthCash={lastmonthcash}
-              isComp={return01.dvat04.frequencyFilings === "QUARTERLY"}
+              isComp={isQuarterlyReturn()}
               paidChallans={paidChallans}
               challan_amount={paidChallans.reduce(
                 (acc, entry) => acc + parseFloat(entry.total_tax_amount ?? "0"),

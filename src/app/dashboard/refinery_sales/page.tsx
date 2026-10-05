@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import AddRefinery from "@/components/refinery/addrefinery";
+import { encryptURLData } from "@/utils/methods";
 
 const formatDate = (value: Date | string) => {
   return new Intl.DateTimeFormat("en-GB", {
@@ -311,8 +312,12 @@ const RefinerySalesPage = () => {
           const matchInvoiceNumber = sale.invoiceNumber
             .toLowerCase()
             .includes(search);
-          const matchRefinery = sale.refineryName.toLowerCase().includes(search);
-          const matchProduct = sale.productSummary.toLowerCase().includes(search);
+          const matchRefinery = sale.refineryName
+            .toLowerCase()
+            .includes(search);
+          const matchProduct = sale.productSummary
+            .toLowerCase()
+            .includes(search);
 
           if (!matchInvoiceNumber && !matchRefinery && !matchProduct) {
             return false;
@@ -377,7 +382,9 @@ const RefinerySalesPage = () => {
       return;
     }
 
-    router.push(`/dashboard/refinery_sales/view/${firstSaleId}`);
+    router.push(
+      `/dashboard/refinery_sales/view/${encryptURLData(firstSaleId.toString())}`,
+    );
   };
 
   const openDrawer = () => {
@@ -570,8 +577,7 @@ const RefinerySalesPage = () => {
                 <TableBody>
                   {pagedSales.map((sale, index) => {
                     const status = sale.status || "SALE";
-                    const displayIndex =
-                      pagination.skip + index + 1;
+                    const displayIndex = pagination.skip + index + 1;
 
                     return (
                       <TableRow
@@ -634,7 +640,7 @@ const RefinerySalesPage = () => {
                               size="small"
                               onClick={() =>
                                 router.push(
-                                  `/dashboard/refinery_sales/view/${sale.id}`,
+                                  `/dashboard/refinery_sales/view/${encryptURLData(sale.id.toString())}`,
                                 )
                               }
                             >
@@ -662,9 +668,7 @@ const RefinerySalesPage = () => {
             {groupedSales.length > 0 && (
               <div className="flex justify-end mt-4">
                 <Pagination
-                  current={
-                    Math.floor(pagination.skip / pagination.take) + 1
-                  }
+                  current={Math.floor(pagination.skip / pagination.take) + 1}
                   pageSize={pagination.take}
                   total={pagination.total}
                   onChange={onPageChange}
