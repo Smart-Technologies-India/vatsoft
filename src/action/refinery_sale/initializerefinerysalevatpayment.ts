@@ -120,7 +120,6 @@ const InitializeRefinerySaleVatPayment = async (
     const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0"); // 01-12
     const currentYear = String(currentDate.getFullYear());
 
- 
     const months = [
       "January",
       "February",
@@ -148,7 +147,6 @@ const InitializeRefinerySaleVatPayment = async (
         id: true,
       },
     });
-
 
     let returnId: number;
 
@@ -242,34 +240,37 @@ const InitializeRefinerySaleVatPayment = async (
     }
 
     const oldWallet = Number.parseFloat(currentDvatBeforeUpdate.wallet || "0");
-    const newWallet = oldWallet - payload.payableAmount;
 
-    // Update wallet in dvat04
-    await prisma.dvat04.update({
-      where: { id: currentDvatId },
-      data: {
-        wallet: newWallet.toFixed(2),
-        updatedById: currentUserId,
-      },
-    });
+    if (oldWallet != 0) {
+      const newWallet = oldWallet - payload.payableAmount;
 
-    // Create wallet history entry
-    await prisma.wallet_history.create({
-      data: {
-        dvatId: currentDvatId,
-        refineryId: targetSale.refineryId,
-        type: payload.payableAmount > 0 ? "DEBIT" : "CREDIT",
-        status: "ACTIVE",
-        difference_amount: payload.payableAmount.toFixed(2),
-        old_wallet: oldWallet.toFixed(2),
-        new_wallet: newWallet.toFixed(2),
-        old_quantity: "0",
-        new_quantity: "0",
-        old_amount: payload.totalVatAmount.toFixed(2),
-        new_amount: payload.payableAmount.toFixed(2),
-        invoice_number: targetSale.invoice_number,
-      },
-    });
+      // Update wallet in dvat04
+      await prisma.dvat04.update({
+        where: { id: currentDvatId },
+        data: {
+          wallet: newWallet.toFixed(2),
+          updatedById: currentUserId,
+        },
+      });
+
+      // Create wallet history entry
+      await prisma.wallet_history.create({
+        data: {
+          dvatId: currentDvatId,
+          refineryId: targetSale.refineryId,
+          type: payload.payableAmount > 0 ? "DEBIT" : "CREDIT",
+          status: "ACTIVE",
+          difference_amount: payload.payableAmount.toFixed(2),
+          old_wallet: oldWallet.toFixed(2),
+          new_wallet: newWallet.toFixed(2),
+          old_quantity: "0",
+          new_quantity: "0",
+          old_amount: payload.totalVatAmount.toFixed(2),
+          new_amount: payload.payableAmount.toFixed(2),
+          invoice_number: targetSale.invoice_number,
+        },
+      });
+    }
 
     return createResponse({
       message: "Refinery VAT challan created successfully.",
