@@ -182,51 +182,11 @@ const AddWalletTransaction = async (
       },
     });
 
-    // Update wallet and create wallet history entry
-    const currentDvatBeforeUpdate = await prisma.dvat04.findUnique({
-      where: { id: currentDvatId },
-      select: { wallet: true },
-    });
-
-    if (!currentDvatBeforeUpdate) {
-      return createResponse({
-        message: "Failed to retrieve current wallet amount.",
-        functionname,
-      });
-    }
-
-    const oldWallet = Number.parseFloat(currentDvatBeforeUpdate.wallet || "0");
-    const newWallet = oldWallet + payload.amount;
-
-    // Update wallet in dvat04
-    await prisma.dvat04.update({
-      where: { id: currentDvatId },
-      data: {
-        wallet: newWallet.toFixed(2),
-        updatedById: currentUserId,
-      },
-    });
-
-    // Create wallet history entry
-    await prisma.wallet_history.create({
-      data: {
-        dvatId: currentDvatId,
-        refineryId: 1, // Using 1 as placeholder for wallet top-up (not linked to any refinery)
-        type: "CREDIT",
-        status: "ACTIVE",
-        difference_amount: amountStr,
-        old_wallet: oldWallet.toFixed(2),
-        new_wallet: newWallet.toFixed(2),
-        old_quantity: "0",
-        new_quantity: "0",
-        old_amount: "0",
-        new_amount: amountStr,
-        invoice_number: `WALLET_TOPUP_${created.cpin}`,
-      },
-    });
+    // NOTE: Wallet update and wallet_history creation is now handled in
+    // payment callback handler (ccavresponse.js) only when payment succeeds
 
     return createResponse({
-      message: "Wallet top-up challan created successfully and wallet updated.",
+      message: "Wallet top-up challan created successfully.",
       functionname,
       data: {
         challanId: created.id,

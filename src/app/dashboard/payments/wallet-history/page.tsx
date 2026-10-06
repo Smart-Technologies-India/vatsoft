@@ -135,7 +135,7 @@ const WalletHistoryPage = () => {
       setLoading(false);
     };
     init();
-  }, [userid]);
+  }, [userid, router]);
 
   const invoiceNumberSearch = async () => {
     if (
@@ -281,7 +281,7 @@ const WalletHistoryPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+            <div className="bg-linear-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-600 font-medium mb-1">
                 Current Wallet Amount
               </p>
@@ -289,7 +289,7 @@ const WalletHistoryPage = () => {
                 ₹ {formatCurrency(dvatdata.wallet || "0")}
               </p>
             </div>
-            <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+            <div className="bg-linear-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
               <p className="text-sm text-green-600 font-medium mb-1">
                 Total Transactions
               </p>
@@ -297,7 +297,7 @@ const WalletHistoryPage = () => {
                 {pagination.total}
               </p>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
+            <div className="bg-linear-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
               <p className="text-sm text-purple-600 font-medium mb-1">
                 DVAT ID
               </p>

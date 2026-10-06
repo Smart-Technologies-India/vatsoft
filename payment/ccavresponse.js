@@ -1090,12 +1090,14 @@ export const postRes = (request, response) => {
             const markerInvoiceNo = markerParts[1] || "";
             const markerRefineryId = parseInt(markerParts[2] || "0", 10);
             const markerSellerTinId = parseInt(markerParts[3] || "0", 10);
+            const markerSaleId = parseInt(markerParts[4] || "0", 10);
 
             if (
               markerInvoiceNo &&
               markerRefineryId > 0 &&
               markerSellerTinId > 0
             ) {
+              // Update refinery sale status to VATPAID
               await prisma.refinery_sale.updateMany({
                 where: {
                   invoice_number: markerInvoiceNo,
@@ -1112,6 +1114,127 @@ export const postRes = (request, response) => {
                   updatedById: challan.createdById,
                 },
               });
+
+              // Handle wallet update only on successful payment
+              // Extract payable amount from challan remark
+              const payableAmountMatch = refineryMarker.match(
+                /PAYABLE:([^#]+)/,
+              );
+              const payableAmount = payableAmountMatch
+                ? parseFloat(payableAmountMatch[1])
+                : 0;
+
+              if (payableAmount != 0) {
+                try {
+                  // Get current wallet amount
+                  const dvatRecord = await prisma.dvat04.findUnique({
+                    where: { id: parseInt(dvatid) },
+                    select: { wallet: true },
+                  });
+
+                  if (dvatRecord) {
+                    const oldWallet = Number.parseFloat(
+                      dvatRecord.wallet || "0",
+                    );
+                    const newWallet = Math.max(
+                      0,
+                      oldWallet - payableAmount,
+                    );
+
+                    // Update wallet in dvat04
+                    await prisma.dvat04.update({
+                      where: { id: parseInt(dvatid) },
+                      data: {
+                        wallet: newWallet.toFixed(2),
+                        updatedById: challan.createdById,
+                      },
+                    });
+
+                    // Create wallet history entry
+                    await prisma.wallet_history.create({
+                      data: {
+                        dvatId: parseInt(dvatid),
+                        refineryId: markerRefineryId,
+                        type: "DEBIT",
+                        status: "ACTIVE",
+                        difference_amount: payableAmount.toFixed(2),
+                        old_wallet: oldWallet.toFixed(2),
+                        new_wallet: newWallet.toFixed(2),
+                        old_quantity: "0",
+                        new_quantity: "0",
+                        old_amount: "0",
+                        new_amount: payableAmount.toFixed(2),
+                        invoice_number: markerInvoiceNo,
+                      },
+                    });
+                  }
+                } catch (walletError) {
+                  console.log(
+                    "Error updating wallet for refinery VAT payment:",
+                    walletError,
+                  );
+                  // Don't fail the payment if wallet update fails
+                }
+              }
+            }
+          } else {
+            // Handle wallet top-up payments
+            const isWalletTopup = refineryMarker.startsWith("WALLET_TOPUP#");
+
+            if (isWalletTopup) {
+              // Extract amount from challan remark
+              const amountMatch = refineryMarker.match(/AMOUNT:([^#]+)/);
+              const topupAmount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+
+              if (topupAmount > 0) {
+                try {
+                  // Get current wallet amount
+                  const dvatRecord = await prisma.dvat04.findUnique({
+                    where: { id: parseInt(dvatid) },
+                    select: { wallet: true },
+                  });
+
+                  if (dvatRecord) {
+                    const oldWallet = Number.parseFloat(
+                      dvatRecord.wallet || "0",
+                    );
+                    const newWallet = oldWallet + topupAmount;
+
+                    // Update wallet in dvat04
+                    await prisma.dvat04.update({
+                      where: { id: parseInt(dvatid) },
+                      data: {
+                        wallet: newWallet.toFixed(2),
+                        updatedById: challan.createdById,
+                      },
+                    });
+
+                    // Create wallet history entry
+                    await prisma.wallet_history.create({
+                      data: {
+                        dvatId: parseInt(dvatid),
+                        refineryId: 1, // Using 1 as placeholder for wallet top-up
+                        type: "CREDIT",
+                        status: "ACTIVE",
+                        difference_amount: topupAmount.toFixed(2),
+                        old_wallet: oldWallet.toFixed(2),
+                        new_wallet: newWallet.toFixed(2),
+                        old_quantity: "0",
+                        new_quantity: "0",
+                        old_amount: "0",
+                        new_amount: topupAmount.toFixed(2),
+                        invoice_number: `WALLET_TOPUP_${challan.cpin}`,
+                      },
+                    });
+                  }
+                } catch (walletError) {
+                  console.log(
+                    "Error updating wallet for wallet top-up payment:",
+                    walletError,
+                  );
+                  // Don't fail the payment if wallet update fails
+                }
+              }
             }
           }
 

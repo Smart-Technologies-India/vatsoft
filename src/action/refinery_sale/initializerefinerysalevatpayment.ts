@@ -226,51 +226,8 @@ const InitializeRefinerySaleVatPayment = async (
       },
     });
 
-    // Update wallet and create wallet history entry
-    const currentDvatBeforeUpdate = await prisma.dvat04.findUnique({
-      where: { id: currentDvatId },
-      select: { wallet: true, tin_master_id: true },
-    });
-
-    if (!currentDvatBeforeUpdate) {
-      return createResponse({
-        message: "Failed to retrieve current wallet amount.",
-        functionname,
-      });
-    }
-
-    const oldWallet = Number.parseFloat(currentDvatBeforeUpdate.wallet || "0");
-
-    if (oldWallet != 0) {
-      const newWallet = oldWallet - payload.payableAmount;
-
-      // Update wallet in dvat04
-      await prisma.dvat04.update({
-        where: { id: currentDvatId },
-        data: {
-          wallet: newWallet.toFixed(2),
-          updatedById: currentUserId,
-        },
-      });
-
-      // Create wallet history entry
-      await prisma.wallet_history.create({
-        data: {
-          dvatId: currentDvatId,
-          refineryId: targetSale.refineryId,
-          type: payload.payableAmount > 0 ? "DEBIT" : "CREDIT",
-          status: "ACTIVE",
-          difference_amount: payload.payableAmount.toFixed(2),
-          old_wallet: oldWallet.toFixed(2),
-          new_wallet: newWallet.toFixed(2),
-          old_quantity: "0",
-          new_quantity: "0",
-          old_amount: payload.totalVatAmount.toFixed(2),
-          new_amount: payload.payableAmount.toFixed(2),
-          invoice_number: targetSale.invoice_number,
-        },
-      });
-    }
+    // NOTE: Wallet update and wallet_history creation is now handled in
+    // payment callback handler (ccavresponse.js) only when payment succeeds
 
     return createResponse({
       message: "Refinery VAT challan created successfully.",
