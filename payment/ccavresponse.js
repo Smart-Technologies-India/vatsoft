@@ -1117,9 +1117,8 @@ export const postRes = (request, response) => {
 
               // Handle wallet update only on successful payment
               // Extract payable amount from challan remark
-              const payableAmountMatch = refineryMarker.match(
-                /PAYABLE:([^#]+)/,
-              );
+              const payableAmountMatch =
+                refineryMarker.match(/PAYABLE:([^#]+)/);
               const payableAmount = payableAmountMatch
                 ? parseFloat(payableAmountMatch[1])
                 : 0;
@@ -1136,10 +1135,7 @@ export const postRes = (request, response) => {
                     const oldWallet = Number.parseFloat(
                       dvatRecord.wallet || "0",
                     );
-                    const newWallet = Math.max(
-                      0,
-                      oldWallet - payableAmount,
-                    );
+                    const newWallet = oldWallet - payableAmount;
 
                     // Update wallet in dvat04
                     await prisma.dvat04.update({

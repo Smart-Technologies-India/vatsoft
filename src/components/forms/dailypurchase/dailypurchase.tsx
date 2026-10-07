@@ -733,10 +733,12 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             placeholder="Select Invoice Date"
             mindate={dayjs("2026-04-01")}
             maxdate={
-              davtdata?.commodity === "FUEL" &&
-              [1, 2, 748, 749].includes(Number(description_of_goods))
-                ? dayjs("2026-06-30")
-                : dayjs()
+              [384, 388, 383, 13].includes(davtdata?.id ?? 0)
+                ? dayjs()
+                : davtdata?.commodity === "FUEL" &&
+                    [1, 2, 748, 749].includes(Number(description_of_goods))
+                  ? dayjs("2026-06-30")
+                  : dayjs()
             }
             // disable={isAddMoreMode}
           />

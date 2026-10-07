@@ -65,7 +65,7 @@ const ReverseInvoicePage = () => {
     null,
   );
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
-  const [reversingAll, setReversingAll] = useState(false);
+  const [reversingGroupKey, setReversingGroupKey] = useState<string | null>(null);
 
   const loadRows = useCallback(async () => {
     const reversePurchaseResponse = await GetReverseInvoicePurchase();
@@ -106,9 +106,9 @@ const ReverseInvoicePage = () => {
 
   const onReverseAll = useCallback(
     async (group: GroupedPurchaseRow) => {
-      if (reversingAll) return;
+      if (reversingGroupKey === group.groupKey) return;
 
-      setReversingAll(true);
+      setReversingGroupKey(group.groupKey);
       let successCount = 0;
       let failedCount = 0;
 
@@ -133,11 +133,11 @@ const ReverseInvoicePage = () => {
       }
 
       await loadRows();
-      setReversingAll(false);
+      setReversingGroupKey(null);
       setIsGroupModalOpen(false);
       setSelectedGroup(null);
     },
-    [loadRows, reversingAll, userid],
+    [loadRows, reversingGroupKey, userid],
   );
 
   const tradeNameOptions = useMemo(() => {
@@ -279,7 +279,7 @@ const ReverseInvoicePage = () => {
               size="small"
               type="primary"
               danger
-              loading={reversingAll}
+              loading={reversingGroupKey === row.original.groupKey}
               onClick={() => onReverseAll(row.original)}
             >
               Reverse All
@@ -288,7 +288,7 @@ const ReverseInvoicePage = () => {
         ),
       },
     ],
-    [reversingAll, onReverseAll],
+    [reversingGroupKey, onReverseAll],
   );
 
   const columns = useMemo<ColumnDef<ReverseInvoicePurchaseRow>[]>(
@@ -703,7 +703,7 @@ const ReverseInvoicePage = () => {
                 <Button
                   type="primary"
                   danger
-                  loading={reversingAll}
+                  loading={reversingGroupKey === selectedGroup?.groupKey}
                   onClick={() => onReverseAll(selectedGroup)}
                 >
                   Reverse All ({selectedGroup.records.length} items)

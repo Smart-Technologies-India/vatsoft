@@ -76,7 +76,11 @@ export async function POST(req: NextRequest) {
           let dvat = dvatCache.get(data.SupplierTIN);
           if (!dvat) {
             const dvatResponse = await tx.dvat04.findFirst({
-              where: { tinNumber: data.SupplierTIN, deletedAt: null, deletedById: null },
+              where: {
+                tinNumber: data.SupplierTIN,
+                deletedAt: null,
+                deletedById: null,
+              },
               select: { id: true, createdById: true },
             });
 
@@ -149,6 +153,11 @@ export async function POST(req: NextRequest) {
 
             const testAmount = item.Rate * item.Qty;
 
+            const isnotlocal = !(
+              data.CustomerTINNo.startsWith("25") ||
+              data.CustomerTINNo.startsWith("26")
+            );
+
             await tx.tally_purchase.create({
               data: {
                 dvat04Id: dvat.id,
@@ -158,9 +167,11 @@ export async function POST(req: NextRequest) {
                 seller_tin_numberId: tin.id,
                 quantity,
                 tax_percent: commodity.taxable_at,
-                amount_unit: ((testAmount * 1.2) / quantity).toFixed(2),
+                amount_unit: isnotlocal
+                  ? (testAmount / quantity).toFixed(2)
+                  : ((testAmount * 1.2) / quantity).toFixed(2),
                 amount: testAmount.toFixed(2),
-                vatamount: (testAmount * 0.2).toFixed(2),
+                vatamount: isnotlocal ? "0.00" : (testAmount * 0.2).toFixed(2),
                 batch_name: item.BatchName,
                 is_local:
                   data.CustomerTINNo.startsWith("25") ||
@@ -170,7 +181,7 @@ export async function POST(req: NextRequest) {
                   data.CustomerTINNo.startsWith("26"),
                 is_accept: false,
                 urn_number: createUrn(),
-                is_against_cform: false,
+                is_against_cform: isnotlocal ? true : false,
                 createdById: dvat.createdById,
               },
             });
