@@ -1123,53 +1123,58 @@ export const postRes = (request, response) => {
                 ? parseFloat(payableAmountMatch[1])
                 : 0;
 
-              if (payableAmount != 0) {
-                try {
-                  // Get current wallet amount
-                  const dvatRecord = await prisma.dvat04.findUnique({
-                    where: { id: parseInt(dvatid) },
-                    select: { wallet: true },
-                  });
+              const dvatRecord = await prisma.dvat04.findUnique({
+                where: { id: parseInt(dvatid) },
+                select: { wallet: true },
+              });
+              if (
+                dvatRecord &&
+                Number.parseFloat(dvatRecord.wallet || "0") != 0
+              ) {
+                if (payableAmount != 0) {
+                  try {
+                    // Get current wallet amount
 
-                  if (dvatRecord) {
-                    const oldWallet = Number.parseFloat(
-                      dvatRecord.wallet || "0",
+                    if (dvatRecord) {
+                      const oldWallet = Number.parseFloat(
+                        dvatRecord.wallet || "0",
+                      );
+                      const newWallet = oldWallet - payableAmount;
+
+                      // Update wallet in dvat04
+                      await prisma.dvat04.update({
+                        where: { id: parseInt(dvatid) },
+                        data: {
+                          wallet: newWallet.toFixed(2),
+                          updatedById: challan.createdById,
+                        },
+                      });
+
+                      // Create wallet history entry
+                      await prisma.wallet_history.create({
+                        data: {
+                          dvatId: parseInt(dvatid),
+                          refineryId: markerRefineryId,
+                          type: "DEBIT",
+                          status: "ACTIVE",
+                          difference_amount: payableAmount.toFixed(2),
+                          old_wallet: oldWallet.toFixed(2),
+                          new_wallet: newWallet.toFixed(2),
+                          old_quantity: "0",
+                          new_quantity: "0",
+                          old_amount: "0",
+                          new_amount: payableAmount.toFixed(2),
+                          invoice_number: markerInvoiceNo,
+                        },
+                      });
+                    }
+                  } catch (walletError) {
+                    console.log(
+                      "Error updating wallet for refinery VAT payment:",
+                      walletError,
                     );
-                    const newWallet = oldWallet - payableAmount;
-
-                    // Update wallet in dvat04
-                    await prisma.dvat04.update({
-                      where: { id: parseInt(dvatid) },
-                      data: {
-                        wallet: newWallet.toFixed(2),
-                        updatedById: challan.createdById,
-                      },
-                    });
-
-                    // Create wallet history entry
-                    await prisma.wallet_history.create({
-                      data: {
-                        dvatId: parseInt(dvatid),
-                        refineryId: markerRefineryId,
-                        type: "DEBIT",
-                        status: "ACTIVE",
-                        difference_amount: payableAmount.toFixed(2),
-                        old_wallet: oldWallet.toFixed(2),
-                        new_wallet: newWallet.toFixed(2),
-                        old_quantity: "0",
-                        new_quantity: "0",
-                        old_amount: "0",
-                        new_amount: payableAmount.toFixed(2),
-                        invoice_number: markerInvoiceNo,
-                      },
-                    });
+                    // Don't fail the payment if wallet update fails
                   }
-                } catch (walletError) {
-                  console.log(
-                    "Error updating wallet for refinery VAT payment:",
-                    walletError,
-                  );
-                  // Don't fail the payment if wallet update fails
                 }
               }
             }
