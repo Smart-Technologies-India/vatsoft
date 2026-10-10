@@ -131,8 +131,12 @@ async function processReturnData(
   const isQuarterlyFiling =
     updateresponse.dvat04.frequencyFilings == "QUARTERLY";
 
-  let month: string = updateresponse.month ?? "";
-  let year: string = updateresponse.year;
+  // Store original month/year for penalty calculations
+  const originalMonth: string = updateresponse.month ?? "";
+  const originalYear: string = updateresponse.year;
+
+  let month: string = originalMonth;
+  let year: string = originalYear;
   const months = [
     "January",
     "February",
@@ -280,10 +284,17 @@ async function processReturnData(
       : 0,
   );
 
+  // Create a copy of updateresponse with original month/year for correct penalty/interest calculation
+  const returnForCalculation: typeof updateresponse = {
+    ...updateresponse,
+    month: originalMonth,
+    year: originalYear,
+  };
+
   const netTaxCalc = new NetTaxCalculation(
     returnforms,
     challans,
-    updateresponse,
+    returnForCalculation,
     !isBeforeApril2026 && lastmonthreturn
       ? parseFloat(lastmonthreturn.pending_payment ?? "0")
       : 0,
@@ -296,7 +307,7 @@ async function processReturnData(
   const centralSales = new CentralSalesCalculation(
     returnforms,
     challans,
-    updateresponse,
+    returnForCalculation,
     !isBeforeApril2026 && lastmonthreturn
       ? parseFloat(lastmonthreturn.pending_payment ?? "0")
       : 0,
@@ -309,7 +320,7 @@ async function processReturnData(
   const thebalance = new TheBalance(
     returnforms,
     challans,
-    updateresponse,
+    returnForCalculation,
     !isBeforeApril2026 && lastmonthreturn
       ? parseFloat(lastmonthreturn.pending_payment ?? "0")
       : 0,
