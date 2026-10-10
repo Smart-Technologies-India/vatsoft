@@ -2044,24 +2044,24 @@ model returns_01_work {
   penalty                String?
   other_charge           String?
   total_tax_amount       String?
-  R4_8                   Decimal?          @db.Decimal(10, 0)
-  R4_9                   Decimal?          @db.Decimal(10, 0)
-  R4_10                  Decimal?          @db.Decimal(10, 0)
-  R5_4                   Decimal?          @db.Decimal(10, 0)
-  R5_5                   Decimal?          @db.Decimal(10, 0)
-  R5_6                   Decimal?          @db.Decimal(10, 0)
-  R6_1_balance_payable   Decimal?          @db.Decimal(10, 0)
-  R6_INTEREST            Decimal?          @db.Decimal(10, 0)
-  R6_penalty             Decimal?          @db.Decimal(10, 0)
-  R7_total_payable       Decimal?          @db.Decimal(10, 0)
-  RPAID_vat              Decimal?          @db.Decimal(10, 0)
-  RPAID_interest         Decimal?          @db.Decimal(10, 0)
-  RPAID_penalty          Decimal?          @db.Decimal(10, 0)
-  RPAID_others           Decimal?          @db.Decimal(10, 0)
-  RPAID_total            Decimal?          @db.Decimal(10, 0)
-  excess_cash_next_month Decimal?          @db.Decimal(10, 0)
-  excess_itc_next_month  Decimal?          @db.Decimal(10, 0)
-  shortfall              Decimal?          @db.Decimal(10, 0)
+  R4_8                   String?
+  R4_9                   String?
+  R4_10                  String?
+  R5_4                   String?
+  R5_5                   String?
+  R5_6                   String?
+  R6_1_balance_payable   String?
+  R6_INTEREST            String?
+  R6_penalty             String?
+  R7_total_payable       String?
+  RPAID_vat              String?
+  RPAID_interest         String?
+  RPAID_penalty          String?
+  RPAID_others           String?
+  RPAID_total            String?
+  excess_cash_next_month String?
+  excess_itc_next_month  String?
+  shortfall              String?
   status                 ReturnWorkStatus  @default(VERIFY)
   remark                 String?           @db.LongText
 }
