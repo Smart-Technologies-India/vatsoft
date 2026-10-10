@@ -747,7 +747,7 @@ export class NetTaxCalculation extends CreditDebit {
       this.return01.rr_number == ""
     ) {
       pdiff_days = getDaysBetweenDates(
-        new Date(parseInt(year), monthIndex, 29),
+        new Date(Date.UTC(parseInt(year), monthIndex, 29)),
         currentDate,
       );
       return isNegative(Math.min(100 * pdiff_days, 10000))
@@ -755,7 +755,7 @@ export class NetTaxCalculation extends CreditDebit {
         : Math.min(100 * pdiff_days, 10000);
     } else {
       pdiff_days = getDaysBetweenDates(
-        new Date(parseInt(year), monthIndex, 29),
+        new Date(Date.UTC(parseInt(year), monthIndex, 29)),
         new Date(this.return01.transaction_date ?? currentDate.toISOString()),
       );
 
