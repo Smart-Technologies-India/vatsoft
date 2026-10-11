@@ -32,7 +32,7 @@ function getDaysBetweenDates(startDate: Date, endDate: Date): number {
   const end = dayjs.utc(endDate).startOf("day");
 
   // Calculate the difference in complete days (inclusive - counts both start and end dates)
-  return Math.floor(end.diff(start, "day", true));
+  return Math.floor(end.diff(start, "day", true)) + 1;
 }
 
 class CreditDebit {

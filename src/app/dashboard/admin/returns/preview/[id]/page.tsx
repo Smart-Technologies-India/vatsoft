@@ -57,9 +57,9 @@ const AdminDvat16ReturnPreview = () => {
     (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
   >();
 
-  const [quarterlyReturns, setQuarterlyReturns] = useState<
-    (returns_01 & { dvat04: dvat04 & { registration: registration[] } })[]
-  >([]);
+  // const [quarterlyReturns, setQuarterlyReturns] = useState<
+  //   (returns_01 & { dvat04: dvat04 & { registration: registration[] } })[]
+  // >([]);
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
   const [paidChallans, setPaidChallans] = useState<challan[]>([]);
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
@@ -181,9 +181,9 @@ const AdminDvat16ReturnPreview = () => {
           allQuarterlyReturns = [selectedReturn];
           mergedEntries = [...returnResponse.data.returns_entry];
         }
-
+        console.log("All quarterly returns:", selectedReturn);
         setReturn01(selectedReturn);
-        setQuarterlyReturns(allQuarterlyReturns);
+        // setQuarterlyReturns(allQuarterlyReturns);
         serReturns_entryData(mergedEntries);
 
         // Get last month due and cash
@@ -222,7 +222,7 @@ const AdminDvat16ReturnPreview = () => {
         }
       } else {
         setReturn01(null);
-        setQuarterlyReturns([]);
+        // setQuarterlyReturns([]);
         serReturns_entryData([]);
         setPaidChallans([]);
       }
@@ -231,10 +231,11 @@ const AdminDvat16ReturnPreview = () => {
   }, [returnid]);
 
   const getTaxPeriod = (): string => {
-    const isQuarterly = return01?.status === "PAID"
-      ? return01?.is_quarterly
-      : return01?.dvat04.frequencyFilings == "QUARTERLY";
-    
+    const isQuarterly =
+      return01?.status === "PAID"
+        ? return01?.is_quarterly
+        : return01?.dvat04.frequencyFilings == "QUARTERLY";
+
     if (isQuarterly) {
       switch (return01?.month ?? "") {
         case "June":
@@ -310,41 +311,6 @@ const AdminDvat16ReturnPreview = () => {
       setDownload(false);
       toast.error("Unable to download pdf try again.");
     }
-  };
-
-  const showSubmitButton = (): boolean => {
-    if (!return01) return false;
-
-    const thebalance = new TheBalance(
-      returns_entryData ?? [],
-      paidChallans,
-      return01,
-      parseFloat(lastmonthdue),
-      parseFloat(lastmonthcash),
-      isQuarterlyReturn(),
-    );
-    const centralSales = new CentralSalesCalculation(
-      returns_entryData ?? [],
-      paidChallans,
-      return01,
-      parseFloat(lastmonthdue),
-      parseFloat(lastmonthcash),
-      isQuarterlyReturn(),
-    );
-
-    const value1 =
-      thebalance.posivite() > 0 && thebalance.posivite() < 1
-        ? 1
-        : thebalance.posivite();
-    const value2 =
-      centralSales.netpayable() > 0 && centralSales.netpayable() < 1
-        ? 1
-        : centralSales.netpayable();
-
-    if (value1 + value2 <= 0) {
-      return true;
-    }
-    return false;
   };
 
   return (

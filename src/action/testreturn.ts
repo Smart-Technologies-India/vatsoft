@@ -27,7 +27,6 @@ const TestReturn = async (
     // Fetch all returns OUTSIDE transaction first
     const isExist = await prisma.returns_01.findMany({
       where: {
-        // id: payload.id,
         deletedAt: null,
         deletedById: null,
         status: "PAID",
