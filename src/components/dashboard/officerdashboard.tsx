@@ -238,6 +238,8 @@ const OfficerDashboardPage = () => {
     liquoredealer: number;
     manufacturer: number;
     oidcdealer: number;
+    wholesaler: number;
+    restaurant: number;
     reg: number;
     comp: number;
     last_month_received: number;
@@ -255,6 +257,8 @@ const OfficerDashboardPage = () => {
     liquoredealer: 0,
     manufacturer: 0,
     oidcdealer: 0,
+    wholesaler: 0,
+    restaurant: 0,
     reg: 0,
     comp: 0,
     last_month_received: 0,
@@ -302,6 +306,10 @@ const OfficerDashboardPage = () => {
   interface CategoryWiseData {
     fuelRevenue: number;
     liquorRevenue: number;
+    oidcRevenue: number;
+    manufacturerRevenue: number;
+    wholesalerRevenue: number;
+    restaurantRevenue: number;
     totalRevenue: number;
   }
 
@@ -320,6 +328,18 @@ const OfficerDashboardPage = () => {
     TopCommodityData[]
   >([]);
   const [topLiquorCommodities, setTopLiquorCommodities] = useState<
+    TopCommodityData[]
+  >([]);
+  const [topOidcCommodities, setTopOidcCommodities] = useState<
+    TopCommodityData[]
+  >([]);
+  const [topManufacturerCommodities, setTopManufacturerCommodities] = useState<
+    TopCommodityData[]
+  >([]);
+  const [topWholesalerCommodities, setTopWholesalerCommodities] = useState<
+    TopCommodityData[]
+  >([]);
+  const [topRestaurantCommodities, setTopRestaurantCommodities] = useState<
     TopCommodityData[]
   >([]);
 
@@ -393,7 +413,7 @@ const OfficerDashboardPage = () => {
         setTopFuelDealers(fuelDealersResponse.data);
       }
 
-      // Fetch category-wise revenue (fuel and liquor)
+      // Fetch category-wise revenue (all 6 commodities)
       const fuelRevenueResponse = await OfficerDashboardReport({
         selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
         selectCommodity: "FUEL",
@@ -402,23 +422,55 @@ const OfficerDashboardPage = () => {
         selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
         selectCommodity: "LIQUOR",
       });
+      const oidcRevenueResponse = await OfficerDashboardReport({
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
+        selectCommodity: "OIDC",
+      });
+      const manufacturerRevenueResponse = await OfficerDashboardReport({
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
+        selectCommodity: "MANUFACTURER",
+      });
+      const wholesalerRevenueResponse = await OfficerDashboardReport({
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
+        selectCommodity: "WHOLESALER",
+      });
+      const restaurantRevenueResponse = await OfficerDashboardReport({
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
+        selectCommodity: "RESTAURANT",
+      });
 
       if (
         fuelRevenueResponse.status &&
         fuelRevenueResponse.data &&
         liquorRevenueResponse.status &&
-        liquorRevenueResponse.data
+        liquorRevenueResponse.data &&
+        oidcRevenueResponse.status &&
+        oidcRevenueResponse.data &&
+        manufacturerRevenueResponse.status &&
+        manufacturerRevenueResponse.data &&
+        wholesalerRevenueResponse.status &&
+        wholesalerRevenueResponse.data &&
+        restaurantRevenueResponse.status &&
+        restaurantRevenueResponse.data
       ) {
         setCategoryWiseData({
           fuelRevenue: fuelRevenueResponse.data.this_month_received,
           liquorRevenue: liquorRevenueResponse.data.this_month_received,
+          oidcRevenue: oidcRevenueResponse.data.this_month_received,
+          manufacturerRevenue: manufacturerRevenueResponse.data.this_month_received,
+          wholesalerRevenue: wholesalerRevenueResponse.data.this_month_received,
+          restaurantRevenue: restaurantRevenueResponse.data.this_month_received,
           totalRevenue:
             fuelRevenueResponse.data.this_month_received +
-            liquorRevenueResponse.data.this_month_received,
+            liquorRevenueResponse.data.this_month_received +
+            oidcRevenueResponse.data.this_month_received +
+            manufacturerRevenueResponse.data.this_month_received +
+            wholesalerRevenueResponse.data.this_month_received +
+            restaurantRevenueResponse.data.this_month_received,
         });
       }
 
-      // Fetch top commodities
+      // Fetch top commodities for all 6 types
       const fuelCommoditiesResponse = await GetTopCommodities({
         selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
         commodityType: "FUEL",
@@ -435,6 +487,42 @@ const OfficerDashboardPage = () => {
       });
       if (liquorCommoditiesResponse.status && liquorCommoditiesResponse.data) {
         setTopLiquorCommodities(liquorCommoditiesResponse.data);
+      }
+
+      const oidcCommoditiesResponse = await GetTopCommodities({
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
+        commodityType: "OIDC",
+        limit: 10,
+      });
+      if (oidcCommoditiesResponse.status && oidcCommoditiesResponse.data) {
+        setTopOidcCommodities(oidcCommoditiesResponse.data);
+      }
+
+      const manufacturerCommoditiesResponse = await GetTopCommodities({
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
+        commodityType: "MANUFACTURER",
+        limit: 10,
+      });
+      if (manufacturerCommoditiesResponse.status && manufacturerCommoditiesResponse.data) {
+        setTopManufacturerCommodities(manufacturerCommoditiesResponse.data);
+      }
+
+      const wholesalerCommoditiesResponse = await GetTopCommodities({
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
+        commodityType: "WHOLESALER",
+        limit: 10,
+      });
+      if (wholesalerCommoditiesResponse.status && wholesalerCommoditiesResponse.data) {
+        setTopWholesalerCommodities(wholesalerCommoditiesResponse.data);
+      }
+
+      const restaurantCommoditiesResponse = await GetTopCommodities({
+        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
+        commodityType: "RESTAURANT",
+        limit: 10,
+      });
+      if (restaurantCommoditiesResponse.status && restaurantCommoditiesResponse.data) {
+        setTopRestaurantCommodities(restaurantCommoditiesResponse.data);
       }
     };
     init();
@@ -547,19 +635,37 @@ const OfficerDashboardPage = () => {
 
   // Dynamic category-wise revenue data from database
   const categoryRevenueChartData = {
-    labels: ["Liquor", "Petroleum"],
+    labels: ["Petroleum", "Liquor", "OIDC", "Manufacturer", "Wholesaler", "Restaurant"],
     datasets: [
       {
         data: categoryWiseData
-          ? [categoryWiseData.liquorRevenue, categoryWiseData.fuelRevenue]
-          : [5800000, 3700000],
+          ? [
+              categoryWiseData.fuelRevenue,
+              categoryWiseData.liquorRevenue,
+              categoryWiseData.oidcRevenue,
+              categoryWiseData.manufacturerRevenue,
+              categoryWiseData.wholesalerRevenue,
+              categoryWiseData.restaurantRevenue,
+            ]
+          : [3700000, 5800000, 1200000, 900000, 800000, 600000],
         backgroundColor: [
-          "#a8edea", // Light Teal
-          "#ffecd2", // Light Peach
+          "#3b82f6", // Blue (Petroleum)
+          "#f59e0b", // Amber (Liquor)
+          "#10b981", // Green (OIDC)
+          "#8b5cf6", // Purple (Manufacturer)
+          "#ec4899", // Pink (Wholesaler)
+          "#f97316", // Orange (Restaurant)
         ],
         borderWidth: 3,
         borderColor: "#ffffff",
-        hoverBackgroundColor: ["#805ad5", "#dd6b20"],
+        hoverBackgroundColor: [
+          "#2563eb",
+          "#d97706",
+          "#059669",
+          "#7c3aed",
+          "#db2777",
+          "#ea580c",
+        ],
         hoverBorderWidth: 4,
       },
     ],
@@ -613,6 +719,114 @@ const OfficerDashboardPage = () => {
           "#f5a623",
           "#50e3c2",
           "#ff6b9d",
+        ],
+        hoverBorderWidth: 4,
+      },
+    ],
+  };
+
+  // Dynamic OIDC commodities data from database
+  const oidcCommoditiesChartData = {
+    labels: topOidcCommodities.map((c) => c.commodityName),
+    datasets: [
+      {
+        data: topOidcCommodities.map((c) => c.totalRevenue),
+        backgroundColor: [
+          "#10B981",
+          "#34D399",
+          "#6EE7B7",
+          "#A7F3D0",
+          "#D1FAE5",
+        ],
+        borderWidth: 3,
+        borderColor: "#ffffff",
+        hoverBackgroundColor: [
+          "#059669",
+          "#10b981",
+          "#34d399",
+          "#6ee7b7",
+          "#a7f3d0",
+        ],
+        hoverBorderWidth: 4,
+      },
+    ],
+  };
+
+  // Dynamic Manufacturer commodities data from database
+  const manufacturerCommoditiesChartData = {
+    labels: topManufacturerCommodities.map((c) => c.commodityName),
+    datasets: [
+      {
+        data: topManufacturerCommodities.map((c) => c.totalRevenue),
+        backgroundColor: [
+          "#8B5CF6",
+          "#A78BFA",
+          "#C4B5FD",
+          "#DDD6FE",
+          "#EDE9FE",
+        ],
+        borderWidth: 3,
+        borderColor: "#ffffff",
+        hoverBackgroundColor: [
+          "#7c3aed",
+          "#8b5cf6",
+          "#a78bfa",
+          "#c4b5fd",
+          "#ddd6fe",
+        ],
+        hoverBorderWidth: 4,
+      },
+    ],
+  };
+
+  // Dynamic Wholesaler commodities data from database
+  const wholesalerCommoditiesChartData = {
+    labels: topWholesalerCommodities.map((c) => c.commodityName),
+    datasets: [
+      {
+        data: topWholesalerCommodities.map((c) => c.totalRevenue),
+        backgroundColor: [
+          "#EC4899",
+          "#F472B6",
+          "#F9A8D4",
+          "#FBCFE8",
+          "#FCE7F3",
+        ],
+        borderWidth: 3,
+        borderColor: "#ffffff",
+        hoverBackgroundColor: [
+          "#db2777",
+          "#ec4899",
+          "#f472b6",
+          "#f9a8d4",
+          "#fbcfe8",
+        ],
+        hoverBorderWidth: 4,
+      },
+    ],
+  };
+
+  // Dynamic Restaurant commodities data from database
+  const restaurantCommoditiesChartData = {
+    labels: topRestaurantCommodities.map((c) => c.commodityName),
+    datasets: [
+      {
+        data: topRestaurantCommodities.map((c) => c.totalRevenue),
+        backgroundColor: [
+          "#F97316",
+          "#FB923C",
+          "#FDBA74",
+          "#FED7AA",
+          "#FFEDD5",
+        ],
+        borderWidth: 3,
+        borderColor: "#ffffff",
+        hoverBackgroundColor: [
+          "#ea580c",
+          "#f97316",
+          "#fb923c",
+          "#fdba74",
+          "#fed7aa",
         ],
         hoverBorderWidth: 4,
       },
@@ -1111,7 +1325,7 @@ const OfficerDashboardPage = () => {
                       Category-wise Revenue (Last 30 Days)
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">
-                      Liquor vs Petroleum comparison
+                      All 6 commodity types comparison
                     </p>
                   </div>
                   <div className="bg-linear-to-r from-purple-50 to-pink-50 p-2 rounded-lg">
@@ -1287,6 +1501,283 @@ const OfficerDashboardPage = () => {
                 <span className="font-medium text-gray-700">
                   {numberWithIndianFormat(
                     topLiquorCommodities.reduce(
+                      (sum, c) => sum + c.totalRevenue,
+                      0,
+                    ),
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Top OIDC Commodities Chart */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 flex items-center">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></div>
+                  Top OIDC Products
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Best selling OIDC commodities
+                </p>
+              </div>
+              <div className="bg-linear-to-r from-emerald-50 to-green-50 p-2 rounded-lg">
+                <svg
+                  className="w-4 h-4 text-emerald-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div className="h-64 flex items-center justify-center">
+              {topOidcCommodities.length > 0 ? (
+                <div className="w-full h-full">
+                  <Pie data={oidcCommoditiesChartData} options={pieOptions} />
+                </div>
+              ) : (
+                <div className="text-center text-gray-400">
+                  <svg
+                    className="w-16 h-16 mx-auto mb-2 opacity-50"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  <p className="text-sm">No data available</p>
+                </div>
+              )}
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Total Products</span>
+                <span className="font-medium text-gray-700">
+                  {numberWithIndianFormat(
+                    topOidcCommodities.reduce(
+                      (sum, c) => sum + c.totalRevenue,
+                      0,
+                    ),
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Manufacturer Commodities Chart */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 flex items-center">
+                  <div className="w-2 h-2 bg-violet-500 rounded-full mr-2"></div>
+                  Top Manufacturer Products
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Best selling manufacturer commodities
+                </p>
+              </div>
+              <div className="bg-linear-to-r from-violet-50 to-purple-50 p-2 rounded-lg">
+                <svg
+                  className="w-4 h-4 text-violet-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div className="h-64 flex items-center justify-center">
+              {topManufacturerCommodities.length > 0 ? (
+                <div className="w-full h-full">
+                  <Pie
+                    data={manufacturerCommoditiesChartData}
+                    options={pieOptions}
+                  />
+                </div>
+              ) : (
+                <div className="text-center text-gray-400">
+                  <svg
+                    className="w-16 h-16 mx-auto mb-2 opacity-50"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  <p className="text-sm">No data available</p>
+                </div>
+              )}
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Total Products</span>
+                <span className="font-medium text-gray-700">
+                  {numberWithIndianFormat(
+                    topManufacturerCommodities.reduce(
+                      (sum, c) => sum + c.totalRevenue,
+                      0,
+                    ),
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Wholesaler Commodities Chart */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 flex items-center">
+                  <div className="w-2 h-2 bg-pink-500 rounded-full mr-2"></div>
+                  Top Wholesaler Products
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Best selling wholesaler commodities
+                </p>
+              </div>
+              <div className="bg-linear-to-r from-pink-50 to-rose-50 p-2 rounded-lg">
+                <svg
+                  className="w-4 h-4 text-pink-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div className="h-64 flex items-center justify-center">
+              {topWholesalerCommodities.length > 0 ? (
+                <div className="w-full h-full">
+                  <Pie
+                    data={wholesalerCommoditiesChartData}
+                    options={pieOptions}
+                  />
+                </div>
+              ) : (
+                <div className="text-center text-gray-400">
+                  <svg
+                    className="w-16 h-16 mx-auto mb-2 opacity-50"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  <p className="text-sm">No data available</p>
+                </div>
+              )}
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Total Products</span>
+                <span className="font-medium text-gray-700">
+                  {numberWithIndianFormat(
+                    topWholesalerCommodities.reduce(
+                      (sum, c) => sum + c.totalRevenue,
+                      0,
+                    ),
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Restaurant Commodities Chart */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 flex items-center">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                  Top Restaurant Products
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Best selling restaurant commodities
+                </p>
+              </div>
+              <div className="bg-linear-to-r from-orange-50 to-amber-50 p-2 rounded-lg">
+                <svg
+                  className="w-4 h-4 text-orange-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div className="h-64 flex items-center justify-center">
+              {topRestaurantCommodities.length > 0 ? (
+                <div className="w-full h-full">
+                  <Pie
+                    data={restaurantCommoditiesChartData}
+                    options={pieOptions}
+                  />
+                </div>
+              ) : (
+                <div className="text-center text-gray-400">
+                  <svg
+                    className="w-16 h-16 mx-auto mb-2 opacity-50"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  <p className="text-sm">No data available</p>
+                </div>
+              )}
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Total Products</span>
+                <span className="font-medium text-gray-700">
+                  {numberWithIndianFormat(
+                    topRestaurantCommodities.reduce(
                       (sum, c) => sum + c.totalRevenue,
                       0,
                     ),

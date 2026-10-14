@@ -719,6 +719,7 @@ const DailyPurchaseMaster = (props: DailyPurchaseProviderProps) => {
             disable={isAddMoreMode}
           />
         </div>
+        {davtdata?.id}
         <div className="mt-2">
           <DateSelect<DailyPurchaseMasterForm>
             name="invoice_date"

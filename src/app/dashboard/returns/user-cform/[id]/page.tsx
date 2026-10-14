@@ -54,17 +54,6 @@ const TrackAppliation = () => {
     setSeachOption(e.target.value);
   };
 
-  const [searchDate, setSearchDate] = useState<
-    [Dayjs | null, Dayjs | null] | null
-  >(null);
-
-  const onChangeDate = (
-    dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string],
-  ) => {
-    setSearchDate(dates);
-  };
-
   const [cformData, setCformData] = useState<Array<cform>>([]);
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
 

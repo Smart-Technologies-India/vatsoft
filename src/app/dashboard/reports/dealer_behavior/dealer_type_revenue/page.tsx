@@ -24,18 +24,38 @@ const DealerTypeRevenueReport = () => {
     month: string;
     fuelRevenue: number;
     liquorRevenue: number;
+    oidcRevenue: number;
+    manufacturerRevenue: number;
+    wholesalerRevenue: number;
+    restaurantRevenue: number;
     fuelDealers: number;
     liquorDealers: number;
+    oidcDealers: number;
+    manufacturerDealers: number;
+    wholesalerDealers: number;
+    restaurantDealers: number;
   }
 
   interface ResponseData {
     monthlyData: MonthlyRevenue[];
     totalFuelRevenue: number;
     totalLiquorRevenue: number;
+    totalOidcRevenue: number;
+    totalManufacturerRevenue: number;
+    totalWholesalerRevenue: number;
+    totalRestaurantRevenue: number;
     totalFuelDealers: number;
     totalLiquorDealers: number;
+    totalOidcDealers: number;
+    totalManufacturerDealers: number;
+    totalWholesalerDealers: number;
+    totalRestaurantDealers: number;
     fuelPercentage: number;
     liquorPercentage: number;
+    oidcPercentage: number;
+    manufacturerPercentage: number;
+    wholesalerPercentage: number;
+    restaurantPercentage: number;
     year: string;
   }
 
@@ -131,17 +151,51 @@ const DealerTypeRevenueReport = () => {
         reportData.totalLiquorDealers.toString(),
         reportData.liquorPercentage.toFixed(2) + "%",
       ],
+      [
+        "OIDC Dealers",
+        reportData.totalOidcRevenue.toString(),
+        reportData.totalOidcDealers.toString(),
+        reportData.oidcPercentage.toFixed(2) + "%",
+      ],
+      [
+        "Manufacturer Dealers",
+        reportData.totalManufacturerRevenue.toString(),
+        reportData.totalManufacturerDealers.toString(),
+        reportData.manufacturerPercentage.toFixed(2) + "%",
+      ],
+      [
+        "Wholesaler Dealers",
+        reportData.totalWholesalerRevenue.toString(),
+        reportData.totalWholesalerDealers.toString(),
+        reportData.wholesalerPercentage.toFixed(2) + "%",
+      ],
+      [
+        "Restaurant Dealers",
+        reportData.totalRestaurantRevenue.toString(),
+        reportData.totalRestaurantDealers.toString(),
+        reportData.restaurantPercentage.toFixed(2) + "%",
+      ],
       [""],
       ["Monthly Breakdown"],
-      ["Month", "Petroleum Revenue", "Liquor Revenue", "Total Revenue"],
+      ["Month", "Petroleum Revenue", "Liquor Revenue", "OIDC Revenue", "Manufacturer Revenue", "Wholesaler Revenue", "Restaurant Revenue", "Total Revenue"],
     ];
 
     reportData.monthlyData.forEach((item) => {
-      const total = item.fuelRevenue + item.liquorRevenue;
+      const total =
+        item.fuelRevenue +
+        item.liquorRevenue +
+        item.oidcRevenue +
+        item.manufacturerRevenue +
+        item.wholesalerRevenue +
+        item.restaurantRevenue;
       worksheetData.push([
         monthNames[item.month],
         item.fuelRevenue.toString(),
         item.liquorRevenue.toString(),
+        item.oidcRevenue.toString(),
+        item.manufacturerRevenue.toString(),
+        item.wholesalerRevenue.toString(),
+        item.restaurantRevenue.toString(),
         total.toString(),
       ]);
     });
@@ -151,7 +205,18 @@ const DealerTypeRevenueReport = () => {
       "Total",
       reportData.totalFuelRevenue.toString(),
       reportData.totalLiquorRevenue.toString(),
-      (reportData.totalFuelRevenue + reportData.totalLiquorRevenue).toString(),
+      reportData.totalOidcRevenue.toString(),
+      reportData.totalManufacturerRevenue.toString(),
+      reportData.totalWholesalerRevenue.toString(),
+      reportData.totalRestaurantRevenue.toString(),
+      (
+        reportData.totalFuelRevenue +
+        reportData.totalLiquorRevenue +
+        reportData.totalOidcRevenue +
+        reportData.totalManufacturerRevenue +
+        reportData.totalWholesalerRevenue +
+        reportData.totalRestaurantRevenue
+      ).toString(),
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet(worksheetData);
@@ -162,15 +227,19 @@ const DealerTypeRevenueReport = () => {
   };
 
   const doughnutData: any = {
-    labels: ["Petroleum Dealers", "Liquor Dealers"],
+    labels: ["Petroleum Dealers", "Liquor Dealers", "OIDC Dealers", "Manufacturer Dealers", "Wholesaler Dealers", "Restaurant Dealers"],
     datasets: [
       {
         data: [
           reportData?.totalFuelRevenue || 0,
           reportData?.totalLiquorRevenue || 0,
+          reportData?.totalOidcRevenue || 0,
+          reportData?.totalManufacturerRevenue || 0,
+          reportData?.totalWholesalerRevenue || 0,
+          reportData?.totalRestaurantRevenue || 0,
         ],
-        backgroundColor: ["#3b82f6", "#f59e0b"],
-        borderColor: ["#2563eb", "#d97706"],
+        backgroundColor: ["#3b82f6", "#f59e0b", "#10b981", "#8b5cf6", "#ec4899", "#f97316"],
+        borderColor: ["#2563eb", "#d97706", "#059669", "#7c3aed", "#be185d", "#d97706"],
         borderWidth: 2,
       },
     ],
@@ -194,12 +263,16 @@ const DealerTypeRevenueReport = () => {
           label: function (context: any) {
             const label = context.label || "";
             const value = context.parsed;
-            const percentage = reportData
-              ? context.dataIndex === 0
-                ? reportData.fuelPercentage
-                : reportData.liquorPercentage
-              : 0;
-            return `${label}: ₹${numberWithIndianFormat(value)} (${percentage.toFixed(
+            const percentages = [
+              reportData?.fuelPercentage || 0,
+              reportData?.liquorPercentage || 0,
+              reportData?.oidcPercentage || 0,
+              reportData?.manufacturerPercentage || 0,
+              reportData?.wholesalerPercentage || 0,
+              reportData?.restaurantPercentage || 0,
+            ];
+            const percentage = percentages[context.dataIndex] || 0;
+            return `${label}: ₹${numberWithIndianFormat(value.toFixed(2))} (${percentage.toFixed(
               2,
             )}%)`;
           },
@@ -229,6 +302,42 @@ const DealerTypeRevenueReport = () => {
         tension: 0.4,
         fill: false,
       },
+      {
+        label: "OIDC Dealers",
+        data: reportData?.monthlyData.map((item) => item.oidcRevenue) || [],
+        backgroundColor: "#10b981",
+        borderColor: "#10b981",
+        borderWidth: 2,
+        tension: 0.4,
+        fill: false,
+      },
+      {
+        label: "Manufacturer Dealers",
+        data: reportData?.monthlyData.map((item) => item.manufacturerRevenue) || [],
+        backgroundColor: "#8b5cf6",
+        borderColor: "#8b5cf6",
+        borderWidth: 2,
+        tension: 0.4,
+        fill: false,
+      },
+      {
+        label: "Wholesaler Dealers",
+        data: reportData?.monthlyData.map((item) => item.wholesalerRevenue) || [],
+        backgroundColor: "#ec4899",
+        borderColor: "#ec4899",
+        borderWidth: 2,
+        tension: 0.4,
+        fill: false,
+      },
+      {
+        label: "Restaurant Dealers",
+        data: reportData?.monthlyData.map((item) => item.restaurantRevenue) || [],
+        backgroundColor: "#f97316",
+        borderColor: "#f97316",
+        borderWidth: 2,
+        tension: 0.4,
+        fill: false,
+      },
     ],
   };
 
@@ -250,7 +359,7 @@ const DealerTypeRevenueReport = () => {
             size: 11,
           },
           callback: function (value: any) {
-            return "₹" + numberWithIndianFormat(value);
+            return "₹" + numberWithIndianFormat(value.toFixed(2));
           },
         },
       },
@@ -271,7 +380,7 @@ const DealerTypeRevenueReport = () => {
             if (label) {
               label += ": ";
             }
-            label += "₹" + numberWithIndianFormat(context.parsed.y);
+            label += "₹" + numberWithIndianFormat(context.parsed.y.toFixed(2));
             return label;
           },
         },
@@ -352,7 +461,7 @@ const DealerTypeRevenueReport = () => {
             Dealer Type-wise Revenue Report
           </h1>
           <p className="text-sm text-gray-600">
-            Compare revenue between Petroleum and Liquor dealers
+            Compare revenue across all dealer types: Petroleum, Liquor, OIDC, Manufacturer, Wholesaler, and Restaurant
           </p>
         </div>
         <div className="shrink-0">
@@ -430,58 +539,76 @@ const DealerTypeRevenueReport = () => {
       ) : reportData ? (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mt-6">
             <div className="bg-linear-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm opacity-90">Petroleum Revenue</p>
-                  <p className="text-2xl font-bold mt-1">
-                    ₹{numberWithIndianFormat(reportData.totalFuelRevenue)}
-                  </p>
-                  <p className="text-xs opacity-90 mt-1">
-                    {reportData.fuelPercentage.toFixed(1)}% of Total
-                  </p>
-                </div>
-                <FluentMdl2Home className="w-10 h-10 opacity-30" />
+              <div>
+                <p className="text-xs font-semibold opacity-90">Petroleum</p>
+                <p className="text-lg font-bold mt-1">
+                  ₹{numberWithIndianFormat(reportData.totalFuelRevenue)}
+                </p>
+                <p className="text-xs opacity-90 mt-1">
+                  {reportData.fuelPercentage.toFixed(1)}% • {reportData.totalFuelDealers} Dealers
+                </p>
               </div>
             </div>
 
             <div className="bg-linear-to-br from-amber-500 to-amber-600 rounded-lg shadow-md p-6 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm opacity-90">Liquor Revenue</p>
-                  <p className="text-2xl font-bold mt-1">
-                    ₹{numberWithIndianFormat(reportData.totalLiquorRevenue)}
-                  </p>
-                  <p className="text-xs opacity-90 mt-1">
-                    {reportData.liquorPercentage.toFixed(1)}% of Total
-                  </p>
-                </div>
-                <FluentMdl2Home className="w-10 h-10 opacity-30" />
+              <div>
+                <p className="text-xs font-semibold opacity-90">Liquor</p>
+                <p className="text-lg font-bold mt-1">
+                  ₹{numberWithIndianFormat(reportData.totalLiquorRevenue)}
+                </p>
+                <p className="text-xs opacity-90 mt-1">
+                  {reportData.liquorPercentage.toFixed(1)}% • {reportData.totalLiquorDealers} Dealers
+                </p>
               </div>
             </div>
 
             <div className="bg-linear-to-br from-green-500 to-green-600 rounded-lg shadow-md p-6 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm opacity-90">Petroleum Dealers</p>
-                  <p className="text-3xl font-bold mt-1">
-                    {reportData.totalFuelDealers}
-                  </p>
-                </div>
-                <FluentMdl2Home className="w-10 h-10 opacity-30" />
+              <div>
+                <p className="text-xs font-semibold opacity-90">OIDC</p>
+                <p className="text-lg font-bold mt-1">
+                  ₹{numberWithIndianFormat(reportData.totalOidcRevenue)}
+                </p>
+                <p className="text-xs opacity-90 mt-1">
+                  {reportData.oidcPercentage.toFixed(1)}% • {reportData.totalOidcDealers} Dealers
+                </p>
               </div>
             </div>
 
             <div className="bg-linear-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm opacity-90">Liquor Dealers</p>
-                  <p className="text-3xl font-bold mt-1">
-                    {reportData.totalLiquorDealers}
-                  </p>
-                </div>
-                <FluentMdl2Home className="w-10 h-10 opacity-30" />
+              <div>
+                <p className="text-xs font-semibold opacity-90">Manufacturer</p>
+                <p className="text-lg font-bold mt-1">
+                  ₹{numberWithIndianFormat(reportData.totalManufacturerRevenue)}
+                </p>
+                <p className="text-xs opacity-90 mt-1">
+                  {reportData.manufacturerPercentage.toFixed(1)}% • {reportData.totalManufacturerDealers} Dealers
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-linear-to-br from-pink-500 to-pink-600 rounded-lg shadow-md p-6 text-white">
+              <div>
+                <p className="text-xs font-semibold opacity-90">Wholesaler</p>
+                <p className="text-lg font-bold mt-1">
+                  ₹{numberWithIndianFormat(reportData.totalWholesalerRevenue)}
+                </p>
+                <p className="text-xs opacity-90 mt-1">
+                  {reportData.wholesalerPercentage.toFixed(1)}% • {reportData.totalWholesalerDealers} Dealers
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-6 text-white">
+              <div>
+                <p className="text-xs font-semibold opacity-90">Restaurant</p>
+                <p className="text-lg font-bold mt-1">
+                  ₹{numberWithIndianFormat(reportData.totalRestaurantRevenue)}
+                </p>
+                <p className="text-xs opacity-90 mt-1">
+                  {reportData.restaurantPercentage.toFixed(1)}% • {reportData.totalRestaurantDealers} Dealers
+                </p>
               </div>
             </div>
           </div>
@@ -510,53 +637,51 @@ const DealerTypeRevenueReport = () => {
           {/* Data Table */}
           <div className="bg-white rounded-lg shadow-sm mt-6 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-sm">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Month
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Petroleum Revenue
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      % of Total
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Liquor Revenue
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      % of Total
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Total Revenue
-                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Month</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">Petroleum</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">Liquor</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">OIDC</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">Manufacturer</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">Wholesaler</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">Restaurant</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">Total</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {reportData.monthlyData.map((item, index) => {
-                    const total = item.fuelRevenue + item.liquorRevenue;
-                    const fuelPercent =
-                      total === 0 ? 0 : (item.fuelRevenue / total) * 100;
-                    const liquorPercent =
-                      total === 0 ? 0 : (item.liquorRevenue / total) * 100;
+                    const total =
+                      item.fuelRevenue +
+                      item.liquorRevenue +
+                      item.oidcRevenue +
+                      item.manufacturerRevenue +
+                      item.wholesalerRevenue +
+                      item.restaurantRevenue;
 
                     return (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
                           {monthNames[item.month]}
                         </td>
-                        <td className="px-4 py-3 text-sm text-right text-blue-600 font-medium">
+                        <td className="px-4 py-3 text-sm text-right text-blue-600">
                           ₹{numberWithIndianFormat(item.fuelRevenue)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-center text-gray-600">
-                          {fuelPercent.toFixed(1)}%
-                        </td>
-                        <td className="px-4 py-3 text-sm text-right text-amber-600 font-medium">
+                        <td className="px-4 py-3 text-sm text-right text-amber-600">
                           ₹{numberWithIndianFormat(item.liquorRevenue)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-center text-gray-600">
-                          {liquorPercent.toFixed(1)}%
+                        <td className="px-4 py-3 text-sm text-right text-green-600">
+                          ₹{numberWithIndianFormat(item.oidcRevenue)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right text-purple-600">
+                          ₹{numberWithIndianFormat(item.manufacturerRevenue)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right text-pink-600">
+                          ₹{numberWithIndianFormat(item.wholesalerRevenue)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right text-orange-600">
+                          ₹{numberWithIndianFormat(item.restaurantRevenue)}
                         </td>
                         <td className="px-4 py-3 text-sm text-right text-gray-900 font-semibold">
                           ₹{numberWithIndianFormat(total)}
@@ -571,20 +696,30 @@ const DealerTypeRevenueReport = () => {
                     <td className="px-4 py-3 text-sm text-right text-blue-600">
                       ₹{numberWithIndianFormat(reportData.totalFuelRevenue)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-center text-gray-600">
-                      {reportData.fuelPercentage.toFixed(1)}%
-                    </td>
                     <td className="px-4 py-3 text-sm text-right text-amber-600">
                       ₹{numberWithIndianFormat(reportData.totalLiquorRevenue)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-center text-gray-600">
-                      {reportData.liquorPercentage.toFixed(1)}%
+                    <td className="px-4 py-3 text-sm text-right text-green-600">
+                      ₹{numberWithIndianFormat(reportData.totalOidcRevenue)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-purple-600">
+                      ₹{numberWithIndianFormat(reportData.totalManufacturerRevenue)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-pink-600">
+                      ₹{numberWithIndianFormat(reportData.totalWholesalerRevenue)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-orange-600">
+                      ₹{numberWithIndianFormat(reportData.totalRestaurantRevenue)}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-900">
                       ₹
                       {numberWithIndianFormat(
                         reportData.totalFuelRevenue +
-                          reportData.totalLiquorRevenue,
+                          reportData.totalLiquorRevenue +
+                          reportData.totalOidcRevenue +
+                          reportData.totalManufacturerRevenue +
+                          reportData.totalWholesalerRevenue +
+                          reportData.totalRestaurantRevenue,
                       )}
                     </td>
                   </tr>

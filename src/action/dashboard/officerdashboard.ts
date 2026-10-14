@@ -15,6 +15,7 @@ interface ResponseData {
   liquoredealer: number;
   manufacturer: number;
   wholesaler: number;
+  restaurant: number;
   oidcdealer: number;
   reg: number;
   comp: number;
@@ -94,6 +95,15 @@ const OfficerDashboard = async (
         deletedAt: null,
         deletedBy: null,
         commodity: "OIDC",
+        status: "APPROVED",
+      },
+    });
+    const restaurantdealer = await prisma.dvat04.count({
+      where: {
+        selectOffice: payload.selectOffice,
+        deletedAt: null,
+        deletedBy: null,
+        commodity: "RESTAURANT",
         status: "APPROVED",
       },
     });
@@ -270,6 +280,7 @@ const OfficerDashboard = async (
       liquoredealer: Math.max(0, liquoredealer),
       manufacturer: Math.max(0, manufacturer),
       wholesaler: Math.max(0, wholesaler),
+      restaurant: Math.max(0, restaurantdealer),
       oidcdealer: Math.max(0, oidcdealer),
       reg: Math.max(0, reg),
       comp: Math.max(0, comp),

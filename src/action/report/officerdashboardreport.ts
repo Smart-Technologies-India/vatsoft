@@ -6,7 +6,7 @@ import { errorToString } from "@/utils/methods";
 
 interface OfficerDashboardPayload {
   selectOffice?: SelectOffice;
-  selectCommodity?: "FUEL" | "LIQUOR";
+  selectCommodity?: "FUEL" | "LIQUOR" | "OIDC" | "MANUFACTURER" | "WHOLESALER" | "RESTAURANT";
   filterType?: "MONTH" | "YEAR";
   month?: number;
   year?: number;
@@ -21,6 +21,8 @@ interface ResponseData {
   liquoredealer: number;
   manufacturer: number;
   oidcdealer: number;
+  wholesaler: number;
+  restaurant: number;
   reg: number;
   comp: number;
   last_month_received: number;
@@ -57,7 +59,15 @@ const OfficerDashboardReport = async (
     if (payload.selectCommodity === "FUEL") {
       whereClause.commodity = "FUEL";
     } else if (payload.selectCommodity === "LIQUOR") {
-      whereClause.commodity = { not: "FUEL" };
+      whereClause.commodity = "LIQUOR";
+    } else if (payload.selectCommodity === "OIDC") {
+      whereClause.commodity = "OIDC";
+    } else if (payload.selectCommodity === "MANUFACTURER") {
+      whereClause.commodity = "MANUFACTURER";
+    } else if (payload.selectCommodity === "WHOLESALER") {
+      whereClause.commodity = "WHOLESALER";
+    } else if (payload.selectCommodity === "RESTAURANT") {
+      whereClause.commodity = "RESTAURANT";
     }
 
     const total_dealer = await prisma.dvat04.count({
@@ -117,6 +127,35 @@ const OfficerDashboardReport = async (
     const oidcdealer = await prisma.dvat04.count({
       where: oidcdealerWhere,
     });
+
+    const wholesalerWhere: any = {
+      deletedAt: null,
+      deletedBy: null,
+      commodity: "WHOLESALER",
+      status: "APPROVED",
+    };
+    if (payload.selectOffice) {
+      wholesalerWhere.selectOffice = payload.selectOffice;
+    }
+
+    const wholesaler = await prisma.dvat04.count({
+      where: wholesalerWhere,
+    });
+
+    const restaurantWhere: any = {
+      deletedAt: null,
+      deletedBy: null,
+      commodity: "RESTAURANT",
+      status: "APPROVED",
+    };
+    if (payload.selectOffice) {
+      restaurantWhere.selectOffice = payload.selectOffice;
+    }
+
+    const restaurant = await prisma.dvat04.count({
+      where: restaurantWhere,
+    });
+
     const regWhere: any = {
       deletedAt: null,
       deletedBy: null,
@@ -129,7 +168,15 @@ const OfficerDashboardReport = async (
     if (payload.selectCommodity === "FUEL") {
       regWhere.commodity = "FUEL";
     } else if (payload.selectCommodity === "LIQUOR") {
-      regWhere.commodity = { not: "FUEL" };
+      regWhere.commodity = "LIQUOR";
+    } else if (payload.selectCommodity === "OIDC") {
+      regWhere.commodity = "OIDC";
+    } else if (payload.selectCommodity === "MANUFACTURER") {
+      regWhere.commodity = "MANUFACTURER";
+    } else if (payload.selectCommodity === "WHOLESALER") {
+      regWhere.commodity = "WHOLESALER";
+    } else if (payload.selectCommodity === "RESTAURANT") {
+      regWhere.commodity = "RESTAURANT";
     }
 
     const reg = await prisma.dvat04.count({
@@ -147,7 +194,15 @@ const OfficerDashboardReport = async (
     if (payload.selectCommodity === "FUEL") {
       compWhere.commodity = "FUEL";
     } else if (payload.selectCommodity === "LIQUOR") {
-      compWhere.commodity = { not: "FUEL" };
+      compWhere.commodity = "LIQUOR";
+    } else if (payload.selectCommodity === "OIDC") {
+      compWhere.commodity = "OIDC";
+    } else if (payload.selectCommodity === "MANUFACTURER") {
+      compWhere.commodity = "MANUFACTURER";
+    } else if (payload.selectCommodity === "WHOLESALER") {
+      compWhere.commodity = "WHOLESALER";
+    } else if (payload.selectCommodity === "RESTAURANT") {
+      compWhere.commodity = "RESTAURANT";
     }
 
     const comp = await prisma.dvat04.count({
@@ -160,7 +215,15 @@ const OfficerDashboardReport = async (
     if (payload.selectCommodity === "FUEL") {
       filedReturnDvatWhere.commodity = "FUEL";
     } else if (payload.selectCommodity === "LIQUOR") {
-      filedReturnDvatWhere.commodity = { not: "FUEL" };
+      filedReturnDvatWhere.commodity = "LIQUOR";
+    } else if (payload.selectCommodity === "OIDC") {
+      filedReturnDvatWhere.commodity = "OIDC";
+    } else if (payload.selectCommodity === "MANUFACTURER") {
+      filedReturnDvatWhere.commodity = "MANUFACTURER";
+    } else if (payload.selectCommodity === "WHOLESALER") {
+      filedReturnDvatWhere.commodity = "WHOLESALER";
+    } else if (payload.selectCommodity === "RESTAURANT") {
+      filedReturnDvatWhere.commodity = "RESTAURANT";
     }
 
     const filed_return = await prisma.return_filing.count({
@@ -183,7 +246,15 @@ const OfficerDashboardReport = async (
     if (payload.selectCommodity === "FUEL") {
       pendingReturnDvatWhere.commodity = "FUEL";
     } else if (payload.selectCommodity === "LIQUOR") {
-      pendingReturnDvatWhere.commodity = { not: "FUEL" };
+      pendingReturnDvatWhere.commodity = "LIQUOR";
+    } else if (payload.selectCommodity === "OIDC") {
+      pendingReturnDvatWhere.commodity = "OIDC";
+    } else if (payload.selectCommodity === "MANUFACTURER") {
+      pendingReturnDvatWhere.commodity = "MANUFACTURER";
+    } else if (payload.selectCommodity === "WHOLESALER") {
+      pendingReturnDvatWhere.commodity = "WHOLESALER";
+    } else if (payload.selectCommodity === "RESTAURANT") {
+      pendingReturnDvatWhere.commodity = "RESTAURANT";
     }
 
     const pending_return = await prisma.return_filing.count({
@@ -240,7 +311,15 @@ const OfficerDashboardReport = async (
     if (payload.selectCommodity === "FUEL") {
       lastMonthDvatWhere.commodity = "FUEL";
     } else if (payload.selectCommodity === "LIQUOR") {
-      lastMonthDvatWhere.commodity = { not: "FUEL" };
+      lastMonthDvatWhere.commodity = "LIQUOR";
+    } else if (payload.selectCommodity === "OIDC") {
+      lastMonthDvatWhere.commodity = "OIDC";
+    } else if (payload.selectCommodity === "MANUFACTURER") {
+      lastMonthDvatWhere.commodity = "MANUFACTURER";
+    } else if (payload.selectCommodity === "WHOLESALER") {
+      lastMonthDvatWhere.commodity = "WHOLESALER";
+    } else if (payload.selectCommodity === "RESTAURANT") {
+      lastMonthDvatWhere.commodity = "RESTAURANT";
     }
 
     // Count records received last month
@@ -279,7 +358,15 @@ const OfficerDashboardReport = async (
     if (payload.selectCommodity === "FUEL") {
       thisMonthDvatWhere.commodity = "FUEL";
     } else if (payload.selectCommodity === "LIQUOR") {
-      thisMonthDvatWhere.commodity = { not: "FUEL" };
+      thisMonthDvatWhere.commodity = "LIQUOR";
+    } else if (payload.selectCommodity === "OIDC") {
+      thisMonthDvatWhere.commodity = "OIDC";
+    } else if (payload.selectCommodity === "MANUFACTURER") {
+      thisMonthDvatWhere.commodity = "MANUFACTURER";
+    } else if (payload.selectCommodity === "WHOLESALER") {
+      thisMonthDvatWhere.commodity = "WHOLESALER";
+    } else if (payload.selectCommodity === "RESTAURANT") {
+      thisMonthDvatWhere.commodity = "RESTAURANT";
     }
 
     // Count records received in last 30 days (instead of this month)
@@ -340,7 +427,15 @@ const OfficerDashboardReport = async (
     if (payload.selectCommodity === "FUEL") {
       todayDvatWhere.commodity = "FUEL";
     } else if (payload.selectCommodity === "LIQUOR") {
-      todayDvatWhere.commodity = { not: "FUEL" };
+      todayDvatWhere.commodity = "LIQUOR";
+    } else if (payload.selectCommodity === "OIDC") {
+      todayDvatWhere.commodity = "OIDC";
+    } else if (payload.selectCommodity === "MANUFACTURER") {
+      todayDvatWhere.commodity = "MANUFACTURER";
+    } else if (payload.selectCommodity === "WHOLESALER") {
+      todayDvatWhere.commodity = "WHOLESALER";
+    } else if (payload.selectCommodity === "RESTAURANT") {
+      todayDvatWhere.commodity = "RESTAURANT";
     }
 
     // Count records received today
@@ -377,6 +472,8 @@ const OfficerDashboardReport = async (
       liquoredealer: Math.max(0, liquoredealer),
       manufacturer: Math.max(0, manufacturer),
       oidcdealer: Math.max(0, oidcdealer),
+      wholesaler: Math.max(0, wholesaler),
+      restaurant: Math.max(0, restaurant),
       reg: Math.max(0, reg),
       comp: Math.max(0, comp),
       last_month_received: Math.max(0, isNaN(last_month_received) ? 0 : last_month_received),

@@ -4,7 +4,6 @@ import { errorToString } from "@/utils/methods";
 import { ApiResponseType } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
-import { customAlphabet } from "nanoid";
 import { returns_01, SelectOffice } from "@prisma/client";
 
 interface CreateCFormForReturnsResponse {
@@ -52,7 +51,7 @@ const CreateCFormForReturns = async (): Promise<
           // Include returns from all months (will be grouped by quarters)
         },
         // Entries that don't have a cform_returns record
-        cfrom_returns: {
+        cform_returns: {
           none: {},
         },
         // Only include DVAT_30_A entries which are eligible for C-Form
@@ -83,57 +82,13 @@ const CreateCFormForReturns = async (): Promise<
       };
     }
 
-    const uniquereturns = new Map<number, returns_01>();
-    for (const entry of returnsWithoutCForm) {
-      if (!uniquereturns.has(entry.returns_01Id)) {
-        uniquereturns.set(entry.returns_01Id, entry.returns_01);
-      }
-    }
-
-    let return_entry_response: typeof returnsWithoutCForm = [];
-
-    for (const entry of uniquereturns.values()) {
-      const monthGroup = getMonthGroup(entry.month ?? "");
-      const reutns_response = await prisma.returns_entry.findMany({
-        where: {
-          deletedAt: null,
-          deletedById: null,
-          status: "ACTIVE",
-          returns_01: {
-            dvat04Id: currentDvatId,
-            deletedAt: null,
-            deletedById: null,
-            status: "PAID",
-            month: {
-              in: monthGroup,
-            },
-          },
-          cfrom_returns: {
-            none: {},
-          },
-          dvat_type: "DVAT_30_A",
-          category_of_entry: "INVOICE",
-          purchase_type: "FORMC_CONCESSION",
-        },
-        include: {
-          returns_01: {
-            include: {
-              dvat04: true,
-            },
-          },
-          seller_tin_number: true,
-        },
-      });
-      return_entry_response.push(...reutns_response);
-    }
-
     // Group returns by seller and quarter period
     const groupedBySellerAndPeriod = new Map<
       string,
       (typeof returnsWithoutCForm)[0][]
     >();
 
-    return_entry_response.forEach((entry) => {
+    returnsWithoutCForm.forEach((entry) => {
       // Group by quarter instead of individual month
       const monthGroup = getMonthGroup(entry.returns_01.month ?? "");
       const quarterKey = monthGroup.join("-"); // e.g., "April-May-June"
@@ -227,7 +182,7 @@ const CreateCFormForReturns = async (): Promise<
                   sum + parseFloat(entry.total_invoice_number || "0"),
                 0,
               )
-              .toString(),
+              .toFixed(2),
             from_period: quarterDates.fromDate,
             to_period: quarterDates.toDate,
             office_of_issue: office,
@@ -256,7 +211,7 @@ const CreateCFormForReturns = async (): Promise<
     return {
       status: true,
       data: result,
-      message: `Successfully processed ${return_entry_response.length} returns. Created ${result.created} C-Form(s).`,
+      message: `Successfully processed ${returnsWithoutCForm.length} returns. Created ${result.created} C-Form(s).`,
       functionname,
     };
   } catch (error) {

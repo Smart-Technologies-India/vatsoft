@@ -454,7 +454,7 @@ const TrackAppliation = () => {
               </div>
               <div className="grow"></div>
               <div className="flex gap-2 flex-wrap">
-                <Button
+                {/* <Button
                   size="small"
                   type="primary"
                   loading={isCreatingCForm}
@@ -462,7 +462,7 @@ const TrackAppliation = () => {
                   className="whitespace-nowrap"
                 >
                   Generate C-Form
-                </Button>
+                </Button> */}
                 {isSearch && (
                   <Button size="small" type="default" onClick={init}>
                     Clear Filter
