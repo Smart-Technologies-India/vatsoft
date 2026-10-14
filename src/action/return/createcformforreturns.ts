@@ -51,7 +51,7 @@ const CreateCFormForReturns = async (): Promise<
           // Include returns from all months (will be grouped by quarters)
         },
         // Entries that don't have a cform_returns record
-        cform_returns: {
+        cfrom_returns: {
           none: {},
         },
         // Only include DVAT_30_A entries which are eligible for C-Form
