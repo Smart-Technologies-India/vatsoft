@@ -558,16 +558,18 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
               errors.push("* Invoice Date cannot be before 1 April 2026");
             }
 
-            // Check maximum date based on commodity
-            if (
-              dvatdata?.commodity === "FUEL" &&
-              [1, 2, 748, 749].includes(Number(item_code_raw))
-            ) {
-              const maxDate = new Date(2026, 5, 30); // June 30, 2026
-              if (invoice_date > maxDate) {
-                errors.push(
-                  "* FUEL commodity: Invoice Date cannot be after 30 June 2026",
-                );
+            if (![384, 388, 383, 13].includes(dvatdata?.id ?? 0)) {
+              // Check maximum date based on commodity
+              if (
+                dvatdata?.commodity === "FUEL" &&
+                [1, 2, 748, 749].includes(Number(item_code_raw))
+              ) {
+                const maxDate = new Date(2026, 5, 30); // June 30, 2026
+                if (invoice_date > maxDate) {
+                  errors.push(
+                    "* FUEL commodity: Invoice Date cannot be after 30 June 2026",
+                  );
+                }
               }
             }
           }
