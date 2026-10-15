@@ -33,8 +33,6 @@ const CreateCFormForReturns = async (): Promise<
     // Get all returns_entry that belong to DVAT_30_A (C-Form applicable) entries
     // but don't have a corresponding cform_returns record
     // Include all months as they are grouped by quarters
-    // const quarterMonths = ["March", "June", "September", "December"];
-
     const returnsWithoutCForm = await prisma.returns_entry.findMany({
       where: {
         deletedAt: null,
@@ -45,10 +43,6 @@ const CreateCFormForReturns = async (): Promise<
           deletedAt: null,
           deletedById: null,
           status: "PAID",
-          // month: {
-          //   in: quarterMonths,
-          // },
-          // Include returns from all months (will be grouped by quarters)
         },
         // Entries that don't have a cform_returns record
         cfrom_returns: {
@@ -99,6 +93,58 @@ const CreateCFormForReturns = async (): Promise<
       groupedBySellerAndPeriod.get(key)!.push(entry);
     });
 
+    // Validate that all three months of each quarter are filed
+    const validQuarterGroups = new Map<
+      string,
+      (typeof returnsWithoutCForm)[0][]
+    >();
+
+    for (const [key, entries] of groupedBySellerAndPeriod) {
+      const firstEntry = entries[0];
+      const monthGroup = getMonthGroup(firstEntry.returns_01.month ?? "");
+      const year = firstEntry.returns_01.year;
+      const sellerId = firstEntry.seller_tin_numberId;
+
+      // Check if all three months of the quarter have at least one UNPROCESSED entry (without cform_returns)
+      let allMonthsHaveUnprocessedEntries = true;
+
+      for (const month of monthGroup) {
+        const monthHasEntry = await prisma.returns_entry.findFirst({
+          where: {
+            deletedAt: null,
+            deletedById: null,
+            status: "ACTIVE",
+            seller_tin_numberId: sellerId,
+            cfrom_returns: {
+              none: {}, // Must NOT have a cform_returns record
+            },
+            returns_01: {
+              dvat04Id: currentDvatId,
+              deletedAt: null,
+              deletedById: null,
+              status: "PAID",
+              year: year,
+              month: month,
+            },
+            dvat_type: "DVAT_30_A",
+            category_of_entry: "INVOICE",
+            purchase_type: "FORMC_CONCESSION",
+          },
+        });
+
+        if (!monthHasEntry) {
+          // This month doesn't have any unprocessed entries
+          allMonthsHaveUnprocessedEntries = false;
+          break;
+        }
+      }
+
+      if (allMonthsHaveUnprocessedEntries) {
+        // All three months have unprocessed entries - C-Form can be created
+        validQuarterGroups.set(key, entries);
+      }
+    };
+
     const result: CreateCFormForReturnsResponse = {
       created: 0,
       skipped: 0,
@@ -107,8 +153,8 @@ const CreateCFormForReturns = async (): Promise<
 
     let cformSrNoCounter = 0;
 
-    // Create C-Forms for each seller-period group
-    for (const [, entries] of groupedBySellerAndPeriod) {
+    // Create C-Forms only for quarters where all three months are filed
+    for (const [, entries] of validQuarterGroups) {
       const firstEntry = entries[0];
       const returns01 = firstEntry.returns_01;
       const sellerTin = firstEntry.seller_tin_number;
