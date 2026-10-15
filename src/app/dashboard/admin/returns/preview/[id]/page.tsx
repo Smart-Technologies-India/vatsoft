@@ -128,6 +128,8 @@ const AdminDvat16ReturnPreview = () => {
         "December",
       ];
 
+      let isQuarterlyFiling = false;
+
       if (returnResponse.status && returnResponse.data) {
         const selectedReturn = returnResponse.data.returns_01;
         let mergedEntries: returns_entry[] = [
@@ -144,9 +146,9 @@ const AdminDvat16ReturnPreview = () => {
           setPaidChallans([]);
         }
 
-        const isQuarterlyFiling =
+        isQuarterlyFiling =
           selectedReturn?.status === "PAID"
-            ? selectedReturn?.is_quarterly
+            ? selectedReturn?.is_quarterly ?? false
             : selectedReturn.dvat04?.frequencyFilings === "QUARTERLY";
 
         let allQuarterlyReturns: (returns_01 & {
@@ -191,14 +193,40 @@ const AdminDvat16ReturnPreview = () => {
           selectedReturn.month ?? "",
         );
         if (currentMonthIndex !== -1) {
-          const lastMonthIndex = (currentMonthIndex - 1 + 12) % 12;
-          const lastMonth: string = monthNames[lastMonthIndex];
+          let lastMonth: string;
+          let lastMonthYear: string;
 
-          // Calculate the last month's year
-          const lastMonthYear =
-            selectedReturn.month === "January"
-              ? (parseInt(selectedReturn.year) - 1).toString()
-              : selectedReturn.year;
+          if (isQuarterlyFiling) {
+            // For quarterly filing, fetch the last month of the previous quarter
+            const currentQuarter = getQuarterForMonth(selectedReturn.month ?? "");
+            const quarterMonthsMap: Record<Quarter, string> = {
+              QUARTER1: "March",
+              QUARTER2: "June",
+              QUARTER3: "September",
+              QUARTER4: "December",
+            };
+            lastMonth = quarterMonthsMap[currentQuarter!];
+
+            // If fetching December and current month is Jan-Mar, year decreases
+            if (
+              lastMonth === "December" &&
+              ["January", "February", "March"].includes(selectedReturn.month ?? "")
+            ) {
+              lastMonthYear = (parseInt(selectedReturn.year) - 1).toString();
+            } else {
+              lastMonthYear = selectedReturn.year;
+            }
+          } else {
+            // For monthly filing, fetch the previous month
+            const lastMonthIndex = (currentMonthIndex - 1 + 12) % 12;
+            lastMonth = monthNames[lastMonthIndex];
+
+            // Calculate the last month's year
+            lastMonthYear =
+              selectedReturn.month === "January"
+                ? (parseInt(selectedReturn.year) - 1).toString()
+                : selectedReturn.year;
+          }
 
           // Fetch last month's return for the same DVAT
           const lastMonthResponse = await GetReturnByDvatAndMonth({

@@ -538,6 +538,9 @@ const TrackAppliation = () => {
               <TableBody>
                 {getFilteredPaymentData().map(
                   (val: returns_01, index: number) => {
+                    const taxPeriodDisplay = val.is_quarterly
+                      ? val.quarter
+                      : val.month;
                     return (
                       <TableRow
                         key={index}
@@ -570,7 +573,7 @@ const TrackAppliation = () => {
                           )}
                         </TableCell>
                         <TableCell className="border text-center p-3 text-gray-900">
-                          {val.month}
+                          {taxPeriodDisplay}
                         </TableCell>
                         <TableCell className="border text-center p-3 text-gray-900">
                           {formateDate(new Date(val.transaction_date!))}

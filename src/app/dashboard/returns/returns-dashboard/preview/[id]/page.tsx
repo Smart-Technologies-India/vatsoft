@@ -65,7 +65,7 @@ const Dvat16ReturnPreview = () => {
   const [paymentSubmitBox, setPaymentSubmitBox] = useState<boolean>(false);
   const searchparam = useSearchParams();
   const [user, setUser] = useState<user | null>();
-  // const [lateFees, setLateFees] = useState<number>(0);
+
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
   const [lastmonthcash, setLastMonthCash] = useState<string>("0");
 
@@ -143,6 +143,8 @@ const Dvat16ReturnPreview = () => {
         "December",
       ];
 
+      let isQuarterlyFiling = false;
+
       if (returnformsresponse.status && returnformsresponse.data) {
         const selectedReturn = returnformsresponse.data.returns_01;
         let mergedEntries: returns_entry[] = [
@@ -159,9 +161,9 @@ const Dvat16ReturnPreview = () => {
           setPaidChallans([]);
         }
 
-        const isQuarterlyFiling =
+        isQuarterlyFiling =
           selectedReturn?.status === "PAID"
-            ? selectedReturn?.is_quarterly
+            ? selectedReturn?.is_quarterly ?? false
             : selectedReturn.dvat04?.frequencyFilings === "QUARTERLY";
 
         let allQuarterlyReturns: (returns_01 & {
@@ -229,19 +231,49 @@ const Dvat16ReturnPreview = () => {
       }
 
       const currentMonthIndex = monthNames.indexOf(month);
+      console.log("Current month index:", currentMonthIndex);
 
       if (currentMonthIndex === -1) {
       } else {
-        // Calculate the last month index and handle wrapping
-        const lastMonthIndex = (currentMonthIndex - 1 + 12) % 12;
+        let lastMonth: string;
+        let fetchYear: string = year;
 
-        // Get the last month's name
-        const lastMonth: string = monthNames[lastMonthIndex];
+        if (isQuarterlyFiling) {
+          // For quarterly filing, fetch the last month of the previous quarter
+          const currentQuarter = getQuarterForMonth(month);
+          const quarterMonthsMap: Record<Quarter, string> = {
+            QUARTER1: "March",
+            QUARTER2: "June",
+            QUARTER3: "September",
+            QUARTER4: "December",
+          };
+          lastMonth = quarterMonthsMap[currentQuarter!];
+
+          // If fetching March and current year starts in April, year stays same
+          // If fetching December and current month is Jan-Mar, year decreases
+          if (
+            lastMonth === "December" &&
+            ["January", "February", "March"].includes(month)
+          ) {
+            fetchYear = (parseInt(year) - 1).toString();
+          }
+        } else {
+          // For monthly filing, fetch the previous month
+          const lastMonthIndex = (currentMonthIndex - 1 + 12) % 12;
+          lastMonth = monthNames[lastMonthIndex];
+
+          if (month === "January") {
+            fetchYear = (parseInt(year) - 1).toString();
+          }
+        }
 
         const lastmonthdata = await getPdfReturn({
-          year: month == "January" ? (parseInt(year) - 1).toString() : year,
+          year: fetchYear,
           month: lastMonth,
         });
+
+        console.log("Fetching last month data for:", lastMonth);
+        console.log("Last month data:", lastmonthdata);
 
         if (lastmonthdata.status && lastmonthdata.data) {
           setLastMonthDue(lastmonthdata.data.returns_01.pending_payment ?? "0");
@@ -254,10 +286,11 @@ const Dvat16ReturnPreview = () => {
 
   const getTaxPeriod = (): string => {
     const year: string = searchparam.get("year") ?? "";
-    const isQuarterly = return01?.status === "PAID" 
-      ? return01?.is_quarterly 
-      : return01?.dvat04.frequencyFilings == "QUARTERLY";
-    
+    const isQuarterly =
+      return01?.status === "PAID"
+        ? return01?.is_quarterly
+        : return01?.dvat04.frequencyFilings == "QUARTERLY";
+
     if (isQuarterly) {
       switch (searchparam.get("month") ?? "") {
         case "June":
@@ -277,7 +310,6 @@ const Dvat16ReturnPreview = () => {
   };
 
   const isQuarterlyReturn = (returnData = return01): boolean => {
-    console.log("Checking if return is quarterly:", returnData);
     if (!returnData) return false;
     if (returnData?.status === "PAID") {
       return returnData?.is_quarterly ?? false;
@@ -344,10 +376,7 @@ const Dvat16ReturnPreview = () => {
     const rrNumber = get_rr_number();
 
     // For quarterly filing, update all 3 returns; for monthly, update only the selected return
-    const returnsToUpdate =
-      isQuarterlyReturn()
-        ? quarterlyReturns
-        : [return01];
+    const returnsToUpdate = isQuarterlyReturn() ? quarterlyReturns : [return01];
 
     try {
       // Determine the last month of the quarter
@@ -362,25 +391,18 @@ const Dvat16ReturnPreview = () => {
       for (let i = 0; i < returnsToUpdate.length; i++) {
         const returnToUpdate = returnsToUpdate[i];
         // Check if this return's month is the actual last month of the quarter
-        const isLastReturn =
-          isQuarterlyReturn()
-            ? returnToUpdate.month === lastMonthOfQuarter
-            : true;
+        const isLastReturn = isQuarterlyReturn()
+          ? returnToUpdate.month === lastMonthOfQuarter
+          : true;
 
         // For quarterly: use 0 values for first two returns, actual values for last return
         // For monthly: always use actual values
         const submitPenalty =
-          isQuarterlyReturn() && !isLastReturn
-            ? "0"
-            : penalty.toFixed(2);
+          isQuarterlyReturn() && !isLastReturn ? "0" : penalty.toFixed(2);
         const submitInterest =
-          isQuarterlyReturn() && !isLastReturn
-            ? "0"
-            : interest.toFixed(2);
+          isQuarterlyReturn() && !isLastReturn ? "0" : interest.toFixed(2);
         const submitVat =
-          isQuarterlyReturn() && !isLastReturn
-            ? "0"
-            : vat.toFixed(2);
+          isQuarterlyReturn() && !isLastReturn ? "0" : vat.toFixed(2);
         const submitTotal =
           isQuarterlyReturn() && !isLastReturn
             ? "0"

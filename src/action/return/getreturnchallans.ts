@@ -107,6 +107,11 @@ const GetReturnChallans = async (
         returnid: {
           in: returnIds,
         },
+        NOT: [
+          {
+            total_tax_amount: "0",
+          },
+        ],
         deletedAt: null,
         deletedById: null,
         paymentstatus: "PAID",

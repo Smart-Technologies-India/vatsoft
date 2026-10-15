@@ -77,8 +77,6 @@ const Dvat16ReturnPreview = () => {
   const [lateFees, setLateFees] = useState<number>(0);
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
   const [lastmonthcash, setLastMonthCash] = useState<string>("0");
-  const [InterestDiffDays, setInterestDiffDays] = useState<number>(0);
-  const [PenaltyDiffDays, setPenaltyDiffDays] = useState<number>(0);
 
   const getQuarterForMonth = (month: string): Quarter | undefined => {
     const monthToQuarterMap: { [key: string]: Quarter } = {
@@ -164,11 +162,6 @@ const Dvat16ReturnPreview = () => {
       }
     }
 
-    const idiff_days = getDaysBetweenDates(
-      new Date(newYear, monthIndex, 16),
-      currentDate,
-    );
-    setInterestDiffDays(idiff_days);
     let pdiff_days = 0;
 
     if (rr_number == null || rr_number == undefined || rr_number == "") {
@@ -177,7 +170,6 @@ const Dvat16ReturnPreview = () => {
         currentDate,
       );
 
-      setPenaltyDiffDays(pdiff_days);
       setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
     } else {
       pdiff_days = getDaysBetweenDates(
@@ -185,7 +177,6 @@ const Dvat16ReturnPreview = () => {
         filing_date,
       );
 
-      setPenaltyDiffDays(pdiff_days);
       setLateFees(Math.max(0, Math.min(100 * pdiff_days, 10000)));
     }
   };
@@ -398,12 +389,6 @@ const Dvat16ReturnPreview = () => {
       setPaymentSubmitBox(false);
       return;
     }
-
-    // const response = await AddSubmitPayment({
-    //   id: return01.id ?? 0,
-    //   rr_number: get_rr_number(),
-    //   penalty: lateFees.toString(),
-    // });
 
     const vatamount = isNegative(getR6_1()) ? 0 : getR6_1();
     const interestamount = isNegative(getR6_2a()) ? 0 : getR6_2a();

@@ -341,7 +341,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
               ).toFixed(2);
 
         // Only create challan for the last return; for first 2 returns, only update with zero values
-        if (isLastReturn || return01.dvat04?.frequencyFilings !== "QUARTERLY") {
+        if (isLastReturn && return01.dvat04?.frequencyFilings === "QUARTERLY") {
           const response = await AddPayment({
             id: returnToUpdate.id,
             bank_name: "NIL",

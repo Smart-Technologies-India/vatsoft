@@ -33,9 +33,6 @@ const AdminDvat16ReturnPreview = () => {
   const returnid: number = parseInt(
     decryptURLData(Array.isArray(id) ? id[0] : id, router),
   );
-  console.log(returnid);
-
-  const [isDownload, setDownload] = useState<boolean>(false);
 
   const [return01, setReturn01] = useState<
     (returns_01 & { dvat04: dvat04 & { registration: registration[] } }) | null
@@ -43,45 +40,7 @@ const AdminDvat16ReturnPreview = () => {
 
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
   const [challans, setChallans] = useState<challan[]>([]);
-  const [user, setUser] = useState<user | null>();
   const [lastmonthdue, setLastMonthDue] = useState<string>("0");
-
-  const getQuarterForMonth = (month: string): Quarter | undefined => {
-    const monthToQuarterMap: { [key: string]: Quarter } = {
-      January: Quarter.QUARTER4,
-      February: Quarter.QUARTER4,
-      March: Quarter.QUARTER4,
-      April: Quarter.QUARTER1,
-      May: Quarter.QUARTER1,
-      June: Quarter.QUARTER1,
-      July: Quarter.QUARTER2,
-      August: Quarter.QUARTER2,
-      September: Quarter.QUARTER2,
-      October: Quarter.QUARTER3,
-      November: Quarter.QUARTER3,
-      December: Quarter.QUARTER3,
-    };
-
-    return monthToQuarterMap[month] || undefined;
-  };
-
-  const getQuarterMonths = (selectedQuarter: Quarter): string[] => {
-    const quarterMonthsMap: Record<Quarter, string[]> = {
-      QUARTER1: ["April", "May", "June"],
-      QUARTER2: ["July", "August", "September"],
-      QUARTER3: ["October", "November", "December"],
-      QUARTER4: ["January", "February", "March"],
-    };
-
-    return quarterMonthsMap[selectedQuarter] ?? [];
-  };
-
-  const getNewYear = (year: string, month: string): string => {
-    if (["January", "February", "March"].includes(month)) {
-      return (parseInt(year) + 1).toString();
-    }
-    return year;
-  };
 
   useEffect(() => {
     const init = async () => {
@@ -96,18 +55,10 @@ const AdminDvat16ReturnPreview = () => {
         return router.back();
       }
 
-      const user_response = await GetUser({
-        id: authResponse.data,
-      });
-      if (user_response.status && user_response.data) {
-        setUser(user_response.data);
-      }
-
       // Fetch return data by returnId with quarterly entries
       const returnformsresponse = await GetReturnByIdWithQuarterly({
         returnId: returnid,
       });
-      console.log(returnformsresponse);
 
       if (returnformsresponse.status && returnformsresponse.data) {
         const selectedReturn = returnformsresponse.data.returns_01;
@@ -161,59 +112,6 @@ const AdminDvat16ReturnPreview = () => {
     } else {
       return (return01.month ?? "") + " " + year;
     }
-  };
-
-  const generatePDF = async (path: string) => {
-    setDownload(true);
-    try {
-      const printUrl = new URL(path, window.location.origin).toString();
-      const printWindow = window.open(printUrl, "_blank");
-
-      if (!printWindow) {
-        setDownload(false);
-        toast.error("Popup blocked. Please allow popups and try again.");
-        return;
-      }
-
-      let hasTriggered = false;
-      const openPrintDialog = () => {
-        if (hasTriggered) return;
-        hasTriggered = true;
-        try {
-          printWindow.focus();
-          printWindow.print();
-        } finally {
-          setDownload(false);
-        }
-      };
-
-      // Trigger print once the page is loaded.
-      printWindow.onload = () => {
-        setTimeout(openPrintDialog, 600);
-      };
-
-      // Fallback in case onload doesn't fire as expected.
-      setTimeout(() => {
-        if (!printWindow.closed) {
-          openPrintDialog();
-        }
-      }, 3000);
-    } catch (error) {
-      setDownload(false);
-      toast.error("Unable to download pdf try again.");
-    }
-  };
-
-  const showSubmit = (): boolean => {
-    if (!return01) return false;
-    const compositionCalculation = new CompositionCalculation(
-      returns_entryData ?? [],
-      challans ?? [],
-      return01,
-      return01.dvat04.compositionScheme ? true : false,
-    );
-
-    return compositionCalculation.total() <= 0;
   };
 
   return (

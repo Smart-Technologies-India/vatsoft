@@ -50,7 +50,6 @@ const Dvat16ReturnPreview = () => {
   >();
 
   const [returns_entryData, serReturns_entryData] = useState<returns_entry[]>();
-  const [payment, setPayment] = useState<boolean>(false);
   const [paymentSubmitBox, setPaymentSubmitBox] = useState<boolean>(false);
   const [challans, setChallans] = useState<challan[]>([]);
   const searchparam = useSearchParams();
@@ -174,13 +173,10 @@ const Dvat16ReturnPreview = () => {
         if (challans_response.status && challans_response.data) {
           setChallans(challans_response.data);
         }
-
-       
       }
     };
     init();
   }, []);
-
 
   const get_rr_number = (): string => {
     const rr_no = return01?.dvat04.tinNumber?.toString().slice(-4);
@@ -356,7 +352,7 @@ const Dvat16ReturnPreview = () => {
       toast.error("Unable to download pdf try again.");
     }
   };
- 
+
   const showSubmit = (): boolean => {
     if (!return01) return false;
     const compositionCalculation = new CompositionCalculation(
@@ -367,12 +363,10 @@ const Dvat16ReturnPreview = () => {
     );
 
     return compositionCalculation.total() <= 0;
-   
   };
 
   return (
     <>
-
       <Modal
         title="Confirmation"
         open={paymentSubmitBox}
@@ -613,48 +607,44 @@ const Dvat16ReturnPreview = () => {
               {isDownload ? "Downloading..." : "Download"}
             </Button>
 
-            {!payment && (
+            {showSubmit() ? (
               <>
-                {showSubmit() ? (
-                  <>
-                    <Button
-                      type="primary"
-                      onClick={() => {
-                        setPaymentSubmitBox(true);
-                      }}
-                    >
-                      Submit
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    type="primary"
-                    onClick={async () => {
-                      const lastPayment = await CheckLastPayment({
-                        id: return01.id ?? 0,
-                      });
-                      if (!lastPayment.status) {
-                        toast.error(lastPayment.message);
-                        return;
-                      }
-
-                      if (lastPayment.data == false) {
-                        toast.error(lastPayment.message);
-                        return;
-                      }
-                      router.push(
-                        `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-                          return01.id.toString(),
-                        )}/challan-payment?year=${searchparam.get("year")}&month=${searchparam.get(
-                          "month",
-                        )}`,
-                      );
-                    }}
-                  >
-                    Proceed to Pay
-                  </Button>
-                )}
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    setPaymentSubmitBox(true);
+                  }}
+                >
+                  Submit
+                </Button>
               </>
+            ) : (
+              <Button
+                type="primary"
+                onClick={async () => {
+                  const lastPayment = await CheckLastPayment({
+                    id: return01.id ?? 0,
+                  });
+                  if (!lastPayment.status) {
+                    toast.error(lastPayment.message);
+                    return;
+                  }
+
+                  if (lastPayment.data == false) {
+                    toast.error(lastPayment.message);
+                    return;
+                  }
+                  router.push(
+                    `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
+                      return01.id.toString(),
+                    )}/challan-payment?year=${searchparam.get("year")}&month=${searchparam.get(
+                      "month",
+                    )}`,
+                  );
+                }}
+              >
+                Proceed to Pay
+              </Button>
             )}
           </div>
         </section>
