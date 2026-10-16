@@ -18,6 +18,8 @@ import { SelectOffice } from "@prisma/client";
 interface ResponseData {
   date: Date; // Date object
   amount: number; // Total amount for the day
+  fuelAmount?: number; // Fuel revenue for the day
+  liquorAmount?: number; // Liquor revenue for the day
 }
 const Last15ReceivedReport = async (
   payload: Last15ReceivedPayload,
@@ -91,19 +93,29 @@ const Last15ReceivedReport = async (
         0,
       );
 
-      const dvat04Where: any = {};
+      // Fetch Fuel data
+      const fuelWhere: any = {
+        commodity: "FUEL",
+        deletedAt: null,
+        deletedById: null,
+      };
 
       if (payload.selectOffice) {
-        dvat04Where.selectOffice = payload.selectOffice;
+        fuelWhere.selectOffice = payload.selectOffice;
       }
 
-      if (payload.selectCommodity === "FUEL") {
-        dvat04Where.commodity = "FUEL";
-      } else if (payload.selectCommodity === "LIQUOR") {
-        dvat04Where.commodity = { not: "FUEL" };
+      // Fetch Liquor data
+      const liquorWhere: any = {
+        commodity: { not: "FUEL" },
+        deletedAt: null,
+        deletedById: null,
+      };
+
+      if (payload.selectOffice) {
+        liquorWhere.selectOffice = payload.selectOffice;
       }
 
-      const challanWhere: any = {
+      const challanWhereBase: any = {
         deletedAt: null,
         deletedById: null,
         paymentstatus: "PAID",
@@ -113,31 +125,64 @@ const Last15ReceivedReport = async (
         },
       };
 
-      if (Object.keys(dvat04Where).length > 0) {
-        challanWhere.dvat = dvat04Where;
+      let fuelData: any[] = [];
+      let liquorData: any[] = [];
+
+      // Get fuel data if not specifically filtered to liquor
+      if (payload.selectCommodity !== "LIQUOR") {
+        fuelData = await prisma.challan.findMany({
+          where: {
+            ...challanWhereBase,
+            dvat: fuelWhere,
+          },
+        });
       }
 
-      const dayReceivedData = await prisma.challan.findMany({
-        where: challanWhere,
-      });
+      // Get liquor data if not specifically filtered to fuel
+      if (payload.selectCommodity !== "FUEL") {
+        liquorData = await prisma.challan.findMany({
+          where: {
+            ...challanWhereBase,
+            dvat: liquorWhere,
+          },
+        });
+      }
 
-      let totalAmountForDay = 0;
-      for (let j = 0; j < dayReceivedData.length; j++) {
-        totalAmountForDay += Math.max(
+      let totalFuelAmount = 0;
+      for (let j = 0; j < fuelData.length; j++) {
+        totalFuelAmount += Math.max(
           0,
           parseInt(
-            dayReceivedData[j].total_tax_amount == "" ||
-              dayReceivedData[j].total_tax_amount == null ||
-              dayReceivedData[j].total_tax_amount == undefined
+            fuelData[j].total_tax_amount == "" ||
+              fuelData[j].total_tax_amount == null ||
+              fuelData[j].total_tax_amount == undefined
               ? "0"
-              : (dayReceivedData[j].total_tax_amount ?? "0"),
+              : (fuelData[j].total_tax_amount ?? "0"),
           ),
         );
       }
 
+      let totalLiquorAmount = 0;
+      for (let j = 0; j < liquorData.length; j++) {
+        totalLiquorAmount += Math.max(
+          0,
+          parseInt(
+            liquorData[j].total_tax_amount == "" ||
+              liquorData[j].total_tax_amount == null ||
+              liquorData[j].total_tax_amount == undefined
+              ? "0"
+              : (liquorData[j].total_tax_amount ?? "0"),
+          ),
+        );
+      }
+
+      const totalAmount = totalFuelAmount + totalLiquorAmount;
+
       receivedDataArray.push({
         date: day,
-        amount: Math.max(0, totalAmountForDay),
+        amount: Math.max(0, totalAmount),
+        fuelAmount: Math.max(0, totalFuelAmount),
+        liquorAmount: Math.max(0, totalLiquorAmount),
       });
     }
 

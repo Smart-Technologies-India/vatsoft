@@ -41,7 +41,9 @@ export default async function GetTopLiquorDealers(data: {
       where: {
         deletedAt: null,
         deletedById: null,
-        commodity: "LIQUOR",
+        commodity: {
+          not: "FUEL",
+        },
         ...whereClause,
       },
       select: {
@@ -61,7 +63,7 @@ export default async function GetTopLiquorDealers(data: {
       0,
       0,
       0,
-      0
+      0,
     );
     const endDate = new Date(
       currentDate.getFullYear(),
@@ -70,7 +72,7 @@ export default async function GetTopLiquorDealers(data: {
       23,
       59,
       59,
-      999
+      999,
     );
 
     // Calculate revenue for each dealer from returns_01 table (last 30 days)
@@ -95,7 +97,8 @@ export default async function GetTopLiquorDealers(data: {
 
         // Sum up the VAT amounts, ensuring no negative values
         const totalRevenue = returns.reduce(
-          (sum, ret) => sum + Math.max(0, parseFloat(ret.total_tax_amount || "0")),
+          (sum, ret) =>
+            sum + Math.max(0, parseFloat(ret.total_tax_amount || "0")),
           0,
         );
 

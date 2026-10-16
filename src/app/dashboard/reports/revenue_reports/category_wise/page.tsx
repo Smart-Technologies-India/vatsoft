@@ -62,6 +62,8 @@ const CategoryWiseReport = () => {
   interface Last15DayData {
     date: Date; // Date object
     amount: number; // Total amount for the day
+    fuelAmount?: number; // Fuel revenue for the day
+    liquorAmount?: number; // Liquor revenue for the day
   }
 
   const [last15Day, setLast15Day] = useState<Last15DayData[]>([]);
@@ -182,15 +184,27 @@ const CategoryWiseReport = () => {
       ["Pending Returns", countData.pending_return.toString()],
       [""],
       ["Selected Month Revenue"],
-      ["Date", "Revenue (₹)"],
     ];
 
-    last15Day.forEach((item) => {
-      worksheetData.push([
-        format(item.date, "dd MMM yyyy"),
-        item.amount.toString(),
-      ]);
-    });
+    if (commoditydata === undefined) {
+      worksheetData.push(["Date", "Fuel (₹)", "Liquor (₹)", "Total Revenue (₹)"]);
+      last15Day.forEach((item) => {
+        worksheetData.push([
+          format(item.date, "dd MMM yyyy"),
+          (item.fuelAmount ?? 0).toString(),
+          (item.liquorAmount ?? 0).toString(),
+          item.amount.toString(),
+        ]);
+      });
+    } else {
+      worksheetData.push(["Date", "Revenue (₹)"]);
+      last15Day.forEach((item) => {
+        worksheetData.push([
+          format(item.date, "dd MMM yyyy"),
+          item.amount.toString(),
+        ]);
+      });
+    }
 
     worksheetData.push([""]);
     worksheetData.push(["Total (Selected Month)", totalLast15Days.toString()]);
@@ -563,6 +577,16 @@ const CategoryWiseReport = () => {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Date
                     </th>
+                    {commoditydata === undefined && (
+                      <>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Fuel (₹)
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Liquor (₹)
+                        </th>
+                      </>
+                    )}
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Revenue (₹)
                     </th>
@@ -589,6 +613,16 @@ const CategoryWiseReport = () => {
                           <td className="px-4 py-3 text-sm font-medium text-gray-900">
                             {format(item.date, "dd MMM yyyy")}
                           </td>
+                          {commoditydata === undefined && (
+                            <>
+                              <td className="px-4 py-3 text-sm text-right text-gray-900">
+                                ₹{numberWithIndianFormat(item.fuelAmount ?? 0)}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-right text-gray-900">
+                                ₹{numberWithIndianFormat(item.liquorAmount ?? 0)}
+                              </td>
+                            </>
+                          )}
                           <td className="px-4 py-3 text-sm text-right text-gray-900">
                             ₹{numberWithIndianFormat(item.amount)}
                           </td>
@@ -601,7 +635,7 @@ const CategoryWiseReport = () => {
                 </tbody>
                 <tfoot className="bg-gray-50">
                   <tr className="font-semibold">
-                    <td className="px-4 py-3 text-sm text-gray-900" colSpan={2}>
+                    <td className="px-4 py-3 text-sm text-gray-900" colSpan={commoditydata === undefined ? 4 : 2}>
                       Total (15 Days)
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-900">
@@ -612,7 +646,7 @@ const CategoryWiseReport = () => {
                     </td>
                   </tr>
                   <tr className="font-semibold">
-                    <td className="px-4 py-3 text-sm text-gray-900" colSpan={2}>
+                    <td className="px-4 py-3 text-sm text-gray-900" colSpan={commoditydata === undefined ? 4 : 2}>
                       Average Daily
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-900">

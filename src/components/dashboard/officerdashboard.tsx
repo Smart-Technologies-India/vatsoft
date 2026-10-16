@@ -330,18 +330,6 @@ const OfficerDashboardPage = () => {
   const [topLiquorCommodities, setTopLiquorCommodities] = useState<
     TopCommodityData[]
   >([]);
-  const [topOidcCommodities, setTopOidcCommodities] = useState<
-    TopCommodityData[]
-  >([]);
-  const [topManufacturerCommodities, setTopManufacturerCommodities] = useState<
-    TopCommodityData[]
-  >([]);
-  const [topWholesalerCommodities, setTopWholesalerCommodities] = useState<
-    TopCommodityData[]
-  >([]);
-  const [topRestaurantCommodities, setTopRestaurantCommodities] = useState<
-    TopCommodityData[]
-  >([]);
 
   const [user, setUser] = useState<user | null>(null);
 
@@ -457,7 +445,8 @@ const OfficerDashboardPage = () => {
           fuelRevenue: fuelRevenueResponse.data.this_month_received,
           liquorRevenue: liquorRevenueResponse.data.this_month_received,
           oidcRevenue: oidcRevenueResponse.data.this_month_received,
-          manufacturerRevenue: manufacturerRevenueResponse.data.this_month_received,
+          manufacturerRevenue:
+            manufacturerRevenueResponse.data.this_month_received,
           wholesalerRevenue: wholesalerRevenueResponse.data.this_month_received,
           restaurantRevenue: restaurantRevenueResponse.data.this_month_received,
           totalRevenue:
@@ -487,42 +476,6 @@ const OfficerDashboardPage = () => {
       });
       if (liquorCommoditiesResponse.status && liquorCommoditiesResponse.data) {
         setTopLiquorCommodities(liquorCommoditiesResponse.data);
-      }
-
-      const oidcCommoditiesResponse = await GetTopCommodities({
-        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
-        commodityType: "OIDC",
-        limit: 10,
-      });
-      if (oidcCommoditiesResponse.status && oidcCommoditiesResponse.data) {
-        setTopOidcCommodities(oidcCommoditiesResponse.data);
-      }
-
-      const manufacturerCommoditiesResponse = await GetTopCommodities({
-        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
-        commodityType: "MANUFACTURER",
-        limit: 10,
-      });
-      if (manufacturerCommoditiesResponse.status && manufacturerCommoditiesResponse.data) {
-        setTopManufacturerCommodities(manufacturerCommoditiesResponse.data);
-      }
-
-      const wholesalerCommoditiesResponse = await GetTopCommodities({
-        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
-        commodityType: "WHOLESALER",
-        limit: 10,
-      });
-      if (wholesalerCommoditiesResponse.status && wholesalerCommoditiesResponse.data) {
-        setTopWholesalerCommodities(wholesalerCommoditiesResponse.data);
-      }
-
-      const restaurantCommoditiesResponse = await GetTopCommodities({
-        selectOffice: filterOffice as "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
-        commodityType: "RESTAURANT",
-        limit: 10,
-      });
-      if (restaurantCommoditiesResponse.status && restaurantCommoditiesResponse.data) {
-        setTopRestaurantCommodities(restaurantCommoditiesResponse.data);
       }
     };
     init();
@@ -635,7 +588,14 @@ const OfficerDashboardPage = () => {
 
   // Dynamic category-wise revenue data from database
   const categoryRevenueChartData = {
-    labels: ["Petroleum", "Liquor", "OIDC", "Manufacturer", "Wholesaler", "Restaurant"],
+    labels: [
+      "Petroleum",
+      "Liquor",
+      "OIDC",
+      "Manufacturer",
+      "Wholesaler",
+      "Restaurant",
+    ],
     datasets: [
       {
         data: categoryWiseData
@@ -719,114 +679,6 @@ const OfficerDashboardPage = () => {
           "#f5a623",
           "#50e3c2",
           "#ff6b9d",
-        ],
-        hoverBorderWidth: 4,
-      },
-    ],
-  };
-
-  // Dynamic OIDC commodities data from database
-  const oidcCommoditiesChartData = {
-    labels: topOidcCommodities.map((c) => c.commodityName),
-    datasets: [
-      {
-        data: topOidcCommodities.map((c) => c.totalRevenue),
-        backgroundColor: [
-          "#10B981",
-          "#34D399",
-          "#6EE7B7",
-          "#A7F3D0",
-          "#D1FAE5",
-        ],
-        borderWidth: 3,
-        borderColor: "#ffffff",
-        hoverBackgroundColor: [
-          "#059669",
-          "#10b981",
-          "#34d399",
-          "#6ee7b7",
-          "#a7f3d0",
-        ],
-        hoverBorderWidth: 4,
-      },
-    ],
-  };
-
-  // Dynamic Manufacturer commodities data from database
-  const manufacturerCommoditiesChartData = {
-    labels: topManufacturerCommodities.map((c) => c.commodityName),
-    datasets: [
-      {
-        data: topManufacturerCommodities.map((c) => c.totalRevenue),
-        backgroundColor: [
-          "#8B5CF6",
-          "#A78BFA",
-          "#C4B5FD",
-          "#DDD6FE",
-          "#EDE9FE",
-        ],
-        borderWidth: 3,
-        borderColor: "#ffffff",
-        hoverBackgroundColor: [
-          "#7c3aed",
-          "#8b5cf6",
-          "#a78bfa",
-          "#c4b5fd",
-          "#ddd6fe",
-        ],
-        hoverBorderWidth: 4,
-      },
-    ],
-  };
-
-  // Dynamic Wholesaler commodities data from database
-  const wholesalerCommoditiesChartData = {
-    labels: topWholesalerCommodities.map((c) => c.commodityName),
-    datasets: [
-      {
-        data: topWholesalerCommodities.map((c) => c.totalRevenue),
-        backgroundColor: [
-          "#EC4899",
-          "#F472B6",
-          "#F9A8D4",
-          "#FBCFE8",
-          "#FCE7F3",
-        ],
-        borderWidth: 3,
-        borderColor: "#ffffff",
-        hoverBackgroundColor: [
-          "#db2777",
-          "#ec4899",
-          "#f472b6",
-          "#f9a8d4",
-          "#fbcfe8",
-        ],
-        hoverBorderWidth: 4,
-      },
-    ],
-  };
-
-  // Dynamic Restaurant commodities data from database
-  const restaurantCommoditiesChartData = {
-    labels: topRestaurantCommodities.map((c) => c.commodityName),
-    datasets: [
-      {
-        data: topRestaurantCommodities.map((c) => c.totalRevenue),
-        backgroundColor: [
-          "#F97316",
-          "#FB923C",
-          "#FDBA74",
-          "#FED7AA",
-          "#FFEDD5",
-        ],
-        borderWidth: 3,
-        borderColor: "#ffffff",
-        hoverBackgroundColor: [
-          "#ea580c",
-          "#f97316",
-          "#fb923c",
-          "#fdba74",
-          "#fed7aa",
         ],
         hoverBorderWidth: 4,
       },
@@ -1182,7 +1034,7 @@ const OfficerDashboardPage = () => {
         {/* Top Dealers Bar Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           {/* Top 10 Liquor Dealers Chart */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+          <div className="bg-white rounded-xl shadow border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-base font-semibold text-gray-900 flex items-center">
@@ -1223,7 +1075,7 @@ const OfficerDashboardPage = () => {
           </div>
 
           {/* Top 10 Fuel Dealers Chart */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+          <div className="bg-white rounded-xl shadow border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-base font-semibold text-gray-900 flex items-center">
@@ -1271,7 +1123,7 @@ const OfficerDashboardPage = () => {
             {/* Top Row - District and Category Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
               {/* District-wise Revenue Chart */}
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+              <div className="bg-white rounded-xl shadow border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-base font-semibold text-gray-900 flex items-center">
@@ -1317,7 +1169,7 @@ const OfficerDashboardPage = () => {
               </div>
 
               {/* Category-wise Revenue Chart */}
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+              <div className="bg-white rounded-xl shadow border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-base font-semibold text-gray-900 flex items-center">
@@ -1374,7 +1226,7 @@ const OfficerDashboardPage = () => {
         {/* Bottom Row - Commodity Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Top Petroleum Commodities Chart */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+          <div className="bg-white rounded-xl shadow border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-base font-semibold text-gray-900 flex items-center">
@@ -1444,7 +1296,7 @@ const OfficerDashboardPage = () => {
           </div>
 
           {/* Top Liquor Commodities Chart */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
+          <div className="bg-white rounded-xl shadow border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-base font-semibold text-gray-900 flex items-center">
@@ -1501,283 +1353,6 @@ const OfficerDashboardPage = () => {
                 <span className="font-medium text-gray-700">
                   {numberWithIndianFormat(
                     topLiquorCommodities.reduce(
-                      (sum, c) => sum + c.totalRevenue,
-                      0,
-                    ),
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Top OIDC Commodities Chart */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 flex items-center">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></div>
-                  Top OIDC Products
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Best selling OIDC commodities
-                </p>
-              </div>
-              <div className="bg-linear-to-r from-emerald-50 to-green-50 p-2 rounded-lg">
-                <svg
-                  className="w-4 h-4 text-emerald-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-            </div>
-            <div className="h-64 flex items-center justify-center">
-              {topOidcCommodities.length > 0 ? (
-                <div className="w-full h-full">
-                  <Pie data={oidcCommoditiesChartData} options={pieOptions} />
-                </div>
-              ) : (
-                <div className="text-center text-gray-400">
-                  <svg
-                    className="w-16 h-16 mx-auto mb-2 opacity-50"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  <p className="text-sm">No data available</p>
-                </div>
-              )}
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Total Products</span>
-                <span className="font-medium text-gray-700">
-                  {numberWithIndianFormat(
-                    topOidcCommodities.reduce(
-                      (sum, c) => sum + c.totalRevenue,
-                      0,
-                    ),
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Top Manufacturer Commodities Chart */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 flex items-center">
-                  <div className="w-2 h-2 bg-violet-500 rounded-full mr-2"></div>
-                  Top Manufacturer Products
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Best selling manufacturer commodities
-                </p>
-              </div>
-              <div className="bg-linear-to-r from-violet-50 to-purple-50 p-2 rounded-lg">
-                <svg
-                  className="w-4 h-4 text-violet-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-              </div>
-            </div>
-            <div className="h-64 flex items-center justify-center">
-              {topManufacturerCommodities.length > 0 ? (
-                <div className="w-full h-full">
-                  <Pie
-                    data={manufacturerCommoditiesChartData}
-                    options={pieOptions}
-                  />
-                </div>
-              ) : (
-                <div className="text-center text-gray-400">
-                  <svg
-                    className="w-16 h-16 mx-auto mb-2 opacity-50"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  <p className="text-sm">No data available</p>
-                </div>
-              )}
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Total Products</span>
-                <span className="font-medium text-gray-700">
-                  {numberWithIndianFormat(
-                    topManufacturerCommodities.reduce(
-                      (sum, c) => sum + c.totalRevenue,
-                      0,
-                    ),
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Top Wholesaler Commodities Chart */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 flex items-center">
-                  <div className="w-2 h-2 bg-pink-500 rounded-full mr-2"></div>
-                  Top Wholesaler Products
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Best selling wholesaler commodities
-                </p>
-              </div>
-              <div className="bg-linear-to-r from-pink-50 to-rose-50 p-2 rounded-lg">
-                <svg
-                  className="w-4 h-4 text-pink-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                  />
-                </svg>
-              </div>
-            </div>
-            <div className="h-64 flex items-center justify-center">
-              {topWholesalerCommodities.length > 0 ? (
-                <div className="w-full h-full">
-                  <Pie
-                    data={wholesalerCommoditiesChartData}
-                    options={pieOptions}
-                  />
-                </div>
-              ) : (
-                <div className="text-center text-gray-400">
-                  <svg
-                    className="w-16 h-16 mx-auto mb-2 opacity-50"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  <p className="text-sm">No data available</p>
-                </div>
-              )}
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Total Products</span>
-                <span className="font-medium text-gray-700">
-                  {numberWithIndianFormat(
-                    topWholesalerCommodities.reduce(
-                      (sum, c) => sum + c.totalRevenue,
-                      0,
-                    ),
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Top Restaurant Commodities Chart */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 flex items-center">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
-                  Top Restaurant Products
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Best selling restaurant commodities
-                </p>
-              </div>
-              <div className="bg-linear-to-r from-orange-50 to-amber-50 p-2 rounded-lg">
-                <svg
-                  className="w-4 h-4 text-orange-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-            </div>
-            <div className="h-64 flex items-center justify-center">
-              {topRestaurantCommodities.length > 0 ? (
-                <div className="w-full h-full">
-                  <Pie
-                    data={restaurantCommoditiesChartData}
-                    options={pieOptions}
-                  />
-                </div>
-              ) : (
-                <div className="text-center text-gray-400">
-                  <svg
-                    className="w-16 h-16 mx-auto mb-2 opacity-50"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  <p className="text-sm">No data available</p>
-                </div>
-              )}
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Total Products</span>
-                <span className="font-medium text-gray-700">
-                  {numberWithIndianFormat(
-                    topRestaurantCommodities.reduce(
                       (sum, c) => sum + c.totalRevenue,
                       0,
                     ),

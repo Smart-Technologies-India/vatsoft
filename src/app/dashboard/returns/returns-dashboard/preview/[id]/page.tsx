@@ -163,7 +163,7 @@ const Dvat16ReturnPreview = () => {
 
         isQuarterlyFiling =
           selectedReturn?.status === "PAID"
-            ? selectedReturn?.is_quarterly ?? false
+            ? (selectedReturn?.is_quarterly ?? false)
             : selectedReturn.dvat04?.frequencyFilings === "QUARTERLY";
 
         let allQuarterlyReturns: (returns_01 & {
@@ -231,7 +231,6 @@ const Dvat16ReturnPreview = () => {
       }
 
       const currentMonthIndex = monthNames.indexOf(month);
-      console.log("Current month index:", currentMonthIndex);
 
       if (currentMonthIndex === -1) {
       } else {
@@ -271,9 +270,6 @@ const Dvat16ReturnPreview = () => {
           year: fetchYear,
           month: lastMonth,
         });
-
-        console.log("Fetching last month data for:", lastMonth);
-        console.log("Last month data:", lastmonthdata);
 
         if (lastmonthdata.status && lastmonthdata.data) {
           setLastMonthDue(lastmonthdata.data.returns_01.pending_payment ?? "0");

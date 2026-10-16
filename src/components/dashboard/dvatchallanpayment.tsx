@@ -222,14 +222,42 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
 
       if (currentMonthIndex === -1) {
       } else {
-        // Calculate the last month index and handle wrapping
-        const lastMonthIndex = (currentMonthIndex - 1 + 12) % 12;
+        let lastMonth: string;
+        let fetchYear: string = year;
 
-        // Get the last month's name
-        const lastMonth: string = monthNames[lastMonthIndex];
+        const isQuarterlyFiling = return01?.dvat04?.frequencyFilings === "QUARTERLY";
+
+        if (isQuarterlyFiling) {
+          // For quarterly filing, fetch the last month of the previous quarter
+          const currentQuarter = getQuarterForMonth(month);
+          const quarterMonthsMap: Record<Quarter, string> = {
+            QUARTER1: "March",
+            QUARTER2: "June",
+            QUARTER3: "September",
+            QUARTER4: "December",
+          };
+          lastMonth = quarterMonthsMap[currentQuarter!];
+
+          // If fetching March and current year starts in April, year stays same
+          // If fetching December and current month is Jan-Mar, year decreases
+          if (
+            lastMonth === "December" &&
+            ["January", "February", "March"].includes(month)
+          ) {
+            fetchYear = (parseInt(year) - 1).toString();
+          }
+        } else {
+          // For monthly filing, fetch the previous month
+          const lastMonthIndex = (currentMonthIndex - 1 + 12) % 12;
+          lastMonth = monthNames[lastMonthIndex];
+
+          if (month === "January") {
+            fetchYear = (parseInt(year) - 1).toString();
+          }
+        }
 
         const lastmonthdata = await getPdfReturn({
-          year: month == "January" ? (parseInt(year) - 1).toString() : year,
+          year: fetchYear,
           month: lastMonth,
         });
 

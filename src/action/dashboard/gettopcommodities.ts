@@ -13,7 +13,13 @@ interface TopCommodityData {
 
 interface GetTopCommoditiesPayload {
   selectOffice?: SelectOffice;
-  commodityType: "FUEL" | "LIQUOR" | "OIDC" | "MANUFACTURER" | "WHOLESALER" | "RESTAURANT";
+  commodityType:
+    | "FUEL"
+    | "LIQUOR"
+    | "OIDC"
+    | "MANUFACTURER"
+    | "WHOLESALER"
+    | "RESTAURANT";
   limit?: number;
 }
 
@@ -72,11 +78,6 @@ const GetTopCommodities = async (
       dvat04Where.selectOffice = payload.selectOffice;
     }
 
-    // For the 4 new commodity types, filter by dvat04's commodity field
-    if (["OIDC", "MANUFACTURER", "WHOLESALER", "RESTAURANT"].includes(payload.commodityType)) {
-      dvat04Where.commodity = payload.commodityType;
-    }
-
     // Get all approved dealers
     const dealers = await prisma.dvat04.findMany({
       where: dvat04Where,
@@ -101,20 +102,13 @@ const GetTopCommodities = async (
     };
 
     // Only apply product_type filter for FUEL and LIQUOR
-    // For the 4 new types (OIDC, MANUFACTURER, WHOLESALER, RESTAURANT), 
+    // For the 4 new types (OIDC, MANUFACTURER, WHOLESALER, RESTAURANT),
     // we've already filtered by dvat04.commodity above
     if (payload.commodityType === "FUEL") {
       commodityWhere.product_type = "FUEL";
     } else if (payload.commodityType === "LIQUOR") {
-      commodityWhere.product_type = "LIQUOR";
-    }
-
-    // For the 4 new commodity types, return early with limited data
-    // since they don't have commodity_master entries
-    if (["OIDC", "MANUFACTURER", "WHOLESALER", "RESTAURANT"].includes(payload.commodityType)) {
-      return {
-        status: true,
-        data: [], // Return empty since these types don't track commodities like FUEL/LIQUOR
+      commodityWhere.product_type = {
+        not: "FUEL",
       };
     }
 
