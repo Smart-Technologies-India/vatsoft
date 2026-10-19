@@ -494,8 +494,8 @@ const Dvat16ReturnPreview = () => {
     }
   };
 
-  const showSubmitButton = (): boolean => {
-    if (!return01) return false;
+  const getButtonType = (): "submit" | "proceed" | "pay_challan" | null => {
+    if (!return01) return null;
 
     const thebalance = new TheBalance(
       returns_entryData ?? [],
@@ -523,10 +523,22 @@ const Dvat16ReturnPreview = () => {
         ? 1
         : centralSales.netpayable();
 
-    if (value1 + value2 <= 0) {
-      return true;
+    // If value1 or value2 is exactly 1, show Pay Challan button
+    if (value1 === 1 || value2 === 1) {
+      return "pay_challan";
     }
-    return false;
+
+    // If no payment needed, show Submit button
+    if (value1 + value2 <= 0) {
+      return "submit";
+    }
+
+    // If payment needed, show Proceed to Pay button
+    return "proceed";
+  };
+
+  const showSubmitButton = (): boolean => {
+    return getButtonType() === "submit";
   };
 
   return (
@@ -895,18 +907,17 @@ const Dvat16ReturnPreview = () => {
 
             {!payment && (
               <>
-                {showSubmitButton() ? (
-                  <>
-                    <Button
-                      type="primary"
-                      onClick={() => {
-                        setPaymentSubmitBox(true);
-                      }}
-                    >
-                      Submit
-                    </Button>
-                  </>
-                ) : (
+                {getButtonType() === "submit" && (
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      setPaymentSubmitBox(true);
+                    }}
+                  >
+                    Submit
+                  </Button>
+                )}
+                {getButtonType() === "proceed" && (
                   <Button
                     type="primary"
                     onClick={async () => {
@@ -932,6 +943,22 @@ const Dvat16ReturnPreview = () => {
                     }}
                   >
                     Proceed to Pay
+                  </Button>
+                )}
+                {getButtonType() === "pay_challan" && (
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      router.push(
+                        `/dashboard/returns/returns-dashboard/pay_challan_one_rupee/${encryptURLData(
+                          return01.id.toString(),
+                        )}?year=${searchparam.get("year")}&month=${searchparam.get(
+                          "month",
+                        )}`,
+                      );
+                    }}
+                  >
+                    Pay Challan
                   </Button>
                 )}
               </>
