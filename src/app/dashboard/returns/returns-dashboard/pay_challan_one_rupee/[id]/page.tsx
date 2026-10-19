@@ -17,7 +17,6 @@ const PayChallanOneRupee = () => {
     decryptURLData(Array.isArray(id) ? id[0] : id, router),
   );
 
-  const [userid, setUserid] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [processing, setProcessing] = useState<boolean>(false);
   const [return01, setReturn01] = useState<
@@ -33,7 +32,6 @@ const PayChallanOneRupee = () => {
           router.push("/");
           return;
         }
-        setUserid(authResponse.data);
 
         const returnResponse = await GetReturn01({
           id: returnId,
@@ -67,24 +65,22 @@ const PayChallanOneRupee = () => {
     setProcessing(true);
     try {
       const response = await AddPaymentOnline({
-        returnid: returnId,
-        userid: userid,
-        amount: 1,
-        month: return01.month,
-        year: return01.year,
+        id: returnId,
+        penalty: "0",
+        vatamount: "1",
+        interestamount: "0",
+        totaltaxamount: "1",
+        challan_vat: "1",
+        challan_interest: "0",
+        challan_penalty: "0",
+        challan_total_tax_amount: "1",
       });
 
-      if (response.status) {
-        toast.success("₹1 payment initiated successfully!");
+      if (response.status && response.data?.order_id) {
+        toast.success("Redirecting to payment gateway...");
 
-        // Redirect back to preview page after successful payment
-        setTimeout(() => {
-          router.push(
-            `/dashboard/returns/returns-dashboard/preview/${encryptURLData(
-              returnId.toString(),
-            )}?year=${searchParams.get("year") || ""}&month=${searchParams.get("month") || ""}`,
-          );
-        }, 1500);
+        // Redirect to payment page with order ID
+        router.push(`/payamount?pi=${encodeURIComponent(response.data.order_id)}`);
       } else {
         toast.error(response.message || "Failed to process payment");
       }
