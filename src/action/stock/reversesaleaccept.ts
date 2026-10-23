@@ -69,16 +69,6 @@ const ReverseSaleAccept = async (
         throw new Error("Stock row not found for this commodity.");
       }
 
-      // await tx.stock.update({
-      //   where: {
-      //     id: stockRow.id,
-      //   },
-      //   data: {
-      //     quantity: stockRow.quantity + sale.quantity,
-      //     updatedById: payload.updatedById,
-      //   },
-      // });
-
       const updatedSale = await tx.daily_sale.update({
         where: {
           id: sale.id,

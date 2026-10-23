@@ -38,7 +38,7 @@ const mergeStockDataByCommodity = (data: StockData[]): StockData[] => {
 };
 
 const CreateFirstStock = async (
-  payload: CreateStockPayload
+  payload: CreateStockPayload,
 ): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = CreateFirstStock.name;
 
@@ -98,7 +98,7 @@ const CreateFirstStock = async (
             },
             data: {
               quantity: existingFirstStock.quantity + item.quantity,
-              updatedById: currentUserId
+              updatedById: currentUserId,
             },
           });
         } else {
@@ -127,6 +127,8 @@ const CreateFirstStock = async (
           await prisma.stock.update({
             where: {
               id: existingStock.id,
+              deletedAt: null,
+              deletedById: null,
             },
             data: {
               quantity: existingStock.quantity + item.quantity,

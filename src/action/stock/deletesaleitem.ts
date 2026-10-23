@@ -57,7 +57,7 @@ const DeleteSaleItem = async (
 
       if (stock) {
         await prisma.stock.update({
-          where: { id: stock.id },
+          where: { id: stock.id, deletedAt: null, deletedById: null },
           data: {
             quantity: stock.quantity + saleItem.quantity,
           },

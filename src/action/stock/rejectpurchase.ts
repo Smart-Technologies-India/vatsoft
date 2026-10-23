@@ -102,7 +102,7 @@ const RejectPurchase = async (
 
         if (sellerStock) {
           await tx.stock.update({
-            where: { id: sellerStock.id },
+            where: { id: sellerStock.id, deletedAt: null, deletedById: null },
             data: {
               quantity: sellerStock.quantity + linkedSale.quantity,
               updatedById: currentUserId,
@@ -120,8 +120,11 @@ const RejectPurchase = async (
           });
         }
 
-        const { id: saleId, createdById: saleCreatedById, ...saleAuditData } =
-          linkedSale;
+        const {
+          id: saleId,
+          createdById: saleCreatedById,
+          ...saleAuditData
+        } = linkedSale;
         await tx.edit_sale.create({
           data: {
             saleId,

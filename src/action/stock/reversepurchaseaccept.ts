@@ -82,6 +82,8 @@ const ReversePurchaseAccept = async (
       await tx.stock.update({
         where: {
           id: stockRow.id,
+          deletedAt: null,
+          deletedById: null,
         },
         data: {
           quantity: stockRow.quantity - requiredPcs,

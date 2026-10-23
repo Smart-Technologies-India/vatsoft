@@ -22,13 +22,11 @@ interface ChunkUpdateResult {
 const ApplyStockUpdatesInChunks = async (
   payload: ApplyStockUpdatesPayload,
 ): Promise<
-  ApiResponseType<
-    {
-      processedCount: number;
-      failedCount: number;
-      message: string;
-    } | null
-  >
+  ApiResponseType<{
+    processedCount: number;
+    failedCount: number;
+    message: string;
+  } | null>
 > => {
   const functionname: string = ApplyStockUpdatesInChunks.name;
 
@@ -78,7 +76,9 @@ const ApplyStockUpdatesInChunks = async (
       });
     }
 
-    const commodityIds = [...new Set(normalizedEntries.map((x) => x.commodityid))];
+    const commodityIds = [
+      ...new Set(normalizedEntries.map((x) => x.commodityid)),
+    ];
     const quantityByCommodityId = new Map<number, number>(
       normalizedEntries.map((entry) => [entry.commodityid, entry.quantity]),
     );
@@ -157,6 +157,8 @@ const ApplyStockUpdatesInChunks = async (
             await tx.stock.update({
               where: {
                 id: stockRow.id,
+                deletedAt: null,
+                deletedById: null,
               },
               data: {
                 quantity: entry.quantity,

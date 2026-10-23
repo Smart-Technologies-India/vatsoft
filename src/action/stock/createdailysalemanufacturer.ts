@@ -202,6 +202,8 @@ const CreateDailySaleManufacturer = async (
         update_response = await prisma.stock.update({
           where: {
             id: isexist.id,
+            deletedAt: null,
+            deletedById: null,
           },
           data: {
             quantity: Math.max(0, isexist.quantity - payload.quantity),

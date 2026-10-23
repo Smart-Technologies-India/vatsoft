@@ -12,11 +12,7 @@ interface CreateBreakagePayload {
   quantity: number;
 }
 
-const CRATE_BASED_COMMODITIES = new Set([
-  "OIDC",
-  "WHOLESALER",
-  "MANUFACTURER",
-]);
+const CRATE_BASED_COMMODITIES = new Set(["OIDC", "WHOLESALER", "MANUFACTURER"]);
 
 const CreateBreakage = async (
   payload: CreateBreakagePayload,
@@ -94,7 +90,9 @@ const CreateBreakage = async (
         }
         quantityInPcs = enteredQuantity * commodityRecord.crate_size;
       } else if (isRestaurant) {
-        const packSize = Number.parseFloat(String(commodityRecord.pack_size || ""));
+        const packSize = Number.parseFloat(
+          String(commodityRecord.pack_size || ""),
+        );
         if (!Number.isFinite(packSize) || packSize <= 0) {
           throw new Error("Pack size is not configured for this commodity.");
         }
@@ -122,7 +120,7 @@ const CreateBreakage = async (
       }
 
       await tx.stock.update({
-        where: { id: stockRow.id },
+        where: { id: stockRow.id, deletedAt: null, deletedById: null },
         data: {
           quantity: stockRow.quantity - quantityInPcs,
           updatedById: currentUserId,

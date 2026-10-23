@@ -17,7 +17,7 @@ import { stock } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const CreateStock = async (
-  payload: CreateStockPayload
+  payload: CreateStockPayload,
 ): Promise<ApiResponseType<stock | null>> => {
   const functionname: string = CreateStock.name;
 
@@ -63,6 +63,8 @@ const CreateStock = async (
         const stock_respone = await prisma.stock.update({
           where: {
             id: isstock.id,
+            deletedAt: null,
+            deletedById: null,
           },
           data: {
             quantity: payload.quantity + isstock.quantity,

@@ -18,7 +18,7 @@ import { manufacturer_purchase, stock } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const EditManufacture = async (
-  payload: EditManufacturePayload
+  payload: EditManufacturePayload,
 ): Promise<ApiResponseType<manufacturer_purchase | null>> => {
   const functionname: string = EditManufacture.name;
 
@@ -101,6 +101,8 @@ const EditManufacture = async (
         const stock_response = await prisma.stock.update({
           where: {
             id: find_stock.id,
+            deletedAt: null,
+            deletedById: null,
           },
           data: {
             quantity: payload.quantity,
@@ -112,7 +114,7 @@ const EditManufacture = async (
         }
 
         return update_response;
-      }
+      },
     );
     return createResponse({
       message: "Manufacturer Purchase Entry Edit completed.",

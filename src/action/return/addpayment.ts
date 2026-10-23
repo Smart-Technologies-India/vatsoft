@@ -126,8 +126,8 @@ const AddPayment = async (
         throw new Error("Something went wrong! Unable to update");
       }
 
-      const isQuarterlyFiling =
-        returnresponse.dvat04.frequencyFilings == "QUARTERLY";
+      // const isQuarterlyFiling =
+      //   returnresponse.dvat04.frequencyFilings == "QUARTERLY";
       // await updateReturns01Work(isQuarterlyFiling, returnresponse);
 
       const updateresponse = await prisma.returns_01.findFirst({

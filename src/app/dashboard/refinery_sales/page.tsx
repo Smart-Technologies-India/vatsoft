@@ -353,9 +353,12 @@ const RefinerySalesPage = () => {
       });
   }, [sales, searchTerm, sortField, sortOrder, statusFilter]);
 
-  const pagedSales = useMemo(() => {
-    // Update total when groupedSales changes
+  useEffect(() => {
+    // Reset pagination to first page when filters change
     setPagination((prev) => ({ ...prev, skip: 0, total: groupedSales.length }));
+  }, [groupedSales.length, searchTerm, statusFilter]);
+
+  const pagedSales = useMemo(() => {
     return groupedSales.slice(
       pagination.skip,
       pagination.skip + pagination.take,

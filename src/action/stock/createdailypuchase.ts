@@ -136,6 +136,8 @@ const CreateDailyPurchase = async (
         const stock_respone = await prisma.stock.update({
           where: {
             id: isstock.id,
+            deletedAt: null,
+            deletedById: null,
           },
           data: {
             quantity: payload.quantity + isstock.quantity,

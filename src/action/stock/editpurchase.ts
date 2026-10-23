@@ -137,13 +137,10 @@ const EditPurchase = async (
 
       // Only recalculate stock when quantity is actually changed.
 
-   
-
       if (payload.quantity !== is_exist.quantity) {
-        
         const stockAdjustment = payload.quantity - is_exist.quantity;
         const newStockQuantity = find_stock.quantity + stockAdjustment;
-       
+
         if (newStockQuantity < 0) {
           throw new Error("Stock not available.");
         }
@@ -151,6 +148,8 @@ const EditPurchase = async (
         const stock_response = await prisma.stock.update({
           where: {
             id: find_stock.id,
+            deletedAt: null,
+            deletedById: null,
           },
           data:
             newStockQuantity === 0

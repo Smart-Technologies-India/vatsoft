@@ -613,7 +613,7 @@ const SupplierDetails = () => {
                         <Button
                           size="small"
                           onClick={async () => {
-                           await SendSMSNotice();
+                            await SendSMSNotice(val.dvatid);
                           }}
                         >
                           SMS

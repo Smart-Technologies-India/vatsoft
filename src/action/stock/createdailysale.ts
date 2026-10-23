@@ -211,6 +211,8 @@ const CreateDailySale = async (
       const update_response = await prisma.stock.update({
         where: {
           id: isexist.id,
+          deletedAt: null,
+          deletedById: null,
         },
         data: {
           quantity: isexist.quantity - payload.quantity,

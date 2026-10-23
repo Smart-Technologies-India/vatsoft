@@ -222,7 +222,7 @@ const EditSale = async (
           });
         } else {
           await prisma.stock.update({
-            where: { id: stockEntry.id },
+            where: { id: stockEntry.id, deletedAt: null, deletedById: null },
             data: {
               quantity: newStockQuantity,
               updatedById: payload.createdById,

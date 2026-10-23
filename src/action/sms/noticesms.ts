@@ -5,24 +5,16 @@ import { ApiResponseType, createResponse } from "@/models/response";
 
 import prisma from "../../../prisma/database";
 import axios from "axios";
-import { getCurrentDvatId } from "@/lib/auth";
 
 const maskMobile = (mobile: string): string => {
   if (mobile.length < 4) return "XXXX";
   return `XXXXXX${mobile.slice(-4)}`;
 };
 
-const SendSMSNotice = async (): Promise<ApiResponseType<boolean | null>> => {
+const SendSMSNotice = async (
+  dvatid: number,
+): Promise<ApiResponseType<boolean | null>> => {
   const functionname: string = SendSMSNotice.name;
-
-  const dvatid = await getCurrentDvatId();
-
-  if (!dvatid) {
-    return createResponse({
-      message: "Invalid id. Please try again.",
-      functionname,
-    });
-  }
 
   const dvat_data = await prisma.dvat04.findFirst({
     where: {

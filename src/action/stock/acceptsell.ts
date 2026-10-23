@@ -41,6 +41,8 @@ const AcceptSale = async (
         },
       });
 
+      console.log("isstock:", isstock);
+
       const stock_respone = await prisma.stock.upsert({
         where: {
           id: isstock ? isstock.id : 0,
@@ -57,6 +59,8 @@ const AcceptSale = async (
           status: "ACTIVE",
         },
       });
+
+      console.log("stock_respone:", stock_respone);
 
       if (!stock_respone) {
         throw new Error("Unable to update or create stock.");
