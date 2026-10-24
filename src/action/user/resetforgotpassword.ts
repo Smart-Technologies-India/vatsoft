@@ -5,7 +5,10 @@ import { ApiResponseType, createResponse } from "@/models/response";
 import { ForgetpasswordSchema } from "@/schema/forgetpassword";
 import { safeParse } from "valibot";
 import DvatChangePassword from "@/action/user/dvatchangepassword";
-import { clearOtpSession, isOtpVerified } from "@/lib/forgot-password-otp-store";
+import {
+  clearOtpSession,
+  isOtpVerified,
+} from "@/lib/forgot-password-otp-store";
 
 interface ResetForgetPasswordPayload {
   tin_number: string;
@@ -85,15 +88,6 @@ const ResetForgetPassword = async (
       message: changeResponse.message,
     });
   }
-
-  await prisma.dvat04.update({
-    where: {
-      id: dvat.id,
-    },
-    data: {
-      temppass: parsed.output.password,
-    },
-  });
 
   await prisma.user.update({
     where: {

@@ -496,7 +496,7 @@ export default function HomePage() {
         <div className="flex flex-col gap-3">
           {/* ── CENTER: Due Dates + Videos + FAQ (top) ── */}
           <div className="flex flex-col gap-2">
-            <div className="grid gap-2 px-2 py-2 grid-cols-12">
+            <div className="grid gap-2 grid-cols-12">
               {/* Due Dates */}
               <div className="border border-[#c8d4e8] col-span-8">
                 <div className="bg-[#0f2f67] px-2 py-2">

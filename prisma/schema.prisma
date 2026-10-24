@@ -16,7 +16,6 @@ model user {
   pan                             String?
   aadhar                          String?
   password                        String?
-  temppass                        String?
   otp                             String?
   otpExpiry                       DateTime?
   otpAttempts                     Int                     @default(0)
@@ -250,7 +249,6 @@ model document {
 model dvat04 {
   id                              Int                         @id @default(autoincrement())
   password                        String?
-  temppass                        String?
   tempregistrationnumber          String?
   tinNumber                       String?
   certificateNumber               String?

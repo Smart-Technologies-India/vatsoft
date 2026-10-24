@@ -42,7 +42,6 @@ const GeneratePassword = async (
         },
         data: {
           password: hashedPassword,
-          temppass: password,
         },
       });
     }

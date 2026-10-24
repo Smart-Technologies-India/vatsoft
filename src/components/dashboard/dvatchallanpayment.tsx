@@ -225,45 +225,54 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
         let lastMonth: string;
         let fetchYear: string = year;
 
-        const isQuarterlyFiling = return01?.dvat04?.frequencyFilings === "QUARTERLY";
-
-        if (isQuarterlyFiling) {
-          // For quarterly filing, fetch the last month of the previous quarter
-          const currentQuarter = getQuarterForMonth(month);
-          const quarterMonthsMap: Record<Quarter, string> = {
-            QUARTER1: "March",
-            QUARTER2: "June",
-            QUARTER3: "September",
-            QUARTER4: "December",
-          };
-          lastMonth = quarterMonthsMap[currentQuarter!];
-
-          // If fetching March and current year starts in April, year stays same
-          // If fetching December and current month is Jan-Mar, year decreases
-          if (
-            lastMonth === "December" &&
-            ["January", "February", "March"].includes(month)
-          ) {
-            fetchYear = (parseInt(year) - 1).toString();
-          }
-        } else {
-          // For monthly filing, fetch the previous month
-          const lastMonthIndex = (currentMonthIndex - 1 + 12) % 12;
-          lastMonth = monthNames[lastMonthIndex];
-
-          if (month === "January") {
-            fetchYear = (parseInt(year) - 1).toString();
-          }
-        }
-
-        const lastmonthdata = await getPdfReturn({
-          year: fetchYear,
-          month: lastMonth,
+        const returns_response = await GetReturn01({
+          id: parseInt(props.returnid),
         });
 
-        if (lastmonthdata.status && lastmonthdata.data) {
-          setLastMonthDue(lastmonthdata.data.returns_01.pending_payment ?? "0");
-          setLastMonthCash(lastmonthdata.data.returns_01.cash_payment ?? "0");
+        if (returns_response.status && returns_response.data) {
+          const isQuarterlyFiling =
+            returns_response.data.dvat04?.frequencyFilings === "QUARTERLY";
+
+          if (isQuarterlyFiling) {
+            // For quarterly filing, fetch the last month of the previous quarter
+            const currentQuarter = getQuarterForMonth(month);
+            const quarterMonthsMap: Record<Quarter, string> = {
+              QUARTER1: "March",
+              QUARTER2: "June",
+              QUARTER3: "September",
+              QUARTER4: "December",
+            };
+            lastMonth = quarterMonthsMap[currentQuarter!];
+
+            // If fetching March and current year starts in April, year stays same
+            // If fetching December and current month is Jan-Mar, year decreases
+            if (
+              lastMonth === "December" &&
+              ["January", "February", "March"].includes(month)
+            ) {
+              fetchYear = (parseInt(year) - 1).toString();
+            }
+          } else {
+            // For monthly filing, fetch the previous month
+            const lastMonthIndex = (currentMonthIndex - 1 + 12) % 12;
+            lastMonth = monthNames[lastMonthIndex];
+
+            if (month === "January") {
+              fetchYear = (parseInt(year) - 1).toString();
+            }
+          }
+
+          const lastmonthdata = await getPdfReturn({
+            year: fetchYear,
+            month: lastMonth,
+          });
+
+          if (lastmonthdata.status && lastmonthdata.data) {
+            setLastMonthDue(
+              lastmonthdata.data.returns_01.pending_payment ?? "0",
+            );
+            setLastMonthCash(lastmonthdata.data.returns_01.cash_payment ?? "0");
+          }
         }
       }
     };

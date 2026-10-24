@@ -8,7 +8,7 @@ import {
   get28thDate,
 } from "@/utils/methods";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import {
   AntDesignCheckOutlined,
   CarbonWarningSquare,
@@ -29,6 +29,8 @@ import getCurrentFyAnnualTurnover from "@/action/return/getcurrentfyannualturnov
 import getCurrentFyTaxLiability from "@/action/return/getcurrentfytaxliability";
 import { getCurrentUserId } from "@/lib/auth";
 import GetUser from "@/action/user/getuser";
+import { toast } from "react-toastify";
+import adminQuickLogin from "@/action/auth/adminquicklogin";
 
 enum Status {
   INACTIVE,
@@ -65,6 +67,7 @@ const ShopView = () => {
   );
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdminLoggingIn, setIsAdminLoggingIn] = useState(false);
 
   const [user, setUser] = useState<user | null>();
   const [dvatData, setDvatData] = useState<dvat04 | null>(null);
@@ -102,8 +105,6 @@ const ShopView = () => {
     "November",
     "December",
   ];
-
-
 
   const setRentMonthDetails = async (
     value: Array<return_filing & { dvat: dvat04 }>,
@@ -181,6 +182,40 @@ const ShopView = () => {
     }
 
     setRetuirnsDetails(monthdetails);
+  };
+
+  const handleAdminQuickLogin = async () => {
+    setIsAdminLoggingIn(true);
+    try {
+      if (!dvatData) {
+        toast.error("DVAT data not found");
+        setIsAdminLoggingIn(false);
+        return;
+      }
+
+      const loginResponse = await adminQuickLogin({
+        dvatId: dvatData.id,
+      });
+      if (!loginResponse.status) {
+        toast.error(loginResponse.message);
+        setIsAdminLoggingIn(false);
+        return;
+      }
+
+      toast.success("Admin quick login successful");
+      
+      // Clear browser history to prevent back button access
+      // This replaces all history entries so back button won't work
+      setTimeout(() => {
+        // Replace current history state
+        window.history.replaceState(null, "", window.location.href);
+        // Clear all previous history by going to dashboard
+        window.location.href = "/dashboard";
+      }, 500);
+    } catch (error) {
+      toast.error("An error occurred during admin login");
+      setIsAdminLoggingIn(false);
+    }
   };
 
   useEffect(() => {
@@ -265,7 +300,20 @@ const ShopView = () => {
             </p>
             <div className="grow"></div>
 
-            {["VATOFFICER", "VATOFFICER_DNH"].includes(user?.role ?? ``) && (
+            {["ADMIN"].includes(user?.role ?? ``) && (
+              <Button 
+                size="small" 
+                type="primary" 
+                onClick={handleAdminQuickLogin}
+                loading={isAdminLoggingIn}
+              >
+                {isAdminLoggingIn ? "Logging in..." : "Admin Login"}
+              </Button>
+            )}
+
+            {["VATOFFICER", "VATOFFICER_DNH", "ADMIN"].includes(
+              user?.role ?? ``,
+            ) && (
               <Button
                 size="small"
                 type="primary"
@@ -404,7 +452,9 @@ const ShopView = () => {
             >
               Challans
             </Button>
-            {["VATOFFICER", "VATOFFICER_DNH"].includes(user?.role ?? ``) && (
+            {["VATOFFICER", "VATOFFICER_DNH", "ADMIN"].includes(
+              user?.role ?? ``,
+            ) && (
               <Button
                 size="small"
                 type="primary"
