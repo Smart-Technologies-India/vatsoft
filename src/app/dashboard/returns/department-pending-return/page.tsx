@@ -23,7 +23,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { Dayjs } from "dayjs";
 
-import { dvat04, user } from "@prisma/client";
+import { dvat04, SelectOffice, user } from "@prisma/client";
 import DeptPendingReturn from "@/action/dvat/deptpendingreturn";
 import CreateDvat10 from "@/action/notice_order/createdvat10";
 import GetReturnMonth from "@/action/dvat/getreturnmonth";
@@ -163,6 +163,13 @@ const TrackAppliation = () => {
     setSearchDate(dates);
   };
 
+  const getDeptValue = (): SelectOffice | "ALL" => {
+    if (user?.role === "ADMIN") {
+      return "ALL";
+    }
+    return user?.selectOffice ?? "DIU";
+  };
+
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
   const [noticeLoading, setNoticeLoading] = useState<number | null>(null);
 
@@ -190,8 +197,12 @@ const TrackAppliation = () => {
     setPeriodMonth(null);
     if (userrespone.status && userrespone.data) {
       setUpser(userrespone.data);
+      const dept =
+        userrespone.data.role === "ADMIN"
+          ? undefined
+          : userrespone.data.selectOffice!;
       const payment_data = await DeptPendingReturn({
-        dept: userrespone.data.selectOffice!,
+        dept,
         take: 10,
         skip: 0,
       });
@@ -230,7 +241,10 @@ const TrackAppliation = () => {
         setUpser(userrespone.data);
 
         const payment_data = await DeptPendingReturn({
-          dept: userrespone.data.selectOffice!,
+          dept:
+            userrespone.data.role === "ADMIN"
+              ? undefined
+              : userrespone.data.selectOffice!,
           take: 10,
           skip: 0,
         });
@@ -264,7 +278,7 @@ const TrackAppliation = () => {
     }
     const search_response = await DeptPendingReturn({
       arnnumber: arnRef.current?.input?.value,
-      dept: user.selectOffice ?? "DIU",
+      dept: getDeptValue(),
       take: 10,
       skip: 0,
     });
@@ -288,7 +302,7 @@ const TrackAppliation = () => {
     }
 
     const search_response = await DeptPendingReturn({
-      dept: user.selectOffice ?? "DIU",
+      dept: getDeptValue(),
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
       take: 10,
@@ -316,7 +330,7 @@ const TrackAppliation = () => {
       return toast.error("Enter TIN Number");
     }
     const search_response = await DeptPendingReturn({
-      dept: user?.selectOffice ?? "DIU",
+      dept: getDeptValue(),
       tradename: nameRef.current?.input?.value,
       take: 10,
       skip: 0,
@@ -339,7 +353,7 @@ const TrackAppliation = () => {
       return toast.error("Select a Frequency Filings option");
     }
     const search_response = await DeptPendingReturn({
-      dept: user?.selectOffice ?? "DIU",
+      dept: getDeptValue(),
       frequencyFilings: frequencyFilingsFilter,
       take: 10,
       skip: 0,
@@ -362,7 +376,7 @@ const TrackAppliation = () => {
       return toast.error("Select a Composition option");
     }
     const search_response = await DeptPendingReturn({
-      dept: user?.selectOffice ?? "DIU",
+      dept: getDeptValue(),
       compositionScheme: compositionFilter === "true",
       take: 10,
       skip: 0,
@@ -386,7 +400,7 @@ const TrackAppliation = () => {
     }
 
     const search_response = await DeptPendingReturn({
-      dept: user?.selectOffice ?? "DIU",
+      dept: getDeptValue(),
       month: periodMonth,
       year: periodYear,
       take: 10,
@@ -411,7 +425,7 @@ const TrackAppliation = () => {
     }
 
     const search_response = await DeptPendingReturn({
-      dept: user?.selectOffice ?? "DIU",
+      dept: getDeptValue(),
       commodity: commodityFilter,
       take: 10,
       skip: 0,
@@ -440,7 +454,7 @@ const TrackAppliation = () => {
 
       // Build search parameters based on current search
       const searchParams: any = {
-        dept: user?.selectOffice,
+        dept: getDeptValue(),
       };
 
       if (isSearch) {
@@ -630,7 +644,7 @@ const TrackAppliation = () => {
           return toast.error("Enter arn number");
         }
         const search_response = await DeptPendingReturn({
-          dept: user.selectOffice ?? "DIU",
+          dept: getDeptValue(),
           arnnumber: arnRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -654,7 +668,7 @@ const TrackAppliation = () => {
           return toast.error("Enter TIN Number");
         }
         const search_response = await DeptPendingReturn({
-          dept: user.selectOffice ?? "DIU",
+          dept: getDeptValue(),
           tradename: nameRef.current?.input?.value,
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -674,7 +688,7 @@ const TrackAppliation = () => {
           return toast.error("Select a Composition option");
         }
         const search_response = await DeptPendingReturn({
-          dept: user.selectOffice ?? "DIU",
+          dept: getDeptValue(),
           compositionScheme: compositionFilter === "true",
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -694,7 +708,7 @@ const TrackAppliation = () => {
           return toast.error("Select a Frequency Filings option");
         }
         const search_response = await DeptPendingReturn({
-          dept: user.selectOffice ?? "DIU",
+          dept: getDeptValue(),
           frequencyFilings: frequencyFilingsFilter,
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -714,7 +728,7 @@ const TrackAppliation = () => {
           return toast.error("Select year and month");
         }
         const search_response = await DeptPendingReturn({
-          dept: user.selectOffice ?? "DIU",
+          dept: getDeptValue(),
           month: periodMonth,
           year: periodYear,
           take: pagesize,
@@ -735,7 +749,7 @@ const TrackAppliation = () => {
           return toast.error("Select a commodity");
         }
         const search_response = await DeptPendingReturn({
-          dept: user.selectOffice ?? "DIU",
+          dept: getDeptValue(),
           commodity: commodityFilter,
           take: pagesize,
           skip: pagesize * (page - 1),
@@ -752,7 +766,7 @@ const TrackAppliation = () => {
         }
       } else {
         const payment_data = await DeptPendingReturn({
-          dept: user.selectOffice ?? "DIU",
+          dept: getDeptValue(),
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -767,7 +781,7 @@ const TrackAppliation = () => {
       }
     } else {
       const payment_data = await DeptPendingReturn({
-        dept: user.selectOffice ?? "DIU",
+        dept: getDeptValue(),
         take: pagesize,
         skip: pagesize * (page - 1),
       });

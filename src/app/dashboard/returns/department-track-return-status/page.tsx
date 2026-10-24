@@ -14,7 +14,7 @@ import { Radio, DatePicker } from "antd";
 import { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 import type { Dayjs } from "dayjs";
-import { dvat04, returns_01, user } from "@prisma/client";
+import { dvat04, returns_01, SelectOffice, user } from "@prisma/client";
 import { capitalcase, encryptURLData, formateDate } from "@/utils/methods";
 import Link from "next/link";
 import SearchReturnPayment from "@/action/return/searchreturnpayment";
@@ -66,6 +66,13 @@ const TrackAppliation = () => {
     dateStrings: [string, string],
   ) => {
     setSearchDate(dates);
+  };
+
+  const getDeptValue = (): SelectOffice | "ALL" | undefined => {
+    if (user?.role === "ADMIN") {
+      return "ALL";
+    }
+    return user?.selectOffice ?? undefined;
   };
 
   const [periodYear, setPeriodYear] = useState<string | null>(null);
@@ -145,8 +152,12 @@ const TrackAppliation = () => {
       const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
         setUpser(userrespone.data);
+        const dept =
+          userrespone.data.role === "ADMIN"
+            ? undefined
+            : userrespone.data.selectOffice!;
         const payment_data = await SearchReturnPayment({
-          dept: userrespone.data.selectOffice!,
+          dept,
           take: 10,
           skip: 0,
         });
@@ -209,9 +220,12 @@ const TrackAppliation = () => {
     }
   };
 
-  const getGroundedMonth = (quarter: number | string | null | undefined): string => {
+  const getGroundedMonth = (
+    quarter: number | string | null | undefined,
+  ): string => {
     if (!quarter) return "";
-    const quarterNum = typeof quarter === "string" ? parseInt(quarter, 10) : quarter;
+    const quarterNum =
+      typeof quarter === "string" ? parseInt(quarter, 10) : quarter;
     switch (quarterNum) {
       case 1:
         return "January";
@@ -279,7 +293,7 @@ const TrackAppliation = () => {
     setPeriodYear(null);
     setPeriodMonth(null);
     const payment_data = await SearchReturnPayment({
-      dept: user?.selectOffice!,
+      dept: getDeptValue(),
       take: 10,
       skip: 0,
     });
@@ -305,7 +319,7 @@ const TrackAppliation = () => {
     }
     const search_response = await SearchReturnPayment({
       rr_number: arnRef.current?.input?.value,
-      dept: user?.selectOffice!,
+      dept: getDeptValue(),
       take: 10,
       skip: 0,
     });
@@ -328,7 +342,7 @@ const TrackAppliation = () => {
     const search_response = await SearchReturnPayment({
       fromdate: searchDate[0]?.toDate(),
       todate: searchDate[1]?.toDate(),
-      dept: user?.selectOffice!,
+      dept: getDeptValue(),
       take: 10,
       skip: 0,
     });
@@ -353,7 +367,7 @@ const TrackAppliation = () => {
     }
     const search_response = await SearchReturnPayment({
       tin: tinRef.current?.input?.value,
-      dept: user?.selectOffice!,
+      dept: getDeptValue(),
       take: 10,
       skip: 0,
     });
@@ -377,7 +391,7 @@ const TrackAppliation = () => {
     }
     const search_response = await SearchReturnPayment({
       trade: tradeRef.current?.input?.value,
-      dept: user?.selectOffice!,
+      dept: getDeptValue(),
       take: 10,
       skip: 0,
     });
@@ -398,7 +412,7 @@ const TrackAppliation = () => {
     }
 
     const search_response = await SearchReturnPayment({
-      dept: user?.selectOffice!,
+      dept: getDeptValue(),
       month: periodMonth,
       year: periodYear,
       take: 10,
@@ -427,7 +441,7 @@ const TrackAppliation = () => {
         }
         const search_response = await SearchReturnPayment({
           rr_number: arnRef.current?.input?.value,
-          dept: user?.selectOffice!,
+          dept: getDeptValue(),
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -449,7 +463,7 @@ const TrackAppliation = () => {
         const search_response = await SearchReturnPayment({
           fromdate: searchDate[0]?.toDate(),
           todate: searchDate[1]?.toDate(),
-          dept: user?.selectOffice!,
+          dept: getDeptValue(),
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -473,7 +487,7 @@ const TrackAppliation = () => {
         }
         const search_response = await SearchReturnPayment({
           tin: tinRef.current?.input?.value,
-          dept: user?.selectOffice!,
+          dept: getDeptValue(),
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -497,7 +511,7 @@ const TrackAppliation = () => {
         }
         const search_response = await SearchReturnPayment({
           trade: tradeRef.current?.input?.value,
-          dept: user?.selectOffice!,
+          dept: getDeptValue(),
           take: pagesize,
           skip: pagesize * (page - 1),
         });
@@ -514,7 +528,7 @@ const TrackAppliation = () => {
       }
     } else {
       const payment_data = await SearchReturnPayment({
-        dept: user?.selectOffice!,
+        dept: getDeptValue(),
         take: pagesize,
         skip: pagesize * (page - 1),
       });
@@ -539,7 +553,7 @@ const TrackAppliation = () => {
 
       // Build search parameters based on current search
       const searchParams: any = {
-        dept: user?.selectOffice,
+        dept: getDeptValue(),
       };
 
       if (isSearch) {
@@ -639,7 +653,10 @@ const TrackAppliation = () => {
       worksheet["!cols"] = columnWidths;
 
       // Download file
-      XLSX.writeFile(workbook, `Return_Status_${(ServerTime().data as Date).getTime()}.xlsx`);
+      XLSX.writeFile(
+        workbook,
+        `Return_Status_${(ServerTime().data as Date).getTime()}.xlsx`,
+      );
 
       toast.dismiss();
       toast.success(

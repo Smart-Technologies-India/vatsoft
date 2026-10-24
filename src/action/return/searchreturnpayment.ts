@@ -17,7 +17,7 @@ interface SearchReturnPaymentPayload {
   trade?: string;
   month?: string;
   year?: string;
-  dept: SelectOffice;
+  dept?: SelectOffice | "ALL";
   skip: number;
   take: number;
 }
@@ -55,7 +55,8 @@ const SearchReturnPayment = async (
           deletedAt: null,
           deletedById: null,
           dvat04: {
-            selectOffice: payload.dept,
+            ...(payload.dept &&
+              payload.dept !== "ALL" && { selectOffice: payload.dept }),
             ...(payload.tin && { tinNumber: payload.tin }),
             ...(payload.trade && {
               tradename: {
@@ -72,10 +73,11 @@ const SearchReturnPayment = async (
                 lte: payload.todate,
               },
             }),
-          ...(payload.month && payload.year && {
-            month: payload.month,
-            year: payload.year,
-          }),
+          ...(payload.month &&
+            payload.year && {
+              month: payload.month,
+              year: payload.year,
+            }),
         },
         include: {
           dvat04: true,
@@ -96,7 +98,8 @@ const SearchReturnPayment = async (
           deletedAt: null,
           deletedById: null,
           dvat04: {
-            selectOffice: payload.dept,
+            ...(payload.dept &&
+              payload.dept !== "ALL" && { selectOffice: payload.dept }),
             ...(payload.tin && { tinNumber: payload.tin }),
             ...(payload.trade && {
               tradename: {
@@ -113,10 +116,11 @@ const SearchReturnPayment = async (
                 lte: payload.todate,
               },
             }),
-          ...(payload.month && payload.year && {
-            month: payload.month,
-            year: payload.year,
-          }),
+          ...(payload.month &&
+            payload.year && {
+              month: payload.month,
+              year: payload.year,
+            }),
         },
       }),
     ]);

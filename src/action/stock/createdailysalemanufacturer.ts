@@ -175,6 +175,10 @@ const CreateDailySaleManufacturer = async (
           is_local:
             purchaser_response.tin_number.startsWith("25") ||
             purchaser_response.tin_number.startsWith("26"),
+          is_accept: !(
+            purchaser_response.tin_number.startsWith("25") ||
+            purchaser_response.tin_number.startsWith("26")
+          ),
         },
         include: {
           seller_tin_number: true,

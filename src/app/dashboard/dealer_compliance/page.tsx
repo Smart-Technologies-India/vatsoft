@@ -56,7 +56,7 @@ const TrackAppliation = () => {
   }
 
   const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.TIN
+    SearchOption.TIN,
   );
 
   const onChange = (e: RadioChangeEvent) => {
@@ -66,13 +66,13 @@ const TrackAppliation = () => {
   const arnRef = useRef<InputRef>(null);
   const nameRef = useRef<InputRef>(null);
 
-  const [searchDate, setSearchDate] = useState<
-    [Dayjs | null, Dayjs | null] | null
-  >(null);
+  // const [searchDate, setSearchDate] = useState<
+  //   [Dayjs | null, Dayjs | null] | null
+  // >(null);
 
   const [dvatData, setDvatData] = useState<Array<ResponseType>>([]);
 
-  const [user, setUpser] = useState<user | null>(null);
+  const [user, setUser] = useState<user | null>(null);
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 
   const applySearchResponse = (
@@ -91,7 +91,8 @@ const TrackAppliation = () => {
     skip: number = 0,
     take: number = pagination.take,
   ) => {
-    const dept = user?.selectOffice ?? undefined;
+    const dept =
+      user?.role === "ADMIN" ? "ALL" : (user?.selectOffice ?? undefined);
 
     const searchResponse = await SearchDeptPendingReturn({
       ...searchPayload,
@@ -113,16 +114,20 @@ const TrackAppliation = () => {
   const init = async () => {
     const userrespone = await GetUser({ id: userid });
     if (userrespone.status && userrespone.data) {
-      setUpser(userrespone.data);
+      setUser(userrespone.data);
+      const dept =
+        userrespone.data.role === "ADMIN"
+          ? undefined
+          : userrespone.data.selectOffice!;
       const payment_data = await DeptPendingReturn({
-        dept: userrespone.data.selectOffice!,
+        dept,
         take: 10,
         skip: 0,
       });
 
       if (payment_data.status && payment_data.data.result) {
         const sortedData = payment_data.data.result.sort(
-          (a: ResponseType, b: ResponseType) => b.pending - a.pending
+          (a: ResponseType, b: ResponseType) => b.pending - a.pending,
         );
         setPaginatin({
           skip: payment_data.data.skip,
@@ -148,16 +153,20 @@ const TrackAppliation = () => {
 
       const userrespone = await GetUser({ id: authResponse.data });
       if (userrespone.status && userrespone.data) {
-        setUpser(userrespone.data);
+        setUser(userrespone.data);
+        const dept =
+          userrespone.data.role === "ADMIN"
+            ? undefined
+            : userrespone.data.selectOffice!;
         const payment_data = await DeptPendingReturn({
-          dept: userrespone.data.selectOffice!,
+          dept,
           take: 10,
           skip: 0,
         });
 
         if (payment_data.status && payment_data.data.result) {
           const sortedData = payment_data.data.result.sort(
-            (a: ResponseType, b: ResponseType) => b.pending - a.pending
+            (a: ResponseType, b: ResponseType) => b.pending - a.pending,
           );
           setDvatData(sortedData);
           setPaginatin({
@@ -231,17 +240,6 @@ const TrackAppliation = () => {
     });
   };
 
-  const datesearch = async () => {
-    if (searchDate == null || searchDate.length <= 1) {
-      return toast.error("Select state date and end date");
-    }
-
-    await runSearch({
-      fromdate: searchDate[0]?.toDate(),
-      todate: searchDate[1]?.toDate(),
-    });
-  };
-
   const namesearch = async () => {
     if (
       nameRef.current?.input?.value == undefined ||
@@ -266,7 +264,7 @@ const TrackAppliation = () => {
         }
         await runSearch(
           {
-          arnnumber: arnRef.current?.input?.value,
+            arnnumber: arnRef.current?.input?.value,
           },
           pagesize * (page - 1),
           pagesize,
@@ -281,7 +279,7 @@ const TrackAppliation = () => {
         }
         await runSearch(
           {
-          tradename: nameRef.current?.input?.value,
+            tradename: nameRef.current?.input?.value,
           },
           pagesize * (page - 1),
           pagesize,
@@ -341,7 +339,8 @@ const TrackAppliation = () => {
                 </TableCell>
                 <TableCell className="text-left p-3 border text-sm text-gray-600">
                   Notice for seeking clarification issued by officer. File
-                  Clarification within 7 working days of date of notice on portal.
+                  Clarification within 7 working days of date of notice on
+                  portal.
                 </TableCell>
               </TableRow>
               <TableRow className="hover:bg-gray-50">
@@ -349,8 +348,8 @@ const TrackAppliation = () => {
                   Clarification filed-Pending for Order
                 </TableCell>
                 <TableCell className="text-left p-3 border text-sm text-gray-600">
-                  Clarification filed successfully by Applicant. Pending with Tax
-                  Officer for Order.*
+                  Clarification filed successfully by Applicant. Pending with
+                  Tax Officer for Order.*
                 </TableCell>
               </TableRow>
               <TableRow className="hover:bg-gray-50">
@@ -367,8 +366,8 @@ const TrackAppliation = () => {
                   Approved
                 </TableCell>
                 <TableCell className="text-left p-3 border text-sm text-gray-600">
-                  Application is Approved. Registration ID and password emailed to
-                  Applicant.
+                  Application is Approved. Registration ID and password emailed
+                  to Applicant.
                 </TableCell>
               </TableRow>
               <TableRow className="hover:bg-gray-50">
@@ -514,7 +513,10 @@ const TrackAppliation = () => {
                 <TableBody>
                   {dvatData.map((val: ResponseType, index: number) => {
                     return (
-                      <TableRow key={index} className="hover:bg-gray-50 border-b">
+                      <TableRow
+                        key={index}
+                        className="hover:bg-gray-50 border-b"
+                      >
                         <TableCell className="text-center p-3 text-sm font-medium text-gray-900">
                           {val.dvat04.tinNumber}
                         </TableCell>
@@ -541,8 +543,8 @@ const TrackAppliation = () => {
                               val.pending > 5
                                 ? "bg-red-100 text-red-700"
                                 : val.pending > 2
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-emerald-100 text-emerald-700"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-emerald-100 text-emerald-700"
                             }`}
                           >
                             {val.pending}
@@ -555,8 +557,8 @@ const TrackAppliation = () => {
                             onClick={() => {
                               router.push(
                                 `/dashboard/returns/department-pending-return/${encryptURLData(
-                                  val.dvat04.id.toString()
-                                )}`
+                                  val.dvat04.id.toString(),
+                                )}`,
                               );
                             }}
                           >
