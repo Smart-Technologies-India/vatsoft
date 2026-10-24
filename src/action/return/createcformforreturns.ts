@@ -93,7 +93,7 @@ const CreateCFormForReturns = async (): Promise<
       groupedBySellerAndPeriod.get(key)!.push(entry);
     });
 
-    // Validate that all three months of each quarter are filed
+    // Validate that all three months of the quarter have filed returns, and at least one has entries
     const validQuarterGroups = new Map<
       string,
       (typeof returnsWithoutCForm)[0][]
@@ -105,45 +105,67 @@ const CreateCFormForReturns = async (): Promise<
       const year = firstEntry.returns_01.year;
       const sellerId = firstEntry.seller_tin_numberId;
 
-      // Check if all three months of the quarter have at least one UNPROCESSED entry (without cform_returns)
-      let allMonthsHaveUnprocessedEntries = true;
+      // Step 1: Check if ALL three months of the quarter have FILED returns (status = "PAID")
+      let allMonthsHaveFiledReturns = true;
 
       for (const month of monthGroup) {
-        const monthHasEntry = await prisma.returns_entry.findFirst({
+        const filedReturn = await prisma.returns_01.findFirst({
           where: {
+            dvat04Id: currentDvatId,
             deletedAt: null,
             deletedById: null,
-            status: "ACTIVE",
-            seller_tin_numberId: sellerId,
-            cfrom_returns: {
-              none: {}, // Must NOT have a cform_returns record
-            },
-            returns_01: {
-              dvat04Id: currentDvatId,
-              deletedAt: null,
-              deletedById: null,
-              status: "PAID",
-              year: year,
-              month: month,
-            },
-            dvat_type: "DVAT_30_A",
-            category_of_entry: "INVOICE",
-            purchase_type: "FORMC_CONCESSION",
+            status: "PAID", // Return must be filed/paid
+            year: year,
+            month: month,
           },
         });
 
-        if (!monthHasEntry) {
-          // This month doesn't have any unprocessed entries
-          allMonthsHaveUnprocessedEntries = false;
+        if (!filedReturn) {
+          allMonthsHaveFiledReturns = false;
           break;
         }
       }
 
-      if (allMonthsHaveUnprocessedEntries) {
-        // All three months have unprocessed entries - C-Form can be created
-        validQuarterGroups.set(key, entries);
+      // Step 2: If all three months have filed returns, check if at least one has C-Form entries
+      if (allMonthsHaveFiledReturns) {
+        let hasAtLeastOneEntry = false;
+
+        for (const month of monthGroup) {
+          const monthHasEntry = await prisma.returns_entry.findFirst({
+            where: {
+              deletedAt: null,
+              deletedById: null,
+              status: "ACTIVE",
+              seller_tin_numberId: sellerId,
+              cfrom_returns: {
+                none: {}, // Must NOT have a cform_returns record
+              },
+              returns_01: {
+                dvat04Id: currentDvatId,
+                deletedAt: null,
+                deletedById: null,
+                status: "PAID",
+                year: year,
+                month: month,
+              },
+              dvat_type: "DVAT_30_A",
+              category_of_entry: "INVOICE",
+              purchase_type: "FORMC_CONCESSION",
+            },
+          });
+
+          if (monthHasEntry) {
+            hasAtLeastOneEntry = true;
+            break;
+          }
+        }
+
+        if (hasAtLeastOneEntry) {
+          // All three months are filed AND at least one has C-Form entries - C-Form can be created
+          validQuarterGroups.set(key, entries);
+        }
       }
-    };
+    }
 
     const result: CreateCFormForReturnsResponse = {
       created: 0,
@@ -153,18 +175,19 @@ const CreateCFormForReturns = async (): Promise<
 
     let cformSrNoCounter = 0;
 
-    // Create C-Forms only for quarters where all three months are filed
+    console.log("Valid quarter groups:", validQuarterGroups);
+    // Create C-Forms for quarters where all three months are filed AND at least one has entries
     for (const [, entries] of validQuarterGroups) {
       const firstEntry = entries[0];
       const returns01 = firstEntry.returns_01;
       const sellerTin = firstEntry.seller_tin_number;
 
       // Check if a cform already exists for this seller and quarter period
-      const monthGroup = getMonthGroup(returns01.month ?? "");
       const quarterDates = getQuarterDates(
         returns01.year,
         returns01.month ?? "",
       );
+      console.log("Quarter Dates:", quarterDates);
       const certdate = returns01.dvat04?.certificateDate || new Date();
 
       const existingCForm = await prisma.cform.findFirst({
@@ -196,6 +219,7 @@ const CreateCFormForReturns = async (): Promise<
         );
         const office = returns01.dvat04?.selectOffice || "Dadra_Nagar_Haveli";
 
+        console.log(quarterDates);
         const lastcform = await prisma.cform.findFirst({
           where: {
             deletedAt: null,
