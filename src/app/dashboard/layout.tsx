@@ -17,6 +17,7 @@ export default function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -26,9 +27,8 @@ export default function DashboardLayout({
   const [dvat, setDvat] = useState<dvat04 | null>(null);
   const [isLoading, setLoading] = useState<boolean>(true);
 
-  const [isbluck, setBluck] = useState<boolean>(
-    searchParams.get("sidebar") == "no" ? true : false,
-  );
+  const isbluck = searchParams.get("sidebar") == "no" ? true : false;
+
   const path = usePathname();
   const init = async () => {
     setLoading(true);

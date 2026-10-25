@@ -254,7 +254,9 @@ const TallySalePage = () => {
         statusText: "Conversion completed successfully.",
       });
 
-      toast.success(`Successfully accepted and converted ${ids.length} record(s).`);
+      toast.success(
+        `Successfully accepted and converted ${ids.length} record(s).`,
+      );
       await init(dvatdata.id, 0, pagination.take);
       setIsAcceptModalOpen(false);
     } catch (error) {
@@ -380,7 +382,9 @@ const TallySalePage = () => {
         okText="Yes, Accept All"
         cancelText="Cancel"
         cancelButtonProps={{ disabled: isAccepting }}
-        maskClosable={!isAccepting}
+        mask={{
+          closable: !isAccepting,
+        }}
         closable={!isAccepting}
       >
         <p className="text-sm text-slate-600 py-2">
@@ -421,7 +425,9 @@ const TallySalePage = () => {
         cancelText="Cancel"
         okButtonProps={{ danger: true }}
         cancelButtonProps={{ disabled: isDeleting }}
-        maskClosable={!isDeleting}
+        mask={{
+          closable: !isDeleting,
+        }}
         closable={!isDeleting}
       >
         <p className="text-sm text-slate-600 py-2">

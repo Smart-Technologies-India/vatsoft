@@ -1099,7 +1099,6 @@ const DocumentWiseDetails = () => {
       }
     }
 
-
     // Call the GroupAcceptSale action with grouped commodities
     const response = await GroupAcceptSale(
       dvatdata.id,
@@ -1618,7 +1617,9 @@ const DocumentWiseDetails = () => {
           loading: isFinalizingPurchase,
         }}
         cancelButtonProps={{ disabled: isFinalizingPurchase }}
-        maskClosable={!isFinalizingPurchase}
+        mask={{
+          closable: !isFinalizingPurchase,
+        }}
         closable={!isFinalizingPurchase}
         width={600}
       >
@@ -1715,7 +1716,9 @@ const DocumentWiseDetails = () => {
         confirmLoading={isAcceptAllLoading}
         okText="Yes, Accept All"
         cancelText="Cancel"
-        maskClosable={!isAcceptAllLoading}
+        mask={{
+          closable: !isAcceptAllLoading,
+        }}
         keyboard={!isAcceptAllLoading}
         cancelButtonProps={{ disabled: isAcceptAllLoading }}
       >

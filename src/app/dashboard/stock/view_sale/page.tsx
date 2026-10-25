@@ -1538,7 +1538,9 @@ const DocumentWiseDetails = () => {
           loading: isFinalizingSales,
         }}
         cancelButtonProps={{ disabled: isFinalizingSales }}
-        maskClosable={!isFinalizingSales}
+        mask={{
+          closable: !isFinalizingSales,
+        }}
         closable={!isFinalizingSales}
         width={600}
       >

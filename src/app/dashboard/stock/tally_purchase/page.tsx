@@ -40,9 +40,8 @@ const TallyPurchasePage = () => {
     Array<GroupedTallyPurchase>
   >([]);
   const [searchText, setSearchText] = useState("");
-  const [selectedGroup, setSelectedGroup] = useState<GroupedTallyPurchase | null>(
-    null,
-  );
+  const [selectedGroup, setSelectedGroup] =
+    useState<GroupedTallyPurchase | null>(null);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [quantityCount, setQuantityCount] = useState("pcs");
   const [userid, setUserid] = useState<number>(0);
@@ -109,7 +108,9 @@ const TallyPurchasePage = () => {
       ? allTallyPurchase
       : allTallyPurchase.filter((group) => {
           const invoiceNo = group.invoice_number.toLowerCase();
-          const dealer = (group.seller_tin_number.name_of_dealer ?? "").toLowerCase();
+          const dealer = (
+            group.seller_tin_number.name_of_dealer ?? ""
+          ).toLowerCase();
           const tin = (group.seller_tin_number.tin_number ?? "").toLowerCase();
           const invoiceDate = formateDate(group.invoice_date).toLowerCase();
           return (
@@ -248,7 +249,9 @@ const TallyPurchasePage = () => {
         statusText: "Conversion completed successfully.",
       });
 
-      toast.success(`Successfully accepted and converted ${ids.length} record(s).`);
+      toast.success(
+        `Successfully accepted and converted ${ids.length} record(s).`,
+      );
       await init(dvatdata.id, 0, pagination.take);
       setIsAcceptModalOpen(false);
     } catch (error) {
@@ -373,7 +376,9 @@ const TallyPurchasePage = () => {
         okText="Yes, Accept All"
         cancelText="Cancel"
         cancelButtonProps={{ disabled: isAccepting }}
-        maskClosable={!isAccepting}
+        mask={{
+          closable: !isAccepting,
+        }}
         closable={!isAccepting}
       >
         <p className="text-sm text-slate-600 py-2">
@@ -413,7 +418,9 @@ const TallyPurchasePage = () => {
         cancelText="Cancel"
         okButtonProps={{ danger: true }}
         cancelButtonProps={{ disabled: isDeleting }}
-        maskClosable={!isDeleting}
+        mask={{
+          closable: !isDeleting,
+        }}
         closable={!isDeleting}
       >
         <p className="text-sm text-slate-600 py-2">
@@ -443,11 +450,15 @@ const TallyPurchasePage = () => {
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <p className="text-xs text-gray-600">Invoice Number</p>
-                  <p className="font-semibold">{selectedGroup.invoice_number}</p>
+                  <p className="font-semibold">
+                    {selectedGroup.invoice_number}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Invoice Date</p>
-                  <p className="font-semibold">{formateDate(selectedGroup.invoice_date)}</p>
+                  <p className="font-semibold">
+                    {formateDate(selectedGroup.invoice_date)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Seller</p>
@@ -461,8 +472,12 @@ const TallyPurchasePage = () => {
               <Table className="border">
                 <TableHeader>
                   <TableRow className="bg-gray-100">
-                    <TableHead className="border text-center text-xs">Sr. No.</TableHead>
-                    <TableHead className="border text-center text-xs">Product Name</TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Sr. No.
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Product Name
+                    </TableHead>
                     <TableHead className="border text-center text-xs">
                       {quantityCount === "pcs"
                         ? dvatdata?.commodity === "FUEL"
@@ -470,29 +485,45 @@ const TallyPurchasePage = () => {
                           : "Quantity"
                         : "Crate"}
                     </TableHead>
-                    <TableHead className="border text-center text-xs">Invoice Value</TableHead>
-                    <TableHead className="border text-center text-xs">Tax Rate</TableHead>
-                    <TableHead className="border text-center text-xs">VAT Amount</TableHead>
-                    <TableHead className="border text-center text-xs">Taxable Value</TableHead>
-                    <TableHead className="border text-center text-xs">URN</TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Invoice Value
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Tax Rate
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      VAT Amount
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      Taxable Value
+                    </TableHead>
+                    <TableHead className="border text-center text-xs">
+                      URN
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {selectedGroup.records.map((record, idx) => (
                     <TableRow key={idx} className="hover:bg-gray-50">
-                      <TableCell className="p-2 border text-center text-xs">{idx + 1}</TableCell>
+                      <TableCell className="p-2 border text-center text-xs">
+                        {idx + 1}
+                      </TableCell>
                       <TableCell className="p-2 border text-left text-xs">
                         {record.commodity_master.product_name}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         {quantityCount === "pcs"
                           ? record.quantity
-                          : showCrates(record.quantity, record.commodity_master.crate_size)}
+                          : showCrates(
+                              record.quantity,
+                              record.commodity_master.crate_size,
+                            )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
                         ₹
                         {formatIndianCurrency(
-                          parseFloat(record.amount) + parseFloat(record.vatamount),
+                          parseFloat(record.amount) +
+                            parseFloat(record.vatamount),
                         )}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-xs">
@@ -516,15 +547,21 @@ const TallyPurchasePage = () => {
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <p className="text-xs text-gray-600">Total Taxable Value</p>
-                  <p className="font-semibold">₹{formatIndianCurrency(selectedGroup.totalTaxableValue)}</p>
+                  <p className="font-semibold">
+                    ₹{formatIndianCurrency(selectedGroup.totalTaxableValue)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Total VAT Amount</p>
-                  <p className="font-semibold">₹{formatIndianCurrency(selectedGroup.totalVatAmount)}</p>
+                  <p className="font-semibold">
+                    ₹{formatIndianCurrency(selectedGroup.totalVatAmount)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Total Invoice Value</p>
-                  <p className="font-semibold">₹{formatIndianCurrency(selectedGroup.totalInvoiceValue)}</p>
+                  <p className="font-semibold">
+                    ₹{formatIndianCurrency(selectedGroup.totalInvoiceValue)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -537,7 +574,9 @@ const TallyPurchasePage = () => {
           <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
             <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
               <div>
-                <h1 className="text-lg font-medium text-gray-900">Tally Purchase Records</h1>
+                <h1 className="text-lg font-medium text-gray-900">
+                  Tally Purchase Records
+                </h1>
               </div>
               <div className="grow" />
               <div className="flex flex-wrap gap-2 items-center">
@@ -582,7 +621,9 @@ const TallyPurchasePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
-              <p className="text-lg font-medium text-gray-900">{summary.totalInvoices}</p>
+              <p className="text-lg font-medium text-gray-900">
+                {summary.totalInvoices}
+              </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Invoice Value</p>
@@ -610,94 +651,129 @@ const TallyPurchasePage = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50 border-b">
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">Count</TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">Invoice No.</TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">Invoice Date</TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">Trade Name</TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">TIN Number</TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">Invoice Value (₹)</TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">VAT Amount</TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">Taxable Value (₹)</TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">Status</TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">Actions</TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Count
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Invoice No.
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Invoice Date
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Trade Name
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        TIN Number
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Invoice Value (₹)
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        VAT Amount
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Taxable Value (₹)
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Status
+                      </TableHead>
+                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedTallyPurchase.map((group: GroupedTallyPurchase, index: number) => (
-                      <TableRow key={index} className="border-b hover:bg-gray-50">
-                        <TableCell className="p-2 text-center text-xs">
-                          {group.count > 1 ? (
-                            <button
-                              onClick={() => {
-                                setSelectedGroup(group);
-                                setIsGroupModalOpen(true);
-                              }}
-                              className="text-blue-600 hover:text-blue-800 underline"
-                            >
-                              {group.count} items
-                            </button>
-                          ) : (
-                            <span>{group.count}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">{group.invoice_number}</TableCell>
-                        <TableCell className="p-2 text-center text-xs">{formateDate(group.invoice_date)}</TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {group.seller_tin_number.name_of_dealer}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {group.seller_tin_number.tin_number}
-                        </TableCell>
-                        <TableCell className="p-2 text-center text-xs">₹{formatIndianCurrency(group.totalInvoiceValue)}</TableCell>
-                        <TableCell className="p-2 text-center text-xs">₹{formatIndianCurrency(group.totalVatAmount)}</TableCell>
-                        <TableCell className="p-2 text-center text-xs">₹{formatIndianCurrency(group.totalTaxableValue)}</TableCell>
-                        <TableCell className="p-2 text-center text-xs">
-                          {group.records.every((r) => r.is_accept) ? (
-                            <span className="inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
-                              Converted
-                            </span>
-                          ) : (
-                            <span className="inline-block px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">
-                              Pending
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="p-2 text-center">
-                          <div className="flex gap-1 justify-center">
-                            <button
-                              onClick={() => {
-                                setSelectedGroup(group);
-                                setIsGroupModalOpen(true);
-                              }}
-                              className="text-sm bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded"
-                            >
-                              View
-                            </button>
-                            {!group.records.every((r) => r.is_accept) && (
+                    {paginatedTallyPurchase.map(
+                      (group: GroupedTallyPurchase, index: number) => (
+                        <TableRow
+                          key={index}
+                          className="border-b hover:bg-gray-50"
+                        >
+                          <TableCell className="p-2 text-center text-xs">
+                            {group.count > 1 ? (
                               <button
-                                onClick={() => handleAcceptGroup(group)}
-                                disabled={acceptingGroupIndex !== null}
-                                className="text-sm bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white py-1 px-3 rounded"
+                                onClick={() => {
+                                  setSelectedGroup(group);
+                                  setIsGroupModalOpen(true);
+                                }}
+                                className="text-blue-600 hover:text-blue-800 underline"
                               >
-                                {acceptingGroupIndex === index
-                                  ? "Accepting..."
-                                  : "Accept"}
+                                {group.count} items
                               </button>
+                            ) : (
+                              <span>{group.count}</span>
                             )}
-                            <button
-                              onClick={() => {
-                                setSelectedGroup(group);
-                                handleDeleteGroup(group);
-                              }}
-                              disabled={isDeleting}
-                              className="text-sm bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white py-1 px-3 rounded"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {group.invoice_number}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {formateDate(group.invoice_date)}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {group.seller_tin_number.name_of_dealer}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {group.seller_tin_number.tin_number}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            ₹{formatIndianCurrency(group.totalInvoiceValue)}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            ₹{formatIndianCurrency(group.totalVatAmount)}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            ₹{formatIndianCurrency(group.totalTaxableValue)}
+                          </TableCell>
+                          <TableCell className="p-2 text-center text-xs">
+                            {group.records.every((r) => r.is_accept) ? (
+                              <span className="inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                                Converted
+                              </span>
+                            ) : (
+                              <span className="inline-block px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">
+                                Pending
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="p-2 text-center">
+                            <div className="flex gap-1 justify-center">
+                              <button
+                                onClick={() => {
+                                  setSelectedGroup(group);
+                                  setIsGroupModalOpen(true);
+                                }}
+                                className="text-sm bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded"
+                              >
+                                View
+                              </button>
+                              {!group.records.every((r) => r.is_accept) && (
+                                <button
+                                  onClick={() => handleAcceptGroup(group)}
+                                  disabled={acceptingGroupIndex !== null}
+                                  className="text-sm bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white py-1 px-3 rounded"
+                                >
+                                  {acceptingGroupIndex === index
+                                    ? "Accepting..."
+                                    : "Accept"}
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setSelectedGroup(group);
+                                  handleDeleteGroup(group);
+                                }}
+                                disabled={isDeleting}
+                                className="text-sm bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white py-1 px-3 rounded"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ),
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -734,7 +810,9 @@ const TallyPurchasePage = () => {
             </div>
           ) : (
             <div className="bg-white rounded shadow-sm border p-3 text-center">
-              <p className="text-gray-500 text-sm">No tally purchase records found.</p>
+              <p className="text-gray-500 text-sm">
+                No tally purchase records found.
+              </p>
             </div>
           )}
         </div>

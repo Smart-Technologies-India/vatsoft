@@ -203,7 +203,7 @@ const ShopView = () => {
       }
 
       toast.success("Admin quick login successful");
-      
+
       // Clear browser history to prevent back button access
       // This replaces all history entries so back button won't work
       setTimeout(() => {
@@ -301,9 +301,9 @@ const ShopView = () => {
             <div className="grow"></div>
 
             {["ADMIN"].includes(user?.role ?? ``) && (
-              <Button 
-                size="small" 
-                type="primary" 
+              <Button
+                size="small"
+                type="primary"
                 onClick={handleAdminQuickLogin}
                 loading={isAdminLoggingIn}
               >
@@ -553,6 +553,7 @@ const ShopView = () => {
                   returnid={item.returnid}
                   filing_date={item.filing_date}
                   dvat04id={dvat04id}
+                  userRole={user?.role}
                 />
               ))}
             </div>
@@ -574,6 +575,7 @@ interface PropertiesDeatilsProps {
   returnid?: number;
   filing_date?: Date | null;
   dvat04id: number;
+  userRole?: string;
 }
 
 const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
@@ -762,6 +764,20 @@ const PropertiesDeatils = (props: PropertiesDeatilsProps) => {
           <Popover
             content={
               <div className="flex gap-2 flex-col">
+                {["ADMIN"].includes(props.userRole ?? "") && (
+                  <Button
+                    type="primary"
+                    onClick={() =>
+                      router.push(
+                        `/dashboard/returns/returns-dashboard/returns_entry_report/${encryptURLData(
+                          props.dvat04id.toString(),
+                        )}?month=${props.name}&year=${props.year}`,
+                      )
+                    }
+                  >
+                    Returns Entry
+                  </Button>
+                )}
                 <Button
                   type="primary"
                   onClick={() =>
