@@ -1011,42 +1011,56 @@ const DocumentWiseDetails = () => {
     let successCount = 0;
     let failedCount = 0;
 
-    for (const record of pendingRecords) {
-      setAcceptAllProgress((prev) => ({
-        ...prev,
-        currentInvoice: record.invoice_number,
-      }));
+    // Process records in batches of 3 to avoid timeout while keeping sequential ordering
+    const batchSize = 3;
+    for (let i = 0; i < pendingRecords.length; i += batchSize) {
+      const batch = pendingRecords.slice(i, i + batchSize);
+      
+      // Process batch in parallel
+      const results = await Promise.all(
+        batch.map(async (record) => {
+          setAcceptAllProgress((prev) => ({
+            ...prev,
+            currentInvoice: record.invoice_number,
+          }));
 
-      // Convert quantity from pieces to ML for restaurant commodity (1 piece = pack_size ML)
-      const quantityToUse = isRestaurantCommodity
-        ? record.quantity *
-          parseInt(record.commodity_master.pack_size ?? "0", 10)
-        : record.quantity;
+          // Convert quantity from pieces to ML for restaurant commodity (1 piece = pack_size ML)
+          const quantityToUse = isRestaurantCommodity
+            ? record.quantity *
+              parseInt(record.commodity_master.pack_size ?? "0", 10)
+            : record.quantity;
 
-      const response = await AcceptSale({
-        commodityid: record.commodity_master.id,
-        dvatid: dvatdata.id,
-        quantity: quantityToUse,
-        puchaseid: record.id,
-        urn: record.urn_number ?? "",
+          const response = await AcceptSale({
+            commodityid: record.commodity_master.id,
+            dvatid: dvatdata.id,
+            quantity: quantityToUse,
+            puchaseid: record.id,
+            urn: record.urn_number ?? "",
+          });
+
+          return { record, response };
+        })
+      );
+
+      // Process results
+      results.forEach(({ record, response }) => {
+        if (response.status && response.data) {
+          successCount += 1;
+          markRecordAccepted(record.id);
+          setAcceptAllProgress((prev) => ({
+            ...prev,
+            processed: prev.processed + 1,
+            success: prev.success + 1,
+          }));
+        } else {
+          failedCount += 1;
+          setAcceptAllProgress((prev) => ({
+            ...prev,
+            processed: prev.processed + 1,
+            failed: prev.failed + 1,
+          }));
+        }
       });
-
-      if (response.status && response.data) {
-        successCount += 1;
-        markRecordAccepted(record.id);
-        setAcceptAllProgress((prev) => ({
-          ...prev,
-          processed: prev.processed + 1,
-          success: prev.success + 1,
-        }));
-      } else {
-        failedCount += 1;
-        setAcceptAllProgress((prev) => ({
-          ...prev,
-          processed: prev.processed + 1,
-          failed: prev.failed + 1,
-        }));
-      }
     }
 
     setIsAcceptAllLoading(false);
