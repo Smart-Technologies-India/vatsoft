@@ -1085,6 +1085,9 @@ export const postRes = (request, response) => {
           const isRefineryVatPayment =
             refineryMarker.startsWith("REFINERY_SALE_VAT#");
 
+          const isLiquorSaleVatPayment =
+            refineryMarker.startsWith("LIQUOR_SALE#");
+
           if (isRefineryVatPayment) {
             const markerParts = refineryMarker.split("#");
             const markerInvoiceNo = markerParts[1] || "";
@@ -1178,6 +1181,105 @@ export const postRes = (request, response) => {
                 }
               }
             }
+          } else if (isLiquorSaleVatPayment) {
+            const markerParts = refineryMarker.split("#");
+            const markerInvoiceNo = markerParts[1] || "";
+            const markerSellerTinId = parseInt(markerParts[2] || "0", 10);
+            const markerDvatId = parseInt(markerParts[3] || "0", 10);
+
+            const dvat = await prisma.dvat04.findUnique({
+              where: { id: markerDvatId, deletedAt: null, deletedById: null },
+            });
+
+            const stock = await prisma.daily_purchase.findMany({
+              where: {
+                dvat04Id: markerDvatId,
+                invoice_number: markerInvoiceNo,
+                seller_tin_numberId: markerSellerTinId,
+                deletedAt: null,
+                deletedById: null,
+                status: "ACTIVE",
+                is_accept: false,
+              },
+            });
+            const isres = dvat.commodity == "RESTAURANT";
+
+            // update or create each stock
+            for (const row of stock) {
+              const isstock = await prisma.stock.findFirst({
+                where: {
+                  deletedAt: null,
+                  deletedById: null,
+                  status: "ACTIVE",
+                  dvat04Id: markerDvatId,
+                  commodity_masterId: row.commodity_masterId,
+                },
+              });
+              const quantity = isres
+                ? row.quantity * isstock.pack_size
+                : row.quantity;
+
+              const stock_response = await prisma.stock.upsert({
+                where: {
+                  id: isstock ? isstock.id : 0,
+                },
+                update: {
+                  quantity: quantity + (isstock ? isstock.quantity : 0),
+                  updatedById: challan.createdById,
+                },
+                create: {
+                  quantity: quantity,
+                  commodity_masterId: row.commodity_masterId,
+                  dvat04Id: markerDvatId,
+                  createdById: challan.createdById,
+                  status: "ACTIVE",
+                },
+              });
+
+              if (!stock_response) {
+                throw new Error("Unable to update or create stock.");
+              }
+
+              const purchases_update = await prisma.daily_purchase.update({
+                where: {
+                  id: row.id,
+                  status: "ACTIVE",
+                  deletedAt: null,
+                  deletedById: null,
+                },
+                data: {
+                  is_accept: true,
+                },
+              });
+
+              const sales_update = await prisma.daily_sale.updateMany({
+                where: {
+                  urn_number: row.urn_number,
+                  status: "ACTIVE",
+                  deletedAt: null,
+                  deletedById: null,
+                },
+                data: {
+                  is_accept: true,
+                },
+              });
+
+              if (!sales_update) {
+                throw new Error("Unable to update sale records");
+              }
+            }
+            await prisma.transport_permit.update({
+              where: {
+                sellerDvatTinNumber: markerSellerTinId,
+                purchaserDvatTinNumber: dvat.tinNumber ?? "",
+                invoiceNumber: row.invoice_number,
+                status: "ACTIVE",
+              },
+              data: {
+                is_paid: true,
+                paid_date: new Date(),
+              },
+            });
           } else {
             // Handle wallet top-up payments
             const isWalletTopup = refineryMarker.startsWith("WALLET_TOPUP#");

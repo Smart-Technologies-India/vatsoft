@@ -93,6 +93,16 @@ const ChallanData = () => {
         id: challanid,
       });
       if (challan_resposne.data && challan_resposne.data) {
+        if (
+          challan_resposne.data.remark?.startsWith("LIQUOR_SALE#") &&
+          searchParams.get("sidebar") !== "no"
+        ) {
+          return router.replace(
+            `/dashboard/stock/liquor-challan/${encryptURLData(
+              challanid.toString(),
+            )}`,
+          );
+        }
         setChallanData(challan_resposne.data);
       }
 

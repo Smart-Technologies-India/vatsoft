@@ -119,7 +119,7 @@ const Sidebar = (props: SidebarProps) => {
           />
         )}
 
-        {!["REFINERY_MANAGER"].includes(props.role) && (
+        {!["REFINERY_MANAGER", "EXCISE"].includes(props.role) && (
           <MenuTab
             click={() => props.setIsOpen(false)}
             icon={<FluentNotepadPerson16Regular className="w-5 h-5" />}
@@ -130,7 +130,7 @@ const Sidebar = (props: SidebarProps) => {
           />
         )}
 
-        {!["USER", "REFINERY_MANAGER"].includes(props.role) && (
+        {!["USER", "REFINERY_MANAGER", "EXCISE"].includes(props.role) && (
           <>
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -175,6 +175,26 @@ const Sidebar = (props: SidebarProps) => {
           </>
         )}
 
+        {["EXCISE"].includes(props.role) && (
+          <>
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<Fa6RegularFileLines className="w-5 h-5" />}
+              name="Transport Permit"
+              path={path}
+              pathcheck={"/dashboard/transport_permit"}
+              collapsed={isCollapsed}
+            />
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentCalendarDataBar32Light className="w-5 h-5" />}
+              name="Commodity"
+              path={path}
+              pathcheck={"/dashboard/commodity_master"}
+              collapsed={isCollapsed}
+            />
+          </>
+        )}
         {isProfileCompletd && ["USER"].includes(props.role) && (
           <>
             <MenuTab

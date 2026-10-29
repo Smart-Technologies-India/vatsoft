@@ -14,6 +14,14 @@ interface AcceptTallyPurchasePayload {
   chunkSize?: number;
 }
 
+const getTaxPercentByTin = (tinNumber: string, defaultTax: string): string => {
+  // If TIN starts with 25 or 26, use 20%, otherwise use the default
+  if (tinNumber && (tinNumber.startsWith("25") || tinNumber.startsWith("26"))) {
+    return "20";
+  }
+  return defaultTax; // Return the default tax percent from record
+};
+
 const AcceptTallyPurchase = async (
   payload: AcceptTallyPurchasePayload,
 ): Promise<
@@ -45,6 +53,9 @@ const AcceptTallyPurchase = async (
         id: { in: payload.tallyIds },
         status: "ACTIVE",
         is_accept: false,
+      },
+      include: {
+        seller_tin_number: true,
       },
     });
 
@@ -79,7 +90,13 @@ const AcceptTallyPurchase = async (
 
       const chunkRecords = records.slice(start, end);
       const entries = chunkRecords.map((record) => {
-        const taxPercent = record.tax_percent;
+        let taxPercent = record.tax_percent;
+        
+        // Check if TIN starts with 25 or 26, if so use 20%
+        if (record.seller_tin_number) {
+          taxPercent = getTaxPercentByTin(record.seller_tin_number.tin_number, record.tax_percent);
+        }
+        
         const totalInvoice =
           parseFloat(record.amount) + parseFloat(record.vatamount);
         const taxableValue = totalInvoice / (1 + parseFloat(taxPercent) / 100);
@@ -145,7 +162,13 @@ const AcceptTallyPurchase = async (
     for (let start = 0; start < totalRecords; start += chunkSize) {
       const chunkRecords = records.slice(start, start + chunkSize);
       const entries = chunkRecords.map((record) => {
-        const taxPercent = record.tax_percent;
+        let taxPercent = record.tax_percent;
+        
+        // Check if TIN starts with 25 or 26, if so use 20%
+        if (record.seller_tin_number) {
+          taxPercent = getTaxPercentByTin(record.seller_tin_number.tin_number, record.tax_percent);
+        }
+        
         const totalInvoice =
           parseFloat(record.amount) + parseFloat(record.vatamount);
         const taxableValue = totalInvoice / (1 + parseFloat(taxPercent) / 100);

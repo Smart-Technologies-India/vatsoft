@@ -10,13 +10,10 @@ import { customAlphabet } from "nanoid";
 interface AddChallanPaymentPayload {
   userid: number;
   id: number;
-  // transaction_id: string;
-  // bank_name: string;
-  // track_id: string;
 }
 
 const AddChallanPayment = async (
-  payload: AddChallanPaymentPayload
+  payload: AddChallanPaymentPayload,
 ): Promise<ApiResponseType<challan | null>> => {
   const functionname: string = AddChallanPayment.name;
   const createOrderId = customAlphabet("1234567890abcdef", 24);

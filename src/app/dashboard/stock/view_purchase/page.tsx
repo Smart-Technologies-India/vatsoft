@@ -49,6 +49,7 @@ import PurchaseBulk from "./purchasebulk";
 import DownloadPurchaseSample from "./downloadpurchasesample";
 import { PurchaseBulkDelete } from "./purchasebulkdelete";
 import ServerTime from "@/action/servertime";
+import CreateLiquorSaleChallan from "@/action/challan/createliquorsalechallan";
 
 type DailyPurchaseFilteredSummary = {
   overallSummary: DailyPurchaseSummary;
@@ -629,6 +630,7 @@ const DocumentWiseDetails = () => {
     currentInvoice: "",
   });
   const [isGroupAcceptLoading, setIsGroupAcceptLoading] = useState(false);
+  const [isPayVatLoading, setIsPayVatLoading] = useState(false);
   // const [isSingleAcceptLoading, setIsSingleAcceptLoading] =
   //   useState<boolean>(false);
   const [isRejectAllLoading, setIsRejectAllLoading] = useState(false);
@@ -1015,7 +1017,7 @@ const DocumentWiseDetails = () => {
     const batchSize = 3;
     for (let i = 0; i < pendingRecords.length; i += batchSize) {
       const batch = pendingRecords.slice(i, i + batchSize);
-      
+
       // Process batch in parallel
       const results = await Promise.all(
         batch.map(async (record) => {
@@ -1039,7 +1041,7 @@ const DocumentWiseDetails = () => {
           });
 
           return { record, response };
-        })
+        }),
       );
 
       // Process results
@@ -1190,6 +1192,36 @@ const DocumentWiseDetails = () => {
   //     toast.error(response.message);
   //   }
   // };
+
+  const handlePayVat = async () => {
+    if (!selectedGroup || selectedGroup.records.length === 0) return;
+
+    setIsPayVatLoading(true);
+    const response = await CreateLiquorSaleChallan({
+      purchaseId: selectedGroup.records[0].id,
+    });
+    setIsPayVatLoading(false);
+
+    if (!response.status || !response.data) {
+      toast.error(response.message);
+      return;
+    }
+
+    if (response.data.isPaid) {
+      if (selectedGroup.records.some((r) => canAcceptRecord(r))) {
+        await handleAcceptGroupAll();
+      } else {
+        toast.info("VAT is already paid for this invoice.");
+      }
+      return;
+    }
+
+    router.push(
+      `/dashboard/stock/liquor-challan/${encryptURLData(
+        response.data.challanId.toString(),
+      )}`,
+    );
+  };
 
   const handleRejectGroupAll = async () => {
     if (!selectedGroup || !dvatdata) return;
@@ -1554,6 +1586,22 @@ const DocumentWiseDetails = () => {
                 </div>
               </div>
             </div>
+            {/* {["RESTAURANT", "LIQUOR", "OIDC", "WHOLESALER"].includes(
+              dvatdata?.commodity ?? "",
+            ) && (
+              <>
+                <button
+                  disabled={isPayVatLoading || isGroupAcceptLoading}
+                  onClick={handlePayVat}
+                  className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+                >
+                  {isPayVatLoading || isGroupAcceptLoading
+                    ? "Please wait..."
+                    : "Pay VAT and Accept"}
+                </button>
+              </>
+            )} */}
+
             {selectedGroup.records.some((r) => canAcceptRecord(r)) && (
               <div className="mt-4 flex justify-end gap-2">
                 <button

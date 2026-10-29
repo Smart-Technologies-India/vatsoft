@@ -1,0 +1,251 @@
+"use server";
+
+import { errorToString } from "@/utils/methods";
+import prisma from "../../../prisma/database";
+import {
+  createPaginationResponse,
+  PaginationResponse,
+} from "@/models/response";
+import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
+import {
+  DailySaleSummary,
+  GroupedDailySale,
+} from "@/action/stock/getuserdailysale";
+
+export type DailySaleSortField =
+  | "invoice_number"
+  | "invoice_date"
+  | "trade_name"
+  | "tin_number"
+  | "invoice_value";
+
+export type DailySaleSortOrder = "asc" | "desc";
+
+interface GetAllUserDailySaleFilteredPayload {
+  take: number;
+  skip: number;
+  searchTerm?: string;
+  sortField?: DailySaleSortField;
+  sortOrder?: DailySaleSortOrder;
+  startDate?: string;
+  endDate?: string;
+  acceptStatusFilter?: "all" | "pending" | "accepted";
+}
+
+export type GroupedDailySaleWithDvat = GroupedDailySale & {
+  seller_dvat_tradename?: string;
+};
+
+type DailySaleFilteredSummary = {
+  overallSummary: DailySaleSummary;
+  filteredSummary: DailySaleSummary;
+};
+
+const ZERO_SUMMARY: DailySaleSummary = {
+  totalInvoices: 0,
+  totalTaxableValue: 0,
+  totalVatAmount: 0,
+  totalInvoiceValue: 0,
+};
+
+const summarize = (groups: GroupedDailySale[]): DailySaleSummary =>
+  groups.reduce(
+    (acc, group) => {
+      acc.totalInvoices += 1;
+      acc.totalTaxableValue += Number(group.totalTaxableValue) || 0;
+      acc.totalVatAmount += Number(group.totalVatAmount) || 0;
+      acc.totalInvoiceValue += Number(group.totalInvoiceValue) || 0;
+      return acc;
+    },
+    { ...ZERO_SUMMARY },
+  );
+
+const GetAllUserDailySaleFiltered = async (
+  payload: GetAllUserDailySaleFilteredPayload,
+): Promise<PaginationResponse<Array<GroupedDailySaleWithDvat> | null>> => {
+  const functionname: string = GetAllUserDailySaleFiltered.name;
+
+  try {
+    const currentUserId = await getCurrentUserId();
+    const currentDvatId = await getCurrentDvatId();
+    if (!currentUserId || !currentDvatId) {
+      return {
+        status: false,
+        data: null,
+        message: "Not authenticated. Please login.",
+        functionname: "GetAllUserDailySaleFiltered",
+      } as any;
+    }
+
+    // Build date filter for database query (moved from memory filtering)
+    const whereCondition: any = {
+      deletedAt: null,
+      deletedById: null,
+      status: "ACTIVE",
+      is_dvat_31: false,
+    };
+
+    // Apply date filter at database level for performance
+    if (payload.startDate || payload.endDate) {
+      const dateFilter: any = {};
+      if (payload.startDate) {
+        dateFilter.gte = new Date(payload.startDate);
+      }
+      if (payload.endDate) {
+        // EndDate is treated as exclusive (use lt instead of lte)
+        // This allows us to pass the next day and exclude it properly
+        dateFilter.lt = new Date(payload.endDate);
+      }
+      whereCondition.invoice_date = dateFilter;
+    }
+
+    const dailySaleRows = await prisma.daily_sale.findMany({
+      where: {
+        ...whereCondition,
+        dvat04: {
+          commodity: {
+            in: ["OIDC", "MANUFACTURER", "WHOLESALER"],
+          },
+        },
+      },
+      include: {
+        commodity_master: true,
+        seller_tin_number: true,
+        dvat04: true,
+      },
+      orderBy: [{ invoice_date: "desc" }, { invoice_number: "desc" }],
+    });
+
+    if (!dailySaleRows) {
+      return createPaginationResponse({
+        message: "No Daily sale found. Please try again.",
+        functionname,
+      });
+    }
+
+    const groupedMap = new Map<string, GroupedDailySaleWithDvat>();
+
+    dailySaleRows.forEach((record) => {
+      const key = `${record.invoice_number}_${record.invoice_date.toISOString()}_${record.seller_tin_numberId}`;
+
+      if (groupedMap.has(key)) {
+        const existing = groupedMap.get(key)!;
+        existing.records.push(record);
+        existing.count += 1;
+        existing.totalTaxableValue += parseFloat(record.amount);
+        existing.totalVatAmount += parseFloat(record.vatamount);
+        existing.totalInvoiceValue +=
+          parseFloat(record.amount) + parseFloat(record.vatamount);
+      } else {
+        groupedMap.set(key, {
+          invoice_number: record.invoice_number,
+          invoice_date: record.invoice_date,
+          seller_tin_id: record.seller_tin_numberId,
+          seller_tin_number: record.seller_tin_number,
+          records: [record],
+          count: 1,
+          totalTaxableValue: parseFloat(record.amount),
+          totalVatAmount: parseFloat(record.vatamount),
+          totalInvoiceValue:
+            parseFloat(record.amount) + parseFloat(record.vatamount),
+          urn_number: record.urn_number || "",
+          seller_dvat_tradename: record.dvat04?.tradename || "",
+        });
+      }
+    });
+
+    const groupedArray = Array.from(groupedMap.values());
+    const overallSummary = summarize(groupedArray);
+
+    const searchTerm = (payload.searchTerm ?? "").trim().toLowerCase();
+    const sortField: DailySaleSortField = payload.sortField ?? "invoice_date";
+    const sortOrder: DailySaleSortOrder = payload.sortOrder ?? "desc";
+    const acceptStatusFilter = payload.acceptStatusFilter ?? "all";
+
+    let filtered = [...groupedArray];
+
+    if (searchTerm !== "") {
+      filtered = filtered.filter(
+        (group) =>
+          group.invoice_number.toLowerCase().includes(searchTerm) ||
+          group.seller_tin_number.name_of_dealer
+            .toLowerCase()
+            .includes(searchTerm) ||
+          group.seller_tin_number.tin_number.includes(searchTerm) ||
+          (group as any).seller_dvat_tradename
+            ?.toLowerCase()
+            .includes(searchTerm),
+      );
+    }
+
+    if (acceptStatusFilter !== "all") {
+      filtered = filtered.filter((group) => {
+        const hasPending = group.records.some((record) => !record.is_accept);
+
+        if (acceptStatusFilter === "pending") return hasPending;
+        if (acceptStatusFilter === "accepted") return !hasPending;
+        return true;
+      });
+    }
+
+    filtered.sort((a, b) => {
+      let compareValue = 0;
+
+      switch (sortField) {
+        case "invoice_number":
+          compareValue = a.invoice_number.localeCompare(b.invoice_number);
+          break;
+        case "invoice_date":
+          compareValue =
+            new Date(a.invoice_date).getTime() -
+            new Date(b.invoice_date).getTime();
+          break;
+        case "trade_name":
+          compareValue = a.seller_tin_number.name_of_dealer.localeCompare(
+            b.seller_tin_number.name_of_dealer,
+          );
+          break;
+        case "tin_number":
+          compareValue = a.seller_tin_number.tin_number.localeCompare(
+            b.seller_tin_number.tin_number,
+          );
+          break;
+        case "invoice_value":
+          compareValue = a.totalInvoiceValue - b.totalInvoiceValue;
+          break;
+      }
+
+      return sortOrder === "asc" ? compareValue : -compareValue;
+    });
+
+    const filteredSummary = summarize(filtered);
+    const totalCount = filtered.length;
+
+    const paginatedGroups = filtered.slice(
+      payload.skip,
+      payload.skip + payload.take,
+    );
+
+    const summary: DailySaleFilteredSummary = {
+      overallSummary,
+      filteredSummary,
+    };
+
+    return createPaginationResponse({
+      message: "Daily sale data fetched successfully for all DVATs.",
+      functionname,
+      data: paginatedGroups,
+      take: payload.take,
+      skip: payload.skip,
+      total: totalCount,
+      summary,
+    });
+  } catch (e) {
+    return createPaginationResponse({
+      message: errorToString(e),
+      functionname,
+    });
+  }
+};
+
+export default GetAllUserDailySaleFiltered;

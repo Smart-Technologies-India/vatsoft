@@ -2084,6 +2084,26 @@ model returns_notfiled_work {
   remark           String?           @db.LongText
 }
 
+model transport_permit {
+  id                     Int       @id @default(autoincrement())
+  invoiceNumber          String
+  invoiceDate            DateTime
+  sellerDvatTradeName    String
+  sellerDvatTinNumber    String
+  purchaserDvatTradeName String
+  purchaserDvatTinNumber String
+  items                  Int
+  status                 Status
+  remark                 String?   @db.LongText
+  tp_released            Boolean   @default(false)
+  is_paid                Boolean   @default(false)
+  is_wallet              Boolean   @default(false)
+  paid_date              DateTime?
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @updatedAt
+  deleted_at             DateTime?
+}
+
 enum NotificationType {
   GENERAL
   ALERT
