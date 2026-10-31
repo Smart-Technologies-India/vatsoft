@@ -1196,6 +1196,7 @@ model daily_sale {
   @@index([updatedById], map: "daily_sale_updatedById_fkey")
   @@index([invoice_number], map: "daily_sale_invoice_number_idx")
   @@index([quantity], map: "daily_sale_quantity_idx")
+  @@index([urn_number], map: "daily_sale_urn_number_idx")
 }
 
 model tally_sale {
@@ -1277,6 +1278,7 @@ model daily_purchase {
   @@index([updatedById], map: "daily_purchase_updatedById_fkey")
   @@index([invoice_number], map: "daily_purchase_invoice_number_idx")
   @@index([quantity], map: "daily_purchase_quantity_idx")
+  @@index([urn_number], map: "daily_purchase_urn_number_idx")
 }
 
 model stock {
@@ -1300,6 +1302,7 @@ model stock {
   stock_update_snapshot stock_update_snapshot[]
   updatedBy             user?                   @relation("stock_updatedBy", fields: [updatedById], references: [id])
 
+  @@unique([dvat04Id, commodity_masterId])
   @@index([commodity_masterId], map: "stock_commodity_masterId_fkey")
   @@index([createdById], map: "stock_createdById_fkey")
   @@index([deletedById], map: "stock_deletedById_fkey")

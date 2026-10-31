@@ -26,8 +26,11 @@ const GroupAcceptSale = async (
   const functionname: string = GroupAcceptSale.name;
 
   try {
-    const currentUserId = await getCurrentUserId();
-    const currentDvatId = await getCurrentDvatId();
+    const [currentUserId, currentDvatId] = await Promise.all([
+      getCurrentUserId(),
+      getCurrentDvatId(),
+    ]);
+
     if (!currentUserId || !currentDvatId) {
       return {
         status: false,
@@ -46,25 +49,19 @@ const GroupAcceptSale = async (
 
     for (const group of groupedCommodities) {
       try {
-        await prisma.$transaction(async (prisma) => {
-          // 1. Find or create stock
-          const isstock = await prisma.stock.findFirst({
-            where: {
-              deletedAt: null,
-              deletedById: null,
-              status: "ACTIVE",
-              dvat04Id: dvatid,
-              commodity_masterId: group.commodityid,
-            },
-          });
+        const urns = group.urnNumbers.filter((urn) => urn !== "");
 
+        await prisma.$transaction(async (prisma) => {
           // 2. Update stock with total quantity
           const stock_response = await prisma.stock.upsert({
             where: {
-              id: isstock ? isstock.id : 0,
+              dvat04Id_commodity_masterId: {
+                dvat04Id: dvatid,
+                commodity_masterId: group.commodityid,
+              },
             },
             update: {
-              quantity: group.totalQuantity + (isstock ? isstock.quantity : 0),
+              quantity: { increment: group.totalQuantity },
               updatedById: currentUserId,
             },
             create: {
@@ -90,6 +87,7 @@ const GroupAcceptSale = async (
               status: "ACTIVE",
               deletedAt: null,
               deletedById: null,
+              is_accept: false,
             },
             data: {
               is_accept: true,
@@ -106,12 +104,11 @@ const GroupAcceptSale = async (
           // 4. Update all sales with corresponding URNs to mark as accepted
           const sales_update = await prisma.daily_sale.updateMany({
             where: {
-              urn_number: {
-                in: group.urnNumbers.filter((urn) => urn !== ""),
-              },
+              urn_number: { in: urns },
               status: "ACTIVE",
               deletedAt: null,
               deletedById: null,
+              is_accept: false,
             },
             data: {
               is_accept: true,

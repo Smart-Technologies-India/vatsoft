@@ -174,7 +174,6 @@ const DocumentWiseDetails = () => {
     useState<GroupedDailyPurchase | null>(null);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
-  // const [userid, setUserid] = useState<number>(0);
 
   const [stockSnapshotExists, setStockSnapshotExists] =
     useState<boolean>(false);
@@ -1586,7 +1585,7 @@ const DocumentWiseDetails = () => {
                 </div>
               </div>
             </div>
-            {/* {["RESTAURANT", "LIQUOR", "OIDC", "WHOLESALER"].includes(
+            {["RESTAURANT", "LIQUOR", "OIDC", "WHOLESALER"].includes(
               dvatdata?.commodity ?? "",
             ) && (
               <>
@@ -1600,7 +1599,7 @@ const DocumentWiseDetails = () => {
                     : "Pay VAT and Accept"}
                 </button>
               </>
-            )} */}
+            )}
 
             {selectedGroup.records.some((r) => canAcceptRecord(r)) && (
               <div className="mt-4 flex justify-end gap-2">

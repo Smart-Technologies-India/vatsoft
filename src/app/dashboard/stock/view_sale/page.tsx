@@ -1515,6 +1515,15 @@ const DocumentWiseDetails = () => {
             </div>
           </div>
         )}
+
+        <>
+          <button
+            onClick={() => {}}
+            className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+          >
+            Pay VAT and Accept
+          </button>
+        </>
       </Modal>
 
       <Modal
