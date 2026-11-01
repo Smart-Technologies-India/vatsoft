@@ -425,6 +425,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
         const refineryMarker = (challan.remark || "").toString();
         const isRefineryVatPayment =
           refineryMarker.startsWith("REFINERY_SALE_VAT#");
+        const isSaleVatPayment = refineryMarker.startsWith("SALE#");
         const isLiquorSaleVatPayment =
           refineryMarker.startsWith("LIQUOR_SALE#");
 
@@ -433,12 +434,14 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
           const markerInvoiceNo = markerParts[1] || "";
           const markerRefineryId = parseInt(markerParts[2] || "0", 10);
           const markerSellerTinId = parseInt(markerParts[3] || "0", 10);
+          const markerSaleId = parseInt(markerParts[4] || "0", 10);
 
           if (
             markerInvoiceNo &&
             markerRefineryId > 0 &&
             markerSellerTinId > 0
           ) {
+            // Update refinery sale status to VATPAID
             await prisma.refinery_sale.updateMany({
               where: {
                 invoice_number: markerInvoiceNo,
@@ -451,11 +454,155 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
               },
               data: {
                 refinery_status: "VATPAID",
-                challanId: paidchallan.id,
+                challanId: challan.id,
                 updatedById: challan.createdById,
               },
             });
+
+            // Handle wallet update only on successful payment
+            // Extract total VAT and payable amount from challan remark
+            const totalVatMatch = refineryMarker.match(/TOTAL_VAT:([^#]+)/);
+            const payableAmountMatch = refineryMarker.match(/PAYABLE:([^#]+)/);
+
+            const totalVatAmount = totalVatMatch
+              ? parseFloat(totalVatMatch[1])
+              : 0;
+            const payableAmount = payableAmountMatch
+              ? parseFloat(payableAmountMatch[1])
+              : 0;
+
+            const dvatRecord = await prisma.dvat04.findUnique({
+              where: { id: parseInt(dvatid) },
+              select: { wallet: true },
+            });
+
+            if (dvatRecord && Number.parseFloat(dvatRecord.wallet || "0") > 0) {
+              if (totalVatAmount > 0) {
+                try {
+                  const oldWallet = Number.parseFloat(dvatRecord.wallet || "0");
+
+                  // Calculate wallet contribution (how much wallet can contribute to VAT payment)
+                  const walletContribution = Math.min(
+                    oldWallet,
+                    totalVatAmount,
+                  );
+
+                  // New wallet after using wallet balance
+                  const newWallet = oldWallet - walletContribution;
+
+                  // Update wallet in dvat04
+                  await prisma.dvat04.update({
+                    where: { id: parseInt(dvatid) },
+                    data: {
+                      wallet: newWallet.toFixed(2),
+                      updatedById: challan.createdById,
+                    },
+                  });
+
+                  // Create wallet history entry
+                  await prisma.wallet_history.create({
+                    data: {
+                      dvatId: parseInt(dvatid),
+                      refineryId: markerRefineryId,
+                      type: "DEBIT",
+                      status: "ACTIVE",
+                      difference_amount: walletContribution.toFixed(2),
+                      old_wallet: oldWallet.toFixed(2),
+                      new_wallet: newWallet.toFixed(2),
+                      old_quantity: "0",
+                      new_quantity: "0",
+                      old_amount: oldWallet.toFixed(2),
+                      new_amount: walletContribution.toFixed(2),
+                      invoice_number: markerInvoiceNo,
+                    },
+                  });
+                } catch (walletError) {
+                  console.log(
+                    "Error updating wallet for refinery VAT payment:",
+                    walletError,
+                  );
+                  // Don't fail the payment if wallet update fails
+                }
+              }
+            }
           }
+        } else if (isSaleVatPayment) {
+          // Handle liquor sale VAT payment (SALE# format)
+          const markerParts = refineryMarker.split("#");
+          const markerInvoiceNo = markerParts[1] || "";
+          const markerDvatId = parseInt(markerParts[2] || "0", 10);
+
+          // Update challan status to PAID
+          await prisma.challan.updateMany({
+            where: {
+              dvatid: markerDvatId,
+              remark: {
+                startsWith: `SALE#${markerInvoiceNo}#`,
+              },
+              deletedAt: null,
+              deletedById: null,
+            },
+            data: {
+              paymentstatus: "PAID",
+              paymentmode: "ONLINE",
+              transaction_date: new Date(),
+              bank_name: "CCAVENUE",
+              order_id: order_id,
+            },
+          });
+
+          // Update transport_permit table
+          await prisma.transport_permit.updateMany({
+            where: {
+              invoiceNumber: markerInvoiceNo,
+              deleted_at: null,
+            },
+            data: {
+              is_paid: true,
+              is_wallet: false,
+              paid_date: new Date(),
+            },
+          });
+          await prisma.daily_sale.updateMany({
+            where: {
+              invoice_number: markerInvoiceNo,
+              dvat04Id: markerDvatId,
+              seller_tin_numberId: markerSellerTinId,
+              deletedAt: null,
+              deletedById: null,
+            },
+            data: {
+              is_paid: true,
+            },
+          });
+          const urn_respone = await prisma.daily_sale.findMany({
+            where: {
+              dvat04Id: markerDvatId,
+              invoice_number: markerInvoiceNo,
+              seller_tin_numberId: markerSellerTinId,
+              deletedAt: null,
+              deletedById: null,
+            },
+            select: {
+              urn_number: true,
+            },
+          });
+
+          const urnNumbers = urn_respone
+            .map((sale) => sale.urn_number)
+            .filter((val) => val !== null && val !== undefined && val !== "");
+          await prisma.daily_purchase.updateMany({
+            where: {
+              urn_number: {
+                in: urnNumbers,
+              },
+              deletedAt: null,
+              deletedBy: null,
+            },
+            data: {
+              is_paid: true,
+            },
+          });
         } else if (isLiquorSaleVatPayment) {
           const markerParts = refineryMarker.split("#");
           const markerInvoiceNo = markerParts[1] || "";
@@ -544,18 +691,64 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
               throw new Error("Unable to update sale records");
             }
           }
-          await prisma.transport_permit.update({
+          await prisma.transport_permit.updateMany({
             where: {
-              sellerDvatTinNumber: markerSellerTinId,
-              purchaserDvatTinNumber: dvat.tinNumber ?? "",
-              invoiceNumber: row.invoice_number,
-              status: "ACTIVE",
+              invoiceNumber: markerInvoiceNo,
+              deleted_at: null,
             },
             data: {
               is_paid: true,
+              is_wallet: false,
               paid_date: new Date(),
             },
           });
+        } else if (refineryMarker.startsWith("LIQUOR_WALLET_TOPUP#")) {
+          // Handle liquor wallet top-up payments
+          const amountMatch = refineryMarker.match(/AMOUNT:([^#]+)/);
+          const topupAmount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+
+          if (topupAmount > 0) {
+            try {
+              // Get current wallet amount
+              const dvatRecord = await prisma.dvat04.findUnique({
+                where: { id: parseInt(challan.dvatid) },
+                select: { wallet: true },
+              });
+
+              if (dvatRecord) {
+                const oldWallet = Number.parseFloat(dvatRecord.wallet || "0");
+                const newWallet = oldWallet + topupAmount;
+
+                // Update wallet in dvat04
+                await prisma.dvat04.update({
+                  where: { id: parseInt(challan.dvatid) },
+                  data: {
+                    wallet: newWallet.toFixed(2),
+                    updatedById: challan.createdById,
+                  },
+                });
+
+                // Create liquor wallet history entry
+                await prisma.liquor_wallet_history.create({
+                  data: {
+                    dvatId: parseInt(challan.dvatid),
+                    sellerId: 1, // Using 1 as placeholder for wallet top-up
+                    type: "CREDIT",
+                    status: "ACTIVE",
+                    old_wallet: oldWallet.toFixed(2),
+                    new_wallet: newWallet.toFixed(2),
+                    invoice_number: `LIQUOR_TOPUP_${challan.cpin}`,
+                  },
+                });
+              }
+            } catch (walletError) {
+              console.log(
+                "Error updating wallet for liquor wallet top-up payment:",
+                walletError,
+              );
+              // Don't fail the payment if wallet update fails
+            }
+          }
         }
       }
     } else if (statusGroup === "pending") {

@@ -121,7 +121,12 @@ const SubmitRefinerySaleVat = async (
     }
 
     const oldWallet = Number.parseFloat(currentDvatBeforeUpdate.wallet || "0");
-    const newWallet = oldWallet - payload.payableAmount;
+    
+    // Calculate wallet contribution (how much wallet can contribute to VAT payment)
+    const walletContribution = Math.min(oldWallet, payload.totalVatAmount);
+    
+    // New wallet after using wallet balance
+    const newWallet = oldWallet - walletContribution;
 
     // Update wallet in dvat04
     await prisma.dvat04.update({
@@ -137,15 +142,15 @@ const SubmitRefinerySaleVat = async (
       data: {
         dvatId: currentDvatId,
         refineryId: targetSale.refineryId,
-        type: payload.payableAmount > 0 ? "DEBIT" : "CREDIT",
+        type: walletContribution > 0 ? "DEBIT" : "CREDIT",
         status: "ACTIVE",
-        difference_amount: payload.payableAmount.toFixed(2),
+        difference_amount: walletContribution.toFixed(2),
         old_wallet: oldWallet.toFixed(2),
         new_wallet: newWallet.toFixed(2),
         old_quantity: "0",
         new_quantity: "0",
-        old_amount: payload.totalVatAmount.toFixed(2),
-        new_amount: payload.payableAmount.toFixed(2),
+        old_amount: oldWallet.toFixed(2),
+        new_amount: walletContribution.toFixed(2),
         invoice_number: targetSale.invoice_number,
       },
     });

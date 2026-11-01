@@ -377,6 +377,7 @@ model dvat04 {
   returns01Works                  returns_01_work[]
   returnsNotfiledWorks            returns_notfiled_work[]
   walletHistories                 wallet_history[]
+  liquorWalletHistories           liquor_wallet_history[]
 
   @@index([createdById], map: "dvat04_createdById_fkey")
   @@index([deletedById], map: "dvat04_deletedById_fkey")
@@ -413,6 +414,22 @@ model wallet_history {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   deletedAt         DateTime?
+}
+
+model liquor_wallet_history {
+  id             Int               @id @default(autoincrement())
+  dvatId         Int
+  dvat           dvat04            @relation(fields: [dvatId], references: [id])
+  sellerId       Int
+  seller         tin_number_master @relation(fields: [sellerId], references: [id])
+  type           WALLETTYPE
+  old_wallet     String
+  new_wallet     String
+  invoice_number String
+  status         Status            @default(ACTIVE)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  deletedAt      DateTime?
 }
 
 model commodity {
@@ -606,6 +623,7 @@ model tin_number_master {
   refinerySales          refinery_sale[]
   refinerySaleChangeLogs refinery_sale_change_log[]
   creditdebitnotes       creditdebitnote[]
+  liquorWalletHistories  liquor_wallet_history[]
 }
 
 model returns_01 {
@@ -1174,6 +1192,7 @@ model daily_sale {
   is_against_e1       Boolean           @default(false)
   is_exempt           Boolean           @default(false)
   is_exempt6_2        Boolean           @default(false)
+  is_paid             Boolean           @default(false)
   createdAt           DateTime          @default(now())
   createdById         Int
   updatedAt           DateTime          @updatedAt
@@ -1256,6 +1275,7 @@ model daily_purchase {
   is_against_hform    Boolean           @default(false)
   is_against_iform    Boolean           @default(false)
   is_against_e1form   Boolean           @default(false)
+  is_paid             Boolean           @default(false)
   createdAt           DateTime          @default(now())
   createdById         Int
   updatedAt           DateTime          @updatedAt
@@ -1470,6 +1490,7 @@ model edit_sale {
   is_exempt6_2        Boolean           @default(false)
   is_exempt           Boolean           @default(false)
   batch_name          String?
+  is_paid             Boolean           @default(false)
   createdAt           DateTime          @default(now())
   createdById         Int
   updatedAt           DateTime          @updatedAt
@@ -1519,6 +1540,7 @@ model edit_purchase {
   is_against_iform    Boolean           @default(false)
   is_against_e1form   Boolean           @default(false)
   batch_name          String?
+  is_paid             Boolean           @default(false)
   createdAt           DateTime          @default(now())
   createdById         Int
   updatedAt           DateTime          @updatedAt

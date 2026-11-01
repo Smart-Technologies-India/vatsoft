@@ -1,7 +1,6 @@
 "use server";
 interface ConvertDvat31Payload {
   dvatid: number;
-  createdById: number;
   startDate?: string;
   endDate?: string;
 }
@@ -194,7 +193,7 @@ const ConvertDvat31 = async (
           total_tax_amount: "0",
           status: Status.ACTIVE,
           compositionScheme: dvat04.compositionScheme,
-          createdById: payload.createdById,
+          createdById: currentUserId,
         },
       });
     }
@@ -233,7 +232,7 @@ const ConvertDvat31 = async (
           },
           data: {
             deletedAt: new Date(),
-            deletedById: payload.createdById,
+            deletedById: currentUserId,
           },
         });
       }
@@ -257,7 +256,7 @@ const ConvertDvat31 = async (
           },
           data: {
             deletedAt: new Date(),
-            deletedById: payload.createdById,
+            deletedById: currentUserId,
           },
         });
       }
@@ -312,7 +311,7 @@ const ConvertDvat31 = async (
                 returns_01Id: returnInvoice.id,
                 dvat_type: val.is_local ? DvatType.DVAT_31 : DvatType.DVAT_31_A,
                 status: Status.ACTIVE,
-                createdById: payload.createdById,
+                createdById: currentUserId,
                 urn_number: val.urn_number || nanoid(),
                 invoice_date: val.invoice_date,
                 invoice_number: val.invoice_number,
@@ -366,7 +365,7 @@ const ConvertDvat31 = async (
           },
           data: {
             is_dvat_31: true,
-            updatedById: payload.createdById,
+            updatedById: currentUserId,
           },
         });
 

@@ -50,6 +50,7 @@ import DownloadPurchaseSample from "./downloadpurchasesample";
 import { PurchaseBulkDelete } from "./purchasebulkdelete";
 import ServerTime from "@/action/servertime";
 import CreateLiquorSaleChallan from "@/action/challan/createliquorsalechallan";
+import { PayPurchaseByWalletLiquor } from "@/action/stock/paypurchasebywalletliquor";
 
 type DailyPurchaseFilteredSummary = {
   overallSummary: DailyPurchaseSummary;
@@ -173,7 +174,6 @@ const DocumentWiseDetails = () => {
   const [selectedGroup, setSelectedGroup] =
     useState<GroupedDailyPurchase | null>(null);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
-
 
   const [stockSnapshotExists, setStockSnapshotExists] =
     useState<boolean>(false);
@@ -630,6 +630,11 @@ const DocumentWiseDetails = () => {
   });
   const [isGroupAcceptLoading, setIsGroupAcceptLoading] = useState(false);
   const [isPayVatLoading, setIsPayVatLoading] = useState(false);
+  const [isWalletPaymentLoading, setIsWalletPaymentLoading] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [isWalletConfirmModalOpen, setIsWalletConfirmModalOpen] =
+    useState(false);
+  const [isWalletPaid, setIsWalletPaid] = useState(false);
   // const [isSingleAcceptLoading, setIsSingleAcceptLoading] =
   //   useState<boolean>(false);
   const [isRejectAllLoading, setIsRejectAllLoading] = useState(false);
@@ -1222,6 +1227,91 @@ const DocumentWiseDetails = () => {
     );
   };
 
+  // Fetch wallet balance when modal opens
+  useEffect(() => {
+    if (!isGroupModalOpen || !dvatdata?.id || !selectedGroup) return;
+
+    const refreshWallet = async () => {
+      const dvat_response = await GetUserDvat04();
+      if (dvat_response.status && dvat_response.data) {
+        setWalletBalance(parseFloat(dvat_response.data.wallet || "0"));
+      }
+      setIsWalletPaid(selectedGroup.records.some((r) => r.is_paid));
+    };
+
+    refreshWallet();
+  }, [isGroupModalOpen, dvatdata?.id, selectedGroup]);
+
+  // Calculate VAT payable
+  const calculateVatPayable = () => {
+    if (!selectedGroup) return 0;
+
+    const mrbBasedVat = selectedGroup.records.reduce((total, record) => {
+      const mrp = parseFloat(record.commodity_master.mrp || "0");
+      const crateSize = parseInt(record.commodity_master.crate_size.toString() || "1");
+      const quantity = record.quantity;
+      const taxableValue =
+        crateSize > 0 ? (mrp / crateSize) * quantity : 0;
+      return total + taxableValue / 6;
+    }, 0);
+
+    return mrbBasedVat - selectedGroup.totalVatAmount;
+  };
+
+  const handlePayByWallet = () => {
+    if (!selectedGroup || selectedGroup.records.length === 0 || !dvatdata)
+      return;
+
+    const vatPayable = calculateVatPayable();
+
+    if (walletBalance < vatPayable) {
+      toast.error(
+        `Insufficient wallet balance. Available: ₹${walletBalance.toFixed(
+          2,
+        )}, Required: ₹${vatPayable.toFixed(2)}`,
+      );
+      return;
+    }
+
+    setIsWalletConfirmModalOpen(true);
+  };
+
+  const confirmWalletPayment = async () => {
+    if (!selectedGroup || selectedGroup.records.length === 0 || !dvatdata)
+      return;
+
+    const vatPayable = calculateVatPayable();
+
+    setIsWalletPaymentLoading(true);
+    try {
+      const response = await PayPurchaseByWalletLiquor({
+        vatPayable: vatPayable.toFixed(2),
+        invoiceNo: selectedGroup.invoice_number,
+        sellerId: selectedGroup.seller_tin_number.id,
+      });
+
+      if (!response.status) {
+        toast.error(response.message);
+        setIsWalletPaymentLoading(false);
+        return;
+      }
+
+      toast.success("Payment successful via wallet!");
+      setWalletBalance(parseFloat(response.data?.new_wallet || "0"));
+      setIsWalletPaid(true);
+      setIsWalletConfirmModalOpen(false);
+      setIsWalletPaymentLoading(false);
+      setTimeout(() => {
+        setIsGroupModalOpen(false);
+        setSelectedGroup(null);
+      }, 1500);
+      await init();
+    } catch (error) {
+      toast.error("Payment failed. Please try again.");
+      setIsWalletPaymentLoading(false);
+    }
+  };
+
   const handleRejectGroupAll = async () => {
     if (!selectedGroup || !dvatdata) return;
 
@@ -1563,61 +1653,137 @@ const DocumentWiseDetails = () => {
                 </TableBody>
               </Table>
             </div>
-            <div className="mt-4 p-3 bg-gray-50 rounded">
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <p className="text-xs text-gray-600">Total Taxable Value</p>
-                  <p className="font-semibold">
-                    ₹{formatIndianNumber(selectedGroup.totalTaxableValue)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Total VAT Amount</p>
-                  <p className="font-semibold">
-                    ₹{formatIndianNumber(selectedGroup.totalVatAmount)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Total Invoice Value</p>
-                  <p className="font-semibold">
-                    ₹{formatIndianNumber(selectedGroup.totalInvoiceValue)}
-                  </p>
+            {!["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") && (
+              <div className="mt-4 p-3 bg-gray-50 rounded">
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <p className="text-xs text-gray-600">Total Taxable Value</p>
+                    <p className="font-semibold">
+                      ₹{formatIndianNumber(selectedGroup.totalTaxableValue)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">Total VAT Amount</p>
+                    <p className="font-semibold">
+                      ₹{formatIndianNumber(selectedGroup.totalVatAmount)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">Total Invoice Value</p>
+                    <p className="font-semibold">
+                      ₹{formatIndianNumber(selectedGroup.totalInvoiceValue)}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-            {["RESTAURANT", "LIQUOR", "OIDC", "WHOLESALER"].includes(
-              dvatdata?.commodity ?? "",
-            ) && (
-              <>
-                <button
-                  disabled={isPayVatLoading || isGroupAcceptLoading}
-                  onClick={handlePayVat}
-                  className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
-                >
-                  {isPayVatLoading || isGroupAcceptLoading
-                    ? "Please wait..."
-                    : "Pay VAT and Accept"}
-                </button>
-              </>
             )}
 
-            {selectedGroup.records.some((r) => canAcceptRecord(r)) && (
-              <div className="mt-4 flex justify-end gap-2">
-                <button
-                  disabled={
-                    isGroupAcceptLoading || isStockSnapshotAcceptLoading
-                  }
-                  onClick={
-                    stockSnapshotExists && dvatdata?.commodity === "RESTAURANT"
-                      ? handleAcceptSnapshotAll
-                      : handleAcceptGroupAll
-                  }
-                  className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
-                >
-                  {isGroupAcceptLoading || isStockSnapshotAcceptLoading
-                    ? "Accepting..."
-                    : "Accept All"}
-                </button>
+            {["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") && (
+              <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
+                <p className="text-xs text-gray-600 font-semibold mb-2">
+                  VAT Summary
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  <div>
+                    <p className="text-xs text-gray-600">Total Taxable Value</p>
+                    <p className="font-semibold">
+                      ₹
+                      {formatIndianNumber(
+                        selectedGroup.records.reduce((total, record) => {
+                          const mrp = parseFloat(
+                            record.commodity_master.mrp || "0",
+                          );
+                          const crateSize = parseInt(
+                            record.commodity_master.crate_size.toString() ||
+                              "1",
+                          );
+                          const quantity = record.quantity;
+                          return (
+                            total +
+                            (crateSize > 0 ? (mrp / crateSize) * quantity : 0)
+                          );
+                        }, 0),
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">Total VAT Amount</p>
+                    <p className="font-semibold">
+                      ₹
+                      {formatIndianNumber(
+                        selectedGroup.records.reduce((total, record) => {
+                          const mrp = parseFloat(
+                            record.commodity_master.mrp || "0",
+                          );
+                          const crateSize = parseInt(
+                            record.commodity_master.crate_size.toString() ||
+                              "1",
+                          );
+                          const quantity = record.quantity;
+                          const taxableValue =
+                            crateSize > 0 ? (mrp / crateSize) * quantity : 0;
+                          return total + taxableValue / 6;
+                        }, 0),
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">
+                      Less Input Tax Credit (ITC)
+                    </p>
+                    <p className="font-semibold">
+                      ₹{formatIndianNumber(selectedGroup.totalVatAmount)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">VAT Payable</p>
+                    <p className="font-semibold text-orange-600">
+                      ₹
+                      {formatIndianNumber(
+                        selectedGroup.records.reduce((total, record) => {
+                          const mrp = parseFloat(
+                            record.commodity_master.mrp || "0",
+                          );
+                          const crateSize = parseInt(
+                            record.commodity_master.crate_size.toString() ||
+                              "1",
+                          );
+                          const quantity = record.quantity;
+                          const taxableValue =
+                            crateSize > 0 ? (mrp / crateSize) * quantity : 0;
+                          return total + taxableValue / 6;
+                        }, 0) - selectedGroup.totalVatAmount,
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* {selectedGroup.records.some((r) => canAcceptRecord(r)) && ( */}
+            <div className="mt-4 flex justify-end gap-2">
+              {!["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") &&
+                selectedGroup.records.some((r) => r.is_paid) &&
+                selectedGroup.records.some((r) => canAcceptRecord(r)) && (
+                  <button
+                    disabled={
+                      isGroupAcceptLoading || isStockSnapshotAcceptLoading
+                    }
+                    onClick={
+                      stockSnapshotExists &&
+                      dvatdata?.commodity === "RESTAURANT"
+                        ? handleAcceptSnapshotAll
+                        : handleAcceptGroupAll
+                    }
+                    className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+                  >
+                    {isGroupAcceptLoading || isStockSnapshotAcceptLoading
+                      ? "Accepting..."
+                      : "Accept All"}
+                  </button>
+                )}
+
+              {selectedGroup.records.some((r) => !r.is_paid) && (
                 <button
                   disabled={isGroupRejectLoading}
                   onClick={() => {
@@ -1637,11 +1803,102 @@ const DocumentWiseDetails = () => {
                 >
                   {isGroupRejectLoading ? "Rejecting..." : "Reject All"}
                 </button>
-              </div>
-            )}
+              )}
+              {["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") && (
+                <>
+                  {isWalletPaid ? (
+                    <div className="text-sm text-green-600 flex items-center gap-2">
+                      ✅ Payment Successful!
+                    </div>
+                  ) : (
+                    <>
+                      {walletBalance < calculateVatPayable() && (
+                        <div className="text-xs text-red-600 flex items-center">
+                          ⚠️ Insufficient wallet balance (₹
+                          {walletBalance.toFixed(2)})
+                        </div>
+                      )}
+                      <button
+                        onClick={handlePayByWallet}
+                        disabled={
+                          isWalletPaymentLoading ||
+                          walletBalance < calculateVatPayable()
+                        }
+                        className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+                      >
+                        {isWalletPaymentLoading
+                          ? "Processing..."
+                          : "Pay Using Wallet"}
+                      </button>
+                      <button
+                        disabled={isPayVatLoading || isGroupAcceptLoading}
+                        onClick={handlePayVat}
+                        className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+                      >
+                        {isPayVatLoading || isGroupAcceptLoading
+                          ? "Please wait..."
+                          : "Pay VAT and Accept"}
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+            {/* )} */}
           </div>
         )}
       </Modal>
+
+      {/* Wallet Payment Confirmation Modal */}
+      <Modal
+        title="Confirm Wallet Payment"
+        open={isWalletConfirmModalOpen}
+        onOk={confirmWalletPayment}
+        onCancel={() => setIsWalletConfirmModalOpen(false)}
+        okText="Confirm Payment"
+        cancelText="Cancel"
+        okButtonProps={{
+          danger: true,
+          loading: isWalletPaymentLoading,
+        }}
+        cancelButtonProps={{
+          disabled: isWalletPaymentLoading,
+        }}
+        width={500}
+      >
+        <div className="space-y-4">
+          <div className="bg-blue-50 p-3 rounded border border-blue-200">
+            <p className="text-sm font-semibold text-gray-700 mb-2">
+              Payment Summary
+            </p>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Invoice Number:</span>
+                <span className="font-medium">
+                  {selectedGroup?.invoice_number}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">VAT Payable:</span>
+                <span className="font-semibold text-orange-600">
+                  ₹{calculateVatPayable().toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Current Wallet Balance:</span>
+                <span className="font-medium">
+                  ₹{walletBalance.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to proceed with the wallet payment? This will
+            deduct ₹{calculateVatPayable().toFixed(2)} from your wallet balance.
+          </p>
+        </div>
+      </Modal>
+
       <Drawer
         placement="right"
         closeIcon={null}
@@ -1922,7 +2179,7 @@ const DocumentWiseDetails = () => {
                             </Button>
                           )}
 
-                          {hasPendingAcceptable && (
+                          {/* {hasPendingAcceptable && (
                             <>
                               <Button
                                 size="small"
@@ -1960,7 +2217,7 @@ const DocumentWiseDetails = () => {
                                 Reject All
                               </Button>
                             </>
-                          )}
+                          )} */}
 
                           {/* {stockSnapshotExists &&
                             dvatdata?.commodity === "RESTAURANT" && (
@@ -2315,9 +2572,11 @@ const DocumentWiseDetails = () => {
                         <TableRow
                           key={index}
                           className={
-                            group.hasPendingAcceptable
-                              ? "border-b bg-red-50 hover:bg-red-100"
-                              : "border-b hover:bg-gray-50"
+                            group.records.some((record) => record.is_paid)
+                              ? "border-b bg-green-50 hover:bg-green-100"
+                              : group.hasPendingAcceptable
+                                ? "border-b bg-red-50 hover:bg-red-100"
+                                : "border-b hover:bg-gray-50"
                           }
                         >
                           <TableCell className="p-2 text-center text-xs">

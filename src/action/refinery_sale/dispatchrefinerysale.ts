@@ -349,7 +349,7 @@ const DispatchRefinerySale = async (
       await prisma.dvat04.update({
         where: { id: sellerDvat.id },
         data: {
-          wallet: newWallet.toFixed(0),
+          wallet: newWallet.toFixed(2),
           updatedById: currentUserId,
           updatedAt: new Date(),
         },
@@ -364,8 +364,8 @@ const DispatchRefinerySale = async (
           new_quantity: String(payload.newQuantityLitres || "0"),
           old_amount: String((payload.oldTotalAmount || 0).toFixed(2)),
           new_amount: String((payload.newTotalAmount || 0).toFixed(2)),
-          old_wallet: currentWallet.toFixed(0),
-          new_wallet: newWallet.toFixed(0),
+          old_wallet: currentWallet.toFixed(2),
+          new_wallet: newWallet.toFixed(2),
           difference_amount: payload.vatDifference.toFixed(2),
           invoice_number: payload.invoice_number,
           type: payload.vatDifference >= 0 ? "CREDIT" : "DEBIT",

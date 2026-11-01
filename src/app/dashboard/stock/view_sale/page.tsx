@@ -8,6 +8,8 @@ import DeleteSale from "@/action/stock/deletesale";
 import DeleteSaleItem from "@/action/stock/deletesaleitem";
 import UpdateInvoiceNumber from "@/action/stock/updateinvoicenumber";
 import GetSaleDeleteImpact from "@/action/stock/getsaledeleteimpact";
+import CreateSaleChallan from "@/action/challan/createsalesalechallan";
+import { PayByWalletLiquor } from "@/action/challan/paybywalletliquor";
 import GetUserDailySale, {
   DailySaleSummary,
   GroupedDailySale,
@@ -181,13 +183,17 @@ const DocumentWiseDetails = () => {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isSingleAcceptLoading, setIsSingleAcceptLoading] =
     useState<boolean>(false);
+  const [isPayVatLoading, setIsPayVatLoading] = useState(false);
+  const [isWalletPaymentLoading, setIsWalletPaymentLoading] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [isWalletConfirmModalOpen, setIsWalletConfirmModalOpen] =
+    useState(false);
+  const [isPaid, setIsPaid] = useState(false);
   const [filedReturnPeriods, setFiledReturnPeriods] = useState<Set<string>>(
     new Set(),
   );
 
   //   const [name, setName] = useState<string>("");
-
-  const [userid, setUserid] = useState<number>(0);
 
   const normalizeTin = (tinNumber: string): string => tinNumber.trim();
 
@@ -302,12 +308,11 @@ const DocumentWiseDetails = () => {
   const init = async () => {
     // setLoading(true);
 
-    const dvat_response = await GetUserDvat04Anx({
-      userid: userid,
-    });
+    const dvat_response = await GetUserDvat04Anx({});
 
     if (dvat_response.status && dvat_response.data) {
       setDvatData(dvat_response.data);
+      setWalletBalance(parseFloat(dvat_response.data.wallet || "0"));
       await loadFiledReturnPeriods(dvat_response.data.id);
       const daily_sale_response = await GetUserDailySaleFiltered({
         dvatid: dvat_response.data.id,
@@ -364,13 +369,6 @@ const DocumentWiseDetails = () => {
     const initEssentialData = async () => {
       setIsLoading(true);
       try {
-        const authResponse = await getAuthenticatedUserId();
-        if (!authResponse.status || !authResponse.data) {
-          toast.error(authResponse.message);
-          return router.push("/");
-        }
-        setUserid(authResponse.data);
-
         const dvat_response = await GetUserDvat04Anx({});
 
         if (dvat_response.status && dvat_response.data) {
@@ -536,6 +534,89 @@ const DocumentWiseDetails = () => {
     }
   };
 
+  const handlePayVat = async () => {
+    if (!selectedGroup || selectedGroup.records.length === 0) return;
+
+    setIsPayVatLoading(true);
+    const response = await CreateSaleChallan({
+      saleId: selectedGroup.records[0].id,
+    });
+    setIsPayVatLoading(false);
+
+    if (!response.status || !response.data) {
+      toast.error(response.message);
+      return;
+    }
+
+    if (response.data.isPaid) {
+      toast.info("VAT is already paid for this invoice.");
+      return;
+    }
+
+    router.push(
+      `/dashboard/stock/sale_challan/${encryptURLData(
+        response.data.challanId.toString(),
+      )}`,
+    );
+  };
+
+  const handlePayByWallet = () => {
+    if (!selectedGroup || selectedGroup.records.length === 0 || !dvatdata)
+      return;
+
+    const totalAmount = selectedGroup.totalVatAmount;
+
+    if (walletBalance < totalAmount) {
+      toast.error(
+        `Insufficient wallet balance. Available: ₹${walletBalance.toFixed(
+          2,
+        )}, Required: ₹${totalAmount.toFixed(2)}`,
+      );
+      return;
+    }
+
+    setIsWalletConfirmModalOpen(true);
+  };
+
+  const confirmWalletPayment = async () => {
+    if (!selectedGroup || selectedGroup.records.length === 0 || !dvatdata)
+      return;
+
+    const totalAmount = selectedGroup.totalVatAmount;
+
+    setIsWalletPaymentLoading(true);
+    try {
+      const response = await PayByWalletLiquor({
+        totalAmount: totalAmount.toFixed(2),
+        invoiceNo: selectedGroup.invoice_number,
+        sellerId: selectedGroup.seller_tin_number.id,
+      });
+
+      if (!response.status) {
+        toast.error(response.message);
+        return;
+      }
+
+      toast.success("Payment successful via wallet!");
+      setWalletBalance(parseFloat(response.data?.new_wallet || "0"));
+      setIsPaid(true);
+      setIsWalletConfirmModalOpen(false);
+      setTimeout(() => {
+        setIsGroupModalOpen(false);
+        setSelectedGroup(null);
+      }, 1500);
+      await init();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Payment failed. Please try again.",
+      );
+    } finally {
+      setIsWalletPaymentLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!dvatdata?.id) return;
 
@@ -634,6 +715,29 @@ const DocumentWiseDetails = () => {
       endDate: endDateStr,
     });
   }, [selectedPeriod]);
+
+  // Refresh wallet balance and check payment status when modal opens
+  useEffect(() => {
+    if (!isGroupModalOpen || !dvatdata?.id || !selectedGroup) return;
+
+    const refreshData = async () => {
+      // Get fresh wallet balance
+      const dvat_response = await GetUserDvat04Anx({});
+
+      if (dvat_response.status && dvat_response.data) {
+        setWalletBalance(parseFloat(dvat_response.data.wallet || "0"));
+      }
+
+      // Check if payment is already done using is_paid column from daily_sale
+      if (selectedGroup.records.some((record) => record.is_paid)) {
+        setIsPaid(true);
+      } else {
+        setIsPaid(false);
+      }
+    };
+
+    refreshData();
+  }, [isGroupModalOpen, dvatdata?.id, selectedGroup]);
 
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (!dvatdata?.id) return;
@@ -930,7 +1034,6 @@ const DocumentWiseDetails = () => {
       }
 
       const response = await ConvertDvat31({
-        createdById: userid,
         dvatid: dvatdata.id,
         startDate: dateFilter.startDate,
         endDate: dateFilter.endDate,
@@ -1094,7 +1197,6 @@ const DocumentWiseDetails = () => {
     for (const id of ids) {
       const response = await DeleteSale({
         id,
-        deletedById: userid,
       });
       if (response.data && response.status) {
         successCount += 1;
@@ -1430,7 +1532,8 @@ const DocumentWiseDetails = () => {
                             !record.seller_tin_number.tin_number.startsWith(
                               "25",
                             )) &&
-                            !record.is_accept && (
+                            !record.is_accept &&
+                            !record.is_paid && (
                               <button
                                 onClick={() => {
                                   handleDeleteSaleItem(record.id);
@@ -1516,14 +1619,147 @@ const DocumentWiseDetails = () => {
           </div>
         )}
 
-        <>
-          <button
-            onClick={() => {}}
-            className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
-          >
-            Pay VAT and Accept
-          </button>
-        </>
+        <div className="flex w-full gap-2">
+          <div className="grow"></div>
+
+          {isPaid ? (
+            <div className="text-sm text-green-600 flex items-center gap-2">
+              ✅ Payment Successful!
+            </div>
+          ) : (
+            <>
+              {selectedGroup &&
+                walletBalance < selectedGroup.totalVatAmount && (
+                  <div className="text-xs text-red-600 flex items-center">
+                    ⚠️ Insufficient wallet balance (₹{walletBalance.toFixed(2)})
+                  </div>
+                )}
+              <button
+                onClick={handlePayByWallet}
+                disabled={
+                  isWalletPaymentLoading ||
+                  !selectedGroup ||
+                  walletBalance < selectedGroup.totalVatAmount
+                }
+                className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+              >
+                {isWalletPaymentLoading ? "Processing..." : "Pay Using Wallet"}
+              </button>
+              <button
+                onClick={handlePayVat}
+                disabled={isPayVatLoading}
+                className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+              >
+                {isPayVatLoading ? "Processing..." : "Pay Online"}
+              </button>
+            </>
+          )}
+        </div>
+      </Modal>
+
+      {/* Wallet Payment Confirmation Modal */}
+      <Modal
+        title="Confirm Wallet Payment"
+        open={isWalletConfirmModalOpen}
+        onOk={confirmWalletPayment}
+        onCancel={() => setIsWalletConfirmModalOpen(false)}
+        okText="Confirm Payment"
+        cancelText="Cancel"
+        okButtonProps={{
+          danger: true,
+          loading: isWalletPaymentLoading,
+        }}
+        cancelButtonProps={{
+          disabled: isWalletPaymentLoading,
+        }}
+        width={500}
+      >
+        {selectedGroup && (
+          <div className="space-y-4 py-3">
+            {/* Wallet Balance Info */}
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-xs text-blue-600 font-semibold mb-2">
+                💳 WALLET BALANCE
+              </p>
+              <p className="text-2xl font-bold text-blue-900">
+                ₹
+                {walletBalance.toLocaleString("en-IN", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </p>
+            </div>
+
+            {/* Payable Amount Info */}
+            <div className="p-3 bg-green-50 border border-green-200 rounded">
+              <p className="text-xs text-green-600 font-semibold mb-2">
+                💰 PAYABLE AMOUNT (VAT)
+              </p>
+              <p className="text-2xl font-bold text-green-900">
+                ₹
+                {selectedGroup.totalVatAmount.toLocaleString("en-IN", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </p>
+            </div>
+
+            {/* Invoice Details */}
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+              <p className="text-xs text-gray-600 font-semibold mb-3">
+                📋 INVOICE DETAILS
+              </p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-gray-500">Invoice Number</p>
+                  <p className="font-semibold text-gray-900">
+                    {selectedGroup.invoice_number}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Invoice Date</p>
+                  <p className="font-semibold text-gray-900">
+                    {formateDate(selectedGroup.invoice_date)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Purchaser</p>
+                  <p className="font-semibold text-gray-900">
+                    {selectedGroup.seller_tin_number.name_of_dealer}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Tax Rate</p>
+                  <p className="font-semibold text-gray-900">
+                    {selectedGroup.records[0]?.tax_percent || "N/A"}%
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded">
+              <p className="text-xs text-amber-700 font-semibold">
+                ⚠️ After confirming, ₹
+                {selectedGroup.totalVatAmount.toLocaleString("en-IN", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                will be deducted from your wallet.
+              </p>
+              <p className="text-xs text-amber-700 mt-2">
+                New wallet balance will be: ₹
+                {(walletBalance - selectedGroup.totalVatAmount).toLocaleString(
+                  "en-IN",
+                  {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  },
+                )}
+              </p>
+            </div>
+          </div>
+        )}
       </Modal>
 
       <Modal
@@ -1910,7 +2146,7 @@ const DocumentWiseDetails = () => {
         <div className="mb-3 pb-2 border-b">
           <h2 className="text-sm font-medium text-gray-900">Sale Invoice</h2>
         </div>
-        <DailySaleProvider userid={userid} setAddBox={setAddBox} init={init} />
+        <DailySaleProvider setAddBox={setAddBox} init={init} />
       </Drawer>
       <Drawer
         placement="right"
@@ -1931,7 +2167,6 @@ const DocumentWiseDetails = () => {
           <CreditNoteDrawer
             group={creditNoteGroup}
             dvat04Id={dvatdata.id}
-            userid={userid}
             setOpen={setCreditNoteBox}
             init={init}
           />
@@ -1954,7 +2189,6 @@ const DocumentWiseDetails = () => {
           <DebitNoteDrawer
             group={debitNoteGroup}
             dvat04Id={dvatdata.id}
-            userid={userid}
             setOpen={setDebitNoteBox}
             init={init}
           />
@@ -2338,7 +2572,9 @@ const DocumentWiseDetails = () => {
                       <TableRow
                         key={index}
                         className={
-                          group.records.some((record) => !record.is_accept)
+                          group.records.some((record) => record.is_paid)
+                            ? "border-b bg-green-50 hover:bg-green-100"
+                            : group.records.some((record) => !record.is_accept)
                             ? "border-b bg-red-50 hover:bg-red-100"
                             : "border-b hover:bg-gray-50"
                         }
@@ -2420,7 +2656,7 @@ const DocumentWiseDetails = () => {
                                     Update
                                   </button>
                                 )}
-                                {!group.records[0].is_accept && (
+                                {!group.records[0].is_accept && !group.records.some((record) => record.is_paid) && (
                                   <button
                                     onClick={() => {
                                       const idsToDelete = group.records.map(

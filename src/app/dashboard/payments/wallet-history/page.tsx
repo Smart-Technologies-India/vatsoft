@@ -275,39 +275,12 @@ const WalletHistoryPage = () => {
             </h1>
             <Link href="/dashboard/payments/add-wallet-transaction">
               <Button type="primary" size="large">
-                Add Wallet Transaction
+                Recharge Wallet
               </Button>
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-linear-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-600 font-medium mb-1">
-                Current Wallet Amount
-              </p>
-              <p className="text-3xl font-bold text-blue-900">
-                ₹ {formatCurrency(dvatdata.wallet || "0")}
-              </p>
-            </div>
-            <div className="bg-linear-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
-              <p className="text-sm text-green-600 font-medium mb-1">
-                Total Transactions
-              </p>
-              <p className="text-3xl font-bold text-green-900">
-                {pagination.total}
-              </p>
-            </div>
-            <div className="bg-linear-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
-              <p className="text-sm text-purple-600 font-medium mb-1">
-                DVAT ID
-              </p>
-              <p className="text-3xl font-bold text-purple-900">
-                {dvatdata.id}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 ">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 ">
             <div className="space-y-4 flex">
               <div className="flex gap-4">
                 <p className="text-sm font-medium text-gray-700 mb-2">
@@ -348,6 +321,16 @@ const WalletHistoryPage = () => {
                   {isSearch && <Button onClick={init}>Clear</Button>}
                 </div>
               )}
+
+              <div className="grow"></div>
+              <div className="bg-linear-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg py-2 px-4 flex gap-4 text-lg justify-center items-center">
+                <p className="text-sm text-blue-600 font-medium">
+                  Wallet Balance
+                </p>
+                <p className="text-lg font-bold text-blue-900">
+                  ₹ {formatCurrency(dvatdata.wallet || "0")}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -367,19 +350,7 @@ const WalletHistoryPage = () => {
                     Transaction Type
                   </TableHead>
                   <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
-                    Difference Amount
-                  </TableHead>
-                  <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
-                    Old Wallet
-                  </TableHead>
-                  <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
-                    New Wallet
-                  </TableHead>
-                  <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
-                    Old Amount
-                  </TableHead>
-                  <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
-                    New Amount
+                    Amount
                   </TableHead>
                   <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
                     Date
@@ -413,20 +384,13 @@ const WalletHistoryPage = () => {
                           {record.type}
                         </span>
                       </TableCell>
-                      <TableCell className="text-center p-3 text-sm">
-                        ₹ {formatCurrency(record.difference_amount)}
-                      </TableCell>
-                      <TableCell className="text-center p-3 text-sm">
-                        ₹ {formatCurrency(record.old_wallet)}
-                      </TableCell>
                       <TableCell className="text-center p-3 text-sm font-medium">
-                        ₹ {formatCurrency(record.new_wallet)}
-                      </TableCell>
-                      <TableCell className="text-center p-3 text-sm">
-                        ₹ {formatCurrency(record.old_amount)}
-                      </TableCell>
-                      <TableCell className="text-center p-3 text-sm">
-                        ₹ {formatCurrency(record.new_amount)}
+                        ₹ {formatCurrency(
+                          Math.abs(
+                            parseFloat(record.old_wallet || "0") -
+                              parseFloat(record.new_wallet || "0")
+                          )
+                        )}
                       </TableCell>
                       <TableCell className="text-center p-3 text-sm">
                         {formateDate(record.createdAt)}
@@ -441,7 +405,7 @@ const WalletHistoryPage = () => {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={10}
+                      colSpan={6}
                       className="text-center p-4 text-sm text-gray-500"
                     >
                       No wallet history found.

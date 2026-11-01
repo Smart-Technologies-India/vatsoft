@@ -30,7 +30,6 @@ interface CreateDebitNotePayload {
   original_invoice_date: Date;
   quantity: number;
   commodity_masterId: number;
-  createdById: number;
   urn_number: string;
 }
 
@@ -143,7 +142,7 @@ const CreateDebitNote = async (
           total_tax_amount: "0",
           status: Status.ACTIVE,
           compositionScheme: dvat04.compositionScheme,
-          createdById: payload.createdById,
+          createdById: currentUserId,
         },
       });
     }
@@ -171,7 +170,7 @@ const CreateDebitNote = async (
         commodity_masterId: payload.commodity_masterId,
         description_of_goods: descriptionOfGoods,
         status: Status.ACTIVE,
-        createdById: payload.createdById,
+        createdById: currentUserId,
       },
     });
 

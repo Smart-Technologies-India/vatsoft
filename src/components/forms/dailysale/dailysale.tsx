@@ -38,7 +38,6 @@ type AgainstType =
   | "EXEMPT6_2";
 
 type DailySaleProviderProps = {
-  userid: number;
   setAddBox: Dispatch<SetStateAction<boolean>>;
   init: () => Promise<void>;
 };
@@ -50,21 +49,13 @@ export const DailySaleProvider = (props: DailySaleProviderProps) => {
 
   return (
     <FormProvider {...methods}>
-      <DailySale
-        userid={props.userid}
-        setAddBox={props.setAddBox}
-        init={props.init}
-      />
+      <DailySale setAddBox={props.setAddBox} init={props.init} />
     </FormProvider>
   );
 };
 
 const DailySale = (props: DailySaleProviderProps) => {
   const router = useRouter();
-
-  const taxable_at: OptionValue[] = [
-    0, 1, 2, 4, 5, 6, 12.5, 12.75, 13.5, 15, 20,
-  ].map((val: number) => ({ value: `${val}`, label: `${val}%` }));
 
   const [againstType, setAgainstType] = useState<AgainstType>("NONE");
   const [isComp, setIsComp] = useState(false);
@@ -170,9 +161,7 @@ const DailySale = (props: DailySaleProviderProps) => {
         setTinData(tin_response.data);
       }
 
-      const response = await GetUserDvat04Anx({
-        userid: authResponse.data,
-      });
+      const response = await GetUserDvat04Anx({});
 
       if (response.status && response.data) {
         setDvatdata(response.data);
@@ -251,7 +240,10 @@ const DailySale = (props: DailySaleProviderProps) => {
       if (recipient_vat_no && (recipient_vat_no ?? "").length < 2) {
         if (recipient_vat_no.length >= 11) {
           toast.dismiss();
-          if (recipient_vat_no.startsWith("25") || recipient_vat_no.startsWith("26")) {
+          if (
+            recipient_vat_no.startsWith("25") ||
+            recipient_vat_no.startsWith("26")
+          ) {
             toast.error("Wrong TIN number");
           } else {
             setTinBox(true);
@@ -269,7 +261,10 @@ const DailySale = (props: DailySaleProviderProps) => {
         setTinData(tinresponse.data);
       } else {
         if ((recipient_vat_no ?? "").length >= 11) {
-          if (recipient_vat_no.startsWith("25") || recipient_vat_no.startsWith("26")) {
+          if (
+            recipient_vat_no.startsWith("25") ||
+            recipient_vat_no.startsWith("26")
+          ) {
             toast.error("Wrong TIN number");
           } else {
             setTinBox(true);
@@ -514,7 +509,6 @@ const DailySale = (props: DailySaleProviderProps) => {
 
     date.setDate(date.getDate() + 1);
 
-   
     // Use MANUFACTURER action for MANUFACTURER commodity, otherwise use regular action
     const stock_response =
       dvatdata?.commodity === "MANUFACTURER" || [821, 35].includes(dvatdata?.id)
@@ -837,7 +831,9 @@ const DailySale = (props: DailySaleProviderProps) => {
     // Validate that input contains at least one letter and is not purely numeric
     const hasAlphabet = /[a-zA-Z]/.test(dealerName);
     if (!hasAlphabet) {
-      return toast.error("Dealer Name must contain at least one letter. Only numbers are not allowed.");
+      return toast.error(
+        "Dealer Name must contain at least one letter. Only numbers are not allowed.",
+      );
     }
 
     const response = await CreateTinNumber({
@@ -979,8 +975,11 @@ const DailySale = (props: DailySaleProviderProps) => {
                   label:
                     val.product_name +
                     ` [${val.quantity} ${
-                      dvatdata && dvatdata.commodity == "RESTAURANT" ?"mL":
-                      val.product_type == "FUEL" ? "Litre" : "PCS"
+                      dvatdata && dvatdata.commodity == "RESTAURANT"
+                        ? "mL"
+                        : val.product_type == "FUEL"
+                          ? "Litre"
+                          : "PCS"
                     }]`,
                 }),
               )}

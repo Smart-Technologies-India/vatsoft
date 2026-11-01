@@ -15,7 +15,6 @@ import { DateSelect } from "../inputfields/dateselect";
 type CreditNoteDrawerProps = {
   group: GroupedDailySale;
   dvat04Id: number;
-  userid: number;
   setOpen: Dispatch<SetStateAction<boolean>>;
   init: () => Promise<void>;
 };
@@ -40,7 +39,7 @@ export const CreditNoteDrawer = (props: CreditNoteDrawerProps) => {
 };
 
 const CreditNoteDrawerForm = (props: CreditNoteDrawerProps) => {
-  const { group, dvat04Id, userid, setOpen, init } = props;
+  const { group, dvat04Id, setOpen, init } = props;
 
   const firstRecord = group.records[0];
   const totalQuantity = group.records.reduce((acc, r) => acc + r.quantity, 0);
@@ -65,7 +64,6 @@ const CreditNoteDrawerForm = (props: CreditNoteDrawerProps) => {
         original_invoice_date: new Date(group.invoice_date),
         quantity: totalQuantity,
         commodity_masterId: firstRecord.commodity_masterId,
-        createdById: userid,
         urn_number: group.urn_number,
       });
 
@@ -82,7 +80,10 @@ const CreditNoteDrawerForm = (props: CreditNoteDrawerProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onFormError)} className="flex flex-col gap-4">
+    <form
+      onSubmit={handleSubmit(onSubmit, onFormError)}
+      className="flex flex-col gap-4"
+    >
       {/* Original invoice reference (read-only) */}
       <div className="grid grid-cols-2 gap-3">
         <div>

@@ -17,7 +17,6 @@ const Page = () => {
 
   useEffect(() => {
     const init = async () => {
-      
       const authResponse = await getAuthenticatedUserId();
       if (!authResponse.status || !authResponse.data) {
         toast.error(authResponse.message);
@@ -123,6 +122,13 @@ const Page = () => {
                   title="Wallet History"
                   description="View the history of all your wallet transactions related to VAT payments."
                   link="/dashboard/payments/wallet-history"
+                />
+              )}
+              {commodity != "FUEL" && (
+                <DashboardCards
+                  title="Wallet History"
+                  description="View the history of all your wallet transactions related to VAT payments."
+                  link="/dashboard/payments/wallet-transactions"
                 />
               )}
             </>

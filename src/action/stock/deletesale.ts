@@ -2,7 +2,6 @@
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 interface DeleteSalePayload {
   id: number;
-  deletedById: number;
 }
 
 import { errorToString } from "@/utils/methods";
@@ -106,9 +105,9 @@ const DeleteSale = async (
             },
             data: {
               status: "INACTIVE",
-              updatedById: payload.deletedById,
+              updatedById: currentUserId,
               deletedAt: new Date(),
-              deletedById: payload.deletedById,
+              deletedById: currentUserId,
             },
           });
         }
@@ -121,7 +120,7 @@ const DeleteSale = async (
         data: {
           saleId: is_exist.id,
           is_delete: true,
-          createdById: payload.deletedById,
+          createdById: currentUserId,
           ...filteredData,
         },
       });
@@ -136,8 +135,8 @@ const DeleteSale = async (
             status: "ACTIVE",
           },
           data: {
-            updatedById: payload.deletedById,
-            deletedById: payload.deletedById,
+            updatedById: currentUserId,
+            deletedById: currentUserId,
             deletedAt: new Date(),
             status: "INACTIVE",
           },
@@ -148,8 +147,8 @@ const DeleteSale = async (
       const update_response = await prisma.daily_sale.update({
         where: { id: is_exist.id },
         data: {
-          updatedById: payload.deletedById,
-          deletedById: payload.deletedById,
+          updatedById: currentUserId,
+          deletedById: currentUserId,
           deletedAt: new Date(),
           status: "INACTIVE",
         },
