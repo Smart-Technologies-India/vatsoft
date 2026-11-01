@@ -1195,6 +1195,10 @@ export const postRes = (request, response) => {
             const markerInvoiceNo = markerParts[1] || "";
             const markerDvatId = parseInt(markerParts[2] || "0", 10);
 
+            const dvat = await prisma.dvat04.findUnique({
+              where: { id: markerDvatId, deletedAt: null, deletedById: null },
+            });
+
             // Update challan status to PAID
             await prisma.challan.updateMany({
               where: {
@@ -1216,6 +1220,7 @@ export const postRes = (request, response) => {
             await prisma.transport_permit.updateMany({
               where: {
                 invoiceNumber: markerInvoiceNo,
+                sellerDvatTinNumber: dvat.tinNumber ?? "",
                 deleted_at: null,
               },
               data: {

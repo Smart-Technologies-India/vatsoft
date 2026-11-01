@@ -74,6 +74,7 @@ export const PayByWalletLiquor = async (input: {
     await prisma.transport_permit.updateMany({
       where: {
         invoiceNumber: input.invoiceNo,
+        sellerDvatTinNumber: dvat04.tinNumber ?? "",
         deleted_at: null,
       },
       data: {

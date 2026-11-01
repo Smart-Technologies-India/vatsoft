@@ -555,6 +555,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
           await prisma.transport_permit.updateMany({
             where: {
               invoiceNumber: markerInvoiceNo,
+              sellerDvatTinNumber: dvat.tinNumber ?? "",
               deleted_at: null,
             },
             data: {
@@ -694,6 +695,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
           await prisma.transport_permit.updateMany({
             where: {
               invoiceNumber: markerInvoiceNo,
+              sellerDvatTinNumber: dvat.tinNumber ?? "",
               deleted_at: null,
             },
             data: {
