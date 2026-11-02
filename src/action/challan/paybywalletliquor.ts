@@ -124,7 +124,7 @@ export const PayByWalletLiquor = async (input: {
         deletedById: null,
       },
       data: {
-        is_paid: true,
+        payment_status: "PAID",
       },
     });
 

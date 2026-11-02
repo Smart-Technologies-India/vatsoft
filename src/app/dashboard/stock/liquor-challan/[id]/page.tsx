@@ -32,9 +32,10 @@ import ServerTime from "@/action/servertime";
 
 const parseLiquorRemark = (remark?: string | null) => {
   const value = remark ?? "";
+
   return {
-    invoiceNo: value.match(/INVOICE_NO:([^#]*)/)?.[1] ?? "N/A",
-    sellerTin: value.match(/SELLER_TIN:([^#]*)/)?.[1] ?? "N/A",
+    invoiceNo: value.split("#")[1],
+    sellerTin: value.split("#")[2],
   };
 };
 

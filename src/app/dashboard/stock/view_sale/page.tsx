@@ -2574,9 +2574,7 @@ const DocumentWiseDetails = () => {
                         className={
                           group.records.some((record) => record.is_paid)
                             ? "border-b bg-green-50 hover:bg-green-100"
-                            : group.records.some((record) => !record.is_accept)
-                            ? "border-b bg-red-50 hover:bg-red-100"
-                            : "border-b hover:bg-gray-50"
+                            : "border-b bg-red-50 hover:bg-red-100"
                         }
                       >
                         <TableCell className="p-2 text-center text-xs">
@@ -2656,22 +2654,25 @@ const DocumentWiseDetails = () => {
                                     Update
                                   </button>
                                 )}
-                                {!group.records[0].is_accept && !group.records.some((record) => record.is_paid) && (
-                                  <button
-                                    onClick={() => {
-                                      const idsToDelete = group.records.map(
-                                        (record) => record.id,
-                                      );
-                                      setDeleteRecords(idsToDelete);
-                                      setDeleteBox(true);
-                                      loadDeleteImpact(idsToDelete);
-                                      handelClose(index);
-                                    }}
-                                    className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded"
-                                  >
-                                    Delete
-                                  </button>
-                                )}
+                                {!group.records[0].is_accept &&
+                                  !group.records.some(
+                                    (record) => record.is_paid,
+                                  ) && (
+                                    <button
+                                      onClick={() => {
+                                        const idsToDelete = group.records.map(
+                                          (record) => record.id,
+                                        );
+                                        setDeleteRecords(idsToDelete);
+                                        setDeleteBox(true);
+                                        loadDeleteImpact(idsToDelete);
+                                        handelClose(index);
+                                      }}
+                                      className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded"
+                                    >
+                                      Delete
+                                    </button>
+                                  )}
                                 {!group.records[0].invoice_number ||
                                 group.records[0].invoice_number.trim() ===
                                   "" ? (

@@ -94,13 +94,49 @@ const CreateLiquorSaleChallan = async (
         deletedById: null,
         status: "ACTIVE",
       },
-      select: { vatamount: true },
+      select: { 
+        vatamount: true,
+        amount: true,
+        commodity_master: {
+          select: {
+            mrp: true,
+            crate_size: true,
+          },
+        },
+        quantity: true,
+      },
     });
 
-    const totalVat = invoiceRows.reduce(
-      (sum, row) => sum + (Number.parseFloat(row.vatamount) || 0),
-      0,
-    );
+    let totalVat = 0;
+
+    // For RESTAURANT and LIQUOR, calculate MRB-based VAT minus ITC
+    if (["RESTAURANT", "LIQUOR"].includes(purchase.dvat04.commodity ?? "")) {
+      // Calculate MRB-based VAT
+      const mrbBasedVat = invoiceRows.reduce((total, row) => {
+        const mrp = parseFloat(row.commodity_master.mrp || "0");
+        const crateSize = parseInt(
+          row.commodity_master.crate_size.toString() || "1",
+        );
+        const quantity = row.quantity;
+        const taxableValue = crateSize > 0 ? (mrp / crateSize) * quantity : 0;
+        return total + taxableValue / 6;
+      }, 0);
+
+      // Calculate total ITC (from invoice-level VAT amounts)
+      const totalItc = invoiceRows.reduce(
+        (sum, row) => sum + (Number.parseFloat(row.vatamount) || 0),
+        0,
+      );
+
+      // VAT Payable = MRB-based VAT - ITC
+      totalVat = mrbBasedVat - totalItc;
+    } else {
+      // For other commodities, use the sum of VAT amounts
+      totalVat = invoiceRows.reduce(
+        (sum, row) => sum + (Number.parseFloat(row.vatamount) || 0),
+        0,
+      );
+    }
 
     if (totalVat <= 0) {
       return createResponse({

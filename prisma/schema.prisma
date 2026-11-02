@@ -1251,6 +1251,12 @@ model tally_sale {
   @@index([seller_tin_numberId], map: "tally_sale_seller_tin_numberId_fkey")
 }
 
+enum PURCHASE_STATUS {
+  DUE
+  PAID
+  DEALER_PAID
+}
+
 model daily_purchase {
   id                  Int               @id @default(autoincrement())
   dvat04Id            Int
@@ -1275,7 +1281,7 @@ model daily_purchase {
   is_against_hform    Boolean           @default(false)
   is_against_iform    Boolean           @default(false)
   is_against_e1form   Boolean           @default(false)
-  is_paid             Boolean           @default(false)
+  payment_status      PURCHASE_STATUS   @default(DUE)
   createdAt           DateTime          @default(now())
   createdById         Int
   updatedAt           DateTime          @updatedAt
@@ -1540,7 +1546,7 @@ model edit_purchase {
   is_against_iform    Boolean           @default(false)
   is_against_e1form   Boolean           @default(false)
   batch_name          String?
-  is_paid             Boolean           @default(false)
+  payment_status      PURCHASE_STATUS   @default(DUE)
   createdAt           DateTime          @default(now())
   createdById         Int
   updatedAt           DateTime          @updatedAt

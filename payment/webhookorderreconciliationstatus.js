@@ -601,7 +601,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
               deletedBy: null,
             },
             data: {
-              is_paid: true,
+              payment_status: "PAID",
             },
           });
         } else if (isLiquorSaleVatPayment) {
@@ -673,6 +673,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
               },
               data: {
                 is_accept: true,
+                payment_status: "DEALER_PAID",
               },
             });
 

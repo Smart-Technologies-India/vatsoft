@@ -95,7 +95,7 @@ export const PayPurchaseByWalletLiquor = async (input: {
       },
       data: {
         is_accept: true,
-        is_paid: true,
+        payment_status: "DEALER_PAID",
       },
     });
 

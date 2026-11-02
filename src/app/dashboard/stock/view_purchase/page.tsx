@@ -1151,52 +1151,6 @@ const DocumentWiseDetails = () => {
     }
   };
 
-  // const handleAcceptSingleRecord = async (
-  //   record: GroupedDailyPurchase["records"][number],
-  // ) => {
-  //   if (!dvatdata) {
-  //     toast.error("DVAT not found.");
-  //     return;
-  //   }
-
-  //   setIsSingleAcceptLoading(true);
-
-  //   const response = await AcceptSale({
-  //     commodityid: record.commodity_master.id,
-  //     dvatid: dvatdata.id,
-  //     quantity: record.quantity,
-  //     puchaseid: record.id,
-  //     urn: record.urn_number ?? "",
-  //   });
-
-  //   setIsSingleAcceptLoading(false);
-
-  //   if (response.status && response.data) {
-  //     markRecordAccepted(record.id);
-  //     toast.success("Purchase record accepted.");
-  //     await init();
-  //   } else {
-  //     toast.error(response.message);
-  //   }
-  // };
-
-  // const handleRejectSingleRecord = async (
-  //   record: GroupedDailyPurchase["records"][number],
-  // ) => {
-  //   setIsSingleRejectLoading(true);
-
-  //   const response = await RejectPurchase({ id: record.id });
-
-  //   setIsSingleRejectLoading(false);
-
-  //   if (response.status && response.data) {
-  //     toast.success("Purchase record rejected.");
-  //     await init();
-  //   } else {
-  //     toast.error(response.message);
-  //   }
-  // };
-
   const handlePayVat = async () => {
     if (!selectedGroup || selectedGroup.records.length === 0) return;
 
@@ -1236,7 +1190,9 @@ const DocumentWiseDetails = () => {
       if (dvat_response.status && dvat_response.data) {
         setWalletBalance(parseFloat(dvat_response.data.wallet || "0"));
       }
-      setIsWalletPaid(selectedGroup.records.some((r) => r.is_paid));
+      setIsWalletPaid(
+        selectedGroup.records.some((r) => r.payment_status == "DEALER_PAID"),
+      );
     };
 
     refreshWallet();
@@ -1248,10 +1204,11 @@ const DocumentWiseDetails = () => {
 
     const mrbBasedVat = selectedGroup.records.reduce((total, record) => {
       const mrp = parseFloat(record.commodity_master.mrp || "0");
-      const crateSize = parseInt(record.commodity_master.crate_size.toString() || "1");
+      const crateSize = parseInt(
+        record.commodity_master.crate_size.toString() || "1",
+      );
       const quantity = record.quantity;
-      const taxableValue =
-        crateSize > 0 ? (mrp / crateSize) * quantity : 0;
+      const taxableValue = crateSize > 0 ? (mrp / crateSize) * quantity : 0;
       return total + taxableValue / 6;
     }, 0);
 
@@ -1386,41 +1343,6 @@ const DocumentWiseDetails = () => {
       setSelectedGroup(null);
     }
   };
-
-  // const handleAcceptSnapshotSingle = async (
-  //   record: GroupedDailyPurchase["records"][number],
-  // ) => {
-  //   if (!dvatdata) {
-  //     toast.error("DVAT not found.");
-  //     return;
-  //   }
-
-  //   setIsSingleAcceptLoading(true);
-
-  //   // Convert quantity from pieces to ML (1 piece = pack_size ML)
-  //   const quantityInML =
-  //     record.quantity * parseInt(record.commodity_master.pack_size ?? "0", 10);
-
-  //   const response = await AcceptSale({
-  //     commodityid: record.commodity_master.id,
-  //     dvatid: dvatdata.id,
-  //     quantity: quantityInML, // ML quantity
-  //     puchaseid: record.id,
-  //     urn: record.urn_number ?? "",
-  //   });
-
-  //   setIsSingleAcceptLoading(false);
-
-  //   if (response.status && response.data) {
-  //     markRecordAccepted(record.id);
-  //     toast.success(
-  //       `Purchase record accepted. Quantity converted: ${record.quantity} pcs → ${quantityInML} ML`,
-  //     );
-  //     await init();
-  //   } else {
-  //     toast.error(response.message);
-  //   }
-  // };
 
   const handleAcceptSnapshotAll = async () => {
     if (!dvatdata || !selectedGroup) {
@@ -1738,22 +1660,7 @@ const DocumentWiseDetails = () => {
                   <div>
                     <p className="text-xs text-gray-600">VAT Payable</p>
                     <p className="font-semibold text-orange-600">
-                      ₹
-                      {formatIndianNumber(
-                        selectedGroup.records.reduce((total, record) => {
-                          const mrp = parseFloat(
-                            record.commodity_master.mrp || "0",
-                          );
-                          const crateSize = parseInt(
-                            record.commodity_master.crate_size.toString() ||
-                              "1",
-                          );
-                          const quantity = record.quantity;
-                          const taxableValue =
-                            crateSize > 0 ? (mrp / crateSize) * quantity : 0;
-                          return total + taxableValue / 6;
-                        }, 0) - selectedGroup.totalVatAmount,
-                      )}
+                      {formatIndianNumber(Math.round(calculateVatPayable()))}
                     </p>
                   </div>
                 </div>
@@ -1763,7 +1670,7 @@ const DocumentWiseDetails = () => {
             {/* {selectedGroup.records.some((r) => canAcceptRecord(r)) && ( */}
             <div className="mt-4 flex justify-end gap-2">
               {!["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") &&
-                selectedGroup.records.some((r) => r.is_paid) &&
+                selectedGroup.records.some((r) => r.payment_status == "PAID") &&
                 selectedGroup.records.some((r) => canAcceptRecord(r)) && (
                   <button
                     disabled={
@@ -1783,7 +1690,7 @@ const DocumentWiseDetails = () => {
                   </button>
                 )}
 
-              {selectedGroup.records.some((r) => !r.is_paid) && (
+              {selectedGroup.records.some((r) => r.payment_status == "DUE") && (
                 <button
                   disabled={isGroupRejectLoading}
                   onClick={() => {
@@ -1804,45 +1711,48 @@ const DocumentWiseDetails = () => {
                   {isGroupRejectLoading ? "Rejecting..." : "Reject All"}
                 </button>
               )}
-              {["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") && (
-                <>
-                  {isWalletPaid ? (
-                    <div className="text-sm text-green-600 flex items-center gap-2">
-                      ✅ Payment Successful!
-                    </div>
-                  ) : (
-                    <>
-                      {walletBalance < calculateVatPayable() && (
-                        <div className="text-xs text-red-600 flex items-center">
-                          ⚠️ Insufficient wallet balance (₹
-                          {walletBalance.toFixed(2)})
-                        </div>
-                      )}
-                      <button
-                        onClick={handlePayByWallet}
-                        disabled={
-                          isWalletPaymentLoading ||
-                          walletBalance < calculateVatPayable()
-                        }
-                        className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
-                      >
-                        {isWalletPaymentLoading
-                          ? "Processing..."
-                          : "Pay Using Wallet"}
-                      </button>
-                      <button
-                        disabled={isPayVatLoading || isGroupAcceptLoading}
-                        onClick={handlePayVat}
-                        className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
-                      >
-                        {isPayVatLoading || isGroupAcceptLoading
-                          ? "Please wait..."
-                          : "Pay VAT and Accept"}
-                      </button>
-                    </>
-                  )}
-                </>
-              )}
+              {["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") &&
+                selectedGroup.records.some(
+                  (r) => r.payment_status == "PAID",
+                ) && (
+                  <>
+                    {isWalletPaid ? (
+                      <div className="text-sm text-green-600 flex items-center gap-2">
+                        ✅ Payment Successful!
+                      </div>
+                    ) : (
+                      <>
+                        {walletBalance < calculateVatPayable() && (
+                          <div className="text-xs text-red-600 flex items-center">
+                            ⚠️ Insufficient wallet balance (₹
+                            {walletBalance.toFixed(2)})
+                          </div>
+                        )}
+                        <button
+                          onClick={handlePayByWallet}
+                          disabled={
+                            isWalletPaymentLoading ||
+                            walletBalance < calculateVatPayable()
+                          }
+                          className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+                        >
+                          {isWalletPaymentLoading
+                            ? "Processing..."
+                            : "Pay Using Wallet"}
+                        </button>
+                        <button
+                          disabled={isPayVatLoading || isGroupAcceptLoading}
+                          onClick={handlePayVat}
+                          className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+                        >
+                          {isPayVatLoading || isGroupAcceptLoading
+                            ? "Please wait..."
+                            : "Pay VAT and Accept"}
+                        </button>
+                      </>
+                    )}
+                  </>
+                )}
             </div>
             {/* )} */}
           </div>
@@ -1886,9 +1796,7 @@ const DocumentWiseDetails = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Current Wallet Balance:</span>
-                <span className="font-medium">
-                  ₹{walletBalance.toFixed(2)}
-                </span>
+                <span className="font-medium">₹{walletBalance.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -2572,7 +2480,11 @@ const DocumentWiseDetails = () => {
                         <TableRow
                           key={index}
                           className={
-                            group.records.some((record) => record.is_paid)
+                            group.records.some(
+                              (record) =>
+                                record.payment_status === "PAID" ||
+                                record.payment_status === "DEALER_PAID",
+                            )
                               ? "border-b bg-green-50 hover:bg-green-100"
                               : group.hasPendingAcceptable
                                 ? "border-b bg-red-50 hover:bg-red-100"
@@ -2668,67 +2580,6 @@ const DocumentWiseDetails = () => {
                                         </button>
                                       </>
                                     )}
-                                  {/* {group.count === 1 &&
-                                    (group.seller_tin_number.tin_number.startsWith(
-                                      "25",
-                                    ) ||
-                                      group.seller_tin_number.tin_number.startsWith(
-                                        "26",
-                                      )) &&
-                                    canAcceptRecord(group.records[0]) && (
-                                      <>
-                                        <button
-                                          onClick={async () => {
-                                            if (
-                                              stockSnapshotExists &&
-                                              dvatdata?.commodity ===
-                                                "RESTAURANT"
-                                            ) {
-                                              await handleAcceptSnapshotSingle(
-                                                group.records[0],
-                                              );
-                                            } else {
-                                              await handleAcceptSingleRecord(
-                                                group.records[0],
-                                              );
-                                            }
-                                            handelClose(index);
-                                          }}
-                                          disabled={isSingleAcceptLoading}
-                                          className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded disabled:opacity-60"
-                                        >
-                                          {isSingleAcceptLoading
-                                            ? "Accepting..."
-                                            : "Accept"}
-                                        </button>
-                                        <button
-                                          onClick={async () => {
-                                            Modal.confirm({
-                                              title: "Confirm Reject",
-                                              content:
-                                                "This will reject this purchase record and cannot be undone.",
-                                              okText: "Reject",
-                                              cancelText: "Cancel",
-                                              okButtonProps: {
-                                                danger: true,
-                                              },
-                                              onOk: async () => {
-                                                await handleRejectSingleRecord(
-                                                  group.records[0],
-                                                );
-                                                handelClose(index);
-                                              },
-                                            });
-                                          }}
-                                          disabled={isSingleRejectLoading}
-                                          className="text-sm bg-white border hover:border-red-500 hover:text-red-600 text-gray-700 py-1 px-3 rounded disabled:opacity-60"
-                                        >
-                                          {isSingleRejectLoading
-                                            ? "Rejecting..."
-                                            : "Reject"}
-                                        </button>
-                                      </>
-                                    )} */}
                                 </div>
                               }
                               title="Actions"

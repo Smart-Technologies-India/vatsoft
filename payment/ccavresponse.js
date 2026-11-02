@@ -1268,7 +1268,7 @@ export const postRes = (request, response) => {
                 deletedBy: null,
               },
               data: {
-                is_paid: true,
+                payment_status: "PAID",
               },
             });
           } else if (refineryMarker.startsWith("LIQUOR_SALE#")) {
@@ -1340,6 +1340,7 @@ export const postRes = (request, response) => {
                 },
                 data: {
                   is_accept: true,
+                  payment_status: "DEALER_PAID",
                 },
               });
 
