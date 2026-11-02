@@ -1671,7 +1671,8 @@ const DocumentWiseDetails = () => {
             <div className="mt-4 flex justify-end gap-2">
               {!["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") &&
                 selectedGroup.records.some((r) => r.payment_status == "PAID") &&
-                selectedGroup.records.some((r) => canAcceptRecord(r)) && (
+                selectedGroup.records.some((r) => canAcceptRecord(r)) &&
+                new Date(selectedGroup.invoice_date) < new Date("2026-11-01") && (
                   <button
                     disabled={
                       isGroupAcceptLoading || isStockSnapshotAcceptLoading
