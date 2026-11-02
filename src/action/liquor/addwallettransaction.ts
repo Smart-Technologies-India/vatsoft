@@ -64,7 +64,6 @@ const AddLiquorWalletTransaction = async (
     }
 
     const amountStr = payload.amount.toFixed(2);
-    const invoiceNumber = `LIQ-TOPUP-${currentDvatId}-${Date.now()}`;
     const challanRemark = `LIQUOR_WALLET_TOPUP#AMOUNT:${amountStr}#DATE:${new Date().toISOString().split("T")[0]}${payload.remark ? `#REMARK:${payload.remark}` : ""}`;
 
     // Get current date to determine month and year

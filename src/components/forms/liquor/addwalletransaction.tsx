@@ -16,8 +16,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { ToWords } from "to-words";
 import { capitalcase, encryptURLData, onFormError } from "@/utils/methods";
-import { TaxtAreaInput } from "../inputfields/textareainput";
-import { Separator } from "@/components/ui/separator";
 import AddLiquorWalletTransaction from "@/action/liquor/addwallettransaction";
 import { dvat04 } from "@prisma/client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";
@@ -207,9 +205,7 @@ const AddLiquorWalletTransactionPage = (
             </TableBody>
           </Table>
           <div className="w-60 mt-2 bg-green-50 border border-green-200 rounded p-3">
-            <p className="text-xs text-green-700 mb-2">
-              Total Payable Amount
-            </p>
+            <p className="text-xs text-green-700 mb-2">Total Payable Amount</p>
             <p className="text-2xl font-bold text-green-900">
               ₹ {getTotalAmount().toFixed(2)}
             </p>

@@ -706,52 +706,11 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
             },
           });
         } else if (refineryMarker.startsWith("LIQUOR_WALLET_TOPUP#")) {
-          // Handle liquor wallet top-up payments
-          const amountMatch = refineryMarker.match(/AMOUNT:([^#]+)/);
-          const topupAmount = amountMatch ? parseFloat(amountMatch[1]) : 0;
-
-          if (topupAmount > 0) {
-            try {
-              // Get current wallet amount
-              const dvatRecord = await prisma.dvat04.findUnique({
-                where: { id: parseInt(challan.dvatid) },
-                select: { wallet: true },
-              });
-
-              if (dvatRecord) {
-                const oldWallet = Number.parseFloat(dvatRecord.wallet || "0");
-                const newWallet = oldWallet + topupAmount;
-
-                // Update wallet in dvat04
-                await prisma.dvat04.update({
-                  where: { id: parseInt(challan.dvatid) },
-                  data: {
-                    wallet: newWallet.toFixed(2),
-                    updatedById: challan.createdById,
-                  },
-                });
-
-                // Create liquor wallet history entry
-                await prisma.liquor_wallet_history.create({
-                  data: {
-                    dvatId: parseInt(challan.dvatid),
-                    sellerId: 1, // Using 1 as placeholder for wallet top-up
-                    type: "CREDIT",
-                    status: "ACTIVE",
-                    old_wallet: oldWallet.toFixed(2),
-                    new_wallet: newWallet.toFixed(2),
-                    invoice_number: `LIQUOR_TOPUP_${challan.cpin}`,
-                  },
-                });
-              }
-            } catch (walletError) {
-              console.log(
-                "Error updating wallet for liquor wallet top-up payment:",
-                walletError,
-              );
-              // Don't fail the payment if wallet update fails
-            }
-          }
+          // Liquor wallet top-up handled in ccavresponse.js
+          // Skip processing here to prevent duplicate entries
+          console.log(
+            `Liquor wallet top-up for challan ${challan.cpin} already processed via ccavresponse.js`,
+          );
         }
       }
     } else if (statusGroup === "pending") {
