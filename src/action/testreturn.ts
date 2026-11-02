@@ -24,31 +24,7 @@ const TestReturn = async (
   const functionname: string = TestReturn.name;
 
   try {
-    // Fetch all returns OUTSIDE transaction first
-    const isExist = await prisma.returns_01.findMany({
-      where: {
-        deletedAt: null,
-        deletedById: null,
-        status: "PAID",
-        OR: [
-          {
-            return_type: "REVISED",
-          },
-          {
-            return_type: "ORIGINAL",
-          },
-        ],
-      },
-      include: {
-        dvat04: true,
-      },
-    });
-
-    if (!isExist || isExist.length === 0) {
-      throw new Error("Invalid Id, try again");
-    }
-
-    // Sort returns by year and month to ensure correct calculation order
+    const BATCH_SIZE = 1000;
     const monthOrder = [
       "January",
       "February",
@@ -64,53 +40,139 @@ const TestReturn = async (
       "December",
     ];
 
-    isExist.sort((a, b) => {
-      const yearDiff = parseInt(a.year) - parseInt(b.year);
-      if (yearDiff !== 0) return yearDiff;
-      return (
-        monthOrder.indexOf(a.month ?? "") - monthOrder.indexOf(b.month ?? "")
-      );
+    // Get total count of returns to process
+    const totalCount = await prisma.returns_01.count({
+      where: {
+        deletedAt: null,
+        deletedById: null,
+        status: "PAID",
+        OR: [
+          {
+            return_type: "REVISED",
+          },
+          {
+            return_type: "ORIGINAL",
+          },
+        ],
+      },
     });
 
-    // Process in chunks of 100
-    const chunks = [];
-    for (let i = 0; i < isExist.length; i += CHUNK_SIZE) {
-      chunks.push(isExist.slice(i, i + CHUNK_SIZE));
+    if (totalCount === 0) {
+      throw new Error("No returns found to process");
     }
 
-    let processedResult: returns_01 = isExist[0];
+    let processedResult: returns_01 | null = null;
+    let totalProcessed = 0;
+    let totalFailed = 0;
+    const failedRecords: Array<{ id: number; error: string }> = [];
 
-    // Process each chunk with increased timeout (30 seconds)
-    for (const chunk of chunks) {
-      await prisma.$transaction(
-        async (txPrisma) => {
-          for (let i = 0; i < chunk.length; i++) {
-            const updateresponse = await txPrisma.returns_01.findFirst({
-              where: {
-                id: chunk[i].id,
-              },
+    // Process all returns in batches using pagination
+    for (let skip = 0; skip < totalCount; skip += BATCH_SIZE) {
+      const batch = await prisma.returns_01.findMany({
+        where: {
+          deletedAt: null,
+          deletedById: null,
+          status: "PAID",
+          OR: [
+            {
+              return_type: "REVISED",
+            },
+            {
+              return_type: "ORIGINAL",
+            },
+          ],
+        },
+        include: {
+          dvat04: true,
+        },
+        skip: skip,
+        take: BATCH_SIZE,
+        orderBy: {
+          id: "asc",
+        },
+      });
 
-              include: {
-                dvat04: true,
-              },
-            });
-            if (!updateresponse) {
-              throw new Error("Something went wrong! Unable to update");
-            }
+      if (batch.length === 0) break;
 
-            // Process this return's data
-            await processReturnData(txPrisma, updateresponse);
+      // Sort this batch by year and month
+      batch.sort((a, b) => {
+        const yearDiff = parseInt(a.year) - parseInt(b.year);
+        if (yearDiff !== 0) return yearDiff;
+        return (
+          monthOrder.indexOf(a.month ?? "") - monthOrder.indexOf(b.month ?? "")
+        );
+      });
+
+      // Process each return in the batch with individual transactions
+      for (const returnItem of batch) {
+        try {
+          // Process computations OUTSIDE transaction first
+          const updateresponse = await prisma.returns_01.findFirst({
+            where: {
+              id: returnItem.id,
+            },
+            include: {
+              dvat04: true,
+            },
+          });
+
+          if (!updateresponse) {
+            throw new Error("Unable to fetch return data");
           }
-        },
-        {
-          maxWait: 60000, // Wait max 60 seconds to acquire a client
-          timeout: 30000, // Transaction timeout 30 seconds (increased from 5 seconds)
-        },
+
+          // Pre-process all heavy computations outside the transaction
+          const processedData = await calculateReturnMetrics(
+            prisma,
+            updateresponse,
+            updateresponse.dvat04.frequencyFilings === "QUARTERLY"
+          );
+
+          // Only do lightweight DB writes in transaction
+          await prisma.$transaction(
+            async (txPrisma) => {
+              await writeProcessedReturnData(txPrisma, updateresponse, processedData);
+            },
+            {
+              maxWait: 30000,
+              timeout: 15000, // Reduced timeout since transaction is now lightweight
+            }
+          );
+
+          totalProcessed++;
+          processedResult = updateresponse;
+        } catch (itemError) {
+          totalFailed++;
+          const errorMessage = itemError instanceof Error ? itemError.message : String(itemError);
+          failedRecords.push({
+            id: returnItem.id,
+            error: errorMessage,
+          });
+          // Log error but continue processing next record
+          console.error(`Failed to process return ID ${returnItem.id}: ${errorMessage}`);
+        }
+      }
+
+      // Log progress for large datasets
+      console.log(
+        `Processed batch: ${totalProcessed + totalFailed}/${totalCount} returns ` +
+        `(Success: ${totalProcessed}, Failed: ${totalFailed})`
       );
+    }
+
+    // Build response message with detailed statistics
+    const successRate = totalCount > 0 ? Math.round((totalProcessed / totalCount) * 100) : 0;
+    let responseMessage = `Processing completed. Processed ${totalProcessed}/${totalCount} returns successfully (${successRate}% success rate).`;
+
+    if (totalFailed > 0) {
+      responseMessage += ` Failed: ${totalFailed} returns.`;
+      if (failedRecords.length <= 10) {
+        // Include details of failures if not too many
+        responseMessage += ` Failed IDs: ${failedRecords.map((r) => r.id).join(", ")}`;
+      }
     }
 
     return createResponse({
-      message: "Payment completed successfully.",
+      message: responseMessage,
       functionname,
       data: processedResult,
     });
@@ -122,14 +184,12 @@ const TestReturn = async (
   }
 };
 
-// Helper function to process a single return's data
-async function processReturnData(
+// Calculate all metrics outside of transaction
+async function calculateReturnMetrics(
   prisma: any,
   updateresponse: returns_01 & { dvat04: dvat04 },
+  isQuarterlyFiling: boolean,
 ) {
-  const isQuarterlyFiling =
-    updateresponse.dvat04.frequencyFilings == "QUARTERLY";
-
   // Store original month/year for penalty calculations
   const originalMonth: string = updateresponse.month ?? "";
   const originalYear: string = updateresponse.year;
@@ -224,9 +284,13 @@ async function processReturnData(
     });
 
     if (!lastmonthreturn) {
-      throw new Error(
-        `No return found for the previous month: ${month} ${year}`,
+      // Log warning but don't fail - use null for missing previous month
+      console.warn(
+        `Warning: No return found for the previous month: ${month} ${year} ` +
+        `(Return ID: ${updateresponse.id}). Will use zero values for calculations.`
       );
+      // Don't throw error - allow processing to continue with default values
+      // lastmonthreturn remains null and calculations will use 0 as default
     }
   }
 
@@ -359,13 +423,56 @@ async function processReturnData(
       penaltypaidchallan +
       otherpaidchallan);
 
+  return {
+    returnforms,
+    challans,
+    r4Turnover,
+    r5Turnover,
+    netTaxCalc,
+    centralSales,
+    thebalance,
+    originalMonth,
+    originalYear,
+    isQuarterlyFiling,
+    vatpaidchallan,
+    interestpaidchallan,
+    penaltypaidchallan,
+    otherpaidchallan,
+    value,
+  };
+}
+
+// Write processed data to database (inside transaction)
+async function writeProcessedReturnData(
+  txPrisma: any,
+  updateresponse: returns_01 & { dvat04: dvat04 },
+  calculatedData: Awaited<ReturnType<typeof calculateReturnMetrics>>,
+) {
+  const {
+    returnforms,
+    challans,
+    r4Turnover,
+    r5Turnover,
+    netTaxCalc,
+    centralSales,
+    thebalance,
+    originalMonth,
+    originalYear,
+    isQuarterlyFiling,
+    vatpaidchallan,
+    interestpaidchallan,
+    penaltypaidchallan,
+    otherpaidchallan,
+    value,
+  } = calculatedData;
+
   if (
     isQuarterlyFiling &&
     !["March", "June", "September", "December"].includes(
       updateresponse.month ?? "",
     )
   ) {
-    await prisma.returns_01_work.create({
+    await txPrisma.returns_01_work.create({
       data: {
         returnId: updateresponse.id,
         dvatId: updateresponse.dvat04Id,
@@ -416,7 +523,7 @@ async function processReturnData(
     });
   } else {
     // Create returns_01_work
-    await prisma.returns_01_work.create({
+    await txPrisma.returns_01_work.create({
       data: {
         returnId: updateresponse.id,
         dvatId: updateresponse.dvat04Id,
@@ -467,8 +574,22 @@ async function processReturnData(
     });
   }
 
+  // Handle interest updates (can be done after transaction or in a separate transaction)
+  await updateInterestWorking(
+    txPrisma,
+    updateresponse,
+    netTaxCalc,
+  );
+}
+
+// Update interest working records
+async function updateInterestWorking(
+  prismaClient: any,
+  updateresponse: returns_01 & { dvat04: dvat04 },
+  netTaxCalc: any,
+) {
   // Fetch interest_working records
-  const response_interest = await prisma.interest_working.findMany({
+  const response_interest = await prismaClient.interest_working.findMany({
     where: {
       returnId: updateresponse.id,
       dvatId: updateresponse.dvat04Id,
@@ -505,7 +626,7 @@ async function processReturnData(
       const chunkData = bulkUpdateData.slice(i, i + CHUNK_SIZE);
 
       for (const data of chunkData) {
-        await prisma.interest_working.update({
+        await prismaClient.interest_working.update({
           where: { id: data.id },
           data: {
             outstanding_before: data.outstanding_before,

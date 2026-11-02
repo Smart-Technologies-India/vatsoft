@@ -293,6 +293,7 @@ const AssessmentPage = () => {
       commodity_master: {
         product_name: string;
         sale_price: string;
+        mrp: string;
         taxable_at: string;
         crate_size: number;
         pack_size: string | null;
@@ -312,7 +313,7 @@ const AssessmentPage = () => {
       // Calculate VAT per unit (sale_price is inclusive of VAT)
       // VAT = sale_price * (taxable_at / (100 + taxable_at))
       const commodityPrice =
-        parseFloat(sale.commodity_master.sale_price || "0") /
+        parseFloat(sale.commodity_master.mrp || "0") /
         sale.commodity_master.crate_size;
       const taxablePercent = parseFloat(
         sale.commodity_master.taxable_at || "0",
