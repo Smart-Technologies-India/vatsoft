@@ -1,824 +1,829 @@
-"use client";
-
-import GetUserTallyPurchase, {
-  GroupedTallyPurchase,
-} from "@/action/stock/getusertallypurchase";
-import AcceptTallyPurchase from "@/action/stock/accepttallypurchase";
-import DeleteTallyPurchase from "@/action/stock/deletetallypurchase";
-import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
-import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { formateDate } from "@/utils/methods";
-import { dvat04 } from "@prisma/client";
-import { Button, Modal, Pagination, Radio, RadioChangeEvent } from "antd";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "react-toastify";
-import * as XLSX from "xlsx";
-import ServerTime from "@/action/servertime";
-
-const TallyPurchasePage = () => {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  const [pagination, setPagination] = useState<{
-    take: number;
-    skip: number;
-    total: number;
-  }>({ take: 10, skip: 0, total: 0 });
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const [dvatdata, setDvatData] = useState<dvat04>();
-  const [allTallyPurchase, setAllTallyPurchase] = useState<
-    Array<GroupedTallyPurchase>
-  >([]);
-  const [searchText, setSearchText] = useState("");
-  const [selectedGroup, setSelectedGroup] =
-    useState<GroupedTallyPurchase | null>(null);
-  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
-  const [quantityCount, setQuantityCount] = useState("pcs");
-  const [userid, setUserid] = useState<number>(0);
-  const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
-  const [isAccepting, setIsAccepting] = useState(false);
-  const [acceptingGroupIndex, setAcceptingGroupIndex] = useState<number | null>(
-    null,
-  );
-  const [acceptProgress, setAcceptProgress] = useState<{
-    total: number;
-    processed: number;
-    percent: number;
-    statusText: string;
-  }>({
-    total: 0,
-    processed: 0,
-    percent: 0,
-    statusText: "Waiting...",
-  });
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
-
-  const onChange = ({ target: { value } }: RadioChangeEvent) => {
-    setQuantityCount(value);
-  };
-
-  const formatIndianCurrency = (value: number | string): string => {
-    const numericValue = typeof value === "number" ? value : parseFloat(value);
-    const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
-    return safeValue.toLocaleString("en-IN", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  };
-
-  const showCrates = (quantity: number, crate_size: number): string => {
-    const crates = Math.floor(quantity / crate_size);
-    const pcs = quantity % crate_size;
-    if (crates === 0) return `${pcs} Pcs`;
-    if (pcs === 0) return `${crates} Crate`;
-    return `${crates} Crate ${pcs} Pcs`;
-  };
-
-  const init = async (dvatId?: number, skip = 0, take = 10) => {
-    const id = dvatId ?? dvatdata?.id;
-    if (!id) return;
-
-    const response = await GetUserTallyPurchase({ skip, take });
-    if (response.status && response.data?.result) {
-      setAllTallyPurchase(response.data.allData ?? response.data.result);
-      setPagination({
-        skip: response.data.skip ?? 0,
-        take: response.data.take ?? 10,
-        total: response.data.total ?? 0,
-      });
-      setCurrentPage(1);
-    }
-  };
-
-  const filteredTallyPurchase = useMemo(() => {
-    const query = searchText.trim().toLowerCase();
-    let result = !query
-      ? allTallyPurchase
-      : allTallyPurchase.filter((group) => {
-          const invoiceNo = group.invoice_number.toLowerCase();
-          const dealer = (
-            group.seller_tin_number.name_of_dealer ?? ""
-          ).toLowerCase();
-          const tin = (group.seller_tin_number.tin_number ?? "").toLowerCase();
-          const invoiceDate = formateDate(group.invoice_date).toLowerCase();
-          return (
-            invoiceNo.includes(query) ||
-            dealer.includes(query) ||
-            tin.includes(query) ||
-            invoiceDate.includes(query)
-          );
-        });
-
-    // Sort pending records to top
-    return result.sort((a, b) => {
-      const aPending = !a.records.every((r) => r.is_accept);
-      const bPending = !b.records.every((r) => r.is_accept);
-      if (aPending !== bPending) return aPending ? -1 : 1;
-      return 0;
-    });
-  }, [allTallyPurchase, searchText]);
-
-  const paginatedTallyPurchase = useMemo(() => {
-    const start = (currentPage - 1) * pagination.take;
-    return filteredTallyPurchase.slice(start, start + pagination.take);
-  }, [filteredTallyPurchase, currentPage, pagination.take]);
-
-  const summary = useMemo(() => {
-    const totals = filteredTallyPurchase.reduce(
-      (acc, val) => {
-        acc.invoiceValue += val.totalInvoiceValue;
-        acc.totalTax += val.totalVatAmount;
-        acc.taxableValue += val.totalTaxableValue;
-        return acc;
-      },
-      { invoiceValue: 0, totalTax: 0, taxableValue: 0 },
-    );
-
-    return {
-      totalInvoices: filteredTallyPurchase.length,
-      invoiceValue: totals.invoiceValue,
-      totalTax: totals.totalTax,
-      taxableValue: totals.taxableValue,
-    };
-  }, [filteredTallyPurchase]);
-
-  const pendingRecords = useMemo(
-    () =>
-      filteredTallyPurchase.flatMap((group) =>
-        group.records.filter((record) => !record.is_accept),
-      ),
-    [filteredTallyPurchase],
-  );
-
-  const pendingRecordCount = pendingRecords.length;
-
-  // Phase 1: Load essential data (auth, DVAT, first page of tally purchase)
-  useEffect(() => {
-    const initEssentialData = async () => {
-      setIsLoading(true);
-      try {
-        const authResponse = await getAuthenticatedUserId();
-        if (!authResponse.status || !authResponse.data) {
-          toast.error(authResponse.message);
-          return router.push("/");
-        }
-        setUserid(authResponse.data);
-
-        const dvatResponse = await GetUserDvat04Anx({
-          userid: authResponse.data,
-        });
-        if (dvatResponse.status && dvatResponse.data) {
-          setDvatData(dvatResponse.data);
-          // Load first page with minimal records (10 items)
-          await init(dvatResponse.data.id, 0, 10);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    initEssentialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleAccept = async () => {
-    if (!dvatdata) return;
-    if (pendingRecordCount === 0) {
-      setIsAcceptModalOpen(false);
-      return toast.info("No pending records to accept.");
-    }
-
-    setIsAccepting(true);
-    const ids = pendingRecords.map((record) => record.id);
-    const CHUNK_SIZE = 100;
-    const totalChunks = Math.ceil(ids.length / CHUNK_SIZE);
-
-    setAcceptProgress({
-      total: ids.length,
-      processed: 0,
-      percent: 0,
-      statusText: "Starting conversion...",
-    });
-
-    try {
-      // Process chunks sequentially
-      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-        const response = await AcceptTallyPurchase({
-          tallyIds: ids,
-          dvatid: dvatdata.id,
-          createdById: userid,
-          chunkIndex,
-          chunkSize: CHUNK_SIZE,
-        });
-
-        if (!response.status) {
-          toast.error(response.message);
-          setIsAcceptModalOpen(false);
-          setIsAccepting(false);
-          return;
-        }
-
-        const processedSoFar = (chunkIndex + 1) * CHUNK_SIZE;
-        const boundedProcessed = Math.min(ids.length, processedSoFar);
-        const percent = Math.floor((boundedProcessed / ids.length) * 100);
-
-        setAcceptProgress({
-          total: ids.length,
-          processed: boundedProcessed,
-          percent,
-          statusText: `Processing chunk ${chunkIndex + 1} of ${totalChunks}...`,
-        });
-      }
-
-      // All chunks processed successfully
-      setAcceptProgress({
-        total: ids.length,
-        processed: ids.length,
-        percent: 100,
-        statusText: "Conversion completed successfully.",
-      });
-
-      toast.success(
-        `Successfully accepted and converted ${ids.length} record(s).`,
-      );
-      await init(dvatdata.id, 0, pagination.take);
-      setIsAcceptModalOpen(false);
-    } catch (error) {
-      console.error("Error during accept:", error);
-      toast.error("An unexpected error occurred during conversion.");
-      setIsAcceptModalOpen(false);
-    } finally {
-      setIsAccepting(false);
-    }
-  };
-
-  const handleAcceptGroup = async (group: GroupedTallyPurchase) => {
-    if (!dvatdata) return;
-
-    const pendingGroupRecords = group.records.filter(
-      (record) => !record.is_accept,
-    );
-    if (pendingGroupRecords.length === 0) {
-      return toast.info("No pending records to accept in this group.");
-    }
-
-    setAcceptingGroupIndex(paginatedTallyPurchase.indexOf(group));
-    const ids = pendingGroupRecords.map((record) => record.id);
-    const response = await AcceptTallyPurchase({
-      tallyIds: ids,
-      dvatid: dvatdata.id,
-      createdById: userid,
-    });
-    setAcceptingGroupIndex(null);
-
-    if (response.status) {
-      toast.success(response.message);
-      await init(dvatdata.id, pagination.skip, pagination.take);
-    } else {
-      toast.error(response.message);
-    }
-  };
-
-  const handleDeleteGroup = async (group: GroupedTallyPurchase) => {
-    if (!dvatdata) return;
-
-    setIsDeleteModalOpen(true);
-    setDeletingGroupId(group.invoice_number);
-  };
-
-  const confirmDelete = async () => {
-    if (!selectedGroup) return;
-
-    setIsDeleting(true);
-    const ids = selectedGroup.records.map((record) => record.id);
-
-    try {
-      const response = await DeleteTallyPurchase({
-        tallyIds: ids,
-      });
-
-      if (response.status) {
-        toast.success(response.message);
-        setIsDeleteModalOpen(false);
-        setDeletingGroupId(null);
-        await init(dvatdata?.id, pagination.skip, pagination.take);
-      } else {
-        toast.error(response.message);
-      }
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const onChangePageCount = (page: number, pagesize: number) => {
-    setCurrentPage(page);
-    setPagination((prev) => ({
-      ...prev,
-      take: pagesize,
-      skip: pagesize * (page - 1),
-    }));
-  };
-
-  const downloadReport = () => {
-    if (filteredTallyPurchase.length === 0) {
-      toast.info("No tally purchase records found to export.");
-      return;
-    }
-
-    const rows = filteredTallyPurchase.map((group, index) => ({
-      "S. No.": index + 1,
-      Count: group.count,
-      "Invoice No.": group.invoice_number,
-      "Invoice Date": formateDate(group.invoice_date),
-      "Trade Name": group.seller_tin_number.name_of_dealer,
-      "TIN Number": group.seller_tin_number.tin_number,
-      "Invoice Value": Number(group.totalInvoiceValue.toFixed(2)),
-      "VAT Amount": Number(group.totalVatAmount.toFixed(2)),
-      "Taxable Value": Number(group.totalTaxableValue.toFixed(2)),
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Tally Purchase");
-    const fileDate = (ServerTime().data as Date).toISOString().slice(0, 10);
-    XLSX.writeFile(workbook, `tallyPurchase_report_${fileDate}.xlsx`);
-  };
-
-  if (isLoading)
-    return (
-      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
-        Loading...
-      </div>
-    );
-
-  return (
-    <>
-      <Modal
-        title="Accept Tally Purchase"
-        open={isAcceptModalOpen}
-        onOk={handleAccept}
-        onCancel={() => {
-          if (isAccepting) return;
-          setIsAcceptModalOpen(false);
-        }}
-        confirmLoading={isAccepting}
-        okText="Yes, Accept All"
-        cancelText="Cancel"
-        cancelButtonProps={{ disabled: isAccepting }}
-        mask={{
-          closable: !isAccepting,
-        }}
-        closable={!isAccepting}
-      >
-        <p className="text-sm text-slate-600 py-2">
-          This will convert <strong>{pendingRecordCount} record(s)</strong> from
-          tally purchase to daily purchase. This action cannot be undone.
-        </p>
-        {isAccepting && (
-          <div className="mt-2 rounded border border-blue-200 bg-blue-50 p-3 text-xs text-slate-700">
-            <p>Status: {acceptProgress.statusText}</p>
-            <p>
-              Processed: {acceptProgress.processed} / {acceptProgress.total}
-            </p>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded bg-slate-200">
-              <div
-                className="h-full bg-blue-500 transition-all"
-                style={{ width: `${acceptProgress.percent}%` }}
-              />
-            </div>
-            <p className="mt-1">Progress: {acceptProgress.percent}%</p>
-          </div>
-        )}
-      </Modal>
-
-      {/* Delete confirmation modal */}
-      <Modal
-        title="Delete Tally Purchase"
-        open={isDeleteModalOpen}
-        onOk={confirmDelete}
-        onCancel={() => {
-          if (isDeleting) return;
-          setIsDeleteModalOpen(false);
-          setSelectedGroup(null);
-          setDeletingGroupId(null);
-        }}
-        confirmLoading={isDeleting}
-        okText="Yes, Delete"
-        cancelText="Cancel"
-        okButtonProps={{ danger: true }}
-        cancelButtonProps={{ disabled: isDeleting }}
-        mask={{
-          closable: !isDeleting,
-        }}
-        closable={!isDeleting}
-      >
-        <p className="text-sm text-slate-600 py-2">
-          Are you sure you want to delete this invoice record?
-          <br />
-          <strong>{deletingGroupId}</strong>
-          <br />
-          <span className="text-red-600 font-semibold">
-            This action cannot be undone.
-          </span>
-        </p>
-      </Modal>
-
-      <Modal
-        title="Invoice Details"
-        open={isGroupModalOpen}
-        onCancel={() => {
-          setIsGroupModalOpen(false);
-          setSelectedGroup(null);
-        }}
-        footer={null}
-        width={1200}
-      >
-        {selectedGroup && (
-          <div>
-            <div className="mb-4 p-3 bg-gray-50 rounded">
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <p className="text-xs text-gray-600">Invoice Number</p>
-                  <p className="font-semibold">
-                    {selectedGroup.invoice_number}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Invoice Date</p>
-                  <p className="font-semibold">
-                    {formateDate(selectedGroup.invoice_date)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Seller</p>
-                  <p className="font-semibold">
-                    {selectedGroup.seller_tin_number.name_of_dealer}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <Table className="border">
-                <TableHeader>
-                  <TableRow className="bg-gray-100">
-                    <TableHead className="border text-center text-xs">
-                      Sr. No.
-                    </TableHead>
-                    <TableHead className="border text-center text-xs">
-                      Product Name
-                    </TableHead>
-                    <TableHead className="border text-center text-xs">
-                      {quantityCount === "pcs"
-                        ? dvatdata?.commodity === "FUEL"
-                          ? "Litres"
-                          : "Quantity"
-                        : "Crate"}
-                    </TableHead>
-                    <TableHead className="border text-center text-xs">
-                      Invoice Value
-                    </TableHead>
-                    <TableHead className="border text-center text-xs">
-                      Tax Rate
-                    </TableHead>
-                    <TableHead className="border text-center text-xs">
-                      VAT Amount
-                    </TableHead>
-                    <TableHead className="border text-center text-xs">
-                      Taxable Value
-                    </TableHead>
-                    <TableHead className="border text-center text-xs">
-                      URN
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedGroup.records.map((record, idx) => (
-                    <TableRow key={idx} className="hover:bg-gray-50">
-                      <TableCell className="p-2 border text-center text-xs">
-                        {idx + 1}
-                      </TableCell>
-                      <TableCell className="p-2 border text-left text-xs">
-                        {record.commodity_master.product_name}
-                      </TableCell>
-                      <TableCell className="p-2 border text-center text-xs">
-                        {quantityCount === "pcs"
-                          ? record.quantity
-                          : showCrates(
-                              record.quantity,
-                              record.commodity_master.crate_size,
-                            )}
-                      </TableCell>
-                      <TableCell className="p-2 border text-center text-xs">
-                        ₹
-                        {formatIndianCurrency(
-                          parseFloat(record.amount) +
-                            parseFloat(record.vatamount),
-                        )}
-                      </TableCell>
-                      <TableCell className="p-2 border text-center text-xs">
-                        {record.tax_percent}%
-                      </TableCell>
-                      <TableCell className="p-2 border text-center text-xs">
-                        ₹{formatIndianCurrency(record.vatamount)}
-                      </TableCell>
-                      <TableCell className="p-2 border text-center text-xs">
-                        ₹{formatIndianCurrency(record.amount)}
-                      </TableCell>
-                      <TableCell className="p-2 border text-center text-xs">
-                        {record.urn_number ?? "-"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <div className="mt-4 p-3 bg-gray-50 rounded">
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <p className="text-xs text-gray-600">Total Taxable Value</p>
-                  <p className="font-semibold">
-                    ₹{formatIndianCurrency(selectedGroup.totalTaxableValue)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Total VAT Amount</p>
-                  <p className="font-semibold">
-                    ₹{formatIndianCurrency(selectedGroup.totalVatAmount)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Total Invoice Value</p>
-                  <p className="font-semibold">
-                    ₹{formatIndianCurrency(selectedGroup.totalInvoiceValue)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      <main className="p-3 bg-gray-50">
-        <div className="mx-auto">
-          <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
-            <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
-              <div>
-                <h1 className="text-lg font-medium text-gray-900">
-                  Tally Purchase Records
-                </h1>
-              </div>
-              <div className="grow" />
-              <div className="flex flex-wrap gap-2 items-center">
-                <input
-                  value={searchText}
-                  onChange={(e) => {
-                    setSearchText(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  placeholder="Search invoice no, trade name, TIN or date"
-                  className="h-8 w-72 max-w-full rounded border border-gray-300 px-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-                {dvatdata?.commodity !== "FUEL" && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600">View:</span>
-                    <Radio.Group
-                      size="small"
-                      onChange={onChange}
-                      value={quantityCount}
-                      optionType="button"
-                    >
-                      <Radio.Button value="pcs">Pcs</Radio.Button>
-                      <Radio.Button value="crate">Crate</Radio.Button>
-                    </Radio.Group>
-                  </div>
-                )}
-                <Button size="small" type="default" onClick={downloadReport}>
-                  Download Report
-                </Button>
-                <Button
-                  size="small"
-                  type="primary"
-                  disabled={pendingRecordCount === 0}
-                  onClick={() => setIsAcceptModalOpen(true)}
-                >
-                  Accept All
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
-              <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
-              <p className="text-lg font-medium text-gray-900">
-                {summary.totalInvoices}
-              </p>
-            </div>
-            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
-              <p className="text-xs text-gray-600 mb-1">Invoice Value</p>
-              <p className="text-lg font-medium text-gray-900">
-                ₹{formatIndianCurrency(summary.invoiceValue)}
-              </p>
-            </div>
-            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
-              <p className="text-xs text-gray-600 mb-1">Total Tax</p>
-              <p className="text-lg font-medium text-gray-900">
-                ₹{formatIndianCurrency(summary.totalTax)}
-              </p>
-            </div>
-            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
-              <p className="text-xs text-gray-600 mb-1">Taxable Value</p>
-              <p className="text-lg font-medium text-gray-900">
-                ₹{formatIndianCurrency(summary.taxableValue)}
-              </p>
-            </div>
-          </div>
-
-          {filteredTallyPurchase.length > 0 ? (
-            <div className="bg-white rounded shadow-sm border p-3">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50 border-b">
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Count
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Invoice No.
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Invoice Date
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Trade Name
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        TIN Number
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Invoice Value (₹)
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        VAT Amount
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Taxable Value (₹)
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Status
-                      </TableHead>
-                      <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedTallyPurchase.map(
-                      (group: GroupedTallyPurchase, index: number) => (
-                        <TableRow
-                          key={index}
-                          className="border-b hover:bg-gray-50"
-                        >
-                          <TableCell className="p-2 text-center text-xs">
-                            {group.count > 1 ? (
-                              <button
-                                onClick={() => {
-                                  setSelectedGroup(group);
-                                  setIsGroupModalOpen(true);
-                                }}
-                                className="text-blue-600 hover:text-blue-800 underline"
-                              >
-                                {group.count} items
-                              </button>
-                            ) : (
-                              <span>{group.count}</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="p-2 text-center text-xs">
-                            {group.invoice_number}
-                          </TableCell>
-                          <TableCell className="p-2 text-center text-xs">
-                            {formateDate(group.invoice_date)}
-                          </TableCell>
-                          <TableCell className="p-2 text-center text-xs">
-                            {group.seller_tin_number.name_of_dealer}
-                          </TableCell>
-                          <TableCell className="p-2 text-center text-xs">
-                            {group.seller_tin_number.tin_number}
-                          </TableCell>
-                          <TableCell className="p-2 text-center text-xs">
-                            ₹{formatIndianCurrency(group.totalInvoiceValue)}
-                          </TableCell>
-                          <TableCell className="p-2 text-center text-xs">
-                            ₹{formatIndianCurrency(group.totalVatAmount)}
-                          </TableCell>
-                          <TableCell className="p-2 text-center text-xs">
-                            ₹{formatIndianCurrency(group.totalTaxableValue)}
-                          </TableCell>
-                          <TableCell className="p-2 text-center text-xs">
-                            {group.records.every((r) => r.is_accept) ? (
-                              <span className="inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
-                                Converted
-                              </span>
-                            ) : (
-                              <span className="inline-block px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">
-                                Pending
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="p-2 text-center">
-                            <div className="flex gap-1 justify-center">
-                              <button
-                                onClick={() => {
-                                  setSelectedGroup(group);
-                                  setIsGroupModalOpen(true);
-                                }}
-                                className="text-sm bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded"
-                              >
-                                View
-                              </button>
-                              {!group.records.every((r) => r.is_accept) && (
-                                <button
-                                  onClick={() => handleAcceptGroup(group)}
-                                  disabled={acceptingGroupIndex !== null}
-                                  className="text-sm bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white py-1 px-3 rounded"
-                                >
-                                  {acceptingGroupIndex === index
-                                    ? "Accepting..."
-                                    : "Accept"}
-                                </button>
-                              )}
-                              <button
-                                onClick={() => {
-                                  setSelectedGroup(group);
-                                  handleDeleteGroup(group);
-                                }}
-                                disabled={isDeleting}
-                                className="text-sm bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white py-1 px-3 rounded"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ),
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="px-3 py-2 border-t bg-gray-50">
-                <div className="lg:hidden">
-                  <Pagination
-                    align="center"
-                    current={currentPage}
-                    onChange={onChangePageCount}
-                    showSizeChanger
-                    pageSize={pagination.take}
-                    total={filteredTallyPurchase.length}
-                    showTotal={(total: number) => `Total ${total} items`}
-                  />
-                </div>
-                <div className="hidden lg:block">
-                  <Pagination
-                    showQuickJumper
-                    align="center"
-                    current={currentPage}
-                    onChange={onChangePageCount}
-                    showSizeChanger
-                    pageSize={pagination.take}
-                    pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                    total={filteredTallyPurchase.length}
-                    responsive
-                    showTotal={(total: number, range: number[]) =>
-                      `${range[0]}-${range[1]} of ${total} items`
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded shadow-sm border p-3 text-center">
-              <p className="text-gray-500 text-sm">
-                No tally purchase records found.
-              </p>
-            </div>
-          )}
-        </div>
-      </main>
-    </>
-  );
+const Sale = () => {
+  return <div>404 Page not found.</div>;
 };
 
-export default TallyPurchasePage;
+export default Sale;
+// "use client";
+
+// import GetUserTallyPurchase, {
+//   GroupedTallyPurchase,
+// } from "@/action/stock/getusertallypurchase";
+// import AcceptTallyPurchase from "@/action/stock/accepttallypurchase";
+// import DeleteTallyPurchase from "@/action/stock/deletetallypurchase";
+// import GetUserDvat04Anx from "@/action/dvat/getuserdvatanx";
+// import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+// import {
+//   Table,
+//   TableBody,
+//   TableCell,
+//   TableHead,
+//   TableHeader,
+//   TableRow,
+// } from "@/components/ui/table";
+// import { formateDate } from "@/utils/methods";
+// import { dvat04 } from "@prisma/client";
+// import { Button, Modal, Pagination, Radio, RadioChangeEvent } from "antd";
+// import { useRouter } from "next/navigation";
+// import { useEffect, useMemo, useState } from "react";
+// import { toast } from "react-toastify";
+// import * as XLSX from "xlsx";
+// import ServerTime from "@/action/servertime";
+
+// const TallyPurchasePage = () => {
+//   const router = useRouter();
+//   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+//   const [pagination, setPagination] = useState<{
+//     take: number;
+//     skip: number;
+//     total: number;
+//   }>({ take: 10, skip: 0, total: 0 });
+//   const [currentPage, setCurrentPage] = useState(1);
+
+//   const [dvatdata, setDvatData] = useState<dvat04>();
+//   const [allTallyPurchase, setAllTallyPurchase] = useState<
+//     Array<GroupedTallyPurchase>
+//   >([]);
+//   const [searchText, setSearchText] = useState("");
+//   const [selectedGroup, setSelectedGroup] =
+//     useState<GroupedTallyPurchase | null>(null);
+//   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+//   const [quantityCount, setQuantityCount] = useState("pcs");
+//   const [userid, setUserid] = useState<number>(0);
+//   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
+//   const [isAccepting, setIsAccepting] = useState(false);
+//   const [acceptingGroupIndex, setAcceptingGroupIndex] = useState<number | null>(
+//     null,
+//   );
+//   const [acceptProgress, setAcceptProgress] = useState<{
+//     total: number;
+//     processed: number;
+//     percent: number;
+//     statusText: string;
+//   }>({
+//     total: 0,
+//     processed: 0,
+//     percent: 0,
+//     statusText: "Waiting...",
+//   });
+//   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+//   const [isDeleting, setIsDeleting] = useState(false);
+//   const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
+
+//   const onChange = ({ target: { value } }: RadioChangeEvent) => {
+//     setQuantityCount(value);
+//   };
+
+//   const formatIndianCurrency = (value: number | string): string => {
+//     const numericValue = typeof value === "number" ? value : parseFloat(value);
+//     const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
+//     return safeValue.toLocaleString("en-IN", {
+//       minimumFractionDigits: 2,
+//       maximumFractionDigits: 2,
+//     });
+//   };
+
+//   const showCrates = (quantity: number, crate_size: number): string => {
+//     const crates = Math.floor(quantity / crate_size);
+//     const pcs = quantity % crate_size;
+//     if (crates === 0) return `${pcs} Pcs`;
+//     if (pcs === 0) return `${crates} Crate`;
+//     return `${crates} Crate ${pcs} Pcs`;
+//   };
+
+//   const init = async (dvatId?: number, skip = 0, take = 10) => {
+//     const id = dvatId ?? dvatdata?.id;
+//     if (!id) return;
+
+//     const response = await GetUserTallyPurchase({ skip, take });
+//     if (response.status && response.data?.result) {
+//       setAllTallyPurchase(response.data.allData ?? response.data.result);
+//       setPagination({
+//         skip: response.data.skip ?? 0,
+//         take: response.data.take ?? 10,
+//         total: response.data.total ?? 0,
+//       });
+//       setCurrentPage(1);
+//     }
+//   };
+
+//   const filteredTallyPurchase = useMemo(() => {
+//     const query = searchText.trim().toLowerCase();
+//     let result = !query
+//       ? allTallyPurchase
+//       : allTallyPurchase.filter((group) => {
+//           const invoiceNo = group.invoice_number.toLowerCase();
+//           const dealer = (
+//             group.seller_tin_number.name_of_dealer ?? ""
+//           ).toLowerCase();
+//           const tin = (group.seller_tin_number.tin_number ?? "").toLowerCase();
+//           const invoiceDate = formateDate(group.invoice_date).toLowerCase();
+//           return (
+//             invoiceNo.includes(query) ||
+//             dealer.includes(query) ||
+//             tin.includes(query) ||
+//             invoiceDate.includes(query)
+//           );
+//         });
+
+//     // Sort pending records to top
+//     return result.sort((a, b) => {
+//       const aPending = !a.records.every((r) => r.is_accept);
+//       const bPending = !b.records.every((r) => r.is_accept);
+//       if (aPending !== bPending) return aPending ? -1 : 1;
+//       return 0;
+//     });
+//   }, [allTallyPurchase, searchText]);
+
+//   const paginatedTallyPurchase = useMemo(() => {
+//     const start = (currentPage - 1) * pagination.take;
+//     return filteredTallyPurchase.slice(start, start + pagination.take);
+//   }, [filteredTallyPurchase, currentPage, pagination.take]);
+
+//   const summary = useMemo(() => {
+//     const totals = filteredTallyPurchase.reduce(
+//       (acc, val) => {
+//         acc.invoiceValue += val.totalInvoiceValue;
+//         acc.totalTax += val.totalVatAmount;
+//         acc.taxableValue += val.totalTaxableValue;
+//         return acc;
+//       },
+//       { invoiceValue: 0, totalTax: 0, taxableValue: 0 },
+//     );
+
+//     return {
+//       totalInvoices: filteredTallyPurchase.length,
+//       invoiceValue: totals.invoiceValue,
+//       totalTax: totals.totalTax,
+//       taxableValue: totals.taxableValue,
+//     };
+//   }, [filteredTallyPurchase]);
+
+//   const pendingRecords = useMemo(
+//     () =>
+//       filteredTallyPurchase.flatMap((group) =>
+//         group.records.filter((record) => !record.is_accept),
+//       ),
+//     [filteredTallyPurchase],
+//   );
+
+//   const pendingRecordCount = pendingRecords.length;
+
+//   // Phase 1: Load essential data (auth, DVAT, first page of tally purchase)
+//   useEffect(() => {
+//     const initEssentialData = async () => {
+//       setIsLoading(true);
+//       try {
+//         const authResponse = await getAuthenticatedUserId();
+//         if (!authResponse.status || !authResponse.data) {
+//           toast.error(authResponse.message);
+//           return router.push("/");
+//         }
+//         setUserid(authResponse.data);
+
+//         const dvatResponse = await GetUserDvat04Anx({
+//           userid: authResponse.data,
+//         });
+//         if (dvatResponse.status && dvatResponse.data) {
+//           setDvatData(dvatResponse.data);
+//           // Load first page with minimal records (10 items)
+//           await init(dvatResponse.data.id, 0, 10);
+//         }
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+//     initEssentialData();
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, []);
+
+//   const handleAccept = async () => {
+//     if (!dvatdata) return;
+//     if (pendingRecordCount === 0) {
+//       setIsAcceptModalOpen(false);
+//       return toast.info("No pending records to accept.");
+//     }
+
+//     setIsAccepting(true);
+//     const ids = pendingRecords.map((record) => record.id);
+//     const CHUNK_SIZE = 100;
+//     const totalChunks = Math.ceil(ids.length / CHUNK_SIZE);
+
+//     setAcceptProgress({
+//       total: ids.length,
+//       processed: 0,
+//       percent: 0,
+//       statusText: "Starting conversion...",
+//     });
+
+//     try {
+//       // Process chunks sequentially
+//       for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+//         const response = await AcceptTallyPurchase({
+//           tallyIds: ids,
+//           dvatid: dvatdata.id,
+//           createdById: userid,
+//           chunkIndex,
+//           chunkSize: CHUNK_SIZE,
+//         });
+
+//         if (!response.status) {
+//           toast.error(response.message);
+//           setIsAcceptModalOpen(false);
+//           setIsAccepting(false);
+//           return;
+//         }
+
+//         const processedSoFar = (chunkIndex + 1) * CHUNK_SIZE;
+//         const boundedProcessed = Math.min(ids.length, processedSoFar);
+//         const percent = Math.floor((boundedProcessed / ids.length) * 100);
+
+//         setAcceptProgress({
+//           total: ids.length,
+//           processed: boundedProcessed,
+//           percent,
+//           statusText: `Processing chunk ${chunkIndex + 1} of ${totalChunks}...`,
+//         });
+//       }
+
+//       // All chunks processed successfully
+//       setAcceptProgress({
+//         total: ids.length,
+//         processed: ids.length,
+//         percent: 100,
+//         statusText: "Conversion completed successfully.",
+//       });
+
+//       toast.success(
+//         `Successfully accepted and converted ${ids.length} record(s).`,
+//       );
+//       await init(dvatdata.id, 0, pagination.take);
+//       setIsAcceptModalOpen(false);
+//     } catch (error) {
+//       console.error("Error during accept:", error);
+//       toast.error("An unexpected error occurred during conversion.");
+//       setIsAcceptModalOpen(false);
+//     } finally {
+//       setIsAccepting(false);
+//     }
+//   };
+
+//   const handleAcceptGroup = async (group: GroupedTallyPurchase) => {
+//     if (!dvatdata) return;
+
+//     const pendingGroupRecords = group.records.filter(
+//       (record) => !record.is_accept,
+//     );
+//     if (pendingGroupRecords.length === 0) {
+//       return toast.info("No pending records to accept in this group.");
+//     }
+
+//     setAcceptingGroupIndex(paginatedTallyPurchase.indexOf(group));
+//     const ids = pendingGroupRecords.map((record) => record.id);
+//     const response = await AcceptTallyPurchase({
+//       tallyIds: ids,
+//       dvatid: dvatdata.id,
+//       createdById: userid,
+//     });
+//     setAcceptingGroupIndex(null);
+
+//     if (response.status) {
+//       toast.success(response.message);
+//       await init(dvatdata.id, pagination.skip, pagination.take);
+//     } else {
+//       toast.error(response.message);
+//     }
+//   };
+
+//   const handleDeleteGroup = async (group: GroupedTallyPurchase) => {
+//     if (!dvatdata) return;
+
+//     setIsDeleteModalOpen(true);
+//     setDeletingGroupId(group.invoice_number);
+//   };
+
+//   const confirmDelete = async () => {
+//     if (!selectedGroup) return;
+
+//     setIsDeleting(true);
+//     const ids = selectedGroup.records.map((record) => record.id);
+
+//     try {
+//       const response = await DeleteTallyPurchase({
+//         tallyIds: ids,
+//       });
+
+//       if (response.status) {
+//         toast.success(response.message);
+//         setIsDeleteModalOpen(false);
+//         setDeletingGroupId(null);
+//         await init(dvatdata?.id, pagination.skip, pagination.take);
+//       } else {
+//         toast.error(response.message);
+//       }
+//     } finally {
+//       setIsDeleting(false);
+//     }
+//   };
+
+//   const onChangePageCount = (page: number, pagesize: number) => {
+//     setCurrentPage(page);
+//     setPagination((prev) => ({
+//       ...prev,
+//       take: pagesize,
+//       skip: pagesize * (page - 1),
+//     }));
+//   };
+
+//   const downloadReport = () => {
+//     if (filteredTallyPurchase.length === 0) {
+//       toast.info("No tally purchase records found to export.");
+//       return;
+//     }
+
+//     const rows = filteredTallyPurchase.map((group, index) => ({
+//       "S. No.": index + 1,
+//       Count: group.count,
+//       "Invoice No.": group.invoice_number,
+//       "Invoice Date": formateDate(group.invoice_date),
+//       "Trade Name": group.seller_tin_number.name_of_dealer,
+//       "TIN Number": group.seller_tin_number.tin_number,
+//       "Invoice Value": Number(group.totalInvoiceValue.toFixed(2)),
+//       "VAT Amount": Number(group.totalVatAmount.toFixed(2)),
+//       "Taxable Value": Number(group.totalTaxableValue.toFixed(2)),
+//     }));
+
+//     const worksheet = XLSX.utils.json_to_sheet(rows);
+//     const workbook = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(workbook, worksheet, "Tally Purchase");
+//     const fileDate = (ServerTime().data as Date).toISOString().slice(0, 10);
+//     XLSX.writeFile(workbook, `tallyPurchase_report_${fileDate}.xlsx`);
+//   };
+
+//   if (isLoading)
+//     return (
+//       <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
+//         Loading...
+//       </div>
+//     );
+
+//   return (
+//     <>
+//       <Modal
+//         title="Accept Tally Purchase"
+//         open={isAcceptModalOpen}
+//         onOk={handleAccept}
+//         onCancel={() => {
+//           if (isAccepting) return;
+//           setIsAcceptModalOpen(false);
+//         }}
+//         confirmLoading={isAccepting}
+//         okText="Yes, Accept All"
+//         cancelText="Cancel"
+//         cancelButtonProps={{ disabled: isAccepting }}
+//         mask={{
+//           closable: !isAccepting,
+//         }}
+//         closable={!isAccepting}
+//       >
+//         <p className="text-sm text-slate-600 py-2">
+//           This will convert <strong>{pendingRecordCount} record(s)</strong> from
+//           tally purchase to daily purchase. This action cannot be undone.
+//         </p>
+//         {isAccepting && (
+//           <div className="mt-2 rounded border border-blue-200 bg-blue-50 p-3 text-xs text-slate-700">
+//             <p>Status: {acceptProgress.statusText}</p>
+//             <p>
+//               Processed: {acceptProgress.processed} / {acceptProgress.total}
+//             </p>
+//             <div className="mt-2 h-2 w-full overflow-hidden rounded bg-slate-200">
+//               <div
+//                 className="h-full bg-blue-500 transition-all"
+//                 style={{ width: `${acceptProgress.percent}%` }}
+//               />
+//             </div>
+//             <p className="mt-1">Progress: {acceptProgress.percent}%</p>
+//           </div>
+//         )}
+//       </Modal>
+
+//       {/* Delete confirmation modal */}
+//       <Modal
+//         title="Delete Tally Purchase"
+//         open={isDeleteModalOpen}
+//         onOk={confirmDelete}
+//         onCancel={() => {
+//           if (isDeleting) return;
+//           setIsDeleteModalOpen(false);
+//           setSelectedGroup(null);
+//           setDeletingGroupId(null);
+//         }}
+//         confirmLoading={isDeleting}
+//         okText="Yes, Delete"
+//         cancelText="Cancel"
+//         okButtonProps={{ danger: true }}
+//         cancelButtonProps={{ disabled: isDeleting }}
+//         mask={{
+//           closable: !isDeleting,
+//         }}
+//         closable={!isDeleting}
+//       >
+//         <p className="text-sm text-slate-600 py-2">
+//           Are you sure you want to delete this invoice record?
+//           <br />
+//           <strong>{deletingGroupId}</strong>
+//           <br />
+//           <span className="text-red-600 font-semibold">
+//             This action cannot be undone.
+//           </span>
+//         </p>
+//       </Modal>
+
+//       <Modal
+//         title="Invoice Details"
+//         open={isGroupModalOpen}
+//         onCancel={() => {
+//           setIsGroupModalOpen(false);
+//           setSelectedGroup(null);
+//         }}
+//         footer={null}
+//         width={1200}
+//       >
+//         {selectedGroup && (
+//           <div>
+//             <div className="mb-4 p-3 bg-gray-50 rounded">
+//               <div className="grid grid-cols-3 gap-2">
+//                 <div>
+//                   <p className="text-xs text-gray-600">Invoice Number</p>
+//                   <p className="font-semibold">
+//                     {selectedGroup.invoice_number}
+//                   </p>
+//                 </div>
+//                 <div>
+//                   <p className="text-xs text-gray-600">Invoice Date</p>
+//                   <p className="font-semibold">
+//                     {formateDate(selectedGroup.invoice_date)}
+//                   </p>
+//                 </div>
+//                 <div>
+//                   <p className="text-xs text-gray-600">Seller</p>
+//                   <p className="font-semibold">
+//                     {selectedGroup.seller_tin_number.name_of_dealer}
+//                   </p>
+//                 </div>
+//               </div>
+//             </div>
+//             <div className="overflow-x-auto">
+//               <Table className="border">
+//                 <TableHeader>
+//                   <TableRow className="bg-gray-100">
+//                     <TableHead className="border text-center text-xs">
+//                       Sr. No.
+//                     </TableHead>
+//                     <TableHead className="border text-center text-xs">
+//                       Product Name
+//                     </TableHead>
+//                     <TableHead className="border text-center text-xs">
+//                       {quantityCount === "pcs"
+//                         ? dvatdata?.commodity === "FUEL"
+//                           ? "Litres"
+//                           : "Quantity"
+//                         : "Crate"}
+//                     </TableHead>
+//                     <TableHead className="border text-center text-xs">
+//                       Invoice Value
+//                     </TableHead>
+//                     <TableHead className="border text-center text-xs">
+//                       Tax Rate
+//                     </TableHead>
+//                     <TableHead className="border text-center text-xs">
+//                       VAT Amount
+//                     </TableHead>
+//                     <TableHead className="border text-center text-xs">
+//                       Taxable Value
+//                     </TableHead>
+//                     <TableHead className="border text-center text-xs">
+//                       URN
+//                     </TableHead>
+//                   </TableRow>
+//                 </TableHeader>
+//                 <TableBody>
+//                   {selectedGroup.records.map((record, idx) => (
+//                     <TableRow key={idx} className="hover:bg-gray-50">
+//                       <TableCell className="p-2 border text-center text-xs">
+//                         {idx + 1}
+//                       </TableCell>
+//                       <TableCell className="p-2 border text-left text-xs">
+//                         {record.commodity_master.product_name}
+//                       </TableCell>
+//                       <TableCell className="p-2 border text-center text-xs">
+//                         {quantityCount === "pcs"
+//                           ? record.quantity
+//                           : showCrates(
+//                               record.quantity,
+//                               record.commodity_master.crate_size,
+//                             )}
+//                       </TableCell>
+//                       <TableCell className="p-2 border text-center text-xs">
+//                         ₹
+//                         {formatIndianCurrency(
+//                           parseFloat(record.amount) +
+//                             parseFloat(record.vatamount),
+//                         )}
+//                       </TableCell>
+//                       <TableCell className="p-2 border text-center text-xs">
+//                         {record.tax_percent}%
+//                       </TableCell>
+//                       <TableCell className="p-2 border text-center text-xs">
+//                         ₹{formatIndianCurrency(record.vatamount)}
+//                       </TableCell>
+//                       <TableCell className="p-2 border text-center text-xs">
+//                         ₹{formatIndianCurrency(record.amount)}
+//                       </TableCell>
+//                       <TableCell className="p-2 border text-center text-xs">
+//                         {record.urn_number ?? "-"}
+//                       </TableCell>
+//                     </TableRow>
+//                   ))}
+//                 </TableBody>
+//               </Table>
+//             </div>
+//             <div className="mt-4 p-3 bg-gray-50 rounded">
+//               <div className="grid grid-cols-3 gap-2">
+//                 <div>
+//                   <p className="text-xs text-gray-600">Total Taxable Value</p>
+//                   <p className="font-semibold">
+//                     ₹{formatIndianCurrency(selectedGroup.totalTaxableValue)}
+//                   </p>
+//                 </div>
+//                 <div>
+//                   <p className="text-xs text-gray-600">Total VAT Amount</p>
+//                   <p className="font-semibold">
+//                     ₹{formatIndianCurrency(selectedGroup.totalVatAmount)}
+//                   </p>
+//                 </div>
+//                 <div>
+//                   <p className="text-xs text-gray-600">Total Invoice Value</p>
+//                   <p className="font-semibold">
+//                     ₹{formatIndianCurrency(selectedGroup.totalInvoiceValue)}
+//                   </p>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+//       </Modal>
+
+//       <main className="p-3 bg-gray-50">
+//         <div className="mx-auto">
+//           <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
+//             <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+//               <div>
+//                 <h1 className="text-lg font-medium text-gray-900">
+//                   Tally Purchase Records
+//                 </h1>
+//               </div>
+//               <div className="grow" />
+//               <div className="flex flex-wrap gap-2 items-center">
+//                 <input
+//                   value={searchText}
+//                   onChange={(e) => {
+//                     setSearchText(e.target.value);
+//                     setCurrentPage(1);
+//                   }}
+//                   placeholder="Search invoice no, trade name, TIN or date"
+//                   className="h-8 w-72 max-w-full rounded border border-gray-300 px-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+//                 />
+//                 {dvatdata?.commodity !== "FUEL" && (
+//                   <div className="flex items-center gap-2">
+//                     <span className="text-xs text-gray-600">View:</span>
+//                     <Radio.Group
+//                       size="small"
+//                       onChange={onChange}
+//                       value={quantityCount}
+//                       optionType="button"
+//                     >
+//                       <Radio.Button value="pcs">Pcs</Radio.Button>
+//                       <Radio.Button value="crate">Crate</Radio.Button>
+//                     </Radio.Group>
+//                   </div>
+//                 )}
+//                 <Button size="small" type="default" onClick={downloadReport}>
+//                   Download Report
+//                 </Button>
+//                 <Button
+//                   size="small"
+//                   type="primary"
+//                   disabled={pendingRecordCount === 0}
+//                   onClick={() => setIsAcceptModalOpen(true)}
+//                 >
+//                   Accept All
+//                 </Button>
+//               </div>
+//             </div>
+//           </div>
+
+//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+//             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
+//               <p className="text-xs text-gray-600 mb-1">Total Invoices</p>
+//               <p className="text-lg font-medium text-gray-900">
+//                 {summary.totalInvoices}
+//               </p>
+//             </div>
+//             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
+//               <p className="text-xs text-gray-600 mb-1">Invoice Value</p>
+//               <p className="text-lg font-medium text-gray-900">
+//                 ₹{formatIndianCurrency(summary.invoiceValue)}
+//               </p>
+//             </div>
+//             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
+//               <p className="text-xs text-gray-600 mb-1">Total Tax</p>
+//               <p className="text-lg font-medium text-gray-900">
+//                 ₹{formatIndianCurrency(summary.totalTax)}
+//               </p>
+//             </div>
+//             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
+//               <p className="text-xs text-gray-600 mb-1">Taxable Value</p>
+//               <p className="text-lg font-medium text-gray-900">
+//                 ₹{formatIndianCurrency(summary.taxableValue)}
+//               </p>
+//             </div>
+//           </div>
+
+//           {filteredTallyPurchase.length > 0 ? (
+//             <div className="bg-white rounded shadow-sm border p-3">
+//               <div className="overflow-x-auto">
+//                 <Table>
+//                   <TableHeader>
+//                     <TableRow className="bg-gray-50 border-b">
+//                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+//                         Count
+//                       </TableHead>
+//                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+//                         Invoice No.
+//                       </TableHead>
+//                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+//                         Invoice Date
+//                       </TableHead>
+//                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+//                         Trade Name
+//                       </TableHead>
+//                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+//                         TIN Number
+//                       </TableHead>
+//                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+//                         Invoice Value (₹)
+//                       </TableHead>
+//                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+//                         VAT Amount
+//                       </TableHead>
+//                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+//                         Taxable Value (₹)
+//                       </TableHead>
+//                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+//                         Status
+//                       </TableHead>
+//                       <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+//                         Actions
+//                       </TableHead>
+//                     </TableRow>
+//                   </TableHeader>
+//                   <TableBody>
+//                     {paginatedTallyPurchase.map(
+//                       (group: GroupedTallyPurchase, index: number) => (
+//                         <TableRow
+//                           key={index}
+//                           className="border-b hover:bg-gray-50"
+//                         >
+//                           <TableCell className="p-2 text-center text-xs">
+//                             {group.count > 1 ? (
+//                               <button
+//                                 onClick={() => {
+//                                   setSelectedGroup(group);
+//                                   setIsGroupModalOpen(true);
+//                                 }}
+//                                 className="text-blue-600 hover:text-blue-800 underline"
+//                               >
+//                                 {group.count} items
+//                               </button>
+//                             ) : (
+//                               <span>{group.count}</span>
+//                             )}
+//                           </TableCell>
+//                           <TableCell className="p-2 text-center text-xs">
+//                             {group.invoice_number}
+//                           </TableCell>
+//                           <TableCell className="p-2 text-center text-xs">
+//                             {formateDate(group.invoice_date)}
+//                           </TableCell>
+//                           <TableCell className="p-2 text-center text-xs">
+//                             {group.seller_tin_number.name_of_dealer}
+//                           </TableCell>
+//                           <TableCell className="p-2 text-center text-xs">
+//                             {group.seller_tin_number.tin_number}
+//                           </TableCell>
+//                           <TableCell className="p-2 text-center text-xs">
+//                             ₹{formatIndianCurrency(group.totalInvoiceValue)}
+//                           </TableCell>
+//                           <TableCell className="p-2 text-center text-xs">
+//                             ₹{formatIndianCurrency(group.totalVatAmount)}
+//                           </TableCell>
+//                           <TableCell className="p-2 text-center text-xs">
+//                             ₹{formatIndianCurrency(group.totalTaxableValue)}
+//                           </TableCell>
+//                           <TableCell className="p-2 text-center text-xs">
+//                             {group.records.every((r) => r.is_accept) ? (
+//                               <span className="inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+//                                 Converted
+//                               </span>
+//                             ) : (
+//                               <span className="inline-block px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">
+//                                 Pending
+//                               </span>
+//                             )}
+//                           </TableCell>
+//                           <TableCell className="p-2 text-center">
+//                             <div className="flex gap-1 justify-center">
+//                               <button
+//                                 onClick={() => {
+//                                   setSelectedGroup(group);
+//                                   setIsGroupModalOpen(true);
+//                                 }}
+//                                 className="text-sm bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded"
+//                               >
+//                                 View
+//                               </button>
+//                               {!group.records.every((r) => r.is_accept) && (
+//                                 <button
+//                                   onClick={() => handleAcceptGroup(group)}
+//                                   disabled={acceptingGroupIndex !== null}
+//                                   className="text-sm bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white py-1 px-3 rounded"
+//                                 >
+//                                   {acceptingGroupIndex === index
+//                                     ? "Accepting..."
+//                                     : "Accept"}
+//                                 </button>
+//                               )}
+//                               <button
+//                                 onClick={() => {
+//                                   setSelectedGroup(group);
+//                                   handleDeleteGroup(group);
+//                                 }}
+//                                 disabled={isDeleting}
+//                                 className="text-sm bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white py-1 px-3 rounded"
+//                               >
+//                                 Delete
+//                               </button>
+//                             </div>
+//                           </TableCell>
+//                         </TableRow>
+//                       ),
+//                     )}
+//                   </TableBody>
+//                 </Table>
+//               </div>
+
+//               <div className="px-3 py-2 border-t bg-gray-50">
+//                 <div className="lg:hidden">
+//                   <Pagination
+//                     align="center"
+//                     current={currentPage}
+//                     onChange={onChangePageCount}
+//                     showSizeChanger
+//                     pageSize={pagination.take}
+//                     total={filteredTallyPurchase.length}
+//                     showTotal={(total: number) => `Total ${total} items`}
+//                   />
+//                 </div>
+//                 <div className="hidden lg:block">
+//                   <Pagination
+//                     showQuickJumper
+//                     align="center"
+//                     current={currentPage}
+//                     onChange={onChangePageCount}
+//                     showSizeChanger
+//                     pageSize={pagination.take}
+//                     pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
+//                     total={filteredTallyPurchase.length}
+//                     responsive
+//                     showTotal={(total: number, range: number[]) =>
+//                       `${range[0]}-${range[1]} of ${total} items`
+//                     }
+//                   />
+//                 </div>
+//               </div>
+//             </div>
+//           ) : (
+//             <div className="bg-white rounded shadow-sm border p-3 text-center">
+//               <p className="text-gray-500 text-sm">
+//                 No tally purchase records found.
+//               </p>
+//             </div>
+//           )}
+//         </div>
+//       </main>
+//     </>
+//   );
+// };
+
+// export default TallyPurchasePage;

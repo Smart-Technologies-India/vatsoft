@@ -1245,6 +1245,7 @@ const DocumentWiseDetails = () => {
         vatPayable: vatPayable.toFixed(2),
         invoiceNo: selectedGroup.invoice_number,
         sellerId: selectedGroup.seller_tin_number.id,
+        invoiceDate: selectedGroup.invoice_date,
       });
 
       if (!response.status) {
@@ -1732,8 +1733,8 @@ const DocumentWiseDetails = () => {
                   {isGroupRejectLoading ? "Rejecting..." : "Reject All"}
                 </button>
               )}
-              { new Date(selectedGroup.invoice_date) >=
-                  new Date("2026-11-01") && ["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") &&
+              {new Date(selectedGroup.invoice_date) >= new Date("2026-11-01") &&
+                ["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") &&
                 selectedGroup.records.some(
                   (r) => r.payment_status == "PAID",
                 ) && (
@@ -2030,7 +2031,7 @@ const DocumentWiseDetails = () => {
               </div>
 
               <div className="grow"></div>
-              {(dvatdata?.commodity === "OIDC" ||
+              {/* {(dvatdata?.commodity === "OIDC" ||
                 [84, 542, 93].includes(dvatdata?.id ?? 0)) && (
                 <Button
                   size="small"
@@ -2043,7 +2044,7 @@ const DocumentWiseDetails = () => {
                 >
                   Tally Purchase
                 </Button>
-              )}
+              )} */}
 
               <Button
                 size="small"

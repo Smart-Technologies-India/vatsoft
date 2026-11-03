@@ -1085,7 +1085,7 @@ export const postRes = (request, response) => {
           const isRefineryVatPayment =
             refineryMarker.startsWith("REFINERY_SALE_VAT#");
 
-          const isSaleVatPayment = refineryMarker.startsWith("SALE#");
+          const isSaleVatPayment = refineryMarker.startsWith("SALE_LIQUOR#");
 
           if (isRefineryVatPayment) {
             const markerParts = refineryMarker.split("#");
@@ -1216,20 +1216,6 @@ export const postRes = (request, response) => {
               },
             });
 
-            // Update transport_permit table
-            await prisma.transport_permit.updateMany({
-              where: {
-                invoiceNumber: markerInvoiceNo,
-                sellerDvatTinNumber: dvat.tinNumber ?? "",
-                deleted_at: null,
-              },
-              data: {
-                is_paid: true,
-                is_wallet: false,
-                paid_date: new Date(),
-              },
-            });
-
             await prisma.daily_sale.updateMany({
               where: {
                 invoice_number: markerInvoiceNo,
@@ -1253,6 +1239,29 @@ export const postRes = (request, response) => {
               },
               select: {
                 urn_number: true,
+              },
+            });
+
+            const sellerdata = await prisma.tin_number_master.findUnique({
+              where: { id: markerSellerTinId },
+            });
+
+            const is_paid = dvat.commodity !== "WHOLESALER";
+
+            // Update transport_permit table for wallet payment
+            await prisma.transport_permit.create({
+              data: {
+                invoiceNumber: markerInvoiceNo,
+                invoiceDate: urn_respone[0]?.invoice_date ?? new Date(),
+                sellerDvatTinNumber: dvat.tinNumber ?? "",
+                sellerDvatTradeName: dvat.tradename ?? "",
+                purchaserDvatTradeName: sellerdata?.name_of_dealer ?? "",
+                purchaserDvatTinNumber: sellerdata?.tin_number ?? "",
+                status: "ACTIVE",
+                items: urn_respone.length,
+                is_paid: is_paid,
+                is_wallet: false,
+                paid_date: is_paid ? new Date() : null,
               },
             });
 
@@ -1360,6 +1369,27 @@ export const postRes = (request, response) => {
                 throw new Error("Unable to update sale records");
               }
             }
+
+            const sellerdata = await prisma.tin_number_master.findUnique({
+              where: { id: markerSellerTinId },
+            });
+
+            // Update transport_permit table for wallet payment
+            await prisma.transport_permit.create({
+              data: {
+                invoiceNumber: urn_respone[0]?.invoice_number ?? "",
+                invoiceDate: urn_respone[0]?.invoice_date ?? new Date(),
+                sellerDvatTinNumber: dvat04.tinNumber ?? "",
+                sellerDvatTradeName: dvat04.tradename ?? "",
+                purchaserDvatTradeName: sellerdata?.name_of_dealer ?? "",
+                purchaserDvatTinNumber: sellerdata?.tin_number ?? "",
+                is_paid: true,
+                is_wallet: false,
+                paid_date: new Date(),
+                status: "ACTIVE",
+                items: stock.length,
+              },
+            });
           } else {
             // Handle wallet top-up payments
             const isWalletTopup = refineryMarker.startsWith("WALLET_TOPUP#");

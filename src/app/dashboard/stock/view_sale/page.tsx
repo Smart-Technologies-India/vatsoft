@@ -590,6 +590,7 @@ const DocumentWiseDetails = () => {
         totalAmount: totalAmount.toFixed(2),
         invoiceNo: selectedGroup.invoice_number,
         sellerId: selectedGroup.seller_tin_number.id,
+        invoiceDate: selectedGroup.invoice_date,
       });
 
       if (!response.status) {
@@ -2205,7 +2206,7 @@ const DocumentWiseDetails = () => {
               </div>
               <div className="grow"></div>
 
-              {(dvatdata?.commodity === "OIDC" ||
+              {/* {(dvatdata?.commodity === "OIDC" ||
                 [84, 542, 93].includes(dvatdata?.id ?? 0)) && (
                 <Button
                   size="small"
@@ -2217,7 +2218,7 @@ const DocumentWiseDetails = () => {
                 >
                   Tally Sale
                 </Button>
-              )}
+              )} */}
               <Button
                 size="small"
                 type="default"

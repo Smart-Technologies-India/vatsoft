@@ -19,7 +19,7 @@ import {
 import { formateDate } from "@/utils/methods";
 import { Button, Input, Modal, Pagination, Select } from "antd";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
@@ -313,8 +313,8 @@ const TransportPermit = () => {
         "Seller TIN": record.sellerDvatTinNumber,
         "Purchaser Name": record.purchaserDvatTradeName,
         "Purchaser TIN": record.purchaserDvatTinNumber,
-        "Items": record.items,
-        "Status": record.status,
+        Items: record.items,
+        Status: record.status,
         "TP Released": record.tp_released ? "Yes" : "No",
         "Is Paid": record.is_paid ? "Yes" : "No",
       }));
@@ -392,9 +392,7 @@ const TransportPermit = () => {
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Total Items</p>
-                  <p className="font-semibold">
-                    {selectedDetails.count}
-                  </p>
+                  <p className="font-semibold">{selectedDetails.count}</p>
                 </div>
               </div>
             </div>
@@ -467,9 +465,7 @@ const TransportPermit = () => {
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <p className="text-xs text-gray-600">Total Items</p>
-                  <p className="font-semibold">
-                    {selectedDetails.count}
-                  </p>
+                  <p className="font-semibold">{selectedDetails.count}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Total Taxable Value</p>
@@ -524,8 +520,8 @@ const TransportPermit = () => {
           <div>
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
               <p className="text-sm text-yellow-800">
-                <strong>⚠️ Warning:</strong> You are about to release this Transport
-                Permit. This action cannot be undone.
+                <strong>⚠️ Warning:</strong> You are about to release this
+                Transport Permit. This action cannot be undone.
               </p>
             </div>
             <div className="mb-4 p-3 bg-gray-50 rounded">
@@ -708,7 +704,9 @@ const TransportPermit = () => {
                     type="primary"
                     onClick={() => downloadReport()}
                     loading={isDownloadingReport}
-                    disabled={transportPermitData.length === 0 || isDownloadingReport}
+                    disabled={
+                      transportPermitData.length === 0 || isDownloadingReport
+                    }
                   >
                     📥 Download Excel
                   </Button>

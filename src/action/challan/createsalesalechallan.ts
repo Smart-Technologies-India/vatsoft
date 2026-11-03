@@ -17,7 +17,7 @@ interface CreateSaleChallanResult {
 }
 
 const getSaleRemark = (invoiceNumber: string, dvatId: number) =>
-  `SALE#${invoiceNumber}#${dvatId}`;
+  `SALE_LIQUOR#${invoiceNumber}#${dvatId}`;
 
 const CreateSaleChallan = async (
   payload: CreateSaleChallanPayload,

@@ -11,7 +11,7 @@ const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
   const downloadBulkTemplate = async () => {
     const commodityType = props.commodity;
     const isManufacturerCommodity =
-      commodityType === "MANUFACTURER" || commodityType == "WHOLESALER";
+      commodityType === "MANUFACTURER" || commodityType == "WHOLESALER" || commodityType == "OIDC";
 
     let commodityMasterData: commodity_master[] = [];
     const commodityResponse = await AllCommodityMaster({});
@@ -30,7 +30,7 @@ const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
       }));
 
     const getCommoditySpecificColumns = (rowVariant: 1 | 2 | 3) => {
-      if (commodityType === "MANUFACTURER") {
+      if (commodityType === "MANUFACTURER" || commodityType === "OIDC") {
         if (rowVariant === 1) {
           return {
             "Is Against C Form": "false",
@@ -100,7 +100,7 @@ const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
     };
 
     const commoditySpecificInstructionRows =
-      commodityType === "MANUFACTURER"
+      commodityType === "MANUFACTURER" || commodityType === "OIDC"
         ? [
             {
               Field: "Is Against C Form",

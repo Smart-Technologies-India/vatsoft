@@ -34,8 +34,8 @@ import numberWithIndianFormat from "@/utils/methods";
 const parseSaleRemark = (remark?: string | null) => {
   const value = remark ?? "";
   return {
-    invoiceNo: value.match(/SALE#([^#]*)/)?.[1] ?? "N/A",
-    sellerTin: value.match(/SALE#[^#]*#([^#]*)/)?.[1] ?? "N/A",
+    invoiceNo: value.match(/SALE_LIQUOR#([^#]*)/)?.[1] ?? "N/A",
+    sellerTin: value.match(/SALE_LIQUOR#[^#]*#([^#]*)/)?.[1] ?? "N/A",
   };
 };
 

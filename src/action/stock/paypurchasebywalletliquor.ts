@@ -17,6 +17,7 @@ export const PayPurchaseByWalletLiquor = async (input: {
   vatPayable: string;
   invoiceNo: string;
   sellerId: number;
+  invoiceDate: Date;
 }): Promise<PayPurchaseByWalletLiquorResponse> => {
   try {
     const dvatId = await getCurrentDvatId();
@@ -70,20 +71,6 @@ export const PayPurchaseByWalletLiquor = async (input: {
       },
     });
 
-    // Update transport_permit table for wallet payment
-    await prisma.transport_permit.updateMany({
-      where: {
-        sellerDvatTinNumber: dvat04.tinNumber ?? "",
-        invoiceNumber: input.invoiceNo,
-        deleted_at: null,
-      },
-      data: {
-        is_paid: true,
-        is_wallet: true,
-        paid_date: new Date(),
-      },
-    });
-
     // Update daily_purchase to mark as accepted and paid
     await prisma.daily_purchase.updateMany({
       where: {
@@ -110,6 +97,26 @@ export const PayPurchaseByWalletLiquor = async (input: {
       },
       select: {
         urn_number: true,
+      },
+    });
+    const sellerdata = await prisma.tin_number_master.findUnique({
+      where: { id: input.sellerId },
+    });
+
+    // Update transport_permit table for wallet payment
+    await prisma.transport_permit.create({
+      data: {
+        invoiceNumber: input.invoiceNo,
+        invoiceDate: input.invoiceDate,
+        sellerDvatTinNumber: dvat04.tinNumber ?? "",
+        sellerDvatTradeName: dvat04.tradename ?? "",
+        purchaserDvatTradeName: sellerdata?.name_of_dealer ?? "",
+        purchaserDvatTinNumber: sellerdata?.tin_number ?? "",
+        is_paid: true,
+        is_wallet: true,
+        paid_date: new Date(),
+        status: "ACTIVE",
+        items: purchaseRecords.length,
       },
     });
 

@@ -3,6 +3,7 @@
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
 import { getCurrentUserId } from "@/lib/auth";
+import { commodity, Dvat04Commodity } from "@prisma/client";
 
 interface PopulateNotfiledWorkResponse {
   status: boolean;
@@ -106,7 +107,7 @@ const PopulateNotfiledWork =
           "December",
         ];
         const index = months.findIndex(
-          (m) => m.toLowerCase() === (monthName || "").toLowerCase()
+          (m) => m.toLowerCase() === (monthName || "").toLowerCase(),
         );
         return index !== -1 ? index + 1 : 0; // Returns 1-12 or 0 if not found
       };
@@ -123,7 +124,7 @@ const PopulateNotfiledWork =
         // Validate month - must be a valid number between 1 and 12
         if (isNaN(monthNumber) || monthNumber < 1 || monthNumber > 12) {
           console.error(
-            `Invalid month value for dvatId: ${dvatId}, filing.month: ${monthName}. Skipping this record.`
+            `Invalid month value for dvatId: ${dvatId}, filing.month: ${monthName}. Skipping this record.`,
           );
           continue;
         }
@@ -146,7 +147,6 @@ const PopulateNotfiledWork =
         const startDate = new Date(year, monthNumber - 1, 1); // First day of the month
         const endDate = new Date(year, monthNumber, 1); // First day of next month
 
-
         // Get VAT amounts for this specific month and dvat
         const vatAmountRecords = await prisma.daily_purchase.findMany({
           where: {
@@ -159,6 +159,7 @@ const PopulateNotfiledWork =
           },
           select: {
             amount: true,
+            dvat04: true,
             commodity_master: {
               select: {
                 id: true,
@@ -166,7 +167,6 @@ const PopulateNotfiledWork =
             },
           },
         });
-
 
         let totalVatAmount = 0;
         for (const record of vatAmountRecords) {
@@ -183,13 +183,25 @@ const PopulateNotfiledWork =
             // If commodity id = 2 or 749: 12.75%
             else if (commodityId === 2 || commodityId === 749) {
               vatRate = 0.135;
-            }
-            else if (commodityId === 1245 ) {
+            } else if (commodityId === 1245) {
               vatRate = 0.06;
             }
 
-            totalVatAmount += amount * vatRate;
-           
+            const commodityPercent: Record<Dvat04Commodity, number> = {
+              MANUFACTURER: 1.0,
+              WHOLESALER: 1.0,
+              OIDC: 1.0,
+              LIQUOR: 0.15,
+              RESTAURANT: 0.15,
+              FUEL: 0.05,
+              OTHER: 1.0,
+            };
+
+            const commodity = record.dvat04.commodity;
+            const percent: number =
+              commodity != null ? (commodityPercent[commodity] ?? 1.0) : 1.0;
+
+            totalVatAmount += amount * vatRate * percent;
           }
         }
 
@@ -222,7 +234,8 @@ const PopulateNotfiledWork =
 
         // Calculate total_tax_amount = balance + interest + penalty
         //if balance is nagative only only add panalty in total tax amount
-        const totalTaxAmount = balance < 0 ? penalty : balance + interest + penalty;
+        const totalTaxAmount =
+          balance < 0 ? penalty : balance + interest + penalty;
 
         const dataToUpsert = {
           dvatId: dvatId,

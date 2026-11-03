@@ -47,7 +47,8 @@ interface SearchChallanPayload {
   excludePaid?: boolean;
   excludeCreatedExpired?: boolean;
   searchText?: string;
-  bucketFilter?: "pending" | "failed";
+  bucketFilter?: "pending" | "failed" | "success";
+  statusFilter?: "pending" | "failed" | "success";
   skip: number;
   take: number;
 }
@@ -103,6 +104,33 @@ const buildWhere = (payload: SearchChallanPayload) => {
         { order_status: null },
       ],
     });
+  }
+
+  // Handle statusFilter for payment status page
+  if (payload.statusFilter) {
+    if (payload.statusFilter === "failed") {
+      andConditions.push({
+        OR: [
+          { order_status: { in: failedGatewayStatuses } },
+          { paymentstatus: "FAILED" },
+        ],
+      });
+    } else if (payload.statusFilter === "pending") {
+      andConditions.push({
+        OR: [
+          { order_status: { in: pendingGatewayStatuses } },
+          { order_status: null },
+          { paymentstatus: "PENDING" },
+        ],
+      });
+    } else if (payload.statusFilter === "success") {
+      andConditions.push({
+        OR: [
+          { order_status: { in: successGatewayStatuses } },
+          { paymentstatus: "PAID" },
+        ],
+      });
+    }
   }
 
   if (payload.searchText) {

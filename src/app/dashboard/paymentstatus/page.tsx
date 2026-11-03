@@ -112,7 +112,6 @@ const PaymentStatusPage = () => {
   const [isLoading, setLoading] = useState<boolean>(true);
   const [challanData, setChallanData] = useState<challan[]>([]);
   const [processingId, setProcessingId] = useState<number | null>(null);
-  // const [dvatId, setDvatId] = useState<number | null>(null);
   const [manualOrderId, setManualOrderId] = useState<string>("");
   const [lookupMode, setLookupMode] = useState<StatusLookupMode>("order_no");
   const [isManualChecking, setIsManualChecking] = useState<boolean>(false);
@@ -148,14 +147,22 @@ const PaymentStatusPage = () => {
     }
   };
 
-  const loadRecentChallans = async () => {
+  const loadRecentChallans = async (
+    searchQuery?: string,
+    statusFilterValue?: TableStatusFilter,
+  ) => {
     const searchResponse = await SearchChallan({
-      take: 100000,
+      take: 50,
       skip: 0,
       excludePaid: false,
+      searchText: searchQuery,
+      statusFilter:
+        statusFilterValue && statusFilterValue !== "all"
+          ? (statusFilterValue as any)
+          : undefined,
     });
 
-    if (searchResponse.status && searchResponse.data.result) {
+    if (searchResponse.status && searchResponse.data?.result) {
       setChallanData(searchResponse.data.result);
     } else if (!searchResponse.status) {
       toast.error(searchResponse.message || "Unable to fetch payment status.");
@@ -173,21 +180,22 @@ const PaymentStatusPage = () => {
         return router.push("/");
       }
 
-      // const dvatResponse = await GetUserDvat04();
-      // if (!dvatResponse.status || !dvatResponse.data) {
-      //   toast.error(dvatResponse.message || "Unable to fetch DVAT details.");
-      //   setLoading(false);
-      //   return;
-      // }
-
-      // setDvatId(dvatResponse.data.id);
-      await loadRecentChallans();
+      await loadRecentChallans(undefined, "all");
 
       setLoading(false);
     };
 
     init();
   }, [router]);
+
+  // Effect to handle search and filter changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadRecentChallans(searchText, statusFilter);
+    }, 300); // Debounce search input
+
+    return () => clearTimeout(timer);
+  }, [searchText, statusFilter]);
 
   const fetchOrderStatus = async (params: {
     orderNo?: string;
@@ -402,7 +410,11 @@ const PaymentStatusPage = () => {
         id: "payment_bucket",
         header: "Payment Status",
         accessorFn: (row) => getPaymentBucket(row),
-        filterFn: "equalsString",
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue) return true; // Show all if no filter
+          const bucketValue = getPaymentBucket(row.original);
+          return bucketValue === filterValue;
+        },
         cell: ({ row }) => {
           const bucket = getPaymentBucket(row.original);
           return (
@@ -481,7 +493,9 @@ const PaymentStatusPage = () => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     globalFilterFn: (row, _columnId, filterValue) => {
-      const needle = String(filterValue ?? "").trim().toLowerCase();
+      const needle = String(filterValue ?? "")
+        .trim()
+        .toLowerCase();
       if (!needle) return true;
 
       const haystack = [
@@ -504,9 +518,18 @@ const PaymentStatusPage = () => {
   const handleStatusFilterChange = (value: TableStatusFilter) => {
     setStatusFilter(value);
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    table
-      .getColumn("payment_bucket")
-      ?.setFilterValue(value === "all" ? undefined : value);
+    
+    // Map TableStatusFilter to actual payment bucket values
+    let filterValue: string | undefined;
+    if (value === "all") {
+      filterValue = undefined; // Show all
+    } else if (value === "pending") {
+      filterValue = "pending";
+    } else if (value === "failed") {
+      filterValue = "failed";
+    }
+    
+    table.getColumn("payment_bucket")?.setFilterValue(filterValue);
   };
 
   const summary = useMemo(() => {
@@ -514,10 +537,10 @@ const PaymentStatusPage = () => {
     let paid = 0;
     let failed = 0;
 
-    const initiatedRows = table.getFilteredRowModel().rows;
+    const currentPageRows = table.getRowModel().rows;
 
-    for (let i = 0; i < initiatedRows.length; i++) {
-      const bucket = getPaymentBucket(initiatedRows[i].original);
+    for (let i = 0; i < currentPageRows.length; i++) {
+      const bucket = getPaymentBucket(currentPageRows[i].original);
 
       if (bucket === "failed") {
         failed += 1;
@@ -529,12 +552,12 @@ const PaymentStatusPage = () => {
     }
 
     return {
-      total: initiatedRows.length,
+      total: challanData.length,
       paid,
       pending,
       failed,
     };
-  }, [table]);
+  }, [challanData, table]);
 
   if (isLoading) {
     return (
@@ -736,8 +759,7 @@ const PaymentStatusPage = () => {
           </div>
 
           <p className="mt-2 text-xs text-gray-600">
-            Showing {table.getRowModel().rows.length} of {summary.total} total
-            record(s)
+            Showing {table.getRowModel().rows.length} of {summary.total} record(s) on this page
           </p>
         </div>
 
@@ -809,8 +831,8 @@ const PaymentStatusPage = () => {
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-gray-600">
                 Page {table.getState().pagination.pageIndex + 1} of{" "}
-                {Math.max(1, table.getPageCount())} &mdash; {summary.total} total
-                record(s)
+                {Math.max(1, table.getPageCount())} &mdash; {summary.total}{" "}
+                total record(s)
               </p>
               <div className="flex items-center gap-2">
                 <select
