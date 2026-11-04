@@ -28,7 +28,7 @@ const SearchReturnPayment = async (
   PaginationResponse<Array<returns_01 & { dvat04: dvat04 }> | null>
 > => {
   const functionname: string = SearchReturnPayment.name;
-
+  console.log("SearchReturnPayment payload:", payload);
   try {
     const currentUserId = await getCurrentUserId();
     const currentDvatId = await getCurrentDvatId();
@@ -124,6 +124,8 @@ const SearchReturnPayment = async (
         },
       }),
     ]);
+
+    console.log(return_01);
 
     return createPaginationResponse({
       message: return_01

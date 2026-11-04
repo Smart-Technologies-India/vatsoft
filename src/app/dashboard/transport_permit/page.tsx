@@ -28,6 +28,8 @@ import ServerTime from "@/action/servertime";
 const DEFAULT_SUMMARY = {
   totalRecords: 0,
   totalItems: 0,
+  pendingRecords: 0,
+  paidRecords: 0,
 };
 
 const formatDateInputValue = (date: Date): string => {
@@ -582,15 +584,15 @@ const TransportPermit = () => {
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
-              <p className="text-xs text-gray-600 mb-1">Total Items</p>
+              <p className="text-xs text-gray-600 mb-1">Paid Records</p>
               <p className="text-lg font-medium text-gray-900">
-                {summary.totalItems}
+                {summary.paidRecords ?? 0}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
-              <p className="text-xs text-gray-600 mb-1">Page Records</p>
+              <p className="text-xs text-gray-600 mb-1">Pending Records</p>
               <p className="text-lg font-medium text-gray-900">
-                {transportPermitData.length}
+                {summary.pendingRecords ?? 0}
               </p>
             </div>
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">

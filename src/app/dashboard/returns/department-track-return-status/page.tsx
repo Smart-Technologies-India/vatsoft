@@ -204,22 +204,6 @@ const TrackAppliation = () => {
     }
   };
 
-  const getQuarterMonths = (quarter: number | null | undefined): string => {
-    if (!quarter) return "";
-    switch (quarter) {
-      case 1:
-        return "Jan-Mar";
-      case 2:
-        return "Apr-Jun";
-      case 3:
-        return "Jul-Sep";
-      case 4:
-        return "Oct-Dec";
-      default:
-        return "";
-    }
-  };
-
   const getGroundedMonth = (
     quarter: number | string | null | undefined,
   ): string => {
@@ -240,27 +224,7 @@ const TrackAppliation = () => {
     }
   };
 
-  const get_month = (composition: boolean, month: string): string => {
-    if (composition) {
-      if (["January", "February", "March"].includes(capitalcase(month))) {
-        return "Jan-Mar";
-      } else if (["April", "May", "June"].includes(capitalcase(month))) {
-        return "Apr-Jun";
-      } else if (["July", "August", "September"].includes(capitalcase(month))) {
-        return "Jul-Sep";
-      } else if (
-        ["October", "November", "December"].includes(capitalcase(month))
-      ) {
-        return "Oct-Dec";
-      } else {
-        return "Jan-Mar";
-      }
-    } else {
-      return month;
-    }
-  };
-
-  // Filter payment data to show only one quarterly return per DVAT when is_quarterly is true
+  // Filter payment data to show only one quarterly return per DVAT per quarter when is_quarterly is true
   const filteredPaymentData = paymentData.reduce(
     (
       acc: Array<returns_01 & { dvat04: dvat04 }>,
@@ -270,12 +234,13 @@ const TrackAppliation = () => {
       if (!current.is_quarterly) {
         acc.push(current);
       } else {
-        // For QUARTERLY, check if we already have this DVAT
-        const dvat04IdExists = acc.some(
-          (item) => item.dvat04Id === current.dvat04Id,
+        // For QUARTERLY, check if we already have this DVAT + QUARTER combination
+        const dvat04AndQuarterExists = acc.some(
+          (item) =>
+            item.dvat04Id === current.dvat04Id && item.quarter === current.quarter,
         );
-        // If not, add it (this will be the first/latest quarterly return for this DVAT)
-        if (!dvat04IdExists) {
+        // If not, add it (this will be the first/latest quarterly return for this DVAT + QUARTER combination)
+        if (!dvat04AndQuarterExists) {
           acc.push(current);
         }
       }

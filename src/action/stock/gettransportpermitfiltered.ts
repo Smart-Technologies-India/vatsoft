@@ -50,16 +50,22 @@ export type TransportPermitRecord = {
 type TransportPermitSummary = {
   totalRecords: number;
   totalItems: number;
+  pendingRecords?: number;
+  paidRecords?: number;
 };
 
 const ZERO_SUMMARY: TransportPermitSummary = {
   totalRecords: 0,
   totalItems: 0,
+  pendingRecords: 0,
+  paidRecords: 0,
 };
 
 const summarize = (records: TransportPermitRecord[]): TransportPermitSummary => ({
   totalRecords: records.length,
   totalItems: records.reduce((sum, record) => sum + record.items, 0),
+  pendingRecords: records.filter((r) => !r.is_paid).length,
+  paidRecords: records.filter((r) => r.is_paid).length,
 });
 
 const GetTransportPermitFiltered = async (
