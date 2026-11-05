@@ -68,23 +68,38 @@ const CreateMultiDailySaleManufacturer = async (
       });
 
       if (isexist) {
-        throw new Error(
-          `Entry with invoice number ${entry.invoice_number}, with commodity name ${isexist.commodity_master.product_name} and quantity ${isexist.quantity} already exists.`,
-        );
+        const mergedQuantity = isexist.quantity + entry.quantity;
+        const mergedAmount =
+          parseFloat(isexist.amount) + parseFloat(entry.amount);
+        const mergedVatAmount =
+          parseFloat(isexist.vatamount) + parseFloat(entry.vatamount);
+
+        await prisma.daily_sale.update({
+          where: {
+            id: isexist.id,
+          },
+          data: {
+            quantity: mergedQuantity,
+            amount: mergedAmount.toString(),
+            vatamount: mergedVatAmount.toString(),
+          },
+        });
+
+        createdCount += 1;
+      } else {
+        const response = await CreateDailySaleManufacturer({
+          ...entry,
+          dvatid: currentDvatId,
+        });
+
+        if (!response.status) {
+          throw new Error(
+            `Failed to create entry for invoice: ${entry.invoice_number}, error: ${response.message}`,
+          );
+        }
+
+        createdCount += 1;
       }
-
-      const response = await CreateDailySaleManufacturer({
-        ...entry,
-        dvatid: currentDvatId,
-      });
-
-      if (!response.status) {
-        throw new Error(
-          `Failed to create entry for invoice: ${entry.invoice_number}, error: ${response.message}`,
-        );
-      }
-
-      createdCount += 1;
     }
 
     return createResponse({

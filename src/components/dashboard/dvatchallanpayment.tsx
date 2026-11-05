@@ -349,13 +349,13 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
           return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
             ? "0"
             : return01.dvat04?.compositionScheme
-              ? (compositionCalculation?.getInterest() ?? 0).toFixed(0)
+              ? getInterestAmountcomp().toFixed(0)
               : remainingInterest.toFixed(0);
         const submitChallanPenalty =
           return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
             ? "0"
             : return01.dvat04?.compositionScheme
-              ? (compositionCalculation?.getPenalty() ?? 0).toFixed(0)
+              ? getPenaltyAmountcomp().toFixed(0)
               : remainingPenalty.toFixed(0);
         const submitChallanOther =
           return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
@@ -480,13 +480,13 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
           return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
             ? "0"
             : return01.dvat04?.compositionScheme
-              ? (compositionCalculation?.getInterest() ?? 0).toFixed(0)
+              ? getInterestAmountcomp().toFixed(0)
               : remainingInterest.toFixed(0);
         const submitChallanPenalty =
           return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
             ? "0"
             : return01.dvat04?.compositionScheme
-              ? (compositionCalculation?.getPenalty() ?? 0).toFixed(0)
+              ? getPenaltyAmountcomp().toFixed(0)
               : remainingPenalty.toFixed(0);
         const submitChallanOther =
           return01.dvat04?.frequencyFilings === "QUARTERLY" && !isLastReturn
@@ -633,6 +633,14 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     );
   };
 
+  const getInterestAmountcomp = (): number => {
+    return compositionCalculation.getInterest() - paidinterestamount;
+  };
+
+  const getPenaltyAmountcomp = (): number => {
+    return compositionCalculation.getPenalty() - paidpenaltyamount;
+  };
+
   // raguler start here
 
   const getAdjustedBalances = () => {
@@ -685,8 +693,8 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
     if (return01?.dvat04?.compositionScheme) {
       const total: number =
         getVatAmountcomp() +
-        compositionCalculation.getInterest() +
-        compositionCalculation.getPenalty();
+        getInterestAmountcomp() +
+        getPenaltyAmountcomp();
       return total;
     } else {
       const total: number =
@@ -811,7 +819,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                 <TableCell className="text-left p-2 border">Interest</TableCell>
                 <TableCell className="text-center p-2 border">
                   {return01?.dvat04.compositionScheme
-                    ? compositionCalculation.getInterest().toFixed(0)
+                    ? getInterestAmountcomp().toFixed(0)
                     : remainingInterest.toFixed(0)}
                 </TableCell>
               </TableRow>
@@ -821,7 +829,7 @@ export const DvatChallanPayment = (props: DvatChallanPaymentProps) => {
                 </TableCell>
                 <TableCell className="text-center p-2 border">
                   {return01?.dvat04.compositionScheme
-                    ? compositionCalculation.getPenalty().toFixed(0)
+                    ? getPenaltyAmountcomp().toFixed(0)
                     : remainingPenalty.toFixed(0)}
                 </TableCell>
               </TableRow>
