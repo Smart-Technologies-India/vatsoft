@@ -175,7 +175,6 @@ const CreateCFormForReturns = async (): Promise<
 
     let cformSrNoCounter = 0;
 
-    console.log("Valid quarter groups:", validQuarterGroups);
     // Create C-Forms for quarters where all three months are filed AND at least one has entries
     for (const [, entries] of validQuarterGroups) {
       const firstEntry = entries[0];
@@ -187,7 +186,6 @@ const CreateCFormForReturns = async (): Promise<
         returns01.year,
         returns01.month ?? "",
       );
-      console.log("Quarter Dates:", quarterDates);
       const certdate = returns01.dvat04?.certificateDate || new Date();
 
       const existingCForm = await prisma.cform.findFirst({
@@ -219,7 +217,6 @@ const CreateCFormForReturns = async (): Promise<
         );
         const office = returns01.dvat04?.selectOffice || "Dadra_Nagar_Haveli";
 
-        console.log(quarterDates);
         const lastcform = await prisma.cform.findFirst({
           where: {
             deletedAt: null,

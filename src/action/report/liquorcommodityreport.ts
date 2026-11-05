@@ -100,9 +100,6 @@ const LiquorCommodityReport = async (
     }
 
     const commodityIds = commodityData.map((c) => c.id);
-    console.log(
-      `Fetched ${commodityIds.length} commodity IDs in ${(new Date().getTime() - start.getTime()) / 1000} seconds.`,
-    );
 
     const sec_start = new Date();
 
@@ -143,9 +140,6 @@ const LiquorCommodityReport = async (
       });
     }
 
-    console.log(
-      `Starting aggregation of ${response.length} entries at ${(new Date().getTime() - sec_start.getTime()) / 1000} seconds.`,
-    );
     // Create commodity lookup map for O(1) access
     const commodityMap = new Map(commodityData.map((c) => [c.id, c]));
 
@@ -199,17 +193,9 @@ const LiquorCommodityReport = async (
       );
     }
 
-    console.log(
-      `Skipped ${skippedCount} entries due to missing commodityId or userOffice`,
-    );
-
     // Sort by total amount for consistent ordering
     const allAggregatedData = Object.values(aggregationMap).sort(
       (a, b) => b.total_amount - a.total_amount,
-    );
-
-    console.log(
-      `Aggregated ${allAggregatedData.length} unique groups (commodity + office combinations) in ${(new Date().getTime() - sec_start.getTime()) / 1000} seconds.`,
     );
 
     // Apply pagination to aggregated results

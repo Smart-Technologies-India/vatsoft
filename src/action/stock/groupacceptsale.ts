@@ -78,7 +78,6 @@ const GroupAcceptSale = async (
           }
 
           // 3. Update all purchase records in this group to mark as accepted
-          console.log(`Processing commodity ID ${group.purchaseIds}`);
           const purchases_update = await prisma.daily_purchase.updateMany({
             where: {
               id: {
@@ -93,9 +92,6 @@ const GroupAcceptSale = async (
               is_accept: true,
             },
           });
-          console.log(
-            `Updated ${purchases_update} purchase records for commodity ID ${group.commodityid}`,
-          );
 
           if (!purchases_update) {
             throw new Error("Unable to update daily purchase records");

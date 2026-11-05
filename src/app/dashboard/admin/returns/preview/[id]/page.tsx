@@ -148,7 +148,7 @@ const AdminDvat16ReturnPreview = () => {
 
         isQuarterlyFiling =
           selectedReturn?.status === "PAID"
-            ? selectedReturn?.is_quarterly ?? false
+            ? (selectedReturn?.is_quarterly ?? false)
             : selectedReturn.dvat04?.frequencyFilings === "QUARTERLY";
 
         let allQuarterlyReturns: (returns_01 & {
@@ -183,7 +183,6 @@ const AdminDvat16ReturnPreview = () => {
           allQuarterlyReturns = [selectedReturn];
           mergedEntries = [...returnResponse.data.returns_entry];
         }
-        console.log("All quarterly returns:", selectedReturn);
         setReturn01(selectedReturn);
         // setQuarterlyReturns(allQuarterlyReturns);
         serReturns_entryData(mergedEntries);
@@ -198,7 +197,9 @@ const AdminDvat16ReturnPreview = () => {
 
           if (isQuarterlyFiling) {
             // For quarterly filing, fetch the last month of the previous quarter
-            const currentQuarter = getQuarterForMonth(selectedReturn.month ?? "");
+            const currentQuarter = getQuarterForMonth(
+              selectedReturn.month ?? "",
+            );
             const quarterMonthsMap: Record<Quarter, string> = {
               QUARTER1: "March",
               QUARTER2: "June",
@@ -210,7 +211,9 @@ const AdminDvat16ReturnPreview = () => {
             // If fetching December and current month is Jan-Mar, year decreases
             if (
               lastMonth === "December" &&
-              ["January", "February", "March"].includes(selectedReturn.month ?? "")
+              ["January", "February", "March"].includes(
+                selectedReturn.month ?? "",
+              )
             ) {
               lastMonthYear = (parseInt(selectedReturn.year) - 1).toString();
             } else {

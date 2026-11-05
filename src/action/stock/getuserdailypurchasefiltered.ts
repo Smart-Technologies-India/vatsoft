@@ -61,7 +61,6 @@ const GetUserDailyPurchaseFiltered = async (
   payload: GetUserDailyPurchaseFilteredPayload,
 ): Promise<PaginationResponse<Array<GroupedDailyPurchase> | null>> => {
   const functionname: string = GetUserDailyPurchaseFiltered.name;
-
   try {
     const currentUserId = await getCurrentUserId();
     const currentDvatId = await getCurrentDvatId();
@@ -159,7 +158,8 @@ const GetUserDailyPurchaseFiltered = async (
     const overallSummary = summarize(groupedArray);
 
     const searchTerm = (payload.searchTerm ?? "").trim().toLowerCase();
-    const sortField: DailyPurchaseSortField = payload.sortField ?? "invoice_date";
+    const sortField: DailyPurchaseSortField =
+      payload.sortField ?? "invoice_date";
     const sortOrder: DailyPurchaseSortOrder = payload.sortOrder ?? "desc";
     const acceptStatusFilter = payload.acceptStatusFilter ?? "all";
 

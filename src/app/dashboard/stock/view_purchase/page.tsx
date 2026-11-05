@@ -1402,6 +1402,15 @@ const DocumentWiseDetails = () => {
     group.records.some((record) => canAcceptRecord(record)),
   );
 
+  const cutoffDate = new Date("2026-11-01");
+  const hasPendingAcceptableBeforeCutoff = dailyPurchase.some((group) => {
+    const invoiceDate = new Date(group.invoice_date);
+    return (
+      invoiceDate < cutoffDate &&
+      group.records.some((record) => canAcceptRecord(record))
+    );
+  });
+
   const isFilterApplied = useMemo(
     () =>
       searchTerm.trim() !== "" ||
@@ -2110,7 +2119,7 @@ const DocumentWiseDetails = () => {
                             </Button>
                           )}
 
-                          {/* {hasPendingAcceptable && (
+                          {hasPendingAcceptableBeforeCutoff && (
                             <>
                               <Button
                                 size="small"
@@ -2148,7 +2157,7 @@ const DocumentWiseDetails = () => {
                                 Reject All
                               </Button>
                             </>
-                          )} */}
+                          )}
 
                           {/* {stockSnapshotExists &&
                             dvatdata?.commodity === "RESTAURANT" && (

@@ -56,13 +56,6 @@ const ReturnFiling = async (): Promise<ApiResponseType<boolean | null>> => {
           .startOf("month")
           .subtract(1, "month")
           .add(5, "day");
-        console.log(dvat.id);
-        console.log(
-          "Start Month:",
-          startMonth.toDate(),
-          "End Month:",
-          endMonth.toDate(),
-        );
         const months: Dayjs[] = [];
         let monthIterator = startMonth;
 
