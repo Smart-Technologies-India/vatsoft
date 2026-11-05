@@ -277,7 +277,7 @@ const CreateDailySale = async (
                 seller_dvat.tinNumber.startsWith("25") ||
                 seller_dvat.tinNumber.startsWith("26"),
               urn_number: ref_no,
-              payment_status: ispaid ? "DEALER_PAID" : "DUE",
+              payment_status: ispaid ? "PAID" : "DUE",
             },
           });
 

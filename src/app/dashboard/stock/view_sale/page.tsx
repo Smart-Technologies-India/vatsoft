@@ -1081,6 +1081,10 @@ const DocumentWiseDetails = () => {
   const [isBulkDeleteLoading, setIsBulkDeleteLoading] =
     useState<boolean>(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState<boolean>(false);
+  const [bulkDeleteProgress, setBulkDeleteProgress] = useState<{
+    current: number;
+    total: number;
+  }>({ current: 0, total: 0 });
   const [isDownloadingSaleDailyReport, setIsDownloadingSaleDailyReport] =
     useState<boolean>(false);
   const [bulkDeleteRows, setBulkDeleteRows] = useState<
@@ -1195,7 +1199,10 @@ const DocumentWiseDetails = () => {
     let failedCount = 0;
     let error = "";
 
-    for (const id of ids) {
+    for (let index = 0; index < ids.length; index++) {
+      const id = ids[index];
+      setBulkDeleteProgress({ current: index + 1, total: ids.length });
+
       const response = await DeleteSale({
         id,
       });
@@ -1373,8 +1380,10 @@ const DocumentWiseDetails = () => {
     }
 
     setIsBulkDeleting(true);
+    setBulkDeleteProgress({ current: 0, total: selectedBulkDeleteIds.length });
     await delete_sale_entry(selectedBulkDeleteIds);
     setIsBulkDeleting(false);
+    setBulkDeleteProgress({ current: 0, total: 0 });
     setIsBulkDeleteConfirmOpen(false);
     setIsBulkDeleteModalOpen(false);
     setSelectedBulkDeleteIds([]);
@@ -2049,34 +2058,49 @@ const DocumentWiseDetails = () => {
       <Modal
         title="Confirm Bulk Delete"
         open={isBulkDeleteConfirmOpen}
-        onCancel={() => setIsBulkDeleteConfirmOpen(false)}
+        onCancel={() => !isBulkDeleting && setIsBulkDeleteConfirmOpen(false)}
         onOk={handleConfirmBulkDelete}
         okText="Delete Permanently"
         okButtonProps={{ danger: true, loading: isBulkDeleting }}
+        cancelButtonProps={{ disabled: isBulkDeleting }}
       >
-        <p className="text-sm text-gray-700">
-          You are about to delete {selectedBulkDeleteIds.length} sale item(s).
-        </p>
-        <p className="mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-          Warning: This action cannot be reversed. Deleted items cannot be
-          restored.
-        </p>
-      </Modal>
-      <Modal
-        title="Confirm Bulk Delete"
-        open={isBulkDeleteConfirmOpen}
-        onCancel={() => setIsBulkDeleteConfirmOpen(false)}
-        onOk={handleConfirmBulkDelete}
-        okText="Delete Permanently"
-        okButtonProps={{ danger: true, loading: isBulkDeleting }}
-      >
-        <p className="text-sm text-gray-700">
-          You are about to delete {selectedBulkDeleteIds.length} sale item(s).
-        </p>
-        <p className="mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-          Warning: This action cannot be reversed. Deleted items cannot be
-          restored.
-        </p>
+        {!isBulkDeleting ? (
+          <>
+            <p className="text-sm text-gray-700">
+              You are about to delete {selectedBulkDeleteIds.length} sale
+              item(s).
+            </p>
+            <p className="mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+              Warning: This action cannot be reversed. Deleted items cannot be
+              restored.
+            </p>
+          </>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">
+                Deleting items...
+              </span>
+              <span className="text-sm font-semibold text-blue-600">
+                {bulkDeleteProgress.current} / {bulkDeleteProgress.total}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-in-out"
+                style={{
+                  width: `${(bulkDeleteProgress.current / bulkDeleteProgress.total) * 100}%`,
+                }}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 text-center">
+              {Math.round(
+                (bulkDeleteProgress.current / bulkDeleteProgress.total) * 100
+              )}
+              % Complete
+            </p>
+          </div>
+        )}
       </Modal>
 
       <Modal

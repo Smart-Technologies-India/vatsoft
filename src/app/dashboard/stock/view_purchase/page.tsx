@@ -1405,6 +1405,10 @@ const DocumentWiseDetails = () => {
   const cutoffDate = new Date("2026-11-01");
   const hasPendingAcceptableBeforeCutoff = dailyPurchase.some((group) => {
     const invoiceDate = new Date(group.invoice_date);
+    const commodity = String(dvatdata?.commodity ?? "");
+    if (commodity === "WHOLESALER") {
+      return true;
+    }
     return (
       invoiceDate < cutoffDate &&
       group.records.some((record) => canAcceptRecord(record))
