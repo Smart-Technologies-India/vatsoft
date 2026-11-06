@@ -61,166 +61,169 @@ const BulkDeleteSale = async (
 
       try {
         // Single transaction for entire batch
-        const batchResultCount = await prisma.$transaction(async (tx) => {
-          // Step 1: Fetch all sale entries in this batch
-          const salesToDelete = await tx.daily_sale.findMany({
-            where: {
-              id: { in: batch },
-              deletedAt: null,
-              deletedById: null,
-            },
-            select: {
-              id: true,
-              dvat04Id: true,
-              commodity_masterId: true,
-              quantity: true,
-              invoice_number: true,
-              invoice_date: true,
-              urn_number: true,
-              seller_tin_numberId: true,
-            },
-          });
-
-          // Step 2: Get unique DVATs and TINs for this batch (reduce queries)
-          const uniqueDvatIds = [...new Set(salesToDelete.map((s) => s.dvat04Id))];
-          const uniqueTinIds = [...new Set(salesToDelete.map((s) => s.seller_tin_numberId))];
-
-          const dvatMap = await tx.dvat04.findMany({
-            where: {
-              id: { in: uniqueDvatIds },
-              deletedAt: null,
-              deletedById: null,
-            },
-            select: { id: true, tinNumber: true },
-          });
-
-          const tinMap = await tx.tin_number_master.findMany({
-            where: {
-              id: { in: uniqueTinIds },
-              deletedAt: null,
-            },
-            select: { id: true, tin_number: true },
-          });
-
-          const dvatById = Object.fromEntries(dvatMap.map((d) => [d.id, d.tinNumber]));
-          const tinById = Object.fromEntries(tinMap.map((t) => [t.id, t.tin_number]));
-
-          // Step 3: Update stocks in batch
-          const stockUpdates = salesToDelete.map((sale) => ({
-            dvat04Id: sale.dvat04Id,
-            commodity_masterId: sale.commodity_masterId,
-            quantity: sale.quantity,
-          }));
-
-          for (const { dvat04Id, commodity_masterId, quantity } of stockUpdates) {
-            await tx.stock.updateMany(
-              {
-                where: {
-                  dvat04Id,
-                  commodity_masterId,
-                  deletedAt: null,
-                  deletedById: null,
+        const batchResultCount = await prisma.$transaction(
+          async (tx) => {
+            // Step 1: Fetch all sale entries with related data in one query
+            const salesToDelete = await tx.daily_sale.findMany({
+              where: {
+                id: { in: batch },
+                deletedAt: null,
+                deletedById: null,
+              },
+              include: {
+                dvat04: {
+                  select: { id: true, tinNumber: true },
                 },
-                data: {
-                  quantity: {
-                    increment: quantity,
-                  },
+                seller_tin_number: {
+                  select: { id: true, tin_number: true },
                 },
               },
-            );
-          }
+            });
 
-          // Step 4: Collect all purchase updates for batch
-          const purchaseUpdatesToExecute: Array<{
-            buyerDvatId: number;
-            sellerTinId: number;
-            invoiceNumber: string;
-            invoiceDate: Date;
-          }> = [];
+            if (salesToDelete.length === 0) {
+              return 0;
+            }
 
-          for (const sale of salesToDelete) {
-            const sellerTinNumber = dvatById[sale.dvat04Id];
-            const buyerTinNumber = tinById[sale.seller_tin_numberId];
+            // Step 2: Get all seller TIN numbers and buyer TIN numbers upfront
+            const sellerTinNumbers = salesToDelete
+              .map((s) => s.dvat04?.tinNumber)
+              .filter(Boolean) as string[];
+            const buyerTinNumbers = salesToDelete
+              .map((s) => s.seller_tin_number?.tin_number)
+              .filter(Boolean) as string[];
 
-            if (sellerTinNumber && buyerTinNumber) {
-              // Get buyer DVAT by TIN
-              const buyerDvat = await tx.dvat04.findFirst({
+            // Fetch seller TIN masters and buyer DVATs in parallel
+            const [sellerTinMasters, buyerDvats] = await Promise.all([
+              tx.tin_number_master.findMany({
                 where: {
-                  tinNumber: buyerTinNumber,
+                  tin_number: { in: sellerTinNumbers },
+                  status: "ACTIVE",
+                  deletedAt: null,
+                },
+                select: { id: true, tin_number: true },
+              }),
+              tx.dvat04.findMany({
+                where: {
+                  tinNumber: { in: buyerTinNumbers },
                   deletedAt: null,
                   deletedById: null,
                 },
-                select: { id: true },
-              });
+                select: { id: true, tinNumber: true },
+              }),
+            ]);
 
-              if (buyerDvat) {
-                // Get seller TIN master
-                const sellerTinMaster = await tx.tin_number_master.findFirst({
-                  where: {
-                    tin_number: sellerTinNumber,
-                    status: "ACTIVE",
-                    deletedAt: null,
-                  },
-                  select: { id: true },
+            const sellerTinById = Object.fromEntries(
+              sellerTinMasters.map((t) => [t.tin_number, t.id]),
+            );
+            const buyerDvatByTin = Object.fromEntries(
+              buyerDvats.map((d) => [d.tinNumber, d.id]),
+            );
+
+            // Step 3: Update stocks in batch (single updateMany call per unique stock)
+            const stockUpdateMap = new Map<
+              string,
+              { dvat04Id: number; commodity_masterId: number; totalQuantity: number }
+            >();
+
+            for (const sale of salesToDelete) {
+              const key = `${sale.dvat04Id}-${sale.commodity_masterId}`;
+              const existing = stockUpdateMap.get(key);
+              if (existing) {
+                existing.totalQuantity += sale.quantity;
+              } else {
+                stockUpdateMap.set(key, {
+                  dvat04Id: sale.dvat04Id,
+                  commodity_masterId: sale.commodity_masterId,
+                  totalQuantity: sale.quantity,
                 });
+              }
+            }
 
-                if (sellerTinMaster) {
-                  purchaseUpdatesToExecute.push({
-                    buyerDvatId: buyerDvat.id,
-                    sellerTinId: sellerTinMaster.id,
-                    invoiceNumber: sale.invoice_number,
-                    invoiceDate: sale.invoice_date,
-                  });
+            // Execute all stock updates in parallel
+            await Promise.all(
+              Array.from(stockUpdateMap.values()).map((update) =>
+                tx.stock.updateMany({
+                  where: {
+                    dvat04Id: update.dvat04Id,
+                    commodity_masterId: update.commodity_masterId,
+                    deletedAt: null,
+                    deletedById: null,
+                  },
+                  data: {
+                    quantity: {
+                      increment: update.totalQuantity,
+                    },
+                  },
+                }),
+              ),
+            );
+
+            // Step 4: Prepare purchase updates in batch
+            const purchaseUpdateMap = new Map<
+              string,
+              { buyerDvatId: number; sellerTinId: number; entries: any[] }
+            >();
+
+            for (const sale of salesToDelete) {
+              const sellerTinNumber = sale.dvat04?.tinNumber;
+              const buyerTinNumber = sale.seller_tin_number?.tin_number;
+
+              if (sellerTinNumber && buyerTinNumber) {
+                const sellerTinId = sellerTinById[sellerTinNumber];
+                const buyerDvatId = buyerDvatByTin[buyerTinNumber];
+
+                if (sellerTinId && buyerDvatId) {
+                  const key = `${buyerDvatId}-${sellerTinId}`;
+                  const existing = purchaseUpdateMap.get(key);
+                  if (existing) {
+                    existing.entries.push({
+                      invoiceNumber: sale.invoice_number,
+                      invoiceDate: sale.invoice_date,
+                    });
+                  } else {
+                    purchaseUpdateMap.set(key, {
+                      buyerDvatId,
+                      sellerTinId,
+                      entries: [
+                        {
+                          invoiceNumber: sale.invoice_number,
+                          invoiceDate: sale.invoice_date,
+                        },
+                      ],
+                    });
+                  }
                 }
               }
             }
-          }
 
-          // Step 5: Execute all purchase updates for batch
-          for (const update of purchaseUpdatesToExecute) {
-            await tx.daily_purchase.updateMany({
+            // Step 5: Execute all purchase updates in batch
+            await Promise.all(
+              Array.from(purchaseUpdateMap.values()).map((update) =>
+                tx.daily_purchase.updateMany({
+                  where: {
+                    dvat04Id: update.buyerDvatId,
+                    seller_tin_numberId: update.sellerTinId,
+                    OR: update.entries.map((e) => ({
+                      invoice_number: e.invoiceNumber,
+                      invoice_date: e.invoiceDate,
+                    })),
+                    deletedAt: null,
+                    status: "ACTIVE",
+                  },
+                  data: {
+                    status: "INACTIVE",
+                    updatedById: currentUserId,
+                    deletedAt: new Date(),
+                    deletedById: currentUserId,
+                  },
+                }),
+              ),
+            );
+
+            // Step 6: Soft delete all sales in batch
+            await tx.daily_sale.updateMany({
               where: {
-                dvat04Id: update.buyerDvatId,
-                seller_tin_numberId: update.sellerTinId,
-                invoice_number: update.invoiceNumber,
-                invoice_date: update.invoiceDate,
-                deletedAt: null,
-                status: "ACTIVE",
-              },
-              data: {
-                status: "INACTIVE",
-                updatedById: currentUserId,
-                deletedAt: new Date(),
-                deletedById: currentUserId,
-              },
-            });
-          }
-
-          // Step 6: Create audit entries for batch
-          // Step 6: Soft delete all sales in batch (skip audit entry creation for bulk delete)
-          await tx.daily_sale.updateMany({
-            where: {
-              id: { in: salesToDelete.map((s) => s.id) },
-            },
-            data: {
-              updatedById: currentUserId,
-              deletedById: currentUserId,
-              deletedAt: new Date(),
-              status: "INACTIVE",
-            },
-          });
-
-          // Step 7: Update returns_entry for batch (all URNs at once)
-          const urnNumbers = salesToDelete
-            .filter((s) => s.urn_number)
-            .map((s) => s.urn_number);
-
-          if (urnNumbers.length > 0) {
-            await tx.returns_entry.updateMany({
-              where: {
-                description_of_goods: { in: urnNumbers as string[] },
-                deletedAt: null,
-                status: "ACTIVE",
+                id: { in: salesToDelete.map((s) => s.id) },
               },
               data: {
                 updatedById: currentUserId,
@@ -229,10 +232,34 @@ const BulkDeleteSale = async (
                 status: "INACTIVE",
               },
             });
-          }
 
-          return salesToDelete.length;
-        });
+            // Step 7: Update returns_entry for batch (all URNs at once)
+            const urnNumbers = salesToDelete
+              .filter((s) => s.urn_number)
+              .map((s) => s.urn_number);
+
+            if (urnNumbers.length > 0) {
+              await tx.returns_entry.updateMany({
+                where: {
+                  description_of_goods: { in: urnNumbers as string[] },
+                  deletedAt: null,
+                  status: "ACTIVE",
+                },
+                data: {
+                  updatedById: currentUserId,
+                  deletedById: currentUserId,
+                  deletedAt: new Date(),
+                  status: "INACTIVE",
+                },
+              });
+            }
+
+            return salesToDelete.length;
+          },
+          {
+            timeout: 30000,
+          },
+        );
 
         result.successCount += batchResultCount;
       } catch (batchError) {
