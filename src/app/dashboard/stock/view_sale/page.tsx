@@ -5,6 +5,7 @@ import AcceptSaleWithoutDvat from "@/action/stock/acceptsalewithoutdvat";
 import AcceptSaleForPendingProcess from "@/action/stock/acceptsaleforpendingprocess";
 import AutoAcceptSaleByDays from "@/action/stock/autoacceptsalebydays";
 import DeleteSale from "@/action/stock/deletesale";
+import BulkDeleteSale from "@/action/stock/bulkdeletesale";
 import DeleteSaleItem from "@/action/stock/deletesaleitem";
 import UpdateInvoiceNumber from "@/action/stock/updateinvoicenumber";
 import GetSaleDeleteImpact from "@/action/stock/getsaledeleteimpact";
@@ -1195,42 +1196,47 @@ const DocumentWiseDetails = () => {
       return;
     }
 
-    let successCount = 0;
-    let failedCount = 0;
-    let error = "";
+    try {
+      setBulkDeleteProgress({ current: 0, total: ids.length });
 
-    for (let index = 0; index < ids.length; index++) {
-      const id = ids[index];
-      setBulkDeleteProgress({ current: index + 1, total: ids.length });
-
-      const response = await DeleteSale({
-        id,
+      const response = await BulkDeleteSale({
+        ids,
+        batchSize: 50,
       });
-      if (response.data && response.status) {
-        successCount += 1;
+
+      if (response.status && response.data) {
+        setBulkDeleteProgress({
+          current: response.data.successCount,
+          total: ids.length,
+        });
+
+        if (response.data.successCount > 0) {
+          toast.success(
+            `${response.data.successCount} sale record(s) deleted successfully.`,
+          );
+        }
+        if (response.data.failedCount > 0) {
+          toast.error(
+            `${response.data.failedCount} sale record(s) could not be deleted.\n${response.data.errors.join("\n")}`,
+          );
+        }
       } else {
-        failedCount += 1;
-        error = response.message || "Unknown error";
+        toast.error(response.message || "Failed to delete sale records.");
       }
-    }
 
-    if (successCount > 0) {
-      toast.success(`${successCount} sale record(s) deleted successfully.`);
+      await init();
+    } catch (error) {
+      toast.error("Error during bulk delete: " + String(error));
+      console.error(error);
+    } finally {
+      setDeleteBox(false);
+      setDeleteRecords([]);
+      setDeleteImpact({
+        creditNoteCount: 0,
+        debitNoteCount: 0,
+        totalLinkedCount: 0,
+      });
     }
-    if (failedCount > 0) {
-      toast.error(
-        `${failedCount} sale record(s) could not be deleted. Error: ${error}`,
-      );
-    }
-
-    await init();
-    setDeleteBox(false);
-    setDeleteRecords([]);
-    setDeleteImpact({
-      creditNoteCount: 0,
-      debitNoteCount: 0,
-      totalLinkedCount: 0,
-    });
   };
 
   const loadDeleteImpact = async (saleIds: number[]) => {
