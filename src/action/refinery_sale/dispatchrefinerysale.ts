@@ -345,33 +345,43 @@ const DispatchRefinerySale = async (
       const currentWallet = Number(sellerDvat.wallet || "0");
       const newWallet = currentWallet + payload.vatDifference;
 
-      // Update DVAT04 wallet
-      await prisma.dvat04.update({
-        where: { id: sellerDvat.id },
-        data: {
-          wallet: newWallet.toFixed(2),
-          updatedById: currentUserId,
-          updatedAt: new Date(),
-        },
-      });
-
-      // Create wallet_history entry
-      await prisma.wallet_history.create({
-        data: {
+      const is_exist_payment = await prisma.wallet_history.findFirst({
+        where: {
           dvatId: sellerDvat.id,
-          refineryId: targetSale.refineryId,
-          old_quantity: String(payload.oldQuantityLitres || "0"),
-          new_quantity: String(payload.newQuantityLitres || "0"),
-          old_amount: String((payload.oldTotalAmount || 0).toFixed(2)),
-          new_amount: String((payload.newTotalAmount || 0).toFixed(2)),
-          old_wallet: currentWallet.toFixed(2),
-          new_wallet: newWallet.toFixed(2),
-          difference_amount: payload.vatDifference.toFixed(2),
           invoice_number: payload.invoice_number,
-          type: payload.vatDifference >= 0 ? "CREDIT" : "DEBIT",
           status: "ACTIVE",
         },
       });
+
+      if (is_exist_payment) {
+        // Update DVAT04 wallet
+        await prisma.dvat04.update({
+          where: { id: sellerDvat.id },
+          data: {
+            wallet: newWallet.toFixed(2),
+            updatedById: currentUserId,
+            updatedAt: new Date(),
+          },
+        });
+
+        // Create wallet_history entry
+        await prisma.wallet_history.create({
+          data: {
+            dvatId: sellerDvat.id,
+            refineryId: targetSale.refineryId,
+            old_quantity: String(payload.oldQuantityLitres || "0"),
+            new_quantity: String(payload.newQuantityLitres || "0"),
+            old_amount: String((payload.oldTotalAmount || 0).toFixed(2)),
+            new_amount: String((payload.newTotalAmount || 0).toFixed(2)),
+            old_wallet: currentWallet.toFixed(2),
+            new_wallet: newWallet.toFixed(2),
+            difference_amount: payload.vatDifference.toFixed(2),
+            invoice_number: payload.invoice_number,
+            type: payload.vatDifference >= 0 ? "CREDIT" : "DEBIT",
+            status: "ACTIVE",
+          },
+        });
+      }
     }
 
     return {

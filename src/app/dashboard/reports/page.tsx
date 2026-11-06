@@ -205,6 +205,20 @@ const ReportsPage = () => {
             View Report
           </button>
         </div>
+        <div className="p-2 rounded shadow bg-white relative pb-8">
+          <p className="text-sm">Liquor Revenue Report</p>
+
+          <button
+            className="bg-blue-500 text-white mt-2 block text-sm font-semibold absolute bottom-0 right-0 px-2 py-1 rounded-tl-lg"
+            onClick={() => {
+              router.push(
+                "/dashboard/reports/revenue_reports/liquor_revenue",
+              );
+            }}
+          >
+            View Report
+          </button>
+        </div>
       </div>
       <hr className="my-4" />
       <h1>C. CST-Form Reports</h1>

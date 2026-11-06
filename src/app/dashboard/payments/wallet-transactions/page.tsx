@@ -355,6 +355,9 @@ const WalletTransactionsPage = () => {
                     Amount
                   </TableHead>
                   <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
+                    Wallet Amount
+                  </TableHead>
+                  <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
                     Date
                   </TableHead>
                   <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
@@ -390,12 +393,16 @@ const WalletTransactionsPage = () => {
                         {record.seller?.name_of_dealer || "N/A"}
                       </TableCell>
                       <TableCell className="text-center p-3 text-sm font-medium">
-                        ₹ {formatCurrency(
+                        ₹{" "}
+                        {formatCurrency(
                           Math.abs(
                             parseFloat(record.old_wallet || "0") -
-                              parseFloat(record.new_wallet || "0")
-                          )
+                              parseFloat(record.new_wallet || "0"),
+                          ),
                         )}
+                      </TableCell>
+                      <TableCell className="text-center p-3 text-sm">
+                        ₹ {formatCurrency(parseFloat(record.new_wallet || "0"))}
                       </TableCell>
                       <TableCell className="text-center p-3 text-sm">
                         {formateDate(record.createdAt)}

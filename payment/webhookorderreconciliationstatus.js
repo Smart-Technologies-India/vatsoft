@@ -490,32 +490,43 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
                   // New wallet after using wallet balance
                   const newWallet = oldWallet - walletContribution;
 
-                  // Update wallet in dvat04
-                  await prisma.dvat04.update({
-                    where: { id: parseInt(dvatid) },
-                    data: {
-                      wallet: newWallet.toFixed(2),
-                      updatedById: challan.createdById,
-                    },
-                  });
+                  const is_exist_payment =
+                    await prisma.wallet_history.findFirst({
+                      where: {
+                        dvatId: parseInt(dvatid),
+                        invoice_number: `WALLET_TOPUP_${challan.cpin}`,
+                        status: "ACTIVE",
+                      },
+                    });
 
-                  // Create wallet history entry
-                  await prisma.wallet_history.create({
-                    data: {
-                      dvatId: parseInt(dvatid),
-                      refineryId: markerRefineryId,
-                      type: "DEBIT",
-                      status: "ACTIVE",
-                      difference_amount: walletContribution.toFixed(2),
-                      old_wallet: oldWallet.toFixed(2),
-                      new_wallet: newWallet.toFixed(2),
-                      old_quantity: "0",
-                      new_quantity: "0",
-                      old_amount: oldWallet.toFixed(2),
-                      new_amount: walletContribution.toFixed(2),
-                      invoice_number: markerInvoiceNo,
-                    },
-                  });
+                  if (!is_exist_payment) {
+                    // Update wallet in dvat04
+                    await prisma.dvat04.update({
+                      where: { id: parseInt(dvatid) },
+                      data: {
+                        wallet: newWallet.toFixed(2),
+                        updatedById: challan.createdById,
+                      },
+                    });
+
+                    // Create wallet history entry
+                    await prisma.wallet_history.create({
+                      data: {
+                        dvatId: parseInt(dvatid),
+                        refineryId: markerRefineryId,
+                        type: "DEBIT",
+                        status: "ACTIVE",
+                        difference_amount: walletContribution.toFixed(2),
+                        old_wallet: oldWallet.toFixed(2),
+                        new_wallet: newWallet.toFixed(2),
+                        old_quantity: "0",
+                        new_quantity: "0",
+                        old_amount: oldWallet.toFixed(2),
+                        new_amount: walletContribution.toFixed(2),
+                        invoice_number: markerInvoiceNo,
+                      },
+                    });
+                  }
                 } catch (walletError) {
                   console.log(
                     "Error updating wallet for refinery VAT payment:",
@@ -547,7 +558,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
               paymentmode: "ONLINE",
               transaction_date: new Date(),
               bank_name: "CCAVENUE",
-              order_id: order_id,
+              track_id: track_id,
             },
           });
 
@@ -555,7 +566,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
             where: {
               invoice_number: markerInvoiceNo,
               dvat04Id: markerDvatId,
-              seller_tin_numberId: markerSellerTinId,
+              // seller_tin_numberId: markerSellerTinId,
               deletedAt: null,
               deletedById: null,
             },
@@ -567,7 +578,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
             where: {
               dvat04Id: markerDvatId,
               invoice_number: markerInvoiceNo,
-              seller_tin_numberId: markerSellerTinId,
+              // seller_tin_numberId: markerSellerTinId,
               deletedAt: null,
               deletedById: null,
             },

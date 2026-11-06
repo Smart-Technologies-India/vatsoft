@@ -121,39 +121,49 @@ const SubmitRefinerySaleVat = async (
     }
 
     const oldWallet = Number.parseFloat(currentDvatBeforeUpdate.wallet || "0");
-    
+
     // Calculate wallet contribution (how much wallet can contribute to VAT payment)
     const walletContribution = Math.min(oldWallet, payload.totalVatAmount);
-    
+
     // New wallet after using wallet balance
     const newWallet = oldWallet - walletContribution;
 
-    // Update wallet in dvat04
-    await prisma.dvat04.update({
-      where: { id: currentDvatId },
-      data: {
-        wallet: newWallet.toFixed(2),
-        updatedById: currentUserId,
+    const is_exist_payment = await prisma.wallet_history.findFirst({
+      where: {
+        dvatId: currentDvatId,
+        invoice_number: targetSale.invoice_number,
+        status: "ACTIVE",
       },
     });
 
-    // Create wallet history entry
-    await prisma.wallet_history.create({
-      data: {
-        dvatId: currentDvatId,
-        refineryId: targetSale.refineryId,
-        type: walletContribution > 0 ? "DEBIT" : "CREDIT",
-        status: "ACTIVE",
-        difference_amount: walletContribution.toFixed(2),
-        old_wallet: oldWallet.toFixed(2),
-        new_wallet: newWallet.toFixed(2),
-        old_quantity: "0",
-        new_quantity: "0",
-        old_amount: oldWallet.toFixed(2),
-        new_amount: walletContribution.toFixed(2),
-        invoice_number: targetSale.invoice_number,
-      },
-    });
+    if (!is_exist_payment) {
+      // Update wallet in dvat04
+      await prisma.dvat04.update({
+        where: { id: currentDvatId },
+        data: {
+          wallet: newWallet.toFixed(2),
+          updatedById: currentUserId,
+        },
+      });
+
+      // Create wallet history entry
+      await prisma.wallet_history.create({
+        data: {
+          dvatId: currentDvatId,
+          refineryId: targetSale.refineryId,
+          type: walletContribution > 0 ? "DEBIT" : "CREDIT",
+          status: "ACTIVE",
+          difference_amount: walletContribution.toFixed(2),
+          old_wallet: oldWallet.toFixed(2),
+          new_wallet: newWallet.toFixed(2),
+          old_quantity: "0",
+          new_quantity: "0",
+          old_amount: oldWallet.toFixed(2),
+          new_amount: walletContribution.toFixed(2),
+          invoice_number: targetSale.invoice_number,
+        },
+      });
+    }
 
     return createResponse({
       message: "Refinery VAT submitted successfully.",

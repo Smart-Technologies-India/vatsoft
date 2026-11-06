@@ -50,26 +50,36 @@ export const PayPurchaseByWalletLiquor = async (input: {
     const walletDeduction = Math.min(oldWallet, vatPayable);
     const newWallet = oldWallet - walletDeduction;
 
-    // Update DVAT04 wallet
-    await prisma.dvat04.update({
-      where: { id: dvatId, deletedAt: null },
-      data: {
-        wallet: newWallet.toFixed(2),
-      },
-    });
-
-    // Create wallet history entry
-    await prisma.liquor_wallet_history.create({
-      data: {
+    const is_exist_payment = await prisma.liquor_wallet_history.findFirst({
+      where: {
         dvatId: dvatId,
-        sellerId: input.sellerId,
-        type: "DEBIT",
-        old_wallet: oldWallet.toFixed(2),
-        new_wallet: newWallet.toFixed(2),
         invoice_number: input.invoiceNo,
         status: "ACTIVE",
       },
     });
+
+    if (!is_exist_payment) {
+      // Update DVAT04 wallet
+      await prisma.dvat04.update({
+        where: { id: dvatId, deletedAt: null },
+        data: {
+          wallet: newWallet.toFixed(2),
+        },
+      });
+
+      // Create wallet history entry
+      await prisma.liquor_wallet_history.create({
+        data: {
+          dvatId: dvatId,
+          sellerId: input.sellerId,
+          type: "DEBIT",
+          old_wallet: oldWallet.toFixed(2),
+          new_wallet: newWallet.toFixed(2),
+          invoice_number: input.invoiceNo,
+          status: "ACTIVE",
+        },
+      });
+    }
 
     // Update daily_purchase to mark as accepted and paid
     await prisma.daily_purchase.updateMany({
