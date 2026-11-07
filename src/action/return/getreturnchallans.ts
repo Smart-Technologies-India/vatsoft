@@ -104,6 +104,7 @@ const GetReturnChallans = async (
     // Get all challans for the return(s)
     const challans = await prisma.challan.findMany({
       where: {
+        reason: "MONTHLYPAYMENT",
         returnid: {
           in: returnIds,
         },

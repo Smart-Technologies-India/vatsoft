@@ -3,7 +3,7 @@
 import { errorToString } from "@/utils/methods";
 import prisma from "../../../prisma/database";
 import { getCurrentUserId } from "@/lib/auth";
-import { commodity, Dvat04Commodity } from "@prisma/client";
+import { Dvat04Commodity } from "@prisma/client";
 
 interface PopulateNotfiledWorkResponse {
   status: boolean;
@@ -68,6 +68,7 @@ const PopulateNotfiledWork =
           },
           paymentstatus: "PAID",
           deletedAt: null,
+          reason: "MONTHLYPAYMENT",
         },
         include: {
           returns_01: {

@@ -180,23 +180,6 @@ function calculateInterestWithPayments(
   return interest;
 }
 
-// Helper function to calculate interest (R6.2a)
-function calculateInterest(netTax: number, filingDate: Date): number {
-  const dueDate = new Date(filingDate);
-  dueDate.setDate(dueDate.getDate() + 15); // 15-day grace period
-
-  const currentDate = new Date();
-  if (currentDate <= dueDate) {
-    return 0;
-  }
-
-  const daysDifference = Math.floor(
-    (currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
-  );
-  const interest = (netTax * daysDifference * 1.5) / 100;
-  return Math.max(0, interest);
-}
-
 // Helper function to get days between dates
 function getDaysBetweenDates(startDate: Date, endDate: Date): number {
   const differenceInTime = endDate.getTime() - startDate.getTime();
@@ -257,7 +240,19 @@ function calculateAdjustAmount(
 ): number {
   const amount = isNegative(netTax) ? Math.abs(netTax) : 0;
 
-  const taxPercentages = ["0", "1", "2", "4", "5", "6", "12.5", "12.75", "13.5", "15", "20"];
+  const taxPercentages = [
+    "0",
+    "1",
+    "2",
+    "4",
+    "5",
+    "6",
+    "12.5",
+    "12.75",
+    "13.5",
+    "15",
+    "20",
+  ];
   let total = 0;
 
   // Calculate decrease values for each tax percentage
@@ -430,12 +425,12 @@ export default async function GetReturnsData({ dvatId }: { dvatId: number }) {
         const outputTax = await calculateOutputTax(returns_entryRecords);
         const inputCredit = await calculateInputCredit(returns_entryRecords);
         const netTax = outputTax - inputCredit;
-        
+
         // Calculate interest using the same logic as preview page
         let interest = 0;
         if (record.month && netTax > 0) {
           const dueDate = getInterestDueDate(record.year, record.month, false);
-          
+
           // Prepare payment data from challans
           const paymentData = challans
             .map((challan) => {
@@ -444,11 +439,15 @@ export default async function GetReturnsData({ dvatId }: { dvatId: number }) {
                 parseFloat(challan.vat || "0") +
                 parseFloat(challan.penalty || "0") +
                 parseFloat(challan.interest || "0");
-              
-              if (!paymentDate || !Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+
+              if (
+                !paymentDate ||
+                !Number.isFinite(paymentAmount) ||
+                paymentAmount <= 0
+              ) {
                 return null;
               }
-              
+
               return {
                 amount: paymentAmount,
                 date: new Date(paymentDate),
@@ -458,7 +457,7 @@ export default async function GetReturnsData({ dvatId }: { dvatId: number }) {
               (payment): payment is { amount: number; date: Date } =>
                 payment !== null,
             );
-          
+
           interest = calculateInterestWithPayments(
             netTax,
             dueDate,
@@ -466,7 +465,7 @@ export default async function GetReturnsData({ dvatId }: { dvatId: number }) {
             15,
           );
         }
-        
+
         // Calculate penalty using same logic as lateFees
         const penalty = record.month
           ? calculatePenalty(
@@ -500,7 +499,8 @@ export default async function GetReturnsData({ dvatId }: { dvatId: number }) {
         }, 0);
 
         // Calculate pending cash using same logic as pendingcashone() from preview page
-        const totalpaid = paidvatamount + paidinterestamount + paidpenaltyamount;
+        const totalpaid =
+          paidvatamount + paidinterestamount + paidpenaltyamount;
         const penaltyForCalc = penalty > 0 ? penalty : 0;
         const interestForCalc = interest > 0 ? interest : 0;
 
@@ -508,7 +508,8 @@ export default async function GetReturnsData({ dvatId }: { dvatId: number }) {
         if (netTax < 0 && interestForCalc + netTax < 0) {
           cashCarryForward = penaltyForCalc - totalpaid;
         } else {
-          cashCarryForward = interestForCalc + netTax + penaltyForCalc - totalpaid;
+          cashCarryForward =
+            interestForCalc + netTax + penaltyForCalc - totalpaid;
         }
 
         // Calculate ITC carry forward (R9.3) using same logic as preview page
@@ -521,7 +522,10 @@ export default async function GetReturnsData({ dvatId }: { dvatId: number }) {
           paidinterestamount,
           paidpenaltyamount,
         );
-        const adjustAmount = calculateAdjustAmount(netTax, returns_entryRecords);
+        const adjustAmount = calculateAdjustAmount(
+          netTax,
+          returns_entryRecords,
+        );
         const itcCarryForward = Math.max(0, netPayable + adjustAmount);
 
         const totalTaxAmount =
