@@ -4,13 +4,13 @@ import { getCurrentUserId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { errorToString } from "@/utils/methods";
-import { wallet_history, dvat04 } from "@prisma/client";
+import { liquor_wallet_history, dvat04 } from "@prisma/client";
 
-export interface AllUsersWalletHistoryWithDvat extends wallet_history {
+export interface AllUsersWalletHistoryWithDvat extends liquor_wallet_history {
   dvat?: {
     id: number;
     tinNumber: string | null;
-    name: string | null;
+    tradename: string | null;
     wallet: string | null;
   } | null;
 }
@@ -18,11 +18,8 @@ export interface AllUsersWalletHistoryWithDvat extends wallet_history {
 interface GetAllUsersWalletTransactionPayload {
   take?: number;
   skip?: number;
-  invoice_number?: string;
-  fromdate?: Date;
-  todate?: Date;
   dvatid?: number;
-  searchTin?: string;
+  searchTinOrName?: string;
 }
 
 interface GetAllUsersWalletTransactionResponse {
@@ -33,7 +30,7 @@ interface GetAllUsersWalletTransactionResponse {
   allDvats: Array<{
     id: number;
     tinNumber: string | null;
-    name: string | null;
+    tradename: string | null;
     wallet: string | null;
   }>;
 }
@@ -89,71 +86,76 @@ const GetAllUsersWalletTransaction = async (
       deletedAt: null,
     };
 
-    if (payload.invoice_number) {
-      where.invoice_number = {
-        contains: payload.invoice_number,
-      };
-    }
-
     if (payload.dvatid) {
       where.dvatId = payload.dvatid;
     }
 
-    if (payload.fromdate && payload.todate) {
-      where.createdAt = {
-        gte: payload.fromdate,
-        lte: payload.todate,
-      };
-    }
-
-    // Fetch all dvat04 users
-    const allDvats = await prisma.dvat04.findMany({
+    // Get distinct DVATs that have entries in liquor_wallet_history
+    const dvatIdWithHistory = await prisma.liquor_wallet_history.findMany({
       where: {
+        deletedAt: null,
+      },
+      distinct: ["dvatId"],
+      select: {
+        dvatId: true,
+      },
+    });
+
+    const dvatIdsInHistory = dvatIdWithHistory
+      .map((h) => h.dvatId)
+      .filter((id): id is number => id !== null);
+
+    // Fetch DVATs that have wallet history entries
+    let allDvats = await prisma.dvat04.findMany({
+      where: {
+        id: {
+          in: dvatIdsInHistory,
+        },
         deletedAt: null,
         status: "APPROVED",
       },
       select: {
         id: true,
         tinNumber: true,
-        name: true,
+        tradename: true,
         wallet: true,
       },
       orderBy: {
-        name: "asc",
+        tradename: "asc",
       },
     });
 
-    // Apply TIN search filter if provided
-    let dvatFilter = allDvats;
-    if (payload.searchTin) {
-      dvatFilter = allDvats.filter(
+    // Apply TIN/tradename search filter if provided - only if no dvatid is specified
+    if (payload.searchTinOrName && !payload.dvatid) {
+      const searchLower = payload.searchTinOrName.toLowerCase();
+      allDvats = allDvats.filter(
         (d) =>
-          (d.tinNumber && d.tinNumber.includes(payload.searchTin!)) ||
-          (d.name && d.name.toLowerCase().includes(payload.searchTin!.toLowerCase())),
+          (d.tinNumber && d.tinNumber.toLowerCase().includes(searchLower)) ||
+          (d.tradename && d.tradename.toLowerCase().includes(searchLower)),
       );
-    }
 
-    const dvatIds = dvatFilter.map((d) => d.id);
+      const filteredDvatIds = allDvats.map((d) => d.id);
 
-    if (dvatIds.length > 0) {
-      where.dvatId = {
-        in: dvatIds,
-      };
-    } else {
-      where.dvatId = {
-        in: [],
-      };
+      if (filteredDvatIds.length > 0) {
+        where.dvatId = {
+          in: filteredDvatIds,
+        };
+      } else {
+        where.dvatId = {
+          in: [],
+        };
+      }
     }
 
     const [result, total] = await Promise.all([
-      prisma.wallet_history.findMany({
+      prisma.liquor_wallet_history.findMany({
         where,
         include: {
           dvat: {
             select: {
               id: true,
               tinNumber: true,
-              name: true,
+              tradename: true,
               wallet: true,
             },
           },
@@ -164,7 +166,7 @@ const GetAllUsersWalletTransaction = async (
         take,
         skip,
       }),
-      prisma.wallet_history.count({
+      prisma.liquor_wallet_history.count({
         where,
       }),
     ]);

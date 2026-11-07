@@ -274,7 +274,7 @@ const ReturnDashboard = () => {
   useEffect(() => {
     // Prevent multiple initializations
     if (hasInitialized.current) return;
-    
+
     const monthNames = [
       "January",
       "February",
@@ -710,7 +710,7 @@ const ReturnDashboard = () => {
   );
 
   const [nilBox, setNilBox] = useState<boolean>(false);
-  const [rrbox, setRRBox] = useState<boolean>(false);
+  // const [rrbox, setRRBox] = useState<boolean>(false);`
   const [nilModalOpen, setNilModalOpen] = useState<boolean>(false);
   const [nilForm, setNilForm] = useState<"30" | "30A" | "31" | "31A" | null>(
     null,
@@ -748,22 +748,22 @@ const ReturnDashboard = () => {
     }
   };
 
-  const returnRevised = async () => {
-    if (return01 == null)
-      return toast.error("There is not any return revised selected");
-    const response = await CreateReturnRevised({
-      id: return01.id,
-    });
+  // const returnRevised = async () => {
+  //   if (return01 == null)
+  //     return toast.error("There is not any return revised selected");
+  //   const response = await CreateReturnRevised({
+  //     id: return01.id,
+  //   });
 
-    if (!response.status) {
-      toast.error(response.message);
-    } else {
-      toast.success(response.message);
-    }
+  //   if (!response.status) {
+  //     toast.error(response.message);
+  //   } else {
+  //     toast.success(response.message);
+  //   }
 
-    setRRBox(false);
-    search(year ?? "", period ?? "");
-  };
+  //   setRRBox(false);
+  //   search(year ?? "", period ?? "");
+  // };
 
   function getQuarterForMonth(month: string): Quarter | undefined {
     const monthToQuarterMap: { [key: string]: Quarter } = {
@@ -988,7 +988,7 @@ const ReturnDashboard = () => {
 
   return (
     <>
-      <Modal title="Confirmation" open={rrbox} footer={null} closeIcon={false}>
+      {/* <Modal title="Confirmation" open={rrbox} footer={null} closeIcon={false}>
         <div>
           <p>
             Would you like to proceed with filing the revised VAT return? Please
@@ -1022,7 +1022,7 @@ const ReturnDashboard = () => {
             Return Revised
           </button>
         </div>
-      </Modal>
+      </Modal> */}
       <Modal title="Confirmation" open={nilBox} footer={null} closeIcon={false}>
         <div>
           <p>
