@@ -4,7 +4,6 @@ import GetDvat31Progress from "@/action/stock/getdvat31progress";
 import AcceptSaleWithoutDvat from "@/action/stock/acceptsalewithoutdvat";
 import AcceptSaleForPendingProcess from "@/action/stock/acceptsaleforpendingprocess";
 import AutoAcceptSaleByDays from "@/action/stock/autoacceptsalebydays";
-import DeleteSale from "@/action/stock/deletesale";
 import BulkDeleteSale from "@/action/stock/bulkdeletesale";
 import DeleteSaleItem from "@/action/stock/deletesaleitem";
 import UpdateInvoiceNumber from "@/action/stock/updateinvoicenumber";
@@ -364,8 +363,7 @@ const DocumentWiseDetails = () => {
     setFiledReturnPeriods(new Set());
   }, []);
 
-  // Phase 1: Load essential data (auth, DVAT, current month sales)
-  // OPTIMIZED: Parallelize Return Periods + Daily Sale after getting DVAT
+  // Phase 1: Load essential data (auth, DVAT, filed return periods)
   useEffect(() => {
     const initEssentialData = async () => {
       setIsLoading(true);
@@ -374,55 +372,17 @@ const DocumentWiseDetails = () => {
 
         if (dvat_response.status && dvat_response.data) {
           setDvatData(dvat_response.data);
-          const dvatId = dvat_response.data.id;
-
-          // Calculate current month's start and end dates for daily sale query
-          const today = ServerTime().data as Date;
-          const year = today.getFullYear();
-          const monthIndex = today.getMonth();
-          const currentMonthStart = new Date(year, monthIndex, 1);
-          const currentMonthEnd = today;
-
-          // OPTIMIZATION: Parallelize Return Periods + Daily Sale queries
-          const [returnMonthResponse, daily_sale_response] = await Promise.all([
-            loadFiledReturnPeriods(dvatId),
-            GetUserDailySaleFiltered({
-              dvatid: dvatId,
-              skip: 0,
-              take: 25,
-              searchTerm: "",
-              sortField: "invoice_date",
-              sortOrder: "desc",
-              startDate: formatDateInputValue(currentMonthStart),
-              endDate: formatDateInputValue(currentMonthEnd),
-              acceptStatusFilter: "all",
-            }),
-          ]);
-
-          if (daily_sale_response.status && daily_sale_response.data.result) {
-            setPaginatin({
-              skip: daily_sale_response.data.skip,
-              take: daily_sale_response.data.take,
-              total: daily_sale_response.data.total,
-            });
-            setDailySale(daily_sale_response.data.result);
-            const summary = daily_sale_response.data.summary as
-              | DailySaleFilteredSummary
-              | undefined;
-            setOverallSaleSummary(
-              summary?.overallSummary ?? DEFAULT_SALE_SUMMARY,
-            );
-            setFilteredSaleSummary(
-              summary?.filteredSummary ?? DEFAULT_SALE_SUMMARY,
-            );
-          }
+          setWalletBalance(parseFloat(dvat_response.data.wallet || "0"));
+          
+          // Load filed return periods in background
+          await loadFiledReturnPeriods(dvat_response.data.id);
         }
       } finally {
         setIsLoading(false);
       }
     };
     initEssentialData();
-  }, [router, loadFiledReturnPeriods]);
+  }, [loadFiledReturnPeriods]);
 
   const [isValidationDataReady, setIsValidationDataReady] = useState(false);
 
@@ -618,6 +578,45 @@ const DocumentWiseDetails = () => {
       setIsWalletPaymentLoading(false);
     }
   };
+
+  // Initial data load when DVAT is set and dateFilter is ready (from selectedPeriod)
+  useEffect(() => {
+    if (!dvatdata?.id || !dateFilter.startDate) return;
+
+    const loadInitialData = async () => {
+      const daily_sale_response = await GetUserDailySaleFiltered({
+        dvatid: dvatdata.id,
+        skip: 0,
+        take: pagination.take,
+        searchTerm: "",
+        sortField: "invoice_date",
+        sortOrder: "desc",
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+        acceptStatusFilter: "all",
+      });
+
+      if (daily_sale_response.status && daily_sale_response.data.result) {
+        setPaginatin({
+          skip: daily_sale_response.data.skip,
+          take: daily_sale_response.data.take,
+          total: daily_sale_response.data.total,
+        });
+        setDailySale(daily_sale_response.data.result);
+        const summary = daily_sale_response.data.summary as
+          | DailySaleFilteredSummary
+          | undefined;
+        setOverallSaleSummary(
+          summary?.overallSummary ?? DEFAULT_SALE_SUMMARY,
+        );
+        setFilteredSaleSummary(
+          summary?.filteredSummary ?? DEFAULT_SALE_SUMMARY,
+        );
+      }
+    };
+
+    loadInitialData();
+  }, [dvatdata?.id, dateFilter.startDate, dateFilter.endDate, pagination.take]);
 
   useEffect(() => {
     if (!dvatdata?.id) return;

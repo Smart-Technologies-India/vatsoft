@@ -285,31 +285,16 @@ const DocumentWiseDetails = () => {
             );
           }
 
-          // Calculate current month's start and end dates
+          // Set the selected period to current month (this will trigger the dateFilter update)
           const today = ServerTime().data as Date;
-          const year = today.getFullYear();
-          const monthIndex = today.getMonth();
-          const currentMonthStart = new Date(year, monthIndex, 1);
-          const currentMonthEnd = today;
-
-          await fetchPurchasePage({
-            dvatid: dvat_response.data.id,
-            skip: 0,
-            take: 25,
-            search: "",
-            sortBy: "invoice_date",
-            order: "desc",
-            startDate: formatDateInputValue(currentMonthStart),
-            endDate: formatDateInputValue(currentMonthEnd),
-            acceptFilter: "all",
-          });
+          setSelectedPeriod(formatMonthInputValue(today));
         }
       } finally {
         setLoading(false);
       }
     };
     initEssentialData();
-  }, [router, fetchPurchasePage]);
+  }, []);
 
   const onChangePageCount = async (page: number, pagesize: number) => {
     if (!dvatdata?.id) return;
@@ -326,6 +311,7 @@ const DocumentWiseDetails = () => {
       acceptFilter: acceptStatusFilter,
     });
   };
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPurchaseConfirmed, setIsPurchaseConfirmed] = useState(false);
   const [isFinalizingPurchase, setIsFinalizingPurchase] =
@@ -703,6 +689,27 @@ const DocumentWiseDetails = () => {
     // return isAprilOrMay2026(record.invoice_date);
     return true;
   };
+
+  // Initial data load when DVAT is set and dateFilter is ready (from selectedPeriod)
+  useEffect(() => {
+    if (!dvatdata?.id || !dateFilter.startDate) return;
+
+    const loadInitialData = async () => {
+      await fetchPurchasePage({
+        dvatid: dvatdata.id,
+        skip: 0,
+        take: pagination.take,
+        search: "",
+        sortBy: sortField,
+        order: sortOrder || "desc",
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+        acceptFilter: "all",
+      });
+    };
+
+    loadInitialData();
+  }, [dvatdata?.id, dateFilter.startDate, pagination.take, sortField, sortOrder, fetchPurchasePage]);
 
   useEffect(() => {
     if (!dvatdata?.id) return;
@@ -1684,7 +1691,8 @@ const DocumentWiseDetails = () => {
             {/* {selectedGroup.records.some((r) => canAcceptRecord(r)) && ( */}
             <div className="mt-4 flex justify-end gap-2">
               {!["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") &&
-                new Date(selectedGroup.invoice_date) >= new Date("2026-11-01") &&
+                new Date(selectedGroup.invoice_date) >=
+                  new Date("2026-11-01") &&
                 selectedGroup.records.some((r) => r.payment_status == "PAID") &&
                 selectedGroup.records.some((r) => canAcceptRecord(r)) && (
                   <button
@@ -2517,15 +2525,27 @@ const DocumentWiseDetails = () => {
                         <TableRow
                           key={index}
                           className={
-                            group.records.some(
-                              (record) =>
-                                record.payment_status === "PAID" ||
-                                record.payment_status === "DEALER_PAID",
-                            )
-                              ? "border-b bg-green-50 hover:bg-green-100"
-                              : group.hasPendingAcceptable
-                                ? "border-b bg-red-50 hover:bg-red-100"
-                                : "border-b hover:bg-gray-50"
+                            dvatdata?.commodity === "RESTAURANT" ||
+                            dvatdata?.commodity === "LIQUOR"
+                              ? group.records.some(
+                                  (record) => record.payment_status === "PAID",
+                                )
+                                ? "border-b bg-yellow-50 hover:bg-yellow-100"
+                                : group.records.some(
+                                      (record) =>
+                                        record.payment_status === "DEALER_PAID",
+                                    )
+                                  ? "border-b bg-green-50 hover:bg-green-100"
+                                  : "border-b hover:bg-gray-50"
+                              : group.records.some(
+                                    (record) =>
+                                      record.payment_status === "PAID" ||
+                                      record.payment_status === "DEALER_PAID",
+                                  )
+                                ? "border-b bg-green-50 hover:bg-green-100"
+                                : group.hasPendingAcceptable
+                                  ? "border-b bg-red-50 hover:bg-red-100"
+                                  : "border-b hover:bg-gray-50"
                           }
                         >
                           <TableCell className="p-2 text-center text-xs">

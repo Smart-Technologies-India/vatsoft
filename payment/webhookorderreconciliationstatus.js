@@ -719,20 +719,27 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
             where: { id: markerSellerTinId },
           });
 
-          // Update transport_permit table for wallet payment
-          await prisma.transport_permit.create({
-            data: {
-              invoiceNumber: urn_respone[0]?.invoice_number ?? "",
-              invoiceDate: urn_respone[0]?.invoice_date ?? new Date(),
+          await prisma.transport_permit.deleteMany({
+            where: {
               sellerDvatTinNumber: dvat04.tinNumber ?? "",
-              sellerDvatTradeName: dvat04.tradename ?? "",
-              purchaserDvatTradeName: sellerdata?.name_of_dealer ?? "",
               purchaserDvatTinNumber: sellerdata?.tin_number ?? "",
+              invoiceNumber: urn_respone[0]?.invoice_number ?? "",
+              status: "ACTIVE",
+              is_paid: true,
+            },
+          });
+          // Update transport_permit table for wallet payment
+          await prisma.transport_permit.updateMany({
+            where: {
+              sellerDvatTinNumber: sellerdata?.tin_number ?? "",
+              purchaserDvatTinNumber: dvat.tinNumber ?? "",
+              invoiceNumber: urn_respone[0]?.invoice_number ?? "",
+              status: "ACTIVE",
+            },
+            data: {
               is_paid: true,
               is_wallet: false,
               paid_date: new Date(),
-              status: "ACTIVE",
-              items: stock.length,
             },
           });
         } else if (refineryMarker.startsWith("LIQUOR_WALLET_TOPUP#")) {
@@ -743,13 +750,14 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
           if (topupAmount > 0) {
             try {
               // Check if wallet entry already exists (may have been created via ccavresponse)
-              const existingEntry = await prisma.liquor_wallet_history.findFirst({
-                where: {
-                  dvatId: parseInt(dvatid),
-                  invoice_number: `LIQUOR_TOPUP_${challan.cpin}`,
-                  status: "ACTIVE",
-                },
-              });
+              const existingEntry =
+                await prisma.liquor_wallet_history.findFirst({
+                  where: {
+                    dvatId: parseInt(dvatid),
+                    invoice_number: `LIQUOR_TOPUP_${challan.cpin}`,
+                    status: "ACTIVE",
+                  },
+                });
 
               if (!existingEntry) {
                 // Get current wallet amount
@@ -759,9 +767,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
                 });
 
                 if (dvatRecord) {
-                  const oldWallet = Number.parseFloat(
-                    dvatRecord.wallet || "0",
-                  );
+                  const oldWallet = Number.parseFloat(dvatRecord.wallet || "0");
                   const newWallet = oldWallet + topupAmount;
 
                   // Update wallet in dvat04

@@ -13,17 +13,43 @@ export interface DeferredRevenueData {
 
 export default async function DeferredRevenueReport(params: {
   selectOffice?: SelectOffice;
-  year?: string;
+  financialYear?: string;
 }) {
   try {
-    const { selectOffice, year } = params;
+    const { selectOffice, financialYear } = params;
+
+    // Parse financial year (e.g., "2026-2027" -> start: Apr 2026, end: Mar 2027)
+    let startDate: Date;
+    let endDate: Date;
+
+    if (financialYear) {
+      const [startYear, endYear] = financialYear.split("-").map(Number);
+      startDate = new Date(startYear, 3, 1); // April 1st of start year
+      endDate = new Date(endYear, 2, 31); // March 31st of end year
+    } else {
+      // Default to current financial year
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth();
+
+      if (currentMonth >= 3) {
+        // April or later - current year is start year
+        startDate = new Date(currentYear, 3, 1);
+        endDate = new Date(currentYear + 1, 2, 31);
+      } else {
+        // January to March - previous year is start year
+        startDate = new Date(currentYear - 1, 3, 1);
+        endDate = new Date(currentYear, 2, 31);
+      }
+    }
 
     // Build where clause for challans
     const challanWhere: any = {
       paymentstatus: "PAID",
       deletedAt: null,
       transaction_date: {
-        not: null,
+        gte: startDate,
+        lte: endDate,
       },
     };
 
@@ -34,26 +60,8 @@ export default async function DeferredRevenueReport(params: {
     }
 
 
-    // Create a map for months to numbers
-    const monthMap: { [key: string]: number } = {
-      January: 1,
-      February: 2,
-      March: 3,
-      April: 4,
-      May: 5,
-      June: 6,
-      July: 7,
-      August: 8,
-      September: 9,
-      October: 10,
-      November: 11,
-      December: 12,
-    };
-
+    // Financial year months (April to March) - defines the column order in the table
     const monthNames = [
-      "January",
-      "February",
-      "March",
       "April",
       "May",
       "June",
@@ -63,7 +71,26 @@ export default async function DeferredRevenueReport(params: {
       "October",
       "November",
       "December",
+      "January",
+      "February",
+      "March",
     ];
+
+    // Create a map for months to numbers (used for sorting transaction months)
+    const monthMap: { [key: string]: number } = {
+      April: 0,
+      May: 1,
+      June: 2,
+      July: 3,
+      August: 4,
+      September: 5,
+      October: 6,
+      November: 7,
+      December: 8,
+      January: 9,
+      February: 10,
+      March: 11,
+    };
 
     // Process challan and returns data to create deferred revenue matrix
     // Rows: Transaction month (when payment came in)
@@ -72,6 +99,19 @@ export default async function DeferredRevenueReport(params: {
 
     // For returns_01: We know both the "for month" and transaction_date
     // For challans: We link through returns_01 to get the "for month"
+
+    // Helper function to convert calendar month to financial year month name
+    const getFinancialMonthName = (calendarMonthIndex: number): string => {
+      // JavaScript getMonth() returns 0-11 (Jan=0, Dec=11)
+      // Financial year starts at April (index 3)
+      if (calendarMonthIndex >= 3) {
+        // April-December: use index directly into monthNames
+        return monthNames[calendarMonthIndex - 3];
+      } else {
+        // January-March: offset by 9 (January=9, Feb=10, Mar=11)
+        return monthNames[calendarMonthIndex + 9];
+      }
+    };
 
     // Get challans with their related returns to understand the "for month"
     const challansWithReturns = await prisma.challan.findMany({
@@ -96,7 +136,7 @@ export default async function DeferredRevenueReport(params: {
       if (!challan.transaction_date) return;
 
       const transactionDate = new Date(challan.transaction_date);
-      const transactionMonth = monthNames[transactionDate.getMonth()];
+      const transactionMonth = getFinancialMonthName(transactionDate.getMonth());
 
       // Determine the "for month" from the linked return
       let forMonth = transactionMonth; // Default to transaction month if no return linked

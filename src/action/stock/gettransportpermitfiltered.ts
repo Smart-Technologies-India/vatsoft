@@ -25,6 +25,7 @@ interface GetTransportPermitFilteredPayload {
   sortOrder?: TransportPermitSortOrder;
   startDate?: string;
   endDate?: string;
+  statusFilter?: "all" | "paid" | "unpaid" | "released";
 }
 
 export type TransportPermitRecord = {
@@ -118,6 +119,7 @@ const GetTransportPermitFiltered = async (
     const sortField: TransportPermitSortField =
       payload.sortField ?? "invoiceDate";
     const sortOrder: TransportPermitSortOrder = payload.sortOrder ?? "desc";
+    const statusFilter = payload.statusFilter ?? "all";
 
     let filtered = [...transportPermitRows];
 
@@ -131,6 +133,16 @@ const GetTransportPermitFiltered = async (
           record.purchaserDvatTinNumber.includes(searchTerm),
       );
     }
+
+    // Apply status filter
+    if (statusFilter === "paid") {
+      filtered = filtered.filter((record) => record.is_paid === true);
+    } else if (statusFilter === "unpaid") {
+      filtered = filtered.filter((record) => record.is_paid === false);
+    } else if (statusFilter === "released") {
+      filtered = filtered.filter((record) => record.tp_released === true);
+    }
+    // "all" means no additional filtering
 
     filtered.sort((a, b) => {
       let compareValue = 0;

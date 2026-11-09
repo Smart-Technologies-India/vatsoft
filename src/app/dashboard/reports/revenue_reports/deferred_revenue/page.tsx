@@ -24,72 +24,98 @@ const DeferredRevenueReportPage = () => {
   const [selectedOffice, setSelectedOffice] = useState<
     SelectOffice | undefined
   >(undefined);
-  const [year, setYear] = useState<string>(new Date().getFullYear().toString());
+  const [financialYear, setFinancialYear] = useState<string>("");
+
+  // Calculate current financial year
+  const getCurrentFinancialYear = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    
+    if (month >= 3) {
+      // April or later
+      return `${year}-${year + 1}`;
+    } else {
+      // January to March
+      return `${year - 1}-${year}`;
+    }
+  };
 
   useEffect(() => {
     const init = async () => {
+      // Initialize financial year if not already set
+      if (!financialYear) {
+        setFinancialYear(getCurrentFinancialYear());
+        return; // Exit and wait for the financialYear state to update
+      }
+
       setLoading(true);
 
-      // Fetch authenticated user
-      const authResponse = await getAuthenticatedUserId();
-      if (!authResponse.status || !authResponse.data) {
-        toast.error(authResponse.message);
-        router.push("/");
-        return;
+      try {
+        // Fetch authenticated user
+        const authResponse = await getAuthenticatedUserId();
+        if (!authResponse.status || !authResponse.data) {
+          toast.error(authResponse.message);
+          router.push("/");
+          return;
+        }
+
+        const userResponse = await GetUser({ id: authResponse.data });
+        if (userResponse.status && userResponse.data) {
+          setUser(userResponse.data);
+
+          // Set office filter based on role
+          const filterOffice = [
+            "VATOFFICER",
+            "DY_COMMISSIONER",
+            "JOINT_COMMISSIONER",
+          ].includes(userResponse.data.role)
+            ? (userResponse.data.selectOffice ?? undefined)
+            : selectedOffice;
+
+          // Fetch main report
+          const reportResponse = await DeferredRevenueReport({
+            selectOffice: filterOffice,
+            financialYear,
+          });
+
+          if (reportResponse.status && reportResponse.data) {
+            setReportData(reportResponse.data);
+            setMonthNames(reportResponse.monthNames);
+          } else {
+            toast.error(reportResponse.message || "Failed to load data");
+          }
+
+          // Fetch fuel report
+          const liquorResponse = await DeferredRevenueReportLiquor({
+            selectOffice: filterOffice,
+            financialYear,
+          });
+
+          if (liquorResponse.status && liquorResponse.data) {
+            setLiquorReportData(liquorResponse.data);
+          }
+
+          // Fetch liquor report
+          const nonLiquorResponse = await DeferredRevenueReportNonLiquor({
+            selectOffice: filterOffice,
+            financialYear,
+          });
+
+          if (nonLiquorResponse.status && nonLiquorResponse.data) {
+            setNonLiquorReportData(nonLiquorResponse.data);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast.error("An error occurred while fetching data");
+      } finally {
+        setLoading(false);
       }
-
-      const userResponse = await GetUser({ id: authResponse.data });
-      if (userResponse.status && userResponse.data) {
-        setUser(userResponse.data);
-
-        // Set office filter based on role
-        const filterOffice = [
-          "VATOFFICER",
-          "DY_COMMISSIONER",
-          "JOINT_COMMISSIONER",
-        ].includes(userResponse.data.role)
-          ? (userResponse.data.selectOffice ?? undefined)
-          : selectedOffice;
-
-        // Fetch main report
-        const reportResponse = await DeferredRevenueReport({
-          selectOffice: filterOffice,
-          year,
-        });
-
-        if (reportResponse.status && reportResponse.data) {
-          setReportData(reportResponse.data);
-          setMonthNames(reportResponse.monthNames);
-        } else {
-          toast.error(reportResponse.message || "Failed to load data");
-        }
-
-        // Fetch fuel report
-        const liquorResponse = await DeferredRevenueReportLiquor({
-          selectOffice: filterOffice,
-          year,
-        });
-
-        if (liquorResponse.status && liquorResponse.data) {
-          setLiquorReportData(liquorResponse.data);
-        }
-
-        // Fetch liquor report
-        const nonLiquorResponse = await DeferredRevenueReportNonLiquor({
-          selectOffice: filterOffice,
-          year,
-        });
-
-        if (nonLiquorResponse.status && nonLiquorResponse.data) {
-          setNonLiquorReportData(nonLiquorResponse.data);
-        }
-      }
-
-      setLoading(false);
     };
 
     init();
-  }, [selectedOffice, year]);
+  }, [selectedOffice, financialYear]);
 
   const getCellColor = (
     transactionMonth: string,
@@ -204,13 +230,13 @@ const DeferredRevenueReportPage = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Deferred Revenue Report</h1>
+        <h1 className="text-2xl font-bold">Deferred Revenue Report (FY {financialYear})</h1>
         <p className="text-gray-600 mb-4">
           Shows the transaction date vs the month the payment was for. Helps
           identify deferred revenue and payment patterns.
         </p>
 
-        <div className="flex bg-white p-3 rounded border border-gray-200 text-sm">
+        <div className="flex flex-col bg-white p-4 rounded border border-gray-200 text-sm gap-4">
           <div>
             <p>
               <strong>Color Legend:</strong>
@@ -230,8 +256,22 @@ const DeferredRevenueReportPage = () => {
               </div>
             </div>
           </div>
-          <div className="grow"></div>
-          <div className="flex gap-4 mb-4 flex-wrap">
+          
+          <div className="flex gap-4 flex-wrap">
+            <div>
+              <label className="block text-sm font-medium mb-1">Financial Year</label>
+              <Select
+                placeholder="Select Financial Year"
+                value={financialYear}
+                onChange={(value) => setFinancialYear(value)}
+                options={[
+                  { label: "2025-2026", value: "2025-2026" },
+                  { label: "2026-2027", value: "2026-2027" },
+                  { label: "2027-2028", value: "2027-2028" },
+                ]}
+                style={{ width: 200 }}
+              />
+            </div>
             {["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
               user?.role || "",
             ) ? (

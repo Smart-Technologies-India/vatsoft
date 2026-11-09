@@ -11,33 +11,75 @@ export interface DeferredRevenueDataLiquor {
 
 export default async function DeferredRevenueReportLiquor(params: {
   selectOffice?: SelectOffice;
-  year?: string;
+  financialYear?: string;
 }) {
   try {
-    const { selectOffice, year = new Date().getFullYear().toString() } = params;
-    const yearNum = parseInt(year);
+    const { selectOffice, financialYear } = params;
 
-    // Month mapping
+    // Parse financial year (e.g., "2026-2027" -> start: Apr 2026, end: Mar 2027)
+    let startDate: Date;
+    let endDate: Date;
+
+    if (financialYear) {
+      const [startYear, endYear] = financialYear.split("-").map(Number);
+      startDate = new Date(startYear, 3, 1); // April 1st of start year
+      endDate = new Date(endYear, 2, 31); // March 31st of end year
+    } else {
+      // Default to current financial year
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth();
+
+      if (currentMonth >= 3) {
+        // April or later - current year is start year
+        startDate = new Date(currentYear, 3, 1);
+        endDate = new Date(currentYear + 1, 2, 31);
+      } else {
+        // January to March - previous year is start year
+        startDate = new Date(currentYear - 1, 3, 1);
+        endDate = new Date(currentYear, 2, 31);
+      }
+    }
+
+    // Month mapping for financial year (April to March)
     const monthMap: { [key: string]: number } = {
-      January: 0,
-      February: 1,
-      March: 2,
-      April: 3,
-      May: 4,
-      June: 5,
-      July: 6,
-      August: 7,
-      September: 8,
-      October: 9,
-      November: 10,
-      December: 11,
+      April: 0,
+      May: 1,
+      June: 2,
+      July: 3,
+      August: 4,
+      September: 5,
+      October: 6,
+      November: 7,
+      December: 8,
+      January: 9,
+      February: 10,
+      March: 11,
     };
 
-    const monthNames = Object.keys(monthMap);
+    const monthNames = [
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+      "January",
+      "February",
+      "March",
+    ];
 
     // Build where clause for LIQUOR challans
     const challanWhere: any = {
       paymentstatus: "PAID",
+      deletedAt: null,
+      transaction_date: {
+        gte: startDate,
+        lte: endDate,
+      },
       dvat: {
         commodity: "FUEL",
       },
@@ -67,11 +109,18 @@ export default async function DeferredRevenueReportLiquor(params: {
       if (!challan.transaction_date) return;
 
       const challanDate = new Date(challan.transaction_date);
-      const challanYear = challanDate.getFullYear();
-      if (challanYear !== yearNum) return;
-
       const transactionMonthNum = challanDate.getMonth();
-      const transactionMonth = monthNames[transactionMonthNum];
+      const transactionYear = challanDate.getFullYear();
+
+      // Map calendar month to financial year month
+      let transactionMonth: string;
+      if (transactionMonthNum >= 3) {
+        // April-December
+        transactionMonth = monthNames[transactionMonthNum - 3];
+      } else {
+        // January-March (belongs to previous financial year)
+        transactionMonth = monthNames[transactionMonthNum + 9];
+      }
 
       // Determine for month
       let forMonth = transactionMonth;

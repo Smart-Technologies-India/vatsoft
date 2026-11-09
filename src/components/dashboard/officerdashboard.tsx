@@ -734,14 +734,20 @@ const OfficerDashboardPage = () => {
         color: "white",
       },
       title: {
-        display: false,
+        margin: {
+          top: 0,
+          bottom: 60,
+          left: 10,
+          right: 10,
+        },
       },
       legend: {
-        labels: {
-          font: {
-            size: 14,
-          },
-        },
+        display: false,
+        // labels: {
+        //   font: {
+        //     size: 14,
+        //   },
+        // },
       },
     },
   };

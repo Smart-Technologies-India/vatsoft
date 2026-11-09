@@ -113,20 +113,28 @@ export const PayPurchaseByWalletLiquor = async (input: {
       where: { id: input.sellerId },
     });
 
-    // Update transport_permit table for wallet payment
-    await prisma.transport_permit.create({
-      data: {
-        invoiceNumber: input.invoiceNo,
-        invoiceDate: input.invoiceDate,
+    await prisma.transport_permit.deleteMany({
+      where: {
         sellerDvatTinNumber: dvat04.tinNumber ?? "",
-        sellerDvatTradeName: dvat04.tradename ?? "",
-        purchaserDvatTradeName: sellerdata?.name_of_dealer ?? "",
         purchaserDvatTinNumber: sellerdata?.tin_number ?? "",
+        invoiceNumber: input.invoiceNo,
+        status: "ACTIVE",
+        is_paid: true,
+      },
+    });
+
+    // Update transport_permit table for wallet payment
+    await prisma.transport_permit.updateMany({
+      where: {
+        sellerDvatTinNumber: sellerdata?.tin_number ?? "",
+        purchaserDvatTinNumber: dvat04.tinNumber ?? "",
+        invoiceNumber: input.invoiceNo,
+        status: "ACTIVE",
+      },
+      data: {
         is_paid: true,
         is_wallet: true,
         paid_date: new Date(),
-        status: "ACTIVE",
-        items: purchaseRecords.length,
       },
     });
 

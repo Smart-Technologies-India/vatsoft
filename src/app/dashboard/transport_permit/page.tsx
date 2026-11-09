@@ -62,6 +62,7 @@ const TransportPermit = () => {
   const [sortField, setSortField] =
     useState<TransportPermitSortField>("invoiceDate");
   const [sortOrder, setSortOrder] = useState<TransportPermitSortOrder>("desc");
+  const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid" | "released">("all");
   const [selectedPeriod, setSelectedPeriod] = useState(
     formatMonthInputValue(ServerTime().data as Date),
   );
@@ -89,7 +90,23 @@ const TransportPermit = () => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    initData();
+    const init = async () => {
+      setIsLoading(true);
+      try {
+        const authResponse = await getAuthenticatedUserId();
+        if (!authResponse.status || !authResponse.data) {
+          toast.error(authResponse.message);
+          return router.push("/");
+        }
+        setUserid(authResponse.data);
+        setIsInitialized(true);
+      } catch (error) {
+        toast.error("Failed to initialize");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    init();
   }, []);
 
   useEffect(() => {
@@ -124,6 +141,7 @@ const TransportPermit = () => {
         sortOrder,
         startDate: dateFilter.startDate,
         endDate: dateFilter.endDate,
+        statusFilter,
       });
       if (response.status && response.data?.result) {
         setTransportPermitData(response.data.result);
@@ -133,71 +151,30 @@ const TransportPermit = () => {
           total: response.data.total,
         });
         const summaryData = response.data.summary as any;
-        setSummary(summaryData?.filteredSummary ?? DEFAULT_SUMMARY);
+        setSummary(summaryData?.overallSummary ?? DEFAULT_SUMMARY);
       }
     } catch (error) {
       toast.error("Failed to load data");
     }
   };
 
-  const initData = async () => {
-    setIsLoading(true);
-    try {
-      const authResponse = await getAuthenticatedUserId();
-      if (!authResponse.status || !authResponse.data) {
-        toast.error(authResponse.message);
-        return router.push("/");
-      }
-      setUserid(authResponse.data);
-
-      const today = ServerTime().data as Date;
-      // Start from October 2026 (after September 2026)
-      const octStartDate = new Date(2026, 9, 1); // October 1, 2026
-      const endDate = today;
-
-      const tpResponse = await GetTransportPermitFiltered({
-        skip: 0,
-        take: 25,
-        searchTerm: "",
-        sortField: "invoiceDate",
-        sortOrder: "desc",
-        startDate: formatDateInputValue(octStartDate),
-        endDate: formatDateInputValue(endDate),
-      });
-
-      if (tpResponse.status && tpResponse.data?.result) {
-        setTransportPermitData(tpResponse.data.result);
-        setPagination({
-          skip: tpResponse.data.skip,
-          take: tpResponse.data.take,
-          total: tpResponse.data.total,
-        });
-        const summaryData = tpResponse.data.summary as any;
-        setSummary(summaryData?.filteredSummary ?? DEFAULT_SUMMARY);
-      } else {
-        toast.error("No transport permit data found");
-      }
-    } catch (error) {
-      toast.error("Failed to initialize");
-    } finally {
-      setIsLoading(false);
-      setIsInitialized(true);
-    }
-  };
-
+  // Data load - triggered on initial load or filter changes
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!isInitialized || !dateFilter.startDate) return;
+    
     const timer = setTimeout(() => {
       loadData();
     }, 300);
     return () => clearTimeout(timer);
   }, [
+    isInitialized,
+    dateFilter.startDate,
+    dateFilter.endDate,
     pagination.take,
     searchTerm,
     sortField,
     sortOrder,
-    dateFilter.startDate,
-    dateFilter.endDate,
+    statusFilter,
   ]);
 
   const onChangePageCount = async (page: number, pagesize: number) => {
@@ -210,6 +187,7 @@ const TransportPermit = () => {
       sortOrder,
       startDate: dateFilter.startDate,
       endDate: dateFilter.endDate,
+      statusFilter,
     });
     if (response.status && response.data?.result) {
       setTransportPermitData(response.data.result);
@@ -219,7 +197,7 @@ const TransportPermit = () => {
         total: response.data.total,
       });
       const summaryData = response.data.summary as any;
-      setSummary(summaryData?.filteredSummary ?? DEFAULT_SUMMARY);
+      setSummary(summaryData?.overallSummary ?? DEFAULT_SUMMARY);
     }
   };
 
@@ -576,7 +554,7 @@ const TransportPermit = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
             <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
               <p className="text-xs text-gray-600 mb-1">Total Permits</p>
               <p className="text-lg font-medium text-gray-900">
@@ -593,12 +571,6 @@ const TransportPermit = () => {
               <p className="text-xs text-gray-600 mb-1">Pending Records</p>
               <p className="text-lg font-medium text-gray-900">
                 {summary.pendingRecords ?? 0}
-              </p>
-            </div>
-            <div className="bg-white p-3 rounded shadow-sm border border-gray-200">
-              <p className="text-xs text-gray-600 mb-1">Total Pages</p>
-              <p className="text-lg font-medium text-gray-900">
-                {Math.ceil(pagination.total / pagination.take)}
               </p>
             </div>
           </div>
@@ -683,10 +655,27 @@ const TransportPermit = () => {
                   </Select>
                 </div>
 
+                <div className="w-48">
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
+                    Status
+                  </label>
+                  <Select
+                    size="small"
+                    value={statusFilter}
+                    onChange={(value) => setStatusFilter(value as "all" | "paid" | "unpaid" | "released")}
+                    options={[
+                      { label: "All Status", value: "all" },
+                      { label: "Paid", value: "paid" },
+                      { label: "Unpaid", value: "unpaid" },
+                      { label: "Released", value: "released" },
+                    ]}
+                  />
+                </div>
+
                 <div className="grow"></div>
 
                 <div className="flex gap-2">
-                  {(searchTerm || selectedPeriod) && (
+                  {(searchTerm || selectedPeriod || statusFilter !== "all") && (
                     <Button
                       size="small"
                       type="default"
@@ -696,6 +685,7 @@ const TransportPermit = () => {
                         setDateFilter({ startDate: "", endDate: "" });
                         setSortField("invoiceDate");
                         setSortOrder("desc");
+                        setStatusFilter("all");
                       }}
                     >
                       Clear Filters

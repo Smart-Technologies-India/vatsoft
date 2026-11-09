@@ -1384,21 +1384,28 @@ export const postRes = (request, response) => {
             const sellerdata = await prisma.tin_number_master.findUnique({
               where: { id: markerSellerTinId },
             });
+            await prisma.transport_permit.deleteMany({
+              where: {
+                sellerDvatTinNumber: dvat04.tinNumber ?? "",
+                purchaserDvatTinNumber: sellerdata?.tin_number ?? "",
+                invoiceNumber: urn_respone[0]?.invoice_number ?? "",
+                status: "ACTIVE",
+                is_paid: true,
+              },
+            });
 
             // Update transport_permit table for wallet payment
-            await prisma.transport_permit.create({
-              data: {
+            await prisma.transport_permit.updateMany({
+              where: {
+                sellerDvatTinNumber: sellerdata?.tin_number ?? "",
+                purchaserDvatTinNumber: dvat.tinNumber ?? "",
                 invoiceNumber: urn_respone[0]?.invoice_number ?? "",
-                invoiceDate: urn_respone[0]?.invoice_date ?? new Date(),
-                sellerDvatTinNumber: dvat04.tinNumber ?? "",
-                sellerDvatTradeName: dvat04.tradename ?? "",
-                purchaserDvatTradeName: sellerdata?.name_of_dealer ?? "",
-                purchaserDvatTinNumber: sellerdata?.tin_number ?? "",
+                status: "ACTIVE",
+              },
+              data: {
                 is_paid: true,
                 is_wallet: false,
                 paid_date: new Date(),
-                status: "ACTIVE",
-                items: stock.length,
               },
             });
           } else {
