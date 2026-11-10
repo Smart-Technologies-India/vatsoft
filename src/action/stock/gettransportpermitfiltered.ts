@@ -6,7 +6,7 @@ import {
   createPaginationResponse,
   PaginationResponse,
 } from "@/models/response";
-import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
+import { getCurrentUserId, getCurrentDvatId, getCurrentUser } from "@/lib/auth";
 
 export type TransportPermitSortField =
   | "invoiceNumber"
@@ -26,6 +26,7 @@ interface GetTransportPermitFilteredPayload {
   startDate?: string;
   endDate?: string;
   statusFilter?: "all" | "paid" | "unpaid" | "released";
+  officeFilter?: "all" | "Dadra_Nagar_Haveli" | "DAMAN" | "DIU";
 }
 
 export type TransportPermitRecord = {
@@ -38,6 +39,7 @@ export type TransportPermitRecord = {
   purchaserDvatTinNumber: string;
   items: number;
   status: string;
+  office: string;
   remark?: string | null;
   tp_released: boolean;
   is_paid: boolean;
@@ -77,6 +79,8 @@ const GetTransportPermitFiltered = async (
   try {
     const currentUserId = await getCurrentUserId();
     const currentDvatId = await getCurrentDvatId();
+    const currentUser = await getCurrentUser();
+    
     if (!currentUserId || !currentDvatId) {
       return {
         status: false,
@@ -120,6 +124,13 @@ const GetTransportPermitFiltered = async (
       payload.sortField ?? "invoiceDate";
     const sortOrder: TransportPermitSortOrder = payload.sortOrder ?? "desc";
     const statusFilter = payload.statusFilter ?? "all";
+    
+    // Determine office filter based on user role
+    let effectiveOfficeFilter = payload.officeFilter ?? "all";
+    if (currentUser && currentUser.role !== "ADMIN") {
+      // For non-admin users, always filter by their office
+      effectiveOfficeFilter = currentUser.selectOffice || "Dadra_Nagar_Haveli";
+    }
 
     let filtered = [...transportPermitRows];
 
@@ -132,6 +143,11 @@ const GetTransportPermitFiltered = async (
           record.purchaserDvatTradeName.toLowerCase().includes(searchTerm) ||
           record.purchaserDvatTinNumber.includes(searchTerm),
       );
+    }
+
+    // Apply office filter
+    if (effectiveOfficeFilter !== "all") {
+      filtered = filtered.filter((record) => record.office === effectiveOfficeFilter);
     }
 
     // Apply status filter

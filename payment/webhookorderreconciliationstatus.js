@@ -607,6 +607,7 @@ export const webhookOrderReconciliationStatus = async (request, response) => {
               is_paid: is_paid,
               is_wallet: false,
               paid_date: is_paid ? new Date() : null,
+              office: dvat.selectOffice ?? "Dadra_Nagar_Haveli",
             },
           });
 

@@ -326,6 +326,14 @@ const Sidebar = (props: SidebarProps) => {
               pathcheck={"/dashboard/test/add_purchase"}
               collapsed={isCollapsed}
             />
+            <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentCalendar12Regular className="w-5 h-5" />}
+              name="Transport Permit"
+              path={path}
+              pathcheck={"/dashboard/transport_permit"}
+              collapsed={isCollapsed}
+            />
           </>
         )}
 

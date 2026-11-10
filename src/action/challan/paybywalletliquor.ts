@@ -123,6 +123,7 @@ export const PayByWalletLiquor = async (input: {
         purchaserDvatTradeName: sellerdata?.name_of_dealer ?? "",
         purchaserDvatTinNumber: sellerdata?.tin_number ?? "",
         status: "ACTIVE",
+        office: dvat04.selectOffice ?? "Dadra_Nagar_Haveli",
         items: urn_respone.length,
         is_paid: is_paid,
         is_wallet: is_paid,

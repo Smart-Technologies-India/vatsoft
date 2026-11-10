@@ -2116,7 +2116,7 @@ model returns_notfiled_work {
 }
 
 model transport_permit {
-  id                     Int       @id @default(autoincrement())
+  id                     Int          @id @default(autoincrement())
   invoiceNumber          String
   invoiceDate            DateTime
   sellerDvatTradeName    String
@@ -2125,13 +2125,14 @@ model transport_permit {
   purchaserDvatTinNumber String
   items                  Int
   status                 Status
-  remark                 String?   @db.LongText
-  tp_released            Boolean   @default(false)
-  is_paid                Boolean   @default(false)
-  is_wallet              Boolean   @default(false)
+  office                 SelectOffice @default(Dadra_Nagar_Haveli)
+  remark                 String?      @db.LongText
+  tp_released            Boolean      @default(false)
+  is_paid                Boolean      @default(false)
+  is_wallet              Boolean      @default(false)
   paid_date              DateTime?
-  created_at             DateTime  @default(now())
-  updated_at             DateTime  @updatedAt
+  created_at             DateTime     @default(now())
+  updated_at             DateTime     @updatedAt
   deleted_at             DateTime?
 }
 

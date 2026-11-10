@@ -23,6 +23,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
+import { getCurrentUserInfo } from "@/action/auth/getcurrentuserinfo";
 import ServerTime from "@/action/servertime";
 
 const DEFAULT_SUMMARY = {
@@ -62,7 +63,14 @@ const TransportPermit = () => {
   const [sortField, setSortField] =
     useState<TransportPermitSortField>("invoiceDate");
   const [sortOrder, setSortOrder] = useState<TransportPermitSortOrder>("desc");
-  const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid" | "released">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "paid" | "unpaid" | "released"
+  >("all");
+  const [officeFilter, setOfficeFilter] = useState<
+    "all" | "Dadra_Nagar_Haveli" | "DAMAN" | "DIU"
+  >("all");
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userOffice, setUserOffice] = useState<string>("Dadra_Nagar_Haveli");
   const [selectedPeriod, setSelectedPeriod] = useState(
     formatMonthInputValue(ServerTime().data as Date),
   );
@@ -99,6 +107,19 @@ const TransportPermit = () => {
           return router.push("/");
         }
         setUserid(authResponse.data);
+
+        const userInfoResponse = await getCurrentUserInfo();
+        if (userInfoResponse.status && userInfoResponse.data) {
+          setUserRole(userInfoResponse.data.role);
+          setUserOffice(userInfoResponse.data.office);
+          
+          // If non-admin, set office filter to their office
+          if (userInfoResponse.data.role !== "ADMIN") {
+            setOfficeFilter(
+              userInfoResponse.data.office as "all" | "Dadra_Nagar_Haveli" | "DAMAN" | "DIU"
+            );
+          }
+        }
         setIsInitialized(true);
       } catch (error) {
         toast.error("Failed to initialize");
@@ -142,6 +163,7 @@ const TransportPermit = () => {
         startDate: dateFilter.startDate,
         endDate: dateFilter.endDate,
         statusFilter,
+        officeFilter,
       });
       if (response.status && response.data?.result) {
         setTransportPermitData(response.data.result);
@@ -161,7 +183,7 @@ const TransportPermit = () => {
   // Data load - triggered on initial load or filter changes
   useEffect(() => {
     if (!isInitialized || !dateFilter.startDate) return;
-    
+
     const timer = setTimeout(() => {
       loadData();
     }, 300);
@@ -175,6 +197,7 @@ const TransportPermit = () => {
     sortField,
     sortOrder,
     statusFilter,
+    officeFilter,
   ]);
 
   const onChangePageCount = async (page: number, pagesize: number) => {
@@ -188,6 +211,7 @@ const TransportPermit = () => {
       startDate: dateFilter.startDate,
       endDate: dateFilter.endDate,
       statusFilter,
+      officeFilter,
     });
     if (response.status && response.data?.result) {
       setTransportPermitData(response.data.result);
@@ -623,7 +647,7 @@ const TransportPermit = () => {
                   />
                 </div>
 
-                <div className="w-48">
+                <div className="w-44">
                   <label className="text-xs font-medium text-gray-700 mb-1 block">
                     Month & Year
                   </label>
@@ -655,14 +679,19 @@ const TransportPermit = () => {
                   </Select>
                 </div>
 
-                <div className="w-48">
+                <div className="w-24">
                   <label className="text-xs font-medium text-gray-700 mb-1 block">
                     Status
                   </label>
                   <Select
+                    className="w-24"
                     size="small"
                     value={statusFilter}
-                    onChange={(value) => setStatusFilter(value as "all" | "paid" | "unpaid" | "released")}
+                    onChange={(value) =>
+                      setStatusFilter(
+                        value as "all" | "paid" | "unpaid" | "released",
+                      )
+                    }
                     options={[
                       { label: "All Status", value: "all" },
                       { label: "Paid", value: "paid" },
@@ -672,10 +701,40 @@ const TransportPermit = () => {
                   />
                 </div>
 
+                {userRole === "ADMIN" && (
+                  <div className="w-44">
+                    <label className="text-xs font-medium text-gray-700 mb-1 block">
+                      Office
+                    </label>
+                    <Select
+                      className="w-44"
+                      size="small"
+                      value={officeFilter}
+                      onChange={(value) =>
+                        setOfficeFilter(
+                          value as "all" | "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
+                        )
+                      }
+                      options={[
+                        { label: "All Offices", value: "all" },
+                        {
+                          label: "Dadra & Nagar Haveli",
+                          value: "Dadra_Nagar_Haveli",
+                        },
+                        { label: "Daman", value: "DAMAN" },
+                        { label: "Diu", value: "DIU" },
+                      ]}
+                    />
+                  </div>
+                )}
+
                 <div className="grow"></div>
 
                 <div className="flex gap-2">
-                  {(searchTerm || selectedPeriod || statusFilter !== "all") && (
+                  {(searchTerm ||
+                    selectedPeriod ||
+                    statusFilter !== "all" ||
+                    officeFilter !== "all") && (
                     <Button
                       size="small"
                       type="default"
@@ -686,6 +745,7 @@ const TransportPermit = () => {
                         setSortField("invoiceDate");
                         setSortOrder("desc");
                         setStatusFilter("all");
+                        setOfficeFilter("all");
                       }}
                     >
                       Clear Filters

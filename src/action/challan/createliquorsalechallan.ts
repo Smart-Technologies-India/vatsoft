@@ -94,7 +94,7 @@ const CreateLiquorSaleChallan = async (
         deletedById: null,
         status: "ACTIVE",
       },
-      select: { 
+      select: {
         vatamount: true,
         amount: true,
         commodity_master: {
@@ -247,6 +247,7 @@ const CreateLiquorSaleChallan = async (
         sellerDvatTinNumber: purchase.seller_tin_number.tin_number,
         purchaserDvatTradeName: purchase.dvat04.tradename ?? "",
         purchaserDvatTinNumber: purchase.dvat04.tinNumber ?? "",
+        office: purchase.dvat04.selectOffice ?? "Dadra_Nagar_Haveli",
       },
     });
 
