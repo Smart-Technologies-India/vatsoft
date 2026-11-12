@@ -68,24 +68,24 @@ const CreateMultiDailySale = async (
       });
 
       if (isexist) {
-        const mergedQuantity = isexist.quantity + entry.quantity;
-        const mergedAmount =
-          parseFloat(isexist.amount) + parseFloat(entry.amount);
-        const mergedVatAmount =
-          parseFloat(isexist.vatamount) + parseFloat(entry.vatamount);
+        // const mergedQuantity = isexist.quantity + entry.quantity;
+        // const mergedAmount =
+        //   parseFloat(isexist.amount) + parseFloat(entry.amount);
+        // const mergedVatAmount =
+        //   parseFloat(isexist.vatamount) + parseFloat(entry.vatamount);
 
-        await prisma.daily_sale.update({
-          where: {
-            id: isexist.id,
-          },
-          data: {
-            quantity: mergedQuantity,
-            amount: mergedAmount.toString(),
-            vatamount: mergedVatAmount.toString(),
-          },
-        });
+        // await prisma.daily_sale.update({
+        //   where: {
+        //     id: isexist.id,
+        //   },
+        //   data: {
+        //     quantity: mergedQuantity,
+        //     amount: mergedAmount.toString(),
+        //     vatamount: mergedVatAmount.toString(),
+        //   },
+        // });
 
-        createdCount += 1;
+        // createdCount += 1;
       } else {
         const response = await CreateDailySale({
           ...entry,

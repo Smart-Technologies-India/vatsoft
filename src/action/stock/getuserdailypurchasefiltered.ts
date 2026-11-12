@@ -12,22 +12,11 @@ import {
   GroupedDailyPurchase,
 } from "@/action/stock/getuserdailypurchase";
 
-export type DailyPurchaseSortField =
-  | "invoice_number"
-  | "invoice_date"
-  | "trade_name"
-  | "tin_number"
-  | "invoice_value";
-
-export type DailyPurchaseSortOrder = "asc" | "desc";
-
 interface GetUserDailyPurchaseFilteredPayload {
   dvatid: number;
   take: number;
   skip: number;
   searchTerm?: string;
-  sortField?: DailyPurchaseSortField;
-  sortOrder?: DailyPurchaseSortOrder;
   startDate?: string;
   endDate?: string;
   acceptStatusFilter?: "all" | "pending" | "accepted";
@@ -73,7 +62,15 @@ const GetUserDailyPurchaseFiltered = async (
       } as any;
     }
 
-    // Build date filter for database query (moved from memory filtering)
+    // Get DVAT commodity type
+    const dvat = await prisma.dvat04.findUnique({
+      where: { id: payload.dvatid },
+      select: { commodity: true },
+    });
+
+    const dvatCommodity = dvat?.commodity || "";
+
+    // Build where condition for database query
     const whereCondition: any = {
       deletedAt: null,
       deletedById: null,
@@ -82,30 +79,32 @@ const GetUserDailyPurchaseFiltered = async (
       dvat04Id: payload.dvatid,
     };
 
-    // Apply date filter at database level for performance
+    // Apply date filter at database level
     if (payload.startDate || payload.endDate) {
       const dateFilter: any = {};
       if (payload.startDate) {
         dateFilter.gte = new Date(payload.startDate);
       }
       if (payload.endDate) {
-        // EndDate is treated as exclusive (use lt instead of lte)
-        // This allows us to pass the next day and exclude it properly
         dateFilter.lt = new Date(payload.endDate);
       }
       whereCondition.invoice_date = dateFilter;
     }
 
+    const searchTerm = (payload.searchTerm ?? "").trim().toLowerCase();
+    const acceptStatusFilter = payload.acceptStatusFilter ?? "all";
+
+    // Fetch ALL data for grouping (since we need to group by invoice + date + seller)
+    // But apply all filters at database level first
     const rows = await prisma.daily_purchase.findMany({
       where: whereCondition,
       include: {
         commodity_master: true,
         seller_tin_number: true,
       },
-      orderBy: [{ invoice_date: "desc" }, { invoice_number: "desc" }],
     });
 
-    if (!rows) {
+    if (!rows || rows.length === 0) {
       return createPaginationResponse({
         message: "No Daily Purchase found. Please try again.",
         functionname,
@@ -154,19 +153,65 @@ const GetUserDailyPurchaseFiltered = async (
       }
     });
 
-    const groupedArray = Array.from(groupedMap.values());
-    const overallSummary = summarize(groupedArray);
+    let groupedArray = Array.from(groupedMap.values());
 
-    const searchTerm = (payload.searchTerm ?? "").trim().toLowerCase();
-    const sortField: DailyPurchaseSortField =
-      payload.sortField ?? "invoice_date";
-    const sortOrder: DailyPurchaseSortOrder = payload.sortOrder ?? "desc";
-    const acceptStatusFilter = payload.acceptStatusFilter ?? "all";
+    // Step 1: Determine sortKey based on commodity type and payment status
+    groupedArray = groupedArray.map((group) => {
+      let sortKey = 999; // default: last
 
-    let filtered = [...groupedArray];
+      const isRestaurantOrLiquor =
+        dvatCommodity === "RESTAURANT" || dvatCommodity === "LIQUOR";
 
+      if (isRestaurantOrLiquor) {
+        // For RESTAURANT or LIQUOR:
+        // Yellow (PAID) = 0 (first)
+        // Green (DEALER_PAID) = 2 (last)
+        // Remaining = 1 (middle)
+
+        const hasPaid = group.records.some(
+          (record) => record.payment_status === "PAID",
+        );
+        if (hasPaid) {
+          sortKey = 0; // yellow (first)
+        } else {
+          const hasDealerPaid = group.records.some(
+            (record) => record.payment_status === "DEALER_PAID",
+          );
+          if (hasDealerPaid) {
+            sortKey = 2; // green (last)
+          } else {
+            sortKey = 1; // remaining (middle)
+          }
+        }
+      } else {
+        // For other commodities (not RESTAURANT or LIQUOR):
+        // Red (is_accept === false) = 0 (first)
+        // Green (PAID or DEALER_PAID) = 2 (last)
+        // Remaining = 1 (middle)
+
+        const hasNotAccepted = group.records.some((record) => !record.is_accept);
+        if (hasNotAccepted) {
+          sortKey = 0; // red (first)
+        } else {
+          const hasPaidOrDealerPaid = group.records.some(
+            (record) =>
+              record.payment_status === "PAID" ||
+              record.payment_status === "DEALER_PAID",
+          );
+          if (hasPaidOrDealerPaid) {
+            sortKey = 2; // green (last)
+          } else {
+            sortKey = 1; // remaining (middle)
+          }
+        }
+      }
+
+      return { ...group, sortKey };
+    }) as any;
+
+    // Apply search filter in memory (can't be done at DB level due to grouping)
     if (searchTerm !== "") {
-      filtered = filtered.filter(
+      groupedArray = groupedArray.filter(
         (group) =>
           group.invoice_number.toLowerCase().includes(searchTerm) ||
           group.seller_tin_number.name_of_dealer
@@ -176,8 +221,9 @@ const GetUserDailyPurchaseFiltered = async (
       );
     }
 
+    // Apply accept status filter in memory (can't be done at DB level due to grouping logic)
     if (acceptStatusFilter !== "all") {
-      filtered = filtered.filter((group) => {
+      groupedArray = groupedArray.filter((group) => {
         const hasPending = group.records.some(
           (record) =>
             (record.seller_tin_number.tin_number.startsWith("25") ||
@@ -191,51 +237,23 @@ const GetUserDailyPurchaseFiltered = async (
       });
     }
 
-    filtered.sort((a, b) => {
-      // Keep pending acceptable groups at the top across all pages.
-      if (a.hasPendingAcceptable !== b.hasPendingAcceptable) {
-        return a.hasPendingAcceptable ? -1 : 1;
-      }
-
-      let compareValue = 0;
-
-      switch (sortField) {
-        case "invoice_number":
-          compareValue = a.invoice_number.localeCompare(b.invoice_number);
-          break;
-        case "invoice_date":
-          compareValue =
-            new Date(a.invoice_date).getTime() -
-            new Date(b.invoice_date).getTime();
-          break;
-        case "trade_name":
-          compareValue = a.seller_tin_number.name_of_dealer.localeCompare(
-            b.seller_tin_number.name_of_dealer,
-          );
-          break;
-        case "tin_number":
-          compareValue = a.seller_tin_number.tin_number.localeCompare(
-            b.seller_tin_number.tin_number,
-          );
-          break;
-        case "invoice_value":
-          compareValue = a.totalInvoiceValue - b.totalInvoiceValue;
-          break;
-      }
-
-      return sortOrder === "asc" ? compareValue : -compareValue;
+    // Sort in memory: by payment status (yellow -> red -> green) only
+    groupedArray.sort((a, b) => {
+      // Sort by payment status (sortKey) only
+      return (a as any).sortKey - (b as any).sortKey;
     });
 
-    const filteredSummary = summarize(filtered);
-    const totalCount = filtered.length;
+    const filteredSummary = summarize(groupedArray);
+    const totalCount = groupedArray.length;
 
-    const paginatedGroups = filtered.slice(
+    // Paginate after grouping, filtering, and sorting
+    const paginatedGroups = groupedArray.slice(
       payload.skip,
       payload.skip + payload.take,
     );
 
     const summary: DailyPurchaseFilteredSummary = {
-      overallSummary,
+      overallSummary: filteredSummary,
       filteredSummary,
     };
 

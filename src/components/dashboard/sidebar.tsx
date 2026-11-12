@@ -334,6 +334,14 @@ const Sidebar = (props: SidebarProps) => {
               pathcheck={"/dashboard/transport_permit"}
               collapsed={isCollapsed}
             />
+             <MenuTab
+              click={() => props.setIsOpen(false)}
+              icon={<FluentBuildingBank48Regular className="w-5 h-5" />}
+              name="Dvat BlackList"
+              path={path}
+              pathcheck={"/dashboard/test/dvat_blacklist"}
+              collapsed={isCollapsed}
+            />
           </>
         )}
 

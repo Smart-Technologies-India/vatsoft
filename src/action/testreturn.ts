@@ -466,6 +466,18 @@ async function writeProcessedReturnData(
     value,
   } = calculatedData;
 
+  // Check if returns_01_work entry already exists for this returnId
+  const existingEntry = await txPrisma.returns_01_work.findUnique({
+    where: {
+      returnId: updateresponse.id,
+    },
+  });
+
+  if (existingEntry) {
+    // Entry already exists, skip creation
+    return;
+  }
+
   if (
     isQuarterlyFiling &&
     !["March", "June", "September", "December"].includes(

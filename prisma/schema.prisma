@@ -378,6 +378,7 @@ model dvat04 {
   returnsNotfiledWorks            returns_notfiled_work[]
   walletHistories                 wallet_history[]
   liquorWalletHistories           liquor_wallet_history[]
+  dvatblocks                      dvatblock[]
 
   @@index([createdById], map: "dvat04_createdById_fkey")
   @@index([deletedById], map: "dvat04_deletedById_fkey")
@@ -2134,6 +2135,20 @@ model transport_permit {
   created_at             DateTime     @default(now())
   updated_at             DateTime     @updatedAt
   deleted_at             DateTime?
+}
+
+model dvatblock {
+  id         Int               @id @default(autoincrement())
+  dvatId     Int
+  dvat04     dvat04            @relation(fields: [dvatId], references: [id])
+  office     SelectOffice
+  tinnumber  String?
+  tradename  String?
+  commodity  String?
+  frequency  FrequencyFilings?
+  created_at DateTime          @default(now())
+  updated_at DateTime          @updatedAt
+  deleted_at DateTime?
 }
 
 enum NotificationType {

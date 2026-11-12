@@ -67,9 +67,9 @@ const CreateMultiDailyPurchase = async (
       });
 
       if (isexist) {
-        throw new Error(
-          `Entry with invoice number ${entry.invoice_number}, with commodity name ${isexist.commodity_master.product_name} and quantity ${isexist.quantity} already exists.`,
-        );
+        // throw new Error(
+        //   `Entry with invoice number ${entry.invoice_number}, with commodity name ${isexist.commodity_master.product_name} and quantity ${isexist.quantity} already exists.`,
+        // );
       }
 
       const response = await CreateDailyPurchase({

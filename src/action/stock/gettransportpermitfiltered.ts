@@ -107,108 +107,97 @@ const GetTransportPermitFiltered = async (
       whereCondition.invoiceDate = dateFilter;
     }
 
+    const searchTerm = (payload.searchTerm ?? "").trim().toLowerCase();
+    const statusFilter = payload.statusFilter ?? "all";
+    
+    // Determine office filter based on user role
+    let effectiveOfficeFilter = payload.officeFilter ?? "all";
+    if (currentUser && currentUser.role !== "ADMIN") {
+      effectiveOfficeFilter = currentUser.selectOffice || "Dadra_Nagar_Haveli";
+    }
+
+    // Apply search term filter
+    if (searchTerm !== "") {
+      whereCondition.OR = [
+        { invoiceNumber: { contains: searchTerm, mode: "insensitive" } },
+        { sellerDvatTradeName: { contains: searchTerm, mode: "insensitive" } },
+        { sellerDvatTinNumber: { contains: searchTerm, mode: "insensitive" } },
+        { purchaserDvatTradeName: { contains: searchTerm, mode: "insensitive" } },
+        { purchaserDvatTinNumber: { contains: searchTerm, mode: "insensitive" } },
+      ];
+    }
+
+    // Apply office filter
+    if (effectiveOfficeFilter !== "all") {
+      whereCondition.office = effectiveOfficeFilter;
+    }
+
+    // Apply status filter
+    if (statusFilter === "paid") {
+      whereCondition.is_paid = true;
+    } else if (statusFilter === "unpaid") {
+      whereCondition.is_paid = false;
+    } else if (statusFilter === "released") {
+      whereCondition.tp_released = true;
+    }
+
+    const sortField: TransportPermitSortField =
+      payload.sortField ?? "invoiceDate";
+    const sortOrder: TransportPermitSortOrder = payload.sortOrder ?? "desc";
+
+    // Build orderBy with is_paid first, then the selected field
+    const orderByCondition: any[] = [
+      { is_paid: "desc" }, // true (paid) on top, false (unpaid) on bottom
+    ];
+
+    switch (sortField) {
+      case "invoiceNumber":
+        orderByCondition.push({ invoiceNumber: sortOrder });
+        break;
+      case "invoiceDate":
+        orderByCondition.push({ invoiceDate: sortOrder });
+        break;
+      case "sellerDvatTradeName":
+        orderByCondition.push({ sellerDvatTradeName: sortOrder });
+        break;
+      case "purchaserDvatTradeName":
+        orderByCondition.push({ purchaserDvatTradeName: sortOrder });
+        break;
+      case "items":
+        orderByCondition.push({ items: sortOrder });
+        break;
+    }
+
+    // Fetch paginated data with all filters and sorting applied at database level
     const transportPermitRows = await prisma.transport_permit.findMany({
       where: whereCondition,
-      orderBy: [{ invoiceDate: "desc" }, { invoiceNumber: "desc" }],
+      orderBy: orderByCondition,
+      take: payload.take,
+      skip: payload.skip,
     });
 
-    if (!transportPermitRows) {
+    if (!transportPermitRows || transportPermitRows.length === 0) {
       return createPaginationResponse({
         message: "No Transport Permit records found. Please try again.",
         functionname,
       });
     }
 
-    const searchTerm = (payload.searchTerm ?? "").trim().toLowerCase();
-    const sortField: TransportPermitSortField =
-      payload.sortField ?? "invoiceDate";
-    const sortOrder: TransportPermitSortOrder = payload.sortOrder ?? "desc";
-    const statusFilter = payload.statusFilter ?? "all";
-    
-    // Determine office filter based on user role
-    let effectiveOfficeFilter = payload.officeFilter ?? "all";
-    if (currentUser && currentUser.role !== "ADMIN") {
-      // For non-admin users, always filter by their office
-      effectiveOfficeFilter = currentUser.selectOffice || "Dadra_Nagar_Haveli";
-    }
-
-    let filtered = [...transportPermitRows];
-
-    if (searchTerm !== "") {
-      filtered = filtered.filter(
-        (record) =>
-          record.invoiceNumber.toLowerCase().includes(searchTerm) ||
-          record.sellerDvatTradeName.toLowerCase().includes(searchTerm) ||
-          record.sellerDvatTinNumber.includes(searchTerm) ||
-          record.purchaserDvatTradeName.toLowerCase().includes(searchTerm) ||
-          record.purchaserDvatTinNumber.includes(searchTerm),
-      );
-    }
-
-    // Apply office filter
-    if (effectiveOfficeFilter !== "all") {
-      filtered = filtered.filter((record) => record.office === effectiveOfficeFilter);
-    }
-
-    // Apply status filter
-    if (statusFilter === "paid") {
-      filtered = filtered.filter((record) => record.is_paid === true);
-    } else if (statusFilter === "unpaid") {
-      filtered = filtered.filter((record) => record.is_paid === false);
-    } else if (statusFilter === "released") {
-      filtered = filtered.filter((record) => record.tp_released === true);
-    }
-    // "all" means no additional filtering
-
-    filtered.sort((a, b) => {
-      let compareValue = 0;
-
-      switch (sortField) {
-        case "invoiceNumber":
-          compareValue = a.invoiceNumber.localeCompare(b.invoiceNumber);
-          break;
-        case "invoiceDate":
-          compareValue =
-            new Date(a.invoiceDate).getTime() -
-            new Date(b.invoiceDate).getTime();
-          break;
-        case "sellerDvatTradeName":
-          compareValue = a.sellerDvatTradeName.localeCompare(
-            b.sellerDvatTradeName,
-          );
-          break;
-        case "purchaserDvatTradeName":
-          compareValue = a.purchaserDvatTradeName.localeCompare(
-            b.purchaserDvatTradeName,
-          );
-          break;
-        case "items":
-          compareValue = a.items - b.items;
-          break;
-      }
-
-      return sortOrder === "asc" ? compareValue : -compareValue;
+    // Get total count for pagination info
+    const totalCount = await prisma.transport_permit.count({
+      where: whereCondition,
     });
 
-    const overallSummary = summarize(filtered);
-    const totalCount = filtered.length;
-
-    const paginatedRecords = filtered.slice(
-      payload.skip,
-      payload.skip + payload.take,
-    );
-
-    const filteredSummary = summarize(paginatedRecords);
-
+    const filteredSummary = summarize(transportPermitRows);
     const summary = {
-      overallSummary,
       filteredSummary,
+      totalRecords: totalCount,
     };
 
     return createPaginationResponse({
       message: "Transport Permit data fetched successfully.",
       functionname,
-      data: paginatedRecords,
+      data: transportPermitRows,
       take: payload.take,
       skip: payload.skip,
       total: totalCount,

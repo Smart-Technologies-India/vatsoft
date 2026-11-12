@@ -62,6 +62,87 @@ const GetUserDailyPurchase = async (
       } as any;
     }
 
+    // Step 1: Get distinct invoice groups
+    const allDistinctInvoices = await prisma.daily_purchase.findMany({
+      where: {
+        deletedAt: null,
+        deletedById: null,
+        status: "ACTIVE",
+        is_dvat_30a: false,
+        dvat04Id: payload.dvatid,
+      },
+      select: {
+        invoice_number: true,
+        invoice_date: true,
+        seller_tin_numberId: true,
+      },
+      distinct: ["invoice_number", "invoice_date", "seller_tin_numberId"],
+    });
+
+    if (!allDistinctInvoices || allDistinctInvoices.length === 0) {
+      return createPaginationResponse({
+        message: "No Daily Purchase found. Please try again.",
+        functionname,
+      });
+    }
+
+    // Step 2: Get payment status for each invoice group
+    const invoiceGroupsWithStatus = await Promise.all(
+      allDistinctInvoices.map(async (inv) => {
+        // Check if ANY record in this group has PAID status
+        const paidRecord = await prisma.daily_purchase.findFirst({
+          where: {
+            invoice_number: inv.invoice_number,
+            invoice_date: inv.invoice_date,
+            seller_tin_numberId: inv.seller_tin_numberId,
+            deletedAt: null,
+            status: "ACTIVE",
+            dvat04Id: payload.dvatid,
+            payment_status: "PAID",
+          },
+        });
+
+        if (paidRecord) {
+          return { ...inv, paymentStatus: "PAID", sortKey: 0 };
+        }
+
+        // Check if ANY record in this group has DEALER_PAID status
+        const dealerPaidRecord = await prisma.daily_purchase.findFirst({
+          where: {
+            invoice_number: inv.invoice_number,
+            invoice_date: inv.invoice_date,
+            seller_tin_numberId: inv.seller_tin_numberId,
+            deletedAt: null,
+            status: "ACTIVE",
+            dvat04Id: payload.dvatid,
+            payment_status: "DEALER_PAID",
+          },
+        });
+
+        if (dealerPaidRecord) {
+          return { ...inv, paymentStatus: "DEALER_PAID", sortKey: 2 };
+        }
+
+        // Default: red (middle)
+        return { ...inv, paymentStatus: "OTHER", sortKey: 1 };
+      }),
+    );
+
+    // Step 3: Sort by payment status
+    invoiceGroupsWithStatus.sort((a, b) => {
+      if (a.sortKey !== b.sortKey) {
+        return a.sortKey - b.sortKey;
+      }
+      return new Date(b.invoice_date).getTime() - new Date(a.invoice_date).getTime();
+    });
+
+    const totalCount = invoiceGroupsWithStatus.length;
+
+    // Step 4: Get paginated invoice groups
+    const paginatedInvoices = invoiceGroupsWithStatus.slice(
+      payload.skip,
+      payload.skip + payload.take,
+    );
     const daily_purchase_response = await prisma.daily_purchase.findMany({
       where: {
         deletedAt: null,
@@ -69,6 +150,11 @@ const GetUserDailyPurchase = async (
         status: "ACTIVE",
         is_dvat_30a: false,
         dvat04Id: payload.dvatid,
+        OR: paginatedInvoices.map((inv) => ({
+          invoice_number: inv.invoice_number,
+          invoice_date: inv.invoice_date,
+          seller_tin_numberId: inv.seller_tin_numberId,
+        })),
       },
       include: {
         commodity_master: true,
@@ -77,14 +163,14 @@ const GetUserDailyPurchase = async (
       orderBy: [{ invoice_date: "desc" }],
     });
 
-    if (!daily_purchase_response) {
+    if (!daily_purchase_response || daily_purchase_response.length === 0) {
       return createPaginationResponse({
         message: "No Daily Purchase found. Please try again.",
         functionname,
       });
     }
 
-    // Group records by invoice_number, invoice_date, and seller_tin_id
+    // Step 4: Group the fetched records
     const groupedMap = new Map<string, GroupedDailyPurchase>();
 
     daily_purchase_response.forEach((record) => {
@@ -127,16 +213,13 @@ const GetUserDailyPurchase = async (
       }
     });
 
-    const groupedArray = Array.from(groupedMap.values());
-
-    // Sort: pending acceptable first, then by date
-    groupedArray.sort((a, b) => {
-      if (a.hasPendingAcceptable === b.hasPendingAcceptable) return 0;
-      return a.hasPendingAcceptable ? -1 : 1;
+    // Return groups in sorted order (from paginatedInvoices)
+    const paginatedGroups = paginatedInvoices.map((inv) => {
+      const key = `${inv.invoice_number}_${inv.invoice_date.toISOString()}_${inv.seller_tin_numberId}`;
+      return groupedMap.get(key)!;
     });
 
-    const totalCount = groupedArray.length;
-    const summary: DailyPurchaseSummary = groupedArray.reduce(
+    const summary: DailyPurchaseSummary = paginatedGroups.reduce(
       (acc, group) => {
         acc.totalInvoices += 1;
         acc.totalTaxableValue += Number(group.totalTaxableValue) || 0;
@@ -150,12 +233,6 @@ const GetUserDailyPurchase = async (
         totalVatAmount: 0,
         totalInvoiceValue: 0,
       },
-    );
-
-    // Apply pagination to grouped results
-    const paginatedGroups = groupedArray.slice(
-      payload.skip,
-      payload.skip + payload.take,
     );
 
     return createPaginationResponse({

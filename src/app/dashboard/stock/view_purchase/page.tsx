@@ -101,32 +101,6 @@ const formatIndianNumber = (num: number): string => {
   return `${withCommas},${lastThree}`;
 };
 
-type SortField =
-  | "invoice_number"
-  | "invoice_date"
-  | "trade_name"
-  | "tin_number"
-  | "invoice_value";
-type SortOrder = "asc" | "desc" | null;
-
-const SortIcon = ({
-  sortField: currentSortField,
-  field,
-  sortOrder,
-}: {
-  sortField: SortField;
-  field: SortField;
-  sortOrder: SortOrder;
-}) => {
-  if (currentSortField !== field) {
-    return <span className="text-gray-300 text-xs">↕</span>;
-  }
-  return sortOrder === "asc" ? (
-    <span className="text-xs">▲</span>
-  ) : sortOrder === "desc" ? (
-    <span className="text-xs">▼</span>
-  ) : null;
-};
 
 const DocumentWiseDetails = () => {
   const router = useRouter();
@@ -186,8 +160,6 @@ const DocumentWiseDetails = () => {
       skip,
       take,
       search,
-      sortBy,
-      order,
       startDate,
       endDate,
       acceptFilter,
@@ -196,13 +168,6 @@ const DocumentWiseDetails = () => {
       skip: number;
       take: number;
       search: string;
-      sortBy:
-        | "invoice_number"
-        | "invoice_date"
-        | "trade_name"
-        | "tin_number"
-        | "invoice_value";
-      order: "asc" | "desc";
       startDate: string;
       endDate: string;
       acceptFilter: "all" | "pending" | "accepted";
@@ -212,8 +177,6 @@ const DocumentWiseDetails = () => {
         skip,
         take,
         searchTerm: search,
-        sortField: sortBy,
-        sortOrder: order,
         startDate,
         endDate,
         acceptStatusFilter: acceptFilter,
@@ -254,8 +217,6 @@ const DocumentWiseDetails = () => {
         skip: 0,
         take: 25,
         search: "",
-        sortBy: "invoice_date",
-        order: "desc",
         startDate: "",
         endDate: "",
         acceptFilter: "all",
@@ -304,8 +265,6 @@ const DocumentWiseDetails = () => {
       take: pagesize,
       skip: pagesize * (page - 1),
       search: searchTerm,
-      sortBy: sortField,
-      order: sortOrder || "desc",
       startDate: dateFilter.startDate,
       endDate: dateFilter.endDate,
       acceptFilter: acceptStatusFilter,
@@ -399,8 +358,6 @@ const DocumentWiseDetails = () => {
       skip: 0,
       take: Math.max(pagination.total, 10000),
       searchTerm: "",
-      sortField: "invoice_date",
-      sortOrder: "desc",
       startDate: dateFilter.startDate,
       endDate: dateFilter.endDate,
       acceptStatusFilter: "all",
@@ -621,27 +578,13 @@ const DocumentWiseDetails = () => {
   const [isWalletConfirmModalOpen, setIsWalletConfirmModalOpen] =
     useState(false);
   const [isWalletPaid, setIsWalletPaid] = useState(false);
-  // const [isSingleAcceptLoading, setIsSingleAcceptLoading] =
-  //   useState<boolean>(false);
   const [isRejectAllLoading, setIsRejectAllLoading] = useState(false);
   const [isGroupRejectLoading, setIsGroupRejectLoading] = useState(false);
-  // const [isSingleRejectLoading, setIsSingleRejectLoading] =
-  //   useState<boolean>(false);
-  // const [isPurchaseReportLoading, setIsPurchaseReportLoading] =
-  //   useState<boolean>(false);
   const [isDownloadingDailyPurchase, setIsDownloadingDailyPurchase] =
     useState<boolean>(false);
 
-  // Search, Sort, and Filter states
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [sortField, setSortField] = useState<
-    | "invoice_number"
-    | "invoice_date"
-    | "trade_name"
-    | "tin_number"
-    | "invoice_value"
-  >("invoice_date");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  
   const [selectedPeriod, setSelectedPeriod] = useState<string>(
     formatMonthInputValue(ServerTime().data as Date),
   );
@@ -656,22 +599,6 @@ const DocumentWiseDetails = () => {
   const isRestaurantCommodity = useMemo(() => {
     return String(dvatdata?.commodity ?? "") === "RESTAURANT";
   }, [dvatdata?.commodity]);
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      // Toggle sort order
-      const newOrder =
-        sortOrder === "asc" ? "desc" : sortOrder === "desc" ? null : "asc";
-      setSortOrder(newOrder);
-      if (newOrder === null) {
-        setSortField("invoice_date");
-        setSortOrder("desc");
-      }
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
-  };
 
   const canAcceptRecord = (record: GroupedDailyPurchase["records"][number]) => {
     if (!isTinAcceptable(record.seller_tin_number.tin_number)) {
@@ -700,8 +627,6 @@ const DocumentWiseDetails = () => {
         skip: 0,
         take: pagination.take,
         search: "",
-        sortBy: sortField,
-        order: sortOrder || "desc",
         startDate: dateFilter.startDate,
         endDate: dateFilter.endDate,
         acceptFilter: "all",
@@ -709,7 +634,7 @@ const DocumentWiseDetails = () => {
     };
 
     loadInitialData();
-  }, [dvatdata?.id, dateFilter.startDate, pagination.take, sortField, sortOrder, fetchPurchasePage]);
+  }, [dvatdata?.id, dateFilter.startDate, pagination.take, fetchPurchasePage]);
 
   useEffect(() => {
     if (!dvatdata?.id) return;
@@ -729,8 +654,6 @@ const DocumentWiseDetails = () => {
           skip: 0,
           take: pagination.take,
           search: searchTerm,
-          sortBy: sortField,
-          order: sortOrder || "desc",
           startDate: dateFilter.startDate,
           endDate: dateFilter.endDate,
           acceptFilter: acceptStatusFilter,
@@ -745,8 +668,6 @@ const DocumentWiseDetails = () => {
     dvatdata?.id,
     pagination.take,
     searchTerm,
-    sortField,
-    sortOrder,
     dateFilter.startDate,
     dateFilter.endDate,
     acceptStatusFilter,
@@ -797,13 +718,11 @@ const DocumentWiseDetails = () => {
       skip: 0,
       take: pagination.take,
       search: searchTerm,
-      sortBy: sortField,
-      order: sortOrder || "desc",
       startDate: dateFilter.startDate,
       endDate: dateFilter.endDate,
       acceptFilter: acceptStatusFilter,
     });
-  }, [sortField, sortOrder]);
+  }, [acceptStatusFilter, dateFilter, dvatdata, fetchPurchasePage, pagination.take, searchTerm]);
 
   const downloadDailyPurchaseReport = async () => {
     if (!dvatdata) {
@@ -826,8 +745,6 @@ const DocumentWiseDetails = () => {
               skip,
               take: BATCH_SIZE,
               searchTerm: "",
-              sortField: "invoice_date",
-              sortOrder: "desc",
               startDate: dateFilter.startDate,
               endDate: dateFilter.endDate,
               acceptStatusFilter: "all",
@@ -2340,39 +2257,6 @@ const DocumentWiseDetails = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-gray-700 mb-1 block">
-                    Sort By
-                  </label>
-                  <Select
-                    size="small"
-                    value={sortField}
-                    onChange={(value) => setSortField(value as any)}
-                    options={[
-                      { label: "Invoice Date", value: "invoice_date" },
-                      { label: "Invoice Number", value: "invoice_number" },
-                      { label: "Trade Name", value: "trade_name" },
-                      { label: "TIN Number", value: "tin_number" },
-                      { label: "Invoice Value", value: "invoice_value" },
-                    ]}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-medium text-gray-700 mb-1 block">
-                    Order
-                  </label>
-                  <Select
-                    size="small"
-                    value={sortOrder || "desc"}
-                    onChange={(value) => setSortOrder(value as SortOrder)}
-                    options={[
-                      { label: "Ascending", value: "asc" },
-                      { label: "Descending", value: "desc" },
-                    ]}
-                  />
-                </div>
-
-                <div>
                   <label className="text-xs font-medium text-gray-700 mb-1 block w-52">
                     Accept Status
                   </label>
@@ -2401,8 +2285,6 @@ const DocumentWiseDetails = () => {
                         setSelectedPeriod("");
                         setDateFilter({ startDate: "", endDate: "" });
                         setAcceptStatusFilter("all");
-                        setSortField("invoice_date");
-                        setSortOrder("desc");
                       }}
                     >
                       Clear Filters
@@ -2444,60 +2326,20 @@ const DocumentWiseDetails = () => {
                     <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                       Count
                     </TableHead>
-                    <TableHead
-                      className="text-center p-2 font-medium text-gray-700 text-xs cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("invoice_number")}
-                    >
-                      Invoice No.{" "}
-                      <SortIcon
-                        sortField={sortField}
-                        field="invoice_number"
-                        sortOrder={sortOrder}
-                      />
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Invoice No.
                     </TableHead>
-                    <TableHead
-                      className="text-center p-2 font-medium text-gray-700 text-xs cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("invoice_date")}
-                    >
-                      Invoice Date{" "}
-                      <SortIcon
-                        sortField={sortField}
-                        field="invoice_date"
-                        sortOrder={sortOrder}
-                      />
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Invoice Date
                     </TableHead>
-                    <TableHead
-                      className="text-center p-2 font-medium text-gray-700 text-xs cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("trade_name")}
-                    >
-                      Trade Name{" "}
-                      <SortIcon
-                        sortField={sortField}
-                        field="trade_name"
-                        sortOrder={sortOrder}
-                      />
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Trade Name
                     </TableHead>
-                    <TableHead
-                      className="text-center p-2 font-medium text-gray-700 text-xs cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("tin_number")}
-                    >
-                      TIN Number{" "}
-                      <SortIcon
-                        sortField={sortField}
-                        field="tin_number"
-                        sortOrder={sortOrder}
-                      />
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      TIN Number
                     </TableHead>
-                    <TableHead
-                      className="text-center p-2 font-medium text-gray-700 text-xs cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("invoice_value")}
-                    >
-                      Invoice Value (₹){" "}
-                      <SortIcon
-                        sortField={sortField}
-                        field="invoice_value"
-                        sortOrder={sortOrder}
-                      />
+                    <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
+                      Invoice Value (₹)
                     </TableHead>
                     <TableHead className="text-center p-2 font-medium text-gray-700 text-xs">
                       VAT Amount

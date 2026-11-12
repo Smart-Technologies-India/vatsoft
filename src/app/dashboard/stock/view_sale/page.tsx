@@ -96,16 +96,8 @@ const DocumentWiseDetails = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [toolbarActionsOpen, setToolbarActionsOpen] = useState(false);
 
-  // Search, Sort, and Filter states for daily sale table
+  // Search and Filter states for daily sale table
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [sortField, setSortField] = useState<
-    | "invoice_number"
-    | "invoice_date"
-    | "trade_name"
-    | "tin_number"
-    | "invoice_value"
-  >("invoice_date");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedPeriod, setSelectedPeriod] = useState<string>(
     formatMonthInputValue(ServerTime().data as Date),
   );
@@ -234,8 +226,6 @@ const DocumentWiseDetails = () => {
           skip,
           take: BATCH_SIZE,
           searchTerm: "",
-          sortField: "invoice_date",
-          sortOrder: "desc",
           startDate: reportStartDate,
           endDate: reportEndDate,
           acceptStatusFilter: "all",
@@ -319,8 +309,6 @@ const DocumentWiseDetails = () => {
         skip: 0,
         take: 25,
         searchTerm,
-        sortField,
-        sortOrder,
         startDate: dateFilter.startDate,
         endDate: dateFilter.endDate,
         acceptStatusFilter,
@@ -373,7 +361,7 @@ const DocumentWiseDetails = () => {
         if (dvat_response.status && dvat_response.data) {
           setDvatData(dvat_response.data);
           setWalletBalance(parseFloat(dvat_response.data.wallet || "0"));
-          
+
           // Load filed return periods in background
           await loadFiledReturnPeriods(dvat_response.data.id);
         }
@@ -589,8 +577,6 @@ const DocumentWiseDetails = () => {
         skip: 0,
         take: pagination.take,
         searchTerm: "",
-        sortField: "invoice_date",
-        sortOrder: "desc",
         startDate: dateFilter.startDate,
         endDate: dateFilter.endDate,
         acceptStatusFilter: "all",
@@ -606,9 +592,7 @@ const DocumentWiseDetails = () => {
         const summary = daily_sale_response.data.summary as
           | DailySaleFilteredSummary
           | undefined;
-        setOverallSaleSummary(
-          summary?.overallSummary ?? DEFAULT_SALE_SUMMARY,
-        );
+        setOverallSaleSummary(summary?.overallSummary ?? DEFAULT_SALE_SUMMARY);
         setFilteredSaleSummary(
           summary?.filteredSummary ?? DEFAULT_SALE_SUMMARY,
         );
@@ -640,8 +624,6 @@ const DocumentWiseDetails = () => {
           skip: 0,
           take: pagination.take,
           searchTerm,
-          sortField,
-          sortOrder,
           startDate: dateFilter.startDate,
           endDate: dateFilter.endDate,
           acceptStatusFilter,
@@ -674,8 +656,6 @@ const DocumentWiseDetails = () => {
     dvatdata?.id,
     pagination.take,
     searchTerm,
-    sortField,
-    sortOrder,
     dateFilter.startDate,
     dateFilter.endDate,
     acceptStatusFilter,
@@ -749,8 +729,6 @@ const DocumentWiseDetails = () => {
       take: pagesize,
       skip,
       searchTerm,
-      sortField,
-      sortOrder,
       startDate: dateFilter.startDate,
       endDate: dateFilter.endDate,
       acceptStatusFilter,
@@ -903,8 +881,6 @@ const DocumentWiseDetails = () => {
         skip: 0,
         take: 1,
         searchTerm: "",
-        sortField: "invoice_date",
-        sortOrder: "desc",
         startDate: dateFilter.startDate,
         endDate: dateFilter.endDate,
         acceptStatusFilter: "pending",
@@ -2100,7 +2076,7 @@ const DocumentWiseDetails = () => {
             </div>
             <p className="text-xs text-gray-500 text-center">
               {Math.round(
-                (bulkDeleteProgress.current / bulkDeleteProgress.total) * 100
+                (bulkDeleteProgress.current / bulkDeleteProgress.total) * 100,
               )}
               % Complete
             </p>
@@ -2410,7 +2386,7 @@ const DocumentWiseDetails = () => {
           </div>
 
           <div className="bg-white rounded shadow-sm border p-3">
-            {/* Search, Sort, and Filter Controls */}
+            {/* Search, and Filter Controls */}
             <div className="mb-4 space-y-3">
               <div className="flex gap-3 items-end">
                 <div className="xl:col-span-2">
@@ -2422,39 +2398,6 @@ const DocumentWiseDetails = () => {
                     placeholder="Invoice, TIN, dealer name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-medium text-gray-700 mb-1 block">
-                    Sort By
-                  </label>
-                  <Select
-                    size="small"
-                    value={sortField}
-                    onChange={(value) => setSortField(value as any)}
-                    options={[
-                      { label: "Invoice Date", value: "invoice_date" },
-                      { label: "Invoice Number", value: "invoice_number" },
-                      { label: "Trade Name", value: "trade_name" },
-                      { label: "TIN Number", value: "tin_number" },
-                      { label: "Invoice Value", value: "invoice_value" },
-                    ]}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-medium text-gray-700 mb-1 block">
-                    Order
-                  </label>
-                  <Select
-                    size="small"
-                    value={sortOrder}
-                    onChange={(value) => setSortOrder(value as "asc" | "desc")}
-                    options={[
-                      { label: "Ascending", value: "asc" },
-                      { label: "Descending", value: "desc" },
-                    ]}
                   />
                 </div>
 
@@ -2519,8 +2462,6 @@ const DocumentWiseDetails = () => {
                         setSelectedPeriod("");
                         setDateFilter({ startDate: "", endDate: "" });
                         setAcceptStatusFilter("all");
-                        setSortField("invoice_date");
-                        setSortOrder("desc");
                       }}
                     >
                       Clear Filters

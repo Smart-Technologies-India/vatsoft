@@ -12,22 +12,11 @@ import {
   GroupedDailySale,
 } from "@/action/stock/getuserdailysale";
 
-export type DailySaleSortField =
-  | "invoice_number"
-  | "invoice_date"
-  | "trade_name"
-  | "tin_number"
-  | "invoice_value";
-
-export type DailySaleSortOrder = "asc" | "desc";
-
 interface GetUserDailySaleFilteredPayload {
   dvatid: number;
   take: number;
   skip: number;
   searchTerm?: string;
-  sortField?: DailySaleSortField;
-  sortOrder?: DailySaleSortOrder;
   startDate?: string;
   endDate?: string;
   acceptStatusFilter?: "all" | "pending" | "accepted";
@@ -74,7 +63,7 @@ const GetUserDailySaleFiltered = async (
       } as any;
     }
 
-    // Build date filter for database query (moved from memory filtering)
+    // Build where condition for database query
     const whereCondition: any = {
       deletedAt: null,
       deletedById: null,
@@ -83,20 +72,23 @@ const GetUserDailySaleFiltered = async (
       dvat04Id: payload.dvatid,
     };
 
-    // Apply date filter at database level for performance
+    // Apply date filter at database level
     if (payload.startDate || payload.endDate) {
       const dateFilter: any = {};
       if (payload.startDate) {
         dateFilter.gte = new Date(payload.startDate);
       }
       if (payload.endDate) {
-        // EndDate is treated as exclusive (use lt instead of lte)
-        // This allows us to pass the next day and exclude it properly
         dateFilter.lt = new Date(payload.endDate);
       }
       whereCondition.invoice_date = dateFilter;
     }
 
+    const searchTerm = (payload.searchTerm ?? "").trim().toLowerCase();
+    const acceptStatusFilter = payload.acceptStatusFilter ?? "all";
+
+    // Fetch ALL data for grouping (since we need to group by invoice_number + date + seller)
+    // But apply all filters at database level first
     const dailySaleRows = await prisma.daily_sale.findMany({
       where: whereCondition,
       include: {
@@ -106,7 +98,7 @@ const GetUserDailySaleFiltered = async (
       orderBy: [{ invoice_date: "desc" }, { invoice_number: "desc" }],
     });
 
-    if (!dailySaleRows) {
+    if (!dailySaleRows || dailySaleRows.length === 0) {
       return createPaginationResponse({
         message: "No Daily sale found. Please try again.",
         functionname,
@@ -143,18 +135,11 @@ const GetUserDailySaleFiltered = async (
       }
     });
 
-    const groupedArray = Array.from(groupedMap.values());
-    const overallSummary = summarize(groupedArray);
+    let groupedArray = Array.from(groupedMap.values());
 
-    const searchTerm = (payload.searchTerm ?? "").trim().toLowerCase();
-    const sortField: DailySaleSortField = payload.sortField ?? "invoice_date";
-    const sortOrder: DailySaleSortOrder = payload.sortOrder ?? "desc";
-    const acceptStatusFilter = payload.acceptStatusFilter ?? "all";
-
-    let filtered = [...groupedArray];
-
+    // Apply search filter in memory (can't be done at DB level due to grouping)
     if (searchTerm !== "") {
-      filtered = filtered.filter(
+      groupedArray = groupedArray.filter(
         (group) =>
           group.invoice_number.toLowerCase().includes(searchTerm) ||
           group.seller_tin_number.name_of_dealer
@@ -164,8 +149,9 @@ const GetUserDailySaleFiltered = async (
       );
     }
 
+    // Apply accept status filter in memory (can't be done at DB level due to grouping logic)
     if (acceptStatusFilter !== "all") {
-      filtered = filtered.filter((group) => {
+      groupedArray = groupedArray.filter((group) => {
         const hasPending = group.records.some((record) => !record.is_accept);
 
         if (acceptStatusFilter === "pending") return hasPending;
@@ -174,46 +160,31 @@ const GetUserDailySaleFiltered = async (
       });
     }
 
-    filtered.sort((a, b) => {
-      let compareValue = 0;
+    // Sort in memory: by is_paid status (red -> green)
+    // Red (is_paid === false) = 0 (first)
+    // Green (is_paid === true) = 1 (last)
+    groupedArray.sort((a, b) => {
+      // Check if ANY record in this group has is_paid === false
+      const aHasNotPaid = a.records.some((record) => !record.is_paid);
+      const bHasNotPaid = b.records.some((record) => !record.is_paid);
 
-      switch (sortField) {
-        case "invoice_number":
-          compareValue = a.invoice_number.localeCompare(b.invoice_number);
-          break;
-        case "invoice_date":
-          compareValue =
-            new Date(a.invoice_date).getTime() -
-            new Date(b.invoice_date).getTime();
-          break;
-        case "trade_name":
-          compareValue = a.seller_tin_number.name_of_dealer.localeCompare(
-            b.seller_tin_number.name_of_dealer,
-          );
-          break;
-        case "tin_number":
-          compareValue = a.seller_tin_number.tin_number.localeCompare(
-            b.seller_tin_number.tin_number,
-          );
-          break;
-        case "invoice_value":
-          compareValue = a.totalInvoiceValue - b.totalInvoiceValue;
-          break;
-      }
-
-      return sortOrder === "asc" ? compareValue : -compareValue;
+      // Red rows (not paid) come first
+      if (aHasNotPaid && !bHasNotPaid) return -1;
+      if (!aHasNotPaid && bHasNotPaid) return 1;
+      return 0;
     });
 
-    const filteredSummary = summarize(filtered);
-    const totalCount = filtered.length;
+    const filteredSummary = summarize(groupedArray);
+    const totalCount = groupedArray.length;
 
-    const paginatedGroups = filtered.slice(
+    // Paginate after grouping, filtering, and sorting
+    const paginatedGroups = groupedArray.slice(
       payload.skip,
       payload.skip + payload.take,
     );
 
     const summary: DailySaleFilteredSummary = {
-      overallSummary,
+      overallSummary: filteredSummary,
       filteredSummary,
     };
 

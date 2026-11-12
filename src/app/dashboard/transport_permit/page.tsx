@@ -8,6 +8,7 @@ import GetTransportPermitDetails, {
   type GroupedPurchaseItem,
 } from "@/action/stock/gettransportpermitdetails";
 import UpdateTpReleased from "@/action/stock/updatetpreleased";
+import GetBlacklistedDvats from "@/action/dvat/getblacklisteddvats";
 import {
   Table,
   TableBody,
@@ -17,7 +18,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formateDate } from "@/utils/methods";
-import { Button, Input, Modal, Pagination, Select } from "antd";
+import {
+  Button,
+  Input,
+  Modal,
+  Pagination,
+  Select,
+  Drawer,
+  Table as AntTable,
+  Spin,
+} from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -96,6 +106,18 @@ const TransportPermit = () => {
   const [userid, setUserid] = useState(0);
   const [isDownloadingReport, setIsDownloadingReport] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isBlacklistDrawerOpen, setIsBlacklistDrawerOpen] = useState(false);
+  const [blacklistedDvats, setBlacklistedDvats] = useState<any[]>([]);
+  const [isLoadingBlacklist, setIsLoadingBlacklist] = useState(false);
+  const [blacklistPagination, setBlacklistPagination] = useState({
+    take: 10,
+    skip: 0,
+    total: 0,
+  });
+  const [blacklistSearchTerm, setBlacklistSearchTerm] = useState("");
+  const [blacklistCommodityFilter, setBlacklistCommodityFilter] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     const init = async () => {
@@ -112,11 +134,15 @@ const TransportPermit = () => {
         if (userInfoResponse.status && userInfoResponse.data) {
           setUserRole(userInfoResponse.data.role);
           setUserOffice(userInfoResponse.data.office);
-          
+
           // If non-admin, set office filter to their office
           if (userInfoResponse.data.role !== "ADMIN") {
             setOfficeFilter(
-              userInfoResponse.data.office as "all" | "Dadra_Nagar_Haveli" | "DAMAN" | "DIU"
+              userInfoResponse.data.office as
+                | "all"
+                | "Dadra_Nagar_Haveli"
+                | "DAMAN"
+                | "DIU",
             );
           }
         }
@@ -340,6 +366,59 @@ const TransportPermit = () => {
     } finally {
       setIsDownloadingReport(false);
     }
+  };
+
+  const fetchBlacklistedDvats = async (skip: number = 0) => {
+    setIsLoadingBlacklist(true);
+    try {
+      const response = await GetBlacklistedDvats({
+        searchTerm: blacklistSearchTerm,
+        skip: 0,
+        take: 10000, // Fetch all records to properly filter and count
+      });
+
+      let filteredData = response.data?.result || [];
+
+      // Apply commodity filter on the client side
+      if (blacklistCommodityFilter && blacklistCommodityFilter !== "all") {
+        filteredData = filteredData.filter(
+          (dvat: any) => dvat.commodity === blacklistCommodityFilter,
+        );
+      }
+
+      // Apply office filter if user is not admin
+      if (userRole !== "ADMIN") {
+        filteredData = filteredData.filter(
+          (dvat: any) => dvat.office === userOffice,
+        );
+      }
+
+      if (response.status) {
+        // Apply pagination on filtered data
+        const paginatedData = filteredData.slice(
+          skip,
+          skip + blacklistPagination.take,
+        );
+        setBlacklistedDvats(paginatedData);
+        setBlacklistPagination({
+          take: blacklistPagination.take,
+          skip: skip,
+          total: filteredData.length, // Use filtered data length as total
+        });
+      } else {
+        toast.error(response.message || "Failed to fetch blacklisted records");
+      }
+    } catch (error) {
+      toast.error("Error fetching blacklisted records");
+      console.error(error);
+    } finally {
+      setIsLoadingBlacklist(false);
+    }
+  };
+
+  const handleOpenBlacklistDrawer = () => {
+    setIsBlacklistDrawerOpen(true);
+    fetchBlacklistedDvats();
   };
 
   if (isLoading)
@@ -569,12 +648,19 @@ const TransportPermit = () => {
       <main className="p-3 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm mb-3">
-            <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+            <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
               <div>
                 <h1 className="text-lg font-medium text-gray-900">
                   Transport Permit
                 </h1>
               </div>
+              <Button
+                type="default"
+                onClick={handleOpenBlacklistDrawer}
+                size="middle"
+              >
+                📋 View Blacklist
+              </Button>
             </div>
           </div>
 
@@ -712,7 +798,11 @@ const TransportPermit = () => {
                       value={officeFilter}
                       onChange={(value) =>
                         setOfficeFilter(
-                          value as "all" | "Dadra_Nagar_Haveli" | "DAMAN" | "DIU",
+                          value as
+                            | "all"
+                            | "Dadra_Nagar_Haveli"
+                            | "DAMAN"
+                            | "DIU",
                         )
                       }
                       options={[
@@ -911,6 +1001,139 @@ const TransportPermit = () => {
           </div>
         </div>
       </main>
+
+      <Drawer
+        title="Blacklisted DVATs"
+        onClose={() => setIsBlacklistDrawerOpen(false)}
+        open={isBlacklistDrawerOpen}
+        width={1000}
+        bodyStyle={{ padding: "0" }}
+      >
+        <Spin spinning={isLoadingBlacklist}>
+          <div className="p-3">
+            <div className="mb-3 space-y-3">
+              <div className="flex gap-2 flex-wrap items-end">
+                <div className="flex-1 min-w-48">
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
+                    Search by TIN or Trade Name
+                  </label>
+                  <Input
+                    size="small"
+                    placeholder="TIN number or trade name..."
+                    value={blacklistSearchTerm}
+                    onChange={(e) => setBlacklistSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="w-40">
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">
+                    Filter by Commodity
+                  </label>
+                  <Select
+                    size="small"
+                    placeholder="All Commodities"
+                    value={blacklistCommodityFilter}
+                    onChange={(value) =>
+                      setBlacklistCommodityFilter(value || null)
+                    }
+                    allowClear
+                    style={{ width: "100%" }}
+                    options={[
+                      { label: "All Commodities", value: null },
+                      { label: "RESTAURANT", value: "RESTAURANT" },
+                      { label: "RETAILOR", value: "LIQUOR" },
+                      { label: "WHOLESALER", value: "WHOLESALER" },
+                      { label: "OIDC", value: "OIDC" },
+                      { label: "MANUFACTURER", value: "MANUFACTURER" },
+                    ]}
+                  />
+                </div>
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => {
+                    setBlacklistPagination((prev) => ({
+                      ...prev,
+                      skip: 0,
+                    }));
+                    fetchBlacklistedDvats(0);
+                  }}
+                >
+                  Search
+                </Button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <AntTable
+                columns={[
+                  {
+                    title: "TIN Number",
+                    dataIndex: "tinnumber",
+                    key: "tinnumber",
+                    align: "center" as const,
+                    render: (text) => <span className="text-xs">{text}</span>,
+                  },
+                  {
+                    title: "Trade Name",
+                    dataIndex: "tradename",
+                    key: "tradename",
+                    align: "center" as const,
+                    render: (text) => <span className="text-xs">{text}</span>,
+                  },
+                  {
+                    title: "Commodity",
+                    dataIndex: "commodity",
+                    key: "commodity",
+                    align: "center" as const,
+                    render: (text) => <span className="text-xs">{text}</span>,
+                  },
+                  ...(userRole === "ADMIN"
+                    ? [
+                        {
+                          title: "Office",
+                          dataIndex: "office",
+                          key: "office",
+                          align: "center" as const,
+                          render: (text: any) => (
+                            <span className="text-xs">{text}</span>
+                          ),
+                        },
+                      ]
+                    : []),
+                  {
+                    title: "Frequency",
+                    dataIndex: "frequency",
+                    key: "frequency",
+                    align: "center" as const,
+                    render: (text) => <span className="text-xs">{text}</span>,
+                  },
+                ]}
+                dataSource={blacklistedDvats}
+                rowKey="id"
+                pagination={{
+                  pageSize: blacklistPagination.take,
+                  current:
+                    Math.floor(
+                      blacklistPagination.skip / blacklistPagination.take,
+                    ) + 1,
+                  total: blacklistPagination.total,
+                  onChange: (page, pageSize) => {
+                    const newSkip = (page - 1) * pageSize;
+                    setBlacklistPagination({
+                      skip: newSkip,
+                      take: pageSize,
+                      total: blacklistPagination.total,
+                    });
+                    fetchBlacklistedDvats(newSkip);
+                  },
+                  showSizeChanger: true,
+                  showTotal: (total) => `Total ${total} blacklisted DVATs`,
+                }}
+                size="small"
+              />
+            </div>
+          </div>
+        </Spin>
+      </Drawer>
     </>
   );
 };
