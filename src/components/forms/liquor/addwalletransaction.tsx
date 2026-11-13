@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { ToWords } from "to-words";
-import { capitalcase, encryptURLData, onFormError } from "@/utils/methods";
+import { encryptURLData, onFormError } from "@/utils/methods";
 import AddLiquorWalletTransaction from "@/action/liquor/addwallettransaction";
 import { dvat04 } from "@prisma/client";
 import GetUserDvat04 from "@/action/dvat/getuserdvat";

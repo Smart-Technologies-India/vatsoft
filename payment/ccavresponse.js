@@ -1131,7 +1131,7 @@ export const postRes = (request, response) => {
                 : 0;
 
               const dvatRecord = await prisma.dvat04.findUnique({
-                where: { id: parseInt(dvatid) },
+                where: { id: challan.dvatid },
                 select: { wallet: true },
               });
 
@@ -1157,7 +1157,7 @@ export const postRes = (request, response) => {
                     const is_exist_payment =
                       await prisma.wallet_history.findFirst({
                         where: {
-                          dvatId: parseInt(dvatid),
+                          dvatId: challan.dvatid,
                           invoice_number: `WALLET_TOPUP_${challan.cpin}`,
                           status: "ACTIVE",
                         },
@@ -1166,7 +1166,7 @@ export const postRes = (request, response) => {
                     if (!is_exist_payment) {
                       // Update wallet in dvat04
                       await prisma.dvat04.update({
-                        where: { id: parseInt(dvatid) },
+                        where: { id: challan.dvatid },
                         data: {
                           wallet: newWallet.toFixed(2),
                           updatedById: challan.createdById,
@@ -1176,7 +1176,7 @@ export const postRes = (request, response) => {
                       // Create wallet history entry
                       await prisma.wallet_history.create({
                         data: {
-                          dvatId: parseInt(dvatid),
+                          dvatId: challanDvatId,
                           refineryId: markerRefineryId,
                           type: "DEBIT",
                           status: "ACTIVE",
@@ -1417,12 +1417,13 @@ export const postRes = (request, response) => {
               // Extract amount from challan remark
               const amountMatch = refineryMarker.match(/AMOUNT:([^#]+)/);
               const topupAmount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+              const challanDvatId = challan.dvatid;
 
               if (topupAmount > 0) {
                 try {
                   // Get current wallet amount
                   const dvatRecord = await prisma.dvat04.findUnique({
-                    where: { id: parseInt(dvatid) },
+                    where: { id: challanDvatId },
                     select: { wallet: true },
                   });
 
@@ -1435,7 +1436,7 @@ export const postRes = (request, response) => {
                     const is_exist_payment =
                       await prisma.wallet_history.findFirst({
                         where: {
-                          dvatId: parseInt(dvatid),
+                          dvatId: challanDvatId,
                           invoice_number: `WALLET_TOPUP_${challan.cpin}`,
                           status: "ACTIVE",
                         },
@@ -1444,7 +1445,7 @@ export const postRes = (request, response) => {
                     if (!is_exist_payment) {
                       // Update wallet in dvat04
                       await prisma.dvat04.update({
-                        where: { id: parseInt(dvatid) },
+                        where: { id: challanDvatId },
                         data: {
                           wallet: newWallet.toFixed(2),
                           updatedById: challan.createdById,
@@ -1454,7 +1455,7 @@ export const postRes = (request, response) => {
                       // Create wallet history entry
                       await prisma.wallet_history.create({
                         data: {
-                          dvatId: parseInt(dvatid),
+                          dvatId: challanDvatId,
                           refineryId: 1, // Using 1 as placeholder for wallet top-up
                           type: "CREDIT",
                           status: "ACTIVE",
@@ -1482,12 +1483,13 @@ export const postRes = (request, response) => {
               // Handle liquor wallet top-up payments
               const amountMatch = refineryMarker.match(/AMOUNT:([^#]+)/);
               const topupAmount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+              const challanDvatId = challan.dvatid;
 
               if (topupAmount > 0) {
                 try {
                   // Get current wallet amount
                   const dvatRecord = await prisma.dvat04.findUnique({
-                    where: { id: parseInt(dvatid) },
+                    where: { id: challanDvatId },
                     select: { wallet: true },
                   });
 
@@ -1500,7 +1502,7 @@ export const postRes = (request, response) => {
                     const is_exist_payment =
                       await prisma.liquor_wallet_history.findFirst({
                         where: {
-                          dvatId: parseInt(dvatid),
+                          dvatId: challanDvatId,
                           invoice_number: `LIQUOR_TOPUP_${challan.cpin}`,
                           status: "ACTIVE",
                         },
@@ -1509,7 +1511,7 @@ export const postRes = (request, response) => {
                     if (!is_exist_payment) {
                       // Update wallet in dvat04
                       await prisma.dvat04.update({
-                        where: { id: parseInt(dvatid) },
+                        where: { id: challanDvatId },
                         data: {
                           wallet: newWallet.toFixed(2),
                           updatedById: challan.createdById,
@@ -1518,7 +1520,7 @@ export const postRes = (request, response) => {
                       // Create liquor wallet history entry
                       await prisma.liquor_wallet_history.create({
                         data: {
-                          dvatId: parseInt(dvatid),
+                          dvatId: challanDvatId,
                           sellerId: 1, // Using 1 as placeholder for wallet top-up
                           type: "CREDIT",
                           status: "ACTIVE",
