@@ -3,8 +3,8 @@ import { getCurrentUserId } from "@/lib/auth";
 interface UpdateCommodityMasterPayload {
   id: number;
   product_name?: string;
-  product_type?: Dvat04Commodity;
-  crate_size?: string;
+  product_type?: string;
+  crate_size?: number;
   mrp?: string;
   sale_price?: string;
   oidc_price?: string;
@@ -12,12 +12,15 @@ interface UpdateCommodityMasterPayload {
   taxable_at?: string;
   description?: string;
   remark?: string;
-  status?: Status;
+  status?: string;
+  pack_type?: string;
+  pack_size?: string;
+  market_type?: string;
 }
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { commodity_master, Dvat04Commodity, Status } from "@prisma/client";
+import { commodity_master, Status } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const UpdateCommodityMaster = async (
@@ -38,6 +41,7 @@ const UpdateCommodityMaster = async (
 
     const isexist = await prisma.commodity_master.findFirst({
       where: {
+        id: payload.id,
         deletedAt: null,
         deletedById: null,
         status: "ACTIVE",
@@ -58,17 +62,21 @@ const UpdateCommodityMaster = async (
       data: {
         updatedById: currentUserId,
         ...(payload.product_name && { product_name: payload.product_name }),
-        ...(payload.product_type && { product_type: payload.product_type }),
+        ...(payload.product_type && { product_type: payload.product_type as any }),
         ...(payload.mrp && { mrp: payload.mrp }),
         ...(payload.sale_price && { sale_price: payload.sale_price }),
+        ...(payload.oidc_price && { oidc_price: payload.oidc_price }),
         ...(payload.oidc_discount_percent && {
           oidc_discount_percent: payload.oidc_discount_percent,
         }),
         ...(payload.taxable_at && { taxable_at: payload.taxable_at }),
         ...(payload.description && { description: payload.description }),
         ...(payload.remark && { remark: payload.remark }),
-        ...(payload.status && { status: payload.status }),
-        
+        ...(payload.status && { status: payload.status as Status }),
+        ...(payload.crate_size !== undefined && { crate_size: payload.crate_size }),
+        ...(payload.pack_type && { pack_type: payload.pack_type as any }),
+        ...(payload.pack_size && { pack_size: payload.pack_size }),
+        ...(payload.market_type && { market_type: payload.market_type as any }),
       },
     });
 
@@ -80,7 +88,7 @@ const UpdateCommodityMaster = async (
     }
 
     return createResponse({
-      message: "Commodity data fetched successfully",
+      message: "Commodity data updated successfully",
       functionname,
       data: commodity_master,
     });

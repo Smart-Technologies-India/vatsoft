@@ -28,7 +28,7 @@ const RemoveDvatFromBlacklist = async (
       };
     }
 
-    // Soft delete the blacklist entry
+    // Soft delete the redflag entry
     const result = await prisma.dvatblock.update({
       where: { id: payload.blacklistId },
       data: {
@@ -38,7 +38,7 @@ const RemoveDvatFromBlacklist = async (
 
     return {
       status: true,
-      message: "DVAT removed from blacklist successfully.",
+      message: "DVAT removed from redflag successfully.",
       data: result,
     };
   } catch (e) {

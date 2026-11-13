@@ -2,7 +2,7 @@
 import { getCurrentUserId } from "@/lib/auth";
 interface CreateCommodityMasterPayload {
   product_name: string;
-  product_type: Dvat04Commodity;
+  product_type: string;
   mrp: string;
   sale_price: string;
   oidc_price: string;
@@ -11,15 +11,19 @@ interface CreateCommodityMasterPayload {
   description: string;
   remark: string;
   createdById: number;
+  crate_size: number;
+  pack_type: string;
+  pack_size: string;
+  market_type: string;
 }
 
 import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
-import { commodity_master, Dvat04Commodity } from "@prisma/client";
+import { commodity_master } from "@prisma/client";
 import prisma from "../../../prisma/database";
 
 const CreateCommodityMaster = async (
-  payload: CreateCommodityMasterPayload
+  payload: CreateCommodityMasterPayload,
 ): Promise<ApiResponseType<commodity_master | null>> => {
   const functionname: string = CreateCommodityMaster.name;
 
@@ -35,7 +39,21 @@ const CreateCommodityMaster = async (
     }
 
     const commodity_master = await prisma.commodity_master.create({
-      data: payload,
+      data: {
+        product_name: payload.product_name,
+        product_type: payload.product_type as any,
+        mrp: payload.mrp,
+        sale_price: payload.sale_price,
+        oidc_price: payload.oidc_price,
+        oidc_discount_percent: payload.oidc_discount_percent,
+        taxable_at: payload.taxable_at,
+        description: payload.description,
+        remark: payload.remark,
+        createdById: payload.createdById,
+        crate_size: payload.crate_size,
+        pack_type: payload.pack_type as any,
+        pack_size: payload.pack_size,
+      },
     });
 
     if (!commodity_master) {

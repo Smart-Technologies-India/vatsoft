@@ -426,6 +426,7 @@ model liquor_wallet_history {
   type           WALLETTYPE
   old_wallet     String
   new_wallet     String
+  amount         String            @default("0")
   invoice_number String
   status         Status            @default(ACTIVE)
   createdAt      DateTime          @default(now())
@@ -1011,6 +1012,7 @@ model commodity_master {
   oidc_crate_sale_price        String?
   oidc_crate_purchase_price    String?
   crate_size                   Int                        @default(0)
+  market_type                  MarketType?                @default(LOCAL)
   dn_oidc_code                 String?
   dn_oidc_crate_sale_price     String?
   dn_oidc_crate_purchase_price String?
@@ -2531,6 +2533,11 @@ enum PackType {
   PET
   TETRAPACK
   POUCH
+}
+
+enum MarketType {
+  LOCAL
+  EXPORT
 }
 
 enum DisplayGroup {

@@ -77,6 +77,7 @@ export const PayByWalletLiquor = async (input: {
           new_wallet: newWallet.toFixed(2),
           invoice_number: input.invoiceNo,
           status: "ACTIVE",
+          amount: walletDeduction.toFixed(2),
         },
       });
     }

@@ -7,33 +7,28 @@ import {
   string,
   pipe,
   nullish,
+  number,
 } from "valibot";
 
 const CommodityMasterSchema = object({
   product_name: pipe(string(), minLength(1, "Product Name is required.")),
-  product_type: enum_(Dvat04Commodity, "Product Type is required."),
+  market_type: pipe(
+    string("Market Type is required."),
+    minLength(1, "Market Type is required.")
+  ),
   mrp: pipe(string("MRP is required."), minLength(1, "MRP is required.")),
-  sale_price: pipe(
-    string("Sale Price is required."),
-    minLength(1, "Sale Price is required.")
+  crate_size: pipe(
+    string("Pcs/Crate is required."),
+    minLength(1, "Pcs/Crate is required.")
   ),
-  oidc_price: pipe(
-    string("OIDC Price Amount is required."),
-    minLength(1, "OIDC Price Amount is required.")
+  pack_type: pipe(
+    string("Pack Type is required."),
+    minLength(1, "Pack Type is required.")
   ),
-  oidc_discount_percent: pipe(
-    string("OIDC Discount Percent is required."),
-    minLength(1, "OIDC Discount Percent is required.")
+  pack_size: pipe(
+    string("Pack Size is required."),
+    minLength(1, "Pack Size is required.")
   ),
-  taxable_at: pipe(
-    string("Taxable At is required."),
-    minLength(1, "Taxable At is required.")
-  ),
-  description: pipe(
-    string("Description is required."),
-    minLength(1, "Description is required.")
-  ),
-  remark: nullish(string()),
 });
 
 type CommodityMasterForm = InferInput<typeof CommodityMasterSchema>;

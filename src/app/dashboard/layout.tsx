@@ -89,7 +89,7 @@ export default function DashboardLayout({
           />
         </div>
         <p>
-          An official website of U.T. Administration of Dadra & Nagar Haveli and
+          The official website of U.T. Administration of Dadra & Nagar Haveli and
           Daman & Diu
         </p>
       </div>

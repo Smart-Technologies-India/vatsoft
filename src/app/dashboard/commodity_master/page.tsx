@@ -3,6 +3,7 @@ import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import GetAllCommodityMaster from "@/action/commoditymaster/getallcommoditymaster";
 import GetCommodityMaster from "@/action/commoditymaster/getcommoditymaster";
 import UpdateCommodityMaster from "@/action/commoditymaster/updatecommoditymaster";
+import { getCurrentUserInfo } from "@/action/auth/getcurrentuserinfo";
 import { CommodityMasterProvider } from "@/components/forms/commodity/commoditymaster";
 import {
   Table,
@@ -12,7 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getCurrentUserRole } from "@/lib/auth";
 import { commodity_master, Status } from "@prisma/client";
 import {
   Button,
@@ -50,6 +50,7 @@ const CommodityMaster = () => {
   const [open, setOpen] = useState(false);
   const [comm, setComm] = useState<commodity_master | null>(null);
   const [allProductTypes, setAllProductTypes] = useState<string[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   // Fetch data with current filters and pagination
   const fetchCommodities = useCallback(
@@ -122,7 +123,13 @@ const CommodityMaster = () => {
         toast.error(authResponse.message);
         return router.push("/");
       }
-      // setUserid(authResponse.data);
+
+      // Fetch user info to get role
+      const userInfoResponse = await getCurrentUserInfo();
+      if (userInfoResponse.status && userInfoResponse.data) {
+        setUserRole(userInfoResponse.data.role);
+      }
+
       await fetchAllProductTypes();
       await fetchCommodities(1, 10);
     };
@@ -495,75 +502,79 @@ const CommodityMaster = () => {
                             >
                               View
                             </Button>
-                            <button
-                              onClick={() => {
-                                setCommid(val.id);
-                                setAddBox(true);
-                              }}
-                              className="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-sm font-medium transition-colors"
-                            >
-                              Edit
-                            </button>
-
-                            <Popover
-                              content={
-                                <div className="flex flex-col gap-2">
-                                  <p className="text-sm">
-                                    Are you sure you want to{" "}
-                                    {val.status == Status.ACTIVE
-                                      ? "deactivate"
-                                      : "activate"}{" "}
-                                    this commodity?
-                                  </p>
-                                  <div className="flex gap-2">
-                                    <Button
-                                      type="primary"
-                                      size="small"
-                                      onClick={() => {
-                                        commoditystatus(
-                                          val.id,
-                                          val.status == Status.ACTIVE
-                                            ? Status.INACTIVE
-                                            : Status.ACTIVE,
-                                        );
-                                      }}
-                                    >
-                                      YES
-                                    </Button>
-                                    <Button
-                                      size="small"
-                                      onClick={() => {
-                                        handelClose(index);
-                                      }}
-                                    >
-                                      No
-                                    </Button>
-                                  </div>
-                                </div>
-                              }
-                              title={
-                                val.status == Status.ACTIVE
-                                  ? "Deactivate Commodity"
-                                  : "Activate Commodity"
-                              }
-                              trigger="click"
-                              open={!!openPopovers[index]}
-                              onOpenChange={(newOpen) =>
-                                handleOpenChange(newOpen, index)
-                              }
-                            >
+                            {userRole === "ADMIN" && (
                               <button
-                                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                                  val.status == Status.ACTIVE
-                                    ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
-                                    : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-                                }`}
+                                onClick={() => {
+                                  setCommid(val.id);
+                                  setAddBox(true);
+                                }}
+                                className="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-sm font-medium transition-colors"
                               >
-                                {val.status == Status.ACTIVE
-                                  ? "Deactivate"
-                                  : "Activate"}
+                                Edit
                               </button>
-                            </Popover>
+                            )}
+
+                            {userRole === "ADMIN" && (
+                              <Popover
+                                content={
+                                  <div className="flex flex-col gap-2">
+                                    <p className="text-sm">
+                                      Are you sure you want to{" "}
+                                      {val.status == Status.ACTIVE
+                                        ? "deactivate"
+                                        : "activate"}{" "}
+                                      this commodity?
+                                    </p>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        type="primary"
+                                        size="small"
+                                        onClick={() => {
+                                          commoditystatus(
+                                            val.id,
+                                            val.status == Status.ACTIVE
+                                              ? Status.INACTIVE
+                                              : Status.ACTIVE,
+                                          );
+                                        }}
+                                      >
+                                        YES
+                                      </Button>
+                                      <Button
+                                        size="small"
+                                        onClick={() => {
+                                          handelClose(index);
+                                        }}
+                                      >
+                                        No
+                                      </Button>
+                                    </div>
+                                  </div>
+                                }
+                                title={
+                                  val.status == Status.ACTIVE
+                                    ? "Deactivate Commodity"
+                                    : "Activate Commodity"
+                                }
+                                trigger="click"
+                                open={!!openPopovers[index]}
+                                onOpenChange={(newOpen) =>
+                                  handleOpenChange(newOpen, index)
+                                }
+                              >
+                                <button
+                                  className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                                    val.status == Status.ACTIVE
+                                      ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
+                                      : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                                  }`}
+                                >
+                                  {val.status == Status.ACTIVE
+                                    ? "Deactivate"
+                                    : "Activate"}
+                                </button>
+                              </Popover>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

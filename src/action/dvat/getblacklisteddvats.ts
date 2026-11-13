@@ -12,6 +12,7 @@ interface GetBlacklistedDvatsPayload {
   searchTerm?: string;
   skip: number;
   take: number;
+  office?: string;
 }
 
 interface BlacklistedDvatResult {
@@ -61,6 +62,10 @@ const GetBlacklistedDvats = async (
           },
         },
       ];
+    }
+
+    if (payload.office) {
+      whereCondition.office = payload.office;
     }
 
     // Get total count

@@ -63,7 +63,7 @@ const AddDvatToBlacklist = async (
       };
     }
 
-    // Create blacklist entry
+    // Create redflag entry
     const blacklistEntry = await prisma.dvatblock.create({
       data: {
         dvatId: payload.dvatId,
@@ -77,7 +77,7 @@ const AddDvatToBlacklist = async (
 
     return {
       status: true,
-      message: "DVAT added to blacklist successfully.",
+      message: "DVAT added to redflag successfully.",
       data: blacklistEntry,
     };
   } catch (e) {

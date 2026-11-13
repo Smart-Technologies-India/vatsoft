@@ -92,13 +92,11 @@ export default function DvatBlacklistPage() {
 
       if (response.status && response.data?.result) {
         let dvatData = response.data.result;
-        
+
         // Filter by office if user is not admin
-        if (userRole !== "ADMIN") {
-          dvatData = dvatData.filter(
-            (dvat: DvatOption) => dvat.selectOffice === userOffice,
-          );
-        }
+        dvatData = dvatData.filter(
+          (dvat: DvatOption) => dvat.selectOffice === userOffice,
+        );
 
         setDvatOptions(dvatData);
         setPagination({
@@ -123,31 +121,18 @@ export default function DvatBlacklistPage() {
     try {
       const response = await GetBlacklistedDvats({
         searchTerm: blacklistSearchTerm,
-        skip: 0,
-        take: 10000, // Fetch all records to properly filter and count
+        skip: blacklistPagination.skip,
+        take: blacklistPagination.take,
+        office: userRole === "ADMIN" ? undefined : userOffice,
       });
 
+      console.log("Blacklisted DVAT response:", response);
       if (response.status && response.data?.result) {
-        let blacklistData = response.data.result;
-
-        // Filter by office if user is not admin
-        if (userRole !== "ADMIN") {
-          blacklistData = blacklistData.filter(
-            (dvat: BlacklistedDvat) => dvat.office === userOffice,
-          );
-        }
-
-        // Apply pagination on filtered data
-        const paginatedData = blacklistData.slice(
-          blacklistPagination.skip,
-          blacklistPagination.skip + blacklistPagination.take,
-        );
-
-        setBlacklistedDvats(paginatedData);
+        setBlacklistedDvats(response.data.result);
         setBlacklistPagination({
-          take: blacklistPagination.take,
-          skip: blacklistPagination.skip,
-          total: blacklistData.length, // Use filtered data length as total
+          take: response.data.take,
+          skip: response.data.skip,
+          total: response.data.total,
         });
       } else {
         toast.error(response.message || "Failed to fetch blacklisted records");
@@ -158,7 +143,13 @@ export default function DvatBlacklistPage() {
     } finally {
       setIsBlacklistLoading(false);
     }
-  }, [blacklistSearchTerm, blacklistPagination.skip, blacklistPagination.take, userRole, userOffice]);
+  }, [
+    blacklistSearchTerm,
+    blacklistPagination.skip,
+    blacklistPagination.take,
+    userRole,
+    userOffice,
+  ]);
 
   // Initial load
   useEffect(() => {
@@ -179,7 +170,7 @@ export default function DvatBlacklistPage() {
     }
   }, [searchTerm]);
 
-  // Handle blacklist search
+  // Handle redflag search
   useEffect(() => {
     setBlacklistPagination((prev) => ({ ...prev, skip: 0 }));
   }, [blacklistSearchTerm]);
@@ -192,10 +183,15 @@ export default function DvatBlacklistPage() {
     }
   }, [blacklistSearchTerm]);
 
-  // Handle add to blacklist
+  // Handle redflag pagination changes
+  useEffect(() => {
+    fetchBlacklistedDvats();
+  }, [blacklistPagination.skip, blacklistPagination.take]);
+
+  // Handle add to redflag
   const handleAddToBlacklist = async () => {
     if (!selectedDvat) {
-      toast.error("Please select a DVAT to add to blacklist");
+      toast.error("Please select a DVAT to add to redflag");
       return;
     }
 
@@ -204,26 +200,26 @@ export default function DvatBlacklistPage() {
       const response = await AddDvatToBlacklist({ dvatId: selectedDvat });
 
       if (response.status) {
-        toast.success("DVAT added to blacklist successfully");
+        toast.success("DVAT added to redflag successfully");
         setSelectedDvat(null);
         await fetchDvatOptions();
         await fetchBlacklistedDvats();
       } else {
-        toast.error(response.message || "Failed to add DVAT to blacklist");
+        toast.error(response.message || "Failed to add DVAT to redflag");
       }
     } catch (error) {
-      toast.error("Error adding DVAT to blacklist");
+      toast.error("Error adding DVAT to redflag");
       console.error(error);
     } finally {
       setIsAddingToBlacklist(false);
     }
   };
 
-  // Handle remove from blacklist
+  // Handle remove from redflag
   const handleRemoveFromBlacklist = (blacklistId: number) => {
     Modal.confirm({
-      title: "Remove from Blacklist",
-      content: "Are you sure you want to remove this DVAT from the blacklist?",
+      title: "Remove from Redflag",
+      content: "Are you sure you want to remove this DVAT from the redflag?",
       okText: "Yes",
       cancelText: "No",
       onOk: async () => {
@@ -234,16 +230,16 @@ export default function DvatBlacklistPage() {
           });
 
           if (response.status) {
-            toast.success("DVAT removed from blacklist successfully");
+            toast.success("DVAT removed from redflag successfully");
             await fetchBlacklistedDvats();
             await fetchDvatOptions();
           } else {
             toast.error(
-              response.message || "Failed to remove DVAT from blacklist",
+              response.message || "Failed to remove DVAT from redflag",
             );
           }
         } catch (error) {
-          toast.error("Error removing DVAT from blacklist");
+          toast.error("Error removing DVAT from redflag");
           console.error(error);
         } finally {
           setIsRemovingFromBlacklist(false);
@@ -258,17 +254,17 @@ export default function DvatBlacklistPage() {
         {/* Header */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">
-            DVAT Blacklist Management
+            DVAT Redflag Management
           </h1>
           <p className="text-sm text-gray-600">
-            Manage blacklisted DVAT entries and add new ones to the blacklist
+            Manage redflagged DVAT entries and add new ones to the redflag list
           </p>
         </div>
 
-        {/* Add to Blacklist Section */}
+        {/* Add to Redflag Section */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-3">
-            Add DVAT to Blacklist
+            Add DVAT to Redflag
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
@@ -325,7 +321,7 @@ export default function DvatBlacklistPage() {
                 className="w-full"
                 size="middle"
               >
-                Add to Blacklist
+                Add to Redflag
               </Button>
             </div>
           </div>
@@ -390,7 +386,10 @@ export default function DvatBlacklistPage() {
                     </TableRow>
                   ) : (
                     blacklistedDvats.map((dvat) => (
-                      <TableRow key={dvat.id} className="border-b hover:bg-gray-50">
+                      <TableRow
+                        key={dvat.id}
+                        className="border-b hover:bg-gray-50"
+                      >
                         <TableCell className="text-center p-2 text-xs text-gray-900">
                           {dvat.tinnumber}
                         </TableCell>
@@ -415,9 +414,7 @@ export default function DvatBlacklistPage() {
                           <Button
                             danger
                             size="small"
-                            onClick={() =>
-                              handleRemoveFromBlacklist(dvat.id)
-                            }
+                            onClick={() => handleRemoveFromBlacklist(dvat.id)}
                             loading={isRemovingFromBlacklist}
                           >
                             Remove
@@ -435,8 +432,9 @@ export default function DvatBlacklistPage() {
             <div className="mt-3">
               <Pagination
                 current={
-                  Math.floor(blacklistPagination.skip / blacklistPagination.take) +
-                  1
+                  Math.floor(
+                    blacklistPagination.skip / blacklistPagination.take,
+                  ) + 1
                 }
                 pageSize={blacklistPagination.take}
                 total={blacklistPagination.total}

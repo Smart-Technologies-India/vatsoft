@@ -88,6 +88,7 @@ const GetUserLiquorWalletTransactions = async (
           },
           old_wallet: true,
           new_wallet: true,
+          amount: true,
           invoice_number: true,
           type: true,
           status: true,

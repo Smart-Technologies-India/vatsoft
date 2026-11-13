@@ -1527,6 +1527,7 @@ export const postRes = (request, response) => {
                           old_wallet: oldWallet.toFixed(2),
                           new_wallet: newWallet.toFixed(2),
                           invoice_number: `LIQUOR_TOPUP_${challan.cpin}`,
+                          amount: topupAmount.toFixed(2),
                         },
                       });
                     }

@@ -659,7 +659,7 @@ const TransportPermit = () => {
                 onClick={handleOpenBlacklistDrawer}
                 size="middle"
               >
-                📋 View Blacklist
+                📋 View Redflag
               </Button>
             </div>
           </div>
