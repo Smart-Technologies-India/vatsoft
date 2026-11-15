@@ -19,6 +19,11 @@ import { DailySaleProvider } from "@/components/forms/dailysale/dailysale";
 import { CreditNoteDrawer } from "@/components/forms/creditnote/creditnotedrawer";
 import { DebitNoteDrawer } from "@/components/forms/debitnote/debitnotedrawer";
 import { AntDesignMenuOutlined } from "@/components/icons";
+import { WalletPaymentModal } from "@/components/payment/WalletPaymentModal";
+import { PaymentButtons } from "@/components/payment/PaymentButtons";
+import { PostPaymentAddItemDrawer } from "@/components/stock/PostPaymentAddItemDrawer";
+import { usePaymentState } from "@/hooks/usePaymentState";
+import { usePostPaymentAddItem } from "@/hooks/usePostPaymentAddItem";
 import {
   Table,
   TableBody,
@@ -175,12 +180,25 @@ const DocumentWiseDetails = () => {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isSingleAcceptLoading, setIsSingleAcceptLoading] =
     useState<boolean>(false);
-  const [isPayVatLoading, setIsPayVatLoading] = useState(false);
-  const [isWalletPaymentLoading, setIsWalletPaymentLoading] = useState(false);
-  const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [isWalletConfirmModalOpen, setIsWalletConfirmModalOpen] =
-    useState(false);
-  const [isPaid, setIsPaid] = useState(false);
+
+  const {
+    isPayVatLoading,
+    setIsPayVatLoading,
+    isWalletPaymentLoading,
+    setIsWalletPaymentLoading,
+    walletBalance,
+    setWalletBalance,
+    isWalletConfirmModalOpen,
+    setIsWalletConfirmModalOpen,
+    isPaid,
+    setIsPaid,
+  } = usePaymentState();
+
+  const {
+    isDrawerOpen,
+    setIsDrawerOpen,
+  } = usePostPaymentAddItem();
+
   const [filedReturnPeriods, setFiledReturnPeriods] = useState<Set<string>>(
     new Set(),
   );
@@ -1610,148 +1628,37 @@ const DocumentWiseDetails = () => {
           </div>
         )}
 
-        <div className="flex w-full gap-2">
-          <div className="grow"></div>
-
-          {isPaid ? (
-            <div className="text-sm text-green-600 flex items-center gap-2">
-              ✅ Payment Successful!
-            </div>
-          ) : (
-            <>
-              {selectedGroup &&
-                walletBalance < selectedGroup.totalVatAmount && (
-                  <div className="text-xs text-red-600 flex items-center">
-                    ⚠️ Insufficient wallet balance (₹{walletBalance.toFixed(2)})
-                  </div>
-                )}
-              <button
-                onClick={handlePayByWallet}
-                disabled={
-                  isWalletPaymentLoading ||
-                  !selectedGroup ||
-                  walletBalance < selectedGroup.totalVatAmount
-                }
-                className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
-              >
-                {isWalletPaymentLoading ? "Processing..." : "Pay Using Wallet"}
-              </button>
-              <button
-                onClick={handlePayVat}
-                disabled={isPayVatLoading}
-                className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
-              >
-                {isPayVatLoading ? "Processing..." : "Pay Online"}
-              </button>
-            </>
-          )}
-        </div>
-      </Modal>
-
-      {/* Wallet Payment Confirmation Modal */}
-      <Modal
-        title="Confirm Wallet Payment"
-        open={isWalletConfirmModalOpen}
-        onOk={confirmWalletPayment}
-        onCancel={() => setIsWalletConfirmModalOpen(false)}
-        okText="Confirm Payment"
-        cancelText="Cancel"
-        okButtonProps={{
-          danger: true,
-          loading: isWalletPaymentLoading,
-        }}
-        cancelButtonProps={{
-          disabled: isWalletPaymentLoading,
-        }}
-        width={500}
-      >
         {selectedGroup && (
-          <div className="space-y-4 py-3">
-            {/* Wallet Balance Info */}
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-              <p className="text-xs text-blue-600 font-semibold mb-2">
-                💳 WALLET BALANCE
-              </p>
-              <p className="text-2xl font-bold text-blue-900">
-                ₹
-                {walletBalance.toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </p>
-            </div>
-
-            {/* Payable Amount Info */}
-            <div className="p-3 bg-green-50 border border-green-200 rounded">
-              <p className="text-xs text-green-600 font-semibold mb-2">
-                💰 PAYABLE AMOUNT (VAT)
-              </p>
-              <p className="text-2xl font-bold text-green-900">
-                ₹
-                {selectedGroup.totalVatAmount.toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </p>
-            </div>
-
-            {/* Invoice Details */}
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded">
-              <p className="text-xs text-gray-600 font-semibold mb-3">
-                📋 INVOICE DETAILS
-              </p>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-xs text-gray-500">Invoice Number</p>
-                  <p className="font-semibold text-gray-900">
-                    {selectedGroup.invoice_number}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Invoice Date</p>
-                  <p className="font-semibold text-gray-900">
-                    {formateDate(selectedGroup.invoice_date)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Purchaser</p>
-                  <p className="font-semibold text-gray-900">
-                    {selectedGroup.seller_tin_number.name_of_dealer}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Tax Rate</p>
-                  <p className="font-semibold text-gray-900">
-                    {selectedGroup.records[0]?.tax_percent || "N/A"}%
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Summary */}
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded">
-              <p className="text-xs text-amber-700 font-semibold">
-                ⚠️ After confirming, ₹
-                {selectedGroup.totalVatAmount.toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}{" "}
-                will be deducted from your wallet.
-              </p>
-              <p className="text-xs text-amber-700 mt-2">
-                New wallet balance will be: ₹
-                {(walletBalance - selectedGroup.totalVatAmount).toLocaleString(
-                  "en-IN",
-                  {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  },
-                )}
-              </p>
-            </div>
-          </div>
+          <PaymentButtons
+            isPaid={isPaid}
+            isPayVatLoading={isPayVatLoading}
+            isWalletPaymentLoading={isWalletPaymentLoading}
+            walletBalance={walletBalance}
+            selectedGroup={selectedGroup}
+            onPayByWallet={handlePayByWallet}
+            onPayOnline={handlePayVat}
+            onAddItem={() => setIsDrawerOpen(true)}
+          />
         )}
       </Modal>
+
+      <WalletPaymentModal
+        isOpen={isWalletConfirmModalOpen}
+        isLoading={isWalletPaymentLoading}
+        walletBalance={walletBalance}
+        selectedGroup={selectedGroup}
+        onConfirm={confirmWalletPayment}
+        onCancel={() => setIsWalletConfirmModalOpen(false)}
+      />
+
+      <PostPaymentAddItemDrawer
+        isOpen={isDrawerOpen}
+        selectedGroup={selectedGroup}
+        walletBalance={walletBalance}
+        dvatData={dvatdata ?? null}
+        onClose={() => setIsDrawerOpen(false)}
+        onSuccess={init}
+      />
 
       <Modal
         title={

@@ -175,7 +175,7 @@ const Sidebar = (props: SidebarProps) => {
           </>
         )}
 
-        {["EXCISE"].includes(props.role) && (
+        {["EXCISE", "ASST_VAT_OFFICER"].includes(props.role) && (
           <>
             <MenuTab
               click={() => props.setIsOpen(false)}
@@ -334,7 +334,7 @@ const Sidebar = (props: SidebarProps) => {
               pathcheck={"/dashboard/transport_permit"}
               collapsed={isCollapsed}
             />
-             <MenuTab
+            <MenuTab
               click={() => props.setIsOpen(false)}
               icon={<FluentBuildingBank48Regular className="w-5 h-5" />}
               name="Dvat Redflag"

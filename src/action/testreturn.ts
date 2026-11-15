@@ -467,7 +467,7 @@ async function writeProcessedReturnData(
   } = calculatedData;
 
   // Check if returns_01_work entry already exists for this returnId
-  const existingEntry = await txPrisma.returns_01_work.findUnique({
+  const existingEntry = await txPrisma.returns_01_work.findFirst({
     where: {
       returnId: updateresponse.id,
     },

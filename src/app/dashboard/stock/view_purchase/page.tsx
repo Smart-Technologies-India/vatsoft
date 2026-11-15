@@ -48,6 +48,7 @@ import * as XLSX from "xlsx";
 import PurchaseBulk from "./purchasebulk";
 import DownloadPurchaseSample from "./downloadpurchasesample";
 import { PurchaseBulkDelete } from "./purchasebulkdelete";
+import { PostPaymentAddItemPurchaseDrawer } from "@/components/stock/PostPaymentAddItemPurchaseDrawer";
 import ServerTime from "@/action/servertime";
 import CreateLiquorSaleChallan from "@/action/challan/createliquorsalechallan";
 import { PayPurchaseByWalletLiquor } from "@/action/stock/paypurchasebywalletliquor";
@@ -582,6 +583,7 @@ const DocumentWiseDetails = () => {
   const [isGroupRejectLoading, setIsGroupRejectLoading] = useState(false);
   const [isDownloadingDailyPurchase, setIsDownloadingDailyPurchase] =
     useState<boolean>(false);
+  const [isAddItemDrawerOpen, setIsAddItemDrawerOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   
@@ -1170,6 +1172,7 @@ const DocumentWiseDetails = () => {
         invoiceNo: selectedGroup.invoice_number,
         sellerId: selectedGroup.seller_tin_number.id,
         invoiceDate: selectedGroup.invoice_date,
+        commodityType: dvatdata?.commodity ?? "",
       });
 
       if (!response.status) {
@@ -1598,7 +1601,7 @@ const DocumentWiseDetails = () => {
                   <div>
                     <p className="text-xs text-gray-600">VAT Payable</p>
                     <p className="font-semibold text-orange-600">
-                      {formatIndianNumber(Math.round(calculateVatPayable()))}
+                      ₹{formatIndianNumber(Math.max(0, Math.round(calculateVatPayable())))}
                     </p>
                   </div>
                 </div>
@@ -1676,43 +1679,75 @@ const DocumentWiseDetails = () => {
                 ["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") &&
                 selectedGroup.records.some(
                   (r) => r.payment_status == "PAID",
-                ) && (
+                ) &&
+                selectedGroup.records.some((r) => !r.is_accept) && (
                   <>
-                    {isWalletPaid ? (
-                      <div className="text-sm text-green-600 flex items-center gap-2">
-                        ✅ Payment Successful!
-                      </div>
+                    {calculateVatPayable() <= 0 ? (
+                      // Show Accept All button when VAT Payable is 0 or negative
+                      <button
+                        disabled={
+                          isGroupAcceptLoading || isStockSnapshotAcceptLoading
+                        }
+                        onClick={
+                          stockSnapshotExists &&
+                          dvatdata?.commodity === "RESTAURANT"
+                            ? handleAcceptSnapshotAll
+                            : handleAcceptGroupAll
+                        }
+                        className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+                      >
+                        {isGroupAcceptLoading || isStockSnapshotAcceptLoading
+                          ? "Accepting..."
+                          : "Accept All"}
+                      </button>
                     ) : (
+                      // Show payment buttons when VAT Payable is positive
                       <>
-                        {walletBalance < calculateVatPayable() && (
-                          <div className="text-xs text-red-600 flex items-center">
-                            ⚠️ Insufficient wallet balance (₹
-                            {walletBalance.toFixed(2)})
+                        {isWalletPaid ? (
+                          <div className="text-sm text-green-600 flex items-center gap-2">
+                            ✅ Payment Successful!
                           </div>
+                        ) : (
+                          <>
+                            {walletBalance < calculateVatPayable() && (
+                              <div className="text-xs text-red-600 flex items-center">
+                                ⚠️ Insufficient wallet balance (₹
+                                {walletBalance.toFixed(2)})
+                              </div>
+                            )}
+                            <button
+                              onClick={handlePayByWallet}
+                              disabled={
+                                isWalletPaymentLoading ||
+                                walletBalance < calculateVatPayable()
+                              }
+                              className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+                            >
+                              {isWalletPaymentLoading
+                                ? "Processing..."
+                                : "Pay Using Wallet"}
+                            </button>
+                            <button
+                              disabled={isPayVatLoading || isGroupAcceptLoading}
+                              onClick={handlePayVat}
+                              className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+                            >
+                              {isPayVatLoading || isGroupAcceptLoading
+                                ? "Please wait..."
+                                : "Pay VAT and Accept"}
+                            </button>
+                          </>
                         )}
-                        <button
-                          onClick={handlePayByWallet}
-                          disabled={
-                            isWalletPaymentLoading ||
-                            walletBalance < calculateVatPayable()
-                          }
-                          className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
-                        >
-                          {isWalletPaymentLoading
-                            ? "Processing..."
-                            : "Pay Using Wallet"}
-                        </button>
-                        <button
-                          disabled={isPayVatLoading || isGroupAcceptLoading}
-                          onClick={handlePayVat}
-                          className="text-sm bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
-                        >
-                          {isPayVatLoading || isGroupAcceptLoading
-                            ? "Please wait..."
-                            : "Pay VAT and Accept"}
-                        </button>
                       </>
                     )}
+                    {/* {isWalletPaid && selectedGroup && selectedGroup.records.filter(record => !record.is_accept).length > 0 && (
+                      <button
+                        onClick={() => setIsAddItemDrawerOpen(true)}
+                        className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+                      >
+                        ➕ Add Item
+                      </button>
+                    )} */}
                   </>
                 )}
             </div>
@@ -1783,6 +1818,15 @@ const DocumentWiseDetails = () => {
         </div>
         <DailyPurchaseMasterProvider setAddBox={setAddBox} init={init} />
       </Drawer>
+
+      <PostPaymentAddItemPurchaseDrawer
+        isOpen={isAddItemDrawerOpen}
+        selectedGroup={selectedGroup}
+        walletBalance={walletBalance}
+        dvatData={dvatdata}
+        onClose={() => setIsAddItemDrawerOpen(false)}
+        onSuccess={init}
+      />
 
       <Modal
         title={

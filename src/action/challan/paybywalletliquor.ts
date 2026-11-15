@@ -18,6 +18,7 @@ export const PayByWalletLiquor = async (input: {
   invoiceNo: string;
   invoiceDate: Date;
   sellerId: number;
+  isAddItem?: boolean;
 }): Promise<PayByWalletLiquorResponse> => {
   try {
     const dvatId = await getCurrentDvatId();
@@ -50,37 +51,32 @@ export const PayByWalletLiquor = async (input: {
     const walletDeduction = Math.min(oldWallet, totalVat);
     const newWallet = oldWallet - walletDeduction;
 
-    const is_exist_payment = await prisma.liquor_wallet_history.findFirst({
-      where: {
-        dvatId: dvatId,
-        invoice_number: input.invoiceNo,
-        status: "ACTIVE",
+    const invoiceNumberForHistory = input.isAddItem
+      ? `${input.invoiceNo}-ADD`
+      : input.invoiceNo;
+
+    // Update DVAT04 wallet
+    await prisma.dvat04.update({
+      where: { id: dvatId, deletedAt: null },
+      data: {
+        wallet: newWallet.toFixed(2),
       },
     });
+    console.log(input.sellerId)
 
-    if (!is_exist_payment) {
-      // Update DVAT04 wallet
-      await prisma.dvat04.update({
-        where: { id: dvatId, deletedAt: null },
-        data: {
-          wallet: newWallet.toFixed(2),
-        },
-      });
-
-      // Create wallet history entry
-      await prisma.liquor_wallet_history.create({
-        data: {
-          dvatId: dvatId,
-          sellerId: input.sellerId,
-          type: "DEBIT",
-          old_wallet: oldWallet.toFixed(2),
-          new_wallet: newWallet.toFixed(2),
-          invoice_number: input.invoiceNo,
-          status: "ACTIVE",
-          amount: walletDeduction.toFixed(2),
-        },
-      });
-    }
+    // Create wallet history entry
+    await prisma.liquor_wallet_history.create({
+      data: {
+        dvatId: dvatId,
+        sellerId: input.sellerId,
+        type: "DEBIT",
+        old_wallet: oldWallet.toFixed(2),
+        new_wallet: newWallet.toFixed(2),
+        invoice_number: invoiceNumberForHistory,
+        status: "ACTIVE",
+        amount: walletDeduction.toFixed(2),
+      },
+    });
 
     await prisma.daily_sale.updateMany({
       where: {

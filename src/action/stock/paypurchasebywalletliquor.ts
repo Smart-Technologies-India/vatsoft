@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/../prisma/database";
-import { getCurrentDvatId } from "@/lib/auth";
+import { getCurrentDvatId, getCurrentUserId } from "@/lib/auth";
 
 export interface PayPurchaseByWalletLiquorResponse {
   status: boolean;
@@ -18,12 +18,14 @@ export const PayPurchaseByWalletLiquor = async (input: {
   invoiceNo: string;
   sellerId: number;
   invoiceDate: Date;
+  commodityType?: string;
 }): Promise<PayPurchaseByWalletLiquorResponse> => {
   try {
     const dvatId = await getCurrentDvatId();
+    const currentUserId = await getCurrentUserId();
 
-    if (!dvatId) {
-      return { status: false, message: "DVAT ID not found" };
+    if (!dvatId || !currentUserId) {
+      return { status: false, message: "DVAT ID or User ID not found" };
     }
 
     // Fetch DVAT04 wallet data
@@ -82,6 +84,73 @@ export const PayPurchaseByWalletLiquor = async (input: {
       });
     }
 
+    // Get purchase records to update stock
+    const purchaseRecords = await prisma.daily_purchase.findMany({
+      where: {
+        dvat04Id: dvatId,
+        invoice_number: input.invoiceNo,
+        seller_tin_numberId: input.sellerId,
+        deletedAt: null,
+        deletedById: null,
+      },
+      select: {
+        id: true,
+        urn_number: true,
+        commodity_masterId: true,
+        quantity: true,
+        commodity_master: {
+          select: {
+            pack_size: true,
+          },
+        },
+      },
+    });
+
+    // Update stock for each purchase record
+    for (const record of purchaseRecords) {
+      // For RESTAURANT commodity, multiply quantity by pack_size
+      const quantityToAdd =
+        input.commodityType === "RESTAURANT"
+          ? record.quantity *
+            (parseInt(record.commodity_master?.pack_size ?? "0", 10) || 0)
+          : record.quantity;
+
+      const existingStock = await prisma.stock.findFirst({
+        where: {
+          dvat04Id: dvatId,
+          commodity_masterId: record.commodity_masterId,
+          status: "ACTIVE",
+          deletedAt: null,
+          deletedById: null,
+        },
+        select: {
+          id: true,
+          quantity: true,
+        },
+      });
+
+      const newQuantity = quantityToAdd + (existingStock?.quantity || 0);
+
+      if (existingStock) {
+        await prisma.stock.update({
+          where: { id: existingStock.id },
+          data: {
+            quantity: newQuantity,
+          },
+        });
+      } else {
+        await prisma.stock.create({
+          data: {
+            quantity: newQuantity,
+            commodity_masterId: record.commodity_masterId,
+            dvat04Id: dvatId,
+            status: "ACTIVE",
+            createdById: currentUserId,
+          },
+        });
+      }
+    }
+
     // Update daily_purchase to mark as accepted and paid
     await prisma.daily_purchase.updateMany({
       where: {
@@ -94,20 +163,6 @@ export const PayPurchaseByWalletLiquor = async (input: {
       data: {
         is_accept: true,
         payment_status: "DEALER_PAID",
-      },
-    });
-
-    // Get urn_numbers from updated daily_purchase records
-    const purchaseRecords = await prisma.daily_purchase.findMany({
-      where: {
-        dvat04Id: dvatId,
-        invoice_number: input.invoiceNo,
-        seller_tin_numberId: input.sellerId,
-        deletedAt: null,
-        deletedById: null,
-      },
-      select: {
-        urn_number: true,
       },
     });
     const sellerdata = await prisma.tin_number_master.findUnique({

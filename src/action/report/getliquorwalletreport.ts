@@ -18,6 +18,9 @@ const GetLiquorWalletReport = async (): Promise<{
   try {
     // Get all liquor wallet history records with DVAT info
     const historyRecords = await prisma.liquor_wallet_history.findMany({
+      where: {
+        deletedAt: null,
+      },
       include: {
         dvat: {
           select: {
@@ -37,7 +40,12 @@ const GetLiquorWalletReport = async (): Promise<{
     const groupedMap = new Map<
       number,
       {
-        dvat: { id: number; tinNumber: string | null; tradename: string | null; wallet: string | null };
+        dvat: {
+          id: number;
+          tinNumber: string | null;
+          tradename: string | null;
+          wallet: string | null;
+        };
         creditAmount: number;
         debitAmount: number;
       }
@@ -64,7 +72,9 @@ const GetLiquorWalletReport = async (): Promise<{
     });
 
     // Convert map to formatted records
-    const formattedRecords: LiquorWalletGroupRecord[] = Array.from(groupedMap.values())
+    const formattedRecords: LiquorWalletGroupRecord[] = Array.from(
+      groupedMap.values(),
+    )
       .map((group) => ({
         dvatId: group.dvat.id,
         tinNumber: group.dvat.tinNumber,
