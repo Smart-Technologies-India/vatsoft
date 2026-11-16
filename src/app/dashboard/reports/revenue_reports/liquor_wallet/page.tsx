@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Input, Pagination } from "antd";
+import { Select } from "antd";
 import {
   Table,
   TableBody,
@@ -12,7 +13,7 @@ import {
 
 import type { InputRef } from "antd";
 import { Spin } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import GetLiquorWalletReport from "@/action/report/getliquorwalletreport";
 import type { LiquorWalletGroupRecord } from "@/action/report/getliquorwalletreport";
 import { toast } from "react-toastify";
@@ -30,27 +31,90 @@ const LiquorWalletReportPage = () => {
   const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
 
-  const [pagination, setPagination] = useState<PaginationState>({
-    take: 10,
-    skip: 0,
-    total: 0,
-  });
+  const [pagination, setPage] = useState<number>(1);
 
   const searchTinRef = useRef<InputRef>(null);
 
   const [walletData, setWalletData] = useState<LiquorWalletGroupRecord[]>([]);
-  const [filteredData, setFilteredData] = useState<LiquorWalletGroupRecord[]>(
-    [],
-  );
   const [searchResults, setSearchResults] = useState<LiquorWalletGroupRecord[]>(
     [],
   );
+  const [searchValue, setSearchValue] = useState<string>("");
+
+  // Filter states
+  const [selectedCommodity, setSelectedCommodity] = useState<string | null>(
+    null,
+  );
+  const [selectedOffice, setSelectedOffice] = useState<string | null>(null);
+  const [selectedFrequency, setSelectedFrequency] = useState<string | null>(
+    null,
+  );
+
+  // Unique filter values
+  const [commodityOptions, setCommodityOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [officeOptions, setOfficeOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [frequencyOptions, setFrequencyOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
 
   const formatCurrency = (value: string | number | null) => {
     if (value === null || value === undefined) return "0.00";
     const num = typeof value === "string" ? parseFloat(value) : value;
     return Number.isFinite(num) ? num.toFixed(2) : "0.00";
   };
+
+  const extractFilterOptions = (data: LiquorWalletGroupRecord[]) => {
+    const commodities = new Set<string>();
+    const offices = new Set<string>();
+    const frequencies = new Set<string>();
+
+    data.forEach((record) => {
+      if (record.commodity) commodities.add(record.commodity);
+      if (record.selectOffice) offices.add(record.selectOffice);
+      if (record.frequencyFilings) frequencies.add(record.frequencyFilings);
+    });
+
+    setCommodityOptions(
+      Array.from(commodities)
+        .sort()
+        .map((val) => ({ label: val, value: val })),
+    );
+    setOfficeOptions(
+      Array.from(offices)
+        .sort()
+        .map((val) => ({ label: val, value: val })),
+    );
+    setFrequencyOptions(
+      Array.from(frequencies)
+        .sort()
+        .map((val) => ({ label: val, value: val })),
+    );
+  };
+
+  const applyFilters = useCallback(
+    (data: LiquorWalletGroupRecord[]) => {
+      let filtered = data;
+
+      if (selectedCommodity) {
+        filtered = filtered.filter((r) => r.commodity === selectedCommodity);
+      }
+      if (selectedOffice) {
+        filtered = filtered.filter((r) => r.selectOffice === selectedOffice);
+      }
+      if (selectedFrequency) {
+        filtered = filtered.filter(
+          (r) => r.frequencyFilings === selectedFrequency,
+        );
+      }
+
+      return filtered;
+    },
+    [selectedCommodity, selectedOffice, selectedFrequency],
+  );
 
   const init = async () => {
     setLoading(true);
@@ -59,27 +123,13 @@ const LiquorWalletReportPage = () => {
 
     if (response.status && response.data) {
       setWalletData(response.data);
-      setPagination({
-        skip: 0,
-        take: 10,
-        total: response.data.length,
-      });
-      updatePaginatedData(response.data, 0, 10);
+      extractFilterOptions(response.data);
+      setPage(1);
     } else {
       toast.error(response.message);
     }
 
     setLoading(false);
-  };
-
-  const updatePaginatedData = (
-    data: LiquorWalletGroupRecord[],
-    skip: number,
-    take: number,
-  ) => {
-    const start = skip;
-    const end = start + take;
-    setFilteredData(data.slice(start, end));
   };
 
   useEffect(() => {
@@ -104,60 +154,71 @@ const LiquorWalletReportPage = () => {
     }
   }, [userid]);
 
+  // Memoized filtered data based on filters and search
+  const memoizedFilteredData = useMemo(() => {
+    if (walletData.length === 0) return [];
+
+    let filtered = walletData;
+
+    if (searchValue) {
+      filtered = filtered.filter(
+        (record) =>
+          record.tinNumber
+            ?.toLowerCase()
+            .includes(searchValue.toLowerCase()) ||
+          record.tradename?.toLowerCase().includes(searchValue.toLowerCase()),
+      );
+    }
+
+    return applyFilters(filtered);
+  }, [walletData, searchValue, applyFilters]);
+
+  // Derive pagination and filtered data from memoized data (no setState calls)
+  const itemsPerPage = 10;
+  const paginationState: PaginationState = {
+    take: itemsPerPage,
+    skip: (pagination - 1) * itemsPerPage,
+    total: memoizedFilteredData.length,
+  };
+  const filteredData = memoizedFilteredData.slice(
+    paginationState.skip,
+    paginationState.skip + itemsPerPage,
+  );
+
   const searchByTinOrName = async () => {
-    const searchValue = searchTinRef.current?.input?.value?.trim();
-    if (!searchValue || searchValue === "") {
+    const inputValue = searchTinRef.current?.input?.value?.trim();
+    if (!inputValue || inputValue === "") {
       toast.error("Enter TIN number or trade name to search");
       return;
     }
 
-    setLoading(true);
-    const filtered = walletData.filter(
-      (record) =>
-        record.tinNumber?.toLowerCase().includes(searchValue.toLowerCase()) ||
-        record.tradename?.toLowerCase().includes(searchValue.toLowerCase()),
-    );
+    setSearchValue(inputValue);
     setLoading(false);
-
-    if (filtered.length > 0) {
-      setSearchResults(filtered);
-      setPagination({
-        skip: 0,
-        take: 10,
-        total: filtered.length,
-      });
-      updatePaginatedData(filtered, 0, 10);
-      toast.success(`Found ${filtered.length} record(s)`);
-    } else {
-      toast.error("No records found with that TIN or trade name");
-      setSearchResults([]);
-      setFilteredData([]);
-    }
   };
 
   const clearSearch = () => {
     if (searchTinRef.current?.input) {
       (searchTinRef.current.input as HTMLInputElement).value = "";
     }
+    setSearchValue("");
     setSearchResults([]);
-    setPagination({
-      skip: 0,
-      take: 10,
-      total: walletData.length,
-    });
-    updatePaginatedData(walletData, 0, 10);
+    setPage(1);
   };
 
-  const onChangePageCount = (page: number, pagesize: number) => {
-    const data = searchResults.length > 0 ? searchResults : walletData;
-    const skip = pagesize * (page - 1);
+  const clearFilters = () => {
+    setSelectedCommodity(null);
+    setSelectedOffice(null);
+    setSelectedFrequency(null);
+    if (searchTinRef.current?.input) {
+      (searchTinRef.current.input as HTMLInputElement).value = "";
+    }
+    setSearchResults([]);
+    setSearchValue("");
+    setPage(1);
+  };
 
-    updatePaginatedData(data, skip, pagesize);
-    setPagination({
-      skip,
-      take: pagesize,
-      total: data.length,
-    });
+  const onChangePageCount = (page: number) => {
+    setPage(page);
   };
 
   if (isLoading) {
@@ -187,36 +248,104 @@ const LiquorWalletReportPage = () => {
     <main className="p-4 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-4">
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-semibold text-gray-900">
               Liquor Wallet Report - DVAT Summary
             </h1>
           </div>
 
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-            <div>
-              <p className="text-sm font-semibold text-gray-800 mb-3">
-                Search by TIN or Trade Name:
-              </p>
-              <div className="flex gap-2">
-                <Input
-                  ref={searchTinRef}
-                  placeholder="Enter TIN number or trade name"
-                  onPressEnter={searchByTinOrName}
-                  disabled={isLoading}
-                />
-                <Button
-                  type="primary"
-                  onClick={searchByTinOrName}
-                  loading={isLoading}
-                >
-                  Search
-                </Button>
-                {searchResults.length > 0 && (
-                  <Button onClick={clearSearch} disabled={isLoading}>
-                    Clear
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-2">
+            {/* Search and Filter Row */}
+            <div className="space-y-2 flex gap-2">
+              {/* Search Section */}
+              <div className="w-96">
+                <p className="text-xs font-semibold text-gray-700 mb-2">
+                  Search by TIN or Trade Name:
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    ref={searchTinRef}
+                    placeholder="Enter TIN number or trade name"
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    onPressEnter={searchByTinOrName}
+                    disabled={isLoading}
+                    size="small"
+                  />
+                  <Button
+                    type="primary"
+                    onClick={searchByTinOrName}
+                    loading={isLoading}
+                    size="small"
+                  >
+                    Search
                   </Button>
-                )}
+                  {searchResults.length > 0 && (
+                    <Button
+                      onClick={clearSearch}
+                      disabled={isLoading}
+                      size="small"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="grow"></div>
+
+              {/* Filters Section */}
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-2">
+                  Filter by:
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  <Select
+                    placeholder="Commodity"
+                    allowClear
+                    value={selectedCommodity}
+                    onChange={(value) => {
+                      setSelectedCommodity(value || null);
+                      setPage(1);
+                    }}
+                    options={commodityOptions}
+                    disabled={isLoading}
+                    size="small"
+                  />
+                  <Select
+                    placeholder="Select Office"
+                    allowClear
+                    value={selectedOffice}
+                    onChange={(value) => {
+                      setSelectedOffice(value || null);
+                      setPage(1);
+                    }}
+                    options={officeOptions}
+                    disabled={isLoading}
+                    size="small"
+                  />
+                  <Select
+                    placeholder="Filing Frequency"
+                    allowClear
+                    value={selectedFrequency}
+                    onChange={(value) => {
+                      setSelectedFrequency(value || null);
+                      setPage(1);
+                    }}
+                    options={frequencyOptions}
+                    disabled={isLoading}
+                    size="small"
+                  />
+                  {(selectedCommodity ||
+                    selectedOffice ||
+                    selectedFrequency) && (
+                    <Button
+                      onClick={clearFilters}
+                      disabled={isLoading}
+                      size="small"
+                    >
+                      Clear All
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -355,6 +484,15 @@ const LiquorWalletReportPage = () => {
                     Trade Name
                   </TableHead>
                   <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
+                    Commodity
+                  </TableHead>
+                  <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
+                    Select Office
+                  </TableHead>
+                  <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
+                    Filing Frequency
+                  </TableHead>
+                  <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
                     Total Credit (₹)
                   </TableHead>
                   <TableHead className="text-center p-3 text-xs font-semibold text-gray-700">
@@ -373,13 +511,22 @@ const LiquorWalletReportPage = () => {
                       className="border-b hover:bg-gray-50"
                     >
                       <TableCell className="text-center p-3 text-sm">
-                        {pagination.skip + index + 1}
+                        {paginationState.skip + index + 1}
                       </TableCell>
                       <TableCell className="text-center p-3 text-sm font-medium">
                         {record.tinNumber || "N/A"}
                       </TableCell>
                       <TableCell className="text-center p-3 text-sm">
                         {record.tradename || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-center p-3 text-sm">
+                        {record.commodity || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-center p-3 text-sm">
+                        {record.selectOffice || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-center p-3 text-sm">
+                        {record.frequencyFilings || "N/A"}
                       </TableCell>
                       <TableCell className="text-center p-3 text-sm font-medium text-green-600">
                         {formatCurrency(record.totalCredit)}
@@ -395,7 +542,7 @@ const LiquorWalletReportPage = () => {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={9}
                       className="text-center p-4 text-sm text-gray-500"
                     >
                       No records found.
@@ -409,12 +556,11 @@ const LiquorWalletReportPage = () => {
           {filteredData.length > 0 && (
             <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-center">
               <Pagination
-                current={Math.floor(pagination.skip / pagination.take) + 1}
-                pageSize={pagination.take}
-                total={pagination.total}
+                current={pagination}
+                pageSize={itemsPerPage}
+                total={paginationState.total}
                 onChange={onChangePageCount}
-                showSizeChanger
-                pageSizeOptions={[10, 20, 50, 100]}
+                showSizeChanger={false}
               />
             </div>
           )}

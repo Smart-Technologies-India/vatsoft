@@ -13,6 +13,8 @@ interface GetBlacklistedDvatsPayload {
   skip: number;
   take: number;
   office?: string;
+  commodity?: string;
+  frequency?: string;
 }
 
 interface BlacklistedDvatResult {
@@ -66,6 +68,14 @@ const GetBlacklistedDvats = async (
 
     if (payload.office) {
       whereCondition.office = payload.office;
+    }
+
+    if (payload.commodity) {
+      whereCondition.commodity = payload.commodity;
+    }
+
+    if (payload.frequency) {
+      whereCondition.frequency = payload.frequency;
     }
 
     // Get total count

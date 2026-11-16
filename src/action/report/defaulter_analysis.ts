@@ -134,6 +134,39 @@ const DefaulterAnalysis = async (
       return month; // Return as is if not found
     };
 
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    // Helper function to compare months chronologically
+    const isMonthMoreRecent = (
+      currentMonth: string,
+      currentYear: string,
+      previousMonth: string,
+      previousYear: string,
+    ): boolean => {
+      const currentYearNum = parseInt(currentYear);
+      const previousYearNum = parseInt(previousYear);
+      const currentMonthNum = monthNames.indexOf(currentMonth) + 1;
+      const previousMonthNum = monthNames.indexOf(previousMonth) + 1;
+
+      return (
+        currentYearNum > previousYearNum ||
+        (currentYearNum === previousYearNum && currentMonthNum > previousMonthNum)
+      );
+    };
+
     for (let i = 0; i < tempRes.length; i++) {
       let resItem = tempRes[i];
       let lastfiling = "N/A";
@@ -150,22 +183,42 @@ const DefaulterAnalysis = async (
         const currentLastFiling = `${filing.month}-${filing.year}`;
         const dueDate = filing.due_date ? new Date(filing.due_date) : null;
 
-        if (filingStatus) {
+        // Track the most recent filed return
+        if (filingStatus && lastfiling === "N/A") {
           lastfiling = currentLastFiling;
-        } else if (dueDate && dueDate < currentDate) {
+        } else if (filingStatus && lastfiling !== "N/A") {
+          // Compare months and years to find the most recent filing
+          const [lastMonth, lastYear] = lastfiling.split("-");
+          
+          if (isMonthMoreRecent(filing.month, filing.year, lastMonth, lastYear)) {
+            lastfiling = currentLastFiling;
+          }
+        } else if (!filingStatus && dueDate && dueDate < currentDate) {
           // For quarterly filing, only count if it's the last month of the quarter
           if (isQuarterly) {
             const lastMonthOfQuarter = getLastMonthOfQuarter(filing.month);
             if (filing.month === lastMonthOfQuarter) {
               pendingCount += 1;
-              pendingMonth = filing.month;
-              pendingYear = filing.year;
+              // Track the most recent pending filing for quarterly
+              if (pendingMonth === "") {
+                pendingMonth = filing.month;
+                pendingYear = filing.year;
+              } else if (isMonthMoreRecent(filing.month, filing.year, pendingMonth, pendingYear)) {
+                pendingMonth = filing.month;
+                pendingYear = filing.year;
+              }
             }
           } else {
             // For monthly filing, count every overdue month
             pendingCount += 1;
-            pendingMonth = filing.month;
-            pendingYear = filing.year;
+            // Track the most recent pending filing for monthly
+            if (pendingMonth === "") {
+              pendingMonth = filing.month;
+              pendingYear = filing.year;
+            } else if (isMonthMoreRecent(filing.month, filing.year, pendingMonth, pendingYear)) {
+              pendingMonth = filing.month;
+              pendingYear = filing.year;
+            }
           }
         }
       }
@@ -199,22 +252,6 @@ const DefaulterAnalysis = async (
     const res: ResponseType[] = Array.from(resMap.values())
       .filter((val: ResponseType) => val.lastYearDefaults >= 3)
       .sort((a, b) => b.pendingCount - a.pendingCount);
-
-    // Check for sales and purchases in pending period
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
 
     const getMonthsInSameQuarter = (month: string): string[] => {
       for (const [quarter, months] of Object.entries(quarterMonthsMap)) {

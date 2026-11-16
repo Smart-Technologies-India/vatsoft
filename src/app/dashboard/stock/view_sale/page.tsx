@@ -618,8 +618,13 @@ const DocumentWiseDetails = () => {
   };
 
   // Initial data load when DVAT is set and dateFilter is ready (from selectedPeriod)
+  // Clear data when dateFilter changes to ensure no stale data is shown
   useEffect(() => {
-    if (!dvatdata?.id || !dateFilter.startDate) return;
+    if (!dvatdata?.id || !dateFilter.startDate) {
+      setDailySale([]);
+      setFilteredSaleSummary(DEFAULT_SALE_SUMMARY);
+      return;
+    }
 
     const loadInitialData = async () => {
       const daily_sale_response = await GetUserDailySaleFiltered({
@@ -669,6 +674,10 @@ const DocumentWiseDetails = () => {
 
     const timer = setTimeout(() => {
       const loadFilteredPage = async () => {
+        // Clear data first to show no data for the selected period if applicable
+        setDailySale([]);
+        setFilteredSaleSummary(DEFAULT_SALE_SUMMARY);
+
         const daily_sale_response = await GetUserDailySaleFiltered({
           dvatid: dvatdata.id,
           skip: 0,

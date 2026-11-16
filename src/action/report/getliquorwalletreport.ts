@@ -5,6 +5,9 @@ export interface LiquorWalletGroupRecord {
   dvatId: number;
   tinNumber: string | null;
   tradename: string | null;
+  commodity: string | null;
+  selectOffice: string | null;
+  frequencyFilings: string | null;
   totalCredit: string;
   totalDebit: string;
   balance: string | null;
@@ -28,6 +31,9 @@ const GetLiquorWalletReport = async (): Promise<{
             tinNumber: true,
             tradename: true,
             wallet: true,
+            commodity: true,
+            selectOffice: true,
+            frequencyFilings: true,
           },
         },
       },
@@ -45,6 +51,9 @@ const GetLiquorWalletReport = async (): Promise<{
           tinNumber: string | null;
           tradename: string | null;
           wallet: string | null;
+          commodity: string | null;
+          selectOffice: string | null;
+          frequencyFilings: string | null;
         };
         creditAmount: number;
         debitAmount: number;
@@ -79,6 +88,9 @@ const GetLiquorWalletReport = async (): Promise<{
         dvatId: group.dvat.id,
         tinNumber: group.dvat.tinNumber,
         tradename: group.dvat.tradename,
+        commodity: group.dvat.commodity,
+        selectOffice: group.dvat.selectOffice,
+        frequencyFilings: group.dvat.frequencyFilings,
         totalCredit: group.creditAmount.toFixed(2),
         totalDebit: group.debitAmount.toFixed(2),
         balance: group.dvat.wallet || "0",

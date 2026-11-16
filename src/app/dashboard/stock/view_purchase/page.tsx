@@ -617,8 +617,13 @@ const DocumentWiseDetails = () => {
   };
 
   // Initial data load when DVAT is set and dateFilter is ready (from selectedPeriod)
+  // Clear data when dateFilter changes to ensure no stale data is shown
   useEffect(() => {
-    if (!dvatdata?.id || !dateFilter.startDate) return;
+    if (!dvatdata?.id || !dateFilter.startDate) {
+      setDailyPurchase([]);
+      setFilteredPurchaseSummary(DEFAULT_PURCHASE_SUMMARY);
+      return;
+    }
 
     const loadInitialData = async () => {
       await fetchPurchasePage({
@@ -648,6 +653,10 @@ const DocumentWiseDetails = () => {
 
     const timer = setTimeout(() => {
       const loadFilteredPage = async () => {
+        // Clear data first to show no data for the selected period if applicable
+        setDailyPurchase([]);
+        setFilteredPurchaseSummary(DEFAULT_PURCHASE_SUMMARY);
+
         await fetchPurchasePage({
           dvatid: dvatdata.id,
           skip: 0,
@@ -708,27 +717,6 @@ const DocumentWiseDetails = () => {
       endDate: endDateStr,
     });
   }, [selectedPeriod]);
-
-  useEffect(() => {
-    if (!dvatdata) return;
-
-    fetchPurchasePage({
-      dvatid: dvatdata.id,
-      skip: 0,
-      take: pagination.take,
-      search: searchTerm,
-      startDate: dateFilter.startDate,
-      endDate: dateFilter.endDate,
-      acceptFilter: acceptStatusFilter,
-    });
-  }, [
-    acceptStatusFilter,
-    dateFilter,
-    dvatdata,
-    fetchPurchasePage,
-    pagination.take,
-    searchTerm,
-  ]);
 
   const downloadDailyPurchaseReport = async () => {
     if (!dvatdata) {
@@ -1520,7 +1508,8 @@ const DocumentWiseDetails = () => {
                 </TableBody>
               </Table>
             </div>
-            {!["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") && (
+            {/* if date is before then 1 nov 2026 then show paragraph  */}
+            {new Date("2026-11-01") > selectedGroup.invoice_date ? (
               <div className="mt-4 p-3 bg-gray-50 rounded">
                 <div className="grid grid-cols-3 gap-2">
                   <div>
@@ -1543,76 +1532,121 @@ const DocumentWiseDetails = () => {
                   </div>
                 </div>
               </div>
-            )}
+            ) : (
+              <>
+                {!["RESTAURANT", "LIQUOR"].includes(
+                  dvatdata?.commodity ?? "",
+                ) && (
+                  <div className="mt-4 p-3 bg-gray-50 rounded">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <p className="text-xs text-gray-600">
+                          Total Taxable Value
+                        </p>
+                        <p className="font-semibold">
+                          ₹{formatIndianNumber(selectedGroup.totalTaxableValue)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">
+                          Total VAT Amount
+                        </p>
+                        <p className="font-semibold">
+                          ₹{formatIndianNumber(selectedGroup.totalVatAmount)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">
+                          Total Invoice Value
+                        </p>
+                        <p className="font-semibold">
+                          ₹{formatIndianNumber(selectedGroup.totalInvoiceValue)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-            {["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") && (
-              <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
-                <p className="text-xs text-gray-600 font-semibold mb-2">
-                  VAT Summary
-                </p>
-                <div className="grid grid-cols-4 gap-2">
-                  <div>
-                    <p className="text-xs text-gray-600">Total Taxable Value</p>
-                    <p className="font-semibold">
-                      ₹
-                      {formatIndianNumber(
-                        selectedGroup.records.reduce((total, record) => {
-                          const mrp = parseFloat(
-                            record.commodity_master.mrp || "0",
-                          );
-                          const crateSize = parseInt(
-                            record.commodity_master.crate_size.toString() ||
-                              "1",
-                          );
-                          const quantity = record.quantity;
-                          return (
-                            total +
-                            (crateSize > 0 ? (mrp / crateSize) * quantity : 0)
-                          );
-                        }, 0),
-                      )}
+                {["RESTAURANT", "LIQUOR"].includes(
+                  dvatdata?.commodity ?? "",
+                ) && (
+                  <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
+                    <p className="text-xs text-gray-600 font-semibold mb-2">
+                      VAT Summary
                     </p>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div>
+                        <p className="text-xs text-gray-600">
+                          Total Taxable Value
+                        </p>
+                        <p className="font-semibold">
+                          ₹
+                          {formatIndianNumber(
+                            selectedGroup.records.reduce((total, record) => {
+                              const mrp = parseFloat(
+                                record.commodity_master.mrp || "0",
+                              );
+                              const crateSize = parseInt(
+                                record.commodity_master.crate_size.toString() ||
+                                  "1",
+                              );
+                              const quantity = record.quantity;
+                              return (
+                                total +
+                                (crateSize > 0
+                                  ? (mrp / crateSize) * quantity
+                                  : 0)
+                              );
+                            }, 0),
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">
+                          Total VAT Amount
+                        </p>
+                        <p className="font-semibold">
+                          ₹
+                          {formatIndianNumber(
+                            selectedGroup.records.reduce((total, record) => {
+                              const mrp = parseFloat(
+                                record.commodity_master.mrp || "0",
+                              );
+                              const crateSize = parseInt(
+                                record.commodity_master.crate_size.toString() ||
+                                  "1",
+                              );
+                              const quantity = record.quantity;
+                              const taxableValue =
+                                crateSize > 0
+                                  ? (mrp / crateSize) * quantity
+                                  : 0;
+                              return total + taxableValue / 6;
+                            }, 0),
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">
+                          Less Input Tax Credit (ITC)
+                        </p>
+                        <p className="font-semibold">
+                          ₹{formatIndianNumber(selectedGroup.totalVatAmount)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">VAT Payable</p>
+                        <p className="font-semibold text-orange-600">
+                          ₹
+                          {formatIndianNumber(
+                            Math.max(0, Math.round(calculateVatPayable())),
+                          )}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-600">Total VAT Amount</p>
-                    <p className="font-semibold">
-                      ₹
-                      {formatIndianNumber(
-                        selectedGroup.records.reduce((total, record) => {
-                          const mrp = parseFloat(
-                            record.commodity_master.mrp || "0",
-                          );
-                          const crateSize = parseInt(
-                            record.commodity_master.crate_size.toString() ||
-                              "1",
-                          );
-                          const quantity = record.quantity;
-                          const taxableValue =
-                            crateSize > 0 ? (mrp / crateSize) * quantity : 0;
-                          return total + taxableValue / 6;
-                        }, 0),
-                      )}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600">
-                      Less Input Tax Credit (ITC)
-                    </p>
-                    <p className="font-semibold">
-                      ₹{formatIndianNumber(selectedGroup.totalVatAmount)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600">VAT Payable</p>
-                    <p className="font-semibold text-orange-600">
-                      ₹
-                      {formatIndianNumber(
-                        Math.max(0, Math.round(calculateVatPayable())),
-                      )}
-                    </p>
-                  </div>
-                </div>
-              </div>
+                )}
+              </>
             )}
 
             {/* {selectedGroup.records.some((r) => canAcceptRecord(r)) && ( */}

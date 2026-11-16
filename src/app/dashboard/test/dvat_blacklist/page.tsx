@@ -64,6 +64,26 @@ export default function DvatBlacklistPage() {
   const [isAddingToBlacklist, setIsAddingToBlacklist] = useState(false);
   const [isRemovingFromBlacklist, setIsRemovingFromBlacklist] = useState(false);
 
+  // Filter states for blacklist table
+  const [selectedCommodity, setSelectedCommodity] = useState<string | null>(
+    null,
+  );
+  const [selectedBlacklistOffice, setSelectedBlacklistOffice] = useState<
+    string | null
+  >(null);
+  const [selectedFrequency, setSelectedFrequency] = useState<string | null>(
+    null,
+  );
+  const [commodityOptions, setCommodityOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [officeOptions, setOfficeOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [frequencyOptions, setFrequencyOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+
   // Get user info on mount
   useEffect(() => {
     const getUserInfo = async () => {
@@ -115,7 +135,7 @@ export default function DvatBlacklistPage() {
     }
   }, [searchTerm, pagination.skip, pagination.take, userRole, userOffice]);
 
-  // Fetch blacklisted DVAT records
+  // Fetch blacklisted DVAT records for display
   const fetchBlacklistedDvats = useCallback(async () => {
     setIsBlacklistLoading(true);
     try {
@@ -123,7 +143,12 @@ export default function DvatBlacklistPage() {
         searchTerm: blacklistSearchTerm,
         skip: blacklistPagination.skip,
         take: blacklistPagination.take,
-        office: userRole === "ADMIN" ? undefined : userOffice,
+        office:
+          userRole === "ADMIN"
+            ? selectedBlacklistOffice || undefined
+            : userOffice,
+        commodity: selectedCommodity || undefined,
+        frequency: selectedFrequency || undefined,
       });
 
       console.log("Blacklisted DVAT response:", response);
@@ -149,13 +174,96 @@ export default function DvatBlacklistPage() {
     blacklistPagination.take,
     userRole,
     userOffice,
+    selectedBlacklistOffice,
+    selectedCommodity,
+    selectedFrequency,
   ]);
+
+  // Fetch all blacklisted records (with pagination) to extract filter options
+  const fetchAllBlacklistedForFilters = useCallback(async () => {
+    try {
+      const allRecords: BlacklistedDvat[] = [];
+      let skip = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await GetBlacklistedDvats({
+          searchTerm: blacklistSearchTerm,
+          skip,
+          take: batchSize,
+          office: userRole === "ADMIN" ? undefined : userOffice,
+          // NO commodity or frequency filters here - get all
+        });
+
+        if (response.status && response.data?.result) {
+          allRecords.push(...response.data.result);
+
+          // Check if there are more records
+          if (response.data.result.length < batchSize) {
+            hasMore = false;
+          } else {
+            skip += batchSize;
+          }
+        } else {
+          hasMore = false;
+        }
+      }
+
+      // Extract filter options from all accumulated records
+      if (allRecords.length > 0) {
+        extractFilterOptions(allRecords);
+      }
+    } catch (error) {
+      console.error("Error fetching filter options:", error);
+    }
+  }, [blacklistSearchTerm, userRole, userOffice]);
+
+  // Extract unique filter options from data
+  const extractFilterOptions = (data: BlacklistedDvat[]) => {
+    const commodities = new Set<string>();
+    const offices = new Set<string>();
+    const frequencies = new Set<string>();
+
+    data.forEach((record) => {
+      if (record.commodity) commodities.add(record.commodity);
+      if (record.office) offices.add(record.office);
+      if (record.frequency) frequencies.add(record.frequency);
+    });
+
+    setCommodityOptions(
+      Array.from(commodities)
+        .sort()
+        .map((val) => ({ label: val, value: val })),
+    );
+    setOfficeOptions(
+      Array.from(offices)
+        .sort()
+        .map((val) => ({ label: val, value: val })),
+    );
+    setFrequencyOptions(
+      Array.from(frequencies)
+        .sort()
+        .map((val) => ({ label: val, value: val })),
+    );
+  };
 
   // Initial load
   useEffect(() => {
     fetchDvatOptions();
     fetchBlacklistedDvats();
+    fetchAllBlacklistedForFilters(); // Fetch all data for filter options
   }, []);
+
+  // Fetch filter options when search term changes
+  useEffect(() => {
+    fetchAllBlacklistedForFilters();
+  }, [blacklistSearchTerm, fetchAllBlacklistedForFilters]);
+
+  // Reset blacklist pagination when filters change (NOT in effect - handled in onChange handlers)
+  const resetBlacklistPagination = () => {
+    setBlacklistPagination((prev) => ({ ...prev, skip: 0 }));
+  };
 
   // Handle search
   useEffect(() => {
@@ -333,13 +441,72 @@ export default function DvatBlacklistPage() {
             Blacklisted DVATs
           </h2>
 
-          <div className="mb-3">
-            <Input
-              placeholder="Search by TIN or Trade Name"
-              value={blacklistSearchTerm}
-              onChange={(e) => setBlacklistSearchTerm(e.target.value)}
-              size="middle"
-            />
+          {/* Search and Filters */}
+          <div className="mb-4">
+            {/* <div className="mb-3"></div> */}
+
+            {/* Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+              <Input
+                placeholder="Search by TIN or Trade Name"
+                value={blacklistSearchTerm}
+                onChange={(e) => {
+                  setBlacklistSearchTerm(e.target.value);
+                  resetBlacklistPagination();
+                }}
+                size="middle"
+              />
+              <Select
+                placeholder="Commodity"
+                allowClear
+                value={selectedCommodity}
+                onChange={(value) => {
+                  setSelectedCommodity(value || null);
+                  resetBlacklistPagination();
+                }}
+                options={commodityOptions}
+                size="middle"
+              />
+              {userRole === "ADMIN" && (
+                <Select
+                  placeholder="Select Office"
+                  allowClear
+                  value={selectedBlacklistOffice}
+                  onChange={(value) => {
+                    setSelectedBlacklistOffice(value || null);
+                    resetBlacklistPagination();
+                  }}
+                  options={officeOptions}
+                  size="middle"
+                />
+              )}
+              <Select
+                placeholder="Filing Frequency"
+                allowClear
+                value={selectedFrequency}
+                onChange={(value) => {
+                  setSelectedFrequency(value || null);
+                  resetBlacklistPagination();
+                }}
+                options={frequencyOptions}
+                size="middle"
+              />
+              {(selectedCommodity ||
+                selectedBlacklistOffice ||
+                selectedFrequency) && (
+                <Button
+                  onClick={() => {
+                    setSelectedCommodity(null);
+                    setSelectedBlacklistOffice(null);
+                    setSelectedFrequency(null);
+                    resetBlacklistPagination();
+                  }}
+                  size="middle"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
           </div>
 
           <Spin spinning={isBlacklistLoading}>
