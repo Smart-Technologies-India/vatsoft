@@ -48,7 +48,6 @@ import * as XLSX from "xlsx";
 import PurchaseBulk from "./purchasebulk";
 import DownloadPurchaseSample from "./downloadpurchasesample";
 import { PurchaseBulkDelete } from "./purchasebulkdelete";
-import { PostPaymentAddItemPurchaseDrawer } from "@/components/stock/PostPaymentAddItemPurchaseDrawer";
 import ServerTime from "@/action/servertime";
 import CreateLiquorSaleChallan from "@/action/challan/createliquorsalechallan";
 import { PayPurchaseByWalletLiquor } from "@/action/stock/paypurchasebywalletliquor";
@@ -101,7 +100,6 @@ const formatIndianNumber = (num: number): string => {
   const withCommas = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
   return `${withCommas},${lastThree}`;
 };
-
 
 const DocumentWiseDetails = () => {
   const router = useRouter();
@@ -583,10 +581,9 @@ const DocumentWiseDetails = () => {
   const [isGroupRejectLoading, setIsGroupRejectLoading] = useState(false);
   const [isDownloadingDailyPurchase, setIsDownloadingDailyPurchase] =
     useState<boolean>(false);
-  const [isAddItemDrawerOpen, setIsAddItemDrawerOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState<string>("");
-  
+
   const [selectedPeriod, setSelectedPeriod] = useState<string>(
     formatMonthInputValue(ServerTime().data as Date),
   );
@@ -724,7 +721,14 @@ const DocumentWiseDetails = () => {
       endDate: dateFilter.endDate,
       acceptFilter: acceptStatusFilter,
     });
-  }, [acceptStatusFilter, dateFilter, dvatdata, fetchPurchasePage, pagination.take, searchTerm]);
+  }, [
+    acceptStatusFilter,
+    dateFilter,
+    dvatdata,
+    fetchPurchasePage,
+    pagination.take,
+    searchTerm,
+  ]);
 
   const downloadDailyPurchaseReport = async () => {
     if (!dvatdata) {
@@ -1601,7 +1605,10 @@ const DocumentWiseDetails = () => {
                   <div>
                     <p className="text-xs text-gray-600">VAT Payable</p>
                     <p className="font-semibold text-orange-600">
-                      ₹{formatIndianNumber(Math.max(0, Math.round(calculateVatPayable())))}
+                      ₹
+                      {formatIndianNumber(
+                        Math.max(0, Math.round(calculateVatPayable())),
+                      )}
                     </p>
                   </div>
                 </div>
@@ -1677,9 +1684,7 @@ const DocumentWiseDetails = () => {
               )}
               {new Date(selectedGroup.invoice_date) >= new Date("2026-11-01") &&
                 ["RESTAURANT", "LIQUOR"].includes(dvatdata?.commodity ?? "") &&
-                selectedGroup.records.some(
-                  (r) => r.payment_status == "PAID",
-                ) &&
+                selectedGroup.records.some((r) => r.payment_status == "PAID") &&
                 selectedGroup.records.some((r) => !r.is_accept) && (
                   <>
                     {calculateVatPayable() <= 0 ? (
@@ -1740,14 +1745,6 @@ const DocumentWiseDetails = () => {
                         )}
                       </>
                     )}
-                    {/* {isWalletPaid && selectedGroup && selectedGroup.records.filter(record => !record.is_accept).length > 0 && (
-                      <button
-                        onClick={() => setIsAddItemDrawerOpen(true)}
-                        className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
-                      >
-                        ➕ Add Item
-                      </button>
-                    )} */}
                   </>
                 )}
             </div>
@@ -1818,15 +1815,6 @@ const DocumentWiseDetails = () => {
         </div>
         <DailyPurchaseMasterProvider setAddBox={setAddBox} init={init} />
       </Drawer>
-
-      <PostPaymentAddItemPurchaseDrawer
-        isOpen={isAddItemDrawerOpen}
-        selectedGroup={selectedGroup}
-        walletBalance={walletBalance}
-        dvatData={dvatdata}
-        onClose={() => setIsAddItemDrawerOpen(false)}
-        onSuccess={init}
-      />
 
       <Modal
         title={

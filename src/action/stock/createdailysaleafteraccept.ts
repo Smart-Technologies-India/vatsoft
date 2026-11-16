@@ -3,6 +3,7 @@
 import prisma from "../../../prisma/database";
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 import { ApiResponseType, createResponse } from "@/models/response";
+import { customAlphabet } from "nanoid";
 
 interface CreateDailySaleAfterAcceptInput {
   dvatid: number;
@@ -25,7 +26,6 @@ interface CreateDailySaleAfterAcceptInput {
   is_exempt6_2: boolean;
   is_accept: boolean;
   is_paid: boolean;
-  urn_number: string;
 }
 
 export default async function CreateDailySaleAfterAccept(
@@ -100,6 +100,9 @@ export default async function CreateDailySaleAfterAccept(
       );
     }
 
+    const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstunvxyz", 12);
+    const urnNumber = nanoid();
+
     // Create the daily sale record (always create new, don't merge with existing)
     const dailySale = await prisma.daily_sale.create({
       data: {
@@ -128,7 +131,7 @@ export default async function CreateDailySaleAfterAccept(
           purchaserTin.tin_number.startsWith("26"),
         is_accept: input.is_accept,
         is_paid: input.is_paid,
-        urn_number: input.urn_number,
+        urn_number: urnNumber,
       },
       include: {
         seller_tin_number: true,
@@ -215,7 +218,7 @@ export default async function CreateDailySaleAfterAccept(
             amount: input.amount,
             amount_unit: input.amount_unit,
             vatamount: input.vatamount,
-            urn_number: input.urn_number,
+            urn_number: urnNumber,
             is_dvat_30a: !(
               sellerDvat.tinNumber.startsWith("25") ||
               sellerDvat.tinNumber.startsWith("26")

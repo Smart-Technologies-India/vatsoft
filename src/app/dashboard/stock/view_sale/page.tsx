@@ -350,6 +350,38 @@ const DocumentWiseDetails = () => {
     }
     // setLoading(false);
   };
+
+  const refreshSelectedGroupModal = async () => {
+    if (!selectedGroup || !dvatdata) return;
+
+    const daily_sale_response = await GetUserDailySaleFiltered({
+      dvatid: dvatdata.id,
+      skip: 0,
+      take: 25,
+      searchTerm,
+      startDate: dateFilter.startDate,
+      endDate: dateFilter.endDate,
+      acceptStatusFilter,
+    });
+
+    if (daily_sale_response.status && daily_sale_response.data.result) {
+      const groupKey = `${selectedGroup.seller_tin_number.tin_number}-${selectedGroup.invoice_number}`;
+      const updatedGroup = daily_sale_response.data.result.find(
+        (group) =>
+          `${group.seller_tin_number.tin_number}-${group.invoice_number}` ===
+          groupKey,
+      );
+
+      if (updatedGroup) {
+        setSelectedGroup(updatedGroup);
+      } else {
+        setIsGroupModalOpen(false);
+        setSelectedGroup(null);
+        toast.info("Invoice group no longer available.");
+      }
+    }
+  };
+
   const getPeriodKey = (year: string | number, month: string) =>
     `${year}-${month}`;
 
@@ -1657,7 +1689,10 @@ const DocumentWiseDetails = () => {
         walletBalance={walletBalance}
         dvatData={dvatdata ?? null}
         onClose={() => setIsDrawerOpen(false)}
-        onSuccess={init}
+        onSuccess={async () => {
+          await init();
+          await refreshSelectedGroupModal();
+        }}
       />
 
       <Modal

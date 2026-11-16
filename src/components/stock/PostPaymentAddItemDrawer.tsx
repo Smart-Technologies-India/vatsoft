@@ -254,7 +254,6 @@ const PostPaymentAddItemFormContent: React.FC<
     setIsWalletPaymentProcessing(true);
 
     try {
-      console.log(selectedGroup);
       // Charge wallet with isAddItem flag set to true
       const paymentResponse = await PayByWalletLiquor({
         totalAmount: vatamount.toString(),
@@ -334,7 +333,6 @@ const PostPaymentAddItemFormContent: React.FC<
       is_exempt6_2: (selectedGroup as any)?.records[0]?.is_exempt6_2 ?? false,
       is_accept: (selectedGroup as any)?.records[0]?.is_accept ?? false,
       is_paid: (selectedGroup as any)?.records[0]?.is_paid ?? false,
-      urn_number: (selectedGroup as any)?.records[0]?.urn_number ?? "",
     });
 
     if (response.status) {

@@ -141,6 +141,7 @@ const DeleteAddedItemAfterAccept = async (
               invoice_number: payload.invoiceNumber,
               invoice_date: saleItem.invoice_date,
               commodity_masterId: saleItem.commodity_masterId,
+              urn_number: saleItem.urn_number,
               deletedAt: null,
               status: "ACTIVE",
             },
@@ -153,18 +154,6 @@ const DeleteAddedItemAfterAccept = async (
           });
         }
       }
-
-      // Create audit entry for deletion
-      const { id, createdById, ...filteredData } = saleItem;
-
-      await prisma.edit_sale.create({
-        data: {
-          saleId: saleItem.id,
-          is_delete: true,
-          createdById: currentUserId,
-          ...filteredData,
-        },
-      });
 
       // Soft delete the daily_sale entry
       const updatedSale = await prisma.daily_sale.update({
